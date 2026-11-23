@@ -36,7 +36,7 @@ fun AirplaneProfileHost(session: Session) {
             title = { Text(stringResource(R.string.offer_title)) },
             text = { Text(stringResource(R.string.offer_line, offer.mapNotNull { it.tail }.joinToString(", "))) },
             confirmButton = { TextButton(onClick = { scope.launch { val _ = runCatching { own.keepOnAccount() } } }) { Text(stringResource(R.string.offer_keep)) } },
-            dismissButton = { TextButton(onClick = own::notNow) { Text(stringResource(R.string.not_now)) } },
+            dismissButton = { TextButton(onClick = own::notNow) { Text(stringResource(R.string.wording_not_now)) } },
         )
     }
 }

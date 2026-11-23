@@ -4,6 +4,7 @@ from a message in the feed's own shape (TATrackAndFlightPlan), FNS's to
 wingtip.notams, TFMS's to wingtip.filed_routes."""
 
 from wingtip import traffic
+from wingtip.config import get_settings
 
 from ingest import swim
 
@@ -107,7 +108,7 @@ def test_a_tracks_code_says_its_emergency_in_the_ads_b_words():
 
 def test_the_tracks_kept_are_those_round_a_view_and_the_followed_ones(monkeypatch):
     heard = []
-    monkeypatch.setattr(traffic, "heard_elsewhere", lambda plane, at: heard.append(plane["hex"]))
+    monkeypatch.setattr(traffic, "heard_all_elsewhere", lambda found, following: heard.extend(p["hex"] for p, _ in found))
     # The map on Chicago, 20 nm round O'Hare: the airliner over it, not
     # N3429J 39 nm north-west.
     monkeypatch.setattr(swim, "WANTED", [([(41.98, -87.9, 20)], set())])
@@ -137,6 +138,9 @@ def test_the_radar_reaches_the_planners_map_through_the_store(monkeypatch):
     cell's diagonal (21.2 nm) so the circle still holds the whole view."""
     now = 1792461510.0
     monkeypatch.setattr(traffic.radar, "_wall", lambda: now)
+    # No LADD list here: shown as on the owner's own stack (wingtip.traffic.ladd).
+    monkeypatch.setenv("LADD_REQUIRED", "0")
+    get_settings.cache_clear()
     traffic.looked_at(41.98, -87.9, 20)
     swim.WANTED[0] = traffic.radar_wanted()
     try:

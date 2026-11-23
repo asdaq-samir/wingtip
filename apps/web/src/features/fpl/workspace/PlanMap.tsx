@@ -88,7 +88,7 @@ export default function PlanMap({
           stopFields={stopFieldPins}
           onPickStopField={pickStopField}
           // The suggested routes' ways only while their pills are out
-          // (RoutesToggle, waysOnMap): one switch for both.
+          // (ShareMenu's Route Options, waysOnMap): one switch for both.
           ways={waysOnMap(vm)}
           wayShown={lineKey === "none" ? "own" : lineKey}
           onPickWay={pickWay}

@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, test } from "vitest";
 import type { Flight } from "../../lib/api/types";
-import { callEngine } from "../../lib/engine/engine";
 import { airborne, debrief } from "./debrief";
 import { readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
 
@@ -123,54 +122,39 @@ describe("a track read", () => {
   });
 });
 
+// The grading is the engine's, each tolerance and boundary tested there on
+// this same flight (engine/facade/tests/figures/drill_cases.rs, the debrief):
+// here, that the flight's checkpoints, the track and the pattern altitudes
+// reach "debrief" and that its answer is read back into the page's shape.
 describe("a flight debriefed", () => {
   const d = debrief(FLIGHT, flown(), { B: 1700 })!;
 
-  test("the flight is the track's run over 40 kt", () => {
+  test("the flight is the track's run over 40 kt, timed against the plan", () => {
     expect(airborne(flown())).toHaveLength(1);
     expect(d.flownMin).toBeCloseTo(36, 0);
     expect(d.plannedMin).toBe(36);
     expect(d.notes).toEqual([]);
   });
 
-  test("leg by leg: the course held and how far off it, the altitude held", () => {
+  test("leg by leg, the course and the altitude passed in read back", () => {
     expect(d.legs[0]!.courseWithin).toBe(1);
     // Half a mile east of a northbound line: right of it.
     expect(d.legs[0]!.worstOffNm).toBeCloseTo(0.5, 1);
-    // The climb is not the cruise: 3,600 from there is within 200.
-    expect(d.legs[0]!.altitudeWithin).toBe(1);
-    // Two minutes at 3,800 of the second leg's cruise.
-    expect(d.legs[1]!.altitudeWithin).toBeGreaterThan(0.75);
-    expect(d.legs[1]!.altitudeWithin).toBeLessThan(0.95);
+    // 3,800 against the second leg's 3,500.
     expect(d.legs[1]!.worstAltFt).toBe(300);
-    // On the map, the two minutes at 3,800 are the off part of the line.
-    const off = d.line.filter((pt) => pt.off);
-    expect(off.length).toBeGreaterThan(10);
-    expect(off.every((pt) => pt.lat > 42 + 40 / 60 && pt.lat < 42 + 44 / 60)).toBe(true);
+    expect(d.line.some((pt) => pt.off)).toBe(true);
   });
 
-  test("each checkpoint when it was due and when it was passed, and the pattern", () => {
+  test("each checkpoint when it was due and when it was passed, and the pattern passed in", () => {
     expect(d.passes.map((p) => p.name)).toEqual(["Lake", "B"]);
     expect(d.passes[0]!.dueMin).toBe(18);
     expect(d.passes[0]!.passedMin).toBeCloseTo(18, 0);
-    expect(d.passes[0]!.closestNm).toBeCloseTo(0.5, 1);
-    expect(d.passes[1]!.passedMin).toBeCloseTo(36, 0);
     expect(d.patterns).toHaveLength(1);
     expect(d.patterns[0]!.patternFt).toBe(1700);
-    expect(d.patterns[0]!.altFt).toBeGreaterThan(1700);
   });
 
-  test("a track from somewhere else is said, and one that never flew is none", () => {
-    const elsewhere = flown().map((p) => ({ ...p, lat: p.lat + 1 }));
-    expect(debrief(FLIGHT, elsewhere)!.notes[0]).toMatch(/takes off 60 nm from A/);
-    const taxi = flown().slice(0, 20);
-    expect(debrief(FLIGHT, taxi)).toBeNull();
-  });
-});
-
-describe("the page's tolerances are the engine's", () => {
-  test("PA.VI.A's and the pattern's (ACS PA.VI.A S5-S7, PA.III.B S5)", () => {
-    const { tolerances } = callEngine("debrief", { checkpoints: [], points: [] });
-    expect(tolerances).toEqual({ altitude_ft: 200, course_deg: 15, off_route_nm: 3, eta_min: 5, pattern_nm: 1.5, pattern_ft: 100 });
+  test("its tolerances read back, and a track that never flew is none", () => {
+    expect(d.tolerances).toEqual({ altitudeFt: 200, courseDeg: 15, offRouteNm: 3, etaMin: 5, patternFt: 100 });
+    expect(debrief(FLIGHT, flown().slice(0, 20))).toBeNull();
   });
 });

@@ -1,11 +1,19 @@
-import { Suspense, lazy, useEffect, useState, type ComponentProps } from "react";
+import { Suspense, useEffect, useState, type ComponentProps } from "react";
+import { fromChunk } from "../lib/fromChunk";
+import { afterRouteDrawn } from "../lib/routeDrawn";
 
 /** The dialog itself (SheetDialogBody): Base UI's Drawer, Dialog and
- *  AlertDialog, about 36 KB that the first load does not draw. */
-const loadBody = () => import("./SheetDialogBody");
-const Body = lazy(loadBody);
+ *  AlertDialog, about 36 KB that the first load does not draw. Drawn
+ *  straight from its module once it is in (fromChunk), where `lazy`
+ *  suspended the first box opened once more, its chunk long fetched: FPL's
+ *  fuel gauge's first sheet took 529 ms where the next took about 200 (the
+ *  speed audit of 2026-11-21). */
+const { Part: Body, prefetch: loadBody } = fromChunk(
+  () => import("./SheetDialogBody"),
+  (m) => m.default,
+);
 
-/** Asked for once, after the page has drawn, so a box opens at once. */
+/** Asked for once, after the route opened has drawn, so a box opens at once. */
 let asked = false;
 
 /**
@@ -13,8 +21,8 @@ let asked = false;
  * says how it looks): a sign-in, a failure, a confirmation. On its own
  * chunk until one first opens -- nearly every page load opens none, and
  * the error box, the confirmations and the sign-in link's sheet are all
- * mounted from the start -- read ahead two seconds after the page draws,
- * as the pilot's console is (usePlanWorkspace). Once opened it stays
+ * mounted from the start -- read ahead two seconds after the route opened
+ * has drawn (lib/routeDrawn), as the pilot's console is. Once opened it stays
  * drawn, so it closes with its own motion.
  */
 export default function SheetDialog(props: ComponentProps<typeof Body>) {
@@ -23,7 +31,7 @@ export default function SheetDialog(props: ComponentProps<typeof Body>) {
   useEffect(() => {
     if (asked) return;
     asked = true;
-    window.setTimeout(() => void loadBody(), 2000);
+    afterRouteDrawn(loadBody, 2000);
   }, []);
   if (!opened && !props.trigger) return null;
   return (

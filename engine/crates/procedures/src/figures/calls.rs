@@ -147,20 +147,35 @@ pub fn fuel(name: &str, v: &Value) -> Result<String, String> {
                         departure: flag("departure"),
                         fuel_gal: opt_num_in(name, p, "fuel_gal")?,
                         refuel: flag("refuel"),
+                        fill_gal: opt_num_in(name, p, "fill_gal")?,
                     })
                 })
                 .collect::<Result<Vec<_>, String>>()?;
+            // Each flight's own reserve (strip::tanks: 91.151(a), 91.167(a)(3)).
+            let reserves = ask
+                .list("reserves_gal")?
+                .iter()
+                .map(|r| match r {
+                    Value::Null => Ok(None),
+                    r => r.as_f64().map(Some).ok_or_else(|| format!("{name}: a flight's reserve is not a number")),
+                })
+                .collect::<Result<Vec<_>, String>>()?;
             let mut out = String::from("[");
-            for (i, at) in strip::tanks(&points, ask.num("usable_gal")?, ask.num("taxi_gal")?, ask.num("reserve_gal")?).iter().enumerate() {
+            // The fuel on to an IFR alternate, the destination's (91.167(a)(2)).
+            let alternate = ask.opt_num("alternate_gal")?.unwrap_or(0.0);
+            for (i, at) in strip::tanks(&points, ask.num("usable_gal")?, ask.num("taxi_gal")?, &reserves, alternate).iter().enumerate() {
                 if i > 0 {
                     out.push(',');
                 }
                 match at {
                     None => out.push_str("null"),
-                    Some((gal, low)) => {
+                    Some(t) => {
                         out.push_str("{\"gal\":");
-                        json::number(&mut out, *gal);
-                        out.push_str(if *low { ",\"low\":true}" } else { ",\"low\":false}" });
+                        json::number(&mut out, t.gal);
+                        out.push_str(if t.low { ",\"low\":true" } else { ",\"low\":false" });
+                        out.push_str(",\"leaves_gal\":");
+                        json::opt_number(&mut out, t.leaves_gal);
+                        out.push('}');
                     }
                 }
             }

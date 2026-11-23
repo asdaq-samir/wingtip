@@ -7,7 +7,10 @@ import type {
   ForecastWind,
   AirportsInView,
   ChartPages,
+  FlightPlates,
   NearestAirports,
+  PlateStateCharts,
+  PlateStates,
   PlacesFound,
   PlateOverlay,
   ProcedureDrawing,
@@ -20,8 +23,10 @@ import type {
  *  so a day's copy in the browser of an older shape is not read as this
  *  one: 2, each field's place after its size (2026-10-22); 3, the closed
  *  fields' labels beside the rows (2026-11-13, decision 0043); 4, each
- *  private, military or joint-use field's use (the private-fields audit). */
-const INDEX_VERSION = 4;
+ *  private, military or joint-use field's use (the private-fields audit);
+ *  5, each place to a ten-thousandth of a degree, not a hundredth, as the
+ *  map is brought to it (features/fpl/vm/useMapPins). */
+const INDEX_VERSION = 5;
 
 /** The planner's calls for airports and places (./client's `api`): the search,
  *  an airport's card and its procedures, the fields near a point or in view. */
@@ -119,6 +124,35 @@ export const plannerAirports = {
   /** The pages of one of the FAA's charts, by its address, drawn by the
    *  planner -- of a booklet, the ones naming `airport`. */
   faaChart: (url: string, airport: string) => planner.GET("/api/faa-chart", { params: { query: { url, airport } } }).then(data<ChartPages>),
+  /** The plates Keep for the Air keeps for a flight and their size, about,
+   *  before any is fetched (wingtip.plate_sets): its own fields', the
+   *  alternate's and those within the airplane's diversion range. */
+  flightPlates: (query: {
+    route: string;
+    fixes?: string;
+    alternate?: string;
+    eta?: string;
+    tas_kt?: number;
+    usable_gal?: number;
+    burn_gph?: number;
+  }) => planner.GET("/api/plates/flight", { params: { query } }).then(data<FlightPlates>),
+  /** The states whose plates Downloads offers, of the d-TPP cycle in force. */
+  plateStates: () => planner.GET("/api/plates/states").then(data<PlateStates>),
+  /** A state's fields and their charts, of `cycle`. */
+  plateState: (cycle: string, state: string) =>
+    planner.GET("/api/plates/states/{cycle}/{state}", { params: { path: { cycle, state } } }).then(data<PlateStateCharts>),
+  /** Where the PDF itself of one of the FAA's d-TPP charts is, by its
+   *  address on aeronav.faa.gov ("https://aeronav.faa.gov/d-tpp/2611/
+   *  00046AD.PDF"), for pdf.js to read its words and where each is drawn
+   *  (the airport diagram's latitude and longitude labels and hot spots):
+   *  the browser may not read aeronav's own (it sends no CORS headers), so
+   *  it is the planner's copy, under the gateway's prefix. Null for any
+   *  other address. The planner serves only the cycle in force
+   *  (app.routers.airport_charts faa_chart_pdf). */
+  faaChartPdfUrl: (url: string): string | null => {
+    const m = /^https:\/\/aeronav\.faa\.gov\/d-tpp\/(\d{4})\/([\w-]+\.PDF)$/i.exec(url);
+    return m ? `/api/planner/faa-chart/pdf/dtpp/${m[1]}/${encodeURIComponent(m[2]!)}` : null;
+  },
 
   /** The landing fields inside a box, the biggest first, each with its
    *  METAR's flight category: what the map lays its chips and tap

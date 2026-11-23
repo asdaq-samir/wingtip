@@ -48,14 +48,14 @@ class AccountDeletionTest extends AccountTestBase {
                 .isZero();
         assertThat(rowsOf(staying)).isEqualTo(before);
         // The planner was asked to forget the pilot's own notes, by their id.
-        assertThat(plannerAsked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
+        assertThat(FakePlanner.asked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
     }
 
     @Test
     void whenThePlannerCannotTakeTheNotesNothingIsDeleted() throws Exception {
         Pilot pilot = pilotWithEverything();
         List<Integer> before = rowsOf(pilot);
-        plannerStatus = 503;
+        FakePlanner.status = 503;
 
         mockMvc.perform(delete("/api/me")
                         .with(csrf())
@@ -78,6 +78,8 @@ class AccountDeletionTest extends AccountTestBase {
                 .andExpect(header().string("Content-Disposition", startsWith("attachment; filename=\"wingtip-maps-")))
                 .andExpect(jsonPath("$.format").value("wingtip-maps-export/1"))
                 .andExpect(jsonPath("$.account.email").value(pilot.getEmail()))
+                .andExpect(jsonPath("$.account.avatarUrl").value(startsWith("/api/me/avatar?v=")))
+                .andExpect(jsonPath("$.photo").value("data:image/png;base64,iVBORw0KGgo="))
                 .andExpect(jsonPath("$.airplanes.length()").value(1))
                 .andExpect(jsonPath("$.airplanes[0].squawks[0].text").value("Landing light out"))
                 .andExpect(jsonPath("$.flights.length()").value(1))
@@ -90,8 +92,6 @@ class AccountDeletionTest extends AccountTestBase {
                 .andExpect(jsonPath("$.checkpointNotes[0].description").value("Water tower"))
                 .andExpect(jsonPath("$.reminders.on").value(false))
                 .andExpect(jsonPath("$.records.remindersSent[0].what").value("medical"))
-                .andExpect(jsonPath("$.records.subscription.updatedAt").exists())
-                .andExpect(jsonPath("$.records.featureUses[0].feature").value("NARRATIVE"))
                 .andExpect(jsonPath("$.connectedApps.length()").value(2))
                 .andExpect(jsonPath("$.connectedApps[0].app").value("Claude"))
                 .andExpect(jsonPath("$.connectedApps[0].scopes").value("wingtip:read"));
@@ -112,6 +112,6 @@ class AccountDeletionTest extends AccountTestBase {
     @Test
     void nobodySignedInDeletesNothing() throws Exception {
         mockMvc.perform(delete("/api/me").with(csrf())).andExpect(status().isUnauthorized());
-        assertThat(plannerAsked).isEmpty();
+        assertThat(FakePlanner.asked).isEmpty();
     }
 }

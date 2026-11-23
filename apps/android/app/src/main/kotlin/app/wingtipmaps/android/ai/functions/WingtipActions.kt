@@ -47,7 +47,7 @@ class WingtipActions(private val app: Application) {
     suspend fun airport(ident: String): AirportEntity {
         val p = place(ident)
         val runways = p.runways.map { r ->
-            listOfNotNull(r.ends, r.lengthFt?.let { "%,d ft".format(it) }, r.surface?.lowercase(), "closed".takeIf { r.closed }).joinToString(" ")
+            listOfNotNull(r.ends, r.lengthFt?.let { Format.altitude(it.toDouble()) }, r.surface?.lowercase(), "closed".takeIf { r.closed }).joinToString(" ")
         }
         return AirportEntity(
             ident = p.ident, name = p.name, place = listOfNotNull(p.municipality, p.region).joinToString(", "),
@@ -164,7 +164,7 @@ class WingtipActions(private val app: Application) {
             }
         }
         refusal(closed)?.let { throw NoAnswer(it) }
-        return Opening("Planning ${(listOf(from) + via + to).joinToString(" ")}.", AgentLinks.route(from, to, via))
+        return Opening("Showing ${(listOf(from) + via + to).joinToString(" ")} to plan.", AgentLinks.route(from, to, via))
     }
 
     fun showAirport(ident: String): Opening = clean(ident).let { Opening("Opening $it.", AgentLinks.place(it)) }

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { bookOf } from "../../airplane/figures";
 import { usePreferences } from "../../preferences";
-import { aircraftProfilesQuery } from "../../queryClient";
+import { aircraftProfilesQuery } from "../../queryClientRecords";
 
 /** The picked airplane's maximum demonstrated crosswind, knots: its type's
  *  POH figure (the planner's stock profile), for the map's wind arrows to

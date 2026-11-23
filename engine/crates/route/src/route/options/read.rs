@@ -252,7 +252,10 @@ pub fn sigmets(grid: &mut Grid, advisories: &[Advisory], window: (f64, f64)) {
         }
         let hazard = a.hazard.to_uppercase();
         let raw: String = a.raw.split('\n').next().unwrap_or("").chars().take(60).collect::<String>().trim().to_owned();
-        if hazard.starts_with("CONVECTIVE") {
+        // An international SIGMET's thunderstorms ("TS", over the oceanic
+        // FIRs a flight may cross) are kept as clear of as a convective
+        // SIGMET's: the same storms, in ICAO's form (ICAO Annex 3, App. 6).
+        if hazard.starts_with("CONVECTIVE") || hazard == "TS" {
             // AIM 7-1-27's 20 nm every way, in miles at each cell (in_area):
             // degrees alone gave 15 nm east and west at 40 N (2026-10-27).
             let at = grid.in_area(&a.area, STORM_NM);
@@ -337,15 +340,13 @@ pub fn groundspeeds(grid: &Grid, stations: &[Station], altitudes: &[f64], tas_kt
             let variation_deg = variation_at(lat, lon);
             let ways: Vec<(f64, bool)> =
                 courses.iter().map(|&course| (course, flight::is_eastbound(geo::py_mod(course - variation_deg, 360.0)))).collect();
-            // The nearest station, the first where two are as near.
-            let mut best = (f64::INFINITY, 0usize);
-            for (i, s) in stations.iter().enumerate() {
-                let d = geo::distance_nm(lat, lon, s.lat, s.lon);
-                if d < best.0 {
-                    best = (d, i);
-                }
-            }
-            let station = &stations[best.1];
+            // The nearest station, the first where two are as near: the
+            // ellipsoid solved only for the few the sphere cannot rule out
+            // (geo::nearest), where every cell against every one of up to
+            // 600 wind points was some millions of solves a route.
+            let exact = |s_lat: f64, s_lon: f64| geo::distance_nm(lat, lon, s_lat, s_lon);
+            let (nearest, _) = geo::nearest(lat, lon, stations.iter().map(|s| (s.lat, s.lon)), exact).unwrap_or((0, 0.0));
+            let station = &stations[nearest];
             let lowest = grid.floor[r * cols + c].max(LOWEST_CRUISE_FT);
             for (k, &(course, east)) in ways.iter().enumerate() {
                 let mut gs = f64::NEG_INFINITY;

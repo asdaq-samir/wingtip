@@ -1,6 +1,6 @@
 import type { EaseToOptions, Map as GlMap } from "maplibre-gl";
 import { picked, watchPilotMoves } from "./pilotCamera";
-import { followMs, linear, pickHow, verdict, FOLLOW_LEAST_PX, type Follow, type Intent } from "./cameraRules";
+import { followMs, followStep, linear, pickHow, verdict, FOLLOW_LEAST_PX, type Follow, type Intent } from "./cameraRules";
 import {
   endFollows,
   inRoom,
@@ -46,11 +46,18 @@ class Camera {
   private nextMs = new Map<Follow, number>();
   /** The sheet's room, taken once the pick under way has landed (room). */
   private later: Pad | null = null;
+  /** A fit made at once (a route's first, as the page opens) and when:
+   *  over before the panel has settled, so aimed again at the room it
+   *  settles in, if that comes within FRESH_MS and nothing else moved
+   *  the map meanwhile. */
+  private fresh: { aim: Aim; at: number } | null = null;
 
   constructor(private readonly map: GlMap) {
     watchPilotMoves(map);
     map.on("movestart", (e: { originalEvent?: unknown }) => {
-      if (e.originalEvent) this.running = { intent: "hand", aim: null };
+      if (!e.originalEvent) return;
+      this.running = { intent: "hand", aim: null };
+      this.fresh = null;
     });
     // Only a drag ends a follow: a pinch keeps own ship in the middle, as
     // Apple Maps' tracking does.
@@ -112,6 +119,7 @@ class Camera {
     if (this.holder() === "pick" && aim && "center" in aim && aim.center[0] === at[0] && aim.center[1] === at[1] && aim.zoom === zoom)
       return false;
     picked();
+    this.fresh = null;
     this.endFollows(o.keeps);
     const { width, height } = map.getContainer().getBoundingClientRect();
     const there = map.project(at),
@@ -137,9 +145,10 @@ class Camera {
   }
 
   /** `bounds` fitted clear of `margin` over the map's padding (the room
-   *  the sheet leaves). A single point is brought into sight only if out
-   *  of the room, not fitted (FL-20: a fit to a box of no size). */
-  fit(bounds: Bounds, o: { margin: Margin; maxZoom?: number; duration: number }) {
+   *  the sheet leaves), or over `pad`, the room the sheet is settling at,
+   *  where the caller knows it. A single point is brought into sight only
+   *  if out of the room, not fitted (FL-20: a fit to a box of no size). */
+  fit(bounds: Bounds, o: { margin: Margin; maxZoom?: number; duration: number; pad?: Pad }) {
     const [[west, south], [east, north]] = bounds;
     if (west === east && south === north) {
       this.pick([west, south], { onlyIfHidden: true, margin: o.margin, duration: o.duration });
@@ -147,7 +156,15 @@ class Camera {
     }
     picked();
     this.endFollows();
-    this.running = { intent: "fit", aim: { bounds, margin: o.margin, ...(o.maxZoom !== undefined ? { maxZoom: o.maxZoom } : {}) } };
+    const aim: Aim = { bounds, margin: o.margin, ...(o.maxZoom !== undefined ? { maxZoom: o.maxZoom } : {}) };
+    this.running = { intent: "fit", aim };
+    this.fresh = o.duration === 0 ? { aim, at: performance.now() } : null;
+    // Over the room the sheet is settling at, not the padding part way
+    // through its ease: a route's first fit, made at once as the side
+    // panel came in to its pill on the training page, was fitted to no
+    // padding and then slid down with the room's ease, its departure off
+    // the screen (classb.spec, 2026-11-19). Setting it stops that ease.
+    if (o.pad && !samePad(padOf(this.map), o.pad)) this.map.setPadding(o.pad);
     log("fit", "fitBounds", o);
     // At the bearing the pilot turned the map to: MapLibre's fit turns it
     // north up unless told (its cameraForBounds' bearing, 0 by default).
@@ -168,6 +185,7 @@ class Camera {
    *  ease, which Reduce Motion makes a jump. */
   northUp() {
     this.running = { intent: "pick", aim: null };
+    this.fresh = null;
     log("pick", "resetNorth");
     if (this.map.getTerrain()) this.map.resetNorth();
     else this.map.resetNorthPitch();
@@ -227,12 +245,24 @@ class Camera {
       const e = p.edge;
       if (there.x >= w * e && there.x <= w * (1 - e) && there.y >= h * e && there.y <= h * (1 - e)) return;
       this.running = { intent: p.intent, aim: null };
+      this.fresh = null;
       log(p.intent, "jumpTo");
       map.jumpTo({ center: p.at });
       return;
     }
     const middle = map.project(map.getCenter());
-    if (Math.hypot(there.x - middle.x, there.y - middle.y) < FOLLOW_LEAST_PX) return;
+    const step = Math.hypot(there.x - middle.x, there.y - middle.y);
+    if (step < FOLLOW_LEAST_PX) return;
+    if (followStep(p.intent, step) === "jump") {
+      // Own ship a few pixels on: one redraw for the fix, not a frame-rate
+      // ease (cameraRules' FOLLOW_JUMP_UNDER_PX).
+      this.running = { intent: p.intent, aim: null };
+      this.fresh = null;
+      this.followAim = p.at;
+      log(p.intent, "jumpTo");
+      map.jumpTo({ center: p.at });
+      return;
+    }
     this.ease(p.intent, p.at);
   }
 
@@ -240,6 +270,7 @@ class Camera {
   private ease(intent: Follow, center: Point) {
     const options = { center, duration: this.nextMs.get(intent) ?? followMs(null), easing: linear };
     this.running = { intent, aim: null };
+    this.fresh = null;
     this.followAim = center;
     log(intent, "easeTo", options);
     this.map.easeTo(options);
@@ -265,10 +296,18 @@ class Camera {
    * first where it is, the course left half fitted). Otherwise the padding
    * is taken as `how` says.
    */
-  room(pad: Pad, how: RoomHow, ease: { duration: number; easing: (t: number) => number }) {
+  room(pad: Pad, how: RoomHow, ease: { duration: number; easing: (t: number) => number }, card = false) {
     const map = this.map;
     this.later = null;
-    const aim = this.picking() ? this.running?.aim : null;
+    // A fit made at once just now counts as under way: the route's first
+    // fit, as the page opened with own ship's position asked for, came
+    // before a desktop's side panel had settled out, and was left fitted
+    // to the room of its pill (sheet-fly-here.spec on a desktop). Not for
+    // a card come or gone, whose room leaves the chart where it is: the
+    // Map card opened from the pill a moment after the page had fitted
+    // its route eased the map under it (sheet-cards.spec:36).
+    const fresh = !card && this.fresh && performance.now() - this.fresh.at < FRESH_MS ? this.fresh.aim : null;
+    const aim = this.picking() ? this.running?.aim : fresh;
     if (aim && "center" in aim) {
       // Where it lands: the middle of the room it was aimed at.
       const { width, height } = map.getContainer().getBoundingClientRect();
@@ -325,6 +364,11 @@ class Camera {
     }
   }
 }
+
+/** How long after a fit made at once the room it settles in still aims it again, ms. */
+const FRESH_MS = 1000;
+
+const samePad = (a: Pad, b: Pad) => a.top === b.top && a.bottom === b.bottom && a.left === b.left && a.right === b.right;
 
 const owners = new WeakMap<GlMap, Camera>();
 

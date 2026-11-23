@@ -18,7 +18,7 @@ struct AirportWeatherWidget: Widget {
         }
         .configurationDisplayName("Airport Weather")
         .description("An airport's METAR and TAF, as sent.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular, .accessoryInline])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge, .accessoryRectangular, .accessoryCircular, .accessoryInline])
     }
 }
 
@@ -68,6 +68,11 @@ private struct AirportWeatherView: View {
             case .accessoryCircular: circle(ident)
             case .accessoryInline: Text("\(ident) \(entry.weather?.report?.flightCategory ?? "—")")
             case .systemMedium: card(ident, taf: true)
+            // The larger sizes show the reports whole, not the medium's lines
+            // stretched: the large one under the other, with their names, and
+            // the iPad's extra large side by side (HIG Widgets).
+            case .systemLarge: large(ident)
+            case .systemExtraLarge: extraLarge(ident)
             default: card(ident, taf: false)
             }
         } else {
@@ -101,6 +106,60 @@ private struct AirportWeatherView: View {
             }
             if taf, let forecast = entry.weather?.taf {
                 Text(forecast).font(.caption2.monospaced()).foregroundStyle(.secondary).lineLimit(3)
+            }
+            Spacer(minLength: 0)
+            AsOf(weather: entry.weather, kept: entry.kept)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func head(_ ident: String) -> some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+            HStack(spacing: WingtipSpace.sm) {
+                Text(ident).font(.title3.weight(.semibold))
+                CategoryChip(category: entry.weather?.report?.flightCategory)
+            }
+            if let name = entry.weather?.name { Text(name).font(.subheadline).foregroundStyle(.secondary).lineLimit(1) }
+        }
+    }
+
+    /// A report under its name, as sent; what is missing said in its place.
+    private func report(_ name: String, _ raw: String?, missing: String, lines: Int) -> some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+            Text(name).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            if let raw {
+                Text(raw).font(.caption.monospaced()).lineLimit(lines)
+            } else {
+                Text(missing).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var metarMissing: String { entry.weather == nil ? "No answer from the planner." : "No report within 10 statute miles." }
+
+    private func large(_ ident: String) -> some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.md) {
+            head(ident)
+            report("METAR", entry.weather?.report?.raw, missing: metarMissing, lines: 4)
+            Divider()
+            report("TAF", entry.weather?.taf, missing: "No TAF for this field.", lines: 9)
+            Spacer(minLength: 0)
+            AsOf(weather: entry.weather, kept: entry.kept)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func extraLarge(_ ident: String) -> some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.md) {
+            head(ident)
+            HStack(alignment: .top, spacing: WingtipSpace.lg) {
+                report("METAR", entry.weather?.report?.raw, missing: metarMissing, lines: 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Divider()
+                report("TAF", entry.weather?.taf, missing: "No TAF for this field.", lines: 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer(minLength: 0)
             AsOf(weather: entry.weather, kept: entry.kept)
@@ -182,4 +241,16 @@ extension WidgetFetch.FieldWeather {
         ident: "KMSN", name: "Dane County Regional",
         metar: .init(raw: "KMSN 091253Z 27010KT 10SM FEW050 12/03 A3012", flightCategory: "VFR", observedAt: nil),
         taf: "TAF KMSN 091120Z 0912/1012 27012KT P6SM FEW050", nearbyMetar: nil, fetchedAt: Date())
+}
+
+#Preview("Airport Weather, large", as: .systemLarge) {
+    AirportWeatherWidget()
+} timeline: {
+    AirportWeatherEntry(date: .now, ident: "KMSN", weather: .sample)
+}
+
+#Preview("Airport Weather, extra large", as: .systemExtraLarge) {
+    AirportWeatherWidget()
+} timeline: {
+    AirportWeatherEntry(date: .now, ident: "KMSN", weather: .sample)
 }

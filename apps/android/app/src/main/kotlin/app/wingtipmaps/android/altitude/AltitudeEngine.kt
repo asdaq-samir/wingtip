@@ -8,12 +8,15 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.altitudeAdvisor
 import app.wingtipmaps.android.engine.generated.altitudeChange
 import app.wingtipmaps.android.engine.generated.profileClearance
+import app.wingtipmaps.android.engine.generated.profileObstacles
 
 /**
  * The engine's answers the altitude screens draw, asked by name: the
  * clearance at an altitude previewed on the profile's slider
  * (`profile_clearance`: red under 500 ft, 14 CFR 91.119(c)'s least
- * height, yellow within 1,000 ft, 91.119(b)'s), the Altitude Advisor's
+ * height, yellow within 1,000 ft, 91.119(b)'s) over the ground and the
+ * DOF's obstacles, the obstacles in those bands with the tallest named
+ * (`profile_obstacles`), the Altitude Advisor's
  * rows (`altitude_advisor`) and a waypoint's Start At or Cross At change
  * (`altitude_change`). The Kotlin only hands the planner's data over.
  */
@@ -21,6 +24,7 @@ object AltitudeEngine {
     typealias Clearance = EngineContract.ProfileClearanceAnswer
     typealias Row = EngineContract.AltitudeAdvisorAnswerItem
     typealias Change = EngineContract.AltitudeChangeAnswer
+    typealias Obstacle = EngineContract.ProfileObstaclesAnswerItem
 
     /** The clearance at `ft` over the side view's ground and obstacles,
      *  with the waypoints to say where. */
@@ -29,10 +33,21 @@ object AltitudeEngine {
             altitudeFt = ft,
             alongNm = profile.terrain.map { it.alongNm },
             groundFt = profile.terrain.map { it.groundFt },
-            // The planner's side view has no obstacles yet; the engine takes them when it does.
-            obstacles = null,
+            // The DOF's obstacles along the route (the planner's side view), held as its ground is.
+            obstacles = profile.obstacles?.map { EngineContract.ProfileClearanceInputObstaclesItem(alongNm = it.alongNm, amslFt = it.amslFt) },
             points = waypoints.map { EngineContract.ProfileClearanceInputPointsItem(ident = it.ident, alongNm = it.alongNm) },
         )
+
+    /** The side view's obstacles against the altitude shown, coloured as
+     *  its ground is (`profile_obstacles`: the 500 and 1,000 ft of
+     *  `profile_clearance`) and the tallest few named; none where the
+     *  engine gave none (Engine.rule has logged why). */
+    fun obstacles(profile: RouteProfile, ft: Double?): List<Obstacle> =
+        Engine.profileObstacles(
+            altitudeFt = ft,
+            lengthNm = profile.lengthNm,
+            obstacles = profile.obstacles.orEmpty().map { EngineContract.ProfileObstaclesInputObstaclesItem(alongNm = it.alongNm, amslFt = it.amslFt, aglFt = it.aglFt) },
+        ).getOrNull().orEmpty()
 
     /** The Advisor's rows from the planner's altitude line: each legal
      *  altitude's figures, its plans by name and the altitude flown. */

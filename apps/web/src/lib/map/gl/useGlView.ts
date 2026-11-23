@@ -72,6 +72,12 @@ export function useGlView<B>(boxOf: GlBoxOf<B> = ahead as unknown as GlBoxOf<B>,
     };
     if (at === "move") map.on("move", moved);
     map.on("moveend", look);
+    // And the view as it is now: a move that ended between the render that
+    // took the first view and this subscription (a link's place jumped to as
+    // the page opens) was never heard, and a screen reader's list of fields
+    // read the fields of where the map had been (card-once.spec:237 picked
+    // a Los Angeles field's row with the map over Waukegan).
+    look();
     return () => {
       map.off("move", moved);
       map.off("moveend", look);

@@ -3,6 +3,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useIsDesktop } from "../hooks/use-desktop";
+import { useInspector } from "../hooks/use-inspector";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
@@ -10,10 +11,11 @@ import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelSt
 import { feel } from "../lib/haptics";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { FLOAT_PX, insetsOf, letGo, snapsOf } from "./sheet/insets";
+import { CARD, FLOAT_PX, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
-import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { SHEET_BELOW } from "./sheet/sheetLayout";
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { SHEET_SIZES, SIDE_SIZES } from "./sheet/grabberSizes";
 import { CardStack, type StackProps } from "./sheet/CardStack";
@@ -91,7 +93,10 @@ interface Props {
  *
  * From `md` up it is a side panel instead, a plain region at the left the
  * window's height while it is out and its head alone at rest, the map
- * beside it -- not a sheet.
+ * beside it -- not a sheet. A card covers it, except on a touch screen
+ * wide enough for an inspector (useInspector), where the cards open in a
+ * column of their own at the map's right and the plan stays in sight, as
+ * the iPad app's inspector holds them.
  */
 export default function MapPanel(props: Props) {
   const { label, top, kept, controls, compact, children, bar, foot, flying = false, layer = "tab" } = props;
@@ -104,6 +109,10 @@ export default function MapPanel(props: Props) {
   // lower than the one under it.
   const coverEntry = useSheetCards((s) => coverCard(s.stack));
   const cardsUp = !!coverEntry;
+  // The cards in the inspector at the map's right: the side panel left as
+  // it is under them, its search, its plan and its figures in sight.
+  const inspector = useInspector() && !onPhone;
+  const covering = cardsUp && !inspector;
   // The map's buttons ride the sheet's top, or the top of the card over it that covers the map most (sheetTopSlot).
   const ridingCard = useRidingCard();
   // Where the cards over it are put: inside its popup (CardStack).
@@ -114,11 +123,11 @@ export default function MapPanel(props: Props) {
   // half up) -- the search's row being it on Search: paged, they are FPL's
   // page's own (SheetParts), beside Search's row. The pill is one fixed
   // height for every page and card (sheet/insets), which the figures fit.
-  const footShown = !!foot && !cardsUp && (!onPhone || props.state !== "peek" || flying || !!props.pages);
+  const footShown = !!foot && !covering && (!onPhone || props.state !== "peek" || flying || !!props.pages);
   // A card or a page open is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
-  const barShown = !!bar && !flying && !cardsUp && layer === "tab";
-  const toEdge = !!props.toEdge && !cardsUp;
+  const barShown = !!bar && !flying && !covering && layer === "tab";
+  const toEdge = !!props.toEdge && !covering;
 
   // The sheet's own size is the page's (MapPanel's state, its setPanel); a
   // card over it sizes its own drawer (CardStack, useCardSize). What is in
@@ -127,7 +136,7 @@ export default function MapPanel(props: Props) {
   // index.css), and for the side panel, which a card covers.
   const ask = props.onStateChange;
   // A card opening, the size it opens at (Emergency's all the way up), not half for its first render.
-  const front: PanelState = coverEntry ? (coverEntry.at ?? cardOpening(coverEntry)) : props.state;
+  const front: PanelState = coverEntry && !inspector ? (coverEntry.at ?? cardOpening(coverEntry)) : props.state;
   const size = onPhone ? props.state : front;
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
@@ -148,14 +157,20 @@ export default function MapPanel(props: Props) {
   // The room the sheet in sight (the top card, else the sheet) leaves the
   // map, from the size it is set to: the map eases with the sheet
   // (GlMapShell, in the Drawer's time).
-  const { cover, least, most } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const { cover, least, most, width } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  // The inspector's column while a card is in it: the panel's width.
+  const right = inspector && cardsUp ? CARD : 0;
   // The sheet the map slides with, frame by frame (useSlidingSheet): a
   // phone's bottom sheet with no card over it.
   const slides = bottomSheet && !cardsUp && !!sheetNode && most > 0;
   useEffect(() => {
-    useSlidingSheet.setState({ sheet: slides && sheetNode ? { node: sheetNode, least, most } : null, half: bottomSheet ? most : 0 });
-  }, [slides, sheetNode, least, most, bottomSheet]);
-  useEffect(() => () => useSlidingSheet.setState({ sheet: null, half: 0 }), []);
+    useSlidingSheet.setState({
+      sheet: slides && sheetNode ? { node: sheetNode, least, most } : null,
+      half: bottomSheet ? most : 0,
+      side: inspector ? inspectorRoom(CARD) : 0,
+    });
+  }, [slides, sheetNode, least, most, bottomSheet, inspector]);
+  useEffect(() => () => useSlidingSheet.setState({ sheet: null, half: 0, side: 0 }), []);
   // The pages, drawn whenever the workspace has them and is not flying: a
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
@@ -170,8 +185,8 @@ export default function MapPanel(props: Props) {
   useEffect(() => () => usePageToggle.setState({ pages: null }), []);
   const tellInsets = props.onInsetsChange;
   const insetsNow = useMemo(
-    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp }),
-    [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp],
+    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, width, right), card: cardsUp }),
+    [front, cover, onPhone, fromBottom, safe.top, width, right, cardsUp],
   );
   // Told in the commit that changes them, before any effect after paint: a
   // place picked with a card centres itself in the card's room (GlMapShell).
@@ -180,7 +195,7 @@ export default function MapPanel(props: Props) {
   // Escape with no card over it (a card's own drawer takes it) lowers the
   // sheet to the pill; whether it took the key.
   const lower = () => {
-    if (cardsUp || size === "peek") return false;
+    if (covering || size === "peek") return false;
     ask("peek");
     return true;
   };
@@ -201,29 +216,13 @@ export default function MapPanel(props: Props) {
   }, [onPhone]);
 
   const panelSize = useMemo(() => ({ size, to: ask, card: layer === "card" }), [size, ask, layer]);
+  // How the sheet is laid out this render, worked out once for each of its parts.
   const shared: PartsProps = {
-    ...props,
     // The pages as drawn (none in flight).
-    pages,
-    layer,
-    flying,
-    size,
-    atPill,
-    fromBottom: bottomSheet,
-    onPhone,
-    desktop,
-    footShown,
-    cardsUp,
-    barShown,
-    toEdge,
+    slots: { top, kept, controls, compact, bar, foot, children, pages },
+    layout: { layer, flying, size, atPill, fromBottom: bottomSheet, onPhone, desktop, footShown, cardsUp: covering, barShown, toEdge },
     panelSize,
     onFootTap: () => ask("half"),
-    kept,
-    top,
-    controls,
-    compact,
-    bar,
-    children,
   };
   // The sheet's grabber and each card's, the one plain bar.
   const grabberAt = bottomSheet ? "top" : "bottom";
@@ -236,7 +235,12 @@ export default function MapPanel(props: Props) {
   // panel was MATERIAL, the chart showing through it (the web audit's WEB-6).
   const look = onPhone
     ? GLASS_SHEET
-    : cn(GLASS_SHEET, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 dark:ring-white/10");
+    : // Narrowed in a narrow window to leave the map 22 rem beside it (an
+      // iPad's half or a Stage Manager window from 660), the wide one from 1024.
+      cn(
+        GLASS_SHEET,
+        "w-[min(var(--size-panel),calc(100vw-22rem))] lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 dark:ring-white/10",
+      );
   const common = {
     "data-slot": "map-panel",
     // The sheet's own size, under a card too; a card's is on its own
@@ -258,37 +262,68 @@ export default function MapPanel(props: Props) {
     onPhone,
     fromBottom: bottomSheet,
     ready,
-    grabber: (cardSize, cardAsk) => <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} sizes={grabberSizes} />,
+    // None in the inspector: its card is the column's height, nothing to put in or out.
+    grabber: (cardSize, cardAsk) =>
+      inspector ? null : <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} sizes={grabberSizes} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
     below: SHEET_BELOW,
   };
 
+  // The inspector's column, the window's height inside its float as the
+  // side panel is, at the right inside the safe area: the cards' host,
+  // drawn as a panel only while one is in it.
+  const inspectorColumn = inspector && (
+    <div
+      data-slot="map-inspector"
+      className={cn(
+        "pointer-events-none fixed right-[max(1rem,env(safe-area-inset-right))] z-40 w-(--size-panel) overflow-clip print:hidden",
+        cardsUp && cn(GLASS_SHEET, "ring-1 ring-inset ring-black/5 dark:ring-white/10"),
+      )}
+      style={{
+        top: `max(${FLOAT_PX}px, env(safe-area-inset-top))`,
+        bottom: `max(${FLOAT_PX}px, env(safe-area-inset-bottom))`,
+        borderRadius: PILL_RADIUS,
+      }}
+    >
+      <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />
+    </div>
+  );
+
   if (!onPhone)
     return (
-      // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own
-      <section
-        {...common}
-        ref={setSheetNode}
-        // Escape a level back first, a page's close in it (use-shortcuts'
-        // backOne), then the panel lowered; taken, so the shortcuts' own
-        // Escape on the document does not go back a second level.
-        onKeyDown={(event: KeyboardEvent) => {
-          if (event.key !== "Escape" || event.defaultPrevented) return;
-          if (backOne(event.currentTarget.ownerDocument) || lower()) event.preventDefault();
-        }}
-        className={cn(
-          "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
-          look,
-        )}
-        // Out, the window's height inside its float on either side.
-        style={{ top: FLOAT_PX, bottom: size === "peek" ? undefined : FLOAT_PX, borderRadius: PILL_RADIUS }}
-      >
-        <SheetParts {...shared} />
-        {!cardsUp && sheetGrabber}
-        {/* The cards over it, each covering the panel, its own scroller. */}
-        <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />
-        <CardStack {...stackProps} />
-      </section>
+      <>
+        {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own */}
+        <section
+          {...common}
+          ref={setSheetNode}
+          // Escape a level back first, a page's close in it (use-shortcuts'
+          // backOne), then the panel lowered; taken, so the shortcuts' own
+          // Escape on the document does not go back a second level.
+          onKeyDown={(event: KeyboardEvent) => {
+            if (event.key !== "Escape" || event.defaultPrevented) return;
+            if (backOne(event.currentTarget.ownerDocument) || lower()) event.preventDefault();
+          }}
+          className={cn(
+            "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
+            look,
+          )}
+          // Out, the window's height inside its float on either side, and
+          // inside the safe area, as its left edge is: an iPhone held
+          // sideways has the home indicator under the panel's grabber.
+          style={{
+            top: `max(${FLOAT_PX}px, env(safe-area-inset-top))`,
+            bottom: size === "peek" ? undefined : `max(${FLOAT_PX}px, env(safe-area-inset-bottom))`,
+            borderRadius: PILL_RADIUS,
+          }}
+        >
+          <SheetParts {...shared} />
+          {!covering && sheetGrabber}
+          {/* The cards over it, each covering the panel, its own scroller; or in the inspector. */}
+          {!inspector && <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />}
+          <CardStack {...stackProps} />
+        </section>
+        {inspectorColumn}
+      </>
     );
 
   return (

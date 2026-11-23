@@ -61,8 +61,8 @@ describe("Fly Here read ahead as a card opens", () => {
     await waitFor(() => expect(api.navlog).toHaveBeenCalled());
     expect(api.course).toHaveBeenCalledWith("KMSN", "KOSH", [], expect.anything(), undefined);
     expect(api.checkpoints).toHaveBeenCalledWith("KMSN", "KOSH", [], expect.anything(), true, undefined);
-    // Its `ahead`, before Start At: the planner's reads queued behind the pilot's.
-    expect(vi.mocked(api.navlog).mock.calls[0]!.at(-2)).toBe(true);
+    // Its `ahead`, before Start At and the tanks: the planner's reads queued behind the pilot's.
+    expect(vi.mocked(api.navlog).mock.calls[0]!.at(-3)).toBe(true);
   });
 
   test("stops them and lets them go as the card closes", async () => {

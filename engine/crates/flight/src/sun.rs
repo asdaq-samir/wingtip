@@ -43,7 +43,9 @@ pub const SUNRISE_DEPRESSION_DEG: f64 = 0.833;
 /// and ends 1 hour before sunrise, s.
 pub const PASSENGER_NIGHT_MARGIN_S: f64 = 3600.0;
 
-const DAY_S: f64 = 86_400.0;
+use wingtip_core::geo::{destination, distance_and_bearing};
+
+pub(crate) const DAY_S: f64 = 86_400.0;
 
 /// The sun's declination and the equation of time at an instant: NOAA's
 /// spreadsheet (Julian century from J2000.0, Meeus ch. 25's low-precision
@@ -92,7 +94,7 @@ fn twilight_hour_angle(lat: f64, declination: f64, depression: f64) -> Result<f6
 
 /// The instant of solar noon at a longitude (east positive) nearest to
 /// `near_s`, UNIX seconds.
-fn solar_noon(lon: f64, near_s: f64) -> f64 {
+pub(crate) fn solar_noon(lon: f64, near_s: f64) -> f64 {
     // The day's 00:00 UTC, then noon there: 720 minutes less four a degree
     // of east longitude, less the equation of time (NOAA's).
     let mut noon = (near_s / DAY_S).floor() * DAY_S + (720.0 - 4.0 * lon) * 60.0;
@@ -115,7 +117,7 @@ fn civil_day(lat: f64, lon: f64, noon_s: f64) -> Result<(f64, f64), bool> {
 /// The two instants round the solar noon `noon_s` when the sun's centre is
 /// `depression` degrees below the horizon (civil twilight's ends at six,
 /// sunrise and sunset at 0.833), or Err as twilight_hour_angle says.
-fn sun_day(lat: f64, lon: f64, noon_s: f64, depression: f64) -> Result<(f64, f64), bool> {
+pub(crate) fn sun_day(lat: f64, lon: f64, noon_s: f64, depression: f64) -> Result<(f64, f64), bool> {
     // Each end worked out at the sun's place at that end, twice over: the
     // declination moves up to a third of a degree in the half day.
     let end = |sign: f64| -> Result<f64, bool> {
@@ -173,6 +175,26 @@ pub fn passenger_night(lat: f64, lon: f64, at_s: f64) -> bool {
     }
 }
 
+/// Whether an instant is in 14 CFR 91.209(a)'s period for an
+/// aircraft's position lights at a point: "from sunset to sunrise (or, in
+/// Alaska, during the period a prominent unlighted object cannot be seen
+/// from a distance of 3 statute miles or the sun is more than six degrees
+/// below the horizon)". Not 1.1's night, which waits for civil
+/// twilight's end: twenty minutes after sunset a flight needs its lights
+/// but is not yet at night for 91.151 or 91.205(c). Alaska's own period
+/// is narrower than sunset to sunrise by its sun test, so sunset to
+/// sunrise is read there too, erring toward the lights; its visibility
+/// test is the reported visibility below 3 statute miles where the
+/// caller has one (`alaska_visibility_sm`, None outside Alaska or not
+/// known).
+pub fn lights_on(lat: f64, lon: f64, at_s: f64, alaska_visibility_sm: Option<f64>) -> bool {
+    sun_down(lat, lon, at_s) || alaska_visibility_sm.is_some_and(|sm| sm < LIGHTS_ALASKA_SM)
+}
+
+/// 14 CFR 91.209(a): in Alaska the lights are on wherever a prominent
+/// unlighted object cannot be seen from 3 statute miles, sm.
+pub const LIGHTS_ALASKA_SM: f64 = 3.0;
+
 /// How often a flight's way is looked at for the night: every half hour,
 /// the planner's own figure (the sun's twilight moves no faster along a
 /// light airplane's track than its own few minutes an hour).
@@ -181,7 +203,7 @@ pub const NIGHT_STEP_MIN: f64 = 30.0;
 /// Whether any of a trip from `start` to `end` (lat, lon) of `minutes`,
 /// its stops' time on the ground counted, leaving at `depart_s`, falls in
 /// the night, judged every NIGHT_STEP_MIN at where it is by then along
-/// the straight line: a stop's flight landing after dark is held to 14
+/// the geodesic between them: a stop's flight landing after dark is held to 14
 /// CFR 91.151(a)(2)'s 45 minutes, which the one long flight, day at both
 /// its ends, was not.
 pub fn night_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64) -> bool {
@@ -197,13 +219,30 @@ pub fn passenger_night_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: 
     on_the_way(start, end, depart_s, minutes, passenger_night)
 }
 
-fn on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, test: fn(f64, f64, f64) -> bool) -> bool {
+/// Where the trip is by each step: on the geodesic from `start` to `end`
+/// (wingtip_core::geo), never a straight line in degrees. Across the
+/// antimeridian (Adak to Attu, 176.6 W to 172.9 E) a line in degrees ran
+/// the long way round, through Greenwich at the half-way step, where it
+/// is night when it is noon over the Aleutians, and a day flight was held
+/// to 91.151(a)(2)'s night reserve, or a night one to the day's.
+fn on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, test: impl Fn(f64, f64, f64) -> bool) -> bool {
     let steps = ((minutes / NIGHT_STEP_MIN).floor() as i64 + 1).max(1);
+    let (nm, course) = distance_and_bearing(start.0, start.1, end.0, end.1);
     (0..=steps).any(|k| {
         let at = if minutes > 0.0 { (k as f64 * NIGHT_STEP_MIN).min(minutes) / minutes } else { 0.0 };
-        let (lat, lon) = (start.0 + (end.0 - start.0) * at, start.1 + (end.1 - start.1) * at);
+        let (lat, lon) = if at >= 1.0 { end } else { destination(start.0, start.1, course, nm * at) };
         test(lat, lon, depart_s + at * minutes * 60.0)
     })
+}
+
+/// Whether any of a flight from `start` to `end` of `minutes`, leaving at
+/// `depart_s`, falls in 91.209(a)'s period for position lights
+/// (lights_on, sunset to sunrise), judged as night_on_the_way judges the
+/// night: an open squawk on the lights deferred for day flight grounds
+/// such a flight even where none of it is 1.1's night. In Alaska the
+/// reported visibility (`alaska_visibility_sm`) counts all the way.
+pub fn lights_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, alaska_visibility_sm: Option<f64>) -> bool {
+    on_the_way(start, end, depart_s, minutes, |lat, lon, at| lights_on(lat, lon, at, alaska_visibility_sm))
 }
 
 /// Whether a flight is at night at either end: leaving `start` at
@@ -293,9 +332,46 @@ mod tests {
     }
 
     #[test]
+    fn position_lights_from_sunset_before_the_night() {
+        // Chicago on the 2026 equinox: sunset about 00:03 UTC on the 21st,
+        // civil twilight's end about 00:30. At 00:20 the lights are on
+        // (91.209(a)) though it is not 1.1's night.
+        let (lat, lon) = (41.88, -87.63);
+        assert!(!lights_on(lat, lon, utc(2026, 3, 20, 23, 50), None));
+        assert!(lights_on(lat, lon, utc(2026, 3, 21, 0, 20), None));
+        assert!(!is_night(lat, lon, utc(2026, 3, 21, 0, 20)));
+        // A 20-minute flight leaving at 23:50: day at both its ends by 1.1
+        // and its lights still needed at its end.
+        let leave = utc(2026, 3, 20, 23, 50);
+        assert!(!night_at_either_end((lat, lon), leave, (lat, lon), leave + 30.0 * 60.0));
+        assert!(lights_on_the_way((lat, lon), (lat, lon), leave, 30.0, None));
+        assert!(!lights_on_the_way((lat, lon), (lat, lon), utc(2026, 3, 20, 18, 0), 60.0, None));
+    }
+
+    #[test]
+    fn alaska_lights_where_an_object_is_not_seen_at_three_miles() {
+        // Anchorage at midday in June: the sun is up, so only Alaska's
+        // visibility test can call for the lights; 3 sm itself does not.
+        let at = utc(2026, 6, 21, 22, 0);
+        assert!(!lights_on(61.22, -149.90, at, None));
+        assert!(!lights_on(61.22, -149.90, at, Some(3.0)));
+        assert!(lights_on(61.22, -149.90, at, Some(2.5)));
+    }
+
+    #[test]
     fn a_long_trip_west_into_the_evening_meets_the_night() {
         let leave = utc(2026, 3, 20, 20, 0);
         assert!(night_on_the_way((41.88, -87.63), (39.74, -104.99), leave, 600.0));
         assert!(!night_on_the_way((41.88, -87.63), (39.74, -104.99), leave, 120.0));
+    }
+
+    #[test]
+    fn a_day_flight_across_the_antimeridian_stays_day() {
+        // Adak (176.6 W) toward Attu (172.9 E) at 00:00 UTC on the equinox:
+        // about local noon all the way along the geodesic, so 1.1's day.
+        // A straight line in degrees passed Greenwich, at midnight.
+        let leave = utc(2026, 3, 20, 0, 0);
+        assert!(!night_on_the_way((51.88, -176.65), (52.83, 173.18), leave, 180.0));
+        assert!(night_on_the_way((51.88, -176.65), (52.83, 173.18), utc(2026, 3, 20, 12, 0), 180.0));
     }
 }

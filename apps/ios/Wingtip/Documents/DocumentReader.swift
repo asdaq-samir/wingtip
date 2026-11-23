@@ -121,7 +121,7 @@ enum DocumentReader {
     /// Why a read failed, in words for the screen.
     static func words(for error: any Error) -> String {
         if let unavailable = error as? WordsUnavailable { return unavailable.why }
-        return "The page could not be read: \(error.localizedDescription)"
+        return Problems.say(Wording.pageNotRead, error)
     }
 }
 
@@ -135,7 +135,7 @@ enum FlagTone: Equatable, Sendable {
 
     var color: Color { self == .wrong ? WingtipInk.problem : WingtipInk.caution }
     var symbol: String { self == .wrong ? "xmark.octagon.fill" : "exclamationmark.triangle.fill" }
-    var said: String { self == .wrong ? "Can't be right" : "Check" }
+    var said: String { self == .wrong ? "Cannot be right" : "Check" }
 }
 
 /// One flag under its item, in its tone, with a mark beside the words for

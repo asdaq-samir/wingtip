@@ -10,6 +10,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.security.util.matcher.InetAddressMatcher;
 import org.springframework.security.util.matcher.InetAddressMatchers;
 
@@ -34,8 +35,18 @@ public final class SlidingWindowLimiter {
      *  header cannot change who it is counted as. */
     private static volatile InetAddressMatcher trusted = parse(System.getenv("GATEWAY_TRUSTED_PROXIES"));
 
+    /** How often the keys with nothing in the window are let go, at most,
+     *  once there are over MOST_KEYS: past that every allow() scanned the
+     *  whole map, and while every key was recent the scan let none go, so
+     *  the next call scanned it all again (10,000 checks a request on the
+     *  open speed and diagnostics endpoints under a spray of addresses). */
+    static final Duration PRUNE_EVERY = Duration.ofMinutes(1);
+
+    static final int MOST_KEYS = 10_000;
+
     private final Duration window;
     private final Map<String, Deque<Instant>> recent = new ConcurrentHashMap<>();
+    private final AtomicReference<Instant> prunedAt = new AtomicReference<>(Instant.MIN);
 
     public SlidingWindowLimiter(Duration window) {
         this.window = window;
@@ -45,7 +56,10 @@ public final class SlidingWindowLimiter {
      *  so, count it. */
     public boolean allow(String key, int limit, Instant now) {
         Instant since = now.minus(window);
-        if (recent.size() > 10_000) {
+        Instant pruned = prunedAt.get();
+        if (recent.size() > MOST_KEYS
+                && !now.isBefore(pruned.plus(PRUNE_EVERY))
+                && prunedAt.compareAndSet(pruned, now)) {
             // Forget keys with nothing in the window, so a spray of one-off
             // callers cannot grow this without bound.
             recent.values().removeIf(times -> {
@@ -65,6 +79,11 @@ public final class SlidingWindowLimiter {
             times.addLast(now);
             return true;
         }
+    }
+
+    /** For tests: how many keys are held. */
+    int keys() {
+        return recent.size();
     }
 
     /** Spring Security's own matcher of addresses and CIDR blocks. */

@@ -22,7 +22,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -33,8 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
@@ -43,6 +41,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.lookShape
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.ago
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.LocalWingtipPalette
@@ -54,20 +53,20 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /** A frame's time as the bar writes it: Zulu, this phone's clock and zone, its age, and whether it is old. */
 data class FrameTime(val zulu: String, val local: String, val age: String, val old: Boolean) {
     companion object {
-        private val ZULU = DateTimeFormatter.ofPattern("HHmm'Z'").withZone(ZoneOffset.UTC)
+        private val ZULU = DateTimeFormatter.ofPattern("HHmm'Z'", Locale.US).withZone(ZoneOffset.UTC)
 
         fun of(frame: app.wingtipmaps.android.api.generated.LoopFrame, now: Instant, oldAfterS: Double): FrameTime? {
             val at = runCatching { Instant.parse(frame.valid) }.getOrNull() ?: return null
-            val minutes = Duration.between(at, now).toMinutes()
             val zone = ZoneId.systemDefault()
             val local = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(zone).format(at) + " " +
-                DateTimeFormatter.ofPattern("zzz").withZone(zone).format(at)
-            val age = if (minutes < 1) "just now" else "${Format.duration(minutes.toDouble())} ago"
+                DateTimeFormatter.ofPattern("zzz", Locale.US).withZone(zone).format(at)
+            val age = Format.ago(Duration.between(at, now).seconds.toDouble())
             return FrameTime(ZULU.format(at), local, age, Duration.between(at, now).seconds > oldAfterS)
         }
     }
@@ -87,14 +86,10 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val loop = remember(context) { WeatherLoop.of(context) }
     val state by loop.state.collectAsStateWithLifecycle()
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, loop) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) loop.away(true) else if (event == Lifecycle.Event.ON_START) loop.away(false)
-        }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
-    }
+    // Lifecycle's own effects: paused at the app's stop, played again at
+    // its start where it was playing.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { loop.away(true) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { loop.away(false) }
     val now by AppClock.ticking(30_000L)
     if (state.kind == LoopKind.OFF) return
     val name = state.kind.label

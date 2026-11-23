@@ -54,6 +54,9 @@ class AirportModel @Inject constructor() : ViewModel() {
          *  null until fetched. */
         val notams: NotamsRanked? = null,
         val notamsProblem: String? = null,
+        /** When the NOTAMs shown were fetched (epoch ms), for their age
+         *  under the title: a kept list is never read as fresh. */
+        val notamsAtMs: Long? = null,
         /** The route's departure where the card's distance is said from
          *  it (no position): its ident and where it is; null for none. */
         val departure: Departure? = null,
@@ -146,6 +149,15 @@ class AirportModel @Inject constructor() : ViewModel() {
         }
     }
 
+    /** The open field's NOTAMs asked again, the problem line's Try Again
+     *  (the errors-and-onboarding audit, 2026-11-21: a failed list had no
+     *  way to ask again). */
+    fun retryNotams() {
+        val ident = _state.value.place?.ident ?: return
+        _state.update { it.copy(notamsProblem = null) }
+        viewModelScope.launch { loadNotams(ident) }
+    }
+
     /** The open field's pictures, asked once a card. */
     fun loadPhotos() {
         val ident = _state.value.place?.ident ?: return
@@ -178,7 +190,7 @@ class AirportModel @Inject constructor() : ViewModel() {
     private suspend fun loadNotams(ident: String) {
         try {
             val had = KeptForAir.had(KeptForAir.NOTAMS, KeptForAir.fieldNotams(ident), NotamsRanked.serializer()) { Planner.airportNotams(ident) }
-            _state.update { if (it.place?.ident == ident) it.copy(notams = had.value, notamsProblem = null) else it }
+            _state.update { if (it.place?.ident == ident) it.copy(notams = had.value, notamsProblem = null, notamsAtMs = had.fetchedAtMs) else it }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

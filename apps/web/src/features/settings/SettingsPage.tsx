@@ -8,17 +8,23 @@ import { clearOwnTrail, useOwnTrail } from "../../lib/map/position/ownTrail";
 import { AIRPORT_WEATHER, useAirportWeatherPrefs, type AirportWeather } from "../../lib/map/marks/airportWeatherPrefs";
 import { keepingAvailable } from "../../lib/map/route/keepRoute";
 import { useSettingsGroup } from "../../lib/openSettings";
+import { useAddressKey } from "../../lib/address";
+import { useBriefPlan } from "../../lib/briefPlan";
+import { flightPlatesLine, useFlightPlates } from "../keptForAir/lazy";
+import { PlatesPage, PlatesRowValue } from "../statePlates/lazy";
 import { usePreferences } from "../../lib/preferences";
 import { CardId, setCard, useSheetCards } from "../../lib/sheetCards";
+import ExtrasGroup from "./ExtrasGroup";
 import GlideRingRow from "./GlideRingRow";
 import { AlertsPage, AtcPage, HelpPage, type HelpPages } from "./SettingsPages";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The app's Settings, one page, the owner's pick of option A of the
  * account canvas (2026-11-13): a row of You (the avatar's card), and what
  * the Map card's gear opens at its Map group (lib/openSettings, the one
  * way in). How the app behaves, in groups as iOS's Settings has them --
- * Map, In Flight, Data, and Help & About (Display, Sunlight's, went to
+ * Map, In Flight, Extras (the parked features, 2026-11-21), Data, and Help & About (Display, Sunlight's, went to
  * the Map card's Look with Theme and Appearance, 2026-11-14) -- where it
  * was the avatar's card's tiles and footer links and the Map card's Map
  * Settings page: one thing called Settings, every control in one home.
@@ -33,17 +39,23 @@ export default function SettingsPage({ help }: { help: HelpPages }) {
         alerts: { title: "Alerts", content: <AlertsPage /> },
         atc: { title: "ATC", content: <AtcPage /> },
         help: { title: "Help & About", content: <HelpPage pages={help} /> },
+        plates: { title: "Plates", content: <PlatesPage /> },
       }}
     >
       <div className="flex flex-col gap-5" data-testid="settings-page">
         <MapGroup />
         <InFlightGroup />
+        {/* The parked features' switches, after In Flight (lib/extras). */}
+        <ExtrasGroup />
         <ListGroup title="Data">
           {/* The base chart along each route loaded, held for the air
               (useKeepOffline); how a keep goes is its toast. Over plain
               http there is no service worker to hold it, and it cannot be
               on. */}
           <KeepRow />
+          {/* The FAA's plates a state at a time, as the phones' Downloads
+              keep the charts' regions (features/statePlates). */}
+          <PageRow page="plates" title="Plates" value={<PlatesRowValue />} testId="plates-row" />
         </ListGroup>
         <ListGroup>
           {/* The guide, the stack's status, the load log, about, where the
@@ -123,7 +135,7 @@ function AirportWeatherRow() {
   const show = useAirportWeatherPrefs((s) => s.show);
   const set = useAirportWeatherPrefs((s) => s.set);
   return (
-    <ListRow title="Airport Weather">
+    <ListRow title={WORDING.airportWeather}>
       <PullDown<AirportWeather>
         label="Airport weather"
         value={show}
@@ -152,9 +164,14 @@ function InFlightGroup() {
 function KeepRow() {
   const keepOffline = usePreferences((s) => s.keepOffline);
   const setKeepOffline = usePreferences((s) => s.setKeepOffline);
+  // What the flight's plates come to, said before they are kept.
+  const course = useBriefPlan((s) => s.flight?.course ?? null);
+  const alternate = useAddressKey("alternate")[0] || null;
+  const plates = useFlightPlates(course, alternate);
   return (
     <SwitchRow
       title="Keep for the Air"
+      description={flightPlatesLine(plates) ?? undefined}
       on={keepOffline && keepingAvailable()}
       onChange={setKeepOffline}
       disabled={!keepingAvailable()}

@@ -21,12 +21,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.wingtipmaps.android.MainActivity
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.api.generated.AirportPlace
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.firstflight.FirstFlightMemory
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.sheet.CardPageTags
 import app.wingtipmaps.android.ui.sheet.MAP_SHEET_TAG
 import app.wingtipmaps.android.ui.sheet.SheetDetent
@@ -36,6 +38,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 /**
  * The card rule and the scrolling rule (the owner, 2026-11-10), table
@@ -89,6 +92,8 @@ class CardRuleTest {
     @After
     fun finish() {
         EmergencyOpen.close()
+        // The app's own store again, made at its next ask.
+        KeptForAir.use(null)
         scenario.close()
     }
 
@@ -219,6 +224,11 @@ class CardRuleTest {
     fun anAirportCardsActionsAndTabsAreInSightAtHalf() {
         // The audit's AND-1 and the owner's T4 (2026-11-14): Fly Here and
         // the section tabs under the head, on screen with the sheet at half.
+        // The card's actions and tabs wait for the field's answer, which no
+        // planner gives the emulator (the site's host has none, and a test
+        // reaches no live service), so the field is the one kept for the air
+        // (KeptForAir), which the card reads when the network fails.
+        keptKosh()
         val airport = CARDS.first()
         open(airport, airport.ways.first())
         compose.waitUntil(TIMEOUT_MS) { detent() == "PartiallyExpanded" }
@@ -250,10 +260,20 @@ class CardRuleTest {
         // on the rows it greys.
         val you = CARDS.first { it.page == SheetPage.You }
         open(you, you.ways.first())
-        val signIn = text(R.string.you_sign_in)
+        val signIn = text(R.string.wording_sign_in)
         compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(signIn)).fetchSemanticsNodes().isNotEmpty() }
         assertEquals(1, compose.onAllNodes(hasText(signIn, substring = true)).fetchSemanticsNodes().size)
         assertEquals(0, compose.onAllNodes(hasText(text(R.string.you)) and hasAnyAncestor(hasTestTag(CardPageTags.BAR))).fetchSemanticsNodes().size)
+    }
+
+    /** A store of the test's own, holding KOSH as the planner sends it. */
+    private fun keptKosh() {
+        val dir = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "kept-air-card-rule").apply { deleteRecursively() }
+        val kosh = AirportPlace(frequencies = emptyList(), ident = "KOSH", kind = "airport", lat = 43.9844, lon = -88.557, name = "Wittman Regional", runways = emptyList(), towered = true)
+        KeptForAir(dir).also { store ->
+            store.write(KeptForAir.AIRPORTS, "KOSH", KeptForAir.JSON.encodeToString(AirportPlace.serializer(), kosh))
+            KeptForAir.use(store)
+        }
     }
 
     private fun text(id: Int): String = InstrumentationRegistry.getInstrumentation().targetContext.getString(id)

@@ -23,12 +23,12 @@ import { FieldError } from "../../components/ui/field";
 // may be gone by: a run-out instructor is warned, never stopped (the
 // owner's rule, 2026-10-26).
 const certificateSchema = z.object({
-  fullName: z.string().trim().min(1, "Your name is required").max(120, "At most 120 characters"),
+  fullName: z.string().trim().min(1, "Your name is required.").max(120, "At most 120 characters."),
   certificate: z
     .string()
     .trim()
     .regex(/^[A-Za-z0-9]{4,20}$/, "4 to 20 letters and figures, as 987654321CFI"),
-  until: z.string().min(1, "The date is required"),
+  until: z.string().min(1, "The date is required."),
   untilKind: z.enum(["RE", "EXP"]),
 });
 type CertificateValues = z.infer<typeof certificateSchema>;
@@ -74,7 +74,7 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
           recent experience (14 CFR 61.197(a)) for a certificate issued on or
           after 1 Dec 2024, which has no expiration date (61.19(d)(1)), or an
           older certificate's expiration date (61.19(d)(2)). */}
-      <ListGroup title="Your flight instructor certificate">
+      <ListGroup title="Your Flight Instructor Certificate">
         <ListRow id={ids.name} title="Name">
           <RowField id={ids.name} error={errors.fullName?.message}>
             <FieldHit htmlFor={ids.name}>
@@ -83,6 +83,10 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
                 {...register("fullName")}
                 placeholder="J. J. Jones"
                 maxLength={120}
+                // The return key moves on, the name AutoFill's own (the iOS
+                // audit's P19).
+                autoComplete="name"
+                enterKeyHint="next"
                 className="h-8 w-44 sm:w-56"
                 {...invalidProps(ids.name, errors.fullName?.message)}
                 data-testid="cfi-name"
@@ -98,6 +102,8 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
                 {...register("certificate")}
                 placeholder="987654321CFI"
                 maxLength={20}
+                autoComplete="off"
+                enterKeyHint="done"
                 className="h-8 w-44 font-mono sm:w-56"
                 autoCapitalize="characters"
                 {...invalidProps(ids.number, errors.certificate?.message)}
@@ -106,7 +112,7 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
             </FieldHit>
           </RowField>
         </ListRow>
-        <ListRow title="Its date">
+        <ListRow title="Its Date">
           <Controller
             control={control}
             name="untilKind"
@@ -116,7 +122,7 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
                 value={field.value}
                 onChange={(v) => field.onChange(v as CertificateValues["untilKind"])}
                 options={[
-                  { value: "RE", label: "Recent experience" },
+                  { value: "RE", label: "Recent Experience" },
                   { value: "EXP", label: "Expires" },
                 ]}
                 testId="cfi-until-kind"
@@ -124,13 +130,13 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
             )}
           />
         </ListRow>
-        <ListRow id={ids.until} title={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}>
+        <ListRow id={ids.until} title={untilKind === "RE" ? "Recent Experience Through" : "Certificate Expires"}>
           <RowField id={ids.until} error={errors.until?.message}>
             <FormDateField
               control={control}
               name="until"
               id={ids.until}
-              aria-label={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}
+              aria-label={untilKind === "RE" ? "Recent Experience Through" : "Certificate Expires"}
               className="h-8 w-40"
               error={errors.until?.message}
               data-testid="cfi-until"

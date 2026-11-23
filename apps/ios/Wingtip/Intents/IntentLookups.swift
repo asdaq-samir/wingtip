@@ -6,7 +6,7 @@ import Foundation
 /// the search finds it, then the biggest field by it), and a field's
 /// weather said as a briefer says it (the web's lib/metarWords, to the
 /// word, so Siri and the microphone's pill read the same).
-enum IntentLookups {
+nonisolated enum IntentLookups {
     /// An ident as pilots write one: KLAS, LAS, 3CK -- three or four
     /// letters and figures, said as one word.
     static func looksLikeIdent(_ words: String) -> Bool {

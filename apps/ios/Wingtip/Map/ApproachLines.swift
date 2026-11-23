@@ -3,9 +3,9 @@ import OpenAPIRuntime
 import UIKit
 
 /// A runway's extended centreline on the ground (approach_scene).
-final class CentrelinePolyline: MKPolyline {}
+final nonisolated class CentrelinePolyline: MKPolyline {}
 /// The traffic pattern's ring round the field (approach_scene).
-final class PatternRing: MKCircle {}
+final nonisolated class PatternRing: MKCircle {}
 
 /// The way in to the route's destination in 3D, as the web's ApproachGl
 /// draws it, on the ground: each runway's extended centreline dashed in

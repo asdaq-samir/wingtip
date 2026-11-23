@@ -4,7 +4,7 @@ import { useMinuteClock } from "../useMinuteClock";
 import { useOnline } from "./useOnline";
 
 /**
- * A kept answer's age, as the page says it with no signal ("Fetched 42 min
+ * A kept answer's age, as the page says it with no signal ("Fetched 42m
  * ago"), and whether it is past its freshness: the engine's `kept_age`,
  * which holds each kind to ready to fly's own limits (the briefing's hour,
  * the NOTAMs', the AIRAC cycle for the airport cards and plates), so no

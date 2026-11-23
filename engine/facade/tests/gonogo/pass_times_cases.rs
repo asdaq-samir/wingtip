@@ -104,7 +104,7 @@ fn every_rule_answers_by_name_from_the_planners_and_the_webs_own_objects() {
         "risk": {"level": "low", "line": "Low · 2 points"}}"#;
     let brief = |alternate: &str| call("gonogo_brief", &format!(r#"{{"verdict": {quiet}, "alternate": {alternate}, "airplane": true}}"#));
     let fuel = |b: &Value| b["items"].as_array().unwrap().iter().find(|i| i["key"] == "fuel").unwrap()["detail"].clone();
-    assert_eq!(fuel(&brief("null")), "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare");
+    assert_eq!(fuel(&brief("null")), "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve");
     // Under IFR, the whole verdict as the planner's app.gonogo puts it
     // together: the items, the alternate's say in the weather's, the line
     // over them (14 CFR 91.169(a): an alternate the destination needs and

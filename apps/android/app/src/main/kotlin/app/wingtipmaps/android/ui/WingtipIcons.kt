@@ -1,7 +1,9 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -10,17 +12,29 @@ import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CellTower
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.FilterDrama
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.FlightLand
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Scale
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Square
@@ -52,6 +66,24 @@ object WingtipIcons {
     val share = Icons.Filled.Share
     val more = Icons.Filled.MoreVert
 
+    /** The plan's way back to the one search, at its bar's start. */
+    val search = Icons.Filled.Search
+
+    /** The airplane's card, at the end of the plan's airplane pill. */
+    val info = Icons.Filled.Info
+
+    /** The flight plan filed (the web's `file`, FileText). */
+    val file = Icons.AutoMirrored.Filled.Article
+
+    /** The nav log printed (PrintManager). */
+    val print = Icons.Filled.Print
+
+    /** When the flight leaves, the plan's time pill. */
+    val time = Icons.Filled.Schedule
+
+    /** Route Options, the plan's More. */
+    val routeOptions = Icons.AutoMirrored.Filled.AltRoute
+
     /** The map's position button: the arrow outlined while off, filled
      *  while it reads or follows, so the state is in the shape as well as
      *  the colour. */
@@ -70,6 +102,7 @@ object WingtipIcons {
     val addToRoute = Icons.Filled.AddLocation
     val holdHere = Icons.Filled.Sync
     val undo = Icons.AutoMirrored.Filled.Undo
+    val fuel = Icons.Filled.LocalGasStation
     val redo = Icons.AutoMirrored.Filled.Redo
     val call = Icons.Filled.Call
     val address = Icons.Filled.Place
@@ -85,12 +118,26 @@ object WingtipIcons {
     val airplane = Icons.Filled.Flight
     val setup = Icons.Filled.Settings
 
+    /** The scratchpad and its tools: a page written on, the ink cleared
+     *  (Material's brush sweeping, as an eraser of everything), the page
+     *  deleted; and the weight and balance, a scale. */
+    val scratchpad = Icons.Filled.EditNote
+    val clear = Icons.Filled.CleaningServices
+    val delete = Icons.Filled.Delete
+    val balance = Icons.Filled.Scale
+
     /** An approach plate laid on the map (an airport card's approach's
      *  Show on Map), and the plate card's transparency slider's ends: an
      *  empty square for clear, a solid one for solid, as ForeFlight's. */
     val showOnMap = Icons.Outlined.Map
     val plateClear = Icons.Outlined.CropSquare
     val plateSolid = Icons.Filled.Square
+
+    /** An airport card's Weather, Runways and Charts tabs (C1): a cloud
+     *  with the sun behind it, an airplane landing, a page of the FAA's. */
+    val weather = Icons.Filled.FilterDrama
+    val runways = Icons.Filled.FlightLand
+    val charts = Icons.Filled.Description
 
     /** Fly Here, a new route to the field: the route's own glyph. */
     val flyHere = Icons.Filled.Route

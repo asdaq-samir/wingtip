@@ -2,8 +2,10 @@
 # The App Store build (native-ios.yml, testflight, main only): archived,
 # signed with the App Store Connect key, exported and uploaded to
 # TestFlight, then the export's push entitlement read where an .ipa is
-# left. Env: KEY_ID, KEY_P8, ISSUER, TEAM, WINGTIP_URL, WINGTIP_BUNDLE_ID,
-# RUN_NUMBER, RUNNER_TEMP.
+# left, then the build sent to the pilots' beta group with its What to
+# Test (scripts/ci/testflight_beta.py, docs/store/beta.md). Env: KEY_ID,
+# KEY_P8, ISSUER, TEAM, WINGTIP_URL, WINGTIP_BUNDLE_ID, RUN_NUMBER,
+# RUNNER_TEMP.
 set -euo pipefail
 key="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
 trap 'rm -f "$key"' EXIT
@@ -41,3 +43,6 @@ if [ -n "$ipa" ]; then
 else
   echo "::notice::upload-only export: check aps-environment in App Store Connect's build metadata"
 fi
+# The external testers' group: the build, once Apple has processed it,
+# with its notes and, for a new version, Beta App Review asked for.
+python3 "$(dirname "$0")/testflight_beta.py"

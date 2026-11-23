@@ -2,9 +2,9 @@ import SwiftUI
 
 /// The app's Settings, one page (the owner's pick of option A of the
 /// account canvas, 2026-11-13; docs/design/rules.md §8): how the app
-/// behaves, in groups as iOS's Settings has them -- Map, In Flight, Data,
-/// and Help & About. Theme and Appearance, the app's look, are the Map
-/// card's (the owner, 2026-11-14). Pushed from You's gear, and from the Map card's
+/// behaves, in groups as iOS's Settings has them -- Map, In Flight, Extras
+/// (the parked features' switches), Data, and Help & About. Theme and
+/// Appearance, the app's look, are the Map card's (the owner, 2026-11-14). Pushed from You's gear, and from the Map card's
 /// gear at its Map group, so the system's Back goes back to the card it
 /// was opened from. The one thing called Settings: every control in one
 /// home, where they were Setup's rows and the Map card's switches.
@@ -19,6 +19,7 @@ struct SettingsView: View {
     @Environment(Charts.self) private var charts
     @Environment(FlightSession.self) private var flight
     @State private var keptBytes: Int64 = 0
+    @AppStorage(Extra.adsbReceiver.key) private var adsbReceiver = false
 
     var body: some View {
         ScrollViewReader { reader in
@@ -36,24 +37,27 @@ struct SettingsView: View {
                 }
                 .id(SettingsView.mapGroup)
                 Section("In Flight") {
-                    NavigationLink { AlertsPage() } label: { Text("Alerts") }
+                    NavigationLink(value: SheetPage.alerts) { Text("Alerts") }
                         .accessibilityIdentifier("alerts-row")
-                    NavigationLink { AtcPage() } label: { Text("ATC") }
+                    NavigationLink(value: SheetPage.atc) { Text("ATC") }
                         .accessibilityIdentifier("atc-row")
                 }
+                // The parked features' switches, after In Flight (Extra).
+                ExtrasSection()
                 Section("Data") {
                     // The charts along a route and its briefing kept for
                     // flying with no signal (KeepForAir, FPL's button), and
                     // whole regions' charts (Downloads).
                     LabeledContent("Kept for the Air", value: ByteCountFormatter.string(fromByteCount: keptBytes, countStyle: .file))
-                    NavigationLink { DownloadsView() } label: { Text(Screen.downloads.title) }
+                    NavigationLink(value: SheetPage.screen(.downloads)) { Text(Screen.downloads.title) }
                     // A Stratux, Sentry or the like on the cockpit's Wi-Fi:
-                    // its traffic and FIS-B weather with no internet.
-                    ReceiverModePicker()
+                    // its traffic and FIS-B weather with no internet; parked
+                    // until its switch in Extras is on (Extra).
+                    if adsbReceiver { ReceiverModePicker() }
                     ForgetNotesButton()
                 }
                 Section {
-                    NavigationLink { HelpPage() } label: { Text("Help & About") }
+                    NavigationLink(value: SheetPage.help) { Text("Help & About") }
                         .accessibilityIdentifier("help-row")
                 }
             }
@@ -86,17 +90,22 @@ enum CommsAssist {
 /// The radio, one page (the owner, 2026-11-13: Comms Assist, the ATC
 /// alerts and the copilot together): Comms Assist's button, the ATC
 /// copilot listening while flying (not offered where speech cannot be
-/// recognised on the iPhone), and the in-flight copilot.
+/// recognised on the iPhone), and the in-flight copilot. Comms Assist and
+/// the ATC alerts are the ATC Copilot's, parked until its switch in Extras
+/// is on (Extra); the in-flight copilot is not parked.
 struct AtcPage: View {
     @Environment(ClearanceListener.self) private var listener
     @AppStorage(CommsAssist.key) private var commsAssist = false
+    @AppStorage(Extra.atcCopilot.key) private var atcCopilot = false
 
     var body: some View {
         List {
-            Toggle("Comms Assist", isOn: $commsAssist)
-                .accessibilityIdentifier("comms-assist-toggle")
-            if listener.canListen {
-                LabeledContent("ATC Alerts") { AtcModePicker().fixedSize() }
+            if atcCopilot {
+                Toggle("Comms Assist", isOn: $commsAssist)
+                    .accessibilityIdentifier("comms-assist-toggle")
+                if listener.canListen {
+                    LabeledContent("ATC Alerts") { AtcModePicker().fixedSize() }
+                }
             }
             LabeledContent("Copilot") { CopilotModePicker().fixedSize() }
         }
@@ -106,19 +115,20 @@ struct AtcPage: View {
 }
 
 /// Help & About, one row of Settings (the owner, 2026-11-13): the guide,
-/// about and where the map's data comes from, then the server and the
-/// version, and the legal pages at the foot.
+/// about and where the map's data comes from, Help Improve Wingtip Maps,
+/// then the server and the version, and the legal pages at the foot.
 struct HelpPage: View {
     var body: some View {
         List {
             Section {
-                NavigationLink { PilotGuideView() } label: { Text(Screen.guide.title) }
+                NavigationLink(value: SheetPage.screen(.guide)) { Text(Screen.guide.title) }
                     .accessibilityIdentifier("guide-link")
-                NavigationLink { AboutView() } label: { Text(Screen.about.title) }
+                NavigationLink(value: SheetPage.screen(.about)) { Text(Screen.about.title) }
                     .accessibilityIdentifier("about-link")
-                NavigationLink { SourcesPage() } label: { Text("Sources") }
+                NavigationLink(value: SheetPage.sources) { Text("Sources") }
                     .accessibilityIdentifier("sources-row")
             }
+            HelpImproveToggle()
             Section {
                 LabeledContent("Server", value: Config.host)
                 LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
@@ -126,7 +136,7 @@ struct HelpPage: View {
             Section {
                 Link("Privacy", destination: AboutModel.page("privacy"))
                 Link("Terms", destination: AboutModel.page("terms"))
-                NavigationLink { AboutView() } label: { Text("Legal") }
+                NavigationLink(value: SheetPage.screen(.about)) { Text("Legal") }
             }
         }
         .listStyle(.insetGrouped)
@@ -158,8 +168,8 @@ struct SourcesPage: View {
 }
 
 #Preview("SettingsView") {
+    // The app's models, as the app gives them: Extras reads the radio's
+    // and the model weather's.
     NavigationStack { SettingsView(atMap: false) }
-        .environment(Session())
-        .environment(Charts())
-        .environment(FlightSession())
+        .modifier(AppModels(session: Session(), charts: Charts(), nav: Navigator(), screens: ScreenModels()))
 }

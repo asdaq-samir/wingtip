@@ -85,7 +85,7 @@ final class SavedFlightsModel {
             flights = try await calls.list().filter { !held.contains($0.id) }
             problem = nil
         } catch {
-            problem = "Your flights could not be fetched: \(error.localizedDescription)"
+            problem = Problems.say("Your flights could not be fetched", error)
         }
     }
 
@@ -98,7 +98,7 @@ final class SavedFlightsModel {
             flights = try await calls.list()
             problem = nil
         } catch {
-            problem = "This plan could not be saved: \(error.localizedDescription)"
+            problem = Problems.say("This plan could not be saved", error)
         }
     }
 
@@ -135,7 +135,7 @@ final class SavedFlightsModel {
             if let at = flights.firstIndex(where: { $0.id == id }) { flights[at] = now }
             if editingID == id { cancelEdit() }
         } catch {
-            rowProblem = "Not kept: \(error.localizedDescription)"
+            rowProblem = Problems.say("The change could not be kept", error)
         }
     }
 
@@ -166,7 +166,7 @@ final class SavedFlightsModel {
         removed = []
         for (flight, _) in sending {
             do { try await calls.delete(flight.id) } catch {
-                problem = "\(Self.title(flight)) could not be deleted: \(error.localizedDescription)"
+                problem = Problems.say("\(Self.title(flight)) could not be deleted", error)
             }
             pending.release(.flight, flight.id)
         }
@@ -184,7 +184,7 @@ final class SavedFlightsModel {
             problem = nil
             return url
         } catch {
-            problem = "\(Self.title(flight)) could not be shared: \(error.localizedDescription)"
+            problem = Problems.say("\(Self.title(flight)) could not be shared", error)
             throw error
         }
     }
@@ -196,7 +196,7 @@ final class SavedFlightsModel {
             if let at = flights.firstIndex(where: { $0.id == flight.id }) { flights[at].share = nil }
             problem = nil
         } catch {
-            problem = "\(Self.title(flight)) is still shared: \(error.localizedDescription)"
+            problem = Problems.say("Sharing \(Self.title(flight)) could not be stopped", error)
         }
     }
 }

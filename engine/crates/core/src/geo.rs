@@ -55,6 +55,54 @@ pub fn distance_nm(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
     distance_and_bearing(lat1, lon1, lat2, lon2).0
 }
 
+/// How far the mean sphere's great-circle distance (sphere_nm) may stand
+/// from distance_nm's WGS-84 geodesic, as a part of it: the ellipsoid's
+/// radii of curvature run from 6,335 km (the meridian's at the equator) to
+/// 6,400 km (at the poles), within 0.6% of the sphere's 6,371 km (NGA
+/// TR8350.2's a and f), so 1% holds anywhere.
+pub const SPHERE_WITHIN: f64 = 0.01;
+
+/// The great-circle distance between two points on the mean sphere
+/// (EARTH_RADIUS_NM), nautical miles: a ranking measure for which of many
+/// is nearest, never a figure given, within SPHERE_WITHIN of distance_nm
+/// at a fraction of its cost.
+pub fn sphere_nm(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    let (p1, p2) = (lat1.to_radians(), lat2.to_radians());
+    let half_lat = ((p2 - p1) / 2.0).sin();
+    let half_lon = ((lon2 - lon1).to_radians() / 2.0).sin();
+    let h = half_lat * half_lat + p1.cos() * p2.cos() * half_lon * half_lon;
+    2.0 * EARTH_RADIUS_NM * h.sqrt().min(1.0).asin()
+}
+
+/// Which of `points` is nearest (lat, lon) by `exact` (the caller's own
+/// distance_nm of a point, in the order of its arguments it has always
+/// asked, so the answer is the same to the last bit), and how far: the
+/// first where two are as near, as a scan of every point's `exact` answers,
+/// (0, infinity) where none is nearer than that. Only the points sphere_nm
+/// cannot rule out are solved on the ellipsoid: one whose sphere distance,
+/// less SPHERE_WITHIN, is past the nearest one's plus SPHERE_WITHIN is
+/// farther than that one on the ellipsoid too, so it can be neither the
+/// nearest nor tie with it. None for no points.
+pub fn nearest(
+    lat: f64, lon: f64, points: impl Iterator<Item = (f64, f64)> + Clone, exact: impl Fn(f64, f64) -> f64,
+) -> Option<(usize, f64)> {
+    let rough = |p: (f64, f64)| sphere_nm(lat, lon, p.0, p.1);
+    let bound = points.clone().map(rough).fold(f64::INFINITY, f64::min) * (1.0 + SPHERE_WITHIN);
+    let mut best = (0usize, f64::INFINITY);
+    let mut any = false;
+    for (i, p) in points.enumerate() {
+        any = true;
+        if rough(p) * (1.0 - SPHERE_WITHIN) > bound {
+            continue;
+        }
+        let d = exact(p.0, p.1);
+        if d < best.1 {
+            best = (i, d);
+        }
+    }
+    any.then_some(best)
+}
+
 /// The geodesic's initial course from point one to point two, degrees 0
 /// to 360 true (pyproj's Geod forward azimuth). Zero for two points that
 /// coincide, as wingtip.geo answers: Karney's own 180 would give a
@@ -159,6 +207,37 @@ pub fn track_from(lat: f64, lon: f64, a: (f64, f64), course: f64) -> (f64, f64) 
     unreachable!("the tenth try returns")
 }
 
+/// Whether (lat, lon) is surely more than `width_nm` off the geodesic from
+/// `a` on `course`, from one inverse solve where track_from takes two or
+/// three inverse and direct solves: the cross-track of the right spherical
+/// triangle the inverse's distance and angle make (track_from's own first
+/// step, sin x = sin s sin A). The sphere's answer is within a small part
+/// of a percent of the ellipsoid's (WGS-84's flattening is 1/298, NGA
+/// TR8350.2), so the margin of 2 nm and 1% of the distance keeps every
+/// point whose exact cross-track is `width_nm` or less. A corridor's first
+/// cut: a point it lets go is off the line by more than the width on the
+/// ellipsoid too, and so, as the inverse's own distance s is never less
+/// than the cross-track, more than the width from `a` as well.
+pub fn surely_off_nm(lat: f64, lon: f64, a: (f64, f64), course: f64, width_nm: f64) -> bool {
+    let (s, to_p) = distance_and_bearing(a.0, a.1, lat, lon);
+    let r = EARTH_RADIUS_NM;
+    let cross = ((s / r).sin() * (to_p - course).to_radians().sin()).clamp(-1.0, 1.0).asin() * r;
+    cross.abs() > width_nm + 2.0 + 0.01 * s
+}
+
+/// A longitude written within 180° of `reference` (179 near -179 is -181):
+/// so a box or a line between two points across the antimeridian is the
+/// short way round, as the geodesic between them is, not some 350° the
+/// long way. The one copy for the engine's boxes in degrees. A longitude
+/// within 180° already is given back as it is, to the bit, so a box that
+/// is nowhere near 180 is the one it always was.
+pub fn lon_near(lon: f64, reference: f64) -> f64 {
+    if (lon - reference).abs() <= 180.0 {
+        return lon;
+    }
+    reference + (lon - reference + 180.0).rem_euclid(360.0) - 180.0
+}
+
 /// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->
 /// b (wingtip.geo.corridor_bbox): `buffer_nm` at WGS-84's shortest degree
 /// of latitude, the equator's 59.7 nm (110,574 m), and of longitude
@@ -178,6 +257,46 @@ pub fn corridor_bbox(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> (f64, f64,
 /// first cut, the distance measured within it after.
 pub fn box_around(lat: f64, lon: f64, radius_nm: f64) -> (f64, f64, f64, f64) {
     corridor_bbox((lat, lon), (lat, lon), radius_nm)
+}
+
+/// A (south, west, north, east) box as the one or two boxes it is between
+/// -180 and 180: one past the antimeridian (a box from lon_near's
+/// longitudes) is cut there into its two halves, and one a whole turn
+/// wide is every longitude (wingtip.geo_boxes.split_box). The edge-places
+/// audit's S10: a box past 180 met nothing across the line, so Shemya's
+/// obstacles, airspace and fields were missed from Adak.
+pub fn split_box(b: (f64, f64, f64, f64)) -> Vec<(f64, f64, f64, f64)> {
+    let (s, w, n, e) = b;
+    if e - w >= 360.0 {
+        vec![(s, -180.0, n, 180.0)]
+    } else if w < -180.0 {
+        vec![(s, w + 360.0, n, 180.0), (s, -180.0, n, e)]
+    } else if e > 180.0 {
+        vec![(s, w, n, 180.0), (s, -180.0, n, e - 360.0)]
+    } else {
+        vec![b]
+    }
+}
+
+/// corridor_bbox round the route a -> b the short way round, b's
+/// longitude read within 180° of a's, as split_box's one or two boxes
+/// (wingtip.geo_boxes.corridor_box, split as its readers split it).
+pub fn corridor_boxes(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> Vec<(f64, f64, f64, f64)> {
+    split_box(corridor_bbox(a, (b.0, lon_near(b.1, a.1)), buffer_nm))
+}
+
+/// corridor_bbox over the corners of a set of (lat, lon) points, each
+/// longitude read within 180° of the first's, so it may pass -180 or 180
+/// (wingtip.geo_boxes.box_over); None for no points.
+pub fn box_over(points: &[(f64, f64)], pad_nm: f64) -> Option<(f64, f64, f64, f64)> {
+    let &(_, first) = points.first()?;
+    let (mut low, mut high) = ((f64::INFINITY, f64::INFINITY), (f64::NEG_INFINITY, f64::NEG_INFINITY));
+    for &(lat, lon) in points {
+        let lon = lon_near(lon, first);
+        low = (low.0.min(lat), low.1.min(lon));
+        high = (high.0.max(lat), high.1.max(lon));
+    }
+    Some(corridor_bbox(low, high, pad_nm))
 }
 
 /// Whether a ring of (x, y) points (longitude, latitude, on a plane of
@@ -252,60 +371,9 @@ pub fn velocity_track(east: f64, north: f64) -> (Option<f64>, f64) {
     (if speed > 0.0 { Some(py_mod(east.atan2(north).to_degrees(), 360.0)) } else { None }, speed)
 }
 
-// --- By name (the facade's dispatcher, contract/*.json) -----------------
-
-fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
-    v.get(key).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a number"))
-}
-
-/// The geodesic figures by name, for the apps that draw between fixes (the
-/// phones' traffic notice, own trail and replay) and the planner, so no app
-/// keeps its own great-circle arithmetic: `distance_nm` and `bearing_deg`
-/// from `{"lat1", "lon1", "lat2", "lon2"}`, and `destination` from
-/// `{"points": [{"lat", "lon", "bearing_deg", "nm"}]}` to `[{"lat",
-/// "lon"}]`, a list so a map's airplanes carried on a step a second cross
-/// into the engine once, not once each; `velocity_track` from
-/// `{"velocities": [{"east", "north"}]}` to `[{"track_deg", "speed"}]`,
-/// a list for the same reason.
-#[cfg_attr(target_arch = "wasm32", inline(always))]
-pub fn call(name: &str, v: &Value) -> Result<String, String> {
-    let mut out = String::new();
-    match name {
-        "distance_nm" | "bearing_deg" => {
-            let (lat1, lon1, lat2, lon2) = (num(name, v, "lat1")?, num(name, v, "lon1")?, num(name, v, "lat2")?, num(name, v, "lon2")?);
-            let figure = if name == "distance_nm" { distance_nm(lat1, lon1, lat2, lon2) } else { bearing_deg(lat1, lon1, lat2, lon2) };
-            json::number(&mut out, figure);
-        }
-        "destination" => {
-            let points = v.get("points").and_then(Value::as_array).ok_or("destination: \"points\" is missing or not a list")?;
-            out.push('[');
-            for (i, p) in points.iter().enumerate() {
-                let (lat, lon) = destination(num(name, p, "lat")?, num(name, p, "lon")?, num(name, p, "bearing_deg")?, num(name, p, "nm")?);
-                out.push_str(if i > 0 { ",{\"lat\":" } else { "{\"lat\":" });
-                json::number(&mut out, lat);
-                out.push_str(",\"lon\":");
-                json::number(&mut out, lon);
-                out.push('}');
-            }
-            out.push(']');
-        }
-        "velocity_track" => {
-            let parts = v.get("velocities").and_then(Value::as_array).ok_or("velocity_track: \"velocities\" is missing or not a list")?;
-            out.push('[');
-            for (i, p) in parts.iter().enumerate() {
-                let (track, speed) = velocity_track(num(name, p, "east")?, num(name, p, "north")?);
-                out.push_str(if i > 0 { ",{\"track_deg\":" } else { "{\"track_deg\":" });
-                json::opt_number(&mut out, track);
-                out.push_str(",\"speed\":");
-                json::number(&mut out, speed);
-                out.push('}');
-            }
-            out.push(']');
-        }
-        _ => return Err(format!("the engine has no rule called {name:?}")),
-    }
-    Ok(out)
-}
+// By name (the facade's dispatcher, contract/*.json): geo/call.rs.
+mod call;
+pub use call::call;
 
 #[cfg(test)]
 #[path = "geo_tests.rs"]

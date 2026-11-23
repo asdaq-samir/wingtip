@@ -1,0 +1,12 @@
+{
+  "about": "The receivers the app supports, each as a GDL 90 datagram of the shape it sends, built by engine/crates/receiver/tests/receivers.rs from the specification's layouts (560-1058-00 Rev A 3.1, 3.4, 3.8; ForeFlight's ID message), not recorded from the units. Each is read by receiver_read at 'at' and own ship asked of receiver_position with no device fix; 'expect' is what the rules must answer, from 14 CFR 91.227(c)(1)'s NIC 7 and NACp 8 and the ID message's datum bit.",
+  "at": 1763740800,
+  "receivers": [
+    { "receiver": "stratux", "hex": "7ecc0200c01a7e7e650001ffffffffffffffff5374726174757800537472617475780000000000000000000000000165b27e7e008141dbd00802b38b7e7e0a00a123451dd4c4c17d5e4b0a098a06e00040014e3132333435202000b8bd7e7e0b0280000a11077e", "expect": {"name":"Stratux","source":"receiver","receiver":"good","altitude_ft":3200,"accuracy_m":10} },
+    { "receiver": "sentry", "hex": "7e650001ffffffffffffffff53656e747279000053656e747279204144532d4200000000000000019fa17e7e008141dbd00802b38b7e7e0a00a123451dd4c4c17d5e4b0a098a06e00040014e3132333435202000b8bd7e7e0b0280000a11077e", "expect": {"name":"Sentry","source":"receiver","receiver":"good","altitude_ft":3200,"accuracy_m":10} },
+    { "receiver": "skyecho", "hex": "7e650001ffffffffffffffff536b794563686f00754176696f6e697820536b794563686f0000000069e07e7e008141dbd00802b38b7e7e0a00a123451dd4c4c17d5e4b0a098a06e00040014e3132333435202000b8bd7e7e0b026c000ab33b7e", "expect": {"name":"SkyEcho","source":"receiver","receiver":"good","altitude_ft":null,"ellipsoid_ft":3100} },
+    { "receiver": "stratus-open", "hex": "7e008141dbd00802b38b7e7e0a00a123451dd4c4c17d5e4b0a098a06e00040014e3132333435202000b8bd7e7e0b026c000ab33b7e", "expect": {"name":null,"source":"receiver","receiver":"good","altitude_ft":null,"ellipsoid_ft":3100} },
+    { "receiver": "stratux-no-fix", "hex": "7ecc0200c01a7e7e650001ffffffffffffffff5374726174757800537472617475780000000000000000000000000165b27e7e000141dbd008028b567e7e0a00a12345000000000000fff000fff80000014e31323334352020004d9c7e", "expect": {"name":"Stratux","source":"none","receiver":"no_gps"} },
+    { "receiver": "sentry-weak", "hex": "7e650001ffffffffffffffff53656e747279000053656e747279204144532d4200000000000000019fa17e7e008141dbd00802b38b7e7e0a00a123451dd4c4c17d5e4b0a098706e00040014e31323334352020002cf67e", "expect": {"name":"Sentry","source":"none","receiver":"weak"} }
+  ]
+}

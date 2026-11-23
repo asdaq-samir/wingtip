@@ -5,7 +5,16 @@ use super::*;
 // 10 gal/h at 100 kt, a tenth of a gallon and 0.6 min a mile.
 const START: Point = (0.0, 0.0);
 const END: Point = (0.0, 10.0);
-const FIG: Figures = Figures { fuel_per_nm: 0.1, min_per_nm: 0.6, usable_gal: 40.0, taxi_gal: 1.0, reserve_gal: 5.0, ground_min: 30.0 };
+const FIG: Figures = Figures {
+    fuel_per_nm: 0.1,
+    min_per_nm: 0.6,
+    usable_gal: 40.0,
+    start_gal: 40.0,
+    taxi_gal: 1.0,
+    reserve_gal: 5.0,
+    alternate_gal: 0.0,
+    ground_min: 30.0,
+};
 
 fn fields(rows: &[(&str, f64, f64)]) -> Vec<Field> {
     rows.iter()
@@ -91,4 +100,36 @@ fn the_fields_along_each_flight_in_route_order() {
     let got: Vec<(&str, usize, &str)> = found.iter().map(|a| (a.field.ident.as_str(), a.flight, a.departure.as_str())).collect();
     assert_eq!(got, vec![("EARLY", 0, "A"), ("LATE", 0, "A"), ("SECOND", 1, "MID")]);
     assert!((found[0].from_nm - 60.0).abs() <= 1.0);
+}
+
+#[test]
+fn less_fuel_at_the_start_lands_sooner() {
+    // 480 nm. Full, 340 nm the first stretch: MIDDLE, 300 nm out, its
+    // landings keeping the more fuel. With 25 gal on board at engine start
+    // the first stretch reaches 190 nm: the stop is EARLY, 150 nm out,
+    // landing with 25 - 1 - 15 = 9 gal, the tanks filled there for the 330.
+    let (end, fields) = ((0.0, 8.0), fields(&[("EARLY", 0.0, 2.5), ("MIDDLE", 0.0, 5.0)]));
+    assert_eq!(idents(&suggest(START, end, &FIG, &fields, &[]).0), vec!["MIDDLE"]);
+    let (s, _) = suggest(START, end, &Figures { start_gal: 25.0, ..FIG }, &fields, &[]);
+    assert_eq!(idents(&s), vec!["EARLY"]);
+    assert!((s[0].lands_with_gal - 9.0).abs() <= 0.3);
+}
+
+#[test]
+fn under_ifr_the_last_stretch_keeps_the_alternates_fuel() {
+    // 14 CFR 91.167(a)(2): to the destination, on to the alternate and the
+    // reserve after. 320 nm direct, 40 - 1 - 32 = 7 gal on landing: over
+    // the 5 gal reserve, no stop; with 3 gal on to the alternate it needs 8,
+    // and a stop is offered where none was (the aviation audit, F7.1).
+    let end = (0.0, 320.0 / 60.0);
+    let rows = fields(&[("MID", 0.0, end.1 / 2.0)]);
+    assert!(suggest(START, end, &FIG, &rows, &[]).0.is_empty());
+    let (s, _) = suggest(START, end, &Figures { alternate_gal: 3.0, ..FIG }, &rows, &[]);
+    assert_eq!(idents(&s), vec!["MID"]);
+    // A stop whose stretch on into the destination cannot keep it too is
+    // not one: 330 nm from MID leaves 40 - 1 - 33 = 6, under 5 + 3.
+    let far = (0.0, (160.0 + 330.0) / 60.0);
+    let rows = fields(&[("MID", 0.0, 160.0 / 60.0)]);
+    assert_eq!(idents(&suggest(START, far, &FIG, &rows, &[]).0), vec!["MID"]);
+    assert!(suggest(START, far, &Figures { alternate_gal: 3.0, ..FIG }, &rows, &[]).0.is_empty());
 }

@@ -48,7 +48,7 @@ fun AddFromPhotoRow(line: String, title: String = stringResource(R.string.add_fr
 fun ReadingLine() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         Loading(Modifier.size(WingtipSize.Chip))
-        Text(stringResource(R.string.reading_page), style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.wording_reading_the_page), style = MaterialTheme.typography.bodyMedium)
     }
 }
 

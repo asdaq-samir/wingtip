@@ -1,6 +1,7 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 import { Mic, Square } from "lucide-react";
 import { cn } from "cn";
 import IconButton from "./IconButton";
@@ -19,12 +20,16 @@ import { startRadio, stopRadio } from "../lib/atcListening";
 import { callPattern } from "../lib/heardCall";
 import { altitudeWords, clearanceParts, readbackCheck, readbackLines } from "../lib/readback";
 import { TEXT } from "../lib/text";
-import { useSettled } from "../hooks/use-settled";
+import { useDebounced } from "../lib/useDebounced";
 import { useReadback } from "./useReadback";
 import { NotYet, Step, Verdict } from "./ClearanceSteps";
 import { ROW_BUTTON, ROW_MIC, routeLine } from "../lib/clearanceRows";
+import { clockTime, zoneName } from "../lib/format";
+import { WORDING } from "../lib/wording/generated/wording";
 
-const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+// The app's own clock and zone, as every other time it writes: the
+// browser's locale wrote "02:05 PM" here, in a 24-hour app, with no zone.
+const time = (at: number) => `${clockTime(new Date(at))} ${zoneName(new Date(at))}`;
 
 /** A clearance as a recognizer writes one, for the empty field's example:
  *  fixtures/clearances.json's Duluth clearance, the form AIM 4-4-3 gives,
@@ -52,7 +57,11 @@ export default function ClearanceCard({
   /** The card put away, the route entered. */
   onDone: () => void;
 }) {
-  const { listening, error, heard, tail, near, mode, input } = useAtcRadio();
+  // Only the fields the card reads: the store also carries the listen-once
+  // pill, whose words change as each is heard, and the card need not draw again for them.
+  const { listening, error, heard, tail, near, mode, input } = useAtcRadio(
+    useShallow(({ listening, error, heard, tail, near, mode, input }) => ({ listening, error, heard, tail, near, mode, input })),
+  );
   const route = useRadioActions((s) => s.route);
   const enter = useRadioActions((s) => s.enter);
   const typed = useAtcRadio((s) => s.cardText) ?? "";
@@ -72,7 +81,7 @@ export default function ClearanceCard({
   // Enter in the field reads what is typed at once (one line: no new
   // lines in a clearance), where the reader otherwise waits for a pause.
   const [readNow, setReadNow] = useState<string | null>(null);
-  const waited = useSettled(text, 400);
+  const waited = useDebounced(text, 400);
   const settled = readNow === text ? text : waited;
   const clearance = useMemo(() => readClearance(settled), [settled]);
   const heardIt = heardAny(clearance);
@@ -132,7 +141,7 @@ export default function ClearanceCard({
     error ?? readbackProblem ?? (found.isError ? "The places in it could not be looked up; check the connection and try again." : null);
   const mic = useCanListen();
 
-  const hearState = onRadio ? "Listening to the radio…" : heardIt ? heardAt ? `Heard ${time(heardAt)}` : "Heard" : <NotYet />;
+  const hearState = onRadio ? WORDING.listeningToTheRadio : heardIt ? heardAt ? `Heard ${time(heardAt)}` : "Heard" : <NotYet />;
   const readbackState = readingBack ? (
     "Listening for your read back…"
   ) : !check ? (
@@ -217,7 +226,7 @@ export default function ClearanceCard({
                   <BaseButton
                     onClick={() => pick(t.text)}
                     className={cn(
-                      "relative w-full py-1 text-left text-tint outline-none after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                      "relative w-full py-1 text-left text-tint outline-none hit-y-2 focus-visible:ring-2 focus-visible:ring-ring",
                       t.forUs && "font-semibold",
                     )}
                   >
@@ -230,7 +239,7 @@ export default function ClearanceCard({
         </Step>
         <Step
           id="readback"
-          title="Read back"
+          title={WORDING.readBack}
           state={readbackState}
           open={open.readback}
           onOpenChange={openRow("readback")}

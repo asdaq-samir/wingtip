@@ -105,10 +105,10 @@ final class Emergency {
                     } else if answer == nil || from == .device {
                         answer = nil
                         ranked = nil
-                        problem = "No fields: the planner didn't answer and no chart data is kept on this iPhone here. Keep the route for the air before you fly."
+                        problem = "No fields: the planner did not answer and no chart data is kept on this iPhone here. Keep the route for the air before you fly."
                     }
                 } catch {
-                    problem = "The fields couldn't be ranked on this iPhone: \(error.localizedDescription)"
+                    problem = Problems.say("The fields could not be ranked on this iPhone", error)
                 }
             }
         }
@@ -120,7 +120,7 @@ final class Emergency {
         do {
             ranked = try Self.bestFields(answer, fix: fix, variationDeg: Self.variation(at: fix.coordinate))
         } catch {
-            problem = "The fields couldn't be ranked: \(error.localizedDescription)"
+            problem = Problems.say("The fields could not be ranked", error)
         }
     }
 
@@ -161,7 +161,7 @@ final class Emergency {
 
     /// Magnetic variation at a point today, east positive (the engine's WMM).
     static func variation(at: CLLocationCoordinate2D, on day: Date = Date()) -> Double? {
-        try? Engine.magneticVariation(lat: at.latitude, lon: at.longitude, date: String(ISO8601DateFormatter().string(from: day).prefix(10)))
+        try? Engine.magneticVariation(lat: at.latitude, lon: at.longitude, date: day.formatted(.iso8601.year().month().day()))
     }
 
     /// The fields ranked from the airplane in "glide" mode (or the
@@ -218,8 +218,8 @@ final class Emergency {
             position: fix != nil ? Self.positionWords(answer?.fields.first) : nil,
             headingMagDeg: Self.magnetic(fix?.trackDeg, variationDeg: variation),
             altitudeFt: fix?.altitudeFt.map { ($0 / 100).rounded() * 100 },
-            fuelMin: Double(fuelMin.trimmingCharacters(in: .whitespaces)),
-            souls: Double(souls.trimmingCharacters(in: .whitespaces)),
+            fuelMin: Typed.number(fuelMin),
+            souls: Typed.number(souls),
             frequencies: frequencies)
     }
 

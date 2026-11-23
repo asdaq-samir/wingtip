@@ -17,7 +17,7 @@ final class FlightSession {
     let plan = Plan()
     let ownShip = OwnShip()
     let dryRun = DryRun()
-    let traffic = Traffic()
+    let traffic: Traffic
     let verdict = Verdict()
     let inFlight = InFlight()
     /// The alerts ahead said aloud, and a watch going off said with them.
@@ -26,10 +26,17 @@ final class FlightSession {
     let alternate = AlternateCheck()
     let weatherWatch = WeatherWatch()
     let watchLink = WatchLink()
+    /// The cockpit's ADS-B receiver (Receiver): its GPS, traffic and FIS-B.
+    let receiver: Receiver
 
-    init() {
+    init(receiver: Receiver = .shared) {
+        self.receiver = receiver
+        traffic = Traffic(receiver: receiver)
         let spoken = SpokenAlerts()
         self.spoken = spoken
         tracking = Tracking(spoken: spoken)
+        // The cockpit receiver's GPS weighed against the device's for own
+        // ship after each read (OwnShipSource).
+        receiver.onOwnship = { [weak ownShip] own, state in ownShip?.fromReceiver(own, state) }
     }
 }

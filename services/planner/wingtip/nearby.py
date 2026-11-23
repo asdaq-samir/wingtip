@@ -33,6 +33,7 @@ import requests
 from . import outside
 from .config import DATA_DIR
 from .geo import box_around, distance_nm
+from .geo_boxes import split_box
 from .units import M_PER_NM
 from .single_flight import once
 
@@ -224,6 +225,15 @@ def _words(category: str | None) -> str:
     return text[:1].upper() + text[1:]
 
 
+def _site(row: dict) -> str | None:
+    """A place's first website, where it is a web page's address: the
+    listing is anyone's to edit, and the apps open what this gives, so a
+    javascript: or data: address there is no website (the security review
+    of 2026-11-21)."""
+    site = (row.get("websites") or [None])[0]
+    return site if isinstance(site, str) and site.lower().startswith(("https://", "http://")) else None
+
+
 def _on_field(outline, lat: float, lon: float, metres: float) -> bool:
     """Whether a place is at the airport itself: inside its outline."""
     if outline is None:
@@ -236,13 +246,15 @@ def _on_field(outline, lat: float, lon: float, metres: float) -> bool:
 def _read(lat: float, lon: float, release: str) -> dict:
     import pyarrow.dataset as ds
 
-    south, west, north, east = box_around(lat, lon, REACH_M / M_PER_NM)
-    box = (
+    # Its one or two halves either side of 180 (geo_boxes), either met.
+    halves = [
         (ds.field("bbox", "xmin") >= west)
         & (ds.field("bbox", "xmin") <= east)
         & (ds.field("bbox", "ymin") >= south)
         & (ds.field("bbox", "ymin") <= north)
-    )
+        for south, west, north, east in split_box(box_around(lat, lon, REACH_M / M_PER_NM))
+    ]
+    box = halves[0] if len(halves) == 1 else halves[0] | halves[1]
     # The field's outline read beside its places, not after them: each is a
     # second or so of S3 (KBMI 1.5 s and 0.9 s, 2026-11-18), and a stop's
     # card waited on both one after the other.
@@ -262,12 +274,12 @@ def _read(lat: float, lon: float, release: str) -> dict:
         # The airport's own listing, for its card's Website: filed as an
         # airport and on the field, inside its outline (the owner, 2026-11-14:
         # "we can add phone numbers, website and address in details").
-        if row.get("websites") and "airport" in ((row.get("taxonomy") or {}).get("primary"), row.get("basic_category")):
+        if _site(row) and "airport" in ((row.get("taxonomy") or {}).get("primary"), row.get("basic_category")):
             box = row["bbox"]
             at = ((box["ymin"] + box["ymax"]) / 2, (box["xmin"] + box["xmax"]) / 2)
             metres = float(distance_nm(lat, lon, *at)) * M_PER_NM
             if _on_field(outline, *at, metres):
-                sites.append((metres, row["websites"][0]))
+                sites.append((metres, _site(row)))
         kind = _kind_of(row.get("taxonomy"), row.get("basic_category"))
         name = ((row.get("names") or {}).get("primary") or "").strip()
         if not kind or not name or (kind == "food" and _COMPANY.search(name.rstrip(" ,"))):
@@ -284,7 +296,7 @@ def _read(lat: float, lon: float, release: str) -> dict:
                 "distance_m": round(metres),
                 "walk_min": math.ceil(metres / WALK_M_PER_MIN) if metres <= WALK_M else None,
                 "phone": (row.get("phones") or [None])[0],
-                "website": (row.get("websites") or [None])[0],
+                "website": _site(row),
                 "lat": round(plat, 6),
                 "lon": round(plon, 6),
                 # On the field for food and schools alike: a school is the

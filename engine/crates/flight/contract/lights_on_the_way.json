@@ -1,0 +1,59 @@
+{
+  "x-call": "wingtip_flight::calls::night",
+  "description": "Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 91.209(a)'s period for lighted position lights, \"from sunset to sunrise\" (the sun's upper limb on the horizon, as sun_down), judged every half hour along the straight line as night_on_the_way judges the night. Not 1.1's night: twenty minutes after sunset the lights are needed though it is not yet night for 91.151 or 91.205(c). In Alaska the rule's period is the sun more than six degrees down or a prominent unlighted object not seen from 3 statute miles: sunset to sunrise is read there too, erring toward the lights, and `alaska_visibility_sm`, the reported visibility below 3 statute miles, puts the lights on all the way.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LightsOnTheWayInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "depart_s": {
+          "type": "number"
+        },
+        "minutes": {
+          "type": "number"
+        },
+        "alaska_visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known."
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "depart_s",
+        "minutes"
+      ]
+    },
+    "answer": {
+      "title": "LightsOnTheWayAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

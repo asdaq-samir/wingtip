@@ -4,7 +4,7 @@ import { EXPLAINED, type ExplainedTerm } from "../../lib/explain";
 /** A heading's unit, under its name, in its own small letters: 11, and
  *  a note's 13 to a finger. */
 const UNIT =
-  "text-(length:--type-caption) font-normal normal-case tracking-normal pointer-coarse:text-(length:--type-note) pointer-coarse:leading-[1.125rem]";
+  "text-(length:--type-caption) font-normal normal-case tracking-normal pointer-coarse:text-(length:--type-note) pointer-coarse:leading-(--lead-note)";
 
 /** A column's heading: its short name over its unit, small, so both
  *  fit a phone's narrow columns ("Alt" over "ft", "MH" over "mag"), and
@@ -14,7 +14,7 @@ export function Heading({ name, unit, spoken }: { name: string; unit?: string; s
   // (components/Explain; decision 0045), named whole for a screen reader.
   if (name in EXPLAINED)
     return (
-      <span className="inline-flex flex-col items-end leading-[1.125rem]">
+      <span className="inline-flex flex-col items-end leading-(--lead-note)">
         <Explain term={name as ExplainedTerm} spoken={spoken} />
         {unit && (
           <span aria-hidden className={UNIT}>
@@ -26,7 +26,7 @@ export function Heading({ name, unit, spoken }: { name: string; unit?: string; s
   return (
     <>
       {/* At a note's own leading (18 over 13), as iOS sets it. */}
-      <span aria-hidden className="inline-flex flex-col items-end leading-[1.125rem]">
+      <span aria-hidden className="inline-flex flex-col items-end leading-(--lead-note)">
         <span>{name}</span>
         {unit && <span className={UNIT}>{unit}</span>}
       </span>

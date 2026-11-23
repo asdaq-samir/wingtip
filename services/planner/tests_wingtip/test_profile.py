@@ -65,9 +65,11 @@ def test_the_obstacles_within_a_mile_of_the_line_are_placed_along_it(flat_world,
     import pandas as pd
 
     # One tower half a mile east of the line 30 nm along, one 3 nm off it.
-    towers = pd.DataFrame({"lat": [42.5, 42.5], "lon": [-87.989, -87.93], "amsl_ft": [1800.0, 2500.0]})
+    towers = pd.DataFrame({"lat": [42.5, 42.5], "lon": [-87.989, -87.93], "amsl_ft": [1800.0, 2500.0], "agl_ft": [1049.0, 1600.0]})
     monkeypatch.setattr(profile.faa_data, "load_obstacles", lambda path, bbox, min_agl_ft: towers)
     side = profile.route_profile([(42.0, -88.0), (43.0, -88.0)], "unused.shp", "DOF.DAT")
     (tower,) = side["obstacles"]
     assert tower["amsl_ft"] == 1800.0 and tower["along_nm"] == pytest.approx(30.0, abs=0.3)
+    # Its height over the ground too, the DOF's AGL, for the profile to name.
+    assert tower["agl_ft"] == 1049.0
     assert profile.route_profile([(42.0, -88.0), (43.0, -88.0)], "unused.shp")["obstacles"] == []

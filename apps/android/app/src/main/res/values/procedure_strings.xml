@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The plan's line: a field's runways and procedures, each picked
+     procedure's fixes (TimelineFieldParts, TimelineProcedureRows). -->
+<resources>
+    <string name="proc_kind_approach">Approach</string>
+    <string name="proc_kind_arrival">Arrival</string>
+    <string name="proc_kind_departure">Departure</string>
+    <string name="proc_short_approach">APCH</string>
+    <string name="proc_short_arrival">ARR</string>
+    <string name="proc_short_departure">DEP</string>
+    <string name="proc_add">+ %1$s</string>
+    <string name="proc_add_said">Add %1$s at %2$s</string>
+    <string name="proc_ask_approach">an approach</string>
+    <string name="proc_ask_arrival">an arrival</string>
+    <string name="proc_ask_departure">a departure</string>
+    <string name="proc_none">None</string>
+    <string name="proc_as_published">As Published</string>
+    <string name="proc_transition">%1$s Transition</string>
+    <string name="proc_back">Back</string>
+    <string name="proc_head_said">%1$s at %2$s, %3$s: picks another</string>
+    <string name="runway_land">Land RWY %1$s</string>
+    <string name="runway_takeoff">Takeoff RWY %1$s</string>
+    <string name="runway_land_said">%1$s landing runway</string>
+    <string name="runway_takeoff_said">%1$s takeoff runway</string>
+    <string name="runway_into_wind">Into the Wind (%1$s)</string>
+    <string name="runway_into_wind_plain">Into the Wind</string>
+    <string name="runway_end">Runway %1$s</string>
+    <string name="fix_fly_charted">Fly %1$s as Charted</string>
+    <string name="fix_cross_at">Cross at…</string>
+    <string name="fix_cross_title">Cross %1$s At</string>
+    <string name="fix_cross_hint">The altitude ATC gave you to cross it at, in feet above sea level.</string>
+    <string name="fix_cross_feet">Feet</string>
+    <string name="fix_as_charted">As Charted</string>
+    <string name="fix_direct_state">direct to</string>
+    <string name="fix_skipped">skipped</string>
+    <string name="fix_turn">↺ procedure turn</string>
+    <string name="fix_said_menu">%1$s: more</string>
+    <string name="proc_approach_brief">Approach Brief</string>
+    <string name="proc_plate">Plate</string>
+    <string name="lesson_brief">Brief</string>
+    <string name="lesson_training_aid">Training aid, fly the FAA plate</string>
+    <string name="lesson_step">Step %1$d of %2$d</string>
+    <string name="lesson_next">Next</string>
+</resources>

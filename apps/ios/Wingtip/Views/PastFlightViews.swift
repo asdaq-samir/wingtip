@@ -67,7 +67,7 @@ struct PastFlightCard: View {
                 points = try await Planner.pastFlight(hex, id: flight.id).points
                 tracking.past = points.map { PathPoint(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }
             } catch {
-                problem = "Its track could not be had."
+                problem = "Its track could not be fetched."
             }
         }
         .onDisappear {
@@ -81,17 +81,22 @@ struct PastFlightCard: View {
 
 /// A US airplane's FAA registration: who it is registered to and where,
 /// whether it is in effect and till when, what it is and its engine, and
-/// its airworthiness certificate -- the registry's own record. An owner who
-/// asked the FAA to withhold their name (49 U.S.C. 44114) is not in it.
+/// its airworthiness certificate -- the registry's own record. The
+/// registrant is named only on the pilot's own airplane (`own`) or for an
+/// organisation, else its kind and state (RegistryNames, App Review
+/// 5.1.1(viii)). An owner who asked the FAA to withhold their name (49
+/// U.S.C. 44114) is not in it.
 struct FAARecordSection: View {
     let faa: FAARecord
+    let own: Bool
 
     var body: some View {
         Section("FAA Registration") {
-            if let owner = faa.owner {
+            if faa.owner != nil {
+                let named = RegistryNames.named(ownerType: faa.ownerType, own: own)
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text("Registered to").font(.subheadline.weight(.semibold))
-                    Text([owner, faa.ownerType, [faa.city, faa.state].compactMap { $0 }.joined(separator: ", ").nonEmpty,
+                    Text([RegistryNames.owner(faa, own: own), named ? faa.ownerType : nil, RegistryNames.town(faa, own: own),
                           (faa.coOwners ?? 0) > 0 ? "and \(faa.coOwners!) more" : nil, faa.fractional == true ? "fractional" : nil]
                             .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
                 }
@@ -105,7 +110,7 @@ struct FAARecordSection: View {
                                value: [faa.year.map { String($0) }, faa.seats.map { "\($0) seats" }].compactMap { $0 }.joined(separator: " · "))
             }
             if let engine = faa.engine {
-                LabeledContent(engine, value: [faa.engineType, faa.horsepower.map { "\($0.formatted()) hp" } ?? faa.thrustLb.map { "\($0.formatted()) lb thrust" }]
+                LabeledContent(engine, value: [faa.engineType, faa.horsepower.map { "\($0.formatted(.number.locale(Format.locale))) hp" } ?? faa.thrustLb.map { "\($0.formatted(.number.locale(Format.locale))) lb thrust" }]
                     .compactMap { $0 }.joined(separator: " · "))
             }
             if let airworthiness = faa.airworthiness {
@@ -158,5 +163,5 @@ private enum PreviewData {
 }
 
 #Preview("FAARecordSection") {
-    List { FAARecordSection(faa: PreviewData.faa) }
+    List { FAARecordSection(faa: PreviewData.faa, own: false) }
 }

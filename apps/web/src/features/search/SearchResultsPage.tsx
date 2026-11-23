@@ -2,12 +2,12 @@ import { useRef } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { useScrollPlace } from "../../lib/scrollPlace";
-import { ChartMark } from "../../components/Favorites";
+import { ChartMark } from "../../components/ChartMark";
 import { USE_WORDS } from "../../lib/airportIndex";
 import type { NearestAirport } from "../../lib/api/types";
 import { chipFillOf } from "../../lib/map/marks/flightCategory";
 import { visibilityWords } from "../../lib/map/marks/airportWeather";
-import { clockTime } from "../../lib/format";
+import { clockAndZulu } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 import { NO_CONNECTION } from "../../lib/problems";
 import { nmAway } from "../../lib/useAway";
@@ -53,7 +53,7 @@ function ResultRow({ field, onOpen }: { field: NearestAirport; onOpen: () => voi
     field.visibility_sm != null ? visibilityWords(field.visibility_sm) : null,
   ].filter(Boolean);
   const forecast = field.forecast?.category ?? null;
-  const forecastAt = field.forecast ? clockTime(new Date(field.forecast.at * 1000)) : null;
+  const forecastAt = field.forecast ? clockAndZulu(new Date(field.forecast.at * 1000)) : null;
   return (
     <Button
       variant="plain"
@@ -125,7 +125,7 @@ export default function SearchResultsPage() {
     : failed
       ? offline
         ? `${NO_CONNECTION}.`
-        : "The fields near there couldn't be fetched."
+        : "The fields near there could not be fetched."
       : rows.length === 0
         ? all > 0
           ? "No field nearby fits these filters."

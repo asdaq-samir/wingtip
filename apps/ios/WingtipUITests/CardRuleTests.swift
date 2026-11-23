@@ -7,7 +7,9 @@ import XCTest
 /// it away back to the plan, a page opened inside a card going Back to
 /// the card, every card opening half way but the emergency assistant,
 /// which opens as a card at full height with its close at the top right,
-/// and You signed out saying Sign In once.
+/// and You signed out saying Sign In once. On the iPad (CardTests.split) a
+/// thing's card closes the same way from the inspector, and a page on the
+/// sidebar's stack goes Back to the plan.
 final class CardRuleTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = true
@@ -22,19 +24,35 @@ final class CardRuleTests: XCTestCase {
                     let app = CardTests.open(entry, size: size.arguments)
                     let shown = CardTests.card(app, card.id)
                     XCTAssertTrue(shown.waitForExistence(timeout: 20), "\(context): \(card.id) did not open")
-                    // Every card opens half way (the card rule's 2).
+                    // Every card opens half way (the card rule's 2): the
+                    // iPhone's sheet. The iPad has no sheet, so it is not
+                    // waited for there (five seconds a card for nothing,
+                    // thirty times, on CI's iPad 2/2 leg).
                     let grabber = CardTests.grabber(app)
-                    if grabber.waitForExistence(timeout: 5) {
+                    if !CardTests.split, grabber.waitForExistence(timeout: 5) {
                         CardTests.settled(grabber)
                         XCTAssertNotEqual(grabber.value as? String, "Expanded", "\(context): it did not open half way")
                     }
-                    // The card covers the search, as Maps' place card does.
+                    // The card covers the search, as Maps' place card does;
+                    // on the iPad the card opens beside it, in the inspector,
+                    // the one search staying at the sidebar's top
+                    // (docs/design/ios.md §16).
                     let search = app.searchFields[CardTests.searchPrompt]
-                    XCTAssertFalse(search.exists && search.isHittable, "\(context): the search is still in reach")
+                    if !CardTests.split {
+                        XCTAssertFalse(search.exists && search.isHittable, "\(context): the search is still in reach")
+                    }
                     if case .youRow = entry {
                         // Opened inside You: Back goes to You, not the map.
-                        app.navigationBars.buttons.element(boundBy: 0).tap()
+                        CardTests.back(app).tap()
                         XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 10), "\(context): Back did not go to You")
+                    } else if CardTests.split, shown.frame.midX < app.frame.midX {
+                        // A page on the iPad's sidebar stack: its Back goes
+                        // back to the plan's search (Navigator.open).
+                        let back = CardTests.back(app)
+                        XCTAssertTrue(back.waitForExistence(timeout: 10), "\(context): no Back in the sidebar")
+                        back.tap()
+                        XCTAssertTrue(shown.waitForNonExistence(timeout: 10), "\(context): Back did not put it away")
+                        XCTAssertTrue(search.waitForExistence(timeout: 10), "\(context): the plan's search did not come back")
                     } else {
                         let close = CardTests.close(app)
                         XCTAssertTrue(close.waitForExistence(timeout: 10), "\(context): no close")
@@ -67,9 +85,9 @@ final class CardRuleTests: XCTestCase {
             CardTests.scrollTo(row, in: app)
             row.tap()
             XCTAssertTrue(app.navigationBars["Downloads"].waitForExistence(timeout: 10), "Downloads did not push at \(size.name)")
-            app.navigationBars.buttons.element(boundBy: 0).tap()
+            CardTests.back(app).tap()
             XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "one Back did not return to Settings at \(size.name)")
-            app.navigationBars.buttons.element(boundBy: 0).tap()
+            CardTests.back(app).tap()
             XCTAssertTrue(app.buttons["you-sign-in"].waitForExistence(timeout: 10), "Back did not return to You at \(size.name)")
             app.terminate()
 
@@ -78,7 +96,7 @@ final class CardRuleTests: XCTestCase {
             map.buttons["settings-gear"].tap()
             XCTAssertTrue(map.navigationBars["Settings"].waitForExistence(timeout: 10), "the Map card's gear did not open Settings at \(size.name)")
             XCTAssertTrue(map.buttons["airport-weather-look"].waitForExistence(timeout: 10), "Settings did not open at its Map group at \(size.name)")
-            map.navigationBars.buttons.element(boundBy: 0).tap()
+            CardTests.back(map).tap()
             XCTAssertTrue(map.navigationBars["Map"].waitForExistence(timeout: 10), "Back did not return to the Map card at \(size.name)")
             map.terminate()
         }
@@ -93,10 +111,16 @@ final class CardRuleTests: XCTestCase {
             let app = CardTests.launch(["-screen", "emergency"], size: size.arguments)
             let shown = CardTests.card(app, "card-emergency")
             XCTAssertTrue(shown.waitForExistence(timeout: 20), "the emergency assistant did not open at \(size.name)")
-            let grabber = CardTests.grabber(app)
-            XCTAssertTrue(grabber.waitForExistence(timeout: 10), "the emergency assistant is not on a sheet at \(size.name)")
-            CardTests.settled(grabber)
-            XCTAssertEqual(grabber.value as? String, "Expanded", "the emergency assistant did not open at full height at \(size.name)")
+            // Full height is the iPhone's sheet's: on the iPad the card is
+            // in the inspector, a column the screen's height, with no sheet
+            // to size (docs/design/ios.md §16: "Avoid: a sheet over the map
+            // on regular width").
+            if !CardTests.split {
+                let grabber = CardTests.grabber(app)
+                XCTAssertTrue(grabber.waitForExistence(timeout: 10), "the emergency assistant is not on a sheet at \(size.name)")
+                CardTests.settled(grabber)
+                XCTAssertEqual(grabber.value as? String, "Expanded", "the emergency assistant did not open at full height at \(size.name)")
+            }
             let close = CardTests.close(app)
             XCTAssertTrue(close.waitForExistence(timeout: 10), "no close at \(size.name)")
             XCTAssertGreaterThan(close.frame.midX, app.frame.midX, "the close is not at the right at \(size.name)")

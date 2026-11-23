@@ -162,6 +162,32 @@ pub fn read_taf(raw: &str, now_s: i64) -> Option<Taf> {
     taf::parse(text.trim_end_matches('='), now_s)
 }
 
+/// A TAF's own times and whether it speaks for `now_s`, as JSON, or null
+/// where it cannot be read: when it was issued and its valid period, as
+/// its header gives them (FAA-H-8083-28B 27.4.1: a TAF is a forecast for
+/// its valid period, normally 24 or 30 hours), and its state -- `not_yet`
+/// before the period starts, `expired` once it has ended, `in_force`
+/// between, the same rule as `weather_in_force`'s for a TAF
+/// (validity.rs). A card showing a TAF kept from a fetch made before
+/// the signal was lost says which it is, so a forecast that has run out
+/// is never read as today's (14 CFR 91.103: weather reports and
+/// forecasts for the flight). Times in seconds.
+pub fn taf_validity(taf_raw: &str, now_s: i64) -> String {
+    use crate::validity::{in_force, Product};
+    let Some(t) = read_taf(taf_raw, now_s) else { return "null".to_owned() };
+    let state = if in_force(Product::Taf, now_s, None, None, Some(t.valid_from), Some(t.valid_to)) {
+        "in_force"
+    } else if now_s < t.valid_from {
+        "not_yet"
+    } else {
+        "expired"
+    };
+    let mut out = String::from("{\"station\":");
+    json::string(&mut out, &t.station);
+    out.push_str(&format!(",\"issued\":{},\"valid_from\":{},\"valid_to\":{},\"state\":\"{state}\"}}", t.issued, t.valid_from, t.valid_to));
+    out
+}
+
 /// Now and the hours after it, as JSON: Now the METAR's, or with none the
 /// TAF's for this moment; then each whole hour the TAF covers, up to
 /// `count`.

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, openRoute, searchAirports, settle, sheetUpToType, showTabs } from "./helpers";
+import { grabberTo, typeRoute, searchAirports, settle, sheetUpToType, showTabs } from "./helpers";
 import { ownHomeBase } from "./oneSearch";
 
 /**
@@ -30,6 +30,6 @@ test("Fly Here goes direct from the present position, not from Home", async ({ p
   // Half way, where the card was, the route folded to its line, opened to
   // its box from the present position: put away, the pill is the route's
   // figures alone.
-  await openRoute(page);
+  await typeRoute(page);
   await expect(page.getByTestId("route-dep")).toContainText("My Location");
 });

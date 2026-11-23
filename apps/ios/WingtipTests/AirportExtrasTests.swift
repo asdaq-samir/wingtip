@@ -152,7 +152,7 @@ struct AirportExtrasTests {
         // 59.96 minutes is the next degree, never 60.0.
         #expect(AirportWords.degreesMinutes(lat: 42.99994, lon: 0) == "N43°00.0′ E000°00.0′")
         let at = AirportWords.date("2026-10-25T12:55:00Z")!
-        #expect(AirportWords.observed("2026-10-25T12:55:00Z", now: at.addingTimeInterval(14 * 60)) == "1255Z · 14 min ago")
+        #expect(AirportWords.observed("2026-10-25T12:55:00Z", now: at.addingTimeInterval(14 * 60)) == "1255Z · 14m ago")
         #expect(AirportWords.observed("2026-10-25T12:55:00.000Z", now: at) == "1255Z · just now")
         #expect(AirportWords.observed("not a time") == nil)
         #expect(AirportWords.faaWords("CHICAGO CLASS B. ACTIVE MON-FRI") == "Chicago Class B. Active Mon-Fri")
@@ -250,7 +250,7 @@ struct AirportExtrasTests {
         shelf.toggleFavorite(dlh, undo: undo)
         undo.endUndoGrouping()
         #expect(!shelf.isFavorite("KDLH"))
-        #expect(undo.undoActionName == "Remove Favorite")
+        #expect(undo.undoActionName == "Remove from Favorites")
         undo.undo()
         #expect(shelf.favorites.map(\.ident) == ["C81", "KDLH"])
         undo.redo()
@@ -267,5 +267,19 @@ struct AirportExtrasTests {
         #expect(again.favorites.map(\.ident) == ["C81"] && again.recents.count == AirportShelf.recentsKept && again.shows == .recents)
         again.clearRecents()
         #expect(AirportShelf(defaults: defaults).recents.isEmpty)
+    }
+
+    /// An FAA outage on the d-TPP is said where the plates would be, not
+    /// read as a field with none; a kept cycle shown in its place is named
+    /// (the data-cycles audit's 13). The web's publicationWords.test.
+    @Test func anFaaOutageIsSaidAndAKeptCycleNamed() throws {
+        let base = #"{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19,"kind":"medium","towered":true,"runways":[],"frequencies":[]"#
+        let current = try decode(AirportPlace.self, base + "}")
+        #expect(AirportChartsTab.publicationNotes(current).isEmpty)
+        let out = try decode(AirportPlace.self, base + #","publications":{"plates":{"state":"unavailable","edition":null},"supplement":{"state":"kept","edition":"03Sep2026"}}}"#)
+        #expect(AirportChartsTab.publicationNotes(out) == [
+            .init(title: "Plates couldn't be fetched from the FAA"),
+            .init(title: "Chart Supplement from kept cycle 03Sep2026", detail: "The cycle in force couldn't be fetched from the FAA"),
+        ])
     }
 }

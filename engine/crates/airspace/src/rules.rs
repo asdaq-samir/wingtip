@@ -47,11 +47,14 @@ pub enum FloorRef {
 
 /// One Class B, C, D or E volume holding the point, as wingtip.airspace_at's
 /// `_volume` gives it: its floor in feet over its reference, its ceiling
-/// in feet MSL.
+/// in feet MSL, and the primary airport's identifier where NASR's Class
+/// Airspace file names one (IDENT: ORD, MSN), which tells the 33 airports
+/// of part 91 Appendix D, section 3, from the rest (special_vfr).
 #[derive(Clone, Debug)]
 pub struct Volume {
     pub class: char,
     pub name: String,
+    pub ident: Option<String>,
     pub floor_ft: f64,
     pub floor_ref: FloorRef,
     pub ceiling_ft: f64,
@@ -79,6 +82,8 @@ pub struct Band {
     pub ceiling_ft: f64,
     pub class: char,
     pub name: Option<String>,
+    /// The B, C or D volume's primary airport (Volume's `ident`).
+    pub ident: Option<String>,
     pub minimums: Option<Minimums>,
     pub entry: &'static str,
     pub equipment: Option<&'static str>,

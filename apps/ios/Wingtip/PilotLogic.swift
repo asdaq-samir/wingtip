@@ -102,12 +102,13 @@ enum Endorsing {
         try Engine.endorsementLapse(until: instructor.until, untilKind: instructor.untilKind, signedOn: signedOn)
     }
 
-    /// The latest of each kind signed in the app and not voided; the
+    /// The latest of each kind signed in the app, not voided and its
+    /// instructor borne out by the FAA airmen registry; the
     /// record comes newest first (the engine's `endorsements_in_force`,
     /// which answers each code with its index into the record, a pair the
     /// contract leaves untyped).
     static func inForce(_ signed: [SignedEndorsement]) throws -> [String: SignedEndorsement] {
-        let pairs = try Engine.endorsementsInForce(signed: signed.map { .init(code: $0.code, voided: $0.voided) })
+        let pairs = try Engine.endorsementsInForce(signed: signed.map { .init(code: $0.code, voided: $0.voided, verified: $0.instructorVerified) })
         var out: [String: SignedEndorsement] = [:]
         for pair in pairs {
             guard pair.count == 2, let code = pair[0].value as? String, let at = pair[1].number,
@@ -208,7 +209,7 @@ struct AircraftForm: Equatable {
         equipment = a.equipment ?? ""; surveillance = a.surveillance ?? ""; colour = a.colour ?? ""
     }
 
-    private static func number(_ s: String) -> Double? { Double(s.trimmingCharacters(in: .whitespaces)) }
+    private static func number(_ s: String) -> Double? { Typed.number(s) }
 
     /// The key of a problem with the form as a whole, said under it: the
     /// engine could not check the fields, so nothing may be saved.
@@ -227,7 +228,7 @@ struct AircraftForm: Equatable {
                 descentIasKt: descentIasKt, descentFuelBurnGph: descentFuelBurnGph, usableFuelGal: usableFuelGal, equipment: equipment, surveillance: surveillance, colour: colour)
         } catch {
             Log.engine.error("aircraft_problems: \(error.localizedDescription, privacy: .public)")
-            return [Self.formKey: "The figures could not be checked: \(error.localizedDescription)"]
+            return [Self.formKey: Problems.say("The figures could not be checked", error)]
         }
         let byField: [String: String?] = [
             "tailNumber": answer.tailNumber, "typeDesignator": answer.typeDesignator, "cruiseTasKt": answer.cruiseTasKt,

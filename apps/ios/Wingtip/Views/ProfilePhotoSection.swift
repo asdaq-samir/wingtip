@@ -16,7 +16,7 @@ struct ProfilePhotoSection: View {
 
     var body: some View {
         Section {
-            let title = reading ? "Reading the Page…" : "Read From a Photo"
+            let title = reading ? Wording.readingThePage : "Read from a Photo"
             PhotosPicker(selection: $picked, matching: .images) { Label(title, systemImage: "camera") }
                 .disabled(reading)
             if !words.isEmpty {
@@ -41,7 +41,7 @@ struct ProfilePhotoSection: View {
         reading = true; problem = nil; words = []
         defer { reading = false; picked = nil }
         guard let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else {
-            problem = "That photo couldn't be opened."
+            problem = "That photo could not be opened."
             return
         }
         do {
@@ -54,7 +54,7 @@ struct ProfilePhotoSection: View {
             for (figure, read) in pairs { if let read { model.drafts[figure] = Format.tenths(read.value) } }
             words = Array(Set(found.words)).sorted()
         } catch {
-            problem = "The page couldn't be read: \(error.localizedDescription)"
+            problem = Problems.say(Wording.pageNotRead, error)
         }
     }
 }

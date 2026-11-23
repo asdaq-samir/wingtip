@@ -1,6 +1,8 @@
 import { gateway, data, csrfHeaders } from "./http";
 import { ApiError, failIfNotOk } from "./errors";
 import type {
+  AppVersions,
+  Connection,
   FlightPlanFiled,
   FlightPlanFilingRequest,
   FlightServiceStatus,
@@ -8,11 +10,10 @@ import type {
   PilotContactRequest,
   SignInCapabilities,
   SpeedDay,
-  Subscription,
 } from "./types";
 
 /** The gateway's calls for who the pilot is (./client's `api`): signing in and
- *  out, the account, the subscription, Flight Service and the speed page. */
+ *  out, the account, Flight Service and the speed page. */
 export const gatewayPilot = {
   /**
    * The signed-in pilot, or null when signed out -- a Spring Boot
@@ -32,6 +33,37 @@ export const gatewayPilot = {
   /** The signed-in pilot's telephone number and home base, both at once,
    *  for a flight plan's item 19 (PilotController); blank is none. */
   setContact: (body: PilotContactRequest) => gateway.PUT("/api/me/contact", { body }).then(data<Pilot>),
+
+  /** The signed-in pilot's photo for their avatar, a JPEG, PNG or WebP of
+   *  at most 512 KB in place of any before it (AvatarController), sent as
+   *  the form's `photo`: GET /api/me then gives its new avatarUrl. A 413
+   *  or 415 throws with the server's words. */
+  async setAvatar(photo: Blob): Promise<void> {
+    await gateway.PUT("/api/me/avatar", {
+      // The document types a binary part as a string; the form carries the Blob.
+      body: { photo: photo as unknown as string },
+      bodySerializer: () => {
+        const form = new FormData();
+        form.append("photo", photo, "avatar.jpg");
+        return form;
+      },
+    });
+  },
+
+  /** Takes the pilot's photo out: their initials show again. */
+  async removeAvatar(): Promise<void> {
+    await gateway.DELETE("/api/me/avatar");
+  },
+
+  /** The AI apps the pilot connected through the connector, newest first,
+   *  and one of them ended from Wingtip's side: its tokens revoked at once
+   *  (ConnectionsController). A 404 is a connection already gone. */
+  connections: {
+    list: () => gateway.GET("/api/me/connections").then(data<Connection[]>),
+    async disconnect(id: string): Promise<void> {
+      await gateway.DELETE("/api/me/connections/{id}", { params: { path: { id } } });
+    },
+  },
 
   /** Deletes the signed-in pilot's account and everything that was
    *  theirs, on every device, and signs them out (a 204). A 502 deleted
@@ -85,13 +117,6 @@ export const gatewayPilot = {
     const landing = new URL(res.url);
     return landing.pathname + landing.search;
   },
-  /** The signed-in pilot's subscription to the paid features, and the
-   *  free month started: once an account, a 409 after. */
-  subscription: {
-    get: () => gateway.GET("/api/subscription").then(data<Subscription>),
-    startTrial: () => gateway.POST("/api/subscription/trial").then(data<Subscription>),
-  },
-
   /** Flight Service's filing through the app (FlightServiceController):
    *  whether it is connected, and a flight plan filed in the pilot's name. */
   flightService: {
@@ -102,4 +127,7 @@ export const gatewayPilot = {
   /** The web app's speed, a day at a time (SpeedController): the
    *  developer's Speed page. */
   speedTrend: (days = 90) => gateway.GET("/api/speed", { params: { query: { days } } }).then(data<SpeedDay[]>),
+  /** The apps' crashes, hangs and speed figures by build
+   *  (AppHealthController): the developer's Apps page. */
+  appVersions: (days = 7) => gateway.GET("/api/diagnostics/versions", { params: { query: { days } } }).then(data<AppVersions>),
 };

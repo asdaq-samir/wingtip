@@ -39,7 +39,7 @@ class PassengerModel @Inject constructor(app: Application) : AndroidViewModel(ap
         val items: List<PassengerItem> = PassengerBriefing.ITEMS.getOrDefault(emptyList()),
         /** Why there are no items: the engine's words where its
          *  `passenger_briefing` failed. */
-        val problem: String? = PassengerBriefing.ITEMS.exceptionOrNull()?.let { "The briefing's items could not be had: ${it.message}" },
+        val problem: String? = PassengerBriefing.ITEMS.exceptionOrNull()?.let { "The briefing's items could not be read: ${it.message}" },
     )
 
     private val ticks = PassengerTicks(PreferencesStore(Kept.of(app, "passengers")))

@@ -1,0 +1,159 @@
+{
+  "_note": "Whose rules a point and a route are under (14 CFR 1.1, 91.1(a) and (b), 91.703(a); decision 0053): the engine's jurisdiction_of and route_jurisdiction, from Natural Earth's 1:50m outlines. The fields' places are their airport reference points. Held by engine/facade/tests/jurisdiction.rs and the web's lib/jurisdiction.test.ts.",
+  "points": [
+    {
+      "why": "Toronto Pearson, CYYZ",
+      "lat": 43.6772,
+      "lon": -79.6306,
+      "code": "CA"
+    },
+    {
+      "why": "Vancouver, CYVR",
+      "lat": 49.1947,
+      "lon": -123.1792,
+      "code": "CA"
+    },
+    {
+      "why": "Thunder Bay, CYQT",
+      "lat": 48.3719,
+      "lon": -89.3239,
+      "code": "CA"
+    },
+    {
+      "why": "Windsor, CYQG, across the river from Detroit",
+      "lat": 42.2756,
+      "lon": -82.9556,
+      "code": "CA"
+    },
+    {
+      "why": "Duluth, KDLH",
+      "lat": 46.842,
+      "lon": -92.1936,
+      "code": "US"
+    },
+    {
+      "why": "Detroit City, KDET",
+      "lat": 42.4092,
+      "lon": -83.0099,
+      "code": "US"
+    },
+    {
+      "why": "Campbell, C81",
+      "lat": 42.3246,
+      "lon": -88.0741,
+      "code": "US"
+    },
+    {
+      "why": "San Juan, Puerto Rico, TJSJ",
+      "lat": 18.4394,
+      "lon": -66.0018,
+      "code": "US"
+    },
+    {
+      "why": "Nassau, the Bahamas, MYNN",
+      "lat": 25.039,
+      "lon": -77.4662,
+      "code": "BS"
+    },
+    {
+      "why": "Tijuana, MMTJ",
+      "lat": 32.5411,
+      "lon": -116.97,
+      "code": "MX"
+    },
+    {
+      "why": "About 5 nm off Miami Beach, within 91.1(b)'s 12 nm",
+      "lat": 25.79,
+      "lon": -80.04,
+      "code": "US"
+    },
+    {
+      "why": "The middle of the Gulf of Mexico",
+      "lat": 25.0,
+      "lon": -90.0,
+      "code": "other"
+    }
+  ],
+  "routes": [
+    {
+      "why": "C81 to Thunder Bay by Duluth: the last leg and its end in Canada",
+      "points": [
+        {
+          "lat": 42.3246,
+          "lon": -88.0741
+        },
+        {
+          "lat": 46.842,
+          "lon": -92.1936
+        },
+        {
+          "lat": 48.3719,
+          "lon": -89.3239
+        }
+      ],
+      "codes": [
+        "US",
+        "US",
+        "CA"
+      ],
+      "legs": [
+        [],
+        [
+          "CA"
+        ]
+      ],
+      "outside": [
+        "CA"
+      ],
+      "caution": "Canada: rules not checked — figures use US rules"
+    },
+    {
+      "why": "Detroit City to Cleveland's Burke Lakefront: both ends in the US, the leg over Ontario and Lake Erie's Canadian half",
+      "points": [
+        {
+          "lat": 42.4092,
+          "lon": -83.0099
+        },
+        {
+          "lat": 41.5175,
+          "lon": -81.6833
+        }
+      ],
+      "codes": [
+        "US",
+        "US"
+      ],
+      "legs": [
+        [
+          "CA"
+        ]
+      ],
+      "outside": [
+        "CA"
+      ],
+      "caution": "Canada: rules not checked — figures use US rules"
+    },
+    {
+      "why": "C81 to Duluth: all in the US, no warning",
+      "points": [
+        {
+          "lat": 42.3246,
+          "lon": -88.0741
+        },
+        {
+          "lat": 46.842,
+          "lon": -92.1936
+        }
+      ],
+      "codes": [
+        "US",
+        "US"
+      ],
+      "legs": [
+        []
+      ],
+      "outside": [],
+      "caution": null
+    }
+  ]
+}

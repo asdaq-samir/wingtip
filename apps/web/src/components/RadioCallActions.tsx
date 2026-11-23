@@ -13,6 +13,7 @@ import { TEXT } from "../lib/text";
 import { openEmergency } from "../lib/emergencyStore";
 import { readBackNow } from "../lib/radioListeningLoad";
 import { eachCapitalised } from "../lib/capitals";
+import { copyText } from "../lib/share";
 
 /** A place's words as a chip says them: spelled idents as they are. */
 const named = (words: string) => (/[a-z]/.test(words) ? eachCapitalised(words) : words);
@@ -101,7 +102,7 @@ export function CallActions({
         say(metarWords(airport.name || at.ident, metar));
       }
     } catch {
-      setProblem(`${at.ident}'s weather could not be had; check the connection.`);
+      setProblem(`${at.ident}'s weather could not be fetched; check the connection.`);
     }
     setBusy(null);
   };
@@ -268,12 +269,7 @@ export function CallActions({
           </Button>
         )}
         {clearance.frequency && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className={CHIP}
-            onClick={() => void navigator.clipboard?.writeText(clearance.frequency!).catch(() => {})}
-          >
+          <Button size="sm" variant="secondary" className={CHIP} onClick={() => void copyText(clearance.frequency!).catch(() => {})}>
             Copy {clearance.frequency}
           </Button>
         )}

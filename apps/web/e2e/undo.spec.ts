@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { clearTheRoute, openPanel, settle, sideDrawer, openRoute } from "./helpers";
+import { clearTheRoute, openPanel, settle, sideDrawer, typeRoute } from "./helpers";
+import { pastSettling } from "./planHelpers";
 import { stopsAre } from "./stopsParam";
 
 /**
@@ -24,11 +25,6 @@ test.afterEach(async ({ page }) => {
 });
 
 const undoToast = (page: Page, words: string) => page.locator("[data-slot=toast]").filter({ hasText: words });
-
-// The page's own settling after a load (an ident made the field's own) is
-// part of the load, not a step to undo (SETTLE_MS): the pilot's first edit
-// comes after it.
-const pastSettling = (page: Page) => page.waitForTimeout(1600);
 
 test("a cleared route comes back from the toast's Undo, and again from the keyboard", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
@@ -89,7 +85,8 @@ test("a stop taken out comes back from the Undo toast that names it", async ({ p
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  // The route's pills, in the field the timeline's toggle turns its box into.
+  await typeRoute(page);
   await pastSettling(page);
 
   const lines = sideDrawer(page).getByTestId("route-slide");

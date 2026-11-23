@@ -29,6 +29,7 @@ class OpenScreenTest {
         assertEquals(Where.Page(SheetPage.Settings), OpenScreen.whereOf(Screen.SETUP))
         // Minimums is You's own page now, the three homes of 2026-11-13.
         assertEquals(Where.Page(SheetPage.Minimums), OpenScreen.whereOf(Screen.MINIMUMS))
+        assertEquals(Where.Page(SheetPage.Documents), OpenScreen.whereOf(Screen.DOCUMENTS))
     }
 
     @Test
@@ -72,8 +73,11 @@ class OpenScreenTest {
         assertEquals(SheetPage.Profile, CardRequests.take())
         assertNull(OpenScreen.field(FieldScreen.MAP, routed = false))
         assertEquals(SheetPage.MapSettings, CardRequests.take())
-        assertNull(OpenScreen.field(FieldScreen.CLEARANCE, routed = false))
+        // The clearance card is the parked ATC Copilot's: its switch on first.
+        assertNull(OpenScreen.field(FieldScreen.CLEARANCE, routed = false, atc = true))
         assertEquals(SheetPage.Clearance, CardRequests.take())
+        assertEquals("Turn on ATC Copilot in Settings, under Extras.", OpenScreen.field(FieldScreen.CLEARANCE, routed = false, atc = false))
+        assertNull(CardRequests.take())
     }
 
     @Test
@@ -88,7 +92,9 @@ class OpenScreenTest {
     @Test
     fun noWordSaysItIsNotOnThisPhoneForTheRulesScreens() {
         listOf(FieldScreen.DRYRUN, FieldScreen.PROFILE, FieldScreen.MAP, FieldScreen.CLEARANCE, FieldScreen.RADIO).forEach { word ->
-            val said = OpenScreen.field(word, routed = true)
+            // With the ATC Copilot on: off, the clearance words ask for its
+            // switch (asserted above), which is not the web's alone either.
+            val said = OpenScreen.field(word, routed = true, atc = true)
             assertTrue("$word: $said", said == null)
         }
         CardRequests.take()

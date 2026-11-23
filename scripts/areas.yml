@@ -36,12 +36,16 @@ areas:
       - scripts/build/design-tokens.sh
       - scripts/build/design_tokens*.py
       # The screens' links and every app's generated list, checked there.
-      - scripts/build/screens.sh
-      - scripts/build/screens.py
+      - scripts/build/screens.*
       - docs/navigation.md
       - apps/ios/Wingtip/Navigation/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/**
       - apps/ios/Wingtip/Design/Generated/**
+      # The shared words and every app's generated copy, checked there.
+      - scripts/build/wording.sh
+      - scripts/build/wording.py
+      - docs/design/rules.md
+      - apps/android/app/src/main/res/values/wording_strings.xml
       - apps/ios/Wingtip/Assets.xcassets/**
       # The icons and launch art, drawn from docs/brand by
       # scripts/build/app-icons.sh and checked there (--check).
@@ -56,10 +60,14 @@ areas:
       - apps/site/assets/**
       - docs/store/*.png
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
+      - services/jobs/charts/map_zoom.py
       - apps/ios/Wingtip/API/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
       - apps/ios/Wingtip/Engine/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
+      # The engine's open-source notices, which the build adds to the page's
+      # (vite-plugins/licences.ts) and its test reads.
+      - engine/licences/**
   py:
     ci: test-wingtip
     check: ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/ (services/planner)
@@ -121,7 +129,7 @@ areas:
       - engine/**
   jobs:
     ci: test-jobs
-    check: the jobs' ruff, import contracts and pytest (services/jobs/charts/tests and crash/tests), in Docker
+    check: the jobs' ruff, import contracts and pytest (services/jobs/charts/tests), in Docker
     paths:
       - services/jobs/**
       - services/planner/wingtip/**
@@ -140,6 +148,8 @@ areas:
       # the committed WebAssembly, held to what engine/ builds
       - scripts/build/build-engine-wasm.sh
       - apps/web/src/lib/engine/wingtip-engine.wasm
+      # its open-source notices (the guards' "Engine: licences")
+      - scripts/build/licences.sh
       - apps/web/src/lib/fixtures/**
       - services/planner/tests_wingtip/fixtures/native/**
   java:
@@ -195,12 +205,15 @@ areas:
       - apps/web/public/support.html
   sim:
     ci: sim
-    check: the replay agent's build, format check and tests (dotnet, in Docker, scripts/ci/sim_suite.sh), cfn-lint on the trial's template, shellcheck on its scripts (the MSFS trial, infra/sim-trial and tools/msfs-agent)
+    check: the test flight's ruff and unit tests (tools/sim-flight, in Docker, scripts/ci/sim_suite.sh) and shellcheck on its runner (docs/SIM-FLIGHT.md)
     paths:
-      - tools/msfs-agent/**
-      - tools/xplane-driver/wingtip_replay/shots.schema.json
-      - infra/sim-trial/**
       - scripts/ci/sim_suite.sh
+      # The test flight: its Mac side, its runner, and what its tests read
+      # from elsewhere (the units, the engine's GDL 90 fixture).
+      - tools/sim-flight/**
+      - scripts/dev/sim-flight.sh
+      - services/planner/wingtip/units.py
+      - apps/web/src/lib/fixtures/gdl90.json
   xplane:
     ci: test-xplane
     check: ruff check . && pytest tests (tools/xplane-driver, the X-Plane trial's plugin, docs/XPLANE-TRIAL.md); CI runs the tests as test-python's xplane leg (scripts/ci/python_suite.sh), ruff in guards

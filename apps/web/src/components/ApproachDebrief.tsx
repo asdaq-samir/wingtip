@@ -144,7 +144,7 @@ function ApproachSection({
     <>
       {/* GPS altitude is not the altimeter's, and a ground track is not a
           needle: the title says what the figures are measured from. */}
-      <ListGroup title="Approach · GPS track">
+      <ListGroup title="Approach · GPS Track">
         <ListRow
           title={d.name}
           description={[
@@ -158,7 +158,7 @@ function ApproachSection({
         />
         <PlanView d={d} />
         {d.hasAltitude && <ProfileView d={d} />}
-        <ListRow title={<label htmlFor={`mins-${d.fafAt}`}>Your minimums</label>} description="The DA or MDA you flew to, from the plate">
+        <ListRow title={<label htmlFor={`mins-${d.fafAt}`}>Your Minimums</label>} description="The DA or MDA you flew to, from the plate">
           {/* Read in the pilot's locale, the findings again as typed. */}
           <NumberField
             id={`mins-${d.fafAt}`}

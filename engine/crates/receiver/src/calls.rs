@@ -1,7 +1,8 @@
 //! The receiver's rules as the engine's dispatcher asks them, JSON in and
 //! out; each is named by its contract file in ../contract.
 
-use crate::{picture_json, views};
+use crate::held::Held;
+use crate::{picture_json, position, views};
 use base64::alphabet::STANDARD;
 use base64::engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig};
 use base64::engine::DecodePaddingMode;
@@ -23,18 +24,31 @@ fn at(name: &str, v: &Value) -> Result<f64, String> {
     v.get("at").and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"at\" is missing"))
 }
 
+/// The bytes a rule is handed in its "data", none where it has none.
+fn data(name: &str, v: &Value) -> Result<Vec<u8>, String> {
+    match v.get("data") {
+        None | Some(Value::Null) => Ok(Vec::new()),
+        Some(Value::String(s)) => bytes_of(s).map_err(|e| format!("{name}: \"data\": {e}")),
+        Some(_) => Err(format!("{name}: \"data\" is not Base64 text")),
+    }
+}
+
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "receiver_read" => {
             let at = at(name, v)?;
-            let bytes = match v.get("data") {
-                None | Some(Value::Null) => Vec::new(),
-                Some(Value::String(s)) => bytes_of(s).map_err(|e| format!("{name}: \"data\": {e}"))?,
-                Some(_) => return Err(format!("{name}: \"data\" is not Base64 text")),
-            };
+            let bytes = data(name, v)?;
             let mut picture = picture_json::read(v.get("picture"));
             picture.read(&bytes, at);
             Ok(picture_json::write(&picture, at))
+        }
+        // The phones hold the picture in a ReceiverSession (bindings/ffi)
+        // and answer this from it; asked by name, the picture handed over
+        // is held for the one read.
+        "receiver_delta" => {
+            let at = at(name, v)?;
+            let bytes = data(name, v)?;
+            Ok(Held::new(picture_json::read(v.get("picture"))).read(&bytes, at))
         }
         "receiver_traffic" => {
             let at = at(name, v)?;
@@ -46,6 +60,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             let ident = v.get("ident").and_then(Value::as_str).ok_or_else(|| format!("{name}: \"ident\" is missing"))?;
             Ok(views::reports(&picture_json::read(v.get("picture")), ident))
         }
+        "receiver_position" => position::position(v),
         "receiver_nexrad" => Ok(views::nexrad(&picture_json::read(v.get("picture")))),
         _ => Err(format!("the engine has no rule called {name:?}")),
     }

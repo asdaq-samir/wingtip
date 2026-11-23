@@ -9,7 +9,7 @@ import { briefingLegs } from "./briefingLegs";
 import { useDirectHere } from "./directOnDevice";
 import { useSaved } from "../../lib/fromCache";
 import { sameRoute, stripType } from "./planMessages";
-import { type BriefingState, navlogQuery, PLAN_KEY_RUNWAYS, type PlanParams, planKeyOf, type Unflyable } from "./planQuery";
+import { type BriefingState, navlogQuery, PLAN_KEY_RUNWAYS, PLAN_KEY_TANKS, type PlanParams, planKeyOf, type Unflyable } from "./planQuery";
 
 /**
  * The plan as TanStack Query sees it: one query per stage, keyed on
@@ -35,6 +35,8 @@ import { type BriefingState, navlogQuery, PLAN_KEY_RUNWAYS, type PlanParams, pla
  *  to 6 s) -- which no longer slows the planner's other answers, being
  *  read in a process of its own (app.chart_model). */
 const AS_ENTERED_AFTER_MS = 600;
+/** How long the course waits on the chart's cycle for its key, at most, ms. */
+const CHART_WAIT_MS = 1000;
 
 /** How long the nav log's legs hold before the briefing is asked for with
  *  them: the ETE and the legs come a render or two apart. */
@@ -67,6 +69,7 @@ export function usePlan({
   altitudeNearest = false,
   patterns = "",
   settling = false,
+  tanks = "",
 }: PlanParams) {
   const routeKnown = routeOf(dep, dest, stops) !== null;
   // An airport to itself with no stop between: a local flight (the pattern,
@@ -78,12 +81,42 @@ export function usePlan({
 
   // The previous route's course stays on the map until the new one is
   // charted, so the map is never taken down between routes.
-  const { data: cycle } = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
-  const course = useQuery({ ...courseQuery(dep, dest, stops, cycle), enabled: briefable, placeholderData: keepPreviousData });
+  // Asked once the chart's cycle is known (kept from the last visit, or
+  // the chart's answer, about a millisecond), which is in their keys: on a
+  // first visit the course and the checkpoints were asked without it and
+  // again with it, and the first draw rendered twice (the speed audit of
+  // 2026-11-21). A chart that fails, or has not answered in a second,
+  // lets them go without it.
+  const chartCycleQuery = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
+  const cycle = chartCycleQuery.data;
+  const chartPending = chartCycleQuery.isPending;
+  const [chartWaited, setChartWaited] = useState(false);
+  useEffect(() => {
+    if (!chartPending) return;
+    const timer = window.setTimeout(() => setChartWaited(true), CHART_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [chartPending]);
+  const cycleKnown = !chartPending || chartWaited;
+  const course = useQuery({ ...courseQuery(dep, dest, stops, cycle), enabled: briefable && cycleKnown, placeholderData: keepPreviousData });
+  // Kept as the nav log is (navlogQuery's staleTime): planned again by
+  // Load (`load`, in the key) or a change of what it is of, not at every
+  // return to the window and every mount of the page, which asked the
+  // planner for the same local flight each time.
   const localFlight = useQuery({
-    queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
+    queryKey: [
+      "localFlight",
+      dep,
+      localMin,
+      depart,
+      aircraft.profile,
+      aircraft.fuelBurnGph ?? null,
+      aircraft.usableFuelGal ?? null,
+      rules,
+      load,
+    ],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
     enabled: local,
+    staleTime: Infinity,
     placeholderData: keepPreviousData,
   });
 
@@ -93,7 +126,7 @@ export function usePlan({
   // out the checkpoints for the nav log itself (and once for both:
   // app.checkpoint_scoring) -- and starts on the chart's read and the ground under
   // the route as the course is asked for (app.prefetch).
-  const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops, cycle), enabled: routeKnown && withCheckpoints });
+  const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops, cycle), enabled: routeKnown && withCheckpoints && cycleKnown });
   const plan = {
     dep,
     dest,
@@ -114,6 +147,7 @@ export function usePlan({
     holds,
     altitudeNearest,
     patterns,
+    tanks,
   };
   const planKey = planKeyOf(plan);
   const navlog = useQuery({ ...navlogQuery(plan, withCheckpoints), enabled: routeKnown && !settling });
@@ -159,8 +193,15 @@ export function usePlan({
   // the key's last): the runways picked into the wind as the field's report
   // comes in are the ones the first plan already flew (the planner's
   // wind_picks), and the figures went to ≈ and back to the same for the
-  // re-plan's second or so.
-  const holdKey = planKey.filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i < planKey.length - 1)).join("|");
+  // re-plan's second or so. And over the fuel set in the tanks (`tanks`),
+  // which changes no leg, only the fuel checks: FPL's gauges are walked on
+  // the device from the legs on screen and the figure just set (the
+  // engine's fuel_in_tanks, routeTanks), so the gauge shows the new gallons
+  // at Done, where the legs went and it waited 543 ms on the re-plan (the
+  // speed audit of 2026-11-21).
+  const holdKey = planKey
+    .filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i !== PLAN_KEY_TANKS && i < planKey.length - 1))
+    .join("|");
   const whole = streamed.some((m) => m.type === "done");
   const [held, setHeld] = useState<{ key: string; messages: NavLogMessage[] } | null>(null);
   if (whole && !pointToPoint && (held?.messages !== streamed || held.key !== holdKey)) {
@@ -340,6 +381,9 @@ export function usePlan({
     stage,
     unflyable,
     unknownPlace,
+    // The nav log failed (no legal altitude, the winds, the planner down):
+    // what waits on the plan asks without it (usePlanAnswer's Routes).
+    planFailed: !!navlog.error,
     // The log on screen is the one before the altitude asked for, whose
     // own is still coming.
     replanning: holding,

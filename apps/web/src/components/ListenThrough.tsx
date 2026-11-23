@@ -117,7 +117,7 @@ export default function ListenThrough() {
             data-testid="listen-find"
             className={cn(
               "relative inline-flex min-w-0 rounded-sm text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-['']",
+              "hit-x-2 hit-y-[11px]",
               TEXT.row,
             )}
           >

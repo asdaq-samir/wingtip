@@ -10,6 +10,8 @@ const PLAN: SharedPlan = {
   type: "C172",
   rules: "vfr",
   tail: null,
+  tanks: {},
+  procs: null,
 };
 
 describe("a shared flight's link", () => {
@@ -19,6 +21,26 @@ describe("a shared flight's link", () => {
       "https://wingtipmaps.app/app/plan?open=shared&dep=KMSN&dest=KOSH&stops=KJVL&altitude_ft=3500&depart=2026-11-10T15%3A00%3A00.000Z&type=C172&rules=vfr",
     );
     expect(sharedLinkOf(new URL(url).searchParams)).toEqual({ kind: "plan", plan: PLAN });
+  });
+
+  it("carries the fuel set on the gauges as the planner writes it, and reads back only what is whole", () => {
+    const url = sharedPlanLink({ ...PLAN, tanks: { KMSN: 20, KJVL: 0 } }, "");
+    expect(url).toContain("tanks=KJVL%3A0%2CKMSN%3A20");
+    expect(sharedLinkOf(new URL(url, "https://x").searchParams)).toEqual({ kind: "plan", plan: { ...PLAN, tanks: { KJVL: 0, KMSN: 20 } } });
+    const wary = sharedLinkOf(new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&tanks=KJVL:12,KMSN:-3,K!:4,KOSH:10000,C81:7:1"));
+    expect(wary?.kind === "plan" && wary.plan.tanks).toEqual({ KJVL: 12 });
+    expect(paramsForSharedPlan({ ...PLAN, tanks: { KJVL: 0 } }).get("tanks")).toBe("KJVL:0");
+    const odd = sharedLinkOf(new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&tanks=KMSN:12.5,<b>:3,KJVL:-1,KOSH:20"));
+    expect(odd).toMatchObject({ plan: { tanks: { KOSH: 20 } } });
+  });
+
+  it("carries the procedures, an approach loaded or flown into its missed approach as it is", () => {
+    const url = sharedPlanLink({ ...PLAN, procs: "KOSH:R36:::L" }, "");
+    expect(url).toContain("procs=KOSH%3AR36%3A%3A%3AL");
+    expect(sharedLinkOf(new URL(url, "https://x").searchParams)).toEqual({ kind: "plan", plan: { ...PLAN, procs: "KOSH:R36:::L" } });
+    const wary = sharedLinkOf(new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&procs=<b>"));
+    expect(wary?.kind === "plan" && wary.plan.procs).toBeNull();
+    expect(paramsForSharedPlan({ ...PLAN, procs: "KOSH:R36:::M" }).get("procs")).toBe("KOSH:R36:::M");
   });
 
   it("sends the N-number only where it is given", () => {
@@ -43,7 +65,18 @@ describe("a shared flight's link", () => {
     const link = sharedLinkOf(new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&stops=KJVL,<b>&altitude_ft=abc&depart=soon&rules=spvfr"));
     expect(link).toEqual({
       kind: "plan",
-      plan: { dep: "KMSN", dest: "KOSH", stops: ["KJVL"], altitudeFt: null, depart: null, type: null, rules: null, tail: null },
+      plan: {
+        dep: "KMSN",
+        dest: "KOSH",
+        stops: ["KJVL"],
+        altitudeFt: null,
+        depart: null,
+        type: null,
+        rules: null,
+        tail: null,
+        tanks: {},
+        procs: null,
+      },
     });
   });
 
@@ -60,6 +93,10 @@ describe("a shared plan used", () => {
       "dep=KMSN&dest=KOSH&stops=KJVL&altitude_ft=3500&depart=2026-11-10T15%3A00%3A00.000Z",
     );
     expect(paramsForSharedPlan(PLAN, Date.parse("2026-11-11T00:00:00Z")).has("depart")).toBe(false);
+  });
+
+  it("sets the sender's fuel on the receiver's gauges", () => {
+    expect(paramsForSharedPlan({ ...PLAN, tanks: { KJVL: 0 } }).get("tanks")).toBe("KJVL:0");
   });
 });
 

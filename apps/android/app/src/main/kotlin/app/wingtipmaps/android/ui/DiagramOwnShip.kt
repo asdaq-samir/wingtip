@@ -5,15 +5,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.api.generated.AirportPlace
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.plates.ChartInkBar
+import app.wingtipmaps.android.plates.ChartInkButton
+import app.wingtipmaps.android.plates.pageInk
+import app.wingtipmaps.android.plates.rememberChartInk
 
 /**
  * The FAA's airport diagram with the airplane on it (#218), as the iOS
@@ -33,9 +40,15 @@ import app.wingtipmaps.android.flight.OwnShip
  * circle, not an arrow, with no track (11.17.2.2), and gone once the fix
  * is older than three seconds or worse than 30 m (11.17.2.3, 11.17.2.4's
  * 30 m), never frozen.
+ *
+ * Over the page, the runway proximity advisor (RunwayAdvisor): the
+ * engine's line and the one under it, "Approaching runway 9-27" and "Hold
+ * short line in about 150 ft", said aloud once each; and the FAA's hot
+ * spots on the page ringed (DiagramPage.hotSpots).
  */
 @Composable
-fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit, model: DiagramModel = hiltViewModel()) {
+fun DiagramOwnShipDialog(place: AirportPlace, url: String, onClose: () -> Unit, model: DiagramModel = hiltViewModel()) {
+    val ident = place.ident
     val read by model.state.collectAsStateWithLifecycle()
     val flight by model.flight.collectAsStateWithLifecycle()
     // The clock, each second, so a fix that stops coming takes the
@@ -45,15 +58,21 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit, model:
     // airplane is not drawn on a fix the engine could not judge.
     val fixAsked = model.usable(flight.fix, nowMs)
     val fix = fixAsked.getOrNull()
+    val advice by model.advice.collectAsStateWithLifecycle()
+    LaunchedEffect(place, read.page, fix, nowMs) { model.advise(place, read.page, fix, nowMs) }
     // Read as the dialog opens; its page let go of as it closes.
     DisposableEffect(ident, url) {
         model.open(ident, url)
         onDispose { model.close() }
     }
+    // The pilot's ink on the diagram, kept by it and its cycle (ChartInk).
+    val ink = rememberChartInk(url)
     FullScreenPage(
         title = "$ident airport diagram",
         onClose = onClose,
+        actions = { ChartInkButton(ink) },
         footer = {
+            ChartInkBar(ink)
             read.page?.let {
                 Text(
                     model.note(it, fixAsked),
@@ -66,7 +85,11 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit, model:
     ) {
         val shown = read.page
         when {
-            shown != null -> ZoomablePage(shown.image, "Airport diagram", ownShipOn(shown, fix, fix?.let { model.place(shown, it) }))
+            shown != null -> {
+                val rings = shown.hotSpots.map { PageRing(it.x / shown.width, it.y / shown.height, it.name) }
+                ZoomablePage(shown.image, "Airport diagram", ownShipOn(shown, fix, fix?.let { model.place(shown, it) }), ink.pageInk(), rings)
+                RunwayAdviceBanner(advice, Modifier.align(Alignment.TopCenter).padding(WingtipSpace.Md))
+            }
             read.problem != null -> ProblemLine(read.problem)
             else -> Loading()
         }

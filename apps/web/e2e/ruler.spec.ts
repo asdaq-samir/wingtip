@@ -32,7 +32,7 @@ async function fingers(
 const tileLevel = (page: Page) => chartZoom(page);
 
 test("two fingers held on the chart bring up the ruler, with its course magnetic and its distance, until they lift", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's fingers");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's fingers");
   await page.goto("/app/plan?place=C81");
   await settle(page);
   // In at Campbell and still: on CI's runner the map was still on the
@@ -80,7 +80,7 @@ test("two fingers held on the chart bring up the ruler, with its course magnetic
 });
 
 test("a pinch that moves at once still zooms the chart, with no ruler", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's fingers");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's fingers");
   await page.goto("/app/plan?place=C81");
   await settle(page);
   await expect.poll(() => tileLevel(page), { timeout: slow(15000) }).toBeGreaterThan(4);

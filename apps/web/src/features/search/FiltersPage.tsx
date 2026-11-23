@@ -62,7 +62,7 @@ export default function FiltersPage() {
           variant="link"
           size="inline"
           onClick={cancel}
-          className={cn("relative justify-self-start after:absolute after:-inset-2", TEXT.row)}
+          className={cn("relative justify-self-start hit-2", TEXT.row)}
           data-testid="filters-cancel"
         >
           Cancel
@@ -72,7 +72,7 @@ export default function FiltersPage() {
           variant="link"
           size="inline"
           onClick={apply}
-          className={cn("relative justify-self-end font-semibold after:absolute after:-inset-2", TEXT.row)}
+          className={cn("relative justify-self-end font-semibold hit-2", TEXT.row)}
           data-testid="filters-apply"
         >
           Apply
@@ -85,7 +85,7 @@ export default function FiltersPage() {
       </ListGroup>
       <ListGroup title="Weather">
         {sw("vfrNow", "VFR Now")}
-        <ListRow title="VFR at">
+        <ListRow title="VFR At">
           <StepMenu
             value={draft.vfrInHours}
             steps={vfrAtSteps}

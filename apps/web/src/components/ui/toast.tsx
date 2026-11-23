@@ -39,12 +39,12 @@ function Stacked({ position, style, className }: { position: "top" | "bottom"; s
           data-position={position}
           style={style}
           className={cn(
-            "fixed inset-x-0 z-100 mx-auto flex w-(--width) flex-col items-stretch gap-2 outline-none",
-            position === "top" ? "top-(--offset-top)" : "bottom-(--offset-bottom) flex-col-reverse",
+            "fixed left-(--toast-left) right-(--toast-right) z-100 mx-auto w-(--width) outline-none",
+            position === "top" ? "top-(--offset-top)" : "bottom-(--offset-bottom)",
             className,
           )}
         >
-          <Toasts />
+          <Toasts position={position} />
         </Toast.Viewport>
       </Toast.Portal>
     </Toast.Provider>
@@ -61,7 +61,15 @@ function Ready() {
   return null;
 }
 
-function Toasts() {
+/**
+ * Each toast stands where Base UI's own offset puts it, the heights of the
+ * newer ones before it (--toast-offset-y) and a gap each (--toast-index),
+ * moved there by a transform, as Base UI's docs stack them: in a flex
+ * column a progress line coming and going ("Planning…" over an "Airplane
+ * Changed" Undo) laid the Undo out again 56 points away and back, a jump
+ * (route-line.spec's layout shift, 0.011); now it slides.
+ */
+function Toasts({ position }: { position: "top" | "bottom" }) {
   const { toasts } = Toast.useToastManager();
   return toasts.map((toast) => (
     <Toast.Root
@@ -76,20 +84,30 @@ function Toasts() {
       // A confirmation with no control to stand by (lib/toast's `done`).
       data-testid={toast.type === "success" ? "done-note" : undefined}
       className={cn(
-        "flex min-h-12 items-center gap-2 rounded-3xl px-4 py-2.5 transition-[opacity,transform] duration-200 ease-out",
+        // Its corner radius.banner in px, not rem: iOS's corners do not
+        // grow with Dynamic Type, and rounded-3xl came to 24.6 at 17.88 px
+        // (the HIG review, the owner, 2026-11-21).
+        "absolute inset-x-0 flex min-h-12 items-center gap-2 rounded-(--radius-banner) px-4 py-2.5 transition-[opacity,transform] duration-200 ease-out [--gap:0.5rem]",
         "data-limited:hidden data-ending-style:opacity-0 data-starting-style:opacity-0",
         "motion-safe:data-starting-style:translate-y-2 motion-reduce:transition-none",
-        "[transform:translate(var(--toast-swipe-movement-x),var(--toast-swipe-movement-y))]",
+        position === "top"
+          ? "top-0 [transform:translate(var(--toast-swipe-movement-x),calc(var(--toast-offset-y)_+_var(--toast-index)_*_var(--gap)_+_var(--toast-swipe-movement-y)))]"
+          : "bottom-0 [transform:translate(var(--toast-swipe-movement-x),calc(var(--toast-swipe-movement-y)_-_var(--toast-offset-y)_-_var(--toast-index)_*_var(--gap)))]",
       )}
     >
-      {toast.type === "success" && <Check className="size-4 shrink-0 text-tint" strokeWidth={2.5} aria-hidden />}
-      {toast.type === "loading" && <Spinner className="size-4 shrink-0" role="presentation" aria-label={undefined} aria-hidden />}
+      {/* Its ✓ and spinner a row's leading glyph, 20 beside the 17-point
+          title, as iOS sets a symbol beside Body; at 16 the glyph read
+          smaller than its words (size.glyph-row; the scale audit's Q4). */}
+      {toast.type === "success" && <Check className="size-(--size-glyph-row) shrink-0 text-tint" strokeWidth={2.5} aria-hidden />}
+      {toast.type === "loading" && (
+        <Spinner className="size-(--size-glyph-row) shrink-0" role="presentation" aria-label={undefined} aria-hidden />
+      )}
       <Toast.Content className="flex min-w-0 flex-1 flex-col">
         <Toast.Title className="font-semibold" />
         <Toast.Description className="text-muted-foreground" />
       </Toast.Content>
       {/* The tint's word at the end, its 44 points by a pseudo-element. */}
-      <Toast.Action className="relative -mr-1 shrink-0 rounded-full px-2 font-semibold text-tint outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring" />
+      <Toast.Action className="relative -mr-1 shrink-0 rounded-full px-2 font-semibold text-tint outline-none hit-2 focus-visible:ring-2 focus-visible:ring-ring" />
     </Toast.Root>
   ));
 }
@@ -112,7 +130,7 @@ function Anchored({ className }: { className?: string }) {
                 "transition-[opacity,scale] duration-150 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none",
               )}
             >
-              <Check className="size-4 shrink-0 text-tint" strokeWidth={2.5} aria-hidden />
+              <Check className="size-(--size-glyph-row) shrink-0 text-tint" strokeWidth={2.5} aria-hidden />
               <Toast.Content className="flex min-w-0 items-baseline gap-2">
                 <Toast.Title className="truncate font-semibold" />
                 <Toast.Description className="truncate text-muted-foreground" />

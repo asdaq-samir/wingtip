@@ -29,9 +29,13 @@ final class FlightRecorder {
     /// Before flying speed, the minutes of taxi kept.
     nonisolated static let groundKeptMs = 10 * 60 * 1000.0
     private static let writeEveryS = 30.0
+    /// Before flying speed, how often the file is written: what a kill
+    /// then loses is a little taxi, where every 30 s rewrote ten minutes
+    /// of a parked airplane's points (Android's GROUND_WRITE_EVERY_MS).
+    nonisolated static let groundWriteEveryS = 5 * 60.0
 
     /// What is kept on the phone between launches.
-    struct Kept: Codable, Equatable, Sendable {
+    nonisolated struct Kept: Codable, Equatable, Sendable {
         var points: [Point] = []
         /// The end of the flight time last offered (the engine's block.to),
         /// so a draft let go is not offered again until a later landing.
@@ -69,11 +73,12 @@ final class FlightRecorder {
         let t = fix.at.timeIntervalSince1970 * 1000
         if let last = kept.points.last, t - last.t < Self.everyMs { return wantsBackground }
         guard kept.points.count < Self.most else { return wantsBackground }
-        if !kept.flown, (try? Flight.underway(fix.groundspeedKt)) == true { kept.flown = true }
+        let takeoff = !kept.flown && (try? Flight.underway(fix.groundspeedKt)) == true
+        if takeoff { kept.flown = true }
         kept.points.append(Point(t: t, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, altFt: fix.altitudeFt))
         if !kept.flown { kept.points.removeAll { t - $0.t > Self.groundKeptMs } }
         if kept.points.count % Self.lookEvery == 0 { look() }
-        if Date().timeIntervalSince(lastWritten) >= Self.writeEveryS { write() }
+        if takeoff || Date().timeIntervalSince(lastWritten) >= (kept.flown ? Self.writeEveryS : Self.groundWriteEveryS) { write() }
         return wantsBackground
     }
 

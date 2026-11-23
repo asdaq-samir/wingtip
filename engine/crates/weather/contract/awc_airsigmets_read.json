@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].",
+  "description": "The Aviation Weather Center's combined SIGMET cache file (sigmets.cache.xml, XML: the US convective and non-convective SIGMETs and the international ones, data API v4.34) read into the shape the weather store keeps, one advisory an area, a convective SIGMET's CONV hazard as CONVECTIVE: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].",
   "type": "object",
   "properties": {
     "input": {

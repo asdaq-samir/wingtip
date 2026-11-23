@@ -9,7 +9,7 @@ import { done } from "../../../lib/doneNote";
 import { toast } from "../../../lib/toast";
 import { useOptimisticList } from "../../../lib/optimisticList";
 import { holdDelete, releaseDelete, usePendingDeletes } from "../../../lib/pendingDeletes";
-import { flightsQuery } from "../../../lib/queryClient";
+import { flightsQuery } from "../../../lib/queryClientRecords";
 import { flightEdit, flightEditProblem, flightTitle, type FlightEditRequest } from "./flightEdit";
 
 /** What the row's save asks: a change to send, a problem found before
@@ -73,7 +73,7 @@ export function useSavedFlights() {
     } catch (err) {
       // Back to the row's fields, on what was typed.
       setChanging(flight.id);
-      return describeError(err, "The flight could not be saved");
+      return describeError(err, "The flight could not be saved.");
     }
   }, null);
   const ask = (next: SaveAsk) => startTransition(() => save(next));
@@ -152,7 +152,7 @@ export function useSavedFlights() {
       keep({ ...flight, share });
       if ((await shareOrCopy({ title: flightTitle(flight), url: share.url })) === "copied") done("Link Copied");
     } catch (err) {
-      if (!cancelled(err)) showError("Not shared", describeError(err));
+      if (!cancelled(err)) showError("Not Shared", describeError(err));
     }
   };
   /** Stop Sharing: the link answers no more, for anyone it was sent to. */
@@ -162,7 +162,7 @@ export function useSavedFlights() {
       keep({ ...flight, share: null });
       done("Sharing Stopped");
     } catch (err) {
-      showError("Still shared", describeError(err));
+      showError("Still Shared", describeError(err));
     }
   };
 

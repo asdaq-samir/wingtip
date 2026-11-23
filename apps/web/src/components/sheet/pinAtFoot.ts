@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { usePanelDragging } from "../../lib/mapChrome";
-import { SETTLE_MS } from "./insets";
+import { prefersReducedMotion } from "../../lib/motion";
+import { SETTLE_MS, shownPx } from "./insets";
 
 /**
  * The row held by its CSS, as the sheet's foot is (sheet/insets'
@@ -17,9 +18,31 @@ import { SETTLE_MS } from "./insets";
  * the owner's pointer ("how does airport card do it?"). The row is marked
  * data-pin-foot so that nothing stops its ease at the pill
  * (sheet/insets' PILL_BODY).
+ *
+ * Of two places, the higher on the screen: where it rests on the sheet
+ * (its place under the route, no lower than the foot's top), which goes
+ * down with the sheet as a finger pulls it -- no --sheet-swipe in it --
+ * and the foot's edge, held still there (with it). So pulled toward the
+ * pill the figures go down with the plan, under the floating bar, and
+ * stay on the screen's foot once there, frame by frame on Base UI's own
+ * offsets, where held on the foot's top while the sheet went they waited
+ * for the sheet's top to reach them and then jumped (the owner,
+ * 2026-11-22: "doesn't slide down with the plan, waits until it touches
+ * the grabber on top").
+ *
+ * Off the pill its lowest place is the foot's top, not its edge
+ * (--pin-lift, the foot's height; usePinAtFoot), so the figures sit over
+ * the floating bar, never under it: a route longer than the sheet held
+ * them on the foot's edge behind FPL's actions, their names showing past
+ * the capsule's ends and their values not at all, at half and all the way
+ * up, where the page's scroller ends at the foot's top and cut them off
+ * whole (the owner's iPhone at his larger text, 2026-11-21). The lift
+ * goes in the last stretch of a slide to the pill (--pin-pill, the
+ * sheet's offset there), as the bar makes way, so the figures come down
+ * onto the foot's edge there as before.
  */
 export const PIN_AT_FOOT =
-  "[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+  "[transform:translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
@@ -73,7 +96,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     const barOf = () => document.querySelector<HTMLElement>(foot)?.querySelector<HTMLElement>("[data-makes-way]");
     if (!on) {
-      row.style.removeProperty("--pin-room");
+      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p", "--pin-cap"]) row.style.removeProperty(name);
       barOf()?.style.removeProperty("--pin-bar-room");
       return;
     }
@@ -89,20 +112,61 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       const sheet = row.closest(SHEET);
       const natural = row.getBoundingClientRect().bottom - moved(row) - moved(sheet);
       const room = restingEdge(edge) - natural;
-      setRoom(row, `${room}px`, sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "");
-      row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, moved(row.closest(SHEET)), room));
+      const lift = liftOf(edge, sheet);
+      setRoom(
+        row,
+        `${room}px`,
+        sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "",
+        !!sheet?.hasAttribute("data-swiping"),
+      );
+      setVar(row, "--pin-lift", `${lift.lift}px`);
+      setVar(row, "--pin-pill", `${lift.pill}px`);
+      setVar(row, "--pin-half", `${lift.half}px`);
+      // On a phone's bottom sheet held on the foot's top at every size, down
+      // to it too where the plan is short (the route's field by its toggle,
+      // a short route all the way up): the figures at the plan's bottom over
+      // the bar (the owner, 2026-11-22: "Route box figures strip is not
+      // pinning to the bottom"); beside the side panel in their place.
+      setVar(row, "--pin-cap", lift.lift > 0 ? "9999px" : "0px");
+      setVar(row, "--pin-p", `${growAt(moved(sheet), lift.half, lift.pill, heldNow.current)}`);
+      const slid = moved(sheet);
+      row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, slid, room, liftAt(slid, lift.lift, lift.pill)));
+      // At the pill, where its face is the figures alone (FplRoute's PINNED).
+      row.toggleAttribute("data-pill", heldNow.current);
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
-      if (bar) bar.style.setProperty("--pin-bar-room", `${barRoom(restingTop(bar), natural)}px`);
+      if (bar) setVar(bar, "--pin-bar-room", `${barRoom(restingTop(bar), natural)}px`);
     };
     measure();
     const resized = new ResizeObserver(measure);
     const page = row.closest("[data-sheet-scroll]");
     if (page) resized.observe(page.firstElementChild ?? page);
+    // The row's place moves with the page as it scrolls, so its room does:
+    // measured at the top alone, the translation kept as the page scrolled
+    // on and carried the figures up through the route, to its middle (the
+    // owner's iPhone, 2026-11-21: a long route at full, the strip over the
+    // approach's fixes with rows below it). Measured again once a frame
+    // while the page scrolls, each value written only as it changes
+    // (setVar): measured and written at each scroll event, the figures were
+    // a frame behind the page under the finger (the speed audit of
+    // 2026-11-21, finding 9). Not sticky (perf-fix's PIN_STICKS, undone
+    // 2026-11-22): a sticky box held the figures at the page's foot from
+    // the first move, over the route's last rows, where they are to sit
+    // under the route and go down with the sheet until they meet the foot
+    // (the owner: "Figures are overlapping the grouped box at the bottom
+    // and doesn't slide down with the plan, waits until it touches the
+    // grabber on top").
+    let scrolled = 0;
+    const onScroll = () => {
+      if (!scrolled) scrolled = requestAnimationFrame(() => ((scrolled = 0), measure()));
+    };
+    page?.addEventListener("scroll", onScroll, { passive: true });
     const edge = document.querySelector<HTMLElement>(foot);
     if (edge) resized.observe(edge);
     addEventListener("resize", measure);
     return () => {
       resized.disconnect();
+      cancelAnimationFrame(scrolled);
+      page?.removeEventListener("scroll", onScroll);
       removeEventListener("resize", measure);
       barOf()?.style.removeProperty("--pin-bar-room");
     };
@@ -113,24 +177,50 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     if (!on) {
       row.removeAttribute("data-pinned");
+      row.removeAttribute("data-pill");
       return;
     }
     const check = () => {
-      const room = parseFloat(row.style.getPropertyValue("--pin-room")) || 0;
-      row.toggleAttribute("data-pinned", pinnedNow(held, moved(row.closest(SHEET)), room));
+      const px = (name: string) => parseFloat(row.style.getPropertyValue(name)) || 0;
+      const slid = moved(row.closest(SHEET));
+      row.toggleAttribute("data-pinned", pinnedNow(held, slid, px("--pin-room"), liftAt(slid, px("--pin-lift"), px("--pin-pill"))));
+      row.toggleAttribute("data-pill", held);
+      // The figures' size, followed a frame at a time as the sheet goes (FIXED by the pill, thin above it).
+      setVar(row, "--pin-p", `${growAt(slid, px("--pin-half"), px("--pin-pill"), held)}`);
     };
+    // A frame at a time for the settle's time, and on while the sheet is
+    // still moving after it, and once more as its slide ends: on a slow
+    // runner the slide began late and ended after SETTLE_MS, the last frame
+    // read the sheet short of half, and the strip rested there part grown
+    // (--pin-p 0.2, 35 points tall at half where it is 32; CI's
+    // fpl-strip-foot, run 45107108914).
+    const sheet = row.closest(SHEET);
     let frame = 0;
+    let was = Number.NaN;
     const until = dragging ? Infinity : performance.now() + SETTLE_MS;
     const step = () => {
       check();
-      if (performance.now() < until) frame = requestAnimationFrame(step);
+      const slid = moved(sheet);
+      const moving = slid !== was;
+      was = slid;
+      if (performance.now() < until || moving) frame = requestAnimationFrame(step);
     };
     step();
-    return () => cancelAnimationFrame(frame);
+    sheet?.addEventListener("transitionend", check);
+    return () => {
+      cancelAnimationFrame(frame);
+      sheet?.removeEventListener("transitionend", check);
+    };
   }, [dragging, held, on, ref]);
 }
 
 const SHEET = ".group\\/sheet";
+
+/** A custom property set only where it differs: the same value written
+ *  again at every scroll asked the row's style to be worked out again. */
+function setVar(el: HTMLElement, name: string, value: string) {
+  if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value);
+}
 
 /** The sheet's offset at each row's last measure (setRoom). */
 const offsetAtMeasure = new WeakMap<HTMLElement, string>();
@@ -145,13 +235,20 @@ const offsetAtMeasure = new WeakMap<HTMLElement, string>();
  * (brief-glance.spec: 193 points down at the pill as the route came in, a
  * layout shift of 0.017 under the opening Brief). So that change is set
  * with no ease, committed at once (the computed transform read), and the
- * ease put back for the sheet's next move.
+ * ease put back for the sheet's next move. Not under a finger (`swiping`),
+ * where nothing eases (PIN_AT_FOOT's transition-none) and Base UI holds the
+ * offset still while the finger's own variable moves: every frame of a pull
+ * read as "still", and the strip growing toward the pill changed its room
+ * at each, so each frame wrote the transition twice and forced a style and
+ * layout between, a share of the 250 layouts and 503 style recalcs of a
+ * 24-step pull from half to the pill at CPU 4x, where half to full took 4
+ * and 43 (the motion review of 2026-11-22).
  */
-function setRoom(row: HTMLElement, room: string, offset: string) {
+function setRoom(row: HTMLElement, room: string, offset: string, swiping: boolean) {
   const was = row.style.getPropertyValue("--pin-room");
   const still = offsetAtMeasure.get(row) === offset;
   offsetAtMeasure.set(row, offset);
-  if (!was || was === room || !still) {
+  if (!was || was === room || !still || swiping) {
     row.style.setProperty("--pin-room", room);
     return;
   }
@@ -187,9 +284,43 @@ function restingTop(bar: HTMLElement) {
 
 /** Whether the row is held now: always at the pill, else once the sheet
  *  has slid further than its room (how far it may slide before the row
- *  reaches the foot's edge). */
-export function pinnedNow(held: boolean, slid: number, room: number) {
-  return held || slid > room;
+ *  reaches the foot's edge) less the lift it has there (liftAt). */
+export function pinnedNow(held: boolean, slid: number, room: number, lift = 0) {
+  return held || slid + lift > room;
+}
+
+/** How far over the foot's edge the row is held with the sheet slid
+ *  `slid`: the whole lift (the foot's height, so it sits on the foot's
+ *  top, over the floating bar) until the sheet is within that of the pill
+ *  (`pill`, its offset there), then less, to none at the pill, where the
+ *  row is the pill's face on the foot's edge. PIN_AT_FOOT's CSS, as a sum. */
+export function liftAt(slid: number, lift: number, pill: number) {
+  return Math.min(lift, Math.max(0, pill - slid));
+}
+
+/**
+ * How far the figures have grown from their thin line (0, at half and
+ * all the way up) to their full size (1, as the pill), by how far the
+ * sheet has slid between half (`half`, its offset there) and the pill
+ * (`pill`), measured from its rect a frame at a time while a finger has
+ * it or it settles, so the strip follows the finger (the owner,
+ * 2026-11-22: "It should follow finger to look natural"). With Reduce
+ * Motion, the end size only: thin until the sheet is at the pill (`held`),
+ * asked of lib/motion's one kept query, as it is asked every frame (a
+ * matchMedia made afresh at each was the cost lib/motion measured).
+ */
+export function growAt(slid: number, half: number, pill: number, held: boolean, reduced = prefersReducedMotion()) {
+  if (reduced || pill <= half) return held ? 1 : 0;
+  return Math.round(Math.min(1, Math.max(0, (slid - half) / (pill - half))) * 1000) / 1000;
+}
+
+/** The foot's height, the row's lift off its edge, and the sheet's offset
+ *  at the pill: a phone's bottom sheet only (Base UI's data-swipe-direction
+ *  on its popup), none beside the side panel, which slides nowhere. */
+function liftOf(foot: HTMLElement | null, sheet: Element | null) {
+  if (!foot || !(sheet instanceof HTMLElement) || sheet.dataset.swipeDirection !== "down") return { lift: 0, pill: 0, half: 0 };
+  const h = sheet.offsetHeight;
+  return { lift: foot.offsetHeight, pill: h - shownPx("peek", true, h), half: h - shownPx("half", true, h) };
 }
 
 /** How far the sheet may slide down before the row's foot reaches the

@@ -64,4 +64,14 @@ class TickerTest {
         a.cancel()
         b.cancel()
     }
+
+    @Test
+    fun inFrontFollowsTheBackgroundForTheScreensOwnLoops() = runTest {
+        val ticker = Ticker(this) { testScheduler.currentTime }
+        assertEquals(true, ticker.inFront.value)
+        ticker.background = true
+        assertEquals(false, ticker.inFront.value)
+        ticker.background = false
+        assertEquals(true, ticker.inFront.value)
+    }
 }

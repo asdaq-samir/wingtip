@@ -5,6 +5,7 @@
 #
 #   apps/web/src/styles/tokens.css                 CSS custom properties
 #   apps/web/src/lib/tokens.ts                     the same for JS
+#   apps/web/src/lib/generated/mapTokens.ts        its map zooms and labels
 #   apps/ios/Wingtip/Design/Generated/Tokens.swift UIColor, Font, CGFloat
 #   apps/android/.../design/generated/Tokens.kt    Color, Typography, Dp
 #

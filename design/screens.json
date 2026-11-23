@@ -20,7 +20,10 @@
     { "key": "type", "about": "A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own." },
     { "key": "rules", "about": "A shared plan's flight rules, vfr or ifr." },
     { "key": "tail", "about": "A shared plan's N-number, only where its pilot chose to send it." },
-    { "key": "share", "about": "A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it." }
+    { "key": "tanks", "about": "A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full." },
+    { "key": "procs", "about": "A shared plan's instrument procedures, as the address keeps them: each a field, a procedure, its transition and a fix flown direct to, colon-separated, and after a fifth colon L for an approach loaded and not flown or M for one flown on into its missed approach (KDLH:I27:::L), comma-separated (the engine's procedures_read)." },
+    { "key": "share", "about": "A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it." },
+    { "key": "doc", "about": "A document open in the reader and where in it: the library's by its name (aim, cfr-14-91, phak) or the pilot's own (own:<id>), after an @ a section, a paragraph or a page (aim@7-1-5, cfr-14-91@91.155, phak@p42)." }
   ],
   "screens": [
     { "id": "fpl", "title": "FPL", "about": "The plan: the route, its altitude and its figures, the sheet's second page (Search, FPL).", "platforms": ["web", "ios", "android"], "shortcut": 6 },
@@ -40,6 +43,9 @@
     { "id": "logbook", "title": "Logbook", "about": "The pilot's logbook and currency.", "platforms": ["web", "ios", "android"], "shortcut": 9 },
     { "id": "coach", "title": "Coach", "about": "The training coach.", "platforms": ["web", "ios", "android"], "shortcut": 11 },
     { "id": "minimums", "title": "Personal Minimums", "about": "The weather the pilot will not take off or land in.", "platforms": ["web", "ios", "android"], "shortcut": 12, "shortLabel": "Minimums" },
+    { "id": "documents", "title": "Documents", "about": "The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph.", "platforms": ["web", "ios", "android"] },
+    { "id": "scratchpad", "title": "Scratchpad", "about": "This flight's scratchpads: pages of ink with a pencil or a finger, blank or a form (CRAFT, ATIS, PIREP), kept on the device; from You and the Brief.", "platforms": ["web", "ios", "android"] },
+    { "id": "balance", "title": "Weight & Balance", "about": "The airplane's loading weighed as the pilot types (the engine's gonogo_balance), the fuel by its grade, against its envelope; from the Brief.", "platforms": ["web", "ios", "android"] },
     { "id": "guide", "title": "Guide", "about": "How the app works, and the practice drills.", "platforms": ["web", "ios"] },
     { "id": "downloads", "title": "Downloads", "about": "Charts kept for flying with no signal.", "platforms": ["ios", "android"], "shortcut": 13 },
     { "id": "passengers", "title": "Passenger Briefing", "about": "The passenger briefing.", "platforms": ["ios", "android"], "shortcut": 14, "shortLabel": "Passengers" },

@@ -30,7 +30,7 @@ fn each_case_reads_as_the_fixture_says() {
         }
         let actions: Vec<&Value> = answer["actions"].as_array().unwrap().iter().map(|a| &a["key"]).collect();
         assert_eq!(json!(actions), want["actions"], "{why}");
-        for key in ["charts", "briefing", "kept"] {
+        for key in ["charts", "briefing", "kept", "notams"] {
             if let Some(line) = want.get(key) {
                 assert_eq!(&find(&answer, key)["line"], line, "{why}");
             }
@@ -72,4 +72,14 @@ fn kept_charts_past_their_edition_are_downloaded_again() {
 fn a_date_that_is_no_day_is_refused_in_words() {
     let err = call("ready_to_fly", &json!({ "now": 0, "packs": { "edition": "soon" } }).to_string()).unwrap_err();
     assert!(err.contains("YYYY-MM-DD"), "{err}");
+}
+
+#[test]
+fn packs_go_out_of_date_at_0901z_on_the_next_cycles_day() {
+    // The 2611 packs (29 Oct 2026) against AIRAC 2612, 0901Z 26 Nov 2026:
+    // the minute before, of and after.
+    for (now, finding) in [(1795683600, "ok"), (1795683660, "caution"), (1795683720, "caution")] {
+        let answer = ask(&json!({ "now": now, "packs": { "edition": "2026-10-29" } }));
+        assert_eq!(find(&answer, "packs")["finding"], json!(finding), "{now}: {answer}");
+    }
 }

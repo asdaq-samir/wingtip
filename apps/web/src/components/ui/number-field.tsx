@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "cn";
 import { Group, Input, NumberField as AriaNumberField, NumberFieldStateContext, type NumberFieldProps } from "react-aria-components";
 
@@ -6,10 +6,13 @@ import { Group, Input, NumberField as AriaNumberField, NumberFieldStateContext, 
 const BOX =
   "relative flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md border border-input bg-transparent px-2.5 shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 data-focus-within:border-ring data-focus-within:ring-2 data-focus-within:ring-ring data-focus-within:ring-offset-2 data-focus-within:ring-offset-background data-disabled:pointer-events-none data-disabled:opacity-50 data-invalid:border-destructive data-invalid:ring-3 data-invalid:ring-destructive/20 dark:data-invalid:border-destructive/50";
 
-/** The figure: 16 below md so a phone does not zoom on it, a row's to a
- *  finger (lib/text). */
+/** The figure: 16 wherever a finger types it, so iOS does not zoom in on
+ *  a field under 16 (an iPad in the Native look, which takes no
+ *  pointer-coarse size, too), 14 with a mouse from md, a row's to a finger
+ *  in Wingtip's looks (lib/text). */
 const FIGURE =
-  "h-full w-full min-w-0 bg-transparent py-1 text-base tabular-nums outline-none placeholder:text-muted-foreground md:text-sm pointer-coarse:text-(length:--type-row)";
+  "h-full w-full min-w-0 bg-transparent py-1 text-base tabular-nums outline-none placeholder:text-muted-foreground md:pointer-fine:text-sm pointer-coarse:text-(length:--type-row)";
+const UNIT = "shrink-0 text-sm text-muted-foreground pointer-coarse:text-(length:--type-row)";
 
 /** The figure as it is typed, each change: React Aria's own reading of the
  *  text (its state's numberValue, parsed in the locale), for a button
@@ -38,7 +41,9 @@ function Typed({ onTyped }: { onTyped: (value: number | null) => void }) {
  * Its value is a number, null for none (React Aria's NaN). The test id and
  * the id are on the figure itself, so a label's htmlFor (FieldHit's 44)
  * and a test's fill reach it. `unit` is said inside the box, at its end,
- * `lead` at its start ("FL").
+ * `lead` at its start ("FL"), both at the figure's own size under a
+ * finger (Body, 17), as an iOS field writes its unit: at 14 they were off
+ * the type scale (the HIG review's "gal", 2026-11-21).
  *
  * The locale is the browser's: the app sets no I18nProvider, so React
  * Aria reads navigator.language, and a pilot whose phone writes 12,5 has
@@ -55,7 +60,10 @@ function NumberField({
   unit,
   lead,
   onTyped,
-  enterKeyHint,
+  // Done unless a field names its own: the figure is taken as Enter
+  // leaves it, and iOS's return key says so (the iOS audit's P19, the
+  // holding and lost-communications practice pages).
+  enterKeyHint = "done",
   className,
   inputClassName,
   formatOptions,
@@ -75,21 +83,34 @@ function NumberField({
   inputClassName?: string;
   "data-testid"?: string;
 }) {
+  // Figures padded to three (THREE_FIGURES' minimumIntegerDigits, a flight
+  // level's 045 or a course's 090) are written so only once the field is
+  // left: padded as it was typed in, React Aria read each Backspace of
+  // "025" as a new figure padded again, "99" and then "9", and the field
+  // could not be emptied (the owner, 2026-11-22: "FL input is not letting
+  // me clear it").
+  const [typing, setTyping] = useState(false);
+  const shown = formatOptions ?? { useGrouping: false, maximumFractionDigits: 3 };
+  const { minimumIntegerDigits: _padded, ...unpadded } = shown;
   return (
     <AriaNumberField
       {...props}
+      onFocusChange={(focused) => {
+        setTyping(focused);
+        props.onFocusChange?.(focused);
+      }}
       value={value === undefined ? undefined : (value ?? Number.NaN)}
       defaultValue={defaultValue === undefined ? undefined : (defaultValue ?? Number.NaN)}
       onChange={(n) => onChange?.(Number.isNaN(n) ? null : n)}
-      formatOptions={formatOptions ?? { useGrouping: false, maximumFractionDigits: 3 }}
+      formatOptions={typing ? unpadded : shown}
       data-slot="number-field"
       className="min-w-0"
     >
       {onTyped && <Typed onTyped={onTyped} />}
       <Group className={cn(BOX, className)}>
-        {lead != null && <span className="shrink-0 text-sm text-muted-foreground">{lead}</span>}
+        {lead != null && <span className={UNIT}>{lead}</span>}
         <Input id={id} placeholder={placeholder} enterKeyHint={enterKeyHint} data-testid={testId} className={cn(FIGURE, inputClassName)} />
-        {unit != null && <span className="shrink-0 text-sm text-muted-foreground">{unit}</span>}
+        {unit != null && <span className={UNIT}>{unit}</span>}
       </Group>
     </AriaNumberField>
   );

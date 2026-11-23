@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.max
 
 /** One message of the copilot's, the engine's. */
 typealias CopilotMessage = EngineContract.CopilotMessage
@@ -62,11 +61,17 @@ class CopilotModel @Inject constructor(
             return
         }
         if (startedAtMs == null) startedAtMs = fix.atMs
+        // Whether either is due, on a key of tenths of a degree, before the
+        // route is measured: route_position over the whole line ran at
+        // every fix, then the throttles threw most of it away. A leg passed
+        // inside one tenth is asked about within the minute.
+        val question = listOf(Math.round(fix.lat * 10) / 10.0, Math.round(fix.lon * 10) / 10.0, flight.dest, flight.alternate).joinToString("|")
+        val askDue = question != askedFor || nowMs - askedAtMs >= ASK_MS
+        val lookDue = lookedAtMs?.let { nowMs - it >= LOOK_MS } != false
+        if (!askDue && !lookDue) return
         val along = rules.along(fix.lat, fix.lon, flight.line)
-        val question = listOf(Math.round(fix.lat * 10) / 10.0, Math.round(fix.lon * 10) / 10.0, flight.dest, flight.alternate,
-            CopilotShapes.restOfRoute(fix.lat, fix.lon, flight.line, along?.leg ?: 0)).joinToString("|")
-        if (question != askedFor || nowMs - askedAtMs >= ASK_MS) ask(question, fix, flight, along, nowMs)
-        if (lookedAtMs?.let { nowMs - it < LOOK_MS } == true) return
+        if (askDue) ask(question, fix, flight, along, nowMs)
+        if (!lookDue) return
         lookedAtMs = nowMs
         val got = around ?: return
         val answer = rules.watch(input(fix, flight, got, along, ahead, minimums)) ?: return
@@ -112,25 +117,22 @@ class CopilotModel @Inject constructor(
     private fun input(
         fix: OwnShip.Fix, flight: CopilotFlight, got: CopilotAround, along: Along?, ahead: List<AheadAlert>,
         minimums: EngineContract.CopilotWatchInputMinimums?,
-    ): EngineContract.CopilotWatchInput {
-        val hours = max(0L, fix.atMs - (startedAtMs ?: fix.atMs)) / 3_600_000.0
-        val fuel = flight.fuelGal
-        val burn = flight.burnGph
-        return EngineContract.CopilotWatchInput(
-            nowS = fix.atMs / 1000.0,
-            own = EngineContract.CopilotWatchInputOwn(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
-            fields = CopilotShapes.fields(got, firstSeen),
-            rules = flight.rules,
-            // The pilot's own minimums (Setup) and whether anyone is aboard
-            // (the Airplane page), as the web's copilotInput passes them.
-            minimums = minimums, passengers = flight.passengers,
-            fuelGal = if (fuel != null && burn != null) max(0.0, fuel - burn * hours) else null,
-            burnGph = burn, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
-            remainingNm = along?.leftNm, plannedGsKt = flight.plannedGsKt,
-            areas = CopilotShapes.areas(got), itws = CopilotShapes.itws(got),
-            ahead = ahead.map { EngineContract.CopilotWatchInputAheadItem(it.id, it.kind, it.level, it.name) },
-        )
-    }
+    ): EngineContract.CopilotWatchInput = EngineContract.CopilotWatchInput(
+        nowS = fix.atMs / 1000.0,
+        own = EngineContract.CopilotWatchInputOwn(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
+        fields = CopilotShapes.fields(got, firstSeen),
+        rules = flight.rules,
+        // The pilot's own minimums (Setup) and whether anyone is aboard
+        // (the Airplane page), as the web's copilotInput passes them.
+        minimums = minimums, passengers = flight.passengers,
+        // The fuel at takeoff and when the flight began: the engine takes
+        // the burn over the time since (copilot_watch's started_s).
+        fuelGal = flight.fuelGal, startedS = startedAtMs?.let { it / 1000.0 },
+        burnGph = flight.burnGph, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
+        remainingNm = along?.leftNm, plannedGsKt = flight.plannedGsKt,
+        areas = CopilotShapes.areas(got), itws = CopilotShapes.itws(got),
+        ahead = ahead.map { EngineContract.CopilotWatchInputAheadItem(it.id, it.kind, it.level, it.name) },
+    )
 
     private fun reset() {
         _message.value = null

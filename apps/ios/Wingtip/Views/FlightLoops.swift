@@ -12,6 +12,8 @@ struct FlightLoops: ViewModifier {
     @Environment(AtcCopilot.self) private var atc
     @Environment(ClearanceListener.self) private var listener
     @Environment(Emergency.self) private var emergency
+    /// The ATC Copilot's switch in Settings' Extras: turned off, listening stops.
+    @AppStorage(Extra.atcCopilot.key) private var atcCopilot = false
 
     func body(content: Content) -> some View {
         let (plan, ownShip, dryRun, traffic) = (flight.plan, flight.ownShip, flight.dryRun, flight.traffic)
@@ -36,7 +38,7 @@ struct FlightLoops: ViewModifier {
             .onChange(of: ownShip.ahead) { _, alerts in flight.spoken.hear(alerts) }
             // The ATC copilot: each settled transmission read, the radio listened to while flying where turned on.
             .onChange(of: listener.heard) { _, heard in atc.observe(heard, tail: plan.tail) }
-            .task(id: "\(inFlight.underway)|\(plan.tail ?? "")|\(atc.mode.rawValue)") {
+            .task(id: "\(inFlight.underway)|\(plan.tail ?? "")|\(atc.mode.rawValue)|\(atcCopilot)") {
                 await atc.follow(flying: inFlight.underway, tail: plan.tail)
             }
             .modifier(AutoLogbookHost()) // The flight logged from its track once landed and at rest.
@@ -49,5 +51,13 @@ struct FlightLoops: ViewModifier {
             // The route's line for the packs read ahead (regions_ahead).
             .onChange(of: plan.course, initial: true) { _, course in ownShip.routeLine = course?.coordinates.map { [$0.latitude, $0.longitude] } }
             .onChange(of: ownShip.groundFt) { _, ft in inFlight.terrainFt = ft }
+            // The screen kept on while flying, as EFBs keep it in flight
+            // (the web's Screen Wake Lock, the in-flight audit's Q2, owner
+            // rec 16): a phone that dimmed and locked on its own timer took
+            // the map and the copilot's voice with it. Let go on the ground,
+            // where iOS's own timer dims it again.
+            .onChange(of: inFlight.underway && dryRun.fix == nil, initial: true) { _, flying in
+                UIApplication.shared.isIdleTimerDisabled = flying
+            }
     }
 }

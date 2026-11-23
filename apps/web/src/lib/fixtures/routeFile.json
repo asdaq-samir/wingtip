@@ -1,0 +1,93 @@
+{
+  "about": "Route files another app wrote, read by the engine's route_file_read before the pilot uses one: a Garmin FlightPlan v1 .fpl (http://www8.garmin.com/xmlschemas/FlightPlan/v1), as Garmin Pilot and ForeFlight export it, and a GPX 1.1 route. Field places from NASR APT_BASE (KMSN, KOSH, C81, KJVL) and NAV_BASE (MSN); the user points made up. Read by engine/facade/tests/route_file.rs and the web's features/shared-flight/routeFile.test.ts.",
+  "cases": [
+    {
+      "name": "a Garmin .fpl: an airport, a VOR, a user waypoint, an airport",
+      "text": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<flight-plan xmlns=\"http://www8.garmin.com/xmlschemas/FlightPlan/v1\">\n  <created>20261121T12:00:00Z</created>\n  <waypoint-table>\n    <waypoint><identifier>KMSN</identifier><type>AIRPORT</type><country-code>K5</country-code><lat>43.139858</lat><lon>-89.337514</lon><comment>DANE CO RGNL/TRUAX FLD</comment></waypoint>\n    <waypoint><identifier>MSN</identifier><type>VOR</type><country-code>K5</country-code><lat>43.144772</lat><lon>-89.338661</lon><comment>MADISON</comment></waypoint>\n    <waypoint><identifier>USR001</identifier><type>USER WAYPOINT</type><country-code /><lat>43.5</lat><lon>-88.9</lon><comment /></waypoint>\n    <waypoint><identifier>KOSH</identifier><type>AIRPORT</type><country-code>K5</country-code><lat>43.984389</lat><lon>-88.556972</lon><comment>WITTMAN RGNL</comment></waypoint>\n  </waypoint-table>\n  <route>\n    <route-name>KMSN TO KOSH</route-name>\n    <flight-plan-index>1</flight-plan-index>\n    <route-point><waypoint-identifier>KMSN</waypoint-identifier><waypoint-type>AIRPORT</waypoint-type><waypoint-country-code>K5</waypoint-country-code></route-point>\n    <route-point><waypoint-identifier>MSN</waypoint-identifier><waypoint-type>VOR</waypoint-type><waypoint-country-code>K5</waypoint-country-code></route-point>\n    <route-point><waypoint-identifier>USR001</waypoint-identifier><waypoint-type>USER WAYPOINT</waypoint-type><waypoint-country-code /></route-point>\n    <route-point><waypoint-identifier>KOSH</waypoint-identifier><waypoint-type>AIRPORT</waypoint-type><waypoint-country-code>K5</waypoint-country-code></route-point>\n  </route>\n</flight-plan>\n",
+      "answer": {
+        "name": "KMSN TO KOSH",
+        "departure": {
+          "ident": "KMSN",
+          "name": "DANE CO RGNL/TRUAX FLD",
+          "lat": 43.139858,
+          "lon": -89.337514,
+          "kind": "airport"
+        },
+        "destination": {
+          "ident": "KOSH",
+          "name": "WITTMAN RGNL",
+          "lat": 43.984389,
+          "lon": -88.556972,
+          "kind": "airport"
+        },
+        "between": [
+          {
+            "ident": "MSN",
+            "name": "MADISON",
+            "lat": 43.144772,
+            "lon": -89.338661,
+            "kind": "navaid"
+          },
+          {
+            "ident": null,
+            "name": "USR001",
+            "lat": 43.5,
+            "lon": -88.9,
+            "kind": "user"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a GPX route: two fields and a point named in words",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"Wingtip fixture\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n  <rte>\n    <name>C81 to KJVL</name>\n    <rtept lat=\"42.322102\" lon=\"-88.074097\"><name>C81</name><sym>Airport</sym></rtept>\n    <rtept lat=\"42.6\" lon=\"-88.6\"><name>Lake Geneva</name></rtept>\n    <rtept lat=\"42.620306\" lon=\"-89.041556\"><name>KJVL</name><sym>Airport</sym></rtept>\n  </rte>\n</gpx>\n",
+      "answer": {
+        "name": "C81 to KJVL",
+        "departure": {
+          "ident": "C81",
+          "name": null,
+          "lat": 42.322102,
+          "lon": -88.074097,
+          "kind": "airport"
+        },
+        "destination": {
+          "ident": "KJVL",
+          "name": null,
+          "lat": 42.620306,
+          "lon": -89.041556,
+          "kind": "airport"
+        },
+        "between": [
+          {
+            "ident": null,
+            "name": "Lake Geneva",
+            "lat": 42.6,
+            "lon": -88.6,
+            "kind": "user"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a KML is not a route file",
+      "text": "<kml><Document/></kml>",
+      "answer": {
+        "error": "This file is not a flight plan (.fpl) or a GPX route."
+      }
+    },
+    {
+      "name": "one point is no route",
+      "text": "<gpx><wpt lat=\"42\" lon=\"-88\"><name>KJVL</name></wpt></gpx>",
+      "answer": {
+        "error": "There is no route in this file: it needs two points at the least."
+      }
+    },
+    {
+      "name": "a route that ends at a user point",
+      "text": "<gpx><rte><rtept lat=\"42\" lon=\"-88\"><name>KJVL</name></rtept><rtept lat=\"43\" lon=\"-89\"><name>Back home</name></rtept></rte></gpx>",
+      "answer": {
+        "error": "This route starts or ends at a point with no ident: a route here runs from a field to a field."
+      }
+    }
+  ]
+}

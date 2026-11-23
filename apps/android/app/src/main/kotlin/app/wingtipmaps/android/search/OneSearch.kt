@@ -117,8 +117,13 @@ fun OneSearch(
     val own by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
 
-    // Opened from elsewhere: an Airport link, the plan's Add a Stop.
-    LaunchedEffect(control.asked) { if (control.takeAsk()) searchBarState.animateToExpanded() }
+    // Opened from elsewhere: an Airport link, the plan's Add a Stop, words
+    // dropped on the window (typed in, as the pilot would).
+    LaunchedEffect(control.asked) {
+        if (!control.takeAsk()) return@LaunchedEffect
+        control.takeWords()?.let(textFieldState::setTextAndPlaceCursorAtEnd)
+        searchBarState.animateToExpanded()
+    }
     LaunchedEffect(searchBarState) {
         snapshotFlow { searchBarState.currentValue }.collect { if (it == SearchBarValue.Collapsed) control.done() }
     }
@@ -184,7 +189,7 @@ fun OneSearch(
             when {
                 listening -> R.string.voice_speak
                 control.picking != null -> control.pickHint
-                control.addingStop -> R.string.search_add_stop
+                control.addingStop -> R.string.wording_add_stop
                 flying && voice -> R.string.search_hint_flying
                 else -> R.string.search_hint
             },
@@ -264,17 +269,29 @@ fun OneSearch(
         val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null, asked) {
             SearchGroups.actions(state.query, planState.routed, fix != null, FieldMarks.firstOffered(state.airports, state.waypoints), asked)
         }
+        // While a stop or an end is asked for, the fields it cannot take
+        // greyed with why (PickRefusal): closed, or already on the route.
+        val closedWord = stringResource(R.string.pick_closed)
+        val onRouteWord = stringResource(R.string.pick_on_route)
+        val route = listOf(planState.dep) + planState.stops + planState.dest
+        val refusal: (String, String?) -> String? = { ident, closed ->
+            when (PickRefusal.of(control.picking != null, control.addingStop, ident, closed, route)) {
+                PickRefusal.Why.CLOSED -> closedWord
+                PickRefusal.Why.ON_ROUTE -> onRouteWord
+                null -> null
+            }
+        }
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             if (typed) {
                 kindFilters(chosen) { kind -> chosen = if (kind in chosen) chosen - kind else chosen + kind }
-                searchResults(state, actions, routed = planState.routed, hasFix = fix != null, chosen = chosen, onPick = pick)
+                searchResults(state, actions, routed = planState.routed, hasFix = fix != null, chosen = chosen, onPick = pick, refusal = refusal)
             } else {
                 if (!control.addingStop) {
                     item(key = "flight") {
                         FlightCard(planState, tail = tail, onOpen = { pick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
                     }
                 }
-                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, fix, onPick = pick)
+                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, fix, onPick = pick, refusal = refusal)
             }
         }
     }

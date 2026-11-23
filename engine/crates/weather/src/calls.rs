@@ -6,7 +6,7 @@
 //! the FAA's data cycles (cycles.rs).
 
 use crate::json::{self, Value};
-use crate::{cycles, forecast, metar, notam, tfr, validity, xml};
+use crate::{cycles, forecast, metar, notam, tfr, time, validity, xml};
 use wingtip_core::ask::{opt_num_in, Ask};
 use wingtip_flight::vfr::{SURFACE_AREA_CEILING_FT, SURFACE_AREA_VISIBILITY_SM};
 
@@ -75,13 +75,20 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "data_cycle" => {
             let kind = ask.str("kind")?;
             let kind = cycles::Kind::from_name(kind).ok_or_else(|| format!("{name}: \"kind\" is not airac, chart or dof: {kind:?}"))?;
-            let on = ask.str("on")?;
-            let on = cycles::day_of(on).ok_or_else(|| format!("{name}: \"on\" is not YYYY-MM-DD: {on:?}"))?;
             let effective = match ask.opt_str("effective")? {
                 "" => None,
                 e => Some(cycles::day_of(e).ok_or_else(|| format!("{name}: \"effective\" is not YYYY-MM-DD: {e:?}"))?),
             };
-            return Ok(cycles::to_json(&cycles::cycle(kind, effective, on)));
+            // A day ("2026-11-26"), its whole self the new edition's, or an
+            // instant ("2026-11-26T09:01:00Z"), exact to 0901Z (cycles.rs).
+            let on = ask.str("on")?;
+            let refused = || format!("{name}: \"on\" is not YYYY-MM-DD or a UTC time: {on:?}");
+            let answer = if on.contains('T') {
+                cycles::cycle_at(kind, effective, time::parse_iso(on).ok_or_else(refused)?)
+            } else {
+                cycles::cycle(kind, effective, cycles::day_of(on).ok_or_else(refused)?)
+            };
+            return Ok(cycles::to_json(&answer));
         }
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }

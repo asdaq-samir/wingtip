@@ -10,7 +10,6 @@ import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.MagicLink;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.Squawk;
-import app.wingtipmaps.gateway.domain.Subscription;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import app.wingtipmaps.gateway.repository.EndorsementRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
@@ -19,17 +18,12 @@ import app.wingtipmaps.gateway.repository.LogbookRepository;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.repository.SquawkRepository;
-import app.wingtipmaps.gateway.repository.SubscriptionRepository;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
-import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,8 +39,6 @@ import org.springframework.session.Session;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
@@ -59,22 +51,21 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Testcontainers
 abstract class AccountTestBase {
 
-    @Container
+    /** One Postgres for every class that extends this, started once and
+     *  left to Testcontainers' own reaper: a container a class stopped
+     *  would leave the next class's cached context (the same one, its
+     *  configuration being the same) pointing at a port that is gone. */
     @ServiceConnection
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18");
 
-    /** The planner, which keeps the pilot's own checkpoint notes. */
-    private static HttpServer planner;
+    static {
+        postgres.start();
+    }
 
-    /** The pilot's own note, as the planner answers GET /api/checkpoint-notes/mine. */
-    static final String NOTES =
-            "{\"notes\":[{\"route\":\"C81->KDLH\",\"lat\":45.0,\"lon\":-90.0,\"description\":\"Water tower\",\"created_at\":\"2026-10-01T00:00:00+00:00\"}]}";
-
-    static final List<String> plannerAsked = new CopyOnWriteArrayList<>();
-    static volatile int plannerStatus = 200;
+    /** A PNG's eight-byte signature: what AvatarService checks a PNG by. */
+    static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
 
     @Autowired
     MockMvc mockMvc;
@@ -104,54 +95,26 @@ abstract class AccountTestBase {
     MagicLinkRepository magicLinks;
 
     @Autowired
-    SubscriptionRepository subscriptions;
-
-    @Autowired
     FindByIndexNameSessionRepository<? extends Session> sessions;
 
     @Autowired
     JdbcTemplate jdbc;
 
+    /** Started once for every class that extends this, as the database
+     *  is: the cached context keeps the first one's address. */
     @BeforeAll
     static void startPlanner() throws IOException {
-        planner = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        planner.createContext("/", exchange -> {
-            plannerAsked.add(
-                    exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath() + " pilot="
-                            + exchange.getRequestHeaders().getFirst("X-Pilot-Id"));
-            // Every field the document requires, in JSON, as the planner answers: Jackson 3 leaves a
-            // missing list null, and Spring reads an unlabelled body as octet-stream.
-            String path = exchange.getRequestURI().getPath();
-            byte[] body = (path.equals("/api/pilot/endorsements")
-                            ? "{\"checks\":[],\"soloUntil\":null,\"until\":[]}"
-                            : exchange.getRequestMethod().equals("GET") && path.equals("/api/checkpoint-notes/mine")
-                                    ? NOTES
-                                    : "{\"removed\":1}")
-                    .getBytes();
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            exchange.sendResponseHeaders(plannerStatus, body.length);
-            exchange.getResponseBody().write(body);
-            exchange.close();
-        });
-        planner.start();
-    }
-
-    @AfterAll
-    static void stopPlanner() {
-        planner.stop(0);
+        FakePlanner.start();
     }
 
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
-        registry.add(
-                "app.planner.base-url",
-                () -> "http://127.0.0.1:" + planner.getAddress().getPort());
+        registry.add("app.planner.base-url", FakePlanner::baseUrl);
     }
 
     @BeforeEach
     void reset() {
-        plannerAsked.clear();
-        plannerStatus = 200;
+        FakePlanner.reset();
     }
 
     /** A pilot with one of everything a pilot can have, and a session. */
@@ -206,12 +169,6 @@ abstract class AccountTestBase {
                         + " updated_at) VALUES (?, ?, 'KDLH', 'I09', 'ILS RWY 09', now(), now())",
                 pilot.getId(),
                 pilot.getId());
-        // The free month started, and a written briefing counted against its cap.
-        subscriptions.save(new Subscription(pilot.getId(), Instant.now()));
-        jdbc.update(
-                "INSERT INTO paid_feature_uses (pilot_id, month, feature, uses) VALUES (?, ?, 'NARRATIVE', 1)",
-                pilot.getId(),
-                LocalDate.of(2026, 10, 1));
         // Shared by link, watched, a reminder sent, and an AI app connected
         // (V39, V31, V23, V40): what the export and both deletions must reach.
         jdbc.update(
@@ -227,6 +184,11 @@ abstract class AccountTestBase {
                 "INSERT INTO reminders_sent (pilot_id, what, due_on, days_before) VALUES (?, 'medical', ?, 30)",
                 pilot.getId(),
                 LocalDate.of(2026, 12, 1));
+        // Their avatar's photo (V45): a PNG's signature is enough of one here.
+        jdbc.update(
+                "INSERT INTO pilot_avatars (pilot_id, content_type, image, updated_at) VALUES (?, 'image/png', ?, now())",
+                pilot.getId(),
+                PNG);
         String client = UUID.randomUUID().toString();
         jdbc.update(
                 "INSERT INTO oauth2_registered_client (id, client_id, client_name, client_authentication_methods,"
@@ -298,8 +260,6 @@ abstract class AccountTestBase {
                 jdbc.queryForObject(
                         "SELECT count(*) FROM cross_country_reviews WHERE student_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM subscriptions WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM paid_feature_uses WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject(
                         "SELECT count(*) FROM magic_links WHERE email = ?", Integer.class, pilot.getEmail()),
                 jdbc.queryForObject(
@@ -308,6 +268,7 @@ abstract class AccountTestBase {
                         id),
                 jdbc.queryForObject("SELECT count(*) FROM flight_watch WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM reminders_sent WHERE pilot_id = ?", Integer.class, id),
+                jdbc.queryForObject("SELECT count(*) FROM pilot_avatars WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject(
                         "SELECT count(*) FROM oauth2_authorization WHERE principal_name = ?",
                         Integer.class,

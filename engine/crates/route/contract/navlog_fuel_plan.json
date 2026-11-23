@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::navlog::calls::call",
-  "description": "The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.",
+  "description": "The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel; the margin is against the fuel in the tanks as the flight leaves (on_board_gal): full, the usable fuel, unless the pilot set their own (fill_gal: at the departure the fuel on board at engine start, at a stop what it is fuelled to, never under what the flight before left, left_gal; more than usable kept as set, with a warning); lands_with_gal is what it lands with, the next flight's left_gal.",
   "type": "object",
   "properties": {
     "input": {
@@ -43,6 +43,20 @@
             "number",
             "null"
           ]
+        },
+        "fill_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The pilot's own figure for the tanks as the flight leaves, gallons: at the departure the fuel on board at engine start, at a stop what it is fuelled to (0, no fuel bought); null, full."
+        },
+        "left_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "At a stop, what the flight before landed with (its lands_with_gal), which fuelling never takes from; null at the departure or where not known."
         }
       },
       "required": [
@@ -86,6 +100,20 @@
             "null"
           ]
         },
+        "on_board_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The fuel in the tanks as the flight leaves, gallons; null with no airplane or no usable fuel known and none set."
+        },
+        "lands_with_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The fuel it lands with: on_board_gal less the start and taxi allowance and the trip; null where either is not known."
+        },
         "night": {
           "type": [
             "boolean",
@@ -103,6 +131,8 @@
         "fuel_required_gal",
         "usable_fuel_gal",
         "fuel_margin_gal",
+        "on_board_gal",
+        "lands_with_gal",
         "night",
         "rules"
       ]

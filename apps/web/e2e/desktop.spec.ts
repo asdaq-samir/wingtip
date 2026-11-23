@@ -72,7 +72,10 @@ test("an airport's card has its actions' keys, Alt+F and Alt+S, and the search's
   await expect(card.getByTestId("fly-here")).toContainText("Alt+F");
   await expect(card.getByTestId("place-add-stop")).toHaveAttribute("aria-keyshortcuts", "Alt+S");
   // A bare S does nothing: a letter alone is VoiceOver's quick nav and the browser's find-as-you-type.
-  await page.locator("body").click({ position: { x: 1000, y: 400 } });
+  // The focus off the search's field, the card kept: a click on the map
+  // puts the card away (places-chart.spec's "a tap elsewhere puts it
+  // away"), and then no key of its has a card to act on.
+  await search.blur();
   await page.keyboard.press("s");
   await page.waitForTimeout(300);
   await expect(page).not.toHaveURL(/[?&]stops=KOSH/);

@@ -20,6 +20,9 @@ enum Screen: String, CaseIterable, Sendable {
     case logbook
     case coach
     case minimums
+    case documents
+    case scratchpad
+    case balance
     case guide
     case downloads
     case passengers
@@ -46,6 +49,9 @@ enum Screen: String, CaseIterable, Sendable {
         case .logbook: "Logbook"
         case .coach: "Coach"
         case .minimums: "Personal Minimums"
+        case .documents: "Documents"
+        case .scratchpad: "Scratchpad"
+        case .balance: "Weight & Balance"
         case .guide: "Guide"
         case .downloads: "Downloads"
         case .passengers: "Passenger Briefing"
@@ -75,5 +81,8 @@ enum LinkKey: String, CaseIterable, Sendable {
     case type
     case rules
     case tail
+    case tanks
+    case procs
     case share
+    case doc
 }

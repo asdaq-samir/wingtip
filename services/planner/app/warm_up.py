@@ -25,7 +25,7 @@ from wingtip import (
     water,
     weather,
 )
-from wingtip import airspace_at, congested, cycle_pack, data_cycles, phone_pack, schedule
+from wingtip import airspace_at, chart_serving, congested, cycle_pack, data_cycles, library, phone_pack, procedures, schedule
 from wingtip import airports as airport_table
 
 from . import chart_model, chart_refresh
@@ -52,6 +52,12 @@ FAA_DATA_AUTO_REFRESH = get_settings().faa_data_auto_refresh
 #: planner holds, once a cycle: on, but on a test stack, which reads the
 #: files themselves and need not write 400 MB a run.
 CYCLE_PACK = get_settings().cycle_pack
+#: Whether the documents library's publications are fetched here
+#: (wingtip.library): on, but on a test stack, whose suite stubs them.
+FAA_LIBRARY_REFRESH = get_settings().faa_library_refresh
+#: How often the library's sources are looked at for a new edition: the
+#: eCFR is issued each working day, the FAA's books a few times a year.
+LIBRARY_CHECK_EVERY_S = 24 * 3600
 # Set once the reference data below is loaded: the health probe reports
 # it, so a test run against a fresh stack can wait for a planner that
 # answers at full speed rather than one still parsing airspace under its first requests.
@@ -93,6 +99,9 @@ def check_faa_editions() -> None:
     if not FAA_DATA_AUTO_REFRESH:
         return
     refreshed = faa_editions.refresh_editions(altitude.DEFAULT_FAA_CACHE_DIR)
+    # The next cycle's files fetched ahead in its week before 0901Z, for the
+    # changeover to put in place with nothing to download.
+    faa_editions.stage_next(altitude.DEFAULT_FAA_CACHE_DIR)
     if refreshed:
         log.info("FAA files refreshed: %s", ", ".join(refreshed))
         airspace.preload(altitude.DEFAULT_FAA_CACHE_DIR)
@@ -103,6 +112,30 @@ def check_faa_editions() -> None:
             cycle_pack.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
             phone_pack.ensure_phone()
             chart_refresh.ask_for_overlays()
+
+
+def check_procedures() -> None:
+    """The next AIRAC cycle's CIFP fetched ahead in its week before 0901Z
+    (wingtip.faa_editions.stage_next_cifp), and the cycle in force's fetched
+    now where it is not on disk yet: the procedures are fetched on a pilot's
+    first ask otherwise, 53 MB under his request. On whatever
+    FAA_DATA_AUTO_REFRESH says, as that first ask fetches it regardless."""
+    faa_editions.stage_next_cifp()
+    procedures.cifp_path()
+
+
+def at_changeover() -> None:
+    """At 0902Z each day, a minute after an AIRAC or charting edition takes
+    over (the engine's `data_cycle`): on a changeover day the next cycle's
+    files go into place now (fetched ahead, `check_faa_editions`), the
+    procedures and the d-TPP and Chart Supplement indexes of the new cycle
+    are read, and what the map serves is decided again, rather than at the
+    six-hourly check's next turn, up to six hours later. A day with no
+    change costs a look at what is on disk."""
+    check_faa_editions()
+    check_procedures()
+    publications.preload()
+    chart_serving.forget_serving()
 
 
 def check_chart_cycle() -> None:
@@ -127,12 +160,19 @@ def _schedule_checks(on: BaseScheduler) -> None:
     schedule.every(on, EDITIONS_CHECK_EVERY_S, data_cycles.warn_if_out_of_date, name="faa-data-cycles")
     # The FAA's files a new edition at a time: now, and four times a day.
     schedule.every(on, EDITIONS_CHECK_EVERY_S, check_faa_editions, name="faa-editions")
+    schedule.every(on, EDITIONS_CHECK_EVERY_S, check_procedures, name="faa-procedures")
+    # And a minute after each 0901Z: an edition takes over then, not at the
+    # six-hourly check's next turn.
+    schedule.daily_at(on, 9, 2, at_changeover, name="faa-changeover")
     # The aircraft registry, read again once it is a day old (each check a
     # look at the file's age): now as well, so a warm-up read that failed is
     # tried again, and after a good one refresh() sees a fresh file and does
     # nothing.
     if REGISTRY_REFRESH:
         schedule.every(on, EDITIONS_CHECK_EVERY_S, registry.refresh, name="aircraft-registry")
+    # The documents library (wingtip.library), now and once a day.
+    if FAA_LIBRARY_REFRESH:
+        schedule.every(on, LIBRARY_CHECK_EVERY_S, library.refresh, name="faa-library")
     # The chart cycle, an hour from now: the warm-up has just checked it.
     schedule.every(on, chart_refresh.CHECK_EVERY_S, check_chart_cycle, name="chart-cycle", now=False)
 

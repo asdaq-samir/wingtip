@@ -6,7 +6,8 @@
 #
 #   always   the paths filter is scripts/areas.yml's, no aviation rule
 #            outside the engine, the legal pages, every test in one tier
-#            (and CI's tiers in shape), warnings fatal, the workflows'
+#            (and CI's tiers in shape), every test asserting and none
+#            skipped without a condition, warnings fatal, the workflows'
 #            rules, the Markdown's links, the web's engine rules
 #            (scripts/build/web_rules.py), ruff over every Python suite
 #            and the Python's layout
@@ -15,6 +16,9 @@
 #            outside the tokens, no unused Python; the simplicity rules on
 #            the files changed: one home per constant or helper (Semgrep),
 #            no new copy-paste (jscpd), and the simplicity ratchet
+#   API      no operation, field or enum value an OpenAPI document removes
+#            that a client of it still calls or reads
+#            (scripts/ci/api_removals.py, oasdiff against the base)
 #   IOS      SwiftLint on the Swift changed (scripts/ci/phone_lint.sh)
 #   ANDROID  detekt on the Kotlin changed
 #   SITE     the website built and checked
@@ -23,7 +27,8 @@
 #            feature layers (dependency-cruiser)
 #   ENGINE   the crates' layering, the WebAssembly's size budget, no
 #            unused dependency (cargo-machete), rustfmt, clippy with
-#            warnings denied
+#            warnings denied, the engine's open-source notices current
+#            and every crate's licence accepted (licences.sh engine)
 #   FLIGHT   flight-critical: the engine's FAA worked examples (in CI,
 #            test-engine's where the engine changed); and, on the
 #            Mac (no PART), the planner's KMSN-KOSH nav log, which needs the
@@ -34,7 +39,8 @@
 # `changes`). INSTALL=true lets it install what it needs (npm ci, the
 # planner's requirements, cargo-machete), as CI does on a fresh runner; on
 # the Mac a check whose tool is missing is skipped with a note, and in CI it
-# fails. BASE_REF is the branch the file sizes are held against (main).
+# fails. BASE_REF is the branch the file sizes are held against (main);
+# BASE a commit to hold them against without fetching.
 #
 #   scripts/ci/guards.sh
 #   WEB=false ENGINE=false FLIGHT=false scripts/ci/guards.sh    the seconds-long ones
@@ -98,8 +104,10 @@ ruff_check() {
 
 # The branch a change is held against, fetched once for every check that
 # reads it (one deep: a tree is all they compare).
-base=refs/guards/base
-if part repo && { on ARCH || on IOS || on ANDROID; }; then
+# BASE names a commit already here instead (scripts/dev/preflight.sh's,
+# on the Mac, where a shallow fetch into a clone breaks its worktrees).
+base=${BASE:-refs/guards/base}
+if [ -z "${BASE:-}" ] && part repo && { on ARCH || on IOS || on ANDROID || on API; }; then
   git fetch -q --depth=1 origin "+refs/heads/${BASE_REF:-main}:$base" 2> /dev/null || base=origin/${BASE_REF:-main}
 fi
 
@@ -143,6 +151,10 @@ clippy() {
 # (apps/web/src/lib/fixtures/flightCritical.json: FAA-H-8083-25C ch. 16,
 # 14 CFR 91.151, 91.155, 91.159, 91.167, 91.179, AIM 5-3-8), and the
 # planner's nav log and nearest fields, which ask the engine every rule.
+engine_licences() {
+  need cargo || return $?
+  scripts/build/licences.sh engine --check
+}
 flight_engine() {
   need cargo || return $?
   cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test flight_critical
@@ -172,6 +184,7 @@ if part repo; then
   start "Rules boundary" python3 scripts/ci/rules_boundary.py
   start "Legal pages" scripts/build/legal_pages.py --check
   start "Test tiers" python3 scripts/ci/test_tiers.py
+  start "Test assertions" python3 scripts/ci/test_assertions.py
   start "Warnings fatal" python3 scripts/ci/warnings_fatal.py
   start "Workflow rules" python3 scripts/ci/workflow_rules.py
   start "Doc links" scripts/ci/check_links.sh
@@ -188,6 +201,8 @@ if part repo; then
     start "Copy-paste (jscpd)" python3 scripts/ci/jscpd_check.py --base "$base"
     start "Simplicity ratchet" python3 scripts/ci/simplicity_ratchet.py --base "$base"
   fi
+  # No operation, field or enum value removed that a client still names.
+  on API && start "API removals" python3 scripts/ci/api_removals.py --base "$base"
   on IOS && start "iPhone: SwiftLint" scripts/ci/phone_lint.sh ios --base "$base"
   on ANDROID && start "Android: detekt" scripts/ci/phone_lint.sh android --base "$base"
   on SITE && start "Website" site
@@ -202,6 +217,9 @@ if part engine; then
     start "Engine: machete" machete
     start "Engine: rustfmt" scripts/dev/format.sh --check rust
     start "Engine: clippy" clippy
+    # The engine's open-source notices are what cargo-about writes from
+    # Cargo.lock, and every crate's licence one engine/about.toml accepts.
+    start "Engine: licences" engine_licences
   fi
   # Where the engine changed, test-engine runs wingtip-engine's tests,
   # flight_critical among them (the facade uses every crate, so it is

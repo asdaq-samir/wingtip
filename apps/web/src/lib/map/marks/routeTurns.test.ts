@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { outsideOfTurn, turnSide } from "./routeTurns";
+import { outsideOfTurn, squareToCourse, turnSide } from "./routeTurns";
 import { routeMarks } from "./routeMarks";
 
 // [lat, lon] points, as the planner sends a course line.
@@ -70,5 +70,26 @@ describe("routeMarks", () => {
     expect(marks[0]!.props).toMatchObject({ kind: "fix", out: 45 });
     expect(marks[1]!.props).toMatchObject({ kind: "field" });
     expect(marks[1]!.props).not.toHaveProperty("out");
+  });
+});
+
+describe("squareToCourse", () => {
+  it("puts a top of climb's or descent's name square to its course, on the upper side", () => {
+    expect(squareToCourse(90)).toBe(0);
+    expect(squareToCourse(270)).toBe(0);
+    expect(squareToCourse(45)).toBe(315);
+    expect(squareToCourse(135)).toBe(45);
+    expect(squareToCourse(225)).toBe(315);
+    expect(squareToCourse(359.6)).toBe(90);
+  });
+
+  it("puts a name on a course due north or south on the east", () => {
+    expect(squareToCourse(0)).toBe(90);
+    expect(squareToCourse(180)).toBe(90);
+  });
+
+  it("agrees with outsideOfTurn on a straight leg", () => {
+    const east: [number, number] = [41.0, -86.0];
+    expect(squareToCourse(90)).toBe(outsideOfTurn([POS0, WETEV, east], at(WETEV)));
   });
 });

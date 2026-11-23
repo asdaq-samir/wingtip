@@ -49,15 +49,15 @@ struct StripSheetView: View {
             switch self {
             case .airport(let text): return AirportRoute(text).heldPoint != nil ? "Airspace" : text
             case .brief: return "Brief"
-            case .navlog: return "Nav log"
+            case .navlog: return Screen.navlog.title
             case .profile: return "Profile"
-            case .airplane: return "My airplane"
+            case .airplane: return Screen.airplane.title
             case .logbook: return "Logbook"
             case .instructor: return "Instructor"
             case .setup: return "Setup"
             case .clearance: return "Clearance"
             case .file: return "File"
-            case .flights: return "Flights"
+            case .flights: return Screen.flights.title
             case .procedures: return "Procedures"
             case .leg(let leg): return "To \(leg.to)"
             case .list(let shows): return shows.rawValue.prefix(1).uppercased() + shows.rawValue.dropFirst()
@@ -116,7 +116,7 @@ struct StripSheetView: View {
                     let along = place.along(points, fix: fix)
                     StripAir(points: points, position: try? along.get(), fix: fix)
                     if case .failure(let error) = along {
-                        Text("Your place on the strip couldn't be worked out: \(error.localizedDescription)")
+                        Text(Problems.words("Your place on the strip could not be worked out", error))
                             .font(ChartInk.note).foregroundStyle(WingtipInk.caution)
                     }
                     radio
@@ -168,9 +168,10 @@ struct StripSheetView: View {
                 case .airport(let text): path.append(.airport(text))
                 case .instructing: _ = open(.instructor)
                 case .notams: path.append(.brief)
-                case .practice, .training, .contact, .leg, .flight: _ = open(.setup)
+                case .practice, .training, .contact, .leg, .flight,
+                     .pilotDetails, .trainingHome, .connectedApps, .alerts, .atc, .help, .sources: _ = open(.setup)
                 // A thing's card over the strip, as over the plan (Navigator).
-                case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .settings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid:
+                case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .settings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid, .scratchpad:
                     nav.open(page)
                 }
             },
@@ -189,6 +190,9 @@ struct StripSheetView: View {
         switch screen {
         case .airport, .ask: search.presented = true
         case .emergency: emergency.open = .link
+        // The scratchpad and the loading are cards over the strip.
+        case .scratchpad: nav.open(.scratchpad)
+        case .balance: nav.open(.screen(.balance))
         default: path = []
         }
     }
@@ -319,21 +323,23 @@ struct StripSheetView: View {
             guard !plan.dest.isEmpty else { return "Plan a route first: the procedures are the destination's." }
             path.append(.procedures); up()
         case .navlog:
-            guard routed, plan.course != nil else { return "Plan a route first." }
+            guard routed, plan.course != nil else { return Wording.planARouteFirst }
             path.append(.navlog); up()
         case .share:
-            guard routed else { return "Plan a route first." }
+            guard routed else { return Wording.planARouteFirst }
             up()
             return "Share, File and Clear are under ••• at the head of the strip."
         case .file:
             guard routed, plan.totals != nil else { return "A flight plan needs a route from an airport, its nav log in." }
             path.append(.file); up()
         case .clearance, .radio:
+            // The clearance listener's card is the ATC Copilot's, parked (Extra).
+            guard Extra.atcCopilot.on() else { return "The ATC Copilot is off: turn it on in Settings, under Extras." }
             path.append(.clearance); up()
         case .dryrun:
-            guard routed, plan.profile != nil else { return "Plan a route first." }
+            guard routed, plan.profile != nil else { return Wording.planARouteFirst }
             path.append(.profile); detent = .large
-            return "Dry run is the Profile's button, at the side view's foot."
+            return "Dry Run is the Profile's button, at the side view's foot."
         case .saved, .recentRoutes:
             path.append(.flights); up()
         case .favorites:

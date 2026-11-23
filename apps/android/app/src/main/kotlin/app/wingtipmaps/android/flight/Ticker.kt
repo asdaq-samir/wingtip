@@ -9,6 +9,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -45,10 +48,16 @@ class Ticker(private val scope: CoroutineScope, private val now: () -> Long = Ap
      *  registration or the app coming back can cut it short. */
     private var waiting: Job? = null
 
+    private val _inFront = MutableStateFlow(true)
+    /** The app in front: what a loop that only feeds the screen waits on
+     *  (WeatherLoop, ModelWeather), as Android keeps a process put away. */
+    val inFront: StateFlow<Boolean> = _inFront.asStateFlow()
+
     /** Whether the intervals are stretched: the app in the background. */
     var background: Boolean = false
         set(value) {
             field = value
+            _inFront.value = !value
             // Back on the screen: nothing waits longer than its own
             // interval, and what fell due while away runs now.
             if (!value) {

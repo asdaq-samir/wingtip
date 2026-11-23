@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.Extra
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.api.AskScreenModel
@@ -41,6 +42,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.rememberExtra
 import app.wingtipmaps.android.ui.BriefModel
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SheetPage
@@ -108,6 +110,7 @@ fun StripLayout(
     // a trip leg used), else now; the times down the strip are this plus
     // the planner's minutes.
     val leaveMs = remember(state.legs, state.depart) { Plan.departMs(state.depart) ?: AppClock.nowMs() }
+    val atc = rememberExtra(Extra.ATC_COPILOT)
     var unfolded by rememberSaveable { mutableStateOf(false) }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
     val verdict = briefed.verdict.takeIf { state.routed }
@@ -193,7 +196,8 @@ fun StripLayout(
                     unfolded = unfolded, onUnfold = { unfolded = true },
                     onField = { CardRequests.open(MapPick.Airport(it)) },
                     onCheckpoint = { row -> state.legs.indexOf(row.leg).takeIf { it >= 0 }?.let { CardRequests.open(MapPick.RouteLeg(it)) } },
-                    onClearance = { CardRequests.open(SheetPage.Clearance) },
+                    // The clearance card while Extras has the ATC Copilot on.
+                    onClearance = if (atc) ({ CardRequests.open(SheetPage.Clearance) }) else null,
                 )
             }
         }

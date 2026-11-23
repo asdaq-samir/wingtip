@@ -6,15 +6,16 @@ name: Native iOS
 # that touches the app, the build and its unit tests alone (`unit_only`), so
 # "CI passed" waits for it (#499 merged with a phone app not compiling when
 # its build ran beside CI). On its own: main's pushes, the unit tests and
-# the CardSmokeTests UI smoke after merge, then TestFlight; claude/native-*
-# pushes; and every night the whole suite (`full`).
+# the CardSmokeTests UI smoke on the iPhone and the iPad after merge, then
+# TestFlight; claude/native-* pushes; and every night the whole suite (`full`).
 #
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
   workflow_call:
     inputs:
       # The whole suite on the iPhone, the iPad and iPhone Duo. Without it
-      # (main's push): the unit tests and CardSmokeTests on the iPhone alone.
+      # (main's push, a wave): the unit tests, CardSmokeTests and
+      # IPadLayoutTests, iPhone and iPad; DocumentsIPadTests on the iPad.
       full:
         type: boolean
         default: false
@@ -39,6 +40,7 @@ on:
       - scripts/build/engine-contract-apps.*
       - scripts/ci/content-mtimes.py
       - scripts/build/ios-strings.sh
+      - scripts/build/licences.sh
       - scripts/ci/ios_test.sh
       - .github/workflows/native-ios.yml
   workflow_dispatch:
@@ -69,16 +71,16 @@ jobs:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # The iPhone by day; at night the iPad and iPhone Duo too, each its own
-    # runner: the three on one ran every UI suite over 80 minutes, cancelled
-    # at the limit twice (#572). The iPhone's leg keeps the job's name.
+    # A pull request runs the iPhone; main's push the iPad too (the primary device,
+    # decision 0058), a wave the iPad's whole suite in four legs; the night iPhone Duo
+    # too, each its own runner (three on one ran over 80 minutes, #572).
     name: ${{ matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
     strategy:
       fail-fast: false
       matrix:
-        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || '["iPhone"]') }}
-    # A pull request's set is a few minutes; a night's device and every UI suite about thirty.
-    timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
+        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || inputs.unit_only && '["iPhone"]' || github.workflow == 'Validate wave' && '["iPhone", "iPad 1/4", "iPad 2/4", "iPad 3/4", "iPad 4/4"]' || '["iPhone", "iPad"]') }}
+    # A pull request's set is a few minutes; a wave's quarter of the iPad's suite some thirty with its build, a night's device thirty.
+    timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || contains(matrix.device, '/') && 45 || 25 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -92,24 +94,26 @@ jobs:
       # The Mac mini's runner keeps rustup in ~/.cargo/bin, off its PATH.
       - name: rustup on the PATH
         run: '[ -d "$HOME/.cargo/bin" ] && echo "$HOME/.cargo/bin" >> "$GITHUB_PATH" || true'
-      # 148 s of a 284 s job built (run 42110145019); the engine changes
-      # far less often than the app, and is cached by its own files. Saved
-      # at once, whatever the tests say.
+      # The engine changes far less than the app, so cached by its own files:
+      # the simulator's slice alone, all a test links (testflight builds its
+      # own; three slices took 342 s, run 44932668280). Saved at once.
       - name: The engine, as last built
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine
-          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-ios-sim-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
+        env:
+          WINGTIP_ENGINE_SLICES: simulator
         run: echo "::notice title=Cache miss::engine-ios" && engine/bindings/ffi/build-xcframework.sh
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine
-          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-ios-sim-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The Xcode project, from project.yml
         run: |
           # The Mac mini's runner has xcodegen already, and no Homebrew.
@@ -137,12 +141,12 @@ jobs:
       - if: steps.derived.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::ios-derived-data"
       # This leg's device, the newest the runner's Xcode has (an iPad a Pro
-      # where there is one), by its id, picked as on the Mac.
+      # where there is one), by its id, picked as on the Mac; LEG for ios_test.sh.
       - name: The simulator to test on
         id: sim
         env:
           DEVICE: ${{ matrix.device }}
-        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "$DEVICE")" >> "$GITHUB_OUTPUT"
+        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${DEVICE%% [0-9]*}")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
       # Built, then the string catalog's check, then the tests, so a stale
       # catalog fails before they run. scripts/ci/ios_test.sh picks them: a
       # pull request's unit tests, main's push's CardSmokeTests too (the one
@@ -158,6 +162,9 @@ jobs:
       # syncs. After the build, since it reads the build's .stringsdata.
       - name: The string catalog is what the Swift says
         run: scripts/build/ios-strings.sh --check --derived-data "$RUNNER_TEMP/derived"
+      # Settings.bundle's acknowledgements, LicensePlist's from this build's packages (docs/legal/credits.md).
+      - name: The acknowledgements are the packages' licences
+        run: scripts/build/licences.sh ios --check "$RUNNER_TEMP/derived/SourcePackages"
       - name: Tested on the simulator
         env:
           SIM: ${{ steps.sim.outputs.id }}
@@ -203,12 +210,17 @@ jobs:
           path: ${{ runner.temp }}/screens
           if-no-files-found: ignore
           retention-days: 7
+      # On a cancel too, with the tests' result bundle: a leg stopped part
+      # way kept nothing to read where it stopped (the iPad's 2/2, twice).
       - name: The log, on failure
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: native-ios-log-${{ strategy.job-index }}
-          path: ${{ runner.temp }}/xcodebuild.log
+          path: |
+            ${{ runner.temp }}/xcodebuild.log
+            ${{ runner.temp }}/Wingtip.xcresult
+          if-no-files-found: ignore
           retention-days: 7
 
   testflight:

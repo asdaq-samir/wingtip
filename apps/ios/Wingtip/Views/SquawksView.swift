@@ -50,8 +50,8 @@ struct SquawksView: View {
                 // or a mechanic who finds it no hazard (14 CFR 91.213(d)).
                 Section("Write a Squawk") {
                     TextField("What was found", text: $text, axis: .vertical).lineLimit(1...4)
-                    DatePicker("Found on", selection: $foundOn, in: ...Date(), displayedComponents: .date)
-                    Toggle("Inoperative equipment", isOn: $inoperative)
+                    DatePicker("Found On", selection: $foundOn, in: ...Date(), displayedComponents: .date)
+                    Toggle("Inoperative Equipment", isOn: $inoperative)
                         .onChange(of: inoperative) { _, on in if !on { deferredFor = nil } }
                     if inoperative {
                         Picker("91.213(d)", selection: $deferredFor) {
@@ -79,7 +79,7 @@ struct SquawksView: View {
                                     do { try await Gateway.deleteSquawk(aircraft.id, s.id) } catch { failed += 1 }
                                 }
                                 await load()
-                                if failed > 0 { problem = failed == 1 ? "A squawk couldn't be deleted." : "\(failed) squawks couldn't be deleted." }
+                                if failed > 0 { problem = failed == 1 ? "A squawk could not be deleted." : "\(failed) squawks could not be deleted." }
                             }
                         }
                     }
@@ -94,7 +94,7 @@ struct SquawksView: View {
     }
 
     private func load() async {
-        do { squawks = try await Gateway.squawks(aircraft.id); problem = nil } catch { problem = "The squawks could not be fetched: \(error.localizedDescription)" }
+        do { squawks = try await Gateway.squawks(aircraft.id); problem = nil } catch { problem = Problems.say("The squawks could not be fetched", error) }
     }
 
     private func add() async {
@@ -107,7 +107,7 @@ struct SquawksView: View {
             text = ""; inoperative = false; deferredFor = nil
             await load()
             onChange()
-        } catch { problem = error.localizedDescription }
+        } catch { problem = Problems.say("The squawk could not be added", error) }
     }
 
     private func fix(_ s: Squawk) async {
@@ -122,6 +122,6 @@ struct SquawksView: View {
             fixing = nil
             await load()
             onChange()
-        } catch { problem = error.localizedDescription }
+        } catch { problem = Problems.say("The squawk could not be changed", error) }
     }
 }

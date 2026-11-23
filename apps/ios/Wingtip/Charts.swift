@@ -9,6 +9,15 @@ import Observation
 final class Charts {
     private(set) var info: ChartInfo?
     private(set) var problem: String?
+    /// The kept cycle later than the chart answer's that has taken over
+    /// (OfflineStore.keptInForce), drawn where its region is kept.
+    private(set) var keptInForce: String?
+    /// The regions kept on the phone, whose cycles `turnKept` asks of.
+    @ObservationIgnored private let offline: OfflineStore
+
+    init(offline: OfflineStore = .shared) {
+        self.offline = offline
+    }
     /// The chart picked on the Map card (None, Sectional, IFR Low, IFR
     /// High; the web's preference `base`), kept on this device; the
     /// sectional until one is picked.
@@ -26,33 +35,55 @@ final class Charts {
 
     /// The chart kept from the last answer, read off the main actor, as
     /// it is at launch, before the first frames are drawn.
+    /// The chart's answer kept for the next launch, off the main actor.
+    @concurrent
+    private nonisolated static func keep(_ fresh: ChartInfo) async {
+        try? FileManager.default.createDirectory(at: kept.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? JSONEncoder().encode(fresh).write(to: kept, options: .atomic)
+    }
+
+    @concurrent
     private nonisolated static func readKept() async -> ChartInfo? {
-        await Task.detached(priority: .userInitiated) {
-            guard let data = try? Data(contentsOf: kept) else { return nil }
-            return try? JSONDecoder().decode(ChartInfo.self, from: data)
-        }.value
+        guard let data = try? Data(contentsOf: kept) else { return nil }
+        return try? JSONDecoder().decode(ChartInfo.self, from: data)
     }
 
     func load() async {
         if info == nil, let last = await Self.readKept(), info == nil {
             info = last
+            turnKept()
         }
         do {
             let fresh = try await Planner.chart()
             info = fresh
             problem = nil
-            Task.detached(priority: .utility) {
-                try? FileManager.default.createDirectory(at: Self.kept.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try? JSONEncoder().encode(fresh).write(to: Self.kept, options: .atomic)
-            }
-            TileStore.shared.keepOnly(cycle: fresh.chartCycle)
+            turnKept()
+            Task { await Self.keep(fresh) }
+            Task { await TileStore.shared.keepOnly(cycle: fresh.chartCycle) }
             // The airspace kept for the air, fetched again where the FAA's
             // cycle has turned since it was.
-            Task.detached { await CyclePacks.shared.refresh() }
+            Task { await CyclePacks.shared.refresh() }
         } catch {
-            problem = info == nil ? "The chart could not be fetched: \(error.localizedDescription)" : nil
+            problem = info == nil ? Problems.words("The chart could not be fetched", error) : nil
             Log.map.error("the chart could not be fetched (\(self.info == nil ? "none kept" : "the kept one stands", privacy: .public)): \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// Asks each minute whether a kept region's cycle has taken over, so a
+    /// phone offline across a changeover draws it from 0901Z with the app
+    /// open (the data-cycles audit's 14); the map is drawn again only when
+    /// the answer turns.
+    func watchChangeover(store: OfflineStore? = nil, now: @escaping () -> Date = { .now }) async {
+        while !Task.isCancelled {
+            turnKept(store: store ?? offline, now: now())
+            try? await Task.sleep(for: .seconds(60))
+        }
+    }
+
+    func turnKept(store: OfflineStore? = nil, now: Date = .now) {
+        let store = store ?? offline
+        let turned = info.flatMap { store.keptInForce(after: $0.chartCycle, now: now) }
+        if turned != keptInForce { keptInForce = turned }
     }
 
     /// The chart the map draws: the one picked, else the sectional, else
@@ -79,6 +110,7 @@ final class Charts {
     var template: TileTemplate? {
         guard let info, let base else { return nil }
         let scale = (base.scales ?? [1]).contains(2) ? 2 : 1
-        return TileTemplate(cycle: info.chartCycle, revision: info.chartRevision ?? 0, tilesBase: info.chartTilesBase, kind: base.kind, scale: scale)
+        return TileTemplate(cycle: info.chartCycle, revision: info.chartRevision ?? 0, tilesBase: info.chartTilesBase, kind: base.kind, scale: scale,
+                            keptInForce: keptInForce)
     }
 }

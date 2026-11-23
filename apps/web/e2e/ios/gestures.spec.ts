@@ -91,27 +91,18 @@ test("a pinch brings in the airports of each level it passes, before the fingers
   // since the owner's "make the current position zoom level the same as
   // class D airports" (2026-11-04, ownShip's OPEN_ZOOM), where these
   // fields are drawn already.
+  // The map itself as the app hands it to a test it is driven by
+  // (useGlProbe's probeLayers, window.__wingtipMaps), the one whose
+  // element is the page's map. The map's element is made with the map and
+  // parked outside React's tree (makeMap), so a walk of React's fibers
+  // from it found no map ("reading 'setZoom'" of null, main's nightly
+  // 44926432837 on the iPhone 16 Pro Max and the iPad).
   await page.evaluate(() => {
-    const box = document.querySelector(".maplibregl-map") as unknown as Record<string, unknown>;
-    const key = Object.keys(box).find((k) => k.startsWith("__reactFiber"))!;
-    let map: { setZoom: (z: number, o: object) => void } | null = null;
-    const seen = new Set<unknown>();
-    const walk = (
-      f: { memoizedProps?: { value?: { map?: { setZoom?: unknown } } }; child?: unknown; sibling?: unknown } | null,
-      depth: number,
-    ) => {
-      if (!f || map || depth > 40 || seen.has(f)) return;
-      seen.add(f);
-      const value = f.memoizedProps?.value;
-      if (value?.map?.setZoom) {
-        map = value.map as typeof map;
-        return;
-      }
-      walk(f.child as typeof f, depth + 1);
-      walk(f.sibling as typeof f, depth);
-    };
-    walk(box[key] as Parameters<typeof walk>[0], 0);
-    map!.setZoom(7, { animate: false });
+    type Zoomable = { getContainer: () => HTMLElement; setZoom: (z: number, o: object) => void };
+    const maps = (window as unknown as { __wingtipMaps?: Zoomable[] }).__wingtipMaps ?? [];
+    const box = document.querySelector(".maplibregl-map");
+    const map = maps.find((m) => m.getContainer() === box) ?? maps[0];
+    map.setZoom(7, { animate: false });
   });
   await mapStill(page);
   // The fields drawn at the region's level (AirportsGl's probe).
@@ -241,23 +232,43 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
     if (r.url().includes("/api/planner/chart-tile/")) asked += 1;
   });
   await expect.poll(() => page.getByTestId("gl-map").getAttribute("data-chart-zoom"), { timeout: slow(15_000) }).not.toBeNull();
+  // In close, where a tile is a few miles across: the map now opens on the
+  // last position at the region's zoom (MapLibre's 7), whose tiles, a
+  // state across, already reach past every edge a half-level pinch bares,
+  // so it asked for none and the test failed with nothing wrong. Just
+  // short of MapLibre's 11, so the pinch stays on the same tiles' level.
+  await page.evaluate(() =>
+    (window as unknown as { __wingtipMaps: { jumpTo(o: { zoom: number }): void }[] }).__wingtipMaps.at(-1)!.jumpTo({ zoom: 10.9 }),
+  );
   await mapStill(page);
+  // Its tiles in before the count starts.
+  await expect
+    .poll(
+      async () => {
+        const was = asked;
+        await page.waitForTimeout(500);
+        return asked === was;
+      },
+      { timeout: slow(10_000) },
+    )
+    .toBe(true);
   const before = asked;
-  // Two fingers near the top, from 180 to 130 points apart: 0.47 of a level
-  // out, its foot drawn out past where the tiles reached.
-  const map = (await page.locator(".maplibregl-map").boundingBox())!;
-  const at = { x: map.x + map.width / 2, y: map.y + 120 };
+  // Two fingers in the middle of the chart in sight, from 180 to 130
+  // points apart in five steps a tenth of a second apart, a finger's
+  // pace: 0.47 of a level out. Moved a point at a time every 30 ms the
+  // map took only the first step (0.02 of a level) and asked for no tile.
+  const at = await chartMiddle(page);
   const touch = await fingers(page);
   await touch("touchStart", [
     [at.x - 90, at.y],
     [at.x + 90, at.y],
   ]);
-  for (let i = 1; i <= 25; i++) {
+  for (let i = 1; i <= 5; i++) {
     await touch("touchMove", [
-      [at.x - 90 + i, at.y],
-      [at.x + 90 - i, at.y],
+      [at.x - 90 + i * 5, at.y],
+      [at.x + 90 - i * 5, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await page.waitForTimeout(100);
   }
   // Still held: the edges it bared asked for already.
   await expect.poll(() => asked, { timeout: slow(5_000) }).toBeGreaterThan(before);

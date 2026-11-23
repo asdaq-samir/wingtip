@@ -1,5 +1,6 @@
 """Airplanes heard by another source -- the FAA's terminal radar through SWIM, which ingest
-(services/ingest) reads -- and which of the radar is worth reading now. Both through the live
+(services/ingest) reads, the FAA's LADD list left out (wingtip.traffic.ladd) -- and which of
+the radar is worth reading now. Both through the live
 store (wingtip.traffic.store): ingest writes what the radar hears and reads what is wanted, the
 planner writes where the map looks and reads what the radar heard."""
 
@@ -9,10 +10,11 @@ import logging
 import math
 
 from ..geo import box_around, distance_nm
-from . import store
+from ..geo_boxes import split_box
+from . import ladd, store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
 from .common import STALE_S, _NM_PER_DEG, _wall
-from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, _followed, _last_recorded, _record, followed
+from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, _followed, _key, _last_recorded, _record, followed
 
 #: A followed airplane's report from elsewhere is recorded at most this
 #: often, s: STARS sweeps every 4.8 s; a point a quarter minute is a
@@ -28,9 +30,28 @@ def heard_elsewhere(plane: dict, at: float) -> None:
     as the airplane's latest for the map, and recorded where it is
     followed, a point every ELSEWHERE_RECORD_S."""
     hex_id = plane["hex"]
+    # An aircraft on the FAA's LADD list is never shown, nor any radar
+    # track while no current list is kept (ladd: SWIM's terms).
+    if ladd.hidden(plane):
+        return
     if not store.radar_heard(plane, at):
         return
     if _followed(hex_id):
+        last = _last_recorded(hex_id)
+        if last is None or at - last["t"] >= ELSEWHERE_RECORD_S:
+            _record(hex_id, {**plane, "seen_s": max(0.0, _wall() - at)})
+
+
+def heard_all_elsewhere(reports: list[tuple[dict, float]], following: set[str]) -> None:
+    """heard_elsewhere for a whole radar message's reports, (plane, at):
+    kept in one transaction (store.radar_heard_many), and whether each is
+    followed read from `following`, the addresses ingest already holds
+    (radar_wanted, a second old at most), not asked of the store a track
+    at a time."""
+    for (plane, at), kept in zip(reports, store.radar_heard_many(reports)):
+        hex_id = plane["hex"]
+        if not kept or _key(hex_id) not in following:
+            continue
         last = _last_recorded(hex_id)
         if last is None or at - last["t"] >= ELSEWHERE_RECORD_S:
             _record(hex_id, {**plane, "seen_s": max(0.0, _wall() - at)})
@@ -113,6 +134,9 @@ def _heard_elsewhere_now(hex_id: str) -> dict | None:
     if found is None:
         return None
     plane, at = found
+    # Read again against the list: one listed since it was heard stays hidden.
+    if ladd.hidden(plane):
+        return None
     return plane | {"seen_s": round(now - at, 1)}
 
 
@@ -120,10 +144,11 @@ def _elsewhere_near(lat: float, lon: float, radius_nm: float, have: set[str]) ->
     """The airplanes heard elsewhere in the last STALE_S within `radius_nm`
     that the region's answer left out."""
     now = _wall()
-    south, west, north, east = box_around(lat, lon, radius_nm)
     out = []
-    for p, at in store.radar_within(south, north, west, east, now - STALE_S):
-        if p["hex"] in have:
+    # The box's one or two halves either side of 180 (geo_boxes).
+    heard = [r for s, w, n, e in split_box(box_around(lat, lon, radius_nm)) for r in store.radar_within(s, n, w, e, now - STALE_S)]
+    for p, at in heard:
+        if p["hex"] in have or ladd.hidden(p):
             continue
         if distance_nm(lat, lon, p["lat"], p["lon"]) <= radius_nm:
             out.append(p | {"seen_s": round(now - at, 1)})

@@ -34,9 +34,14 @@ extension RootView {
             shelf.show(.favorites)
             show(screen)
         case .ask: ask(nil)
+        // The flight's scratchpad, its own card (in the inspector on the
+        // iPad), as ⇧⌘J opens it (WindowHost).
+        case .scratchpad:
+            search.close()
+            nav.open(.scratchpad)
         case .emergency: emergency.open = .link
         case .airplane, .setup, .brief, .profile, .flights, .navlog, .nearest, .passengers, .checklists, .airplanes,
-             .logbook, .coach, .minimums, .guide, .downloads, .about:
+             .logbook, .coach, .minimums, .documents, .balance, .guide, .downloads, .about:
             show(screen)
         // A shared flight's preview opens from its link's keys
         // (AppCommand.sharedFlight); the name alone names no flight.

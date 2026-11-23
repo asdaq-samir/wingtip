@@ -4,7 +4,7 @@
 use super::*;
 
 fn volume(class: char, floor_ft: f64, floor_ref: FloorRef, ceiling_ft: f64) -> Volume {
-    Volume { class, name: format!("{class} test"), floor_ft, floor_ref, ceiling_ft }
+    Volume { class, name: format!("{class} test"), ident: None, floor_ft, floor_ref, ceiling_ft }
 }
 
 #[test]
@@ -91,4 +91,20 @@ fn the_91_215_general_arms_come_before_a_class_ds_own() {
     assert_eq!(equipment('D', 1000.0, 0.0, false, false), Some("A two-way radio."));
     assert_eq!(equipment('E', 10000.0, 2400.0, false, false), None);
     assert_eq!(equipment('E', 10000.0, 2500.0, false, false), Some(TRANSPONDER));
+}
+
+#[test]
+fn a_band_names_its_volumes_primary_airport_for_its_special_vfr() {
+    // Madison's Class C surface area (IDENT MSN in NASR's Class Airspace
+    // file): its band carries MSN, so special_vfr can tell it from the 33
+    // airports of part 91 Appendix D, section 3; the E and G round it none.
+    let mut msn = volume('C', 0.0, FloorRef::Sfc, 4900.0);
+    msn.ident = Some("MSN".into());
+    let bands = column(860.0, &[msn, volume('E', 700.0, FloorRef::Agl, 18000.0)], false);
+    assert_eq!(bands[0].class, 'C');
+    assert_eq!(bands[0].ident.as_deref(), Some("MSN"));
+    assert!(bands.iter().filter(|b| b.class != 'C').all(|b| b.ident.is_none()));
+    let mut out = String::new();
+    write_band(&mut out, &bands[0]);
+    assert!(out.contains("\"ident\":\"MSN\""), "{out}");
 }

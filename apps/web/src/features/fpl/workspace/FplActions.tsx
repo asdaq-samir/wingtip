@@ -7,7 +7,7 @@ import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
-import { routeEditing, routesOut } from "./routeEditing";
+import { routeEditing, routesOut, routeTyped } from "./routeEditing";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -68,8 +68,8 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
  *  (the one layout, decision 0047, where it is read and edited), the
  *  flight's figures under it, which are its pill too (the owner,
  *  2026-11-16: the calculations strip where the action tiles were), and
- *  the suggested routes' chips over it while the first row's button has
- *  them out (RoutesToggle; the owner, 2026-11-17). While the route's field is open (RouteEditor) the figures
+ *  the suggested routes' chips over it while More's Route Options has
+ *  them out (ShareMenu; the owner, 2026-11-17). While the route's field is open (RouteEditor) the figures
  *  go under it and the chips away, as they change the route rather than
  *  edit it. */
 export function FplRoute({
@@ -80,7 +80,12 @@ export function FplRoute({
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;
   const { routeLine } = vm.routeList;
-  const editing = routeEditing(vm);
+  // The route's field open under the page puts the pinned figures away (its
+  // own under it); the grouped box turned into the field by its toggle does
+  // not: the figures stay pinned and follow the sheet alone, thin above the
+  // pill whatever the box shows or the keyboard does (the owner,
+  // 2026-11-22: "Route box still shows figures full size").
+  const editing = routeEditing(vm) && !routeTyped(vm);
   const routesShown = routesOut(vm);
   // The figures are FPL's pill too, one copy at every size: held on the
   // foot's edge at the pill, and as the sheet goes down they stop there
@@ -92,9 +97,10 @@ export function FplRoute({
   const figures = useRef<HTMLDivElement>(null);
   usePinAtFoot(figures, SHEET_FOOT, { on: ground && !editing, held: ground && !panelOpen });
   return (
-    <div className="flex w-full min-w-0 flex-1 flex-col">
+    // The figures alone are the side panel's pill (SheetHead's DESK_PILL).
+    <div className="flex w-full min-w-0 flex-1 flex-col" data-pill-row="">
       {/* The suggested routes' pills just above the stops, out while the
-          first row's button is on (RoutesToggle; the owner, 2026-11-17:
+          More's Route Options is on (ShareMenu; the owner, 2026-11-17:
           "Which shows route pills just above the stops"), where they were a
           section under the figures. */}
       {routesShown && routeLine && (
@@ -105,9 +111,17 @@ export function FplRoute({
         </section>
       )}
       <RouteHead vm={vm} />
-      <div className={cn("pt-2 pb-1", editing && "hidden")}>
-        <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, PINNED)}>
-          {!editing && <FlightFigures vm={vm} grow={false} />}
+      {/* The figures 4 in from the head's 12, so their words are iOS's 16
+          from the sheet's side as the pinned pill's are (PINNED's px-4),
+          where the first figure flush with the head's edge read "Dest" at
+          12 (the iOS audit's margin, a local flight). */}
+      <div className={cn("pt-2 pb-1", editing && "hidden")} data-pill-keeps="">
+        <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, "px-1", PINNED)}>
+          {/* One thin line at half and all the way up, full size as the
+              pill (the owner, 2026-11-22: "Maybe just make the figures
+              strip very thin when fpl is half or full?"): one strip that
+              changes size, eased, never two copies. */}
+          {!editing && <FlightFigures vm={vm} grow={false} thin={ground} />}
         </div>
       </div>
     </div>
@@ -128,4 +142,4 @@ const SHEET_FOOT = '[data-testid="panel-foot"]';
  *  grabber to the screen's foot, where the figures' own box let the
  *  route's white box show a line above and below them. */
 const PINNED =
-  "relative data-pinned:visible data-pinned:[&_[data-pill-hides]]:invisible data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet)";
+  "relative data-pinned:visible data-pill:[&_[data-pill-hides]]:invisible data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet)";

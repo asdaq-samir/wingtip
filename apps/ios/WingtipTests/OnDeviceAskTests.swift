@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 @testable import Wingtip
 
@@ -114,11 +115,10 @@ struct OnDeviceAskTests {
     }
 
     /// Fed from the model's callback, which may run off the test's task.
-    final class Seen: @unchecked Sendable {
-        private let lock = NSLock()
-        private var answers: [[String]] = []
-        func add(_ answer: OnDeviceAnswer) { lock.lock(); answers.append(answer.words.sentences.map(\.text)); lock.unlock() }
-        var all: [[String]] { lock.lock(); defer { lock.unlock() }; return answers }
+    final nonisolated class Seen: Sendable {
+        private let answers = Mutex<[[String]]>([])
+        func add(_ answer: OnDeviceAnswer) { answers.withLock { $0.append(answer.words.sentences.map(\.text)) } }
+        var all: [[String]] { answers.withLock { $0 } }
     }
 
     /// Only checked sentences are streamed, each once, and the stream's
@@ -196,7 +196,7 @@ struct OnDeviceAskTests {
         #expect(EngineWords.topics("What's the crosswind at MSN runway 36?") == [.wind])
         #expect(EngineWords.topics("Is the airplane OK?") == [.route])
         #expect(EngineWords.topics("How many gallons for the reserve?") == [.fuel])
-        #expect(EngineWords.ident("winds at msn", facts: facts) == "MSN")
+        #expect(try EngineWords.ident("winds at msn", facts: facts) == "MSN")
         #expect(EngineWords.runway("rwy 18 please") == "18")
     }
 

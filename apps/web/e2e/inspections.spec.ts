@@ -13,9 +13,14 @@ import { NO_OWN_FIGURES } from "./airplaneMocks";
  */
 
 /** The airplane's form: on a phone a card of its own over You
- *  (ResponsivePopover's SheetCard), opened half way as every card is. */
+ *  (ResponsivePopover's SheetCard), opened half way as every card is; from
+ *  the regular width up the popover beside its button, which scrolls
+ *  within the window (ResponsivePopover, the owner's one form for both,
+ *  2026-10-27). */
 const editCard = (page: Page) =>
-  page.locator("[data-sheet-card]").filter({ has: page.getByRole("heading", { name: "Edit airplane", exact: true }) });
+  page
+    .locator("[data-sheet-card], [data-slot=popover-content]")
+    .filter({ has: page.getByRole("heading", { name: "Edit Airplane", exact: true }) });
 
 /** Tapped where a finger reaches it: the card pulled up to a row under its
  *  edge (inSheet). */
@@ -148,7 +153,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
               aircraftId: 5,
               tailNumber: "N12345",
               itemId: 1,
-              dueOn: "2099-12-01",
+              dueOn: "2035-12-01",
               daysLeft: 26690,
               dueAtHours: null,
               hoursLeft: null,
@@ -169,7 +174,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
   await form.getByTestId("due-item-title").fill("Oil filter adapter");
   await form.getByTestId("due-item-reference").fill("AD 2011-10-09");
   await form.getByTestId("due-item-method").fill("Inspect each 100 h");
-  await fillDate(form.getByTestId("due-item-dueOn"), "2099-12-01");
+  await fillDate(form.getByTestId("due-item-dueOn"), "2035-12-01");
   await tap(page, form.getByTestId("due-item-save"));
   await expect
     .poll(() => written[0])
@@ -178,7 +183,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
       title: "Oil filter adapter",
       reference: "AD 2011-10-09",
       method: "Inspect each 100 h",
-      dueOn: "2099-12-01",
+      dueOn: "2035-12-01",
       dueAtHours: null,
     });
 
@@ -233,7 +238,7 @@ test("an airplane's checklists are written from its handbook, kept on this devic
   // The form's own Checklists, this airplane's: You's Airplanes page under
   // the form has one too, the picked airplane's (YouRows).
   await tap(page, editCard(page).getByRole("button", { name: /^Checklists/ }));
-  await expect(console).toContainText("No checklist yet");
+  await expect(console).toContainText("No Checklist Yet");
   await tap(page, console.getByTestId("checklist-edit"));
   // An empty editor offers the phases' headings alone, nothing under them.
   await tap(page, console.getByTestId("checklist-phases"));
@@ -253,7 +258,7 @@ test("an airplane's checklists are written from its handbook, kept on this devic
   await expect(items.first()).toHaveAttribute("aria-checked", "false");
   // The emergency list is the airplane's other, empty until written.
   await console.getByTestId("checklist-kind").getByText("Emergency").click();
-  await expect(console).toContainText("No emergency checklist yet");
+  await expect(console).toContainText("No Emergency Checklist Yet");
 });
 
 test("a squawk is written with its 91.213(d) deferral, and fixed", async ({ page }) => {
@@ -311,7 +316,7 @@ test("a squawk is written with its 91.213(d) deferral, and fixed", async ({ page
     .poll(() => written[0])
     .toMatchObject({ text: "Landing light out", inoperative: true, deferredFor: "VFR_DAY", fixedOn: null });
   const open = console.getByTestId("squawk-open");
-  await expect(open).toContainText("Deferred for VFR by day");
+  await expect(open).toContainText("Deferred for VFR by Day");
 
   await tap(page, open);
   await console.getByTestId("squawk-fix-note").fill("Bulb replaced");

@@ -64,7 +64,7 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
   await grabberTo(page, "full");
   const overlay = page.getByTestId("overlay-select");
-  await expect(page.getByTestId("map-settings").getByRole("heading", { name: "Base map" })).toBeVisible();
+  await expect(page.getByTestId("map-settings").getByRole("heading", { name: "Base Map" })).toBeVisible();
   await expect(overlay.getByRole("button")).toHaveText(["None", "USGS"]);
   await overlay.getByRole("button", { name: "USGS" }).click();
   // The map's own layer, not the choice's picture of it.
@@ -96,7 +96,9 @@ test("Google's map or its satellite over the chart where the deployment has a ke
   await page.getByTestId("overlay-select").getByRole("button", { name: "Google Map" }).click();
   await expect.poll(() => asked.some((u) => u.includes("/v1/createSession?key=AIza-test")), { timeout: slow(15000) }).toBe(true);
   await expect.poll(() => asked.some((u) => /\/v1\/2dtiles\/\d+\/\d+\/\d+\?session=test-session&key=AIza-test/.test(u))).toBe(true);
-  await expect(page.locator(".maplibregl-ctrl-attrib", { hasText: "Google Maps · Map data ©2026 Google" })).toBeVisible();
+  // Google's own logo (its Map Tiles API policies), then the copyright.
+  const credit = page.locator(".maplibregl-ctrl-attrib", { hasText: "Map data ©2026 Google" });
+  await expect(credit.getByRole("img", { name: "Google Maps" }).filter({ visible: true })).toHaveCount(1);
   // Its satellite, its own picture beside it (the owner, 2026-11-13): a session of its own, with Google's roads over it.
   await page.getByTestId("overlay-select").getByRole("button", { name: "Google Satellite" }).click();
   await expect.poll(() => asked.filter((u) => u.includes("/v1/createSession")).length).toBe(2);
@@ -146,7 +148,7 @@ test("Google's session refused says so in the settings; a kept session of anothe
 test("on a phone the map's settings card has the app's close, the way out besides a tap on the map", async ({ page }) => {
   // The commonality audit's C-4: the sheet was put away only by a tap on
   // the map under it. A card in the map's sheet now (SheetCard).
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's card");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's card");
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);

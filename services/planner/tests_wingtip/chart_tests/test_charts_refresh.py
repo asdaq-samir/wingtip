@@ -1,5 +1,6 @@
 """The chart modules (wingtip.charts maps them): a refresh, the tile cache, writing a tile safely, and the pyramid workers' memory."""
 
+import datetime as dt
 import io
 import json
 
@@ -19,6 +20,7 @@ from wingtip import (
     chart_tiles,
     chart_workers,
     config,
+    data_cycles,
 )
 
 from .helpers import _palette_raster
@@ -70,6 +72,8 @@ def test_a_refresh_publishing_to_a_bucket_asks_the_bucket_whether_the_cycle_is_d
     monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(config, "CHARTS_DIR", tmp_path / "charts")
     monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
+    # Before the next cycle's lead (charts.next_cycle stages it).
+    monkeypatch.setattr(data_cycles, "now", lambda: dt.datetime(2026, 11, 12, 12, tzinfo=dt.timezone.utc))
     calls = []
     monkeypatch.setattr(chart_prepare, "prepare_all", lambda kinds, cycle: calls.append("prepare"))
 
@@ -101,8 +105,8 @@ def test_a_refresh_publishing_to_a_bucket_asks_the_bucket_whether_the_cycle_is_d
             self.cycle = cycle
 
         def get_object(self, Bucket, Key):
-            assert (Bucket, Key) == ("charts-bucket", "tiles/serving.json")
-            if self.cycle is None:
+            assert Bucket == "charts-bucket" and Key in ("tiles/serving.json", "tiles/next.json")
+            if self.cycle is None or Key == "tiles/next.json":  # nothing staged ahead
                 raise self.exceptions.NoSuchKey()
             return {"Body": io.BytesIO(json.dumps({"cycle": self.cycle}).encode())}
 
@@ -116,7 +120,35 @@ def test_a_refresh_publishing_to_a_bucket_asks_the_bucket_whether_the_cycle_is_d
         assert calls == ["prepare", ("publish", "10-29-2026", "charts-bucket")]
 
 
-def test_tile_png_caches_the_render_and_remembers_empty_tiles(tmp_path, monkeypatch):
+def test_a_cycle_staged_ahead_is_not_drawn_again_and_is_promoted_once_in_force(tmp_path, monkeypatch):
+    # The ops audit, 2026-11-21: the refresh drew the new cycle only from
+    # its date, some hours from 08:30 UTC, so the map served an expired
+    # chart past 0901Z every cycle. A cycle staged ahead (next.json) is
+    # the planners' from 0901Z; the next run only moves serving.json on.
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
+    monkeypatch.setattr(chart_upkeep, "build_cycle", lambda *a, **k: pytest.fail("a staged cycle is not drawn again"))
+    promoted = []
+    monkeypatch.setattr(chart_publish, "promote", lambda bucket, **kw: promoted.append(bucket) or "10-29-2026")
+
+    class Bucket:
+        class exceptions:
+            class NoSuchKey(Exception):
+                pass
+
+        def get_object(self, Bucket, Key):
+            cycle = {"tiles/serving.json": "09-03-2026", "tiles/next.json": "10-29-2026"}[Key]
+            return {"Body": io.BytesIO(json.dumps({"cycle": cycle}).encode())}
+
+    monkeypatch.setattr(chart_cycle, "in_force", lambda cycle, now=None: False)  # 08:30 UTC on its date
+    assert chart_upkeep.refresh(publish_bucket="charts-bucket", client=Bucket(), prune=False) == "10-29-2026"
+    assert promoted == []
+    monkeypatch.setattr(chart_cycle, "in_force", lambda cycle, now=None: True)  # the next day's run
+    assert chart_upkeep.refresh(publish_bucket="charts-bucket", client=Bucket(), prune=False) == "10-29-2026"
+    assert promoted == ["charts-bucket"]
+
+
+def test_tile_bytes_caches_the_render_and_remembers_empty_tiles(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "09-03-2026")
     box = (-90.0, 41.0, -86.0, 43.0)
@@ -130,19 +162,19 @@ def test_tile_png_caches_the_render_and_remembers_empty_tiles(tmp_path, monkeypa
 
     monkeypatch.setattr(chart_tiles, "rasters_covering", covering)
 
-    first = chart_tiles.tile_png(65, 94, 8, "sec")
+    first = chart_tiles.tile_bytes(65, 94, 8, "sec")
     assert first and first[:8] == b"\x89PNG\r\n\x1a\n"
     assert chart_tiles.tile_cached(65, 94, 8, "sec")
     monkeypatch.setattr(chart_render, "render_tile", lambda *a: pytest.fail("cached tiles are not re-rendered"))
-    assert chart_tiles.tile_png(65, 94, 8, "sec") == first
+    assert chart_tiles.tile_bytes(65, 94, 8, "sec") == first
     assert len(calls) == 1
 
-    assert chart_tiles.tile_png(65, 80, 8, "sec") is None
+    assert chart_tiles.tile_bytes(65, 80, 8, "sec") is None
     assert (tmp_path / "tiles" / "09-03-2026" / "sec" / "8" / "65" / "80.none").exists()
-    assert chart_tiles.tile_png(65, 80, 8, "sec") is None
+    assert chart_tiles.tile_bytes(65, 80, 8, "sec") is None
     assert len(calls) == 2
 
-    assert chart_tiles.tile_png(65, 94, 20, "sec") is None  # past the chart's own zoom range
+    assert chart_tiles.tile_bytes(65, 94, 20, "sec") is None  # past the chart's own zoom range
 
     image = chart_tiles.tile_image(65, 94, 8, "sec")
     assert image is not None and image.mode == "RGB"
@@ -192,11 +224,11 @@ def test_a_tile_missing_a_sheet_is_left_blank_where_tiles_do_not_fetch(tmp_path,
 
     monkeypatch.setattr(chart_tiles, "FETCH_FOR_TILES", False)
     monkeypatch.setattr(chart_render, "render_tile", lambda *a: pytest.fail("a tile missing a sheet is not drawn here"))
-    assert chart_tiles.tile_png(65, 94, 8, "sec") is None
+    assert chart_tiles.tile_bytes(65, 94, 8, "sec") is None
 
     monkeypatch.setattr(chart_tiles, "FETCH_FOR_TILES", True)
     monkeypatch.setattr(chart_render, "render_tile", render)
-    assert chart_tiles.tile_png(65, 94, 8, "sec")[:8] == b"\x89PNG\r\n\x1a\n"
+    assert chart_tiles.tile_bytes(65, 94, 8, "sec")[:8] == b"\x89PNG\r\n\x1a\n"
     assert not chart_tiles.tile_cached(65, 94, 8, "sec")
 
 
@@ -271,3 +303,18 @@ def test_available_memory_reads_the_containers_limit(tmp_path):
     assert chart_workers.available_memory(tmp_path) == 14 * GB
     (tmp_path / "proc/meminfo").unlink()
     assert chart_workers.available_memory(tmp_path) is None
+
+
+def test_a_server_reading_published_tiles_lets_older_cycles_sheets_go(tmp_path, monkeypatch):
+    # The ops audit, 2026-11-21: on AWS only the refresh task pruned, on its
+    # own disk, and the server's data disk kept every cycle's sheets.
+    monkeypatch.setattr(config, "CHARTS_DIR", tmp_path / "charts")
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    for cycle in ("09-03-2026", "10-29-2026", "12-24-2026"):
+        (tmp_path / "charts" / cycle / "sec").mkdir(parents=True)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "10-29-2026")
+    monkeypatch.setattr(config, "CHART_TILES_URL", None)
+    assert chart_upkeep.prune_behind_served() == []  # locally the refresh prunes
+    monkeypatch.setattr(config, "CHART_TILES_URL", "https://d123.cloudfront.net/tiles")
+    assert chart_upkeep.prune_behind_served() == ["charts/09-03-2026"]
+    assert sorted(p.name for p in (tmp_path / "charts").iterdir()) == ["10-29-2026", "12-24-2026"]

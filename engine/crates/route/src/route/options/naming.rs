@@ -35,8 +35,13 @@ fn fix_like(ident: &str) -> bool {
 }
 
 fn within(fixes: &[Fix], at: Point, nm: f64) -> impl Iterator<Item = &Fix> {
+    // Each fix read within 180 degrees of the point (geo::lon_near), so one
+    // just across the antimeridian is in its box (Shemya's from Attu).
     let (s, w, n, e) = geo::box_around(at.0, at.1, nm);
-    fixes.iter().filter(move |f| f.lat >= s && f.lat <= n && f.lon >= w && f.lon <= e && fix_like(&f.ident))
+    fixes.iter().filter(move |f| {
+        let lon = geo::lon_near(f.lon, at.1);
+        f.lat >= s && f.lat <= n && lon >= w && lon <= e && fix_like(&f.ident)
+    })
 }
 
 /// A point named as the pilot's own point (frd_ident) off the nearest fix

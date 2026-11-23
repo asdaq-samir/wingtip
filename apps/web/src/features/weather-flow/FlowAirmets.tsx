@@ -4,7 +4,7 @@ import type { LineLayerSpecification, SymbolLayerSpecification } from "maplibre-
 import { api } from "../../lib/api/client";
 import { callEngine } from "../../lib/engine/engine";
 import { useGlData, useGlLayer } from "../../lib/map/gl/glLayer";
-import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE } from "../../lib/map/gl/layers/common";
+import { labelHalo, labelInk, labelText } from "../../lib/map/gl/layers/common";
 import { areaColour, hazardTextInk } from "../../lib/map/weatherColours";
 import type { FlowFrame } from "./useWeatherFlow";
 
@@ -30,14 +30,8 @@ const LAYERS: (LineLayerSpecification | SymbolLayerSpecification)[] = [
     id: "flow-gairmet-label",
     type: "symbol",
     source: SOURCE,
-    layout: {
-      "symbol-placement": "line",
-      "text-field": ["get", "label"],
-      "text-font": GL_FONT_BOLD,
-      "text-size": LABEL_SIZE.small,
-      "symbol-spacing": 320,
-    },
-    paint: { "text-color": ["get", "ink"], ...LABEL_HALO },
+    layout: { "symbol-placement": "line", "text-field": ["get", "label"], ...labelText("hazard"), "symbol-spacing": 320 },
+    paint: { "text-color": labelInk(["get", "ink"]), ...labelHalo("hazard") },
   },
 ];
 

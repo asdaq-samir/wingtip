@@ -13,7 +13,9 @@ extension EngineContract.AtcItem {
     /// (AIM 4-2-12).
     var words: String {
         func capital(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
-        func three(_ d: Int) -> String { String(d).leftPadded(to: 3) }
+        // Three figures, north as 360, never 000 (FAA Order JO 7110.65,
+        // 2-4-17), as the web's threeFigures: Format.heading less its sign.
+        func three(_ d: Int) -> String { String(Format.heading(Double(d)).dropLast()) }
         // Altitudes.said: the engine's problem in the altitude's place where it refuses.
         func altitude(_ ft: Int?) -> String { ft.map { Altitudes.said(Double($0)) } ?? "" }
         let points = ["north": "N", "northeast": "NE", "east": "E", "southeast": "SE", "south": "S", "southwest": "SW", "west": "W", "northwest": "NW"]

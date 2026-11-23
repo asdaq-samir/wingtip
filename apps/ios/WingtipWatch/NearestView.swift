@@ -2,40 +2,53 @@ import CoreLocation
 import Observation
 import SwiftUI
 
-/// Where the watch is, from its own Core Location (one fix at a time,
-/// asked for when the screen wants one); nil until it has one or where
-/// the pilot has said no, when the phone's fix stands in.
+/// Where the watch is, from its own Core Location: the first fix of
+/// Core Location's live updates (CLLocationUpdate.liveUpdates) within a
+/// few seconds of being asked, under a service session that asks for
+/// When In Use (CLServiceSession), in place of a delegate-driven
+/// CLLocationManager. Nil until it has one, or where the pilot has said
+/// no, when the phone's fix stands in.
 @MainActor
 @Observable
-final class WatchLocation: NSObject, CLLocationManagerDelegate {
+final class WatchLocation {
     private(set) var coordinate: CLLocationCoordinate2D?
     private(set) var denied = false
 
-    private let manager = CLLocationManager()
+    /// How long a fix is waited for before the phone's stands in.
+    static let waitS: Double = 5
 
-    override init() {
-        super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    /// One fix, asked for when the screen wants one.
+    func fix() async {
+        let session = CLServiceSession(authorization: .whenInUse)
+        defer { session.invalidate() }
+        guard let update = await Self.first(within: Self.waitS) else { return }
+        denied = update.authorizationDenied || update.authorizationDeniedGlobally || update.authorizationRestricted
+        if let location = update.location { coordinate = location.coordinate }
     }
 
-    func ask() {
-        manager.requestWhenInUseAuthorization()
-        manager.requestLocation()
+    /// The first update with a fix or a refusal, or nil after `waitS`.
+    private nonisolated static func first(within seconds: Double) async -> CLLocationUpdate? {
+        await withTaskGroup(of: CLLocationUpdate?.self) { group in
+            group.addTask {
+                do {
+                    for try await update in CLLocationUpdate.liveUpdates()
+                        where update.location != nil || update.authorizationDenied || update.authorizationDeniedGlobally || update.authorizationRestricted {
+                        return update
+                    }
+                } catch {
+                    return nil
+                }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(seconds))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
     }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let last = locations.last else { return }
-        let coordinate = last.coordinate
-        Task { @MainActor in self.coordinate = coordinate }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        let denied = status == .denied || status == .restricted
-        Task { @MainActor in self.denied = denied }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {}
 }
 
 /// The fields nearest the pilot, nearest first, each with its distance
@@ -53,9 +66,9 @@ struct NearestView: View {
         NavigationStack {
             Group {
                 if let problem, airports.isEmpty {
-                    ContentUnavailableView("No airports", systemImage: "antenna.radiowaves.left.and.right.slash", description: Text(problem))
+                    ContentUnavailableView("No Airports", systemImage: "antenna.radiowaves.left.and.right.slash", description: Text(problem))
                 } else if airports.isEmpty {
-                    ContentUnavailableView(asking ? "Asking the iPhone…" : "Nearest airports", systemImage: "airplane.circle", description: Text(asking ? "" : "Tap refresh to ask."))
+                    ContentUnavailableView(asking ? "Asking the iPhone…" : "Nearest Airports", systemImage: "airplane.circle", description: Text(asking ? "" : "Tap refresh to ask."))
                 } else {
                     List(airports) { airport in
                         VStack(alignment: .leading) {
@@ -67,7 +80,7 @@ struct NearestView: View {
                             HStack(alignment: .firstTextBaseline) {
                                 Text(airport.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                                 Spacer()
-                                Text(String(format: "%03.0f°", airport.bearingDeg)).font(.caption).monospacedDigit()
+                                Text(airport.bearingWords).font(.caption).monospacedDigit()
                             }
                             if let category = airport.flightCategory {
                                 Text(category).font(.caption2).foregroundStyle(.secondary)
@@ -84,10 +97,7 @@ struct NearestView: View {
                         .accessibilityLabel("Refresh")
                 }
             }
-            .task {
-                location.ask()
-                await ask()
-            }
+            .task { await ask() }
         }
     }
 
@@ -102,11 +112,9 @@ struct NearestView: View {
         guard !asking else { return }
         asking = true
         defer { asking = false }
-        // The watch's fix comes a moment after it is asked for; the
-        // phone's stands in until then.
-        if location.coordinate == nil, !location.denied {
-            try? await Task.sleep(for: .seconds(2))
-        }
+        // The watch's own fix, waited for a few seconds; the phone's
+        // stands in where none comes.
+        await location.fix()
         guard let here else {
             problem = WatchProblem.noPosition.localizedDescription
             return
@@ -116,7 +124,8 @@ struct NearestView: View {
             airports = reply.airports
             problem = reply.problem
         } catch {
-            problem = error.localizedDescription
+            // The watch's own words; WatchConnectivity's are not a pilot's.
+            problem = ((error as? WatchProblem) ?? .noAnswer).errorDescription
         }
     }
 }

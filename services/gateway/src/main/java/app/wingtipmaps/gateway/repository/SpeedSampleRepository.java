@@ -45,6 +45,37 @@ public interface SpeedSampleRepository extends JpaRepository<SpeedSample, Long> 
             ORDER BY 1, 2, 3, 4""", nativeQuery = true)
     List<Day> daysSince(@Param("since") Instant since);
 
+    /** One build's samples of one metric from one platform. */
+    interface VersionFigure {
+        String getSource();
+
+        String getVersion();
+
+        String getMetric();
+
+        long getCount();
+
+        double getP50();
+
+        double getP75();
+
+        double getP95();
+    }
+
+    /** Each build's figures from pilots' devices since {@code since} (the
+     *  lab's nightly commits left out): how many samples, and the median,
+     *  75th and 95th percentile, the newest build first. */
+    @Query(value = """
+            SELECT source, version, metric, count(*) AS count,
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY value) AS p50,
+                   percentile_cont(0.75) WITHIN GROUP (ORDER BY value) AS p75,
+                   percentile_cont(0.95) WITHIN GROUP (ORDER BY value) AS p95
+            FROM speed_samples
+            WHERE recorded_at >= :since AND source <> 'lab'
+            GROUP BY source, version, metric
+            ORDER BY max(recorded_at) DESC, source, version, metric""", nativeQuery = true)
+    List<VersionFigure> figuresByVersionSince(@Param("since") Instant since);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM SpeedSample s WHERE s.recordedAt < :before")

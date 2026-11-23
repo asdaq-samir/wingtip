@@ -43,7 +43,7 @@ export function RemovableRow({
   const shareIt = () => {
     if (!share) return;
     shareOrCopy(share).catch((err) => {
-      if (!cancelled(err)) showError("Not shared", describeError(err));
+      if (!cancelled(err)) showError("Not Shared", describeError(err));
     });
   };
   // Every list's menu the same two, at the owner's word (2026-10-28): "all
@@ -93,7 +93,7 @@ export function ClearList({
         size="sm"
         onClick={ask}
         data-testid={testId}
-        className={cn("relative h-auto px-1 py-0.5 font-normal text-tint after:absolute after:-inset-x-2 after:-inset-y-3", TEXT.row)}
+        className={cn("relative h-auto px-1 py-0.5 font-normal text-tint hit-x-2 hit-y-3", TEXT.row)}
       >
         Clear
       </Button>

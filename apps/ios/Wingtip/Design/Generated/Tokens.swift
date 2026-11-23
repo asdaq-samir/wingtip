@@ -4,14 +4,14 @@ import SwiftUI
 import UIKit
 
 /// A colour from its 0xRRGGBB and an alpha.
-private func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> UIColor {
+nonisolated private func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> UIColor {
     UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
             blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)
 }
 
 /// Wingtip's colours: the chart's, the flight categories', the mark's, the badges'.
-enum WingtipColor {
-    enum Chart {
+nonisolated enum WingtipColor {
+    nonisolated enum Chart {
         /// The course line's magenta, as an FAA chart draws a course: the route, a hold's racetrack, a top of climb's tag. The same at night.
         static let course = rgb(0xE600E6)
         /// The green either side of a selected course, as ForeFlight cases its magenta (the owner's screenshot, 2026-11-08): no airspace, airway or field on the sectional is drawn in it.
@@ -58,6 +58,8 @@ enum WingtipColor {
         static let fixInk = rgb(0x1C1A17)
         /// A VFR reporting point's green on the map.
         static let vfrGreen = rgb(0x148A3B)
+        /// A VFR reporting point's ident on the map: the green a step deeper for words, 5.4:1 on the white halo, where vfr-green was 4.4:1, under the 4.5:1 small words need (WCAG 1.4.3).
+        static let vfrGreenText = rgb(0x117A35)
         /// A paved runway's surface (ForeFlight's dark grey over its street map).
         static let runwayHard = rgb(0x4A4F57)
         /// A runway that is not hard: turf, grass, dirt, gravel.
@@ -119,7 +121,7 @@ enum WingtipColor {
         /// And at night (slate-900).
         static let mapGroundNight = rgb(0x0F172A)
     }
-    enum Category {
+    nonisolated enum Category {
         static let vfr = rgb(0x1A7F37)
         static let mvfr = rgb(0x1F6FEB)
         static let ifr = rgb(0xB3261E)
@@ -129,7 +131,7 @@ enum WingtipColor {
         static let lifrChip = rgb(0x7E3FB8)
         static let unknown = rgb(0x8FA3B0)
     }
-    enum Brand {
+    nonisolated enum Brand {
         /// Airspace Magenta, the ring round the mark.
         static let markRing = rgb(0xA3266F)
         /// The ring at night.
@@ -145,11 +147,11 @@ enum WingtipColor {
         /// The sectional's lowland green the app icon is drawn on (docs/brand/appicon.svg): the store art's and the small icon's ground.
         static let chartLand = rgb(0xD7E8C6)
     }
-    enum Strip {
+    nonisolated enum Strip {
         /// What is flown already, on the strip's ribbon.
         static let flown = rgb(0x8E8E93)
     }
-    enum Badge {
+    nonisolated enum Badge {
         static let tower = rgb(0x2465B8)
         static let ground = rgb(0x0F766E)
         static let weather = rgb(0x0284C7)
@@ -166,8 +168,8 @@ enum WingtipColor {
         static let car = rgb(0x2563EB)
         static let food = rgb(0xBE185D)
         static let lodging = rgb(0x7E3FB8)
-        /// The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel.
-        static let stopFuel = rgb(0xD97706)
+        /// The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel. The fuel badge's amber, #b45309, a step deeper than the #d97706 picked: the white pump on it was 3.2:1, and the iPad's accessibility audit failed Find Nearby's Fuel row on it; 5.0:1 now (WCAG 2.2 1.4.3).
+        static let stopFuel = rgb(0xB45309)
         static let stopFood = rgb(0xDC2626)
         static let stopRepair = rgb(0x0F766E)
         static let stopTraining = rgb(0x0369A1)
@@ -202,7 +204,7 @@ enum WingtipColor {
         /// A tracked airplane on the ground: iOS's dark grey, zinc-600 (7.7:1).
         static let statusGround = rgb(0x52525B)
     }
-    enum Weather {
+    nonisolated enum Weather {
         static let convective = rgb(0xC2410C)
         static let icing = rgb(0x2563EB)
         static let turbulence = rgb(0xD97706)
@@ -306,7 +308,7 @@ enum WingtipColor {
         /// The thin diagonal lines over where the layer has no data, as Apple Weather hatches it.
         static let flowHatch = rgb(0x7B8494)
     }
-    enum Score {
+    nonisolated enum Score {
         /// Under 3.
         static let step1 = rgb(0xD99A1E)
         /// 3 to 3.5.
@@ -318,15 +320,27 @@ enum WingtipColor {
         /// 4.5 and up.
         static let step5 = rgb(0x4E3406)
     }
-    enum Signal {
+    nonisolated enum Signal {
         static let green = rgb(0x16A34A)
         static let red = rgb(0xDC2626)
         static let white = rgb(0xF8FAFC)
     }
+    nonisolated enum Markup {
+        /// The highlighter's first ink, where it starts.
+        static let highlightYellow = rgb(0xF2B600)
+        static let highlightGreen = rgb(0x52C41A)
+        static let highlightBlue = rgb(0x2F8CFF)
+        static let highlightPink = rgb(0xE02AD8)
+        /// The pen's first ink, where it starts.
+        static let penBlack = rgb(0x1C1A17)
+        static let penBlue = rgb(0x0066D6)
+        static let penRed = rgb(0xDC2626)
+        static let penGreen = rgb(0x148A3B)
+    }
 }
 
 /// One scheme's surfaces, words and states, as the web's cascade resolves them (color.theme, color.look).
-struct WingtipPalette: Sendable {
+nonisolated struct WingtipPalette: Sendable {
     let airspaceBlueText: UIColor
     let airspaceMagentaText: UIColor
     let course: UIColor
@@ -890,7 +904,7 @@ struct WingtipPalette: Sendable {
 
 /// The text roles, each a Dynamic Type style (or a size scaled with one), so
 /// every one grows with the pilot's text size.
-enum WingtipType {
+nonisolated enum WingtipType {
     /// A name over a card's picture: iOS's Title 1, as Maps sets a place's over its photos.
     static let hero: Font = Font.system(.title, weight: .bold)
     /// A card's name: an airport's, the airspace's, Nearest's (iOS Title 2).
@@ -907,10 +921,8 @@ enum WingtipType {
     static let detail: Font = Font.system(.subheadline, weight: .regular)
     /// A section's line of help, a group's heading, a key (iOS Footnote); 13 with a mouse too, the least a desktop's words are.
     static let note: Font = Font.system(.footnote, weight: .regular)
-    /// The panel's tabs' words (iOS Footnote).
-    static let tab: Font = Font.system(.footnote, weight: .regular)
-    /// The tab bar's words (iOS Caption 1, 12/16; the iOS audit's P3).
-    static let tabBar: Font = Font.system(.caption, weight: .regular)
+    /// The floating tab bar's words under their glyphs (FPL's and the airport card's bars): iOS's Footnote, 13 on 18, what the bars drew as a note's since the owner's "a bit bigger" (2026-10-22); the panel's old 13-on-17 tab role, which nothing read, is gone (the scale audit's Q3, the owner, 2026-11-21).
+    static let tabBar: Font = Font.system(.footnote, weight: .regular)
     /// A StatusBadge's word (Active, Closed, In the air): iOS's Caption 1 in semibold, 12 on 16, the same with a mouse.
     static let badge: Font = Font.system(.caption, weight: .semibold)
     /// A chip's category in a narrow column (iOS Caption 2).
@@ -925,7 +937,7 @@ enum WingtipType {
     static let figureSize: CGFloat = 26
 }
 
-enum WingtipSpace {
+nonisolated enum WingtipSpace {
     static let unit: CGFloat = 4
     static let hairline: CGFloat = 1
     static let xxs: CGFloat = 2
@@ -937,7 +949,7 @@ enum WingtipSpace {
     static let xxl: CGFloat = 32
 }
 
-enum WingtipRadius {
+nonisolated enum WingtipRadius {
     static let base: CGFloat = 10
     static let cockpit: CGFloat = 8
     static let ink: CGFloat = 12
@@ -950,7 +962,7 @@ enum WingtipRadius {
 }
 
 /// Motion: durations in seconds, curves as cubic-bezier points.
-enum WingtipMotion {
+nonisolated enum WingtipMotion {
     static let sheet: TimeInterval = 0.3
     static let sheetEase = Animation.timingCurve(0, 0, 0.58, 1, duration: 0.3)
     static let drawer: TimeInterval = 0.45
@@ -963,7 +975,7 @@ enum WingtipMotion {
 /// The taps felt on a key action, as SwiftUI's sensory feedback
 /// (`.sensoryFeedback(WingtipHaptic.altitude, trigger:)`); the system
 /// leaves them out where the pilot has turned system haptics off.
-enum WingtipHaptic {
+nonisolated enum WingtipHaptic {
     /// An altitude set: a wheel's detent, as a picker ticks.
     static let altitude: SensoryFeedback = .selection
     /// Direct To or Fly Here taken: the route has changed under the pilot.
@@ -975,7 +987,7 @@ enum WingtipHaptic {
 }
 
 /// The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees.
-enum WingtipMap {
+nonisolated enum WingtipMap {
     static let pitchOpen: Double = 50
     static let pitchMax: Double = 85
     static let pitchFlatMax: Double = 60
@@ -990,17 +1002,110 @@ enum WingtipMap {
     static let airspaceFaded: Double = 0.35
     static let airspaceHeld: Double = 1.8
     static let airspaceLabelFaded: Double = 0.6
-    static let labelSmall: Double = 11
-    static let label: Double = 12
-    static let labelLarge: Double = 13
-    static let labelCount: Double = 14
-    static let labelRunway: Double = 16
-    static let labelHalo: Double = 2
-    static let labelHaloNight: Double = 0.6
+}
+
+/// From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1.
+nonisolated enum WingtipMapZoom {
+    /// The farthest out the airports' layer is drawn, where its marks are smallest; each field within it from its own tier's zoom below.
+    static let airportsFarthest: Double = 4
+    /// Towered fields (field_mark_rank's first tier), a few states on a phone, with the Class B and C they are named for.
+    static let airportTowered: Double = 5
+    /// Public fields with a hard runway of 3,000 ft or more (field_mark_rank's second tier).
+    static let airportLongHard: Double = 7
+    /// Every other public field (field_mark_rank's third tier).
+    static let airportPublic: Double = 8
+    /// Private fields (field_mark_rank's fourth tier), behind their switch.
+    static let airportPrivate: Double = 10
+    /// Heliports (field_mark_rank's last tier).
+    static let airportHeliport: Double = 11
+    /// Every drawn field's ident from this zoom; farther out only a Class B field's, as there an ident is wider than the room between two towered fields.
+    static let airportIdents: Double = 6
+    /// Class B rings.
+    static let airspaceB: Double = 5
+    /// Class C rings.
+    static let airspaceC: Double = 5
+    /// Class D rings.
+    static let airspaceD: Double = 7
+    /// Class E at the surface and a Class C's or D's surface-area extensions (E2, E3, E4): in the tiles, not drawn on the 2D map.
+    static let airspaceESurface: Double = 8
+    /// Every other Class E (E5, E6, E7): in the tiles, not drawn on the 2D map.
+    static let airspaceE: Double = 9
+    /// The rings at their full width with their band inside; farther out half their width and no band, so a Class C is a ring and not a dot.
+    static let airspaceFull: Double = 7
+    /// The airspace and special-use altitude tabs: farther out they were the largest marks on the map, over the fields' names (the owner, 2026-11-20).
+    static let airspaceLabels: Double = 9
+    /// Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21).
+    static let specialUse: Double = 7
+    /// The VORs a pilot tunes (NASR's NAV_TYPE VOR, VOR/DME and VORTAC), from a region's zoom. The app's alone: the charts job's tiles hold every navaid from its own zooms (overlay_layers).
+    static let vor: Double = 8
+    /// The VFR waypoints and the low enroute chart's fixes. The app's alone: the charts job's tiles hold every fix from its own zooms (overlay_layers).
+    static let fix: Double = 10
+}
+
+/// The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo.
+nonisolated enum WingtipMapLabel {
+    nonisolated enum Halo { case light, dark, none }
+    /// A kind's look: its size by zoom (the app's levels; one stop is a fixed size), its weight and its halo.
+    nonisolated struct Kind {
+        let size: [(zoom: Double, px: Double)]
+        let bold: Bool
+        let halo: Halo
+    }
+    static let sizeSmall: Double = 11
+    static let sizeNormal: Double = 12
+    static let sizeLarge: Double = 13
+    static let sizeCount: Double = 14
+    static let sizeRunway: Double = 16
+    static let sizePicked: Double = 17
+    static let halo: Double = 2
+    static let haloNight: Double = 0.85
+    static let scaleMax: Double = 1.2
+    /// Each light-haloed word's ink after dark, by its day ink (map.label.night-ink).
+    static let nightInk: [String: String] = ["#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#62d48e", "#1c1a17": "#eef1f5", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8fb4ff", "#b45309": "#fbbf24", "#7c3aed": "#bba1ff", "#78716c": "#cdc8c3", "#be185d": "#f58cc4", "#0f766e": "#4fd1c5", "#57534e": "#cfcac5", "#9333ea": "#c99cff"]
+    /// A field's ident beside its mark, in its symbol's blue or magenta (Chart User's Guide, Airports): the tiles' fields, a Class B field's, a stop's.
+    static let airportIdent = Kind(size: [(4, 11), (10, 12), (13, 13)], bold: true, halo: .light)
+    /// The open card's field's ident, white over its ring.
+    static let airportPicked = Kind(size: [(0, 17)], bold: true, halo: .dark)
+    /// A VOR's ident and frequency on its blue tag, "GCO (108.25)", as ForeFlight writes it.
+    static let navaidIdent = Kind(size: [(7, 11), (11, 12)], bold: true, halo: .none)
+    /// An enroute fix's or a VFR waypoint's ident, in capitals as NASR names it, the navaids' size.
+    static let fixIdent = Kind(size: [(7, 11), (11, 12)], bold: true, halo: .light)
+    /// An airspace's or a special-use area's altitudes on its dark tab, as the sectional sets them; the map's smallest words at every zoom, so the tabs are never the largest marks on the chart.
+    static let airspaceTab = Kind(size: [(0, 11)], bold: true, halo: .none)
+    /// A 3D shelf's altitudes on its tab, standing over the tilted map.
+    static let shelfTab = Kind(size: [(0, 12)], bold: true, halo: .none)
+    /// A runway end's number, white on the dark halo, turned as painted.
+    static let runwayNumber = Kind(size: [(13.5, 11), (17, 16)], bold: true, halo: .dark)
+    /// A checkpoint's name beside its dot: a place's name, in regular as the chart sets a town's, under the bold idents.
+    static let checkpointName = Kind(size: [(0, 12)], bold: false, halo: .light)
+    /// A checkpoint's number on its dot.
+    static let checkpointNumber = Kind(size: [(0, 11)], bold: true, halo: .none)
+    /// A route field's ident on its dark pill: the route's words over the chart's.
+    static let routeIdent = Kind(size: [(0, 12)], bold: true, halo: .none)
+    /// A route point's name, a top of climb's or descent's, on its white pill.
+    static let routePoint = Kind(size: [(0, 11)], bold: true, halo: .none)
+    /// A traffic pattern leg's name on its teal chip.
+    static let patternLeg = Kind(size: [(0, 11)], bold: true, halo: .none)
+    /// A way's chip: its time in bold, its name in regular.
+    static let way = Kind(size: [(0, 12)], bold: true, halo: .none)
+    /// A procedure's or a plate's tag of several lines, drawn as a picture (drawTag).
+    static let fixTag = Kind(size: [(0, 13)], bold: true, halo: .none)
+    /// A SIGMET's, an AIRMET's or a TFR's words along its outline, in its colour.
+    static let hazard = Kind(size: [(0, 11)], bold: true, halo: .light)
+    /// A field's weather beside it: a variable wind, its visibility and weather.
+    static let airportWeather = Kind(size: [(0, 11)], bold: true, halo: .light)
+    /// A PIREP's level on its chip.
+    static let pirep = Kind(size: [(0, 12)], bold: true, halo: .none)
+    /// Traffic's height and callsign on its dark tag.
+    static let traffic = Kind(size: [(0, 11)], bold: true, halo: .none)
+    /// A cluster's count on its blue disc.
+    static let clusterCount = Kind(size: [(0, 14)], bold: true, halo: .none)
+    /// Model Weather's pinned value on its white pill.
+    static let flowPin = Kind(size: [(0, 13)], bold: true, halo: .none)
 }
 
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.
-enum WingtipFlow {
+nonisolated enum WingtipFlow {
     typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)
     static let rampWind: [Stop] = [(0, WingtipColor.Weather.flowWindCalm, 40), (25, WingtipColor.Weather.flowWindBreeze, 140), (50, WingtipColor.Weather.flowWindStrong, 190), (75, WingtipColor.Weather.flowWindGale, 220)]
     static let rampStreak: [Stop] = [(0, WingtipColor.Weather.flowStreak, 90), (15, WingtipColor.Weather.flowStreak, 180), (40, WingtipColor.Weather.flowStreak, 250)]
@@ -1023,13 +1128,29 @@ enum WingtipFlow {
     static let scaleRainHeadroom: Double = 15
 }
 
-enum WingtipSize {
+nonisolated enum WingtipSize {
     static let tapTarget: CGFloat = 44
+    static let flyingTarget: CGFloat = 60
     static let chip: CGFloat = 32
-    static let mapButton: CGFloat = 48
+    static let mapButton: CGFloat = 44
+    static let roundButton: CGFloat = 44
+    static let pill: CGFloat = 24
+    static let rowMark: CGFloat = 32
+    static let chartMark: CGFloat = 30
+    static let searchDisc: CGFloat = 36
+    static let rowBadge: CGFloat = 28
+    static let glyphCaption: CGFloat = 12
+    static let glyphNote: CGFloat = 16
+    static let glyphRow: CGFloat = 20
+    static let glyphBadge: CGFloat = 18
+    static let glyphBar: CGFloat = 24
+    static let glyphMap: CGFloat = 20
+    static let glyphCardAction: CGFloat = 20
     static let tabBar: CGFloat = 64
+    static let regular: CGFloat = 660
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
+    static let inspector: CGFloat = 1180
     static let desktop: CGFloat = 1024
     static let glassBlur: CGFloat = 15
 }

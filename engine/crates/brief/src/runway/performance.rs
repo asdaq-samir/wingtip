@@ -13,12 +13,18 @@ use crate::gonogo::calls::{runway, table, In};
 use crate::json::{self, Value};
 
 /// The field's pressure altitude from its elevation and the altimeter
-/// setting reported: a thousand feet for every inch under 29.92
-/// (FAA-H-8083-25C, chapter 11); the elevation itself without one (none,
-/// or 0, as JavaScript's falsy 0).
+/// setting reported: the standard atmosphere's height of the setting
+/// above 29.92 inHg, the engine's one rule for it
+/// (flight::pressure_altitude_ft), which is FAA-H-8083-25C ch. 11 Figure
+/// 11-22's conversion table to within 2 ft; the elevation itself without
+/// one (none, or 0, as JavaScript's falsy 0). It was a flat thousand feet
+/// an inch, which reads the table's -165 ft at 30.10 inHg as -180 and its
+/// -983 at 31.00 as -1,080: a high-pressure day's field came out up to
+/// 100 ft lower than it is, and its takeoff distance shorter, the unsafe
+/// way (apps/web/src/lib/fixtures/reference/atmosphere.json).
 pub fn pressure_altitude_ft(elevation_ft: f64, altimeter_in_hg: Option<f64>) -> f64 {
     match altimeter_in_hg {
-        Some(a) if a != 0.0 && !a.is_nan() => elevation_ft + (flight::STANDARD_INHG - a) * 1000.0,
+        Some(a) if a != 0.0 && !a.is_nan() => flight::pressure_altitude_ft(elevation_ft, a),
         _ => elevation_ft + 0.0,
     }
 }

@@ -3,10 +3,11 @@ import type { Briefing, Candidate, Course, Leg, NavLogAltitude, Totals } from ".
 import { kneeboardRadio, mhzText } from "../../lib/frequencies";
 import { pickedEnd, runwayFlown, runwayNumber, bearing, etaAt, one, plannedWords, isLegPoint, legOf, navLogRows, rowPoint } from "../plan";
 import { useRunwayPicks } from "../plan/lazy";
-import { feet, hm, weekdayDayMonthTime } from "../../lib/format";
+import { feet, hm, weekdayDayMonthTime, zoneName } from "../../lib/format";
 import { routeName } from "../../lib/identSchema";
 import { faaWords } from "../../lib/advisories";
 import { altFt, feetRange, gal, nm } from "../../lib/format";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The altitudes the legs fly: "4,500 ft", or "2,500-3,000 ft" where it steps. */
 function altitudes(legs: Leg[], fallback: number | null | undefined): string | null {
@@ -74,7 +75,7 @@ export default function Kneeboard({
           which the layout's tests find by its element. */}
       <div className="mb-1.5 flex items-baseline justify-between border-b-2 border-black pb-1">
         <span className="text-[13pt] font-bold tracking-tight">{route}</span>
-        <span>{depart ? weekdayDayMonthTime(new Date(depart)) : <Blank label="Date" />}</span>
+        <span>{depart ? `${weekdayDayMonthTime(new Date(depart))} ${zoneName(new Date(depart))}` : <Blank label="Date" />}</span>
       </div>
       <p className="mb-1.5">
         {aircraftLabel}
@@ -98,7 +99,10 @@ export default function Kneeboard({
             <th>Dist</th>
             <th>GS</th>
             <th>ETE</th>
-            <th>ETA</th>
+            {/* The ETAs on the clock the page was printed on: its zone said,
+                as a page printed at home in another zone gave its times
+                with nothing to say whose. */}
+            <th>ETA{depart ? ` ${zoneName(new Date(depart))}` : ""}</th>
             <th className="w-9">ATA</th>
             <th>Fuel</th>
             <th className="w-9">Rem</th>
@@ -179,7 +183,7 @@ export default function Kneeboard({
         <Blank label="Hobbs out" />
         <Blank label="in" />
       </p>
-      <p className="mt-2 text-[6.5pt]">Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.</p>
+      <p className="mt-2 text-[6.5pt]">{WORDING.planningAidKneeboard}</p>
     </section>,
     document.body,
   );

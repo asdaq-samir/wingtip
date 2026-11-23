@@ -1,0 +1,94 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0057-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs (\"14 CFR 91.211(a)(1)\", \"49 CFR 830.5\", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts (\"Part 135\"), AIM paragraphs (\"AIM 7-1-5\") and advisory circulars (\"AC 61-65K\", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CitationsInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The words as the app shows them: a finding's why, a rule's cite."
+        }
+      }
+    },
+    "answer": {
+      "title": "CitationsAnswer",
+      "type": "object",
+      "properties": {
+        "pieces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "cite": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "title": "Citation",
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "cfr",
+                          "aim",
+                          "ac"
+                        ]
+                      },
+                      "doc": {
+                        "type": "string",
+                        "description": "The library's document: \"cfr-14-91\", \"aim\", \"ac-61-65\"."
+                      },
+                      "at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The place in it: a CFR section (\"91.155\"), an AIM paragraph (\"7-1-5\"); null for a whole part or circular."
+                      },
+                      "paragraph": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "A CFR section's paragraph as written, \"(a)(1)\"."
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "doc",
+                      "at",
+                      "paragraph"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "text",
+              "cite"
+            ]
+          }
+        }
+      },
+      "required": [
+        "pieces"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

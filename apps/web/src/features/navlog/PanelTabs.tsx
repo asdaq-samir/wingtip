@@ -29,13 +29,15 @@ import { useFocusKept } from "./useFocusKept";
 const TABS: { value: PanelTab; label: string }[] = [
   { value: "preflight", label: "Preflight" },
   { value: "depart", label: "Depart" },
-  { value: "enroute", label: "En route" },
+  { value: "enroute", label: "En Route" },
   { value: "arrive", label: "Arrive" },
 ];
 /** The pages' order, the overview first, for a step's direction. */
 const PAGE_ORDER: (PanelTab | null)[] = [null, ...TABS.map((t) => t.value)];
 /** On paper every tab, one after another, in the same order. */
 const PRINTED: PanelTab[] = TABS.map((t) => t.value);
+/** How long a section asked for is waited for to be drawn, ms. */
+const SECTION_WAIT_MS = 10_000;
 
 /**
  * The Brief's pages and what is under them (BriefCard's, and the printed
@@ -65,13 +67,13 @@ export default function PanelTabs({
   route,
   overview: Overview,
 }: {
-  /** What shows before any page, its cards each opening one (`open`):
-   *  the Brief's glance (BriefGlance), at the owner's pick of the redesign
-   *  (D′). A page opened from it goes back to it by the close, a swipe to
+  /** What shows before any page, its rows each opening one (`open`), at
+   *  a section of it where a row names one: the Brief's glance
+   *  (BriefGlance), at the owner's pick of option A (2026-11-19). A page opened from it goes back to it by the close, a swipe to
    *  the right or a device's Back (lib/openCards); its tabs stay over it
    *  for going from page to page. Without one, Preflight is up to begin
    *  with. */
-  overview?: ComponentType<{ onOpen: (tab: PanelTab) => void; notice?: ReactNode }>;
+  overview?: ComponentType<{ onOpen: (tab: PanelTab, section?: string) => void; notice?: ReactNode }>;
   /** Over the tabs: the printed title. */
   before: ReactNode;
   contents: Record<PanelTab, ReactNode>;
@@ -152,23 +154,53 @@ export default function PanelTabs({
     if (!box) return;
     box.scrollTop = scrolls.current[tab ?? "overview"] ?? 0;
     const section = wanted.current;
-    wanted.current = null;
     if (!section) return;
+    const find = () => box.querySelector(`[data-tab="${tab}"] [data-title="${CSS.escape(section)}"]`);
     // To the section's top, under the head; twice, the second after a
     // frame, as the sections above it are laid out only near the screen
     // (content-visibility) and the first move is on their estimates.
     const to = () => {
-      const target = box.querySelector(`[data-tab="${tab}"] [data-title="${CSS.escape(section)}"]`);
+      const target = find();
       const under = localHead.current?.getBoundingClientRect().bottom ?? box.getBoundingClientRect().top;
       if (target) box.scrollTop += target.getBoundingClientRect().top - under;
     };
-    to();
-    const frame = requestAnimationFrame(to);
-    return () => cancelAnimationFrame(frame);
+    let frame = 0;
+    const go = () => {
+      wanted.current = null;
+      to();
+      frame = requestAnimationFrame(to);
+    };
+    if (find()) {
+      go();
+      return () => cancelAnimationFrame(frame);
+    }
+    // Not drawn yet: the asked-for page comes in a transition (pageStep),
+    // after the ask's own render, and its sections may come later still,
+    // as their data does. Taken as the section is drawn, rather than
+    // dropped: the Go / No-Go's weather row opened En route at its top
+    // when the page was drawn a second after the tap (tabs.spec, CI's
+    // stack while its weather service restarted, run 44566705876). Let go
+    // after a while, so a later page change is not pulled to it.
+    const seen = new MutationObserver(() => {
+      if (!find()) return;
+      seen.disconnect();
+      go();
+    });
+    seen.observe(box, { childList: true, subtree: true });
+    const giveUp = window.setTimeout(() => {
+      seen.disconnect();
+      if (wanted.current === section) wanted.current = null;
+    }, SECTION_WAIT_MS);
+    return () => {
+      seen.disconnect();
+      window.clearTimeout(giveUp);
+      cancelAnimationFrame(frame);
+    };
   }, [tab, asked]);
   useFocusKept(tab, hadFocus, localHead, pages);
-  // A page opened from the overview's card, the panel all the way up.
-  const openPage = useCallback((next: PanelTab) => goTo(next), [goTo]);
+  // A page opened from the overview's row, at a section of it where the
+  // row names one (the NOTAMs' row, Preflight's NOTAMs).
+  const openPage = useCallback((next: PanelTab, section?: string) => goTo(next, section), [goTo]);
   // A tab and section asked for from outside the tabs (useTabAsk): heard
   // as it is asked, and once drawn, one asked before the tabs were there;
   // the card they are in all the way up where it asks (its own drawer).

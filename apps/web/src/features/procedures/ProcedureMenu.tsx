@@ -1,10 +1,7 @@
-import { useId, useLayoutEffect, useRef } from "react";
+import { useId, useLayoutEffect, useRef, type ReactNode } from "react";
 import { create } from "zustand";
-import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
-import IconButton from "../../components/IconButton";
 import CloseButton from "../../components/CloseButton";
-import { Button } from "../../components/ui/button";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { ListPicks, type ListPick } from "../../components/ListPicks";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
@@ -14,27 +11,18 @@ import { runwayNumber } from "../plan";
 import { usePreferences } from "../../lib/preferences";
 import { transitionWords, type PickedProcedure } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
-import { chipLook } from "./chipLook";
+import { procedureTrigger, TITLE, type TriggerLook } from "./ProcedureTrigger";
 import { faaWords } from "../../lib/advisories";
 import QueryState from "../../components/QueryState";
 import type { UseQueryResult } from "@tanstack/react-query";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 type Kind = ProcedureSummary["kind"];
 
-const TITLE: Record<Kind, string> = { approach: "Approach", arrival: "Arrival", departure: "Departure" };
-/** The trigger's word until one is picked, as short as it goes, at the
- *  owner's ask ("make the selections to be more compact: Arrive,
- *  Approach, Depart"). */
-const SHORT: Record<Kind, string> = { approach: "Approach", arrival: "Arrive", departure: "Depart" };
-/** A kind to add, on its chip: the FAA's contractions (FAA Order JO 7340.2,
- *  Contractions: ARR, APCH, DEP), at the owner's ask (2026-11-17: "shorten
- *  arrival to ARR and approach to APCH") so the row stays on one line. A
- *  reader still hears the whole word (its aria-label). */
-const CHIP: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure: "DEP" };
 const ALL: Record<Kind, string> = { approach: "All approaches…", arrival: "All arrivals…", departure: "All departures…" };
 /** The one failure both the pull-down and the procedures sheet say. */
 export const PROCEDURES_FAILED = "The FAA's procedures could not be fetched.";
-const NONE: Record<Kind, string> = { approach: "No approach", arrival: "No arrival", departure: "No departure" };
+const NONE: Record<Kind, string> = { approach: "No Approach", arrival: "No Arrival", departure: "No Departure" };
 
 /** An approach's name in its runway's group, the runway said by the group:
  *  "ILS RWY 09L" is "ILS", "RNAV (GPS) Y RWY 10R" is "RNAV (GPS) Y". */
@@ -63,6 +51,7 @@ export default function ProcedureMenu({
   windward,
   fixes = [],
   look = "chip",
+  face,
   onOpen,
   onPick,
   onAll,
@@ -88,12 +77,9 @@ export default function ProcedureMenu({
   /** The picked one's fixes ATC can send the airplane direct to, in its
    *  order (its drawing's): with any, a page of them. */
   fixes?: string[];
-  /** Its trigger: a chip; a round button at the right of the procedure's
-   *  branch, to pick another (FixBranch, at the owner's ask: "the button on
-   *  the right should be to reselect another approach"); or, none picked,
-   *  "+ Arrival" in a dashed outline, after the field's runways (the
-   *  owner's pick, option C). */
-  look?: "chip" | "button" | "add";
+  /** Its trigger (ProcedureTrigger's looks), and a row's words. */
+  look?: TriggerLook;
+  face?: ReactNode;
   onOpen: () => void;
   onPick: (next: { id: string; transition: string | null; direct?: string | null } | null) => void;
   onAll: () => void;
@@ -168,7 +154,7 @@ export default function ProcedureMenu({
     page && "procedure" in page
       ? faaWords(page.procedure.name)
       : page && "direct" in page
-        ? "Direct to"
+        ? WORDING.directTo
         : page
           ? runwayName(page.runway)
           : `${ident} ${TITLE[kind].toLowerCase()}`;
@@ -180,50 +166,8 @@ export default function ProcedureMenu({
     // right; a fixed height, its list scrolling in it. On a phone a sheet
     // (ResponsivePopover), beside the trigger from md up.
     <ResponsivePopover open={open} onOpenChange={toggle}>
-      <ResponsivePopoverTrigger asChild>
-        {/* One line, at the owner's ask: the kind's name ("Approach") until
-            one is picked ("Just remove the word select"), then the one
-            picked, its words black as every glass button's are (the owner's
-            D1, 2026-10-23: no tint on the glass). A chip's size beside the
-            field's ident in its head, its 44-point area a pseudo-element
-            round it (the owner's compact head). Opened by a tap -- its
-            lift, as a button's click is -- not a touch. */}
-        {look === "button" ? (
-          // The one picked's name kept in it for a reader, unseen: the
-          // branch's head shows it.
-          <IconButton
-            round
-            label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}, pick another`}
-            data-testid="procedure-kind"
-            data-kind={kind}
-            data-look={look}
-          >
-            <ArrowLeftRight className="size-5" strokeWidth={2} />
-            <span className="sr-only">{label ?? SHORT[kind]}</span>
-          </IconButton>
-        ) : (
-          // The stock Button's glass, a kind to add as one picked, at the
-          // owner's pick of the sketches ("B"): it was a dashed outline.
-          <Button
-            variant="glass"
-            data-testid="procedure-kind"
-            data-kind={kind}
-            data-look={look}
-            className={chipLook(look === "add")}
-            // Its name starts with the words it shows, "+ ARR" or the one picked
-            // (WCAG 2.5.3, Label in Name: a voice user says what they see), then
-            // the whole word for a reader.
-            aria-label={
-              look === "add"
-                ? `+ ${CHIP[kind]}, ${ident} ${TITLE[kind].toLowerCase()}: none picked`
-                : `${label ?? SHORT[kind]}, ${ident} ${TITLE[kind].toLowerCase()}`
-            }
-          >
-            {look === "add" ? <span>+ {CHIP[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
-            {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}
-          </Button>
-        )}
-      </ResponsivePopoverTrigger>
+      {/* Opened by a tap -- its lift, as a button's click is -- not a touch. */}
+      <ResponsivePopoverTrigger asChild>{procedureTrigger({ look, ident, kind, label, face })}</ResponsivePopoverTrigger>
       <ResponsivePopoverContent
         title={title}
         align="start"
@@ -265,7 +209,7 @@ export default function ProcedureMenu({
             selected={picked.direct ?? NO_CHOICE}
             picks={[null, ...fixes].map((f) => ({
               id: f ?? NO_CHOICE,
-              title: f ?? "As charted",
+              title: f ?? "As Charted",
               testId: "procedure-menu-direct-fix",
               act: () => pick({ id: picked.id, transition: picked.transition, direct: f }),
             }))}
@@ -295,7 +239,7 @@ export default function ProcedureMenu({
                   picks={byRunway.get(first)!.map((p) => item(p, shortName(p)))}
                 />
                 {others.length > 0 && (
-                  <ListGroup title="Other runways">
+                  <ListGroup title="Other Runways">
                     {others.map((r) => (
                       <ListRow key={r} title={runwayName(r)} chevron value={pickedOn(r)} onClick={() => push({ runway: r })} />
                     ))}
@@ -309,8 +253,8 @@ export default function ProcedureMenu({
             {picked && fixes.length > 0 && (
               <ListGroup>
                 <ListRow
-                  title="Direct to"
-                  value={picked.direct ?? "As charted"}
+                  title={WORDING.directTo}
+                  value={picked.direct ?? "As Charted"}
                   chevron
                   onClick={() => push({ direct: true })}
                   data-testid="procedure-menu-direct"
@@ -320,7 +264,7 @@ export default function ProcedureMenu({
             <ListGroup>
               {/* The plate on the chart or not, at the owner's ask. */}
               {kind === "approach" && picked && (
-                <ListRow title="Plate on the map">
+                <ListRow title="Plate on the Map">
                   <Switch
                     checked={plates}
                     onCheckedChange={(on) => usePreferences.getState().setPlates(on)}

@@ -4,7 +4,7 @@ import FoundationModels
 /// Where Apple's model answers: on this iPhone, or on Apple's Private
 /// Cloud Compute (iOS 27's PrivateCloudComputeLanguageModel, WWDC26
 /// "Build with the new Apple Foundation Model on Private Cloud Compute").
-enum ModelPlace: String, Equatable, Sendable {
+nonisolated enum ModelPlace: String, Equatable, Sendable {
     case device, cloud
 
     /// The model's name on the words it writes (Words.model).
@@ -29,7 +29,7 @@ enum ModelPlace: String, Equatable, Sendable {
 /// developer account (developer.apple.com/private-cloud-compute). Until
 /// the owner has it, Info.plist's WingtipPrivateCloudCompute is NO and
 /// this path is never taken: the model is not even made.
-enum AppleModels {
+nonisolated enum AppleModels {
     /// The owner's switch, YES once Apple has assigned the account the
     /// entitlement and project.yml carries it.
     static var cloudEnabled: Bool { Bundle.main.object(forInfoDictionaryKey: "WingtipPrivateCloudCompute") as? Bool ?? false }

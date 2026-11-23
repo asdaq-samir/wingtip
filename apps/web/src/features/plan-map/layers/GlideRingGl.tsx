@@ -9,7 +9,7 @@ import { useOwnFix } from "../../../lib/map/position/ownShip";
 import { useGlideRatio } from "../../../lib/map/position/useGlideRatio";
 import { nearestQuery } from "../../../lib/queryClient";
 import { CHART } from "../../../lib/tokens";
-import { keptStore } from "../../../lib/storage";
+import { keptStore, useKeptValue } from "../../../lib/storage";
 import { useGeo } from "../../../lib/geo";
 
 const SOURCE = "glide-ring";
@@ -50,12 +50,20 @@ export function GlideRingGl() {
   const on = useGlideRingSetting((s) => s.value);
   const emergency = useEmergencyOpen((s) => !!s.open);
   const ratio = useGlideRatio();
+  // Off (its default), in an emergency or with no glide ratio, nothing
+  // here reads the fix: the ring was drawn again at every GPS fix for
+  // nothing while it was off (the waste audit of 2026-11-21, item 13).
+  return on && !emergency && ratio != null ? <GlideRing ratio={ratio} /> : null;
+}
+
+/** The ring itself, following each fix, while it is to be drawn. */
+function GlideRing({ ratio }: { ratio: number }) {
   const fix = useOwnFix();
-  const wanted = on && !emergency && ratio != null && !!fix;
+  const wanted = !!fix;
   const nearest = useQuery({ ...nearestQuery(fix?.lat ?? 0, fix?.lon ?? 0), enabled: wanted });
   const field = nearest.data?.[0];
   const answered = field?.elevation_ft ?? null;
-  const kept = keptField()((k) => k.value);
+  const kept = useKeptValue(keptField());
   // Kept as each answer comes, not at every fix.
   useEffect(() => {
     if (field?.elevation_ft != null) keptField().setState({ value: { lat: field.lat, lon: field.lon, field_ft: field.elevation_ft } });

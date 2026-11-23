@@ -3,18 +3,22 @@ import type { Address, SetAddress } from "../../../lib/address";
 import { useWantedPage } from "../../../lib/navigation/wantedPage";
 import { openEmergency } from "../../../lib/emergencyStore";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
+import { useSheetCards } from "../../../lib/sheetCards";
 import { SCREEN_LINK, screenOf, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { stale, takeScreen, useWanted, wantScreen } from "../../../lib/navigation/wanted";
 import { tailOf } from "../../../lib/aircraftChoice";
+import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { usePreferences } from "../../../lib/preferences";
-import { type PanelView, riseToSee } from "../../plan";
+import { type PanelView, riseToSee, useTabAsk } from "../../plan";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /** You's pages a screen is (the account button's card, which took
  *  Setup's place), as the path of page keys down to it
  *  (lib/navigation/wantedPage): the card alone is none. The checklists
  *  under Airplanes, the coach under Training, the guide and about under
- *  Settings' Help & About (the owner's option A, 2026-11-13). */
+ *  Settings' Help & About (the owner's option A, 2026-11-13), and the
+ *  scratchpad beside the documents (ScratchpadRow). */
 const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   setup: [],
   flights: ["flights"],
@@ -23,12 +27,14 @@ const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   coach: ["training", "coach"],
   checklists: ["aircraft", "checklists"],
   minimums: ["minimums"],
+  documents: ["documents"],
+  scratchpad: ["scratchpad"],
   guide: ["settings", "help", "guide"],
   about: ["settings", "help", "about"],
 };
 
 /** The screens drawn over a route, which wait for one. */
-const OVER_ROUTE = new Set<ScreenId>(["brief", "navlog", "profile"]);
+const OVER_ROUTE = new Set<ScreenId>(["brief", "navlog", "profile", "balance"]);
 
 /**
  * Any screen opened by its name (design/screens.json): a link's `open=`,
@@ -69,10 +75,20 @@ export function useOpenScreen({
   }, [linked, setAddress]);
 
   const wanted = useWanted((s) => s.screen);
+  // The airplane's screen opens on its N-number, the engine's to tell
+  // (tailOf): a link to it waits for the engine.
+  const engine = useEngineReady();
+  // A link that opens a card too (an airplane's, an airport's) has it up
+  // first and You over it, as You opens over whatever is up: on a desktop
+  // the plan's code came in after the console's, and the airplane's card,
+  // opened second, went over You (tracking-card.spec).
+  const linkCard = !!(address.flight || address.place);
+  const cardUp = useSheetCards((s) => s.stack.some((e) => e.state === "open"));
   useEffect(() => {
-    if (!wanted) return;
+    if (!wanted || (wanted === "airplane" && !engine)) return;
     // A link with the route in it is planned first: the Brief waits for it.
     if (OVER_ROUTE.has(wanted) && !routed && !stale()) return;
+    if (wanted in SETUP_PAGES && linkCard && !cardUp && !stale()) return;
     const screen = takeScreen();
     if (!screen) return;
     const pages = SETUP_PAGES[screen];
@@ -118,6 +134,16 @@ export function useOpenScreen({
         else if (screen === "navlog") openNavLogCard();
         else openProfileCard();
         return;
+      // Weight & Balance is the Brief's Preflight section on the web
+      // (PreflightSections' WeightBalanceSection): the Brief opened and
+      // scrolled to it, as File flight plan opens its Flight Plan
+      // (useFlightToSave).
+      case "balance":
+        setViewPick("plan");
+        if (!routed) return;
+        openBrief();
+        useTabAsk.getState().go("preflight", WORDING.weightAndBalance);
+        return;
       case "favorites":
         void setAddress({ list: "favorites" });
         riseToSee(setPanel);
@@ -135,6 +161,8 @@ export function useOpenScreen({
       case "coach":
       case "checklists":
       case "minimums":
+      case "documents":
+      case "scratchpad":
       case "guide":
       case "about":
         return;
@@ -146,5 +174,18 @@ export function useOpenScreen({
       default:
         screen satisfies never;
     }
-  }, [wanted, routed, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
+  }, [
+    wanted,
+    engine,
+    routed,
+    linkCard,
+    cardUp,
+    setAddress,
+    setViewPick,
+    setPanel,
+    openBrief,
+    openNavLogCard,
+    openProfileCard,
+    openNearest,
+  ]);
 }

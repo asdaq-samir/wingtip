@@ -64,6 +64,15 @@ struct TrustTests {
         #expect(DiagnosticsReporter.hitchRatio(value: 0.025, symbol: "") == 0.025)
     }
 
+    @Test func reportsGoUntilThePilotTurnsHelpImproveOff() throws {
+        let defaults = try #require(UserDefaults(suiteName: "TrustTests.helpImprove"))
+        defaults.removePersistentDomain(forName: "TrustTests.helpImprove")
+        #expect(HelpImprove.allows(defaults))
+        defaults.set(false, forKey: HelpImprove.key)
+        #expect(!HelpImprove.allows(defaults))
+        defaults.removePersistentDomain(forName: "TrustTests.helpImprove")
+    }
+
     // MARK: About
 
     @Test func theVersionIsWrittenAsSettingsWritesIt() {
@@ -78,11 +87,38 @@ struct TrustTests {
     }
 
     @Test func theCreditsAreTheIPhonesShareOfTheList() {
-        #expect(AboutCredits.data.count == 19)
+        // 23 since the feature review (2026-11-21, 583c9ea9d) cut adsb.fi.
+        #expect(AboutCredits.data.count == 23)
         #expect(AboutCredits.data.first?.what == "FAA aeronautical charts: sectional, terminal area and IFR enroute")
         #expect(AboutCredits.software.map(\.what) == ["Apple MapKit"])
-        #expect(PlanningAid.words.hasPrefix("Wingtip Maps is a planning aid for VFR and IFR flight."))
-        #expect(PlanningAid.words.hasSuffix("applicable regulations (14 CFR 91.103)."))
+        #expect(Wording.planningAid.hasPrefix("Wingtip Maps is a planning aid for VFR and IFR flight."))
+        #expect(Wording.planningAid.hasSuffix("applicable regulations (14 CFR 91.103)."))
+    }
+
+    /// The open-source licences the app ships with: LicensePlist's
+    /// acknowledgements in the app's Settings.bundle (scripts/build/licences.sh
+    /// ios), which About opens, the engine's crates and Apple's NOTICE files
+    /// among them.
+    @Test func theAcknowledgementsShipInTheSettingsBundle() throws {
+        let bundle = try #require(Bundle.main.url(forResource: "Settings", withExtension: "bundle"))
+        let list = try #require(NSDictionary(contentsOf: bundle.appending(path: "com.mono0926.LicensePlist.plist")))
+        let titles = (list["PreferenceSpecifiers"] as? [[String: Any]] ?? []).compactMap { $0["Title"] as? String }
+        for name in ["Nuke", "Valet", "swift-openapi-runtime", "swift-openapi-runtime NOTICE", "Wingtip engine (Rust crates)"] {
+            #expect(titles.contains(name), "\(name) is not in the acknowledgements")
+        }
+        let root = try #require(NSDictionary(contentsOf: bundle.appending(path: "Root.plist")))
+        let panes = (root["PreferenceSpecifiers"] as? [[String: Any]] ?? []).compactMap { $0["File"] as? String }
+        #expect(panes == ["com.mono0926.LicensePlist"])
+    }
+
+    /// A Commons photo's credit in the viewer is a link to its page, where
+    /// its author and licence are given in full, as its licence asks.
+    @Test func aPhotosCreditLinksToItsPage() {
+        let page = URL(string: "https://commons.wikimedia.org/wiki/File:X.jpg")
+        let shown = ShownPicture.paths("KOSH from the ground", ["https://upload.wikimedia.org/x.jpg"], credit: "Jane Doe · CC BY-SA 4.0", creditLink: page)
+        #expect(shown.credit == "Jane Doe · CC BY-SA 4.0")
+        #expect(shown.creditLink == page)
+        #expect(ShownPicture.paths("KOSH airport diagram", ["/x.png"], credit: "FAA").creditLink == nil)
     }
 
     @Test func theLegalPagesAreOnTheSitesHost() {

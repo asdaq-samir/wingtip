@@ -11,7 +11,9 @@ import SwiftData
 /// two devices may each make the same record before they meet
 /// (`Tracking.reload` folds those together).
 enum Records {
-    static let schema = Schema([KeptAirplaneRecord.self, AirplaneWatchRecord.self, PlannedRoute.self])
+    // The pilot's own documents, only while Keep in iCloud is on
+    // (DocumentCloud, OwnDocumentRecord).
+    static let schema = Schema([KeptAirplaneRecord.self, AirplaneWatchRecord.self, PlannedRoute.self, OwnDocumentRecord.self])
 
     /// The one store, in Application Support beside the last plan. It
     /// goes to iCloud through the app's first container (the

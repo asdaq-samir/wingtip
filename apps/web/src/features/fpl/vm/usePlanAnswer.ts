@@ -18,13 +18,19 @@ export function usePlanAnswer({ planned, depart, local, flightRules, ground, pla
   const { profiles, aircraft, aircraftValue, aircraftChoices, changeAircraft, pickTail } = useAircraftPick();
   const planParams: PlanParams = { ...planInputs, aircraft };
   const s = usePlan(planParams);
-  // The route as planned's highest cruise altitude, its legs': where it
-  // enters Class B there the Routes offer Avoid Class B (14 CFR
-  // 91.131(a)(1)); none before the plan.
-  const altitudeFt = s.legs.length ? Math.max(...s.legs.map((leg) => leg.altitude_ft)) : null;
-  // FPL's Routes (useRouteWays), asked for before the plan, and again at
-  // its altitude once it is planned.
-  const ways = useRouteWays({ planned, aircraft, depart, local, flightRules, altitudeFt });
+  // The route as planned's highest cruise altitude, its legs' once they are
+  // all in (the totals, and not the route as entered's on the way to the
+  // checkpoints' log): where it enters Class B there the Routes offer Avoid
+  // Class B (14 CFR 91.131(a)(1)); none before the plan, nor while its legs
+  // stream in, whose highest so far changed with each.
+  const planIn = !!s.totals && !s.pointToPoint;
+  const altitudeFt = planIn && s.legs.length ? Math.max(...s.legs.map((leg) => leg.altitude_ft)) : null;
+  // FPL's Routes (useRouteWays), asked for once, at that altitude, once the
+  // plan is in or has failed: asked before it as well, the planner's
+  // costliest call (1.4-2.6 s on a long new route) was made twice for
+  // every route, 450 of them against 483 nav logs in its log, beside the
+  // nav log on the same workers (the speed audit of 2026-11-21).
+  const ways = useRouteWays({ planned, aircraft, depart, local, flightRules, altitudeFt, planSettled: planIn || s.planFailed });
   // The route's own time and miles: its nav log's once it is planned,
   // the grid's and the course's before (its weather strip's minutes).
   // The grid's minutes are its weather timing's, at a speed the planner

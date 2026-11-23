@@ -12,12 +12,12 @@ from cachetools import TTLCache
 
 from wingtip import airports, registry, traffic, weather
 from wingtip.traffic import adsbx as adsbx_part  # the name adsbx is the usage file's fixture
-from wingtip.traffic import adsb_lol, adsbfi, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched
+from wingtip.traffic import adsb_lol, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched
 from wingtip.config import get_settings
 
 
 # Every part of the package, for standing in for one of its names.
-_PARTS = (traffic, adsb_lol, adsbfi, adsbx_part, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched)
+_PARTS = (traffic, adsb_lol, adsbx_part, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched)
 
 
 def stand_in(monkeypatch, name, value):
@@ -81,11 +81,12 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_sleep", clock.sleep)
     stand_in(monkeypatch, "_WATCHED", {})
     stand_in(monkeypatch, "_WATCH_ASKED", {})
+    stand_in(monkeypatch, "_FOLLOW_ASKED", {})
     stand_in(monkeypatch, "_WATCH_SOURCE", {})
-    stand_in(monkeypatch, "_ADSBFI", {"last": -1e9, "blocked_until": -1e9})
     stand_in(monkeypatch, "_GLOBE", {"blocked_until": -1e9})
-    # adsb.fi not asked over the network here: its own test turns it on.
-    monkeypatch.setenv("ADSBFI_OPEN_DATA", "0")
+    # The FAA's radar shown with no LADD list kept, as the owner's own stack
+    # has it; the list's own tests hold it (test_traffic_ladd.py).
+    monkeypatch.setenv("LADD_REQUIRED", "0")
     get_settings.cache_clear()
     # No METAR near: pressure altitudes as sent (on_altimeter's own test).
     monkeypatch.setattr(weather, "nearest_report", lambda lat, lon, **kw: None)

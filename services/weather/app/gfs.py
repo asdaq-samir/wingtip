@@ -251,9 +251,18 @@ def fetch_period(fcst_hr: str) -> None:
     {"stations": {ident: {altitude_ft: {"wind_dir_true_deg",
     "wind_speed_kt", "temp_c"}}}, "period": period_of(...)}, served to the
     end of its window. Raises ModelWindsUnavailable where no run can be
-    had, the stored copy left in place."""
+    had, the stored copy left in place. The copy held is left as it is
+    where it is already of the run and hour NOMADS would give now: the
+    step moves with the clock's hour and the job runs every 45 min while
+    a pilot plans (and at every start), so one turn in four or so asked
+    for the same ~2 MB file, decoded it and read it at every station again."""
     now = time.time()
-    fields, run, step = _fetch(fcst_hr, datetime.fromtimestamp(now, timezone.utc))
+    record = weather_store.read(f"winds-{fcst_hr}")
+    held = (record.meta.get("run"), record.meta.get("forecast_hour")) if weather_store.servable(record, now) else None
+    got = _fetch(fcst_hr, datetime.fromtimestamp(now, timezone.utc), held=held)
+    if got is None:
+        return
+    fields, run, step = got
     period = period_of(run, step, fcst_hr)
     until = json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": "winds", "valid_to": utc.epoch(period["use_to"])})))
     weather_store.write(
@@ -281,9 +290,11 @@ def period_of(run: datetime, step: int, fcst_hr: str) -> dict:
     }
 
 
-def _fetch(fcst_hr: str, now: datetime) -> tuple[dict, datetime, int]:
+def _fetch(fcst_hr: str, now: datetime, held: tuple | None = None) -> tuple[dict, datetime, int] | None:
     """{(var, hPa): (lats, lons, values)} from the latest run up at the
-    forecast hour valid at the period's hour, that run and that hour."""
+    forecast hour valid at the period's hour, that run and that hour; None
+    where that run and hour are `held`'s ((run as ISO, forecast hour), the
+    stored copy's), nothing downloaded."""
     hour = now.replace(minute=0, second=0, microsecond=0)
     target = hour + timedelta(hours=_PERIODS.get(fcst_hr, _PERIODS["06"])[0])
     latest = nomads.gfs_run(now)
@@ -293,6 +304,8 @@ def _fetch(fcst_hr: str, now: datetime) -> tuple[dict, datetime, int]:
         key = (run, step)
         if time.time() - _NOT_UP.get(key, 0) < NOT_UP_RETRY_S:
             continue
+        if held == (utc.iso(run), step):
+            return None
         body = _download(run, step)
         if body is None:
             _NOT_UP[key] = time.time()

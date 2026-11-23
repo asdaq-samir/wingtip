@@ -34,7 +34,14 @@ final class AccessibilityAuditTests: XCTestCase {
     /// screenshot:
     @MainActor
     private static func known(_ issue: XCUIAccessibilityAuditIssue, screen: String, screenHeight: CGFloat, keyboard: CGRect) -> Bool {
-        guard let element = issue.element else { return unnamedUnderGlass(issue, screen: screen) }
+        guard let found = issue.element else { return unnamedUnderGlass(issue, screen: screen) }
+        // The element read once, as one snapshot: each of its attributes
+        // read off the element itself was a query of the app's whole tree
+        // (XCTest's "Find the …", four or five an issue), made inside the
+        // audit's own time, and on CI's loaded runner one issue's queries
+        // took up to 5 s, so a screen with a few known issues overran the
+        // audit ("Audit failed to complete in time", run 45142870656).
+        guard let element = try? found.snapshot() else { return false }
         let id = element.identifier, type = element.elementType
         // The system keyboard's own bar, up with the search focused: its
         // empty prediction cells are buttons with no description, Apple's
@@ -107,7 +114,7 @@ final class AccessibilityAuditTests: XCTestCase {
     /// fails.
     @MainActor
     private static func unnamedUnderGlass(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
-        if unnamedMapLabel(issue) { return true }
+        if unnamedMapLabel(issue, screen: screen) { return true }
         // The same near miss as a named element's (known), on the system's
         // own grouped-list secondary text the audit cannot name: found
         // 2026-11-09 on the emergency cover's and About's lists. "Nearly"
@@ -134,9 +141,38 @@ final class AccessibilityAuditTests: XCTestCase {
     /// none with it hidden, over three launches each, the strip and the
     /// status bar ruled out the same way. The iPad alone, and that check
     /// alone, so unnamed text on the iPhone still fails.
+    ///
+    /// The iPhone the same on the pages that open as a card at half over
+    /// the map (Airplane, Brief, Nav Log, Downloads): above the card the
+    /// FAA chart's raster shows, its printed words an image the audit
+    /// reports as text with no element, and on the Nav Log one of its
+    /// tiles as an element with no description. Found 2026-11-21 on the
+    /// iPhone 18 Pro (iOS 27.2) once the sheet was solid: with the chart
+    /// on, "Potentially inaccessible text" with no element on those four
+    /// and the Nav Log's "Element has no description"; launched with the
+    /// chart None (-base none), the same audits passed, all five. Those
+    /// screens and those two checks with no element alone, so a control of
+    /// the card's own with no label, or the plan's sheet raised over the
+    /// map, still fails.
+    ///
+    /// About the same, a card at half over the chart too: the wave's check
+    /// run of 2026-11-21 failed it on an "Element has no description" with
+    /// no element. Run alone on the iPhone 18 Pro (iOS 27.2), six times
+    /// each, it failed 3 of 6 with the chart on, on that issue alone and
+    /// with no element to find, where each named issue (MapKit's Legal
+    /// link) was found by its element; launched with -base none it passed
+    /// 6 of 6. It comes and goes with the chart's tiles under the card,
+    /// which is why the runs that passed before missed it. Setup the same,
+    /// found by this change's run of the whole class: alone, with the chart
+    /// on it failed 2 of 21 on that issue with no element, and with -base
+    /// none it passed 21 of 21.
+    private static let halfCardsOverTheChart: Set<String> = ["airplane", "brief", "navlog", "downloads", "about", "setup"]
+
     @MainActor
-    private static func unnamedMapLabel(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        UIDevice.current.userInterfaceIdiom == .pad && issue.auditType == .elementDetection
+    private static func unnamedMapLabel(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
+        if UIDevice.current.userInterfaceIdiom == .pad { return issue.auditType == .elementDetection }
+        return halfCardsOverTheChart.contains(screen)
+            && (issue.auditType == .elementDetection || issue.auditType == .sufficientElementDescription)
     }
 
     /// The audits at the default text size leave clipping to the largest
@@ -166,14 +202,36 @@ final class AccessibilityAuditTests: XCTestCase {
         answerTheSystemsQuestion()
         let height = app.frame.height
         let keyboard = app.keyboards.firstMatch.exists ? app.keyboards.firstMatch.frame : .null
-        try app.performAccessibilityAudit(for: types) { issue in
-            if Self.known(issue, screen: screen, screenHeight: height, keyboard: keyboard) { return true }
-            // Said as it is found: the audit throws once it is done, so a
-            // list printed after it never was.
-            print("audit kept \(screen): \(issue.compactDescription) – \(issue.element?.debugDescription ?? "no element")")
-            return false
+        // The checks in four calls, each a few of them: the whole set in one
+        // call, and then in two, overran the audit's own time on CI's
+        // loaded runner ("Audit failed to complete in time", code -56, runs
+        // 45113706296 and 45132823358), so each call has less to do. The
+        // text-clipped check rides with dynamic type: alone it reported an
+        // element-less "may be clipped" on the iPad's strip that the set
+        // never has. These seven are every check XCTest has on iOS:
+        // .action and .parentChild are macOS's, not defined in an iOS
+        // build (XCUIAutomation's XCUIAccessibilityAuditTypes.h), so .all's
+        // other bits name nothing here. A call of those bits alone is not
+        // made: a mask with no iOS check in it was taken as all of them,
+        // the text-clipped check at the default size too, which then
+        // failed Setup's rows (a local run of 2026-11-22).
+        for group in Self.groups {
+            let type = group.intersection(types)
+            if type.isEmpty { continue }
+            try app.performAccessibilityAudit(for: type) { issue in
+                if Self.known(issue, screen: screen, screenHeight: height, keyboard: keyboard) { return true }
+                // Said as it is found: the audit throws once it is done, so a
+                // list printed after it never was.
+                print("audit kept \(screen): \(issue.compactDescription) – \(issue.element?.debugDescription ?? "no element")")
+                return false
+            }
         }
     }
+
+    /// The checks XCTest has on iOS, in the calls they are asked in.
+    private static let groups: [XCUIAccessibilityAuditType] = [
+        .contrast, [.elementDetection, .sufficientElementDescription], [.hitRegion, .trait], [.dynamicType, .textClipped],
+    ]
 
     /// The sheet brought up to its full height, so the audit reads what
     /// the pilot sees there: at the pill's or half height the rest of the
@@ -199,6 +257,7 @@ final class AccessibilityAuditTests: XCTestCase {
     @MainActor
     private func raiseTheSheet(_ app: XCUIApplication) {
         if UIDevice.current.userInterfaceIdiom == .pad {
+            // The map is a canvas with no element to ask; past its reveal cap, a fixed wait.
             sleep(4)
             return
         }
@@ -260,6 +319,7 @@ final class AccessibilityAuditTests: XCTestCase {
     /// on the iPad for the map past its reveal, as raiseTheSheet does.
     @MainActor
     private func settle() {
+        // The sheet's rise and the iPad's map reveal have no element state to wait on (the grabber is not on every page), so a fixed wait.
         sleep(UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2)
     }
 

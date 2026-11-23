@@ -56,14 +56,14 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
                 holding = Some(v);
             }
         }
-        let (class, name) = match holding {
-            Some(v) => (v.class, Some(v.name.clone())),
+        let (class, name, ident) = match holding {
+            Some(v) => (v.class, Some(v.name.clone()), v.ident.clone()),
             None if class_e.iter().any(|l| l.0 <= middle && middle < l.1)
                 || (middle >= CLASS_E_EVERYWHERE_FT && middle >= ground_ft + CLASS_E_ABOVE_SURFACE_FT) =>
             {
-                ('E', None)
+                ('E', None, None)
             }
-            None => ('G', None),
+            None => ('G', None, None),
         };
         let agl = bottom - ground_ft;
         let under_b = class != 'B' && b_shelves.iter().any(|f| *f > middle);
@@ -73,6 +73,7 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
             ceiling_ft: top,
             class,
             name,
+            ident,
             minimums: minimums(class, bottom, agl),
             entry: entry(class),
             equipment: equipment(class, bottom, agl, in_veil, above_bc),
@@ -82,6 +83,7 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
             Some(previous)
                 if previous.class == band.class
                     && previous.name == band.name
+                    && previous.ident == band.ident
                     && previous.minimums == band.minimums
                     && previous.equipment == band.equipment
                     && previous.speed_kt == band.speed_kt =>
@@ -96,6 +98,7 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
         ceiling_ft: TOP_FT,
         class: 'A',
         name: None,
+        ident: None,
         minimums: None,
         entry: entry('A'),
         equipment: equipment('A', CLASS_A_FLOOR_FT, CLASS_A_FLOOR_FT - ground_ft, in_veil, false),
@@ -128,6 +131,8 @@ pub fn write_band(out: &mut String, b: &Band) {
     json::string(out, &b.class.to_string());
     out.push_str(",\"name\":");
     json::opt_string(out, b.name.as_deref());
+    out.push_str(",\"ident\":");
+    json::opt_string(out, b.ident.as_deref());
     out.push_str(",\"minimums\":");
     match &b.minimums {
         Some(m) => {
@@ -152,7 +157,7 @@ pub fn write_band(out: &mut String, b: &Band) {
 }
 
 /// The column as the planner asks it (call.rs `airspace_column`), from
-/// `{"ground_ft"?, "volumes": [{"class", "name"?, "floor_ft", "floor_ref":
+/// `{"ground_ft"?, "volumes": [{"class", "name"?, "ident"?, "floor_ft", "floor_ref":
 /// "SFC"|"AGL"|"MSL", "ceiling_ft"}], "in_veil"?}`: the bands, each as
 /// the planner's AirspaceBand writes it. The planner reads the volumes
 /// out of its own NASR shapefile or cycle pack (wingtip.airspace_at) and
@@ -192,6 +197,7 @@ pub fn column_json(v: &json::Value) -> Result<String, String> {
         volumes.push(Volume {
             class,
             name: o.get("name").and_then(Value::as_str).unwrap_or("").to_owned(),
+            ident: o.get("ident").and_then(Value::as_str).map(|i| i.trim().to_uppercase()).filter(|i| !i.is_empty()),
             floor_ft: num(o, "floor_ft")?,
             floor_ref,
             ceiling_ft: num(o, "ceiling_ft")?,

@@ -23,7 +23,7 @@ enum Permission: Sendable {
         switch self {
         case .location: "Wingtip plans from where you are and shows your airplane on the chart."
         case .notifications: "Wingtip tells you when something on your route changes: a TFR, the weather turning."
-        case .microphone: "Wingtip listens to the radio to write down your clearance. Speech is recognised on this iPhone and never leaves it."
+        case .microphone: "Wingtip listens to the radio to write down your clearance. Speech is recognized on this iPhone and never leaves it."
         }
     }
 
@@ -39,7 +39,7 @@ enum Permission: Sendable {
     @MainActor
     static func undecided(_ permission: Permission) async -> Bool {
         switch permission {
-        case .location: CLLocationManager().authorizationStatus == .notDetermined
+        case .location: LocationPermission.shared.undecided
         case .notifications: await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined
         case .microphone: AVAudioApplication.shared.recordPermission == .undetermined
             || SFSpeechRecognizer.authorizationStatus() == .notDetermined
@@ -61,7 +61,7 @@ struct PermissionAsk: View {
         } actions: {
             Button(action: allow) { Text("Allow").frame(maxWidth: .infinity) }
                 .glassProminentButton().controlSize(.large)
-            Button(action: notNow) { Text("Not Now").frame(maxWidth: .infinity) }
+            Button(action: notNow) { Text(Wording.notNow).frame(maxWidth: .infinity) }
                 .glassButton().controlSize(.large)
         }
         .accessibilityIdentifier("permission-\(permission.title.lowercased())")

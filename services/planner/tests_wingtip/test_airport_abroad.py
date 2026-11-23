@@ -68,3 +68,57 @@ def test_a_table_without_iso_country_reads_the_region(tmp_path):
     with pytest.raises(OutsideCharts):
         get_airport("IGN", cache_path=path)
     assert get_airport("KLWD", cache_path=path)["ident"] == "LWD"
+
+
+SAN_JUAN = {
+    "ident": "TJSJ",
+    "type": "large_airport",
+    "local_code": "SJU",
+    "icao_code": "TJSJ",
+    "gps_code": "TJSJ",
+    "name": "Luis Munoz Marin International Airport",
+    "latitude_deg": 18.4394,
+    "longitude_deg": -66.0018,
+    "elevation_ft": 9,
+    "municipality": "San Juan",
+    "iso_country": "PR",
+    "iso_region": "PR-U-A",
+}
+
+
+def test_a_us_territory_s_field_is_the_faa_s_and_has_its_card(tmp_path):
+    # Puerto Rico is "PR" in OurAirports, not "US", and its fields are
+    # NASR's: San Juan's card said "Not found" (the owner, 2026-11-20).
+    from wingtip.airport_places import find_place
+
+    path = _table(tmp_path, {**INDAGEN, "type": "small_airport"}, SAN_JUAN, {**LAMONI, "type": "small_airport"})
+    for ident in ("TJSJ", "SJU"):
+        assert find_place(ident, cache_path=path)["name"] == "Luis Munoz Marin International Airport"
+    assert find_place("AYID", cache_path=path) is None
+
+
+MAJURO = {
+    "ident": "PKMJ",
+    "type": "medium_airport",
+    "local_code": "MAJ",
+    "icao_code": "PKMJ",
+    "gps_code": "PKMJ",
+    "name": "Marshall Islands International Airport",
+    "latitude_deg": 7.06476,
+    "longitude_deg": 171.272,
+    "elevation_ft": 6,
+    "municipality": "Majuro Atoll",
+    "iso_country": "MH",
+    "iso_region": "MH-MAJ",
+}
+
+
+def test_a_field_nasr_lists_in_a_freely_associated_state_has_its_card(tmp_path):
+    # NASR's APT_BASE lists Majuro (MAJ, PKMJ) with COUNTRY_CODE MH: the
+    # FAA's field, found as San Juan's is.
+    from wingtip.airport_places import find_place
+
+    path = _table(tmp_path, {**INDAGEN, "type": "small_airport"}, MAJURO)
+    for ident in ("PKMJ", "MAJ"):
+        assert find_place(ident, cache_path=path)["name"] == "Marshall Islands International Airport"
+    assert find_place("AYID", cache_path=path) is None

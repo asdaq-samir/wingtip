@@ -6,7 +6,9 @@ rules are the shared engine's (pilot_currency, pilot_experience:
 engine/crates/pilot/src/pilot/currency.rs; endorsement_records,
 inspections_due: records.rs; AC 61-65K's endorsements and their words,
 endorsement_kinds and endorsement_fill: kinds.rs; how far back an
-instructor's page lists, instructor_records_since: instructor_records.rs), asked by name through wingtip_native.call;
+instructor's page lists, instructor_records_since: instructor_records.rs;
+a field's names, field_names: flight's ident.rs, with NASR's record of
+it: wingtip.field_names), asked by name through wingtip_native.call;
 this only carries the records across.
 
 The entries are the gateway's LogbookEntry, camelCase, as the engine
@@ -14,111 +16,34 @@ reads them, and the answers its CurrencyDto and ExperienceItemDto, so the
 gateway hands them on as they come."""
 
 from datetime import date
-from typing import Literal
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import APIRouter, Body, HTTPException
+from wingtip import airmen, field_names
 
 from ..gonogo import ask as engine
+from ..schemas.pilot import (
+    Currency,
+    CurrencyAsk,
+    EndorsementFillAsk,
+    EndorsementFilled,
+    EndorsementKind,
+    Endorsements,
+    EndorsementsAsk,
+    ExperienceAsk,
+    ExperienceItem,
+    Inspections,
+    InspectionsAsk,
+    InstructorVerification,
+    InstructorVerificationAsk,
+    LogbookEntry,
+    PaperworkDue,
+    ReviewCheck,
+    VorCheck,
+)
+from ..schemas.pilot_batch import MAX_BATCH, RecordsBatch, RecordsBatchAsk, SameField, SameFieldAsk
 
 router = APIRouter()
-
-
-class LogbookEntry(BaseModel):
-    """One logbook entry, the columns the rules read; a column missing is
-    none of it."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    flownOn: date
-    totalHours: float = 0
-    nightHours: float = 0
-    crossCountryHours: float = 0
-    dayLandings: int = Field(0, description="Every landing, by day or at night (14 CFR 61.57(a)).")
-    nightLandings: int = Field(0, description="Landings to a full stop at night (61.57(b)).")
-    dualHours: float = 0
-    soloHours: float = 0
-    instrumentHours: float = 0
-    toweredLandings: int = 0
-    distanceNm: float = 0
-    longestLegNm: float = 0
-    approaches: int = 0
-    holding: bool = False
-    tracking: bool = False
-
-
-class CurrencyAsk(BaseModel):
-    """The logbook, the dates the pilot gives and the day it is asked for
-    (the pilot's own calendar's)."""
-
-    entries: list[LogbookEntry]
-    flightReviewOn: date | None = None
-    medicalExpiresOn: date | None = None
-    ipcOn: date | None = None
-    today: date
-
-
-class PaperworkDue(BaseModel):
-    """One thing that falls due, named and with the rule that asks for it
-    (the engine's PaperworkDue), for the gateway's Coming up list and its
-    reminders, which add only the days and hours left."""
-
-    what: str
-    itemId: int | None
-    label: str
-    rule: str | None = Field(description="14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.")
-    until: date | None
-    dueAtHours: float | None
-    lead: str = Field(description="The reminder sentence's start, to which the day is added.")
-
-
-class Currency(BaseModel):
-    """Where the pilot stands (the engine's pilot_currency): each date
-    null where it cannot be had."""
-
-    dayPassengersUntil: date | None = Field(description="90 days after the third most recent landing (14 CFR 61.57(a)).")
-    nightPassengersUntil: date | None = Field(description="90 days after the third most recent night full-stop landing (61.57(b)).")
-    flightReviewOn: date | None
-    flightReviewUntil: date | None = Field(description="The end of the 24th calendar month after the flight review's (61.56(c)).")
-    medicalExpiresOn: date | None
-    totalHours: float
-    nightHours: float
-    crossCountryHours: float
-    landings: int
-    flights: int
-    instrumentCurrentUntil: date | None = Field(
-        description="The last day of instrument currency (61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed."
-    )
-    instrumentCurrentFrom: date | None = Field(
-        description="The first day of an instrument currency not begun yet: approaches flown this month count from "
-        "the first of next month (61.57(c)(1)), and until then the pilot is not current. Null when current now."
-    )
-    ipcOn: date | None
-    ipcNeededAfter: date | None = Field(description="The day after which only an instrument proficiency check restores it (61.57(d)).")
-    approachesInWindow: int = Field(description="Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).")
-    holdingInWindow: bool
-    trackingInWindow: bool
-    due: list[PaperworkDue] = Field(description="What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).")
-
-
-class ExperienceAsk(BaseModel):
-    """The student's logbook and the day it is asked for."""
-
-    entries: list[LogbookEntry]
-    today: date
-
-
-class ExperienceItem(BaseModel):
-    """One of 14 CFR 61.109(a)'s requirements: how much of it the logbook
-    shows of how much, and whether that is met."""
-
-    key: str
-    rule: str
-    label: str
-    have: float
-    need: float
-    unit: Literal["h", "landings", "flights"]
-    met: bool
 
 
 def _entries(entries: list[LogbookEntry]) -> list[dict]:
@@ -154,48 +79,6 @@ def experience(ask: ExperienceAsk) -> list[ExperienceItem]:
     return [ExperienceItem(**i) for i in _ask("pilot_experience", entries=_entries(ask.entries), today=ask.today.isoformat())]
 
 
-class HeldEndorsement(BaseModel):
-    """An endorsement the student holds: its code (AC 61-65K's, as the
-    engine's endorsement_kinds names it), the day it was given, and the make
-    and model it names where it says."""
-
-    code: str
-    on: date
-    makeModel: str | None = None
-
-
-class EndorsementsAsk(BaseModel):
-    """The endorsements held, voided ones left out by the gateway where it
-    asks the solo endorsement's day and the review's checks, and the day of
-    a solo cross-country to check them for."""
-
-    held: list[HeldEndorsement]
-    flightOn: date | None = None
-
-
-class ReviewCheck(BaseModel):
-    """One of 14 CFR 61.93(d)'s determinations, as far as the record
-    answers it (the gateway's ReviewCheckDto)."""
-
-    rule: str
-    label: str
-    met: bool
-    detail: str
-
-
-class Endorsements(BaseModel):
-    """What the endorsements say (the engine's endorsement_records)."""
-
-    until: list[date | None] = Field(
-        description=(
-            "Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n), (o), (p)) "
-            "or Class B one (61.95); null for one that does not run out."
-        )
-    )
-    soloUntil: date | None = Field(description="The last day of the latest solo endorsement (61.87(n), (p)).")
-    checks: list[ReviewCheck] = Field(description="61.93(d)(4) and (5) for the solo cross-country on flightOn; none without.")
-
-
 @router.post("/api/pilot/endorsements")
 def endorsements(ask: EndorsementsAsk) -> Endorsements:
     """What a student's endorsements say: how long each is good for, the
@@ -207,28 +90,6 @@ def endorsements(ask: EndorsementsAsk) -> Endorsements:
         held=[{"code": h.code, "on": h.on.isoformat(), "make_model": h.makeModel} for h in ask.held],
     )
     return Endorsements(until=got["until"], soloUntil=got["solo_until"], checks=[ReviewCheck(**c) for c in got["checks"]])
-
-
-class EndorsementField(BaseModel):
-    """A blank in an endorsement's words, as the instructor's sheet asks for it."""
-
-    key: str
-    label: str
-    example: str
-    required: bool
-
-
-class EndorsementKind(BaseModel):
-    """One of the student endorsements (the engine's endorsement_kinds):
-    its code, AC 61-65K's paragraph, the 14 CFR section it answers, its
-    name, and the sample's words with the blanks the instructor fills."""
-
-    code: str
-    paragraph: str = Field(description="AC 61-65K's paragraph, \"A.10\".")
-    rule: str = Field(description="The 14 CFR section it answers, \"61.93(c)(3)\".")
-    label: str
-    template: str = Field(description="The sample's words, {student} and each field's {key} in them.")
-    fields: list[EndorsementField]
 
 
 @router.get("/api/pilot/endorsement-kinds")
@@ -246,23 +107,6 @@ def instructor_records_since(today: date) -> date:
     return date.fromisoformat(_ask("instructor_records_since", today=today.isoformat()))
 
 
-class EndorsementFillAsk(BaseModel):
-    """An endorsement to sign: its code, the student's name as on their
-    certificate, and the fields the instructor gave."""
-
-    code: str
-    student: str = ""
-    fields: dict[str, str] = {}
-
-
-class EndorsementFilled(BaseModel):
-    """The endorsement made ready to sign (the engine's endorsement_fill)."""
-
-    fields: dict[str, str] = Field(description="Each field it takes, tidied to single spaces, \"\" where not given.")
-    missing: list[str] = Field(description="The labels of the required fields still empty.")
-    text: str = Field(description="Its words with the student and the fields in, as they are signed.")
-
-
 @router.post("/api/pilot/endorsement-fill")
 def endorsement_fill(ask: EndorsementFillAsk) -> EndorsementFilled:
     """An endorsement's fields, what is still missing and its words as
@@ -273,63 +117,21 @@ def endorsement_fill(ask: EndorsementFillAsk) -> EndorsementFilled:
     return EndorsementFilled(**got)
 
 
-class VorCheckAsk(BaseModel):
-    """A VOR check recorded (14 CFR 91.171(d)): the day, its kind by the
-    gateway's VorCheck names, and the bearing error found."""
-
-    on: date
-    kind: Literal["VOT", "REPAIR_STATION", "GROUND", "AIRBORNE", "RADIAL", "DUAL"]
-    errorDeg: float
-
-
-class KeptItem(BaseModel):
-    """An owner's own item: an AD (14 CFR part 39) or anything else, with
-    its next day or hours."""
-
-    id: int
-    kind: Literal["AD", "OTHER"]
-    title: str
-    reference: str | None = None
-    dueOn: date | None = None
-    dueAtHours: float | None = None
-
-
-class InspectionsAsk(BaseModel):
-    """The days the airplane's inspections and checks were done, and the
-    hours of its last 100-hour; each left out where not recorded. With the
-    airplane's registration, whether it is flown for hire, its ELT
-    battery's marked date and the owner's items, for the list of what
-    falls due (`due`)."""
-
-    tailNumber: str | None = None
-    forHire: bool = False
-    eltBatteryDueOn: date | None = None
-    kept: list[KeptItem] = []
-
-    annualOn: date | None = None
-    eltOn: date | None = None
-    staticCheckOn: date | None = None
-    transponderCheckOn: date | None = None
-    hundredHourAtHours: float | None = None
-    vorCheck: VorCheckAsk | None = None
-
-
-class VorCheck(BaseModel):
-    limitDeg: float = Field(description="The largest bearing error 91.171(b) or (c) allows for this kind of check.")
-    within: bool
-    until: date = Field(description="30 days on (91.171(a)(2)).")
-
-
-class Inspections(BaseModel):
-    """When each falls due (the engine's inspections_due), null where it was not recorded."""
-
-    annualUntil: date | None = Field(description="The end of the 12th calendar month after (14 CFR 91.409(a)).")
-    eltUntil: date | None = Field(description="The end of the 12th calendar month after (91.207(d)).")
-    staticCheckUntil: date | None = Field(description="The end of the 24th calendar month after (91.411(a)).")
-    transponderCheckUntil: date | None = Field(description="The end of the 24th calendar month after (91.413(a)).")
-    hundredHourDueAtHours: float | None = Field(description="100 hours of time in service after the last (91.409(b)).")
-    vorCheck: VorCheck | None
-    due: list[PaperworkDue] = Field(description="Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).")
+@router.post("/api/pilot/instructor-verification")
+def instructor_verification(ask: InstructorVerificationAsk) -> InstructorVerification:
+    """Whether the instructor about to sign is a flight instructor the FAA
+    airmen registry bears out (the engine's instructor_verification, over
+    the flight instructors of that last name ingest keeps, wingtip.airmen):
+    an endorsement counts as signed only where it is (14 CFR 61.189(a))."""
+    got = _ask(
+        "instructor_verification",
+        instructor_name=ask.instructor_name,
+        student_name=ask.student_name,
+        signed_on=ask.signed_on.isoformat(),
+        registry=airmen.instructors_named(ask.instructor_name),
+        bound_elsewhere=ask.bound_elsewhere,
+    )
+    return InstructorVerification(**got)
 
 
 @router.post("/api/aircraft/inspections")
@@ -363,3 +165,30 @@ def inspections(ask: InspectionsAsk) -> Inspections:
         vorCheck=None if v is None else VorCheck(limitDeg=v["limit_deg"], within=v["within"], until=v["until"]),
         due=[PaperworkDue(**d) for d in got["due"]],
     )
+
+
+@router.post("/api/pilot/records-batch")
+def records_batch(ask: RecordsBatchAsk) -> RecordsBatch:
+    """Many students' experience and endorsements in one call, each as
+    /api/pilot/experience and /api/pilot/endorsements answer it, in the
+    order asked: an instructor's page asks its students and the reviews
+    waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d))."""
+    return RecordsBatch(experience=[experience(a) for a in ask.experience], endorsements=[endorsements(a) for a in ask.endorsements])
+
+
+@router.post("/api/aircraft/inspections-batch")
+def inspections_batch(asks: Annotated[list[InspectionsAsk], Body(max_length=MAX_BATCH)]) -> list[Inspections]:
+    """Many airplanes' inspections in one call, each as
+    /api/aircraft/inspections answers it, in the order asked: a pilot's
+    aircraft list and the daily reminders ask every airplane at once, at
+    most MAX_BATCH."""
+    return [inspections(a) for a in asks]
+
+
+@router.post("/api/pilot/same-field")
+def same_field(ask: SameFieldAsk) -> SameField:
+    """Which of the idents name the field, in the order asked: the
+    gateway's lessons put to an instructor a student's flights that
+    landed at the lesson's field, by whichever of its names each was
+    planned with (BUR, KBUR; ANC, PANC)."""
+    return SameField(same=field_names.same_field(ask.field, ask.idents))

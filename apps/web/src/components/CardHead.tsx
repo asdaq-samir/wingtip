@@ -9,6 +9,68 @@ import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../li
 import { TEXT } from "../lib/text";
 
 /**
+ * A head's middle: the name, the line under it and what is pinned under
+ * them, centred (CardHeadRow's; FPL's bar draws it in its own HeadGrid).
+ */
+export function CardHeadMiddle({
+  name,
+  sub,
+  below,
+  nameId,
+  nameTestId,
+  wrap = false,
+  level = "h2",
+  nameSize = "card",
+  nameClassName,
+  nameRef,
+}: {
+  name: ReactNode;
+  sub?: ReactNode;
+  below?: ReactNode;
+  nameId?: string;
+  nameTestId?: string;
+  wrap?: boolean;
+  level?: "h2" | "h3";
+  nameSize?: "card" | "heading";
+  nameClassName?: string;
+  nameRef?: Ref<HTMLHeadingElement>;
+}) {
+  const Name = level;
+  return (
+    <>
+      <Name
+        ref={nameRef}
+        id={nameId}
+        tabIndex={-1}
+        className={cn(
+          "max-w-full font-bold tracking-tight text-foreground outline-none",
+          wrap ? "break-words" : "truncate",
+          nameSize === "heading" ? TEXT.heading : TEXT.card,
+          nameClassName,
+        )}
+        data-testid={nameTestId}
+      >
+        {name}
+      </Name>
+      {sub != null && sub !== "" && (
+        <p
+          className={cn("max-w-full text-muted-foreground tabular-nums", wrap ? "break-words" : "truncate", TEXT.note)}
+          data-testid="card-sub"
+        >
+          {sub}
+        </p>
+      )}
+      {/* Not laid out at the pill (AT_PILL): there the card is its one title row. */}
+      {below != null && (
+        <div className="contents" data-head-below="">
+          {below}
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
  * Every card's one head row (the card rule's 8, the same thing the same
  * component: the owner, 2026-11-11, "Are we using two different cards?"),
  * pinned at the card's top with the card scrolling under it (PinnedHead),
@@ -25,6 +87,7 @@ import { TEXT } from "../lib/text";
 export function CardHeadRow({
   name,
   sub,
+  below,
   nameId,
   nameTestId,
   leading,
@@ -33,12 +96,18 @@ export function CardHeadRow({
   testId,
   hidden = false,
   level = "h2",
+  nameSize = "card",
+  nameClassName,
   nameRef,
   slot,
   children,
 }: {
   name: ReactNode;
   sub?: ReactNode;
+  /** Under the name and its line, centred with them and pinned with them:
+   *  the Brief's verdict, in sight on every page of it (option A, the
+   *  owner, 2026-11-19). */
+  below?: ReactNode;
   /** The name's id, which names the card for a screen reader. */
   nameId?: string;
   nameTestId?: string;
@@ -54,33 +123,30 @@ export function CardHeadRow({
   /** A page's in a card (Settings' pages, a list in full): h3 under the
    *  card's own h2. */
   level?: "h2" | "h3";
+  /** The name's role: the card's 22 (default), or a heading's 20 where the
+   *  head is a bar of its own (FPL's, the owner, 2026-11-21). */
+  nameSize?: "card" | "heading";
+  /** The name's own box (FPL lifts it). */
+  nameClassName?: string;
   /** The name, for the focus as a page is pushed (ConsolePages). */
   nameRef?: Ref<HTMLHeadingElement>;
   /** PinnedHead's slot. */
   slot?: string;
   children?: ReactNode;
 }) {
-  const Name = level;
   const middle = (
-    <>
-      <Name
-        ref={nameRef}
-        id={nameId}
-        tabIndex={-1}
-        className={cn("max-w-full font-bold tracking-tight text-foreground outline-none", wrap ? "break-words" : "truncate", TEXT.card)}
-        data-testid={nameTestId}
-      >
-        {name}
-      </Name>
-      {sub != null && sub !== "" && (
-        <p
-          className={cn("max-w-full text-muted-foreground tabular-nums", wrap ? "break-words" : "truncate", TEXT.note)}
-          data-testid="card-sub"
-        >
-          {sub}
-        </p>
-      )}
-    </>
+    <CardHeadMiddle
+      name={name}
+      sub={sub}
+      below={below}
+      nameId={nameId}
+      nameTestId={nameTestId}
+      wrap={wrap}
+      level={level}
+      nameSize={nameSize}
+      nameClassName={nameClassName}
+      nameRef={nameRef}
+    />
   );
   const start =
     leading != null || children != null ? (
@@ -114,6 +180,7 @@ export function CardHeadRow({
 export function CardHead({
   name,
   sub,
+  below,
   line,
   nameTestId,
   lineClassName,
@@ -127,6 +194,8 @@ export function CardHead({
    *  the smallest too (the owner, 2026-11-11: the Nav Log's totals, the
    *  Profile's cruise and clearance, the Stops' count). */
   sub?: ReactNode;
+  /** Under that line, pinned with it (CardHeadRow's). */
+  below?: ReactNode;
   /** Under the name; none where the caller sets it out itself (an
    *  airport's card, beside its diagram's thumbnail). */
   line?: ReactNode;
@@ -146,6 +215,7 @@ export function CardHead({
       <CardHeadRow
         name={name}
         sub={sub}
+        below={below}
         nameTestId={nameTestId}
         end={<CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />}
       >

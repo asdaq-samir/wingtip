@@ -58,7 +58,8 @@ fn ceiling_visibility(name: &str, v: &Value) -> R<(Option<f64>, Option<f64>)> {
             Some(vis) => {
                 let value = num(name, vis, "value")?;
                 match vis.get("unit").and_then(Value::as_str) {
-                    Some("m") => Some((metar::metres_to_sm(value) * 100.0).round() / 100.0),
+                    // To the step at or below, never rounded up (metres_to_sm).
+                    Some("m") => Some(metar::metres_to_sm(value)),
                     Some("sm") | None => Some(value),
                     Some(other) => return Err(format!("{name}: the visibility's \"unit\" is sm or m, not {other:?}")),
                 }
@@ -145,11 +146,13 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let count = opt_num(name, v, "count")?.map_or(hours::HOURS, |c| c.max(0.0) as usize);
             out = hours::field_hours(metar, taf, num(name, v, "now")?, count);
         }
+        "taf_validity" => out = hours::taf_validity(text(name, v, "taf")?, num(name, v, "now")?.floor() as i64),
         "awc_metars_read" => out = awc::metars(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_tafs_read" => out = awc::tafs(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_airsigmets_read" => out = awc::airsigmets(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_pireps_read" => out = awc::pireps(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_gairmets_read" => out = awc::gairmets(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
+        "awc_airmets_read" => out = awc::airmets(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "weather_held_until" => {
             let until = awc::held_until(text(name, v, "product")?, v.get("data").unwrap_or(&Value::Null), num(name, v, "fetched")? as i64)?;
             json::opt_number(&mut out, until.map(|t| t as f64));

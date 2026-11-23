@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { FILING_OFFERED } from "./filing";
 import {
   consoleSheet,
   controlsInSight,
@@ -10,8 +11,10 @@ import {
   showTabs,
   sideDrawer,
   openRoute,
+  openBriefMenu,
 } from "./helpers";
 import { openSettingsPage } from "./mapCard";
+import { closeBrief } from "./routeHelpers";
 import { pickAirplane } from "./startState";
 import { showPage } from "./sheetPages";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -69,8 +72,8 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   // Offered once the nav log is whole -- it used to be enabled
   // mid-stream, and filed null totals. An item of Share's menu, its state
   // its name, said again in the menu as it changes.
-  await page.getByTestId("share-route").click();
-  await expect(save).toHaveAccessibleName("Save this flight", { timeout: 90_000 });
+  await openBriefMenu(page);
+  await expect(save).toHaveAccessibleName("Save This Flight", { timeout: 90_000 });
   await expect(save).toBeEnabled({ timeout: 90_000 });
   await planSettled(page);
   await expect(save).toBeEnabled();
@@ -79,7 +82,7 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   // its focus was handed back to the button after, and the Escape below
   // was the sheet's, which it lowered.
   await expect(page.getByRole("menu")).toHaveCount(0);
-  await page.getByTestId("share-route").click();
+  await openBriefMenu(page);
   await expect(save).toHaveAccessibleName("Saved");
   await expect(save).toBeDisabled();
   await page.keyboard.press("Escape");
@@ -93,6 +96,7 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   // A new departure time: a fresh nav log is a new plan. "Saved" used to
   // stay for the session, and a click filed a duplicate of whatever was
   // on screen. (There is no Load: every change plans again.)
+  await closeBrief(page);
   await openRoute(page);
   await page.getByTestId("depart-date").click();
   // The month's last day open to pick: React Aria's days are role=button
@@ -100,8 +104,8 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/[?&]depart=/);
-  await page.getByTestId("share-route").click();
-  await expect(save).toHaveAccessibleName("Save this flight", { timeout: 90_000 });
+  await openBriefMenu(page);
+  await expect(save).toHaveAccessibleName("Save This Flight", { timeout: 90_000 });
   await expect(save).toBeEnabled({ timeout: 90_000 });
 });
 
@@ -114,7 +118,7 @@ test("a flight from a present position is filed from that position", async ({ pa
   await page.goto("/app/plan?dep=%4042.2340%2C-87.9877&dest=KDLH&view=full");
   await controlsInSight(page);
   const save = page.getByTestId("save-flight-button");
-  await page.getByTestId("share-route").click();
+  await openBriefMenu(page);
   await expect(save).toBeEnabled({ timeout: 90_000 });
   await planSettled(page);
   await expect(save).toBeEnabled();
@@ -123,7 +127,7 @@ test("a flight from a present position is filed from that position", async ({ pa
   // its focus was handed back to the button after, and the Escape below
   // was the sheet's, which it lowered.
   await expect(page.getByRole("menu")).toHaveCount(0);
-  await page.getByTestId("share-route").click();
+  await openBriefMenu(page);
   await expect(save).toHaveAccessibleName("Saved");
   expect(filed).toHaveLength(1);
   expect(filed[0]).toMatchObject({ departureIdent: "@42.2340,-87.9877", destinationIdent: "KDLH" });
@@ -136,8 +140,10 @@ test("signed out, there is nothing to save", async ({ page }) => {
   // Share showing means the page is not hidden behind a console: while
   // one is up, the page under it is out of reach of the queries below.
   await expect(page.getByTestId("share-route")).toBeVisible({ timeout: 30_000 });
-  await page.getByTestId("share-route").click();
-  await expect(page.getByTestId("file-flight-plan")).toBeVisible();
+  // Filing, the button beside FPL's tab bar signed in or not, is not
+  // offered yet (FILING_OFFERED).
+  await expect(page.getByTestId("file-flight-plan")).toHaveCount(FILING_OFFERED ? 1 : 0);
+  await openBriefMenu(page);
   await expect(page.getByTestId("save-flight-button")).toHaveCount(0);
   await page.keyboard.press("Escape");
 });

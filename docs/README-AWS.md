@@ -35,29 +35,32 @@ pyramid drawn ahead of time, not drawing them on request.
 pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                    │
                    ├─ /tiles/*        ──▶ S3 tiles bucket       serving.json and the archives, read by the planner
-                   ├─ /api/planner/chart-tile/*
-                   │                  ──▶ the server            a tile out of its archive, cached (cycle, revision in the address)
+                   ├─ /api/planner/chart-tile/*, terrain-tile/*, overlay-tiles*
+                   │                  ──▶ the server's planner  a tile out of its archive, cached a year (cycle, revision in the address),
+                   │                                            Caddy straight to the planner, not through the gateway
                    ├─ /app/assets/*   ──▶ the server            cached a year (fingerprinted), Brotli where asked
                    ├─ the chart, the airport search, the stock aircraft
                    │                  ──▶ the server            cached by their own header: a minute, an hour
                    └─ everything else ──▶ the server            not cached: pages, /api, sign-in
                                             │ origin.app.example.com:443, with X-Origin-Secret
                                             ▼
-                        EC2 t3a.medium on Spot, a group of one (Amazon Linux 2023,
+                        EC2 t3a.large on Spot, a group of one (Amazon Linux 2023,
                         infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
+                            └──▶ planner, the map's tiles alone (chart, terrain, overlays)
                                      └──▶ db (Postgres 18, on the data disk)
                           ingest (the FAA's SWIM feeds, the followed airplanes, 384 MB) ─▶ SQLite
-                          weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 384 MB)
+                          weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 768 MB)
                                      ─▶ the weather store; both on the data disk, which the planner reads
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 
 EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: the charts job (services/jobs/charts), refresh
-   a no-op until the FAA's new cycle, then fetches every sheet, draws the
-   pyramid (1.5 million tiles), packs each kind into one PMTiles archive
-   per density and publishes them to the tiles bucket, serving.json last,
-   so every planner moves to the new cycle at once
+   in the week before each new cycle, once the FAA has it up, fetches
+   every sheet, draws the pyramid (1.5 million tiles), packs each kind
+   into one PMTiles archive per density and publishes them to the tiles
+   bucket ahead, next.json last, which every planner takes at 0901Z on
+   the cycle's date; the next run makes it serving.json's
 server cron, hourly ─▶ docker compose run --rm charts-overlays
    the map's overlay tiles, built where the planner's new cycle pack has none
 ```
@@ -76,6 +79,27 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
   view, an airport's card, the Class B list, the airspace at a point), a
   route's answers, and anything of one pilot's is `no-store`, which
   `CacheHeadersTest` checks through the whole filter chain.
+- **The map's tiles skip the gateway.** The chart's tiles, the
+  terrain's and the overlays' archive are public and the same for every
+  pilot, so Caddy hands those addresses, written out whole and read by
+  GET alone, to the planner itself (`infra/server/Caddyfile`, `@tiles`),
+  with the viewer's cookies and any `X-Pilot-Id` dropped: no Spring
+  filter chain, no session or CSRF cookie, no page headers, one hop less
+  for each of a screenful of tiles. Nothing else of the planner's is
+  reached that way (`tests_wingtip/test_front_door.py`). CloudFront keeps
+  them as long as the planner says, a year for a tile whose address
+  names its cycle and revision (`TilesCachePolicy`, keyed on `c` and `r`
+  alone). In the development stack, which has no Caddy, the gateway
+  still forwards them, without the page's headers (`TileSecurityConfig`).
+- **A rate limit on the tiles the server answers.** A tile's address
+  with a `?c=` or `?r=` of its own is a cache miss, which the planner
+  reads on the server. The `TileRateLimit` web ACL (AWS WAF, on the
+  distribution) answers 429 to an address past 3,000 requests to
+  `/api/planner/chart-tile/` and `/api/planner/terrain-tile/` in five
+  minutes, ten a second held; a pilot's session is some 200 tiles, and
+  the rest of the site is not limited by it. WAF's CloudFront scope
+  exists only in us-east-1, where the stack is deployed. Its cost is in
+  the table below; to raise or lower the limit, change its `Limit`.
 - **Only CloudFront reaches the server.** The security group admits
   port 443 from CloudFront's origin-facing addresses alone, and Caddy
   answers 404 to any request without the secret header CloudFront adds
@@ -84,6 +108,15 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
 - **No SSH.** A shell on the server is SSM Session Manager; deploys are
   SSM Run Command. The server's role can pull its own images, read its
   own secrets and write its own backups, and nothing else.
+- **The gateway changes rows, never the schema.** Flyway signs in as the
+  database's owner (`DbPasswordSecret`, `POSTGRES_PASSWORD`); the app
+  signs in as `wingtip_app` with a secret of its own
+  (`AppDbPasswordSecret`, `APP_DB_PASSWORD`), which may read and write
+  the rows of every table and nothing more: no CREATE, ALTER, DROP or
+  TRUNCATE. Flyway's `db/callback/afterMigrate.sql` makes the role and
+  sets its password at each start, so a fresh database, an old one and
+  a restored backup all end the same, and a rotated secret takes at the
+  next deploy (docs/SECURITY.md, N4).
 - **The planner no longer draws tiles** (`CHARTS_AUTO_REFRESH=0`,
   `CHART_TILES_URL`): it reads each one out of the published archive by
   a range request through CloudFront (`wingtip.tile_archive`, the
@@ -131,25 +164,69 @@ Prices in us-east-1, October 2026, at today's traffic:
 
 | Item | A month |
 |---|---|
-| EC2 t3a.medium on Spot, all month (on demand: $27.45) | ~$10, as Spot's price moves |
+| EC2 t3a.large on Spot, all month (on demand: about $55) | ~$19, as Spot's price moves |
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
 | S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
-| Secrets Manager, three secrets | $1.20 |
+| Secrets Manager, four secrets | $1.60 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
-| The health check (HTTPS, every 30 s) and the server's logs in CloudWatch | ~$1.60 |
+| The health check (HTTPS, every 30 s), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
+| AWS WAF, the tiles' rate rule (`TileRateLimit`): $5 the web ACL, $1 the rule, $0.60 a million requests it sees (every request to the distribution, about 0.3 million) | ~$6.20 |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $27** |
+| **Total** | **about $41** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $41, or about $31 with a one-year Savings Plan. The next
+is about $77, or about $51 with a one-year Savings Plan. The template's
+default is a t3a.large (8 GB) since 2026-11-21 (the owner, on the
+prelaunch audit): the services take about 3.5 GB, which a t3a.medium's
+4 GB barely holds. `InstanceType=t3a.medium` (and `SpareInstanceType=t3.medium`)
+still deploys the smaller server, at about $33. On the large one each service is
+held to its share (infra/docker-compose.prod.yml): the planner 3 GB, the
+gateway 1.5 GB, Postgres 1 GB, weather 768 MB, ingest 384 MB, the shares
+the after-merge campaign's stress run is held to. The next
 saving after Spot was the tiles' upload bill, and the archives (#535)
 took it to cents, the reader in the planner rather than the map.
 
 The template's `BudgetEmail` sets an alarm at 80% of $50 a month.
+
+### As pilots come
+
+Recomputed on 2026-11-21 (the prelaunch audit) from today's archives and
+AWS's public us-east-1 prices (CloudFront pay-as-you-go: 1 TB and 10
+million requests a month always free, then $0.085 a GB and $0.01 per
+10,000 HTTPS requests; EC2 on-demand, Spot taken at about a third). One
+cycle's archives are about 30 GB (sec@2x 18 GB, sec 6.7, tac@2x 2.3, tac
+0.9, IFR 1.8, the overlays 0.12), PNG tiles of 35 KB on average at @2x;
+packed as lossless WebP from 2026-11-21 (services/jobs/README.md, "The
+chart tiles as archives") about 89% of that, some 27 GB a cycle.
+An active pilot is taken as ten sessions a month of about 200 tiles and
+100 answers each, some 80 MB and 3,000 requests (the web's service
+worker keeps 20,000 tiles for the cycle, so a pilot's own area costs
+little the second time). The planner's CPU per route and its memory
+were not measured for this; the server's services add up to about
+3.5 GB (weather 768 MB, ingest 384 MB, the gateway's JVM, the planner,
+Postgres), which a t3a.medium's 4 GB barely holds, so a t3a.large is
+the launch size, and the template's default.
+
+| A month | 100 pilots | 1,000 pilots | 10,000 pilots |
+|---|---|---|---|
+| The server, Spot (on demand) | t3a.large ~$19 ($55) | t3a.large ~$19 ($55) | t3a.xlarge ~$40 ($110) |
+| IPv4 address, disks, snapshots | ~$9 | ~$9 | ~$12 (an 80 GB data disk) |
+| S3, three cycles of archives (~90 GB) | ~$2.10 | ~$2.10 | ~$2.10 |
+| CloudFront (data, requests) | $0 (8 GB, 0.3 M) | $0 (80 GB, 3 M) | ~$20 (800 GB free, 30 M requests) |
+| SES, Secrets Manager, Route 53, logs, ECR, the cycle's Fargate task | ~$5 | ~$5 | ~$9 |
+| AWS WAF, the tiles' rate rule ($6, and $0.60 a million requests) | ~$6.20 | ~$7.80 | ~$24 |
+| **Total, Spot (on demand)** | **~$41 ($77)** | **~$43 ($79)** | **~$107 ($177)** |
+| Per pilot | $0.41 | $0.043 | $0.011 |
+
+The server is the cost until some 10,000 pilots; the CDN's bill is its
+requests, not its bytes, and the always-free terabyte holds about 12,000
+pilots' tiles. ADS-B Exchange's RapidAPI plan (10,000 requests a month)
+is not in the table: past a few thousand pilots its fallback needs a
+bigger plan or to be left to adsb.lol.
 
 ## Rehearse it locally
 
@@ -185,8 +262,20 @@ docker run --rm --network wingtip-prod_default -v "$PWD/apps/web:/w" -w /w \
   npx playwright test --config playwright.rehearsal.config.ts --workers=2
 ```
 
-Not rehearsed here, since they need AWS itself: `deploy.sh` and
-`backup.sh`, CloudFront's caching, the Spot group and its data disk,
+The gateway's two roles are checked here as on the server: the app's
+role reads rows and may not touch the schema.
+
+```bash
+docker compose -p wingtip-prod exec -T db psql -U wingtip -d wingtip -Atc \
+  "SELECT has_table_privilege('wingtip_app', 'pilots', 'DELETE'),
+          has_table_privilege('wingtip_app', 'pilots', 'TRUNCATE'),
+          has_schema_privilege('wingtip_app', 'public', 'CREATE'),
+          (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tableowner = 'wingtip_app')"
+# t|f|f|0
+```
+
+Not rehearsed here, since they need AWS itself: `deploy.sh`,
+`backup.sh` and `health.sh` (`DRY_RUN=1` prints its figures), CloudFront's caching, the Spot group and its data disk,
 and the chart refresh's publish to S3 (its bucket check has a test).
 
 ## The first deploy
@@ -278,7 +367,7 @@ its settings, but has no images to run until the first push to ECR.
    ```
 
 `deploy.sh` writes the server's `.env` from the stack's settings and the
-three secrets, pulls the images and starts what changed. It is safe to run
+four secrets, pulls the images and starts what changed. It is safe to run
 at any time.
 
 ### Mail
@@ -366,9 +455,22 @@ with ingest and weather,
   minutes without an answer emails `BudgetEmail` (confirm the SNS
   subscription mail once); another follows when it is back. A Spot
   interruption's few minutes may send one pair.
-- **A failed backup** emails the same address (`backup.sh`).
+- **A failed backup** emails the same address (`backup.sh`), and so does
+  a night with no backup at all (`BackupLateAlarm`).
+- **The server's own checks** (`infra/server/health.sh`, every five
+  minutes from cron) send CloudWatch both disks' use, the services not
+  running or unhealthy (and restart an unhealthy one, which Docker's
+  restart policy never does), the origin certificate's days left and the
+  last backup's age; the stack's alarms on them email the same address,
+  as do the chart refresh task stopping without finishing, ACM's
+  certificate warnings and every `ALERT` line of the gateway's monitor
+  (counted from its log, so they arrive when SES is what has failed).
+  [RUNBOOKS.md](RUNBOOKS.md) has each alert and what to do.
 - **The logs:** every service's, in CloudWatch under `/<stack>/server`,
-  a stream per container, kept a month:
+  a stream per container, kept a month, one JSON object a line with the
+  page's request id (the gateway's `requestId`, the planner's
+  `request_id`), which Logs Insights queries by field
+  ([RUNBOOKS.md](RUNBOOKS.md), "Reading the logs"):
 
   ```bash
   aws logs tail /wingtip/server --region us-east-1 --follow --log-stream-name-prefix wingtip-gateway
@@ -387,9 +489,19 @@ with ingest and weather,
 
 ### Chart cycles
 
-Nothing to do: the daily task publishes each new cycle once and is a
-no-op on the other 55 days. A Spot interruption starts it over the next
-day, the old cycle served until then. Tiles are cached by their cycle,
+Nothing to do. In the week before a new cycle's date (the charts'
+`CHARTS_CYCLE_LEAD_DAYS`, 7), once the FAA has put it up, the daily task
+draws and publishes it ahead of its date under `next.json`; every planner
+takes it at 0901Z on the date, when it comes into force (14 CFR 91.103),
+and the next day's run makes it `serving.json`'s, keeping the one it
+replaced as `serving-previous.json`. On the other days a run is a read or
+two. Until 2026-11-21 the task drew a cycle only from its date, so the map
+served the expired one for the hours that took, every cycle. A run that
+fails or that Spot takes back is mailed (`ChartRefreshFailedRule`) and tried
+again the next day, with six days in hand; a bad cycle is undone by
+copying `serving-previous.json` back ([RUNBOOKS.md](RUNBOOKS.md), "A bad or
+late FAA cycle"). The server lets an older cycle's chart sheets go by
+itself (`chart_upkeep.prune_behind_served`). Tiles are cached by their cycle,
 so a tile drawn again within a cycle (a renderer change) reaches pilots
 with the next cycle.
 
@@ -397,25 +509,48 @@ with the next cycle.
 
 At 07:17 UTC every night `backup.sh` copies to
 `s3://<ServerBucketName>/backups/<date>/` what the server alone holds:
-the database (`postgres.dump`: accounts, aircraft, flights) and the planner's `data/labels` (`labels.tar.gz`: the
+the database (`postgres.dump`: accounts, aircraft, flights), each table's
+rows and the schema's version (`manifest.txt`, which a restore is checked
+against) and the planner's `data/labels` (`labels.tar.gz`: the
 checkpoint notes pilots have written). The bucket keeps 14
 days, and is versioned: a backup overwritten or deleted stays as an
 older version for 30 days more (`aws s3api list-object-versions`). The
 server may write only `backups/` and `ground_grid/`. The dump is written to a file and checked with `pg_restore --list`
 before it is uploaded, so a truncated one never replaces a good day, and a
 failed backup emails `BudgetEmail` (confirm the SNS subscription mail once).
-The data disk is also snapshotted daily at 05:00 UTC, seven kept. To
-restore one, on the server:
+The data disk is also snapshotted daily at 05:00 UTC, seven kept.
+[RUNBOOKS.md](RUNBOOKS.md), "Restore a backup", is the restore step by
+step, and its drill (`scripts/dev/restore-drill.sh`) restores a night into
+a scratch Postgres, checks it against its manifest and starts the gateway
+on it; run it monthly. In short, on the server:
 
 ```bash
 cd /srv/wingtip/repo
+infra/server/restore-deletions.sh save
 B=s3://<ServerBucketName>/backups/<date>
 aws s3 cp $B/postgres.dump - | \
   docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml \
   exec -T db pg_restore -U wingtip -d wingtip --clean --if-exists
 aws s3 cp $B/labels.tar.gz - | tar -xz -C /srv/wingtip/data
+infra/server/restore-deletions.sh apply
 docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml restart gateway planner
 ```
+
+**A deleted account stays deleted.** A dump from before a pilot deleted
+their account holds that account. The gateway notes each deletion by the
+pilot's id alone in `deleted_accounts` (V47, kept 60 days, longer than any
+backup), and `backup.sh` copies that list to `backups/deleted-accounts.csv`
+each night. `restore-deletions.sh save` keeps the live database's list (if
+it still answers) and the nightly copy before the restore; `apply` puts
+them back and moves the pilots' id sequence past them. As the gateway
+starts it deletes again every noted account the restore brought back,
+the planner's notes included (`DeletionsReapplied`), and it looks again
+each night. Restoring a snapshot of the data disk is the same: `save`
+before the new volume is attached (the nightly copy, if the old disk is
+gone), `apply` once the stack is up. Only an account deleted after the last
+night's copy, on a server whose database is lost, is not caught: the dump
+it comes back from is at most a day older than that deletion, and the pilot
+deletes it again (docs/privacy-inventory.md says so).
 
 Everything else in the data folder (the FAA's files, the chart sheets)
 is downloaded again by the planner as it is needed.
@@ -453,7 +588,8 @@ a final snapshot: delete them by hand when they are no longer wanted.
   makes `/workspace/data` its user's for that, and the task's 60 GB of
   storage holds the sheets and the pyramid.
 - **The refresh task's empty disk would read as a cycle never drawn;**
-  it asks the bucket's `serving.json` first (`wingtip.chart_upkeep.refresh`).
+  it asks the bucket's `serving.json` first (`wingtip.chart_upkeep.refresh`),
+  then `next.json`, the cycle staged ahead.
 - **A new server waits for the data disk.** Its first boot attaches the
   disk only once the last server has let it go, so a replacement that
   starts before the old server has stopped waits, then carries on.

@@ -21,6 +21,12 @@ enum SheetPage: Hashable {
     /// NOTAMs in a list of their own: the route's, or one field's.
     case notams(NotamSource)
     case practice, training, instructing, contact
+    /// Pages of You and Settings, each a value so it is pushed on the
+    /// stack it was opened from: a view-destination NavigationLink in the
+    /// iPad's sidebar (a NavigationSplitView's column) popped the page
+    /// under it on its Back, Settings with Help & About (CardScrollTests,
+    /// CardRuleTests, 2026-11-23), where the iPhone's card kept it.
+    case pilotDetails, trainingHome, connectedApps, alerts, atc, help, sources
     /// An airplane in the air, by its ICAO address: its card, tracked.
     case traffic(String)
     /// An airplane's profile by its N-number, the one profile card
@@ -57,6 +63,9 @@ enum SheetPage: Hashable {
     /// consistent"), the one that opens at full height. Opened by its
     /// model (Emergency.open, CardTriggers), never kept by a scene.
     case emergency
+    /// The scratchpad: the flight's pages of ink and forms (ScratchpadView),
+    /// beside the map on the iPad.
+    case scratchpad
 
     /// The field or point whose card this is, for the map's ring.
     var airportRoute: String? {
@@ -72,8 +81,9 @@ enum SheetPage: Hashable {
         switch self {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
-        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid: true
-        case .flight, .notams, .practice, .training, .instructing, .contact, .settings: false
+        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid, .scratchpad: true
+        case .flight, .notams, .practice, .training, .instructing, .contact, .settings,
+             .pilotDetails, .trainingHome, .connectedApps, .alerts, .atc, .help, .sources: false
         }
     }
 
@@ -137,6 +147,13 @@ enum SheetPage: Hashable {
         case .training: "card-training"
         case .instructing: "card-instructing"
         case .contact: "card-contact"
+        case .pilotDetails: "card-pilot-details"
+        case .trainingHome: "card-training-home"
+        case .connectedApps: "card-connected-apps"
+        case .alerts: "card-alerts"
+        case .atc: "card-atc"
+        case .help: "card-help"
+        case .sources: "card-sources"
         case .traffic: "card-traffic"
         case .tail: "card-tail"
         case .hold: "card-hold"
@@ -151,6 +168,7 @@ enum SheetPage: Hashable {
         case .emergency: "card-emergency"
         case .tfr: "card-tfr"
         case .navaid: "card-navaid"
+        case .scratchpad: "card-scratchpad"
         }
     }
 
@@ -168,9 +186,11 @@ enum SheetPage: Hashable {
         case .mapSettings: "+map"
         case .settings: "+settings"
         case .plate(let key): "+plate:" + key
+        case .scratchpad: "+scratchpad"
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
-        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid: nil
+        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid,
+             .pilotDetails, .trainingHome, .connectedApps, .alerts, .atc, .help, .sources: nil
         }
     }
 
@@ -188,6 +208,7 @@ enum SheetPage: Hashable {
         case "+contact": self = .contact
         case "+map": self = .mapSettings
         case "+settings": self = .settings(atMap: false)
+        case "+scratchpad": self = .scratchpad
         // Never kept (stored is nil), but opened by the UI tests' `-card`.
         case "+clearance": self = .clearance
         case "+notams": self = .notams(.route)
@@ -250,6 +271,13 @@ struct SheetPageView: View {
         case .training: TrainingView()
         case .instructing: InstructorView()
         case .contact: ContactView()
+        case .pilotDetails: PilotDetailsView()
+        case .trainingHome: TrainingPage()
+        case .connectedApps: ConnectedAppsView()
+        case .alerts: AlertsPage()
+        case .atc: AtcPage()
+        case .help: HelpPage()
+        case .sources: SourcesPage()
         case .traffic(let hex): AirplaneCard(hex: hex).id(hex)
         case .tail(let asked): AirplaneProfileView(tail: asked.tail, focus: asked.focus).id(asked)
         case .hold(let fix): HoldSheet(fix: fix).id(fix)
@@ -264,6 +292,7 @@ struct SheetPageView: View {
         case .emergency: EmergencyCard()
         case .tfr(let id): TfrCard(notamId: id).id(id)
         case .navaid(let key): NavaidCard(key: key).id(key)
+        case .scratchpad: ScratchpadView()
         }
     }
 }
@@ -297,6 +326,11 @@ struct ScreenPage: View {
         case .downloads: DownloadsView()
         case .passengers: PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
         case .about: AboutView()
+        case .documents: DocumentsPage()
+        // Weight & Balance weighed on the device (LoadingView).
+        case .balance: LoadingView()
+        // Opened as its own card (SheetPage.scratchpad); by its name too.
+        case .scratchpad: ScratchpadView()
         // Not pages (SheetPage.pages): the plan is the root, the search
         // is the field's, Ask is a card by its question, the emergency
         // assistant is its model's card and a shared flight is its own card.

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { inSheet, mapStill, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
+import { inSheet, mapStill, openPanel, settle, sideDrawer, slow, typeRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
 import { noCheckpoints } from "./startState";
@@ -46,23 +46,29 @@ const CHOICE = {
   lands_with_gal: 21.2,
 };
 
+/** The live nav log of the routes `when` picks answered with `fuelStops`
+ *  in its totals. */
+async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unknown[], noFuelStop: unknown[] = []) {
+  await page.route(when, async (route) => {
+    const body = await (await route.fetch()).text();
+    const lines = body
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const message = JSON.parse(line);
+        if (message.type !== "done") return line;
+        message.totals.fuel_stops = fuelStops;
+        message.totals.no_fuel_stop = noFuelStop;
+        return JSON.stringify(message);
+      });
+    await route.fulfill({ contentType: "application/x-ndjson", body: `${lines.join("\n")}\n` });
+  });
+}
+
 async function suggested(page: Page, departure = "C81", reason: "fuel" | "break" = "fuel") {
-  await page.route(
-    (url) => url.pathname.endsWith("/navlog") && !url.searchParams.get("stops"),
-    async (route) => {
-      const body = await (await route.fetch()).text();
-      const lines = body
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => {
-          const message = JSON.parse(line);
-          if (message.type !== "done") return line;
-          message.totals.fuel_stops = [{ departure, destination: "KDLH", usable_gal: 48, reason, stops: [STOP], choices: [CHOICE] }];
-          return JSON.stringify(message);
-        });
-      await route.fulfill({ contentType: "application/x-ndjson", body: `${lines.join("\n")}\n` });
-    },
-  );
+  await answered(page, (url) => url.pathname.endsWith("/navlog") && !url.searchParams.get("stops"), [
+    { departure, destination: "KDLH", usable_gal: 48, reason, stops: [STOP], choices: [CHOICE] },
+  ]);
 }
 
 test.afterEach(async ({ page }) => {
@@ -74,7 +80,7 @@ test("a fuel stop the planner suggests is dashed in the route's box and pinned o
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
   await expect.poll(() => pinned(page)).toBe(1);
   // No cards of it in FPL's list: the route line does their job.
@@ -89,7 +95,7 @@ test("a stop suggested on a flight from a present position is dashed in the rout
   await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
   await expect.poll(() => pinned(page)).toBe(1);
 });
@@ -101,17 +107,19 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
   await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
   // Its menu's Remove takes it out of the box.
   await chip.click();
   await page.getByTestId("route-fuel-stop-remove").click();
   await expect(chip).toHaveCount(0);
-  // The route's menu puts it back.
-  await sideDrawer(page).getByTestId("share-route").click();
-  await page.getByTestId("route-show-fuel").click();
-  await expect(chip).toHaveText("KRPD");
+  // Planned again, it is back.
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await typeRoute(page);
+  await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
   // And its menu's Add to Route makes it a stop of the route.
   await chip.click();
   await page.getByTestId("route-fuel-stop-add").click();
@@ -160,7 +168,7 @@ test("a suggested stop's pin opens its card with its figures", async ({ page }) 
   const pin = (await drawnMarks(page, "fuel-stops")).find((m) => m.title === "Suggested fuel stop KRPD")!;
   await page.mouse.click(pin.x, pin.y);
   const card = page.getByTestId("place-card");
-  await expect(card.getByTestId("place-stop")).toContainText("Suggested fuel stop");
+  await expect(card.getByTestId("place-stop")).toContainText("Suggested Fuel Stop");
   await expect(card.getByTestId("place-stop-after")).toContainText("From C81");
   await expect(card.getByTestId("place-stop-after")).toContainText("1h 58m");
   await expect(card.getByTestId("place-stop-fuel")).toContainText("18 gal");
@@ -195,7 +203,7 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   // The rest of On the field under its title, its first three rows Fuel,
   // its remarks and As Written (FirstFew; 263bd810d gave the remarks a row).
   await expect(services.getByTestId("services-courtesy-car")).toHaveCount(0);
-  const onTheField = services.getByRole("button", { name: /^On the field/ });
+  const onTheField = services.getByRole("button", { name: /^On the Field/ });
   await inSheet(page, onTheField);
   await onTheField.click();
   await expect(services.getByTestId("services-courtesy-car")).toBeVisible();
@@ -210,7 +218,7 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
   await expect(chip).toHaveAccessibleName("Suggested stop KRPD", { timeout: slow(60_000) });
   await chip.click();
@@ -218,3 +226,129 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await expect(page).toHaveURL(stopsAre("KRPD"));
   await expect(page).not.toHaveURL(/[?&]fuel=/);
 });
+
+test("FPL's Add a Stop row has the fuel glyph's Add Stops, and once they are in, Remove Stops", async ({ page }) => {
+  // The owner's ask (2026-11-20): "We should have a add fuel stops pill in
+  // the last row and when added, remove fuel stops pill".
+  await suggested(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
+  await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveAccessibleName("Add Stops for fuel");
+  await inSheet(page, pill);
+  await page.screenshot({ path: "test-results/fuel-pill-add.png" });
+  await pill.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KRPD");
+  await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveAccessibleName("Remove Stops for fuel");
+  await inSheet(page, pill);
+  await page.screenshot({ path: "test-results/fuel-pill-remove.png" });
+  await pill.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("stops")).toBeNull();
+});
+
+test("Add Stops puts in every flight's suggested stops, a later flight's too", async ({ page }) => {
+  // The owner's trip (2026-11-20): to KLAS and on to KPWK, the pill put in
+  // the first flight's stops alone and the last flight still read 21 gal
+  // short. Here the route C81, KMSN, KDLH, each flight with a stop of its
+  // own suggested; once in, the plan suggests none and the pill takes them
+  // out again.
+  await answered(page, (url) => url.pathname.endsWith("/navlog") && url.searchParams.get("stops") === "KMSN", [
+    { departure: "C81", destination: "KMSN", usable_gal: 48, reason: "fuel", stops: [{ ...CHOICE, ident: "KJVL" }], choices: [] },
+    { departure: "KMSN", destination: "KDLH", usable_gal: 48, reason: "fuel", stops: [STOP], choices: [] },
+  ]);
+  await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
+  await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
+  // Two flights' rows put Add a Stop under the half sheet's edge, where a
+  // click finds the pill outside the viewport and retries till the test's
+  // end: brought up first, as the test above does.
+  await inSheet(page, pill);
+  await pill.click();
+  await expect(page).toHaveURL(stopsAre("KJVL,KMSN,KRPD"));
+  await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KJVL,KRPD");
+  await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
+});
+
+test("a flight short with no stop offered says why where the pill would be", async ({ page }) => {
+  // The aviation audit (2026-11-21, F7.6): with too little fuel on board
+  // at the start for the start, taxi and reserve, no field is in reach and
+  // no stop is offered; the timeline says so (warn, never limit).
+  await answered(
+    page,
+    (url) => url.pathname.endsWith("/navlog") && !url.searchParams.get("stops"),
+    [],
+    [{ departure: "C81", destination: "KDLH", on_board: true }],
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const note = sideDrawer(page).getByTestId("timeline-no-fuel-stop");
+  await expect(note).toHaveText("Too little fuel on board for C81 → KDLH", { timeout: slow(60_000) });
+  await expect(sideDrawer(page).getByTestId("timeline-fuel-stops")).toHaveCount(0);
+});
+
+for (const width of [375, 393])
+  test.describe(`at ${width} points and the owner's 19.65-px text`, () => {
+    test.use({ viewport: { width, height: 852 } });
+    test("Add a Stop, the fuel stops' pill and the route's toggle are one line, to add and to remove", async ({ page }) => {
+      // The owner, 2026-11-22: "Remove fuel stops goes to the next line."
+      await suggested(page);
+      await page.goto("/app/plan?dep=C81&dest=KDLH");
+      await settle(page);
+      await page.evaluate(() => (document.documentElement.style.fontSize = "19.65px"));
+      await openPanel(page);
+      const drawer = sideDrawer(page);
+      const pill = drawer.getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
+      await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
+      // `under`: the chips on a line of their own under the words.
+      const row = async (under = false) => {
+        const boxes = await Promise.all(
+          [drawer.getByTestId("timeline-add-stop"), pill, drawer.getByTestId("route-type-open")].map(async (l) => (await l.boundingBox())!),
+        );
+        const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+        const card = (await drawer.getByTestId("route-summary").boundingBox())!;
+        test
+          .info()
+          .annotations.push({
+            type: "row",
+            description: JSON.stringify({
+              card: [card.x, card.width],
+              boxes: boxes.map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.width)]),
+            }),
+          });
+        console.log(
+          "ROW",
+          JSON.stringify({ card: [card.x, card.width], boxes: boxes.map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.width)]) }),
+        );
+        const [words, ...chips] = boxes as [(typeof boxes)[0], ...typeof boxes];
+        if (under) {
+          // At 375 points and 19.65-px text "Remove Stops" does not fit on
+          // the words' line: Add a Stop's 153 and the chips' 183 (the pill's
+          // 136, the toggle's 27 and their gap-2 and inset, 9.8 each at that
+          // text) are 336 in the row's 324, 12 over; with the fuel glyph at
+          // 14, no room between it and its words and the toggle's glyph
+          // bare, still 3 over. So the chips go under the words, together,
+          // on a line of their own (TimelineAction's flex-wrap).
+          for (const b of chips) expect(Math.abs(mid(b) - mid(chips[0]!)), "the chips one line").toBeLessThan(4);
+          expect(chips[0]!.y, "the chips under the words").toBeGreaterThanOrEqual(words.y + words.height - 1);
+          expect(chips[0]!.x, "the pill inside the card").toBeGreaterThanOrEqual(card.x);
+        } else for (const b of boxes) expect(Math.abs(mid(b) - mid(words)), "one line").toBeLessThan(4);
+        // The rows' gap-2 between the pill and the toggle, so their 44-point
+        // areas meet and don't cross, and the toggle 8 in from the card's
+        // edge, never clipped by it (the owner's iPhone, 2026-11-22).
+        const [, chip, toggle] = boxes as [unknown, { x: number; width: number }, { x: number; width: number }];
+        expect(toggle.x - (chip.x + chip.width), "8 between the pill and the toggle").toBeGreaterThanOrEqual(7.5);
+        expect(card.x + card.width - (toggle.x + toggle.width), "the toggle 8 in from the card's edge").toBeGreaterThanOrEqual(7.5);
+      };
+      await row();
+      await inSheet(page, pill);
+      await pill.click();
+      await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
+      await row(width === 375);
+    });
+  });

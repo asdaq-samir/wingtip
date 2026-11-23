@@ -6,6 +6,9 @@ import { FIT_MARGIN } from "../../lib/map/clear";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { cameraOf } from "../../lib/map/gl/camera";
 import { coursePoints } from "../../lib/course";
+import { padOf } from "./makeMap";
+import { useIsMobile } from "../../hooks/use-mobile";
+import { lonBounds } from "../../lib/geo";
 
 /** The least the map is fitted to round a route, ~10 nm. */
 const MIN_FIT_DEG = 0.08;
@@ -35,16 +38,17 @@ const routePointsKey = (course: Course) =>
  * map").
  */
 export function useRouteFit(map: maplibregl.Map | null, course: Course | null, insets: RefObject<MapInsets>, duration: number) {
+  const wide = !useIsMobile();
   const routeKey = course ? routePointsKey(course) : null;
   const routeBounds = useCallback((): [[number, number], [number, number]] | null => {
     if (!course) return null;
     const line = course.course_line as [number, number][];
     const lats = line.map((p) => p[0]),
-      lons = line.map((p) => p[1]);
+      [west, east] = lonBounds(line.map((p) => p[1]));
     const pad = MIN_FIT_DEG / 2;
     return [
-      [Math.min(...lons) - pad, Math.min(...lats) - pad],
-      [Math.max(...lons) + pad, Math.max(...lats) + pad],
+      [west - pad, Math.min(...lats) - pad],
+      [east + pad, Math.max(...lats) + pad],
     ];
   }, [course]);
   // A route made, or asked for again from the location arrow: the pilot's
@@ -55,9 +59,9 @@ export function useRouteFit(map: maplibregl.Map | null, course: Course | null, i
     (animate: boolean) => {
       const bounds = routeBounds();
       if (!map || !bounds) return;
-      cameraOf(map).fit(bounds, { margin: FIT_MARGIN, duration: animate ? duration : 0 });
+      cameraOf(map).fit(bounds, { margin: FIT_MARGIN, duration: animate ? duration : 0, pad: padOf(insets.current) });
     },
-    [map, routeBounds, duration],
+    [map, routeBounds, duration, insets],
   );
   const fitted = useRef<string | null>(null);
   useEffect(() => {
@@ -89,7 +93,12 @@ export function useRouteFit(map: maplibregl.Map | null, course: Course | null, i
     if (!map || !course) return;
     const line = course.course_line as [number, number][];
     const check = () => {
-      const { top, bottom, left } = insets.current;
+      const { bottom, left } = insets.current;
+      // A desktop's side panel at its pill covers only the window's top
+      // left corner, not the width its top inset says: a route beside it
+      // is in sight, and the arrow offered the route fitted already
+      // (route-fit.spec's desktop runs). Out from it, its left inset says.
+      const top = wide ? 0 : insets.current.top;
       const { clientWidth: w, clientHeight: h } = map.getContainer();
       const out = line.some(([lat, lon]) => {
         const p = map.project([lon, lat]);
@@ -102,5 +111,5 @@ export function useRouteFit(map: maplibregl.Map | null, course: Course | null, i
     return () => {
       map.off("moveend", check);
     };
-  }, [map, course, insets]);
+  }, [map, course, insets, wide]);
 }

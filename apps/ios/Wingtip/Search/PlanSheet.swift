@@ -20,7 +20,6 @@ struct PlanSheet: View {
     @Environment(\.splitLayout) private var split
     @Environment(\.sheetAtPill) private var atPill
     @Environment(FirstFlightModel.self) private var firstFlight
-    @AppStorage(PlanningAidNotice.acceptedKey) private var planningAidAccepted = false
     let search: OneSearchModel
     /// A screen by its name, as a link opens it (RootView.openScreen): the
     /// one way a page opens by name.
@@ -32,11 +31,19 @@ struct PlanSheet: View {
         NavigationStack(path: stack) {
             SheetPages(page: nav.sheetPage) {
                 List {
-                    BrowseSections(nearest: search.nearest, pick: browse)
+                    // Its rows only while the page is in sight: kept under
+                    // FPL, hidden and at no opacity, the List's rows (UIKit's
+                    // collection view) were still read by VoiceOver and the
+                    // audit over FPL, "Recents" at its top, whatever
+                    // accessibilityHidden said (the accessibility audit,
+                    // 2026-11-21).
+                    if nav.sheetPage == .search {
+                        BrowseSections(nearest: search.nearest, pick: browse)
+                    }
                 }
                 .accessibilityIdentifier("sheet-page-search")
             } fpl: {
-                PlanView(open: openScreen, addStop: { search.presented = true })
+                PlanView(open: openScreen, ask: { search.ask($0) })
                     .accessibilityIdentifier("sheet-page-fpl")
             }
             .oneSearch(search, host: host, oneRow: !split)
@@ -49,11 +56,10 @@ struct PlanSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: search.nearest) }
         }
-        // The welcome, the first time with no route, once the planning
-        // aid's words are accepted (the two never stack); put away, the
+        // The welcome, the first time with no route; put away, the
         // Search page asks for the destination (welcomeDone).
         .sheet(isPresented: Binding(
-            get: { firstFlight.shown(routed: plan.routed) && (planningAidAccepted || !PlanningAidNotice.wanted()) && nav.card == nil },
+            get: { firstFlight.shown(routed: plan.routed) && nav.card == nil },
             set: { up in if !up { welcomeDone() } })) {
                 WelcomeSheet(go: welcomeDone)
                     .presentationDetents([.large])
@@ -80,11 +86,17 @@ struct PlanSheet: View {
         // (safeAreaBar, glassFoot); over the map on the iPad. Not at the
         // pill, where it covered the route's row (sheetAtPill).
         .glassFoot {
-            if plan.routed, !split, !atPill, nav.sheetPage == .fpl {
-                FiguresStrip()
-                    .padding(.vertical, WingtipSpace.sm)
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 0) {
+                // The step just made, a moment to take it back (UndoBar):
+                // over the strip, on either page, a cleared route's too.
+                UndoBar()
+                if plan.routed, !split, !atPill, nav.sheetPage == .fpl {
+                    FiguresStrip()
+                        .padding(.vertical, WingtipSpace.sm)
+                        .frame(maxWidth: .infinity)
+                }
             }
+            .animation(.easeInOut(duration: WingtipMotion.fade), value: plan.undoOffer)
         }
         // The card over the plan and the alerts, on the iPhone; the
         // iPad's inspector holds the card (SplitLayout).

@@ -30,8 +30,7 @@ final class DepartureWindow {
     /// The hour nearest a time said to Siri ("tomorrow at 9"), within half
     /// an hour of it; none picked where the hours do not reach it.
     func pick(nearest when: Date) {
-        let iso = ISO8601DateFormatter()
-        let near = answer?.hours.compactMap { hour in iso.date(from: hour.depart).map { (hour.depart, abs($0.timeIntervalSince(when))) } }
+        let near = answer?.hours.compactMap { hour in AirportWords.date(hour.depart).map { (hour.depart, abs($0.timeIntervalSince(when))) } }
             .filter { $0.1 <= 30 * 60 }.min { $0.1 < $1.1 }
         if let near { picked = near.0 }
     }
@@ -54,7 +53,7 @@ final class DepartureWindow {
         case .success(let ask): await refresh(ask)
         case .failure(let error):
             answer = nil
-            problem = "Hours unavailable: the question couldn't be put together (\(error.localizedDescription))."
+            problem = Problems.say("The hours could not be asked for", error)
         }
     }
 
@@ -67,7 +66,7 @@ final class DepartureWindow {
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }
-            problem = "Hours unavailable: \(error.localizedDescription)"
+            problem = Problems.say("The hours could not be fetched", error)
         }
     }
 
@@ -102,11 +101,7 @@ final class DepartureWindow {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = zone
         guard !calendar.isDate(at, inSameDayAs: now) else { return nil }
-        let format = DateFormatter()
-        format.locale = Format.locale
-        format.timeZone = zone
-        format.dateFormat = "EEE"
-        return format.string(from: at)
+        return at.formatted(Date.FormatStyle(locale: Format.locale, calendar: calendar, timeZone: zone).weekday(.abbreviated))
     }
 
     /// The best window in a line: "Best: 07:00–10:00 CST", one hour

@@ -1,8 +1,7 @@
 """The one scheduler every service's periodic work runs on: APScheduler's
 (3.x, its maintained line; 4.0 is an alpha untouched since April 2025,
 docs/versions.md), rather than a `while True` and a clock of its own in
-each service, which the planner, weather, ingest and the crash-leads job
-each had (the code audit's CODE-45, 2026-11-14).
+each service, which the planner, weather and ingest each had (the code audit's CODE-45, 2026-11-14).
 
 Every job is held to one run at a time (`max_instances=1`): a turn that
 comes while the last still runs is skipped, not stacked, and runs that
@@ -37,3 +36,9 @@ def every(on: BaseScheduler, seconds: float, job: Callable[..., object], *, name
     else one interval from here."""
     first = {"next_run_time": datetime.now(UTC)} if now else {}
     on.add_job(job, "interval", seconds=seconds, args=args, id=name, name=name, **first)
+
+
+def daily_at(on: BaseScheduler, hour: int, minute: int, job: Callable[..., object], *, name: str) -> None:
+    """`job()` every day at hour:minute UTC (the scheduler's zone): for work
+    tied to a moment rather than an interval, the FAA's 0901Z changeovers."""
+    on.add_job(job, "cron", hour=hour, minute=minute, id=name, name=name)

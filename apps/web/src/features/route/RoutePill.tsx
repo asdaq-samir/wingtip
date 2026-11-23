@@ -100,9 +100,12 @@ export default function RoutePill({
   const mark = isPosition(ident) ? null : waypoint ? (
     <span aria-hidden="true" className="ml-0.5 size-2 shrink-0 rotate-45 rounded-[1px]" style={{ backgroundColor: CHART.waypoint }} />
   ) : (
+    // 14 at a 16 px root, in rem as the pill, its ident and the waypoint's
+    // diamond are, so the mark keeps its share of the pill at a larger
+    // text size (it was 14 px at every size: the scale audit, 2026-11-21).
     <span
       aria-hidden="true"
-      className="block size-[14px] shrink-0"
+      className="block size-3.5 shrink-0"
       dangerouslySetInnerHTML={{
         __html: airportMarkSvg(spaceClass, metarColourOf(ident) ?? colourOf(null), null, "block size-full overflow-visible"),
       }}
@@ -147,9 +150,13 @@ export default function RoutePill({
         // 14 points short of its arrow to KUGN's 6 (the owner, 2026-11-11:
         // "Look at the spacing of first airport in route").
         // Its 44-point area 44 tall and half the row's gap-2 wider each
-        // side, meeting the arrows' beside it (RouteToken, WEB-4).
+        // side, meeting the arrows' beside it (RouteToken, WEB-4), laid
+        // against the pill itself: unplaced, as it is under a mouse, where
+        // the base layer's `relative` is a coarse pointer's alone, the area
+        // was laid against the route's field and the last pill took every
+        // tap on the line, its arrows and chips too.
         className={cn(
-          "h-7 rounded-full px-0.75 after:-inset-x-1 after:-inset-y-2",
+          "relative h-7 rounded-full px-0.75 hit-x-1 hit-y-2",
           TEXT.detail,
           "font-semibold",
           // A present position in the pilot's words, not an ident's capitals.

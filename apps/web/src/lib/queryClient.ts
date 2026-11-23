@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { api, isUnknownPlace } from "./api/client";
+import { api, data, isUnknownPlace, planner } from "./api/client";
+import type { components } from "./api/schema";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { signedInPilot } from "./pilotCache";
@@ -89,10 +90,18 @@ export const routeProfileQuery = (dep: string, dest: string, stops: string[] = [
     meta: { silent: true },
   });
 
-/** The Class B airports and their weather. The airspace never moves and
- *  the planner holds the weather for minutes, so refetching per pan
- *  would ask the same cache the same question; and quiet, because the
- *  layer and the chips show what they have in place. */
+/** The weather on the side view for a flight (api.routeWeather): asked
+ *  again as the departure or the time flown changes, kept ten minutes,
+ *  as the store's products are fetched every few. Quiet: the side view
+ *  is drawn without it where it fails. */
+export const routeWeatherQuery = (dep: string, dest: string, stops: string[], depart: string | undefined, eteMin: number) =>
+  queryOptions({
+    queryKey: ["route-weather", dep, ...stops, dest, depart ?? "now", Math.round(eteMin)],
+    queryFn: () => api.routeWeather(dep, dest, stops, depart, eteMin),
+    staleTime: 10 * 60 * 1000,
+    meta: { silent: true },
+  });
+
 /** The chart alone, for a map with no route on it yet. The map draws
  *  nothing until it has it -- the empty frame, blue in the dark, that the
  *  pilot saw on every load while it was asked for -- so the last answer
@@ -114,6 +123,11 @@ export const chartQuery = queryOptions({
     return chart;
   },
   staleTime: 60 * 60_000,
+  // Asked again every quarter hour while the page is open: the FAA's chart
+  // cycle takes over at 0901Z on its date (the planner's serving cycle), and
+  // a tab left open on the map, never refocused, drew the old cycle until it
+  // was reloaded.
+  refetchInterval: 15 * 60_000,
   initialData: () => keptChart()?.chart,
   initialDataUpdatedAt: () => keptChart()?.at,
 });
@@ -140,47 +154,6 @@ export const nearestQuery = (lat: number, lon: number) => {
   });
 };
 
-/** A tracked flight's airplane, where it took off and its path today
- *  (wingtip.traffic.flight): read again every minute while it is tracked, by
- *  its card and the map's path alike. Quiet: the card says what it has. */
-export const flightQuery = (hex: string) =>
-  queryOptions({
-    queryKey: ["flight", hex],
-    queryFn: () => api.trafficFlight(hex),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-    meta: { silent: true },
-  });
-
-/** An airplane's state now, for the alerts a pilot set on it
- *  (AircraftAlerts): asked every fifteen seconds while the app is open and
- *  an alert waits on it -- the planner reads adsb.lol's recent trace, a
- *  static file, no turn of its API -- and not while the page is hidden.
- *  Quiet: a missed answer is the next one's to make up. */
-export const flightStatusQuery = (hex: string) =>
-  queryOptions({
-    queryKey: ["flight-status", hex],
-    queryFn: () => api.trafficStatus(hex),
-    staleTime: 10_000,
-    refetchInterval: 15_000,
-    retry: false,
-    meta: { silent: true },
-  });
-
-/** The route a tracked flight's number is scheduled to fly, asked once a
- *  callsign (wingtip.traffic.route; the planner keeps it six hours): where the
- *  airplane is says whether it is on it, so the position, to a degree, is
- *  in the key and a diversion or a reused callsign is asked again. Quiet,
- *  as the flight's. */
-export const routeQuery = (callsign: string | null, at: { lat: number; lon: number } | null) =>
-  queryOptions({
-    queryKey: ["route", callsign, at ? Math.round(at.lat) : null, at ? Math.round(at.lon) : null],
-    queryFn: () => api.trafficRoute({ callsign: callsign!, ...at }),
-    enabled: !!callsign,
-    staleTime: 30 * 60_000,
-    meta: { silent: true },
-  });
-
 /** The deployment's key for Google's map tiles (routers/basemaps), asked
  *  once a visit; an error, quiet, where it has none and the map offers
  *  no Google overlay (OverlayTiles, MapSettings). */
@@ -204,6 +177,10 @@ export const overlayTilesQuery = queryOptions({
   meta: { silent: true },
 });
 
+/** The Class B airports and their weather. The airspace never moves and
+ *  the planner holds the weather for minutes, so refetching per pan
+ *  would ask the same cache the same question; and quiet, because the
+ *  layer and the chips show what they have in place. */
 export const classBQuery = queryOptions({
   queryKey: ["classB"],
   queryFn: () => api.classB(),
@@ -221,6 +198,25 @@ export const classBQuery = queryOptions({
  *  the card saying in place what it could not have (PlaceCard). */
 export const airportQuery = (ident: string) =>
   queryOptions({ queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true } });
+
+/** A field's own NOTAMs and the TFRs near it, as the planner ranks them. */
+export type FieldNotams = components["schemas"]["NotamsRanked"];
+
+/**
+ * A field's own NOTAMs (the FAA's feed, by any ident it goes by) and the
+ * TFRs within 5 nm of it, best first, as the engine ranks a route's: the
+ * planner's GET /api/airport/{ident}/notams, which the iPhone's and
+ * Android's cards read too. 14 CFR 91.103 asks for the NOTAMs of every
+ * field a flight uses; a card is where a pilot looks at one field, and
+ * Keep for the Air asks it for each of the route's (keepAnswers).
+ */
+export const fieldNotamsQuery = (ident: string) =>
+  queryOptions({
+    queryKey: ["airport-notams", ident],
+    queryFn: () => planner.GET("/api/airport/{ident}/notams", { params: { path: { ident } } }).then(data<FieldNotams>),
+    staleTime: 5 * 60_000,
+    meta: { silent: true },
+  });
 
 /** A cycle's procedures hold for its 28 days. */
 const PROCEDURE_STALE_MS = 6 * 60 * 60_000;
@@ -312,30 +308,3 @@ export const plateQuery = (airport: string, id: string) =>
     retry: false,
     meta: { silent: true },
   });
-
-/** The pilot's saved flights, for FPL's Saved and its list in full: quiet,
- *  each saying in place what it could not fetch (QueryState). */
-export const flightsQuery = queryOptions({ queryKey: ["flights"], queryFn: () => api.flights.list(), meta: { silent: true } });
-
-/** The pilot's training record: the logbook's, the checkride's, the
- *  Brief's solo review's, a flight's page's. */
-export const trainingQuery = queryOptions({ queryKey: ["training"], queryFn: () => api.training.get() });
-
-/** The pilot's own airplanes, for the aircraft chips, the Brief and
- *  Setup's Aircraft: fresh for a minute. */
-export const aircraftListQuery = queryOptions({ queryKey: ["aircraft"], queryFn: () => api.aircraft.list(), staleTime: 60_000 });
-
-/** The airplanes' book figures the planner flies: the same while the page
- *  is open. */
-export const aircraftProfilesQuery = queryOptions({
-  queryKey: ["aircraftProfiles"],
-  queryFn: () => api.aircraftProfiles(),
-  staleTime: Infinity,
-});
-
-/** The pilot's currency from the logbook: fresh for a minute. */
-export const currencyQuery = queryOptions({ queryKey: ["currency"], queryFn: () => api.logbook.currency(), staleTime: 60_000 });
-
-/** What falls due for the pilot and their airplanes (the Logbook's Coming
- *  up): fresh for a minute. */
-export const paperworkQuery = queryOptions({ queryKey: ["paperwork"], queryFn: () => api.paperwork(), staleTime: 60_000 });

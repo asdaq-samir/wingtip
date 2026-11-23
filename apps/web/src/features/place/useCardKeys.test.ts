@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { onShortcut } from "../../hooks/use-shortcuts";
+import { useShortcuts } from "../../hooks/use-shortcuts";
 import { takeSearchAsk, useSearchAsk } from "../../lib/oneSearch";
 import { useCardKeys } from "./useCardKeys";
 
 const press = (key: string, target: Element = document.body) => {
-  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  const event = new KeyboardEvent("keydown", { key, code: `Key${key.toUpperCase()}`, bubbles: true, cancelable: true });
   target.dispatchEvent(event);
   return event;
 };
@@ -28,8 +28,10 @@ describe("the airport card's letters on a desktop", () => {
   it("Alt+F and Alt+S run Fly Here and Add Stop, and Alt+D stays the page's Direct To", () => {
     const fly = vi.fn(),
       stop = vi.fn();
-    document.addEventListener("keydown", onShortcut);
-    const { unmount } = renderHook(() => useCardKeys(true, { F: fly, S: stop }));
+    const { unmount } = renderHook(() => {
+      useShortcuts();
+      useCardKeys(true, { F: fly, S: stop });
+    });
     expect(press("f").defaultPrevented).toBe(false);
     expect(alt("f").defaultPrevented).toBe(true);
     alt("s");
@@ -39,7 +41,6 @@ describe("the airport card's letters on a desktop", () => {
     alt("d");
     expect(useSearchAsk.getState().ask).not.toBeNull();
     unmount();
-    document.removeEventListener("keydown", onShortcut);
   });
 
   it("leaves a letter typed in a field alone, and does nothing while off", () => {

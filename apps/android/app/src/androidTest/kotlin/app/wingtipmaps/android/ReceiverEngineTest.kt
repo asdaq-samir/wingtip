@@ -10,6 +10,7 @@ import app.wingtipmaps.android.engine.generated.receiverNexrad
 import app.wingtipmaps.android.engine.generated.receiverRead
 import app.wingtipmaps.android.engine.generated.receiverReports
 import app.wingtipmaps.android.engine.generated.receiverTraffic
+import app.wingtipmaps.android.receiver.HeldPicture
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -19,6 +20,8 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -27,7 +30,8 @@ import org.junit.runner.RunWith
  * and the generated types, against the shared fixture
  * (apps/web/src/lib/fixtures/gdl90.json, this test APK's assets): the
  * picture, the traffic merged into the planner's TrafficAircraft, a
- * field's FIS-B reports and the NEXRAD.
+ * field's FIS-B reports and the NEXRAD; and the same read with the picture
+ * held by the engine (HeldPicture), answering only what changed.
  */
 @RunWith(AndroidJUnit4::class)
 class ReceiverEngineTest {
@@ -70,5 +74,37 @@ class ReceiverEngineTest {
 
         val nexrad = Engine.receiverNexrad(p).getOrThrow()
         assertEquals(listOf(3.0, 5.0), nexrad.levels.filter { it.rects.isNotEmpty() }.map { it.level })
+    }
+
+    /** The picture held by the engine between reads: each read answers the
+     *  small part as receiver_read's whole picture has it, a revision moves
+     *  only with what changed, and the views asked of the held picture are
+     *  the rules' answers over the whole one. */
+    @Test
+    fun theHeldPictureAnswersWhatChanged() {
+        val whole = picture()
+        HeldPicture().use { held ->
+            var delta: EngineContract.ReceiverDeltaAnswer? = null
+            for (d in fixture["datagrams"]!!.jsonArray) {
+                val o = d.jsonObject
+                delta = held.read(bytes(o["hex"]!!.jsonPrimitive.content), o["at"]!!.jsonPrimitive.double).getOrThrow()
+            }
+            val read = delta!!
+            assertEquals(whole.receiver, read.receiver)
+            assertEquals(whole.ownship, read.ownship)
+            assertEquals(whole.targets, read.targets)
+            assertEquals(whole.texts.size, read.texts)
+            assertEquals(whole.nexrad.size, read.blocks)
+            assertEquals(Engine.receiverNexrad(whole).getOrThrow(), held.nexrad().getOrThrow())
+            val ident = fixture["reports"]!!.jsonObject["ident"]!!.jsonPrimitive.content
+            assertEquals(Engine.receiverReports(whole, ident).getOrThrow(), held.reports(ident).getOrThrow())
+            val at = fixture["datagrams"]!!.jsonArray[1].jsonObject["at"]!!.jsonPrimitive.double
+            val again = held.read(ByteArray(0), at).getOrThrow()
+            assertEquals(read.trafficRevision, again.trafficRevision)
+            assertEquals(read.nexradRevision, again.nexradRevision)
+            assertTrue(held.traffic(emptyList(), null, at).getOrThrow().isNotEmpty())
+        }
+        // A new held picture starts empty: the receiver turned off lets go.
+        HeldPicture().use { assertNull(it.read(ByteArray(0), 0.0).getOrThrow().receiver.heartbeatAt) }
     }
 }

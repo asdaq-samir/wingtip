@@ -26,6 +26,15 @@ pub(super) fn cases(c: &mut Checker) {
     for case in web["terrainViewBands"].as_array().unwrap() {
         c.ask("terrain_view_bands", json!({ "altitude_ft": case["altitude_ft"] }));
     }
+    // The runway proximity advisor (runwayProximity.json), the diagram's
+    // hot spots and the fuels by grade the weight and balance loads.
+    for case in fixture("runwayProximity.json")["cases"].as_array().unwrap() {
+        c.ask("runway_proximity", case["input"].clone());
+    }
+    c.ask("diagram_hot_spot_labels", json!({ "text": "HS 1 RWY 9-27 HS 2" }));
+    let graticule = json!({ "lat_on_x": false, "a": -10000.0, "b": 420000.0, "c": 7660.0, "d": 689600.0, "north_deg": 0.0 });
+    c.ask("diagram_hot_spots", json!({ "graticule": graticule, "labels": [{ "text": "HS 1", "x": 200.0, "y": 300.0 }] }));
+    c.ask("fuel_grades", json!({}));
     c.ask("checklist_phases", json!({ "kind": "normal" }));
     c.ask("checklist_phases", json!({ "kind": "emergency" }));
     // A procedure's legs drawn (paths.rs), as the planner asks them.
@@ -45,6 +54,12 @@ pub(super) fn cases(c: &mut Checker) {
     c.ask(
         "passenger_night_on_the_way",
         json!({ "start": [61.22, -149.9], "end": [60.57, -151.25], "depart_s": 1782118800, "minutes": 40 }),
+    );
+    // 91.209(a)'s lights: from sunset, before 1.1's night (sun.rs).
+    c.ask("lights_on_the_way", json!({ "start": [41.88, -87.63], "end": [41.88, -87.63], "depart_s": 1774050600, "minutes": 30 }));
+    c.ask(
+        "lights_on_the_way",
+        json!({ "start": [61.22, -149.9], "end": [60.57, -151.25], "depart_s": 1782079200, "minutes": 40, "alaska_visibility_sm": 2.5 }),
     );
     c.ask(
         "night_at_either_end",

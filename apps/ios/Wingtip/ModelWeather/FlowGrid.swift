@@ -11,7 +11,7 @@ import ImageIO
 /// point is the engine's (flow_cell, flow_sample), as the web's bubble and
 /// pins ask it, so the same point reads the same on every app; the bands
 /// and words are the engine's too (FlowLooks, FlowReading).
-struct FlowGrid: Sendable {
+nonisolated struct FlowGrid: Sendable {
     let width: Int
     let height: Int
     /// Each pixel's value for the painted picture (FlowPaint), row by row
@@ -65,7 +65,7 @@ struct FlowGrid: Sendable {
 
     /// A pixel the engine named that the picture's bytes do not hold (a
     /// picture shorter than its width and height say).
-    struct OffThePicture: LocalizedError {
+    nonisolated struct OffThePicture: LocalizedError {
         let index: Int
         var errorDescription: String? { "the picture has no pixel \(index)" }
     }

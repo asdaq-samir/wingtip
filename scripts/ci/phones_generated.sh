@@ -16,6 +16,9 @@ generated=(
 )
 if [ -n "$(git status --porcelain -- "${generated[@]}")" ]; then
   git status --short -- "${generated[@]}"
+  # What differs, so the failure names it (docs/CI.md, "every failure named").
+  git --no-pager diff --stat -- "${generated[@]}"
+  git --no-pager diff -- "${generated[@]}" | head -80
   echo "::error title=Phone generated code out of date::the phones' generated API models or engine calls are not what the OpenAPI documents and the engine's contract give: run scripts/build/api-models-apps.sh and scripts/build/engine-contract-apps.sh and commit the files."
   exit 1
 fi

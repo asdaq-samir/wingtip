@@ -19,7 +19,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # The service's own list includes wingtip's (-r requirements-wingtip-charts.txt,
 # which takes requirements-wingtip.txt), all three beside each other.
 COPY services/planner/requirements.txt services/planner/requirements-wingtip.txt services/planner/requirements-wingtip-charts.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+# pip goes once the image's packages are in: nothing runs it after the
+# build, and its vendored copies of urllib3, msgpack and setuptools were
+# the image's only findings in trivy's scan of 2026-11-21 that a rebuild
+# of the base would not clear. The base (services/Dockerfile.base) keeps
+# it, since each image installs its own list on top.
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt \
+    && pip uninstall -y -q --root-user-action=ignore pip
 
 COPY services/planner/app ./app
 COPY services/planner/wingtip ./wingtip

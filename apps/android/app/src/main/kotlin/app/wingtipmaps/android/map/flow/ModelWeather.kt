@@ -4,12 +4,15 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Extra
+import app.wingtipmaps.android.Extras
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.FlowFrame
 import app.wingtipmaps.android.api.generated.FlowLayer
 import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.flowLevels
+import app.wingtipmaps.android.flight.Ticker
 import app.wingtipmaps.android.settings
 import app.wingtipmaps.android.ui.A11y
 import kotlinx.coroutines.CancellationException
@@ -21,9 +24,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 /** The precipitation's span, as Apple Weather's precipitation map has it:
  *  the hour past, the radar's (1h), or the forecast hours (12h). */
@@ -41,6 +47,9 @@ data class FlowState(
     val playing: Boolean = false,
     val span: FlowSpan = FlowSpan.TWELVE_HOURS,
     val failed: Boolean = false,
+    /** The last ask failed for want of a network: the bar says no
+     *  connection rather than fetching for ever. */
+    val offline: Boolean = false,
     val point: Pair<Double, Double>? = null,
     val grid: FlowGrid? = null,
 ) {
@@ -75,21 +84,36 @@ class ModelWeather private constructor(private val context: Context, private val
     private var clock: Job? = null
     private var resume = false
 
+    /** The field the pilot picked, kept while Model Weather is parked. */
+    private var chosen: FlowKind? = null
+    private var chosenYet = false
+    private val extras = Extras.of(context)
+
     init {
         scope.launch {
             val kept = context.settings.data.first()
-            val field = FlowKind.entries.firstOrNull { it.key == kept[FIELD] }
             val level = kept[LEVEL]
             if (level != null) _state.update { it.copy(picked = level) }
-            if (field != null && _state.value.field == null) pick(field)
+            if (!chosenYet) chosen = FlowKind.entries.firstOrNull { it.key == kept[FIELD] }
+            // Parked in Settings' Extras (Model Weather, off to start): no
+            // field shown and nothing fetched while it is off, whatever was
+            // picked before; the pick shown again as it is turned on.
+            extras.on.map { Extra.MODEL_WEATHER in it }.distinctUntilChanged().collect { on -> show(if (on) chosen else null) }
         }
     }
 
-    /** A field picked, or off (null). */
+    /** A field picked, or off (null): kept, and shown while Model Weather is on. */
     fun pick(field: FlowKind?) {
+        chosen = field
+        chosenYet = true
+        scope.launch { context.settings.edit { if (field == null) it.remove(FIELD) else it[FIELD] = field.key } }
+        show(field.takeIf { extras.isOn(Extra.MODEL_WEATHER) })
+    }
+
+    /** The field drawn and fetched, or none. */
+    private fun show(field: FlowKind?) {
         _state.update { it.copy(field = field, playing = false, grid = if (field == it.field) it.grid else null) }
         clock?.cancel()
-        scope.launch { context.settings.edit { if (field == null) it.remove(FIELD) else it[FIELD] = field.key } }
         if (field == null) {
             fetching?.cancel()
             fetching = null
@@ -168,14 +192,19 @@ class ModelWeather private constructor(private val context: Context, private val
 
     private suspend fun fetchForever() {
         while (true) {
+            // Only for the map on the screen: put away, nothing is asked
+            // until the app is back (Android keeps the process).
+            Ticker.shared.inFront.first { it }
             try {
                 val layer = Planner.api.flowLayer().planned()
-                _state.update { it.copy(layer = layer, failed = false) }
+                _state.update { it.copy(layer = layer, failed = false, offline = false) }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
-                // No signal, or none held yet: what was heard stands.
-                _state.update { it.copy(failed = it.layer == null) }
+            } catch (e: Exception) {
+                // No signal, or none held yet: what was heard stands, and
+                // with nothing heard the bar says why (no connection, or
+                // not available), never "Fetching…" for ever.
+                _state.update { it.copy(failed = it.layer == null, offline = e is IOException) }
             }
             delay(REFRESH_MS)
         }

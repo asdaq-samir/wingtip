@@ -1,0 +1,57 @@
+{
+  "name": "KMSN to KOSH, RNAV (GPS) RWY 36 by WIGIH",
+  "about": "The test flight: off Madison's runway 36, a climb to 5,500 ft, direct to WIGIH, then the RNAV (GPS) RWY 36 at Oshkosh from the WIGIH transition (WIGIH, DOCEN, the final approach fix WIVLI, the step-down JUMVO), a full-stop landing on 36 and a stop on the runway. The same route as the planner's flight-critical test (services/planner/tests/test_flight_critical.py): eastbound, so 5,500 ft, an odd thousand plus 500 (14 CFR 91.159(a)(1)). Fixes, runway ends and altitudes are the FAA's CIFP, cycle 2610 (FAACIFP18, data/raw/faa_cifp/261029): the approach's legs (SUSAP KOSH F R36), its waypoints (SUSAP KOSH C) and the runways (SUSAP KMSN/KOSH G). The speeds and rates are the test's own, a Cessna 172's in round figures, not the app's: nothing here is a figure the app states.",
+  "plan": "/app/plan?dep=KMSN&dest=KOSH&procs=KOSH:R36:WIGIH",
+  "airplane": { "profile": "c172", "label": "C172 · Cessna 172", "xplane": "Aircraft/Laminar Research/Cessna 172 SP/Cessna_172SP.acf" },
+  "own": { "hex": "f0f0f0", "callsign": "N1SIM" },
+  "places": {
+    "KMSN 36": { "lat": 43.127189, "lon": -89.342039, "elev_ft": 862 },
+    "KMSN 18": { "lat": 43.148042, "lon": -89.341075, "elev_ft": 859 },
+    "KOSH 36": { "lat": 43.963839, "lon": -88.556717, "elev_ft": 808 },
+    "KOSH 18": { "lat": 43.985789, "lon": -88.556428, "elev_ft": 790 }
+  },
+  "points": [
+    { "name": "KMSN 36", "at": "KMSN 36", "kt": 0, "phase": "takeoff", "ground": true },
+    { "name": "Lift-off", "at": "KMSN 36", "toward": "KMSN 18", "fraction": 0.22, "kt": 60, "phase": "takeoff", "ground": true },
+    { "name": "Climb-out", "at": "KMSN 36", "toward": "KMSN 18", "fraction": 1.0, "alt_ft": 5500, "kt": 75, "phase": "climb" },
+    { "name": "WIGIH", "lat": 43.764722, "lon": -88.704208, "alt_ft": 2800, "kt": 100, "phase": "enroute" },
+    { "name": "DOCEN", "lat": 43.763831, "lon": -88.559317, "alt_ft": 2800, "kt": 90, "phase": "approach" },
+    { "name": "WIVLI", "lat": 43.878094, "lon": -88.557833, "alt_ft": 2500, "kt": 80, "phase": "approach" },
+    { "name": "JUMVO", "lat": 43.932172, "lon": -88.557131, "alt_ft": 1460, "kt": 70, "phase": "final" },
+    { "name": "KOSH 36", "at": "KOSH 36", "alt_ft": 858, "kt": 65, "phase": "final" },
+    { "name": "Touchdown", "at": "KOSH 36", "toward": "KOSH 18", "fraction": 0.12, "kt": 55, "phase": "landing", "ground": true },
+    { "name": "Stop", "at": "KOSH 36", "toward": "KOSH 18", "fraction": 0.4, "kt": 0, "phase": "rollout", "ground": true }
+  ],
+  "rates": { "climb_fpm": 700, "descent_fpm": 500 },
+  "rest_s": 240,
+  "autopilot": { "from": "Climb-out", "to": "JUMVO" },
+  "power": { "climb": 1.0, "enroute": 0.75, "approach": 0.55, "final": 0.45 },
+  "traffic": [
+    {
+      "callsign": "N4SIM",
+      "hex": "a4f001",
+      "after": "Climb-out",
+      "delay_s": 600,
+      "for_s": 240,
+      "ahead_nm": 4,
+      "right_nm": 2,
+      "above_ft": 500,
+      "kt": 110,
+      "turn_deg": -100
+    }
+  ],
+  "expect": {
+    "checkpoints": ["WIGIH", "DOCEN", "WIVLI", "JUMVO", "KOSH"],
+    "alerts": [
+      { "kind": "airspace", "class": "C", "name": "MADISON", "phases": ["takeoff", "climb"] },
+      { "kind": "airspace", "class": "D", "name": "OSHKOSH", "phases": ["enroute", "approach", "final"] }
+    ],
+    "landings": 1,
+    "route_has": ["MSN", "OSH"],
+    "budgets": {
+      "engine_calls_per_fix_p95": 80,
+      "mutations_per_fix_p95": 600,
+      "rule_per_fix": { "magnetic_variation": 0.1 }
+    }
+  }
+}

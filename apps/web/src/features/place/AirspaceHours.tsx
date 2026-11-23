@@ -38,7 +38,7 @@ export function AirspaceHours({
   const today = hours && todayWords(hours);
   return (
     <div className="scroll-mt-20 pt-5 first:pt-0" ref={sectionRef} data-testid="place-airspace-hours">
-      <PillSection title="Airspace hours">
+      <PillSection title="Airspace Hours">
         <ListGroup>
           <ListRow
             title={<span className={cn(now === surface.class && "text-tint")}>{now ? `Class ${now}` : "Part-time"}</span>}
@@ -47,7 +47,7 @@ export function AirspaceHours({
           />
           {hours?.known && (
             <Collapsible open={open} onOpenChange={onOpenChange}>
-              <CollapsibleTrigger render={<ListRow title={<span className="text-muted-foreground">Normal hours</span>} chevron />} />
+              <CollapsibleTrigger render={<ListRow title={<span className="text-muted-foreground">Normal Hours</span>} chevron />} />
               <CollapsibleContent data-testid="place-airspace-week">
                 {normalHours(hours).map((row) => (
                   <ListRow

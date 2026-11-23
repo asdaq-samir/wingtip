@@ -25,10 +25,12 @@ def test_the_search_index_holds_every_us_field_the_search_answers_with(us_airpor
     also found by where they differ from the one shown."""
     rows = json.loads(gzip.decompress(airports.search_index(cache_path=us_airports_csv)))["airports"]
     assert "CYQT" not in {r[0] for r in rows}
-    # Where each is, to a hundredth of a degree, after the size; then the
+    # Where each is, to a ten-thousandth of a degree, after the size; then the
     # idents it is also found by.
     shapes = [(r[:5], r[7:]) for r in rows]
     assert all(isinstance(v, float) for r in rows for v in r[5:7])
+    # As the table has it, where the map is brought before the card's answer.
+    assert next(r[5:7] for r in rows if r[0] == "C81") == [42.3246, -88.0741]
     assert (["KDLH", "Duluth Intl", "", "MN", 1], ["DLH"]) in shapes
     # C81 is found by OurAirports' made-up KC81 too.
     assert (["C81", "Campbell Airport", "", "MN", 2], ["KC81"]) in shapes

@@ -24,18 +24,24 @@
          notification promoted to the status bar's chip and the top of the
          shade while flying a route, as the iPhone's Live Activity is. -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
-    <!-- The ATC copilot (atc/): the radio listened to through the phone's
-         speech recognizer while flying, with the pilot's leave (Setup's
-         ATC, off until turned on), kept with the screen off by a
-         foreground service of the microphone type. -->
+    <!-- The microphone, with the pilot's leave, asked the moment it is
+         needed: a question said to the search (voice/VoiceInput) and the
+         parked ATC copilot (atc/), the radio listened to through the
+         phone's speech recognizer while flying.
+         The ATC copilot and the cockpit receiver are parked (Settings'
+         Extras, off to start; docs/store/feature-review.md) and out of
+         the first store build: no foreground service of the microphone
+         type (FOREGROUND_SERVICE_MICROPHONE and atc/AtcListenService) nor
+         of the connected-device type (FOREGROUND_SERVICE_CONNECTED_DEVICE
+         and receiver/ReceiverService) is declared, so Play asks no
+         declaration or video for either. Turned on in this build, each
+         works while the app is in front. Bring both back, permission and
+         service, with the feature. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <!-- A cockpit ADS-B receiver's GDL 90 on the Wi-Fi (receiver/): the
-         multicast lock lets the datagrams sent to the network's broadcast
-         address through, and the foreground service of the
-         connected-device type keeps them coming with the screen off. -->
+    <!-- A cockpit ADS-B receiver's GDL 90 on the Wi-Fi (receiver/, parked):
+         the multicast lock lets the datagrams sent to the network's
+         broadcast address through. -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <!-- Android 11 and later show an app only the services it names: the
          phone's speech recognizer, which the ATC copilot listens through. -->
     <queries>
@@ -66,12 +72,19 @@
 
         <!-- One task, one instance: a link tapped in Gmail while the app is
              open comes to the running activity as a new intent
-             (MainActivity.onNewIntent) rather than opening a second one. -->
+             (MainActivity.onNewIntent) rather than opening a second one.
+             A resize, a rotation, a fold or a desktop window dragged wider
+             is Compose's to lay out again (configChanges), not a new
+             activity: the map keeps its tiles, camera and layers rather
+             than loading again at each step of a drag, and the screen's
+             state is kept as it is (Android's Tier 3 Config_Changes; the
+             app has no size-qualified resources to reload). -->
         <activity
             android:name=".MainActivity"
             android:theme="@style/Theme.WingtipMaps.Starting"
             android:exported="true"
             android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -100,6 +113,35 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="wingtipmaps" android:host="plan" />
             </intent-filter>
+            <!-- A PDF shared from another app, or opened with Wingtip from
+                 Files or a mail, kept among the pilot's own documents on
+                 this phone and opened in the reader (library/OwnShelf;
+                 decision 0056). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <!-- A route from another app's flight-plan file, Garmin's .fpl or a
+                 GPX, opened with Wingtip or shared to it: read by the engine
+                 (route_file_read) and previewed as a shared flight is,
+                 never planned unasked (share/FlightFiles). An .fpl has no
+                 type of its own: Files and mail hand it over as XML. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/gpx+xml" />
+                <data android:mimeType="application/xml" />
+                <data android:mimeType="text/xml" />
+            </intent-filter>
             <!-- The app's shortcuts and App Actions' OPEN_APP_FEATURE, one
                  per screen (res/xml/shortcuts.xml, generated from
                  design/screens.json; docs/android-ai.md). -->
@@ -108,12 +150,16 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- Google's Map Tiles key for this app (build.gradle.kts's
-             GOOGLE_MAPS_ANDROID_KEY), where Google's own libraries look for
-             one; empty until the owner adds it. -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${googleMapsAndroidKey}" />
+        <!-- A plate in a window of its own beside the map, on a tablet, a
+             foldable or a desktop window (plates/PlateWindow): a task each,
+             resizable, laid out again by Compose as the window changes. No
+             intent filter: links and files go to MainActivity alone. -->
+        <activity
+            android:name=".plates.PlateWindowActivity"
+            android:theme="@style/Theme.WingtipMaps"
+            android:exported="false"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" />
 
         <!-- The app's actions and entities for Gemini and the system's
              agents (AppFunctions, Android 16 and later; ai/functions/):
@@ -150,12 +196,6 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
-        <!-- The ATC copilot's listening with the screen off (atc/AtcListenService.kt). -->
-        <service
-            android:name=".atc.AtcListenService"
-            android:exported="false"
-            android:foregroundServiceType="microphone" />
-
         <!-- The home screen's Next Flight widget (widget/NextFlightWidget.kt),
              a Glance widget; the launcher talks to its receiver. -->
         <receiver
@@ -169,12 +209,6 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/next_flight_widget_info" />
         </receiver>
-
-        <!-- The cockpit receiver's listening with the screen off (receiver/ReceiverService.kt). -->
-        <service
-            android:name=".receiver.ReceiverService"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
     </application>
 
 </manifest>

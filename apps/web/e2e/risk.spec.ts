@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer, slow, openTab, openSection, controlsInSight } from "./helpers";
+import { settle, sideDrawer, slow, openTab, openSection, controlsInSight, openBriefMenu } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -40,7 +40,7 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
       body: JSON.stringify({
         id: 1,
         departureIdent: "C81",
-        destinationIdent: "KDLH",
+        destinationIdent: "KMSN",
         stops: [],
         aircraftTailNumber: null,
         cruiseAltitudeFt: null,
@@ -55,9 +55,12 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
     });
   });
 
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
+  // A short flight, well within a 172's tanks: C81 to KDLH, 290 nm, is
+  // short of fuel and its reserve on a day of headwinds (the tanks'
+  // shortfall a no-go, 91.151), which is not the quiet day this means.
+  await page.goto("/app/plan?dep=C81&dest=KMSN&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   const drawer = sideDrawer(page);
   await openTab(page, "Brief");
   await openSection(page, "Risk Assessment");
@@ -70,10 +73,10 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
   await expect(drawer.getByTestId("risk-check-fatigue")).toHaveAttribute("aria-checked", "true");
   await drawer.getByTestId("risk-check-alcohol").click();
   await expect(drawer.getByTestId("risk-level")).toContainText("High");
-  await expect(drawer.getByTestId("risk-flag")).toContainText("High risk");
+  await expect(drawer.getByTestId("risk-flag")).toContainText("High Risk");
 
   await controlsInSight(page);
-  await drawer.getByTestId("share-route").click();
+  await openBriefMenu(page);
   await page.getByTestId("save-flight-button").click();
   await expect.poll(() => filed?.risk?.level).toBe("high");
   expect(filed!.risk!.factors).toEqual(

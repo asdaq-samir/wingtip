@@ -7,6 +7,7 @@ import { TEXT } from "../../lib/text";
 import { lookOf, type ShownField } from "./flowLook";
 import { FlowTrack } from "./FlowTrack";
 import { hourName, useWeatherFlow, type FlowFrame, type Span } from "./useWeatherFlow";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 const DATE = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" });
 /** The date beside the precipitation's 1h | 12h, short, so it fits a
@@ -45,20 +46,22 @@ export function FlowBar() {
   const name = lookOf(flow.field).name;
   const frame = flow.frame;
   const at = frame ? new Date(frame.valid) : null;
-  const status = flow.failed
-    ? "Model weather isn't available right now"
-    : flow.loading
-      ? "Fetching model weather…"
-      : !flow.frames.length
-        ? "No model weather yet"
-        : null;
+  const status = flow.offline
+    ? "Model weather: no connection"
+    : flow.failed
+      ? "Model weather isn't available right now"
+      : flow.loading
+        ? WORDING.fetchingModelWeather
+        : !flow.frames.length
+          ? "No model weather yet"
+          : null;
   // What the hour shown is, so a pilot knows which (the owner, 2026-11-12):
   // the radar's mosaic for an hour past on the precipitation, observed;
   // every other picture a forecast, an hour to come said as how far ahead.
   const observed = flow.field === "precip" && !!frame?.past && !!frame.radar_tiles;
   const ahead = !frame ? null : observed ? "Observed" : frame.past ? "Forecast" : `Forecast ${hourName(flow.frames, flow.shown)}`;
   return (
-    <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
+    <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px)+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
       {/* The stock Card in the map's glass; its content is the Base UI
           toolbar, so the bar keeps its one tab stop and its keys. */}
       <Card

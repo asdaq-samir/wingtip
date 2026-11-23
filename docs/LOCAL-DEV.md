@@ -8,6 +8,10 @@ scripts that keep the owner's Mac tidy. What the services are is
 
 - **Docker Desktop** with Compose v2. Nothing else is installed natively:
   every service builds its own image, and the checks run in containers.
+  Its containers' logs are kept whole by default and grow inside Docker's
+  disk for as long as a container lives; in Settings, Docker Engine, add
+  `"log-opts": {"max-size": "20m", "max-file": "3"}` to bound them (it
+  takes effect for containers made after it; the ops audit, 2026-11-21).
 - **Git** and **make** (it ships with macOS and every Linux).
 - **No API key for a model.** The server calls none: its Claude features
   were taken out on 2026-11-12
@@ -96,7 +100,7 @@ Every port is on `127.0.0.1` unless `.env` says otherwise (below).
 | Health | [localhost:8080/actuator/health](http://localhost:8080/actuator/health) | gateway |
 | The planner's API docs | [localhost:8084/docs](http://localhost:8084/docs) | planner |
 | The sign-in inbox | [localhost:8025](http://localhost:8025) | mailpit |
-| Jupyter (token `wingtip`) | [localhost:8888](http://localhost:8888) | ml, on request |
+| Jupyter (its address and token in `docker compose logs ml`, or `JUPYTER_TOKEN` from `.env`) | [localhost:8888](http://localhost:8888) | ml, on request |
 | Traces | [localhost:16686](http://localhost:16686) | jaeger, on request |
 
 The apps only ever talk to the gateway; it proxies `/api/planner/*` to
@@ -133,8 +137,9 @@ docker compose up -d
   tiles within 10 nm of the course with the course, checkpoints and nav
   log. The briefing and the weather are not kept, since a cached METAR
   could only be shown as if it were current.
-- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens Jupyter (8888) too. It has no
-  password and runs code. The planner (8084) and the database stay on
+- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens Jupyter (8888) too. It runs code,
+  behind its token alone: a random one each start (`docker compose logs
+  ml`), or `JUPYTER_TOKEN` from `.env`, never a word in the repository. The planner (8084) and the database stay on
   loopback whatever it says: the planner answers without
   sign-in, and its developer routes are checked by the gateway alone, so
   another device reaches it through the gateway.
@@ -258,7 +263,7 @@ network:
 | gateway | each request (Micrometer Tracing), tagged `wingtip.request_id`; the `traceparent` and `X-Request-Id` on every call to the planner | `management.tracing` in application.yml, `gateway/tracing/` |
 | planner | each request (FastAPI) under the gateway's; each rule asked of the engine, `engine <rule>` with `wingtip.engine.rule` and no payload; each weather product read, `weather_store.read`; each source asked with requests; threads and pools kept in the trace | `app/tracing.py` over `wingtip/tracing.py` |
 | weather | each product's fetch, `fetch <product>`, a trace of its own, the sources under it | `wingtip/tracing.py` |
-| ingest | each round of following airplanes, `follow round`, with its adsb.fi asks | `wingtip/tracing.py` |
+| ingest | each round of following airplanes, `follow round`, with its adsb.lol asks | `wingtip/tracing.py` |
 
 Each call the web app makes carries an `X-Request-Id` (`lib/api/requestId.ts`);
 the gateway answers with it and writes it on the request's log lines. In
@@ -283,14 +288,16 @@ All in `scripts/dev/`, each with its usage at its top.
 | `dev.sh doctor` or `dev.sh up` | What `make dev` and `make doctor` run (First run, above) |
 | `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of the turns the swap watcher allows (below), waiting while memory is short; `--alone` takes the whole machine for a measurement |
 | `swap-watch.sh`, `install-swap-watch.sh` | Full throttle without swapping: a LaunchAgent that holds the heavy-turn limit as high as the Mac takes (below) |
-| `branch-specs.sh [--list]` | The browser specs a branch's change reaches (`apps/web/scripts/reached-specs.mjs`), run on its own page beside the live stack before its push, the pass recorded for the pre-push hook (decision 0048); over 30, the `@smoke` ones, and the pull request runs all |
-| `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
+| `branch-specs.sh [--list] [--from-base]` | The browser specs reached (`apps/web/scripts/reached-specs.mjs`) by what changed since the branch's last pass (the first run, or `--from-base`: since the branch it builds on), run on its own page, served on a free port, beside the live stack before its push, the pass recorded as its commit and tree for the pre-push hook (decision 0048 and its amendment); over 30, the `@smoke` ones and the specs changed, and the pull request runs all |
+| `ci-stack.sh up\|page\|run [--cpus N] <args>\|port\|logs\|down` | A local copy of CI's e2e stack from this worktree: a compose project of the worktree's own (`wingtip-ci-<worktree>`) on free ports Docker picks (`up` and `port` print them), `infra/docker-compose.ci.yml` (`CHARTS_AUTO_REFRESH=0`, no cycle pack), the cut Chicago overlay tiles, the images and page built from the checkout; `run` passes Playwright's arguments, on the phone project with `CI=1` and no retries, `--cpus N` holding the browsers to N CPUs; `down` removes it all, images and page too |
+| `validate-wave.sh <wave>` | A wave's validation, on GitHub (decision 0054): pushes this checkout's commit, the wave's tip, to `claude/validate-<wave>`, whose run (`validate-wave.yml`) is every area, the whole browser suite over 16 shards and both phones; prints the run's link ([CI.md](CI.md#validating-a-wave)) |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
 | `simulators.sh [ios\|android\|both] [--tree <dir>]` | The iPhone simulator and the Android emulator, each with the app built for the live stack and launched ([above](#the-phone-simulators)) |
 | `tidy-local.sh [--dry-run]` | Removes merged, clean worktrees and branches and stopped scratch containers; never volumes, never a running agent's worktree |
 | `tidy-branches.sh [--dry-run]` | Removes the `~/Developer/wingtip-*` worktrees whose commit is on `origin/claude/integration` or `origin/main`, with nothing uncommitted and untouched for six hours (never `wingtip`, `wingtip-live` or a locked one), then deletes local `worktree-agent-*` branches already on `origin/main` |
-| `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-sccache*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed; then `tidy-build-caches.sh` (Shared build caches, below) |
+| `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-sccache*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw-<leg>`, one per Python leg) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed; then `tidy-build-caches.sh` (Shared build caches, below) |
 | `backup-db.sh`, `install-backup.sh` | The nightly database dump (below) |
+| `restore-drill.sh [backup]` | A backup (the server's night from S3, or the Mac's newest dump) restored into a scratch Postgres, checked against its manifest, the gateway started on it; everything removed after ([RUNBOOKS.md](RUNBOOKS.md#the-restore-drill)) |
 | `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
 | `mcp_token.py` | A token for the connector (`/mcp`) from the stack's own sign-in, as Claude gets one; the Inspector and Claude or ChatGPT through a tunnel are in [MCP-CONNECTOR.md](MCP-CONNECTOR.md) |
 
@@ -320,6 +327,9 @@ counts compressed memory as free: on 2026-11-12 the Mac swapped about
 whole, the newest 14 kept, hand-named dumps (`db-before-*.sql.gz`) never
 touched. Its log is `~/Library/Logs/wingtip-db-backup.log`;
 `install-backup.sh --now` runs one at once and `--remove` takes it out.
+`scripts/dev/restore-drill.sh` restores the newest into a scratch Postgres
+and starts the gateway on it, to prove it restores
+([RUNBOOKS.md](RUNBOOKS.md#the-restore-drill)).
 The server's backups are in [README-AWS.md](README-AWS.md#backups-and-restore).
 
 ## The linters and formatters

@@ -12,3 +12,8 @@
 -keep class com.sun.jna.** { *; }
 -keepclassmembers class * extends com.sun.jna.** { public *; }
 -keep class app.wingtipmaps.android.engine.ffi.** { *; }
+
+# PdfBox-Android (the documents reader's outline and search) names the
+# JPEG 2000 decoder it uses where one is present (com.gemalto.jp2, not a
+# dependency of the app): its README's rule, so R8 does not fail on it.
+-dontwarn com.gemalto.jp2.**

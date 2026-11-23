@@ -113,6 +113,8 @@ export function useReadyToFly() {
           briefing,
           alternate,
           notamsAtMs: notams.dataUpdatedAt || null,
+          notamsFullSet: notams.data?.full_set ?? null,
+          notamsSince: notams.data?.coverage_since ?? null,
           kept,
           device,
         }),
@@ -120,7 +122,7 @@ export function useReadyToFly() {
     } catch {
       return null;
     }
-  }, [nowMs, plan, chart, cycles, briefing, alternate, notams.dataUpdatedAt, kept, device]);
+  }, [nowMs, plan, chart, cycles, briefing, alternate, notams.dataUpdatedAt, notams.data, kept, device]);
 
   const keeping = job.status === "keeping";
   /** The fixes the web can do in place; the rest are drawn as words. */

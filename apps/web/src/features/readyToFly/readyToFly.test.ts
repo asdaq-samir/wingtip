@@ -19,6 +19,8 @@ function parts(over: Partial<ReadyParts> = {}): ReadyParts {
     briefing: null,
     alternate: null,
     notamsAtMs: null,
+    notamsFullSet: null,
+    notamsSince: null,
     kept: null,
     device: { batteryPct: null, charging: null, location: null },
     ...over,
@@ -57,6 +59,11 @@ describe("ready to fly's facts", () => {
   test("the packs' edition is the planner's own data, which the web cannot update", () => {
     const input = readyInput(parts({ cycles: [{ key: "nasr", effective: "2026-10-29" } as ReadyParts["cycles"][number]] }));
     expect(input.packs).toEqual({ edition: "2026-10-29", can_update: false });
+  });
+
+  test("the NOTAMs' full set and the feed's day are sent as the planner said them", () => {
+    const input = readyInput(parts({ notamsAtMs: NOW_MS - 600_000, notamsFullSet: false, notamsSince: "2026-10-19" }));
+    expect(input.notams).toEqual({ fetched_at: 1_794_246_600, full_set: false, heard_since: "2026-10-19" });
   });
 
   test("what Keep for the Air holds is sent as it is, and none where nothing can be kept", () => {

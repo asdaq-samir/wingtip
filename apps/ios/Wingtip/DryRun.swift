@@ -47,7 +47,7 @@ final class DryRun {
     func start(course: Course, checkpoints: [Checkpoint], legs: [Leg], at now: Date = Date()) {
         let flown: Flown?
         do { flown = try Self.flight(course: course, checkpoints: checkpoints, legs: legs); problem = nil } catch {
-            problem = "The dry run couldn't be flown: \(error.localizedDescription)"
+            problem = Problems.say("The dry run could not be flown", error)
             return
         }
         guard let flown, flown.points.count >= 2 else { return }

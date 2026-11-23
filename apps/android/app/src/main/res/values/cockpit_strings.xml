@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The cockpit's tools on a tablet and a phone (the market-gap report's
+     items 4, 5 and 8): the plate beside the map, the scratchpad and the
+     weight and balance. -->
+<resources>
+    <string name="plate_beside">Beside the Map</string>
+    <string name="plate_beside_close">Close the plate beside the map</string>
+
+    <string name="scratchpad">Scratchpad</string>
+    <string name="scratchpad_line">Copy a clearance, the ATIS or your own notes, kept with this flight</string>
+    <string name="scratchpad_new">New Page</string>
+    <string name="scratchpad_blank">Blank</string>
+    <string name="scratchpad_craft">CRAFT Clearance</string>
+    <string name="scratchpad_atis">ATIS</string>
+    <string name="scratchpad_told">Takeoff and Landing</string>
+    <string name="scratchpad_undo">Undo the last stroke</string>
+    <string name="scratchpad_clear">Clear the ink</string>
+    <string name="scratchpad_delete">Delete Page</string>
+    <string name="scratchpad_ink">Writing area</string>
+    <string name="scratchpad_empty">Write a clearance, the ATIS or a note with a stylus or a finger, or type it in.</string>
+    <string name="field_clearance_limit">Clearance limit</string>
+    <string name="field_route">Route</string>
+    <string name="field_altitude">Altitude</string>
+    <string name="field_frequency">Departure frequency</string>
+    <string name="field_transponder">Transponder</string>
+    <string name="field_information">Information</string>
+    <string name="field_wind">Wind</string>
+    <string name="field_altimeter">Altimeter</string>
+    <string name="field_runway">Runway</string>
+    <string name="field_remarks">Remarks</string>
+    <string name="field_temperature">Temperature</string>
+    <string name="field_takeoff_distance">Takeoff distance</string>
+    <string name="field_landing_distance">Landing distance</string>
+
+    <string name="balance">Weight and Balance</string>
+    <string name="balance_line">What is aboard against the airplane\'s limits and its envelope</string>
+    <string name="balance_empty">Empty airplane</string>
+    <string name="balance_fuel">Fuel at the start, gal</string>
+    <string name="balance_fuel_poh">As the POH says</string>
+    <string name="balance_takeoff">Takeoff</string>
+    <string name="balance_landing">Landing</string>
+    <string name="balance_envelope">Center of gravity envelope</string>
+    <string name="balance_no_airplane">Pick your airplane to load it: nothing is assumed.</string>
+    <string name="balance_no_loading">This airplane\'s profile has no loading yet: add its weight and balance from its handbook.</string>
+    <string name="balance_within">Within its limits</string>
+</resources>

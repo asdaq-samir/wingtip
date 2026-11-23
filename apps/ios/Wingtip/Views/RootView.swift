@@ -76,13 +76,7 @@ struct RootView: View {
                             // read there alone, so this body is not run again.
                             screens.sheetEdge.plan = height
                         }
-                        .environment(\.sheetAtPill, detent == RootView.pill)
-                        .presentationDetents([RootView.pill, .half, .large], selection: $detent)
-                        .presentationBackgroundInteraction(.enabled(upThrough: .half))
-                        .interactiveDismissDisabled()
-                        // The system sheet settles at its detents with its own
-                        // feel; no tap of ours is added to a stock part (the
-                        // owner, 2026-11-10).
+                        .modifier(PlanSheetPresentation(detent: $detent))
                     }
             case .split:
                 SplitLayout(map: map, search: search, openScreen: { openScreen($0) }, ask: { ask($0) })
@@ -101,6 +95,7 @@ struct RootView: View {
         // argument's screen (CI's pictures, the UI tests) wins over them.
         .onAppear {
             nav.split = layout == .split
+            AirportMarkMenu.shared.input = markPreview // a field's mark held: its card's preview
             let arguments = CommandLine.arguments
             if let at = arguments.firstIndex(of: "-layout"), at + 1 < arguments.count { layoutName = arguments[at + 1] }
             if let at = arguments.firstIndex(of: "-screen"), at + 1 < arguments.count, let screen = Screen(rawValue: arguments[at + 1]) {
@@ -124,13 +119,11 @@ struct RootView: View {
         .lookTint()
         // The key actions' taps, none with Reduce Motion on (Feel).
         .modifier(FeelHost())
-        // ⌘F, ⌘B and ⌘L with a hardware keyboard (KeyboardShortcuts).
-        .modifier(KeyboardShortcuts(search: { search.presented = true }, open: { openScreen($0) }))
+        // The menu bar's commands, Open Flight or Track, and drops (WindowHost).
+        .modifier(WindowHost(search: search, open: { openScreen($0) }, page: { nav.showPage($0) }, run: { await apply($0) }))
         // A link's, Siri's or a Shortcut's ask (the owner's, 2026-11-03:
         // Siri and Shortcuts through App Intents), and a card's own.
         .modifier(CommandHost { await apply($0, then: $1) })
-        // A field's mark held: its card's preview and the plan's three.
-        .onAppear { AirportMarkMenu.shared.input = markPreview }
         .environment(\.appCommand, AppCommandAction { command, then in Task { await apply(command, then: then) } })
     }
 

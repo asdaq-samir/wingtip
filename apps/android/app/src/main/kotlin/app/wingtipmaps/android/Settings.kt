@@ -92,7 +92,7 @@ class Kept internal constructor(private val store: DataStore<Preferences>) {
  * A file of the app's own that is not a setting (the flight recorded, the
  * path flown): read once where it is made, then written behind on the
  * settings' one IO writer (Kept.writing), in order, each write whole or
- * not at all (beside the file, then renamed over it). So a fix taken on
+ * not at all (AndroidX's AtomicFile, WholeFiles). So a fix taken on
  * the main thread never waits on the JSON or the disk. A test hands in
  * Dispatchers.Unconfined, to write at once.
  */
@@ -100,17 +100,12 @@ class KeptFile(private val file: File, private val writing: CoroutineDispatcher 
     private val writer = CoroutineScope(SupervisorJob() + writing)
 
     /** What the file holds; null where there is none or it cannot be read. */
-    fun read(): String? = runCatching { file.readText() }.getOrNull()
+    fun read(): String? = file.readWhole()
 
     /** `text` made and written behind, after every write asked before it. */
     fun write(text: () -> String) {
         writer.launch {
-            val _ = runCatching {
-                file.parentFile?.mkdirs()
-                val part = File(file.path + ".part")
-                part.writeText(text())
-                if (!part.renameTo(file)) part.delete()
-            }
+            val _ = runCatching { file.writeWhole(text()) }
         }
     }
 

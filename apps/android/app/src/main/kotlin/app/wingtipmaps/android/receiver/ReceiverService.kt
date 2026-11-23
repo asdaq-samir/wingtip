@@ -15,7 +15,11 @@ import app.wingtipmaps.android.notify.Notifications
  * receiver is a device the phone is connected to over the Wi-Fi). It reads
  * nothing itself: Receiver's socket and clock run in this process, and the
  * service is only Android's reason not to end it. Started and stopped by
- * Receiver as the receiver is heard and goes quiet.
+ * Receiver as the receiver is heard and goes quiet. Parked with the
+ * receiver, it is not declared in the manifest for the first store build
+ * (the feature review): Android then starts nothing, and the receiver is
+ * heard while the app is in front. Declared again, with
+ * FOREGROUND_SERVICE_CONNECTED_DEVICE, when the receiver comes back.
  */
 class ReceiverService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

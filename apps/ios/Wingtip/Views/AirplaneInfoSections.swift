@@ -4,17 +4,21 @@ import SwiftUI
 /// AirplaneInfo and AirplaneHistory): its public record in the planner's
 /// order -- Registration, Airplane, Engine, Airworthiness -- then where it
 /// is usually based, its safety and ownership history and the documents
-/// filed, each group saying in place where it has nothing. The FAA aircraft
-/// registry is public data, so its owner is shown for every airplane as
-/// the FAA publishes it: name, kind, town and state, co-owners (the owner,
-/// 2026-11-14: "For owner info though, it's public info"); the town, never
-/// the street. An owner who asked the FAA to withhold their name (49
-/// U.S.C. 44114(b)) is not in the record, and its row says so. `record` is
-/// the registry's, at once; `details` the rest, nil while asked.
+/// filed, each group saying in place where it has nothing. The registrant
+/// is named only on the pilot's own airplane or where it is an
+/// organisation; anyone else is their kind and state (RegistryNames, App
+/// Review 5.1.1(viii)); the town, never the street. An owner who asked the
+/// FAA to withhold their name (49 U.S.C. 44114(b)) is not in the record,
+/// and its row says so. `record` is the registry's, at once; `details` the
+/// rest, nil while asked; `own` whether it is one of the pilot's;
+/// `history` whether its base and its safety and ownership history are
+/// offered (Extra.airplaneHistory: another's only with Other Airplanes on).
 struct AirplaneInfoSections: View {
     let record: AircraftRegistration?
     let details: APIAirplaneDetails?
     let detailsFailed: Bool
+    let own: Bool
+    let history: Bool
 
     var body: some View {
         if let full = details?.registration ?? record {
@@ -25,15 +29,17 @@ struct AirplaneInfoSections: View {
         } else {
             Section { Text("The FAA's registry has no record of this N-number.").foregroundStyle(.secondary) }
         }
-        AirplaneHistorySections(details: details, failed: detailsFailed)
+        if history { AirplaneHistorySections(details: details, failed: detailsFailed, own: own) }
     }
 
     private func registration(_ full: AircraftRegistration) -> some View {
         Section("Registration") {
-            fact("Owner", full.owner ?? "Not in the record")
-            fact("Owner type", full.ownerType)
-            fact("Town", Self.town(full.city, full.state ?? (full.country != "US" ? full.country : nil)))
-            fact("Co-owners", full.coOwnerNames.flatMap { $0.isEmpty ? nil : $0.joined(separator: ", ") } ?? full.coOwners.flatMap { $0 > 0 ? String($0) : nil })
+            let named = RegistryNames.named(ownerType: full.ownerType, own: own)
+            fact("Owner", RegistryNames.owner(full, own: own))
+            // Not named, the Owner row is already the kind and state.
+            if named { fact("Owner type", full.ownerType) }
+            fact("Town", RegistryNames.town(full, own: own))
+            fact("Co-owners", RegistryNames.coOwners(full, own: own))
             fact("Status", full.status)
             fact("Issued", Self.day(full.certificateIssued))
             fact("Expires", Self.day(full.expires))
@@ -68,7 +74,7 @@ struct AirplaneInfoSections: View {
         let engine = details?.engine
         let hp = engine?.horsepower ?? full.horsepower
         let thrust = engine?.thrustLb ?? full.thrustLb
-        let power = hp.map { "\($0.formatted()) hp" } ?? thrust.map { "\($0.formatted()) lb thrust" }
+        let power = hp.map { "\($0.formatted(.number.locale(Format.locale))) hp" } ?? thrust.map { "\($0.formatted(.number.locale(Format.locale))) lb thrust" }
         if full.engine != nil || engine != nil || power != nil {
             Section("Engine") {
                 fact("Model", [engine?.manufacturer, engine?.model].compactMap { $0 }.joined(separator: " ").nonEmpty ?? full.engine)
@@ -112,11 +118,12 @@ struct AirplaneInfoSections: View {
 struct AirplaneHistorySections: View {
     let details: APIAirplaneDetails?
     let failed: Bool
+    let own: Bool
 
     var body: some View {
         if let details {
             if details.based?.field != nil || details.basedPending == true {
-                Section("Usually based at") {
+                Section("Usually Based At") {
                     if let based = details.based, let field = based.field {
                         CardRow(title: [field.ident, field.name].compactMap { $0 }.joined(separator: " · "),
                                 detail: based.count.flatMap { count in based.ends.map { "\(count) of \($0) takeoffs and landings" } })
@@ -125,7 +132,7 @@ struct AirplaneHistorySections: View {
                     }
                 }
             }
-            Section("Safety history") {
+            Section("Safety History") {
                 let cases = details.ntsb ?? []
                 if cases.isEmpty { Text("No NTSB accident or incident on record since 2008.").foregroundStyle(.secondary) }
                 ForEach(cases, id: \.evId) { c in
@@ -140,17 +147,17 @@ struct AirplaneHistorySections: View {
                     }
                 }
             }
-            Section("Ownership history") {
+            Section("Ownership History") {
                 let past = (details.pastRegistrations ?? []).sorted { ($0.sameAirframe == true ? 1 : 0) > ($1.sameAirframe == true ? 1 : 0) }
                 if past.isEmpty { Text("No past registrations.").foregroundStyle(.secondary) }
                 ForEach(Array(past.enumerated()), id: \.offset) { _, p in
                     CardRow(title: [p.nNumber, p.sameAirframe == true ? "This airframe" : "Another airplane", p.status].compactMap { $0 }.joined(separator: " · "),
-                            detail: [[p.manufacturer, p.model].compactMap { $0 }.joined(separator: " ").nonEmpty, p.year.map(String.init), p.owner,
-                                     AirplaneInfoSections.town(p.city, p.state), p.cancelDate.flatMap { AirplaneInfoSections.day($0).map { "canceled \($0)" } },
+                            detail: [[p.manufacturer, p.model].compactMap { $0 }.joined(separator: " ").nonEmpty, p.year.map(String.init),
+                                     RegistryNames.pastOwner(ownerType: p.ownerType, owner: p.owner, city: p.city, state: p.state), p.cancelDate.flatMap { AirplaneInfoSections.day($0).map { "canceled \($0)" } },
                                      p.exportCountry.map { "exported to \($0)" }].compactMap { $0 }.joined(separator: " · ").nonEmpty)
                 }
             }
-            Section("Documents filed") {
+            Section("Documents Filed") {
                 let documents = details.documents ?? []
                 if documents.isEmpty, details.reservation == nil { Text("None filed in the last month.").foregroundStyle(.secondary) }
                 ForEach(Array(documents.enumerated()), id: \.offset) { _, d in
@@ -159,14 +166,14 @@ struct AirplaneHistorySections: View {
                                      d.entered.flatMap { AirplaneInfoSections.day($0).map { "entered \($0)" } }].compactMap { $0 }.joined(separator: " · ").nonEmpty)
                 }
                 if let r = details.reservation {
-                    CardRow(title: "N-number reserved",
-                            detail: [r.registrant, AirplaneInfoSections.town(r.city, r.state), AirplaneInfoSections.day(r.reserved), r.kind,
+                    CardRow(title: "N-Number Reserved",
+                            detail: [RegistryNames.reservedBy(r.registrant, city: r.city, state: r.state, own: own), AirplaneInfoSections.day(r.reserved), r.kind,
                                      r.changeTo.map { "changing to \($0)" }].compactMap { $0 }.joined(separator: " · ").nonEmpty)
                 }
             }
         } else {
             Section("History") {
-                Text(failed ? "Its history couldn't be fetched. Try again in a moment." : "Fetching its history…")
+                Text(failed ? Wording.historyNotFetched : String(localized: "Fetching its history…"))
                     .foregroundStyle(failed ? AnyShapeStyle(WingtipInk.problem) : AnyShapeStyle(.secondary))
             }
         }

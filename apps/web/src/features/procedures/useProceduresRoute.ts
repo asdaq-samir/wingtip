@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { useQueries } from "@tanstack/react-query";
 import { callEngine } from "../../lib/engine/engine";
-import { useWindPicks, legOf, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
+import { useWindPicks, legOf, landingRunway, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
 import type { ProcedureList, ProcedureSummary } from "../../lib/api/types";
 import { plateQuery, proceduresQuery } from "../../lib/queryClient";
 import { approachRunway, sameField, type PickedProcedure } from "../../lib/procedures";
@@ -68,7 +68,10 @@ function fieldsOpenAtFirst(): boolean {
  * and the fuel in the tanks at each point. The list itself is drawn by
  * ProceduresRoute and its parts (features/procedures).
  */
-export function useProceduresRoute(props: ProceduresRouteProps) {
+export function useProceduresRoute(given: ProceduresRouteProps) {
+  // Read flat by the list's parts: the route's data and each group's fields.
+  const { runways, procedurePicks, pointActions, stopPlans, ...data } = given;
+  const props = { ...data, ...runways, ...procedurePicks, ...pointActions, ...stopPlans };
   const {
     airports,
     rows,
@@ -90,6 +93,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     routePoints,
     stopsFull = false,
     fuel = null,
+    tanks: ownTanks,
     routeLine = null,
   } = props;
   // The procedure on its own page in the sheet, over its kind's list.
@@ -131,8 +135,10 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   // circling minimums -- the one plate the map draws (PlatesGl).
   const approachesIn = inRoute.filter((p) => p.kind === "approach");
   const plates = useQueries({ queries: approachesIn.map((p) => plateQuery(p.ident, p.id)) });
+  // Landed by an approach once it is activated: one only loaded is not
+  // flown, the field's runway landed on as with none.
   const landingOf = (ident: string): Landing | null => {
-    const i = approachesIn.findIndex((p) => sameField(p.ident, ident));
+    const i = approachesIn.findIndex((p) => sameField(p.ident, ident) && !p.loaded);
     return i < 0 ? null : { runway: approachesIn[i]!.runway, circling: plates[i]?.data?.circling, name: approachesIn[i]!.label };
   };
   const listOf = (ident: string): ProcedureList | undefined => lists[airports.findIndex((a) => sameField(a.ident, ident))]?.data;
@@ -155,18 +161,36 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   // One of a kind at a field: a new pick there takes the old one's place.
   const pick = (ident: string, kind: Kind, next: { id: string; transition: string | null; direct?: string | null } | null) => {
     const kept = procedures.filter((p) => !(sameField(p.ident, ident) && kindOf(p) === kind));
-    const made = next ? { ident, ...next } : null;
+    // An approach picked is loaded, not flown, until the pilot activates
+    // it on the timeline (the owner, 2026-11-22: Garmin's load, then
+    // activate); a new transition of one activated keeps it so, and a
+    // Direct To one of its fixes activates it, as a GPS navigator's does.
+    const was = pickOf(ident, kind);
+    const loaded = kind === "approach" && !next?.direct && (!was || was.id !== next?.id || !!was.loaded);
+    const made = next ? { ident, ...next, ...(loaded ? { loaded } : { missed: !!was?.missed }) } : null;
     onProcedures(made ? [...kept, made] : kept, made);
     // An approach picked lands on its own runway: the field's runway chip
     // goes to it, kept in step with the approach (at the owner's ask);
-    // another only by circling (PatternChips).
+    // another only by circling (PatternChips). The map stays on the
+    // approach just picked, not the runway's pattern: a loaded approach
+    // leaves the field's pattern drawn, and its fit, at zoom 13, put the
+    // approach's transition and hold off the screen (procedures-approach.spec).
     const name = next && kind === "approach" ? listOf(ident)?.procedures.find((q) => q.id === next.id)?.name : undefined;
     const runway = name ? approachRunway(name) : null;
-    if (runway) onPick(ident, runway);
+    if (runway) onPick(ident, runway, false);
   };
   const close = () => onAt(null);
-  // The runway picked at a field, and a stop's to leave from.
-  const chosenAt = (ident: string) => picked.get(ident) ?? null;
+  // The runway landed on at a field, and a stop's to leave from. With an
+  // approach, the approach's own straight in, another only where the pilot
+  // picked it and the plate publishes circling minimums (the engine's
+  // landing_runway, AIM 5-4-20): "Land RWY 9" with KDLH's ILS 09, where
+  // the tray stood open with nothing picked (the HIG review's Q3).
+  const landedOn = (ident: string) => {
+    const now = picked.get(ident) ?? null;
+    const landing = landingOf(ident);
+    return landing ? landingRunway(landing, now, now !== null && !autoPicked.has(`land:${ident}`)).runway : now;
+  };
+  const chosenAt = (ident: string) => landedOn(ident);
   const takeoffAt = (ident: string) => takeoffs.get(ident) ?? null;
   // Each field of the route, its runway picked into the wind until the
   // pilot picks one or none, at the owner's ask ("a preselected runway into
@@ -205,6 +229,15 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
           : [`takeoff:${a.ident}:${wind.ident}`]),
       ];
     })
+    // With an approach, its own runway written to the address where none
+    // was picked or the wind's was (landedOn), so the plan flies it; no
+    // wind is waited for.
+    .concat(
+      airports.flatMap((a) => {
+        const land = landingOf(a.ident) && !preselectedLand(a) ? landedOn(a.ident) : null;
+        return land && land !== picked.get(a.ident) ? [`land:${a.ident}:${land}`] : [];
+      }),
+    )
     .join(",");
   // Save waits while a field's wind is still coming (features/plan/windPicks): its
   // runway is picked into it as it comes, and the route planned again.
@@ -224,9 +257,9 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
       else onPreselectTakeoff(ident, end);
     }
     // Still pending while a pick just made is on its way into the address,
-    // so the nav log is not asked for in between (usePlan's `settling`, the
-    // audit's WEB-14); the render that brings it runs this again. Never
-    // held for good: a pick that does not land lets go after a second.
+    // so Save does not keep the plan from before it (features/plan/windPicks);
+    // the render that brings it runs this again. Never held for good: a
+    // pick that does not land lets go after a second.
     useWindPicks.setState({ pending: windComing || picking });
     if (!picking) return;
     const letGo = window.setTimeout(() => useWindPicks.setState({ pending: false }), 1000);
@@ -252,7 +285,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     const found = routePoints.findIndex((p, j) => j > 0 && j < routePoints.length - 1 && sameField(p, ident));
     return found >= 0 ? found : undefined;
   };
-  const tanks = tanksAt(rows, fuel);
+  const tanks = tanksAt(rows, fuel, ownTanks);
   const points = rows.filter((r) => r.kind !== "checkpoint" && r.kind !== "toc" && r.kind !== "tod");
   const field = on ? airports.find((a) => sameField(a.ident, on.ident)) : undefined;
   const list = on ? listOf(on.ident) : undefined;
@@ -268,7 +301,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
           .find((p) => !on.pick!.runway || p.runway === on.pick!.runway) ?? null)
       : null;
   if (wanted && on) setPage({ at: on, procedure: wanted });
-  const stale = list?.stale ? `Out of date: the ${cycleDate(list.cycle)} cycle, as the current one could not be had` : null;
+  const stale = list?.stale ? `Out of date: the ${cycleDate(list.cycle)} cycle, as the current one could not be fetched` : null;
 
   return {
     ...props,

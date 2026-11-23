@@ -14,7 +14,7 @@ struct ProblemLine: View {
     /// The failure of something the screen worked out (an engine rule's
     /// Result), said with what it was for; nothing for a success.
     init<T>(_ result: Result<T, any Error>, _ what: String) {
-        if case .failure(let error) = result { problem = "\(what) couldn't be worked out: \(error.localizedDescription)" } else { problem = nil }
+        if case .failure(let error) = result { problem = Problems.words("\(what) could not be worked out", error) } else { problem = nil }
     }
 
     var body: some View {
@@ -27,5 +27,5 @@ struct ProblemLine: View {
 }
 
 #Preview("ProblemLine") {
-    List { ProblemLine("The planner could not be reached.") }
+    List { ProblemLine(Wording.plannerNotReached) }
 }

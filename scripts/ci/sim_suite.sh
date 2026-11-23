@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# The MSFS replay agent's checks, as ci.yml's test-sim job and
-# scripts/dev/check.sh's sim area both run them: built (without the SDK's
-# SimConnect, which only the trial's instance has), its format checked and
-# its unit tests run, in .NET's own SDK image at .tool-versions' version
-# (Docker is the runner's and the Mac's alike).
+# The test flight's checks, as ci.yml's test-sim job and the sim area of
+# the Mac's area checks (scripts/dev/check.sh) both run them. The MSFS
+# replay agent's .NET build left with the Studio (the feature review,
+# 2026-11-21).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-dotnet=$(scripts/build/toolchain.sh get dotnet)
-# tools/ whole, as Replay.Core embeds the shot list's schema from beside
-# the X-Plane plugin (tools/xplane-driver/wingtip_replay/shots.schema.json).
-docker run --rm -v "$PWD/tools:/src" -v wingtip-nuget:/root/.nuget/packages -w /src/msfs-agent \
-  -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_NOLOGO=1 "mcr.microsoft.com/dotnet/sdk:$dotnet" \
-  sh -c 'dotnet build MsfsAgent.slnx -v q && dotnet format MsfsAgent.slnx --verify-no-changes && dotnet test --solution MsfsAgent.slnx --no-build'
+# The test flight's Mac side (tools/sim-flight: the feed, GDL 90, the flight
+# scripts and the report; docs/SIM-FLIGHT.md): ruff and its unit tests, in
+# Python's own image at .tool-versions' version, the repository whole
+# (wingtip.units from services/planner, the GDL 90 fixture from apps/web).
+python=$(scripts/build/toolchain.sh get python)
+ruff=$(scripts/build/toolchain.sh get ruff)
+runner=$(grep -E '^pytest==' services/planner/requirements-dev.txt | sed 's/ .*//')
+docker run --rm -v "$PWD:/repo" -v wingtip-pip:/root/.cache/pip -w /repo/tools/sim-flight -e PYTHONDONTWRITEBYTECODE=1 \
+  "python:$python-slim" sh -c "pip install -q --root-user-action=ignore ruff==$ruff $runner && ruff check . && python -m pytest -q -p no:cacheprovider tests"

@@ -6,6 +6,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import MapPictureChoices from "./MapPictureChoices";
 import MapLayers from "./MapLayers";
 import LookChoice from "./LookChoice";
+import HazardChoice from "./HazardChoice";
 import {
   BASE_CHARTS,
   HEIGHT_STRETCHES,
@@ -29,7 +30,8 @@ import { useTerrainView, useTrueHeightView } from "../plan-map";
  * owner's screenshot, 2026-11-10): the charts as pictures (None first,
  * as the overlay's, the owner, 2026-11-14), the overlay
  * over them with its strength, in 3D how tall it stands its heights
- * (HeightsChoice), the four layers as tiles (MapLayers), and the app's
+ * (HeightsChoice), the four layers as tiles (MapLayers), the terrain
+ * hazards' colouring against the altitude (HazardChoice), and the app's
  * Look, Theme, Appearance, Sunlight and Own Ship, and the chart's Dimmer and
  * Contrast under them, last (LookChoice; the owner, 2026-11-14 and 2026-11-18). How the
  * map behaves -- the airport weather, the glide ring, the alerts, keeping
@@ -49,6 +51,7 @@ export default function MapCard() {
       <OverlayChoice />
       <HeightsChoice />
       <MapLayers />
+      <HazardChoice />
       <LookChoice />
     </div>
   );
@@ -109,7 +112,7 @@ function OverlayChoice() {
   return (
     <div className="flex flex-col gap-2">
       <MapPictureChoices
-        title="Base map"
+        title="Base Map"
         value={overlay}
         testId="overlay-select"
         onChange={(v) => prefs.setOverlay(v as MapOverlay)}

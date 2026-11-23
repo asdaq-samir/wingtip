@@ -42,11 +42,13 @@ const NAVAID_PICTURES: Picture[] = [
 
 /** The dark tab an airspace's altitudes sit in, as ForeFlight's: a
  *  rounded box bordered in its class's ink, its corners kept as drawn,
- *  stretched to the text. */
+ *  stretched to the text; the chart showing through it a little and its
+ *  edge a hairline, so it reads as a note on the chart, not a block over
+ *  it (the readability list's G, 2026-11-20). */
 const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map((c) => [
   airspaceTab(c),
   () =>
-    `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="${CHART.tag}" fill-opacity="0.92" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1.5"/></svg>`,
+    `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="${CHART.tag}" fill-opacity="0.72" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1"/></svg>`,
   { inset: 4 },
 ]);
 

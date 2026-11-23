@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
-import { HOLD_AT_EDGE } from "./sheet/insets";
+import { CARD_FOOT_ROOM, HOLD_AT_EDGE } from "./sheet/insets";
 import { FloatingBar, FloatingBarFace } from "./FloatingBar";
-import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM } from "./floatingBarLook";
+import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM, FLOATING_BAR_ROOM } from "./floatingBarLook";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
@@ -58,9 +58,12 @@ export function CardTabBar<T extends string>({
     // to clear it. Only the capsule takes taps. No sides of its own: the
     // card's 16 points (SheetCard) are the room either side, as FPL's
     // foot's are its bar's, so the bar is capped at the same width on both.
+    // Over the card's own room under its content (CARD_FOOT_ROOM): at the
+    // pages' end the bar rests where it rests pinned, where it rose by that
+    // room as the last page was scrolled to its end (card-scroll.spec).
     <div
-      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3", HOLD_AT_EDGE)}
-      style={{ paddingBottom: FLOATING_BAR_FOOT_ROOM }}
+      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3", FLOATING_BAR_ROOM, HOLD_AT_EDGE)}
+      style={{ paddingBottom: FLOATING_BAR_FOOT_ROOM, marginBottom: `calc(-1 * ${CARD_FOOT_ROOM})` }}
       data-testid={testId}
     >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}
@@ -78,8 +81,11 @@ export function CardTabBar<T extends string>({
               value={t.value}
               className={cn(
                 FLOATING_BAR_ITEM,
-                // The picked tab in the tint, as iOS 26's tab bar, on the bar's soft pill.
-                "data-active:text-primary dark:data-active:border-transparent dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
+                // The picked tab in the tint, as iOS 26's tab bar, on the bar's
+                // soft pill: Fly Here's blue by day, and by night the look's
+                // light tint, which reads on the dark glass where the deep
+                // primary read 2.4 to 2.8:1 (the iOS audit's P15).
+                "data-active:text-primary dark:data-active:border-transparent dark:data-active:text-tint group-data-[variant=default]/tabs-list:data-active:shadow-none",
               )}
               disabled={disabled}
               aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}

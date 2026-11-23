@@ -9,9 +9,9 @@ struct CoachModelTests {
     nonisolated static let plan = #"""
     {"today":"2026-11-09",
      "due":[
-      {"key":"night_passengers","id":"due:night_passengers","label":"Passengers at night","rule":"14 CFR 61.57(b)","until":"2026-11-18","from":null,"days_left":9,"status":"due_soon","detail":"3 of 3 night landings"},
-      {"key":"flight_review","id":"due:flight_review","label":"Flight review","rule":"14 CFR 61.56(c)","until":"2027-05-31","from":null,"days_left":203,"status":"current","detail":"Done 2025-05-12"},
-      {"key":"instrument","id":"due:instrument","label":"Instrument currency","rule":"14 CFR 61.57(c)","until":null,"from":null,"days_left":null,"status":"lapsed","detail":"2 of 6 approaches"},
+      {"key":"night_passengers","id":"due:night_passengers","label":"Passengers at Night","rule":"14 CFR 61.57(b)","until":"2026-11-18","from":null,"days_left":9,"status":"due_soon","detail":"3 of 3 night landings"},
+      {"key":"flight_review","id":"due:flight_review","label":"Flight Review","rule":"14 CFR 61.56(c)","until":"2027-05-31","from":null,"days_left":203,"status":"current","detail":"Done 2025-05-12"},
+      {"key":"instrument","id":"due:instrument","label":"Instrument Currency","rule":"14 CFR 61.57(c)","until":null,"from":null,"days_left":null,"status":"lapsed","detail":"2 of 6 approaches"},
       {"key":"medical","id":"due:medical","label":"Medical","rule":"14 CFR 61.23","until":null,"from":null,"days_left":null,"status":"unknown","detail":"Not given"}],
      "reminders":[{"key":"night_passengers","text":"Night passenger currency runs out in 9 days","until":"2026-11-18","days_left":9}],
      "evidence":[{"id":"ev:1","flown_on":"2026-10-20","place":"KMSN","area":"unstable_approach","text":"Below the glidepath at 400 ft above the field"}],

@@ -1,9 +1,10 @@
 import Foundation
 import FoundationModels
 import os
+import Synchronization
 
 /// Who wrote an answer the pilot reads, for the caption over it.
-enum AskOrigin: String, Equatable, Sendable {
+nonisolated enum AskOrigin: String, Equatable, Sendable {
     case device, cloud, engine
 
     var caption: String {
@@ -17,7 +18,7 @@ enum AskOrigin: String, Equatable, Sendable {
 
 /// An answer worked out on the phone: the sentences and the figures they
 /// cite, who wrote them, and why the model did not, where it did not.
-struct OnDeviceAnswer: Equatable, Sendable {
+nonisolated struct OnDeviceAnswer: Equatable, Sendable {
     let words: Words
     let origin: AskOrigin
     var why: String?
@@ -48,28 +49,27 @@ struct OnDeviceAnswer: Equatable, Sendable {
 /// from what is shown withdraws it first. The model's partial output is
 /// streamed a whole, checked sentence at a time (OnDeviceAsk), never a
 /// half sentence whose number the guard has not seen.
-final class StreamedWords: @unchecked Sendable {
-    private let lock = NSLock()
-    private var shown: [String] = []
+final nonisolated class StreamedWords: Sendable {
+    private let shown = Mutex<[String]>([])
 
     func lines(for sentences: [String]) -> [AssistantLine] {
-        lock.lock()
-        defer { lock.unlock() }
-        if sentences.starts(with: shown) {
-            let new = sentences.dropFirst(shown.count)
-            guard !new.isEmpty else { return [] }
-            let text = (shown.isEmpty ? "" : " ") + new.joined(separator: " ")
+        shown.withLock { shown in
+            if sentences.starts(with: shown) {
+                let new = sentences.dropFirst(shown.count)
+                guard !new.isEmpty else { return [] }
+                let text = (shown.isEmpty ? "" : " ") + new.joined(separator: " ")
+                shown = sentences
+                return [.text(text)]
+            }
             shown = sentences
-            return [.text(text)]
+            return [.retract] + (sentences.isEmpty ? [] : [.text(sentences.joined(separator: " "))])
         }
-        shown = sentences
-        return [.retract] + (sentences.isEmpty ? [] : [.text(sentences.joined(separator: " "))])
     }
 }
 
 /// The model that words an answer from the tools' figures: Apple's on the
 /// phone, or a fake in a test (the simulator may have no model).
-protocol AskModel: Sendable {
+nonisolated protocol AskModel: Sendable {
     /// Why the model cannot answer here, else nil.
     var unavailableWhy: String? { get }
     /// The sentences, each citing the ids of the figures it rests on; the
@@ -81,7 +81,7 @@ protocol AskModel: Sendable {
 
 /// Apple's on-device model (Foundation Models, with Apple
 /// Intelligence on), its tools the engine's rules (OnDeviceTools).
-struct AppleAskModel: AskModel {
+nonisolated struct AppleAskModel: AskModel {
     var unavailableWhy: String? { AppleModels.unavailableWhy }
 
     static let instructions = """
@@ -165,7 +165,7 @@ struct AppleAskModel: AskModel {
 /// figures the tools gave (Words.checked: ids; NumberGuard: numbers), and
 /// the engine's own words (EngineWords) where it cannot or where none of
 /// its sentences passed. Never a figure of the model's own.
-struct OnDeviceAsk: Sendable {
+nonisolated struct OnDeviceAsk: Sendable {
     var model: any AskModel = AppleAskModel()
     var pins: FlightFigures.Pins = FlightFigures.packPins
 
@@ -211,7 +211,7 @@ struct OnDeviceAsk: Sendable {
     }
 }
 
-extension Log {
+nonisolated extension Log {
     /// The answers on the phone: the tools called, sentences kept.
     static let onDevice = Logger(subsystem: subsystem, category: "on-device")
 }

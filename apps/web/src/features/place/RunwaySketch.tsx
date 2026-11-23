@@ -1,5 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { TEXT_POINTS } from "../../lib/text";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { TEXT, TEXT_POINTS } from "../../lib/text";
 import { FT_PER_NM } from "../../lib/geo";
 import { numberHalfWidth, numbersOf, stripsOf, type SketchRunway } from "./runwayDrawing";
 import { closureMarksOf, MARK_STROKE, markHalf } from "./runwayClosures";
@@ -50,15 +50,23 @@ export function RunwaySketch({
   runways,
   lat,
   lon,
-  numberSize = TEXT_POINTS.caption,
+  numbers = "caption",
+  onWritten,
 }: {
   runways: SketchRunway[];
   lat: number;
   lon: number;
-  /** The ends' numbers' size, points: TEXT_POINTS.caption (iOS's Caption 2)
-   *  in the card's box, TEXT_POINTS.row full screen (SketchViewer). */
-  numberSize?: number;
+  /** The ends' numbers' type role: a caption (iOS's Caption 2) in the
+   *  card's box, a row's full screen (SketchViewer). Its class sets their
+   *  size and leading as every other text's (lib/text), its points
+   *  (TEXT_POINTS) the room the sketch leaves them. */
+  numbers?: keyof typeof TEXT_POINTS;
+  /** The numbers written, in the order drawn, one space between: the
+   *  words in sight, for the name of the button round the sketch (WCAG
+   *  2.5.3, Label in Name). Some ends find no room and are not written. */
+  onWritten?: (words: string) => void;
 }) {
+  const numberSize = TEXT_POINTS[numbers];
   const box = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   useLayoutEffect(() => {
@@ -115,6 +123,8 @@ export function RunwaySketch({
     const marked = placed.map((p, i) => ({ ...p, closed: p.closed || closures[i]!.whole, closure: closures[i]! }));
     return { w, h, strips: marked, numbers: numbersOf(marked, numberSize, gap, w, h) };
   }, [runways, lat, lon, size, numberSize]);
+  const written = drawn?.numbers.map((n) => n.end).join(" ") ?? "";
+  useEffect(() => onWritten?.(written), [onWritten, written]);
   return (
     <svg
       // Out of the flow, the box's size its own: an SVG's own default
@@ -198,26 +208,29 @@ export function RunwaySketch({
       )}
       {/* Each end's number past it, upright, over every strip, in the
           strips' ink with a casing of the box's ground so a crossing
-          runway does not cut through it. */}
-      {drawn?.numbers.map((n) => (
-        <text
-          key={n.key}
-          x={n.x}
-          y={n.y}
-          textAnchor="middle"
-          dominantBaseline="central"
-          data-runway-end={n.end}
-          fontSize={numberSize}
-          fontWeight={700}
-          fill="currentColor"
-          opacity={n.closed ? 0.35 : 1}
-          className="stroke-background"
-          strokeWidth={3}
-          paintOrder="stroke"
-          strokeLinejoin="round"
-        >
-          {n.end}
-        </text>
+          runway does not cut through it. A space between each, which an
+          SVG draws nothing of outside a <text>, so the words read in sight
+          are "09 27", not "0927", for the name round them (onWritten). */}
+      {drawn?.numbers.map((n, i) => (
+        <Fragment key={n.key}>
+          {i > 0 && " "}
+          <text
+            x={n.x}
+            y={n.y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            data-runway-end={n.end}
+            fontWeight={700}
+            fill="currentColor"
+            opacity={n.closed ? 0.35 : 1}
+            className={`stroke-background ${TEXT[numbers]}`}
+            strokeWidth={3}
+            paintOrder="stroke"
+            strokeLinejoin="round"
+          >
+            {n.end}
+          </text>
+        </Fragment>
       ))}
     </svg>
   );

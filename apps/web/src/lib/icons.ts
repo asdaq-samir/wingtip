@@ -1,7 +1,9 @@
 import {
   ChartArea,
   ClipboardCopy,
+  FileText,
   CloudSun,
+  Info,
   Ellipsis,
   ListOrdered,
   LocateFixed,
@@ -45,10 +47,14 @@ export const ICON = {
   myLocation: Navigation,
   /** The AI brief, the route box's second button. */
   brief: Sparkles,
+  /** Filing the flight plan (FPL's File button beside its tab bar). */
+  file: FileText,
   /** The nav log, in the route's menu. */
   navLog: ListOrdered,
   /** The side view (Profile), the route box's first button. */
   profile: ChartArea,
+  /** An airplane's card from FPL's N-number pill. */
+  info: Info,
   /** The map's layers and weather. */
   mapLayers: MapLayers,
   /** A route, as a list's mark. */

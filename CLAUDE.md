@@ -97,7 +97,10 @@ integration branch"):
   checkout stays on `main`, and no session switches it or commits on it.
 - Each piece of work is a `claude/<topic>` branch, pushed once when the
   code is done, with no pull request yet. Pushing a `claude/` branch
-  starts no CI (`claude/native-*` does: don't use that name). Before that
+  starts no CI, but `claude/check-*` (a branch's early check on GitHub),
+  `claude/validate-*` and `claude/validate-failed/*` (a wave's validation,
+  below; decision 0062) and `claude/native-*` (the phones' own): don't
+  name work so. Before that
   push: a compile or type check of what changed, the generated files it
   needs, and **the change's own tests, run narrowly** (decision 0042):
   `vitest <files>` or `--changed`, `pytest <paths>`, `cargo test -p
@@ -106,9 +109,11 @@ integration branch"):
   owner, 2026-11-14): a spec is written with the code. **When a piece's
   web code is done, the browser specs it reaches pass before its push**
   (hard rule, decision 0048): `scripts/dev/branch-specs.sh` (the local
-  stack up) runs them on the branch's own page and records the pass; the
-  pre-push hook refuses a web push without one. A red spec is fixed, never
-  skipped, loosened or moved to the night.
+  stack up) runs those reached since its last pass (the first, since the
+  base) on the branch's own page and records the pass; the pre-push hook
+  refuses a web push without one. A spec red only on CI is run on
+  `scripts/dev/ci-stack.sh up|run <spec>|down`, a copy of CI's stack. A
+  red spec is fixed, never skipped, loosened or moved to the night.
 - Work that builds on an unmerged branch merges that branch in; nothing
   waits for a merge.
 - **The order, a hard rule** (the owner, 2026-11-14: "make all the code
@@ -119,6 +124,9 @@ integration branch"):
   and the worktrees, branches and simulators tidied; then live; then the
   phones' ports; then the validation of the wave's own changes. No merge,
   go-live or validation while a branch is still coding.
+- **Small waves** (decision 0054): 3 to 5 branches a wave, merged into
+  `claude/integration` and validated within the day; the next wave starts
+  from it.
 - **Live for the owner first:** once a wave is merged into
   `claude/integration`, `scripts/dev/go-live.sh` (in
   `~/Developer/wingtip-live`) tidies the Mac and moves the live tree to it,
@@ -130,16 +138,22 @@ integration branch"):
   as the proof of concept; the iPhone and Android follow only on the
   owner's word for that piece (the hook refuses phone edits and merges
   until its topic is in `~/.config/wingtip/phones-approved`).
-- **Enforced (decisions 0037, 0042):** `.claude/hooks/guard.py` lets a
-  narrow test run at any time and refuses a whole suite until the live
-  stack runs the current `claude/integration`.
-- **Then one validation pass, on GitHub** (decision 0042): the wave's
-  pull request to `main` and its CI (tier 1, about three minutes), whose
-  "CI passed" waits for every browser spec the wave reaches (decision
-  0048, 6 to 15 minutes more on a web change); the full browser suite
-  stays CI's nightly (decision 0034), and the Mac runs no suite for it. A failure is
-  reproduced with its narrow test, fixed in one commit set and pushed
-  once; the pull request merges by itself once "CI passed" is green
+- **Enforced (decisions 0042, 0054):** `.claude/hooks/guard.py` lets a
+  narrow test run at any time and refuses a whole suite on the Mac,
+  always: the Mac runs only narrow tests and quick checks.
+- **Then one validation pass, on GitHub** (decision 0054, the owner,
+  2026-11-21: "Do everything you can do"): the heavy validation (every
+  area in full, the whole browser suite, both phones) is the wave's tip
+  pushed to `claude/validate-<wave>` (`scripts/dev/validate-wave.sh
+  <wave>`), whose run (`validate-wave.yml`, ci.yml as the night runs it,
+  the browser suite over 16 shards) takes about 20 minutes on GitHub's
+  runners, free for a public repository (docs/CI.md, "Validating a
+  wave"). Once it is green, the wave's pull request to `main` and its CI
+  (tier 1, about three minutes), whose "CI passed" waits for every
+  browser spec the wave reaches (decision 0048). A failure is
+  reproduced with the narrow command its job's summary names, fixed in
+  one commit set, merged and pushed once to the same validate branch;
+  the pull request merges by itself once "CI passed" is green
   (auto-merge-agents.yml). Nothing merges red. CI failures are fixed in
   that pass, at most once more after it; an asked-for review is put right
   in "Address review:" commits.
@@ -171,7 +185,11 @@ integration branch"):
   owner's account suspended in October 2026).
 - Issues: "ready" (nothing left for the owner to decide) or "owner" (the
   owner decides, then labels it "ready"). Only the owner takes "owner" off.
-- How to check, ship and review: the skills in `.claude/skills`.
+- How to check, ship and review: the skills in `.claude/skills`. Outside
+  skills installed for the user (`~/.claude/skills`: Emil Kowalski's,
+  Anthropic's, Vercel's and others) are guidance only: where they differ,
+  this file, the stock-components rule, Apple's HIG, the design tokens and
+  the owner's decisions win, and validation stays at the end.
 
 ## Never
 
@@ -191,7 +209,8 @@ integration branch"):
 
 While writing code, a compile or type check and the change's own tests,
 narrowly (decision 0042); the table is what CI runs, and a whole area runs
-on the Mac only to reproduce a CI failure.
+on GitHub, in a wave's validation (decision 0054), never on the Mac: a CI
+failure is reproduced there with its narrow test.
 `scripts/dev/check.sh <area>` runs an area, `scripts/dev/check.sh
 all-changed` every area the branch and its uncommitted files touch. It
 runs in Docker (the phones on the host), each area in its own turn of
@@ -213,11 +232,9 @@ without it).
 | `ingest`, `weather`, `jobs` | each service's ruff and pytest | all |
 | `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` over `scripts/ci/engine_affected.py --all` | lint in `guards`, the touched crates, those that use them and the contract test / every crate |
 | `java` (`services/gateway/`) | `mvn -B test` (Docker, for Testcontainers) | all |
-| `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` / the full suites on the iPhone, iPad and iPhone Duo |
+| `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` on the iPhone and iPad / the full suites on the iPhone, iPad and iPhone Duo |
 | `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
-| `sim` (`tools/msfs-agent/`, `infra/sim-trial/`) | the agent's `dotnet build`, `dotnet format --verify-no-changes` and `dotnet test` (Docker), `cfn-lint` on the template, `shellcheck` on its scripts | all: `test-sim` (`scripts/ci/sim_suite.sh`) where its files change |
-| `xplane` (`tools/xplane-driver/`) | `ruff check . && pytest tests`, in the planner's wingtip image | all: `ruff` in `guards`, its tests `test-python`'s `xplane` leg where its files change |
 | `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new file over 300 lines, no grown one over 400), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine), `semgrep_check.py` (one home per constant or helper), `jscpd_check.py` (no new copy-paste), `simplicity_ratchet.py` (no count above its baseline), and on a phone change `phone_lint.sh` (SwiftLint, detekt) | all |
 
 - **Python outside check.sh** wants `pip install -r requirements-dev.txt`
@@ -227,7 +244,7 @@ without it).
 - **Formatting:** `scripts/dev/format.sh`, one pinned formatter a language;
   `--check` to check.
 - **Edit-time hook** (`.claude/settings.json`, `scripts/dev/simplicity_hook.py`):
-  after each Edit or Write in apps/, services/, engine/ or tools/, the
+  after each Edit or Write in apps/, services/ or engine/, the
   simplicity rules on that file, a second or two; a break comes back to
   be fixed at once.
 - **Pre-push hook** (`scripts/dev/install-hooks.sh` once per clone): `tsc`,
@@ -249,12 +266,12 @@ without it).
   write or update the spec for a change a pilot sees, with the code, and
   leave its run to the wave's validation on CI (the owner, 2026-11-14).
   Main's push runs only `@smoke` (and `@flight-critical`) after the merge,
-  one test per journey that proves it end to end; the rest run at night. A new spec tags its one `@smoke` or is
+  on the phone project and the iPhone's and iPad's WebKit, one test per journey that proves it end to end; the rest run at night. A new spec tags its one `@smoke` or is
   listed in `scripts/ci/test_tiers_nightly.txt`.
 - **CI stays lean** (docs/CI.md, "Rules" and "The tiers"; decision 0034):
   a pull request in about 3 minutes (tier 1: one `guards` job, the unit
   tests a change reaches, the phones' builds when touched); the browser
-  smoke, the images and the iPhone's UI smoke after merge on main's push
+  smoke, the images and the iPhone's and iPad's UI smoke after merge on main's push
   (tier 2, a failure one `ready` issue, no merge held); everything at
   night (tier 3). Each check in one tier and run once, only what a
   change touches, everything cached, newest versions, warnings fatal,
@@ -278,13 +295,17 @@ without it).
 
 ## The app on the phone
 
-Judge every screen at an iPhone's width against Apple's Human Interface
-Guidelines first. How cards open, close and scroll, the one search and
-the airport weather marks: docs/design/rules.md, on all three apps.
+Most pilots fly with an iPad, the primary device (decision 0058). Judge
+every screen on the iPad, in portrait, landscape and split views, as well
+as at an iPhone's width, against Apple's Human Interface Guidelines first
+(the `ipad-iphone-review` skill). How cards open, close and scroll, the
+one search and the airport weather marks: docs/design/rules.md, on all
+three apps.
 
-- Hit areas are 44 points, but controls never grow to get there: a
-  pseudo-element (`after:absolute after:-inset-…`) makes the area, and
-  rows sit at `gap-2` so the areas meet.
+- Hit areas are 44 points, but controls never grow to get there: the
+  shared `hit-*` utility makes the area (hand-written pseudo-element
+  areas are held at zero by the ratchet), and rows sit at `gap-2` so the
+  areas meet.
 - Stock components over hand-rolled ones, on every platform (shadcn on
   Base UI and React Aria on the web, SwiftUI, Material 3): the platform's
   own component even in a release candidate, never a copy of our own;

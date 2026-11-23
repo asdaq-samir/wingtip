@@ -94,7 +94,7 @@ fn a_session_says_wings_may_count_and_never_that_it_does() {
     assert!(unstable["wings"]["note"].as_str().unwrap().starts_with("May count"));
     assert_eq!(unstable["place"]["approach"], "ILS OR LOC RWY 36");
     // The reminder says the day and how far off, with its rule.
-    assert_eq!(got["reminders"][1]["text"], "Passengers at night: current until 18 Nov 2026, in 9 days (14 CFR 61.57(b)).");
+    assert_eq!(got["reminders"][1]["text"], "Passengers at Night: current until 18 Nov 2026, in 9 days (14 CFR 61.57(b)).");
 }
 
 #[test]

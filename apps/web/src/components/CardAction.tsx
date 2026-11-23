@@ -70,8 +70,11 @@ export function CardAction({
   const look = cn(
     // No edge on any, Fly Here's filled one too: the stock button's
     // clear one inset its fill a point, out of line with the tiles beside
-    // and under it (the sheet audit's F-B2).
-    "h-auto min-w-0 flex-col gap-0.5 rounded-xl border-0 px-1 py-1.5 [&_svg:not([class*='size-'])]:size-[20px]",
+    // and under it (the sheet audit's F-B2). Its glyph a fixed 20 px while
+    // its word grows, so the tiles stay inside the half sheet at a larger
+    // text size: size.glyph-card-action, a token, not an accident (the
+    // scale audit's Q2, the owner, 2026-11-21).
+    "h-auto min-w-0 flex-col gap-0.5 rounded-xl border-0 px-1 py-1.5 [&_svg:not([class*='size-'])]:size-(--size-glyph-card-action)",
     !filled &&
       cn(
         destructive ? "text-destructive-ink hover:text-destructive-ink" : "text-tint hover:text-tint",
@@ -82,11 +85,16 @@ export function CardAction({
         // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
         // under it says it is open.
         "aria-expanded:bg-foreground/8",
+        // By night the glass's 8% of the light foreground is a lighter grey
+        // under the tint, 4.43 to 1 on a side panel's card (the iOS audit's
+        // P15, an iPad's and a sideways iPhone's airport and airplane cards,
+        // the nightly run of 2026-11-20): 5% there.
+        "dark:bg-foreground/5",
       ),
   );
   const face = (
     <>
-      {busy ? <Spinner className="size-[20px]" aria-hidden="true" /> : icon}
+      {busy ? <Spinner className="size-(--size-glyph-card-action)" aria-hidden="true" /> : icon}
       {/* On one line, at the pilot's ask: "Fly Here" and "Add Stop" on
           two at a larger text size made every tile a line taller, and
           the card's tiles ran off the half sheet. Wrapped, not cut

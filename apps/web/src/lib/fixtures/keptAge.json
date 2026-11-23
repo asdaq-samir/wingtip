@@ -9,7 +9,7 @@
         "kind": "briefing"
       },
       "expected": {
-        "line": "Fetched 42 min ago",
+        "line": "Fetched 42m ago",
         "finding": "ok",
         "age_min": 42,
         "fresh_min": 60
@@ -23,7 +23,7 @@
         "kind": "briefing"
       },
       "expected": {
-        "line": "Fetched 60 min ago",
+        "line": "Fetched 1h ago",
         "finding": "caution",
         "age_min": 60,
         "fresh_min": 60
@@ -37,7 +37,7 @@
         "kind": "weather"
       },
       "expected": {
-        "line": "Fetched 3 h ago",
+        "line": "Fetched 3h ago",
         "finding": "caution",
         "age_min": 180,
         "fresh_min": 60
@@ -65,7 +65,7 @@
         "kind": "airports"
       },
       "expected": {
-        "line": "Fetched 48 h ago",
+        "line": "Fetched 2d ago",
         "finding": "ok",
         "age_min": 2880,
         "fresh_min": null
@@ -92,7 +92,7 @@
         "kind": "plan"
       },
       "expected": {
-        "line": "Fetched 90 min ago",
+        "line": "Fetched 1h 30m ago",
         "finding": "caution"
       }
     },

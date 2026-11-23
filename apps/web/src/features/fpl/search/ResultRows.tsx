@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from "react";
 import { cn } from "cn";
-import { ChartMark, KeptChartMark } from "../../../components/Favorites";
+import { ChartMark, KeptChartMark } from "../../../components/ChartMark";
 import { Button } from "../../../components/ui/button";
 import { CommandGroup, CommandItem, CommandSeparator } from "../../../components/ui/command";
 import { TEXT } from "../../../lib/text";
@@ -21,7 +21,7 @@ export function RoundIcon({ children, tone = "grey" }: { children: ReactNode; to
     <span
       aria-hidden="true"
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full [&_svg]:size-4.5",
+        "grid size-(--size-search-disc) shrink-0 place-items-center rounded-full [&_svg]:size-4.5",
         tone === "tint" ? "bg-tint text-primary-foreground" : "bg-muted text-muted-foreground",
       )}
     >
@@ -34,7 +34,7 @@ export function RoundIcon({ children, tone = "grey" }: { children: ReactNode; to
  *  top hit (the query its card asks first anyway); the plain symbol for the
  *  rest, so a list typed into asks the planner nothing more. */
 export function AirportIcon({ ident, name, kept = false }: { ident: string; name: string; kept?: boolean }) {
-  return kept ? <KeptChartMark airport={{ ident, name }} size={30} /> : <ChartMark space={null} category={null} use={null} size={30} />;
+  return kept ? <KeptChartMark airport={{ ident, name }} size="row" /> : <ChartMark space={null} category={null} use={null} size="row" />;
 }
 
 /** The group a set of rows is in: its name for a screen reader only, as
@@ -66,6 +66,7 @@ export function ResultRow({
   end,
   actions,
   tint = false,
+  disabled = false,
 }: {
   value: string;
   icon: ReactNode;
@@ -78,10 +79,14 @@ export function ResultRow({
   actions?: ReactNode;
   /** The title in the tint: a row that does something. */
   tint?: boolean;
+  /** Greyed, a tap and Enter doing nothing: a field a pick refuses, its
+   *  reason in `detail` (the owner, 2026-11-21). */
+  disabled?: boolean;
 }) {
   return (
     <CommandItem
       value={value}
+      disabled={disabled}
       onClick={onSelect}
       className={cn("min-h-13 items-start gap-3 rounded-none px-3 py-2.5", className)}
       data-testid={testId}

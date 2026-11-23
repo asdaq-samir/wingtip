@@ -31,6 +31,7 @@ import { nearSearch } from "./listSearch";
 import { useDebounced } from "../../lib/useDebounced";
 import { feet, wholeNm } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 export interface NearFrom {
   label: string;
@@ -113,11 +114,13 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
           />
         ))}
         {found && !found.length && !isFetching && <ListRow muted title="Nothing by that name" />}
-        {current && isError && <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>Couldn't search. Try again.</span>} />}
+        {current && isError && (
+          <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>The search did not answer. Try again.</span>} />
+        )}
         {!found && !(current && isError) && (
           <ListRow title={<span className={cn("text-muted-foreground", TEXT.detail)}>Fetching {typed.trim()}…</span>} />
         )}
-        {from && <ListRow media={<LocateFixed className="size-5 text-tint" />} title="Current position" onClick={() => pick(null)} />}
+        {from && <ListRow media={<LocateFixed className="size-5 text-tint" />} title="Current Position" onClick={() => pick(null)} />}
       </ListGroup>
     </div>
   );
@@ -174,7 +177,9 @@ function NearestRow({
     <ListRow
       media={
         <span
-          className="block size-[26px]"
+          // A row's chart mark, 30 in rem as Search's and Favorites' are
+          // (size.chart-mark; the scale audit's Q5, the owner, 2026-11-21).
+          className="block size-(--size-chart-mark)"
           dangerouslySetInnerHTML={{ __html: airportMarkSvg(field.airspace_class ?? null, colourOf(category), use, "overflow-visible") }}
         />
       }
@@ -306,7 +311,7 @@ export default function NearestCard({
             {enabled ? (
               <ListRow muted title="Finding your position…" />
             ) : (
-              <ListRow title="Show my position" onClick={() => setEnabled(true)} />
+              <ListRow title="Show My Position" onClick={() => setEnabled(true)} />
             )}
           </ListGroup>
         ) : (
@@ -319,7 +324,7 @@ export default function NearestCard({
             // elevation (reachesField), so a field on higher ground inside
             // the ring may not be; each row its longest runway and its
             // listed tower, CTAF or UNICOM frequency.
-            title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${wholeNm(glide)}` : "Nearest to you"}
+            title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${wholeNm(glide)}` : "Nearest to You"}
           >
             {(data ?? []).map((a) => (
               <NearestRow
@@ -332,14 +337,7 @@ export default function NearestCard({
             ))}
             {/* Where they could not be found, said with Try again, where the
                 list stayed on "Looking…" (QueryState). */}
-            {!data && (
-              <QueryState
-                row
-                query={nearestAsked}
-                fetching="Fetching the nearest fields…"
-                failed="The nearest fields could not be found."
-              />
-            )}
+            {!data && <QueryState row query={nearestAsked} fetching={WORDING.fetchingNearestFields} failed={WORDING.nearestNotFound} />}
           </ListGroup>
         )}
         {/* In the air with an airplane of no glide ratio: asked for in

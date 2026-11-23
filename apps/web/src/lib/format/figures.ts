@@ -115,9 +115,28 @@ export function feetRange(alts: number[]): string {
 /** Statute miles as reported: "2.5 sm", and "6+ sm" where the report
  *  says more than that (a METAR's P6SM, FAA JO 7900.5; the engine's
  *  visibility_plus): it printed a bare "6 sm" (the commonality audit's
- *  FIG-3, CODE-12). */
+ *  FIG-3, CODE-12). To the hundredth, down: a visibility read from
+ *  metres (4000 m is 2.4854... sm) printed every figure of its float,
+ *  and rounding it up would show more than was seen. */
 export function miles(sm: number | null | undefined, plus = false): string {
-  return sm === null || sm === undefined ? "—" : `${sm}${plus ? "+" : ""} sm`;
+  return sm === null || sm === undefined ? "—" : `${Math.floor(sm * 100 + 1e-9) / 100}${plus ? "+" : ""} sm`;
+}
+
+/**
+ * A visibility as a whole and a fraction of a statute mile, as a METAR
+ * writes it: 1.625 is [1, "5/8"], 0.5 is [0, "1/2"], 10 is [10, null].
+ * To the sixteenth below 3 sm (the finest a US report gives, "1/16SM")
+ * and the whole mile from 3, always down: the engine already sends a
+ * metric report so (metres_to_sm), and a visibility rounded up would be
+ * more than was seen. It wrote 5/8 as "1" and 1/8 as "0".
+ */
+export function reportedVisibility(sm: number): [whole: number, fraction: string | null] {
+  const whole = Math.floor(sm + 1e-9);
+  const sixteenths = sm >= 3 ? 0 : Math.floor((sm + 1e-9 - whole) * 16);
+  if (!sixteenths) return [whole, null];
+  const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+  const g = gcd(sixteenths, 16);
+  return [whole, `${sixteenths / g}/${16 / g}`];
 }
 
 /**
@@ -168,4 +187,11 @@ export function hundreds(ft: number): string {
  *  wind's. */
 export function knots(kt: number | null | undefined): string {
   return kt === null || kt === undefined ? "—" : `${Math.round(kt)} kt`;
+}
+
+/** A download's size: "3 MB", "0.4 MB" (Keep for the Air's toast, the
+ *  documents library's rows). */
+export function megabytes(bytes: number): string {
+  const mb = bytes / 1e6;
+  return `${mb >= 1 ? Math.round(mb) : Math.max(0.1, Math.round(mb * 10) / 10)} MB`;
 }

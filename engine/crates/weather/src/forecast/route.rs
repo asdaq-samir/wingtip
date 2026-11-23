@@ -110,12 +110,19 @@ pub fn points(v: Option<&Value>) -> Vec<(f64, f64)> {
 /// field's elevation, which the altitude plan keeps each leg under its
 /// clouds with (14 CFR 91.155).
 pub fn tafs_along_route(tafs: &[Value], a: (f64, f64), b: (f64, f64), corridor_nm: f64, start: f64, end: f64) -> String {
+    // The box and each station read with their longitudes within 180° of
+    // the route's start (geo::lon_near): a leg across the antimeridian,
+    // Adak to Shemya, made a box some 350° wide the long way round, which
+    // took in every station of its latitudes the world over, and a leg
+    // near 180 left out the stations just across it.
+    let b = (b.0, geo::lon_near(b.1, a.1));
     let (s, w, n, e) = geo::corridor_bbox(a, b, corridor_nm);
     let mut stations = String::new();
     let (mut ceiling, mut visibility, mut unknown_at): (Option<f64>, Option<f64>, Vec<&str>) = (None, None, Vec::new());
     for station in tafs {
         let (Some(lat), Some(lon)) = (num(station, "lat"), num(station, "lon")) else { continue };
-        if !(s <= lat && lat <= n && w <= lon && lon <= e) {
+        let near = geo::lon_near(lon, a.1);
+        if !(s <= lat && lat <= n && w <= near && near <= e) {
             continue;
         }
         let fcsts = station.get("fcsts").and_then(Value::as_array).unwrap_or(&[]);
@@ -138,6 +145,8 @@ pub fn tafs_along_route(tafs: &[Value], a: (f64, f64), b: (f64, f64), corridor_n
         stations.push_str(if worst.ceiling_unknown { "true" } else { "false" });
         stations.push_str(",\"visibility_sm\":");
         json::opt_number(&mut stations, worst.visibility_sm);
+        stations.push_str(",\"issued\":");
+        json::value(&mut stations, station.get("issued").unwrap_or(&Value::Null));
         stations.push('}');
         if worst.ceiling_unknown {
             unknown_at.push(ident);
@@ -251,6 +260,9 @@ fn object_with(out: &mut String, v: &Value, keep: impl Fn(&str) -> bool, extra: 
 /// January 2025 (gairmets_along_route). Each keeps its times, issue and
 /// area for the briefing to say where and when the flight meets it.
 pub fn sigmets_along_route(advisories: &[Value], a: (f64, f64), b: (f64, f64), corridor_nm: f64, now: f64) -> String {
+    // The route and each area read with their longitudes beside a's
+    // (beside), so a leg or an area across 180 is the short way round.
+    let b = (b.0, geo::lon_near(b.1, a.1));
     let (s, w, n, e) = geo::corridor_bbox(a, b, corridor_nm);
     let keys = ["hazard", "type", "altitude_low_ft", "altitude_high_ft", "raw", "valid_from", "valid_to", "issued", "coords"];
     let mut out = Vec::new();
@@ -258,7 +270,7 @@ pub fn sigmets_along_route(advisories: &[Value], a: (f64, f64), b: (f64, f64), c
         if num(adv, "valid_to").is_some_and(|t| t <= now) || num(adv, "valid_from").is_some_and(|f| f > now) {
             continue;
         }
-        let ring = points(adv.get("coords"));
+        let ring = beside(points(adv.get("coords")), a.1);
         if ring.len() < 3 {
             continue;
         }
@@ -276,69 +288,9 @@ pub fn sigmets_along_route(advisories: &[Value], a: (f64, f64), b: (f64, f64), c
     format!("[{}]", out.join(","))
 }
 
-/// Whether a PIREP is still told: made within PIREP_MAX_AGE_S of `now`
-/// and at or under PIREP_MAX_ALT_FT (a report with no altitude kept).
-fn told(report: &Value, now: f64) -> bool {
-    num(report, "observed").is_some_and(|t| now - t <= PIREP_MAX_AGE_S as f64)
-        && num(report, "altitude_ft").is_none_or(|a| a <= PIREP_MAX_ALT_FT)
-}
-
-/// The PIREPs still told (`told`) within `corridor_nm` of the route flown
-/// through `path`, each with how far along it it is ("along_track_nm",
-/// to the tenth), urgent ones first, then in route order; "observed" (the
-/// Unix time) left out.
-pub fn pireps_along_route(reports: &[Value], path: &[(f64, f64)], corridor_nm: f64, now: f64) -> String {
-    let mut found: Vec<(bool, f64, &Value)> = Vec::new();
-    for report in reports.iter().filter(|r| told(r, now)) {
-        let (Some(lat), Some(lon)) = (num(report, "lat"), num(report, "lon")) else { continue };
-        let mut offset = 0.0;
-        let mut nearest = None;
-        for leg in path.windows(2) {
-            let (cross, along) = geo::track_nm(lat, lon, leg[0], leg[1]);
-            let leg_nm = geo::distance_nm(leg[0].0, leg[0].1, leg[1].0, leg[1].1);
-            if -corridor_nm <= along && along <= leg_nm + corridor_nm && cross.abs() <= corridor_nm {
-                nearest = Some(offset + along.clamp(0.0, leg_nm));
-                break;
-            }
-            offset += leg_nm;
-        }
-        if let Some(at) = nearest {
-            found.push((report.get("urgent") == Some(&Value::Bool(true)), (at * 10.0).round() / 10.0, report));
-        }
-    }
-    found.stable_sort_by(|x, y| y.0.cmp(&x.0).then(x.1.total_cmp(&y.1)));
-    let items: Vec<String> = found
-        .iter()
-        .map(|(_, at, r)| {
-            let mut s = String::new();
-            object_with(&mut s, r, |k| k != "observed", &[("along_track_nm", *at)]);
-            s
-        })
-        .collect();
-    format!("[{}]", items.join(","))
-}
-
-/// The PIREPs still told (`told`) in a box (south, west, north, east),
-/// for the map, the urgent last so they are drawn on top; "observed" left
-/// out.
-pub fn pireps_in_box(reports: &[Value], box_: (f64, f64, f64, f64), now: f64) -> String {
-    let (s, w, n, e) = box_;
-    let mut found: Vec<&Value> = reports
-        .iter()
-        .filter(|r| told(r, now))
-        .filter(|r| num(r, "lat").is_some_and(|l| s <= l && l <= n) && num(r, "lon").is_some_and(|l| w <= l && l <= e))
-        .collect();
-    found.stable_sort_by_key(|r| r.get("urgent") == Some(&Value::Bool(true)));
-    let items: Vec<String> = found
-        .iter()
-        .map(|r| {
-            let mut s = String::new();
-            object_with(&mut s, r, |k| k != "observed", &[]);
-            s
-        })
-        .collect();
-    format!("[{}]", items.join(","))
-}
+// The PIREPs along a route and in a box: route/pireps.rs.
+mod pireps;
+pub use pireps::{pireps_along_route, pireps_in_box};
 
 /// Every G-AIRMET snapshot whose area the route flown through `path`
 /// crosses, valid at some time of the flight [start, end] give or take
@@ -346,12 +298,14 @@ pub fn pireps_in_box(reports: &[Value], box_: (f64, f64, f64, f64), now: f64) ->
 /// for when the flight is in it.
 pub fn gairmets_along_route(advisories: &[Value], path: &[(f64, f64)], start: f64, end: f64) -> String {
     let margin = GAIRMET_SNAPSHOT_S as f64;
+    let reference = path.first().map_or(0.0, |p| p.1);
+    let path = beside(path.to_vec(), reference);
     let items: Vec<String> = advisories
         .iter()
         .filter(|a| num(a, "valid").is_some_and(|v| start - margin <= v && v <= end + margin))
         .filter(|a| {
             let ring = points(a.get("coords"));
-            ring.len() >= 3 && geo::path_meets_polygon(path, &ring)
+            ring.len() >= 3 && geo::path_meets_polygon(&path, &beside(ring, reference))
         })
         .map(|a| {
             let mut s = String::new();
@@ -360,6 +314,20 @@ pub fn gairmets_along_route(advisories: &[Value], path: &[(f64, f64)], start: f6
         })
         .collect();
     format!("[{}]", items.join(","))
+}
+
+/// (lat, lon) points each with its longitude beside the one before, the
+/// first beside `reference` (geo::lon_near): a path or an area drawn across
+/// the antimeridian read as one shape the short way round, on the plane of
+/// degrees path_meets_polygon tests on (the edge-places audit's S10). Points
+/// nowhere near 180 are as they were.
+fn beside(mut points: Vec<(f64, f64)>, reference: f64) -> Vec<(f64, f64)> {
+    let mut before = reference;
+    for p in &mut points {
+        p.1 = geo::lon_near(p.1, before);
+        before = p.1;
+    }
+    points
 }
 
 #[cfg(test)]

@@ -209,8 +209,10 @@ test("a field's departure is picked after its runways, as its arrival and approa
       return m.x > c.x + c.width - 1 && Math.abs(m.y + m.height / 2 - (c.y + c.height / 2)) < 8;
     })
     .toBe(true);
-  // And the departure's time on its own step, not in the route's box.
-  await expect(kord.getByTestId("depart-date")).toHaveText(/^Now/);
+  // And the departure's time on its own step, not in the route's box: "Now"
+  // in sight, its label before it for a screen reader alone (DepartPicker,
+  // WCAG 2.5.3's Label in Name).
+  await expect(kord.getByTestId("depart-date")).toHaveText(/^Departure, Now/);
 });
 
 /**

@@ -71,11 +71,11 @@ struct LegTopsSection: View {
         if leg.toc != nil || leg.tod != nil {
             Section("Climb and Descent") {
                 if let toc = leg.toc {
-                    LabeledContent("Top of climb", value: "\(Format.distance(toc.alongNm)) along")
+                    LabeledContent(Wording.topOfClimb, value: "\(Format.distance(toc.alongNm)) along")
                     if let piece = LegPhase.climbPiece(leg) { pieceRows(piece) }
                 }
                 if let tod = leg.tod {
-                    LabeledContent("Top of descent", value: "\(Format.distance(tod.alongNm)) along")
+                    LabeledContent(Wording.topOfDescent, value: "\(Format.distance(tod.alongNm)) along")
                     LabeledContent("Descent", value: "\(Format.number(tod.fpm, decimals: 0)) fpm to \(Format.altitude(tod.toFt))")
                     if let piece = LegPhase.descentPiece(leg) { pieceRows(piece) }
                     if LegPhase.descentAtCruise(leg) {
@@ -103,7 +103,7 @@ struct LegTopsSection: View {
             LabeledContent("\(name) magnetic heading", value: Format.heading(heading)).accessibilityValue(SpokenFigures.degrees(heading))
         }
         if let flow = piece.fuelBurnGph {
-            LabeledContent("\(name) fuel flow", value: "\(Format.number(flow, decimals: 1)) gal/h")
+            LabeledContent("\(name) Fuel Flow", value: "\(Format.number(flow, decimals: 1)) gal/h")
         }
         if let minutes = piece.minutes {
             LabeledContent("\(name) time", value: Format.duration(minutes)).accessibilityValue(SpokenFigures.minutes(minutes))

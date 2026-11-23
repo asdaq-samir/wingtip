@@ -19,6 +19,7 @@ from pathlib import Path
 
 from . import airports as airports_module
 from . import airspace
+from .engine import ask as engine
 from wingtip.single_flight import once
 
 
@@ -102,13 +103,13 @@ def _envelope(group: list) -> tuple:
 def _airport_for(ident: str, group: list, cache_path) -> dict | None:
     """The airport a Class B is named for, and demonstrably inside it.
 
-    Tried as ICAO first -- K in the lower 48, P in the Pacific -- then
-    bare. Whatever comes back has to sit within the airspace's own
+    Tried by each name the engine's field_names gives it, the K form
+    first, then the FAA's own (ANC, HNL: OurAirports' local code). Whatever comes back has to sit within the airspace's own
     envelope, which is what catches a three-letter code that means one
     airport to the FAA and a different one to an international table.
     """
     min_lon, min_lat, max_lon, max_lat = _envelope(group)
-    for candidate in (f"K{ident}", f"P{ident}", ident):
+    for candidate in engine("field_names", ident=ident):
         try:
             airport = airports_module.get_airport(candidate, cache_path=cache_path)
         except ValueError:

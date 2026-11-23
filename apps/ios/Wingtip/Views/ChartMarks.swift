@@ -53,10 +53,10 @@ final class ChartMarks {
         let vfr: Bool
     }
 
-    /// From which Leaflet zoom each is drawn: the areas from 7 (Android's
-    /// SUA_FROM), the fixes from 10 (the web's FIX_ZOOM).
-    static let areasFrom = 7.0
-    static let fixesFrom = 10.0
+    /// From which Leaflet zoom each is drawn: the areas from map.zoom's
+    /// special-use, the fixes from its fix (design/tokens.json).
+    static let areasFrom = WingtipMapZoom.specialUse
+    static let fixesFrom = WingtipMapZoom.fix
 
     private var areaFetch = ViewFetch()
     private var fixFetch = ViewFetch()
@@ -168,7 +168,7 @@ final class ChartMarks {
 }
 
 /// A ring of a special-use area, the area on its left.
-final class SpecialUseLine: MKPolyline {
+final nonisolated class SpecialUseLine: MKPolyline {
     private(set) var restricted = false
 
     static func of(_ ring: [[Double]], restricted: Bool) -> SpecialUseLine? {
@@ -184,7 +184,7 @@ final class SpecialUseLine: MKPolyline {
 
 /// The boundary: a solid line, and inside it a band of short ticks
 /// across the line (the web's "sua|hatch" pattern), on the area's side.
-final class SpecialUseRenderer: MKPolylineRenderer {
+final nonisolated class SpecialUseRenderer: MKPolylineRenderer {
     /// The band's width and the ticks' spacing, in points on the screen.
     static let band: CGFloat = 6
     static let tickEvery: CGFloat = 5
@@ -262,12 +262,11 @@ final class FixMarkView: MKAnnotationView {
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        identLabel.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
-        identLabel.textColor = WingtipColor.Chart.fixInk
-        identLabel.layer.shadowColor = UIColor.white.cgColor
-        identLabel.layer.shadowRadius = 2
-        identLabel.layer.shadowOpacity = 1
-        identLabel.layer.shadowOffset = .zero
+        identLabel.font = UIFont.systemFont(ofSize: WingtipMapLabel.sizeSmall, weight: .semibold)
+        // The chart's ink by day; after dark a light ink on the night's
+        // halo, never dark words on a white glow (MapLabelLook, rules.md §13.6).
+        identLabel.textColor = MapLabelLook.ink(WingtipColor.Chart.fixInk)
+        identLabel.haloFollowing(self)
         addSubview(mark)
         addSubview(identLabel)
         isEnabled = false
@@ -287,6 +286,7 @@ final class FixMarkView: MKAnnotationView {
     private func show() {
         guard let fix = annotation as? FixAnnotation else { return }
         identLabel.text = fix.fix.ident
+        identLabel.font = MapLabelLook.font(WingtipMapLabel.sizeSmall, weight: .semibold, traits: traitCollection)
         identLabel.sizeToFit()
         let height = max(12, identLabel.bounds.height)
         mark.frame = CGRect(x: 0, y: (height - 12) / 2, width: 12, height: 12)

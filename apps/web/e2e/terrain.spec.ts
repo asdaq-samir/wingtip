@@ -2,7 +2,10 @@ import { test, expect, type Page } from "@playwright/test";
 import { closeProfile, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
 import { setMap3d } from "./mapCard";
 import { pickAirplane } from "./startState";
+import { extrasOn } from "./extras";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
 /**
  * The ground under the chart (features/plan-map/terrain): its relief
@@ -63,6 +66,16 @@ async function startTheRun(page: Page) {
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   await pressDryRunStart(page, start);
+  // Held where it is, on the runway at C81, before the view is stood up:
+  // the pilot's view is drawn from where the run stands, moving or not.
+  // Flown on, every frame of the moving 3D view was a whole redraw, and
+  // with no graphics chip (CI's SwiftShader) a second or more each on two
+  // cores, a click waiting on several of them: terrain:69's last click and
+  // :96's Close ran out the two minutes on CI (run 44621875032). Held in
+  // 2D, the press is cheap, and the view still has to come up.
+  const play = sideDrawer(page).getByTestId("dry-run-play");
+  await play.click();
+  await expect(play).toHaveAttribute("aria-pressed", "false");
   return sideDrawer(page).getByTestId("dry-run-pilot-view");
 }
 

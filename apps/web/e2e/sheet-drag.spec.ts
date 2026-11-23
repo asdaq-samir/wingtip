@@ -39,7 +39,12 @@ async function onGrabber(page: Page) {
 }
 
 test("the panel follows a finger from its grabber out to the top, and down from its content's start", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
+  // On an iPhone SE's screen (375 x 667), so the Brief's Preflight has room
+  // to scroll past the drag whatever the day's weather adds to it: at 844
+  // tall it was about 230 past the screen on CI and less on the Mac, and
+  // the check below failed there (the night of 2026-11-19).
+  await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // The Brief's pages, half way as it opens: its tabs' bar and a page.
@@ -73,10 +78,13 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   const middle = () => middleOf(tab);
 
   // Scrolled down, a drag down scrolls it back rather than taking the
-  // sheet down.
-  await expect.poll(() => tab.evaluate((el) => el.scrollHeight > el.clientHeight + 300)).toBe(true);
+  // sheet down: scrolled further than the drag's 120, by 200, which the
+  // Brief's decluttered Preflight (its rows folded, 2026-11-16) has room
+  // for -- about 230 past the screen at 390 x 844 -- where 300 it no
+  // longer has.
+  await expect.poll(() => tab.evaluate((el) => el.scrollHeight > el.clientHeight + 200)).toBe(true);
   await tab.evaluate((el) => {
-    el.scrollTop = 300;
+    el.scrollTop = 200;
   });
   await fingerDrag(page, await middle(), 120);
   await expect(brief).toHaveAttribute("data-panel", "full");
@@ -100,7 +108,7 @@ test("the panel follows a finger from its grabber out to the top, and down from 
 });
 
 test("a drag held still before it is let go sets the sheet down where it is, not on past it", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
@@ -114,7 +122,7 @@ test("a drag held still before it is let go sets the sheet down where it is, not
 });
 
 test("a flick goes on the way it was thrown: up from the pill, down from all the way up", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   // The stock Drawer reads the throw itself (no one-size rule of our own
   // since the owner's 2026-11-10 "let them be as is for stock ones").
   await page.goto("/app/plan");
@@ -128,8 +136,17 @@ test("a flick goes on the way it was thrown: up from the pill, down from all the
     const box = (await firstRow(page).boundingBox())!;
     const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     const cdp = await page.context().newCDPSession(page);
+    // Each event stamped a frame (16 ms) after the last, the times the
+    // Drawer reads the throw's speed from, whatever the time it takes to
+    // send one: on a loaded runner the release came 90 ms after the last
+    // move, which the Drawer rightly reads as a finger held still and let
+    // go -- not a flick -- and the sheet stayed where it was (CI, shard 9
+    // of run 44566705876; and here under a 6x CPU throttle, 3 runs of 4,
+    // on main's build as on this one).
+    const start = Date.now() / 1000;
+    let frame = 0;
     const touch = (type: string, p?: { x: number; y: number }) =>
-      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [] });
+      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [], timestamp: start + 0.016 * frame++ });
     await touch("touchStart", at);
     for (let i = 1; i <= 2; i++) await touch("touchMove", { x: at.x, y: at.y + (dy * i) / 2 });
     await touch("touchEnd");
@@ -160,7 +177,7 @@ async function onTabs(page: Page) {
 test("a drag from half down past the pill lands on the pill: not closed, not back at half, and the pill its own height", async ({
   page,
 }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   const panel = sideDrawer(page);
@@ -180,7 +197,7 @@ test("a drag from half down past the pill lands on the pill: not closed, not bac
 });
 
 test("a touch on the sheet that does not move leaves it where it is", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   // A touch once took the stock sheet all the way up (the owner,
   // 2026-11-04). On the figures, not a tab, which a tap would pick.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -208,7 +225,7 @@ test("a touch on the sheet that does not move leaves it where it is", async ({ p
 test.describe("by a pointer's drag", () => {
   test.use({ hasTouch: false });
   test("an airport's card dragged past its pill goes to the pill in sight, never fading, and its pill raises it", async ({ page }) => {
-    test.skip(page.viewportSize()!.width >= 768, "a phone's cards");
+    test.skip(page.viewportSize()!.width >= 660, "a phone's cards");
     await installFrameRecorder(page);
     await page.goto("/app/plan?place=KDLH");
     await settle(page);

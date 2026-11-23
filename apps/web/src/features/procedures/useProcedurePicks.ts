@@ -22,6 +22,7 @@ import type { ProcedureAirport, ProceduresAt } from "./ProceduresRoute";
 import type { RouteProcedure } from "../route";
 import { routeBeforeDirect, type PlannedRoute } from "../plan";
 import { pickOnMap, useMapPickOwner } from "../../lib/map/mapPick";
+import type { MapProcedure } from "../../lib/map/gl/layers/RouteExtrasGl";
 
 /** The procedures drawn, the queries that have answered. */
 export const drawnOnly = (results: { data?: ProcedureDrawing }[]) => results.flatMap((r) => (r.data ? [r.data] : []));
@@ -111,18 +112,24 @@ export function useProcedurePicks({
   const routeProcedures = useMemo<RouteProcedure[]>(
     () =>
       procedureDrawings.map((d) => {
-        const direct = pickedProcedures.find((p) => sameField(p.ident, d.airport) && p.id === d.id)?.direct ?? null;
+        const own = pickedProcedures.find((p) => sameField(p.ident, d.airport) && p.id === d.id);
+        const direct = own?.direct ?? null;
         return {
           ident: d.airport,
           kind: d.kind,
           id: d.id,
           runway: d.kind === "approach" ? approachRunway(d.name) : null,
+          name: d.name,
           label: `${d.name.replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` · ${d.transition}` : ""}`,
           spoken: `${d.name}, ${direct ? `direct ${direct}` : transitionWords(d.kind, d.transition ?? null, true)}`,
           direct,
           fixes: d.fixes
             .filter((f) => !f.missed && !/^RW\d/.test(f.ident))
             .map((f) => ({ ...f, turn: d.holds.some((h) => h.fix === f.ident && h.kind === "procedure turn") })),
+          loaded: !!own?.loaded,
+          missed: !!own?.missed,
+          missedFixes: d.fixes.filter((f) => f.missed),
+          suspendAt: d.kind === "approach" ? (d.fixes.find((f) => !f.missed && f.roles.includes("MAP"))?.ident ?? null) : null,
         };
       }),
     [procedureDrawings, pickedProcedures],
@@ -178,9 +185,13 @@ export function useProcedurePicks({
       const at = routeProcedures.find((r) => sameField(r.ident, open.field) && r.kind === open.kind);
       if (!at) return;
       if (direct) feel("directTo");
+      // Sent direct to a fix of an approach only loaded activates it, as a
+      // GPS navigator's Direct To does.
       pickProcedures(
         pickedProcedures.map((p) =>
-          sameField(p.ident, at.ident) && p.id === at.id ? { ...p, direct: direct ? open.fix.ident : null } : p,
+          sameField(p.ident, at.ident) && p.id === at.id
+            ? { ...p, direct: direct ? open.fix.ident : null, loaded: direct ? false : p.loaded }
+            : p,
         ),
         null,
       );
@@ -193,8 +204,18 @@ export function useProcedurePicks({
   // minimums, not at pattern altitude (AIM 5-4-20), so no pattern is
   // drawn for it.
   const flownPatterns = useMemo(
-    () => patterns.filter((p) => !routeProcedures.some((r) => r.kind === "approach" && sameField(r.ident, p.ident))),
+    () => patterns.filter((p) => !routeProcedures.some((r) => r.kind === "approach" && !r.loaded && sameField(r.ident, p.ident))),
     [patterns, routeProcedures],
+  );
+  // An approach activated or put back to loaded, its missed approach
+  // unsuspended or suspended again (the timeline's buttons): loaded, it
+  // is off the route and its missed approach suspended with it.
+  const setApproach = useCallback(
+    (ident: string, id: string, change: { loaded?: boolean; missed?: boolean }) => {
+      const at = (p: PickedProcedure) => sameField(p.ident, ident) && p.id === id;
+      pickProcedures((now) => now.map((p) => (at(p) ? { ...p, ...change, ...(change.loaded ? { missed: false } : {}) } : p)), null);
+    },
+    [pickProcedures],
   );
   // The departure and the arrival picked at the route's ends, filed in
   // the flight plan's route (features/brief/flightPlanForm).
@@ -223,12 +244,16 @@ export function useProcedurePicks({
     ...procedureQuery(procedurePreview ?? { ident: "", id: "", transition: null }),
     enabled: !!procedurePreview,
   });
-  const mapProcedures = useMemo(() => {
+  const mapProcedures = useMemo<MapProcedure[]>(() => {
     const preview = procedurePreview ? previewDrawing : undefined;
-    return preview
-      ? [...procedureDrawings.filter((d) => !(d.kind === preview.kind && sameField(d.airport, preview.airport))), preview]
-      : procedureDrawings;
-  }, [procedureDrawings, procedurePreview, previewDrawing]);
+    // Each approach's missed approach magenta once unsuspended, dimmed while
+    // suspended (ProceduresGl).
+    const flown = procedureDrawings.map((d) => ({
+      ...d,
+      missedFlown: pickedProcedures.some((p) => sameField(p.ident, d.airport) && p.id === d.id && p.missed && !p.loaded),
+    }));
+    return preview ? [...flown.filter((d) => !(d.kind === preview.kind && sameField(d.airport, preview.airport))), preview] : flown;
+  }, [procedureDrawings, procedurePreview, previewDrawing, pickedProcedures]);
   const setProceduresShown = useCallback((at: ProceduresAt) => {
     setProceduresAt(at);
     if (at === null) setProcedurePreview(null);
@@ -253,5 +278,6 @@ export function useProcedurePicks({
     openProcedures,
     previewProcedure,
     mapProcedures,
+    setApproach,
   };
 }

@@ -40,7 +40,7 @@ struct CopilotTests {
         let input = try Copilot.input(fix: fix, flight: flight, around: around, ahead: [], minimums: PersonalMinimums(),
                                       remainingNm: 24, startedAt: fix.at, firstSeen: firstSeen)
         #expect(input.fields.first { $0.ident == "KOSH" }?.plannedCategory == "VFR")
-        #expect(input.fuelGal == 20)
+        #expect(input.fuelGal == 20 && input.startedS == fix.at.timeIntervalSince1970)
         var asked = input
         asked.passengers = false
         asked.nightCurrent = true

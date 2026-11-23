@@ -11,7 +11,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from wingtip import flight_plan as fp
 
-from ..router_basics import line, load_route, ndjson
+from .. import fuel_replan
+from ..route_way import load_way
+from ..router_basics import line, ndjson
 from ..schemas.nav_log import NavLogAltitude, NavLogDone, NavLogError, NavLogLeg, NavLogStage
 from ..checkpoint_scoring import route_checkpoints
 from ..plan_query import PlanQuery
@@ -49,7 +51,7 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
     time that's known, a 200 and a stream of NDJSON have already gone
     out, and an HTTP status can't change after that.
     """
-    r = load_route(q.dep, q.dest, q.stops)
+    r = load_way(q.dep, q.dest, q.stops)
     # Refused as a 422 here, before the stream starts: once its 200 has gone
     # out, a bad procedure or altitude could only be an error line (the
     # one planning sequence, 823822e7, had left them to it).
@@ -155,6 +157,13 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
         for leg in legs:
             yield line(NavLogLeg.model_validate(leg))
 
-        yield line(NavLogDone(totals=fp.totals_of(r, runs, outcome, asked)))
+        totals = fp.totals_of(r, runs, outcome, asked)
+        # Its fuel stops checked by planning the route with them in
+        # (app.fuel_replan), which takes a plan or more: said, so the line
+        # is not silent meanwhile.
+        if totals.get("fuel_stops"):
+            yield line(NavLogStage(detail="Checking fuel stops…"))
+            totals = fuel_replan.checked(q, asked, totals)
+        yield line(NavLogDone(totals=totals))
 
     return ndjson(lines(), NavLogError)

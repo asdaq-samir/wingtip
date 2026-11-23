@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
 import lombok.Getter;
+import org.hibernate.annotations.Formula;
 
 /**
  * Someone who flies. Identity for everything else in the schema.
@@ -50,6 +51,11 @@ public class Pilot {
      *  when the account is deleted. Never sent to a browser. */
     @Column(length = 2000)
     private String appleRefreshToken;
+
+    /** The Apple client that token was issued to (V48): the iOS app's
+     *  bundle id for the app's sign-in, null for the web's Services ID.
+     *  Apple revokes a token only with the client it was issued to. */
+    private String appleTokenClient;
 
     /** Defaults to PILOT for every row, including every row that
      *  existed before the column did (V7). A developer is granted, not
@@ -99,6 +105,13 @@ public class Pilot {
     @Column(length = 11)
     private String homeBase;
 
+    /** When their avatar's photo was last set (V45's pilot_avatars), null
+     *  with none: read with the pilot, never written through it, so
+     *  GET /api/me can give the photo's versioned address without its
+     *  bytes or a second query (AvatarService.url). */
+    @Formula("(SELECT a.updated_at FROM pilot_avatars a WHERE a.pilot_id = id)")
+    private Instant avatarUpdatedAt;
+
     /** A flight instructor's certificate number ("987654321CFI"), its
      *  recent experience end date or expiration date, and which of the
      *  two that is (V26): what every endorsement they sign carries (AC
@@ -142,9 +155,16 @@ public class Pilot {
         this.appleSubject = subject;
     }
 
-    /** What Apple handed over at the latest Sign in with Apple. */
+    /** What Apple handed over at the latest Sign in with Apple, on the web. */
     public void keepAppleRefreshToken(String token) {
+        keepAppleRefreshToken(token, null);
+    }
+
+    /** What Apple handed over at the latest Sign in with Apple, and the
+     *  client it was handed to (null: the web's). */
+    public void keepAppleRefreshToken(String token, String client) {
         this.appleRefreshToken = token;
+        this.appleTokenClient = client;
     }
 
     /** The address the provider now vouches for, when it changed there. */

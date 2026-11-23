@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { Calendar } from "./calendar";
-import { DateField, TimeField } from "./date-field";
+import { DateField } from "./date-field";
+import { TimeField } from "./time-field";
 import { NumberField } from "./number-field";
 import { THREE_FIGURES } from "./numberFormats";
 import { parseDate } from "@internationalized/date";
@@ -10,43 +11,57 @@ import { I18nProvider } from "react-aria-components";
 
 afterEach(cleanup);
 
-// React Aria's date, time and number fields in place of the native ones:
-// the values going out are the strings and numbers the native fields gave,
+// The date and time fields (one button each, as iOS's compact pickers)
+// and React Aria's number field in place of the native ones: the values going out are the strings and numbers the native fields gave,
 // so the forms and the gateway see no change.
 describe("the React Aria fields", () => {
-  it("a date field shows its ISO day and gives one back, a step of a segment by the arrow keys", () => {
-    const changed = vi.fn();
-    render(<DateField aria-label="Date flown" value="2026-11-09" onChange={changed} data-testid="day" />);
-    const box = screen.getByTestId("day");
-    const day = box.querySelector<HTMLElement>('[data-type="day"]')!;
-    expect(day.textContent).toBe("9");
-    act(() => day.focus());
-    fireEvent.keyDown(day, { key: "ArrowUp" });
-    expect(changed).toHaveBeenLastCalledWith("2026-11-10");
+  it("a date field is one button showing its day, named with it", () => {
+    render(<DateField aria-label="Date flown" value="2026-11-09" onChange={vi.fn()} data-testid="day" />);
+    const button = screen.getByTestId("day");
+    expect(button.tagName).toBe("BUTTON");
+    expect(button.textContent).toBe("9 Nov 2026");
+    expect(button.getAttribute("aria-label")).toBe("Date flown, 9 Nov 2026: change");
   });
 
   it("a date field with nothing in it says so, and nonsense is taken for nothing", () => {
     render(<DateField aria-label="Due" value="not a day" data-testid="day" />);
-    expect(screen.getByTestId("day").querySelector('[data-type="year"]')?.hasAttribute("data-placeholder")).toBe(true);
+    expect(screen.getByTestId("day").getAttribute("aria-label")).toBe("Due, none: change");
   });
 
-  it("a time field reads and gives the 24-hour clock's HH:mm", () => {
+  it("a time field is one button showing the 24-hour clock's HH:mm and zone, its wheels giving HH:mm", () => {
     const changed = vi.fn();
-    render(<TimeField aria-label="Departure time" value="15:05" onChange={changed} data-testid="time" />);
-    const hour = screen.getByTestId("time").querySelector<HTMLElement>('[data-type="hour"]')!;
-    expect(hour.textContent).toBe("15");
-    act(() => hour.focus());
-    fireEvent.keyDown(hour, { key: "ArrowDown" });
+    render(<TimeField aria-label="Departure time" value="15:05" zone="CST" onChange={changed} data-testid="time" />);
+    const button = screen.getByTestId("time");
+    expect(button.textContent).toBe("15:05 CST");
+    expect(button.getAttribute("aria-label")).toBe("Departure time, 15:05 CST: change");
+    expect(screen.queryByTestId("time-hours")).toBeNull();
+    fireEvent.click(button);
+    expect(button.getAttribute("aria-expanded")).toBe("true");
+    const hours = screen.getByRole("listbox", { name: "Hours" });
+    expect(hours.querySelector('[aria-selected="true"]')?.textContent).toBe("15");
+    fireEvent.click(within(hours).getByRole("option", { name: "14" }));
     expect(changed).toHaveBeenLastCalledWith("14:05");
+  });
+
+  it("a time field's next pick is against the pilot's own, not a time brought back into range", () => {
+    const changed = vi.fn();
+    const { rerender } = render(<TimeField aria-label="Leaving" value="14:50" onChange={changed} data-testid="time" />);
+    fireEvent.click(screen.getByTestId("time"));
+    fireEvent.click(within(screen.getByRole("listbox", { name: "Hours" })).getByRole("option", { name: "13" }));
+    expect(changed).toHaveBeenLastCalledWith("13:50");
+    // The caller holds it to the landing, 14:20.
+    rerender(<TimeField aria-label="Leaving" value="14:20" onChange={changed} data-testid="time" />);
+    fireEvent.click(within(screen.getByRole("listbox", { name: "Minutes" })).getByRole("option", { name: "05" }));
+    expect(changed).toHaveBeenLastCalledWith("13:05");
   });
 
   it("a number field gives its figure as it is left, null when emptied, without grouping", () => {
     const changed = vi.fn();
-    render(<NumberField aria-label="Hours now" defaultValue={2550} onChange={changed} data-testid="n" />);
+    render(<NumberField aria-label="Hours Now" defaultValue={2550} onChange={changed} data-testid="n" />);
     const field = screen.getByTestId<HTMLInputElement>("n");
     expect(field.value).toBe("2550");
     // Named once, on the figure: a search by its name finds it alone.
-    expect(screen.getAllByLabelText("Hours now")).toEqual([field]);
+    expect(screen.getAllByLabelText("Hours Now")).toEqual([field]);
     act(() => field.focus());
     fireEvent.change(field, { target: { value: "1262.3" } });
     act(() => field.blur());
@@ -64,7 +79,7 @@ describe("the React Aria fields", () => {
     const typed = vi.fn();
     render(
       <I18nProvider locale="de-DE">
-        <NumberField aria-label="Fuel burn" defaultValue={null} onChange={changed} onTyped={typed} data-testid="n" />
+        <NumberField aria-label="Fuel Burn" defaultValue={null} onChange={changed} onTyped={typed} data-testid="n" />
       </I18nProvider>,
     );
     const field = screen.getByTestId<HTMLInputElement>("n");

@@ -52,12 +52,15 @@ function AtcLine() {
 export default function CopilotBanner() {
   const { message, dismiss } = useCopilot();
   // A new warning or caution felt as it comes up (lib/haptics); an advisory only shown.
-  useFeelOnNew(message && message.level !== "advisory" && !message.elsewhere ? `${message.kind}:${message.title}` : null, "warning");
+  useFeelOnNew(message && message.level !== "advisory" && !message.elsewhere ? message.id : null, "warning");
   if (!message || message.elsewhere) return <AtcLine />;
   return (
     <MapBanner
-      // A new message is a new banner, closed.
-      key={`${message.kind}:${message.title}`}
+      // A new message is a new banner, closed; the same one (the engine's
+      // id, the same while what it says is) keeps its place and stays open
+      // as its minutes count down: keyed by its line, the detail the pilot
+      // opened shut each minute ("3 min left of course", copilot.spec).
+      key={message.id}
       data-copilot-banner={message.kind}
       // Told to a screen reader once by useCopilot (lib/announce): a
       // live region arriving with its words in it is not read by every

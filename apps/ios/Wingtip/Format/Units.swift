@@ -9,15 +9,15 @@ import Foundation
 /// those definitions as the engine's core::units is: the international
 /// foot and nautical mile of the 1959 yard and pound agreement (NIST SP
 /// 811 B.9) and the statute mile of 5,280 of those feet.
-enum Units {
+nonisolated enum Units {
     /// Metres in a nautical mile, the international nautical mile (NIST SP
     /// 811 B.9).
-    nonisolated static let mPerNm = 1852.0
-    /// Feet in a statute mile (NIST SP 811 B.9): 91.155(a)'s "1 statute
-    /// mile" from clouds, which the planner sends in feet.
-    nonisolated static let ftPerSm = 5280.0
+    static let mPerNm = 1852.0
+    /// Feet in a statute mile (NIST SP 811 B.9), which the planner's
+    /// distances in statute miles are sent in.
+    static let ftPerSm = 5280.0
     /// Knots in a metre a second: 3,600 s an hour over 1,852 m a mile,
     /// 1.943844492.... Not UnitSpeed.knots, whose metre a second is the
     /// rounded 0.514444 m/s a knot.
-    nonisolated static let ktPerMS = 3600 / mPerNm
+    static let ktPerMS = 3600 / mPerNm
 }

@@ -3,10 +3,10 @@ Description: >
   Wingtip Maps on AWS, built for low cost: one EC2 server (gateway, planner, ingest,
   Postgres) behind CloudFront, FAA chart tiles drawn once
   per 56-day cycle by a Fargate Spot task into S3, and the web app's
-  fingerprinted files cached at the edge. About $29 a month with the
+  fingerprinted files cached at the edge. About $41 a month with the
   server on Spot capacity, the default (docs/README-AWS.md has the
   itemised cost and the runbook). Deploy in
-  us-east-1: CloudFront's certificate must be there.
+  us-east-1: CloudFront's certificate and its WAF web ACL must be there.
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -51,16 +51,17 @@ Parameters:
       server, keeping the data disk.
   InstanceType:
     Type: String
-    Default: t3a.medium
+    Default: t3a.large
     AllowedValues: [t3a.medium, t3a.large, t3.medium, t3.large, m6a.large, m7a.large]
     Description: >
-      2 cores and 4 GB run the stack once the planner no longer draws tiles
-      (the production stack held 1.8 GB at rest in the local rehearsal,
-      2026-10-08). x86, so CI's images run as built; a large (8 GB) if it
-      ever runs short.
+      2 cores and 8 GB. The services' limits add up to about 3.5 GB
+      (weather 768 MB, ingest 384 MB, the gateway's JVM, the planner,
+      Postgres; the prelaunch audit, 2026-11-21), which a medium's 4 GB
+      barely holds, so the launch size is a large (the owner, 2026-11-21).
+      x86, so CI's images run as built.
   SpareInstanceType:
     Type: String
-    Default: t3.medium
+    Default: t3.large
     AllowedValues: [t3a.medium, t3a.large, t3.medium, t3.large, m6a.large, m7a.large]
     Description: >
       A second type of the same size, for when Spot has none of the first:
@@ -262,13 +263,22 @@ Resources:
             ExpiredObjectDeleteMarker: true
 
   # ---------------------------------------------------------------------
-  # Secrets: two the stack generates, one the owner fills in
-  # (infra/server/env.example). deploy.sh reads all three.
+  # Secrets: three the stack generates, one the owner fills in
+  # (infra/server/env.example). deploy.sh reads all four.
   # ---------------------------------------------------------------------
   DbPasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Postgres password on the server.
+      Description: Postgres password of the database's owner on the server, which Flyway signs in as.
+      GenerateSecretString: { PasswordLength: 32, ExcludePunctuation: true }
+
+  # The gateway's own role, which may read and write rows and nothing else
+  # (db/callback/afterMigrate.sql; docs/SECURITY.md, N4). Letters and
+  # digits only: the callback quotes it into its ALTER ROLE.
+  AppDbPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Postgres password of the gateway's DML-only role (wingtip_app) on the server.
       GenerateSecretString: { PasswordLength: 32, ExcludePunctuation: true }
 
   OriginSecret:
@@ -328,7 +338,7 @@ Resources:
                   - !GetAtt ChartsRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
+                Resource: [!Ref DbPasswordSecret, !Ref AppDbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
               # Reads anything (models/ comes from the owner); writes only
               # where it keeps things: backup.sh's backups/ and the ground
               # grid deploy.sh builds once (ground_grid/). So a server
@@ -352,6 +362,14 @@ Resources:
               - Effect: Allow
                 Action: [logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !GetAtt ServerLogGroup.Arn
+              # Its own checks' figures (infra/server/health.sh), in the
+              # Wingtip namespace alone; PutMetricData takes no resource.
+              - Effect: Allow
+                Action: cloudwatch:PutMetricData
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    "cloudwatch:namespace": Wingtip
               # Each new server takes over the stack's address and data disk.
               # The volume and the address are the stack's own; an instance
               # is allowed only if it carries the stack's server Name tag
@@ -407,7 +425,14 @@ Resources:
         ImageId: !Ref ServerImageId
         IamInstanceProfile: { Arn: !GetAtt ServerInstanceProfile.Arn }
         SecurityGroupIds: [!Ref ServerSecurityGroup]
-        MetadataOptions: { HttpTokens: required, HttpEndpoint: enabled }
+        # One hop: the server itself reaches the instance's metadata (deploy.sh,
+        # backup.sh, the awslogs driver in dockerd), its containers, a hop
+        # further behind Docker's bridge, do not. None of them asks AWS for
+        # anything (the planner reads the tiles through CloudFront), and code
+        # run in one of them -- a PDF or GeoTIFF parser's bug, a dependency --
+        # would otherwise have the server role's keys: every secret and every
+        # backup (the deep security review of 2026-11-21).
+        MetadataOptions: { HttpTokens: required, HttpEndpoint: enabled, HttpPutResponseHopLimit: 1 }
         BlockDeviceMappings:
           - DeviceName: /dev/xvda
             Ebs: { VolumeType: gp3, VolumeSize: 20, Encrypted: true, DeleteOnTermination: true }
@@ -445,8 +470,11 @@ Resources:
               mkdir -p /srv/wingtip
               echo "UUID=$(blkid -s UUID -o value "$disk") /srv/wingtip xfs defaults,nofail 0 2" >> /etc/fstab
               mount /srv/wingtip
-              dnf install -y docker git cronie
-              systemctl enable --now docker crond
+              # logrotate keeps the cron jobs' logs (deploy.sh's
+              # /etc/logrotate.d/wingtip); openssl reads the origin's
+              # certificate for health.sh.
+              dnf install -y docker git cronie logrotate openssl
+              systemctl enable --now docker crond logrotate.timer
               mkdir -p /usr/local/lib/docker/cli-plugins
               # A pinned release, checked against the checksum published
               # beside it, so a rebuild gets the plugin the first boot did.
@@ -468,6 +496,7 @@ Resources:
               SERVER_BUCKET=${ServerBucket}
               APP_SECRET_ARN=${AppSecret}
               DB_SECRET_ARN=${DbPasswordSecret}
+              APP_DB_SECRET_ARN=${AppDbPasswordSecret}
               ORIGIN_SECRET_ARN=${OriginSecret}
               BACKUP_TOPIC_ARN=${BackupTopicArn}
               LOG_GROUP=${ServerLogGroup}
@@ -606,9 +635,12 @@ Resources:
   #                  which the planner reads a tile at a time by range
   #                  requests; a month at the edge (each its own immutable
   #                  Cache-Control, its contents in its name).
-  # - /api/planner/chart-tile/*
-  #                  the server, cached: a tile the planner read out of its
-  #                  archive, its cycle and revision in its address.
+  # - /api/planner/chart-tile/*, terrain-tile/*, overlay-tiles*
+  #                  the server, cached a year at most (TilesCachePolicy):
+  #                  a tile the planner read out of its archive, its cycle
+  #                  and revision in its address. Caddy sends these to the
+  #                  planner itself, not through the gateway
+  #                  (infra/server/Caddyfile, @tiles).
   # - /app/assets/*  the server, cached: fingerprinted, a year, immutable
   #                  (WebMvcConfig's own header). CachingOptimized keys on
   #                  Brotli and gzip, so the origin sends the web build's
@@ -644,6 +676,30 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+          # TLS only, whoever asks (AWS's S3 security best practices).
+          - Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt ChartTilesBucket.Arn, !Sub "${ChartTilesBucket.Arn}/*"]
+            Condition:
+              Bool: { aws:SecureTransport: "false" }
+
+  # The backups and the model only over TLS: nothing grants a reader here
+  # but the roles, and this keeps any of them, or a script, from asking in
+  # the clear (the deep security review of 2026-11-21).
+  ServerBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ServerBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt ServerBucket.Arn, !Sub "${ServerBucket.Arn}/*"]
+            Condition:
+              Bool: { aws:SecureTransport: "false" }
 
   # The answers the same for every pilot (the planner's routes marked
   # SHARED in app.gateway, the airport diagrams among them; app.router_basics'
@@ -668,11 +724,99 @@ Resources:
           CookiesConfig: { CookieBehavior: none }
           QueryStringsConfig: { QueryStringBehavior: all }
 
+  # The map's tiles: the chart's, the terrain's and the overlays' archive.
+  # The planner says how long each is good for -- a year and immutable
+  # where the address names the cycle and revision (?c= and ?r=), else
+  # half a cycle -- and this keeps them that long, where
+  # SharedAnswersCachePolicy stops at a day: a chart tile changes only
+  # with its address, so a day's ceiling only sent the edge back to the
+  # server for the same bytes. Keyed by the path and those two query
+  # strings alone, so an address with anything else on it is the same
+  # tile; no cookie and no header goes to the origin, and no encoding is
+  # asked (rasters, and an archive read in byte ranges).
+  TilesCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub "${AWS::StackName}-tiles"
+        MinTTL: 0
+        DefaultTTL: 0
+        MaxTTL: 31536000
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: false
+          EnableAcceptEncodingBrotli: false
+          HeadersConfig: { HeaderBehavior: none }
+          CookiesConfig: { CookieBehavior: none }
+          QueryStringsConfig:
+            QueryStringBehavior: whitelist
+            QueryStrings: [c, r]
+
+  # A rate rule on the tile paths that reach the server (the deep
+  # security review of 2026-11-21, N5). A tile's address with a ?c= or ?r=
+  # of its own is a cache miss, so a loop of them made every tile the
+  # planner's to read on the server's two cores. Past 3,000 tile requests
+  # in five minutes from one address (10 a second, held), that address is
+  # answered 429 at the edge until it slows. A pilot asks far fewer: a
+  # session is some 200 tiles, the web's service worker keeps 20,000 for
+  # the cycle and the phones their own cache, and a whole screen at 2x is
+  # about 40. Counted before the cache, so a hit counts too; an airport's
+  # shared Wi-Fi of ten pilots panning at once stays under it. CLOUDFRONT
+  # scope, which AWS takes only in us-east-1, where this stack is deployed
+  # (its Description). Its cost, $6 a month and $0.60 a million requests,
+  # is in docs/README-AWS.md.
+  TileRateLimit:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${AWS::StackName}-tiles"
+      Description: Rate limit on the planner tile paths, everything else let through.
+      Scope: CLOUDFRONT
+      DefaultAction: { Allow: {} }
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${AWS::StackName}-waf"
+        SampledRequestsEnabled: true
+      CustomResponseBodies:
+        slow-down:
+          ContentType: TEXT_PLAIN
+          Content: Too many tile requests from this address. Try again in a few minutes.
+      Rules:
+        - Name: tiles-per-address
+          Priority: 0
+          Action:
+            Block:
+              CustomResponse:
+                ResponseCode: 429
+                CustomResponseBodyKey: slow-down
+                ResponseHeaders: [{ Name: Retry-After, Value: "60" }]
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${AWS::StackName}-tiles-per-address"
+            SampledRequestsEnabled: true
+          Statement:
+            RateBasedStatement:
+              Limit: 3000
+              EvaluationWindowSec: 300
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                OrStatement:
+                  Statements:
+                    - ByteMatchStatement:
+                        FieldToMatch: { UriPath: {} }
+                        PositionalConstraint: STARTS_WITH
+                        SearchString: /api/planner/chart-tile/
+                        TextTransformations: [{ Priority: 0, Type: NONE }]
+                    - ByteMatchStatement:
+                        FieldToMatch: { UriPath: {} }
+                        PositionalConstraint: STARTS_WITH
+                        SearchString: /api/planner/terrain-tile/
+                        TextTransformations: [{ Priority: 0, Type: NONE }]
+
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
         Enabled: true
+        WebACLId: !GetAtt TileRateLimit.Arn
         Comment: !Sub "Wingtip Maps (${AWS::StackName})"
         Aliases: [!Ref PublicHost]
         ViewerCertificate:
@@ -717,18 +861,31 @@ Resources:
             CachedMethods: [GET, HEAD]
             Compress: false  # archives read in byte ranges: a compressed answer would not be their bytes
             CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # managed CachingOptimized
-          # The map's chart tiles, through the planner: a cycle is kept as
+          # The map's chart tiles, from the planner: a cycle is kept as
           # one archive per kind (#535), so CloudFront no longer has a file
-          # per tile to answer from. Keyed by the address alone, ?c= the
-          # cycle and ?r= the revision among it, for the planner's own
-          # Cache-Control (a day here at most, the policy's ceiling).
+          # per tile to answer from. The origin's Caddy hands them to the
+          # planner itself, not the gateway (infra/server/Caddyfile's
+          # @tiles). Keyed by the address alone, ?c= the cycle and ?r= the
+          # revision among it, for the planner's own Cache-Control, a year
+          # where the address names both (TilesCachePolicy).
           - PathPattern: api/planner/chart-tile/*
             TargetOriginId: server
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD]
             CachedMethods: [GET, HEAD]
-            Compress: false  # PNGs, already compressed
-            CachePolicyId: !Ref SharedAnswersCachePolicy
+            Compress: false  # WebP or PNG, already compressed
+            CachePolicyId: !Ref TilesCachePolicy
+          # The 3D ground's elevation tiles (the planner's
+          # /api/terrain-tile, Terrarium PNGs), the same for every pilot
+          # and for weeks: they went to the server uncached, under the
+          # default behaviour, at every 3D view.
+          - PathPattern: api/planner/terrain-tile/*
+            TargetOriginId: server
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: false
+            CachePolicyId: !Ref TilesCachePolicy
           - PathPattern: app/assets/*
             TargetOriginId: server
             ViewerProtocolPolicy: redirect-to-https
@@ -789,7 +946,8 @@ Resources:
           # The map's FAA overlays as vector tiles (the planner's
           # /api/overlay-tiles and /api/overlay-tiles/{name}.pmtiles): the
           # index for the hour it says, the archive -- its build in its
-          # name -- a day at the edge and its cycle in the browser. The map
+          # name -- as long as the planner says, at the edge and in the
+          # browser; Caddy hands both to the planner itself. The map
           # reads the archive in byte ranges, which CloudFront answers from
           # what it holds (the Range header is never part of the key); not
           # compressed, since its tiles are gzipped inside and a range of
@@ -800,7 +958,7 @@ Resources:
             AllowedMethods: [GET, HEAD]
             CachedMethods: [GET, HEAD]
             Compress: false
-            CachePolicyId: !Ref SharedAnswersCachePolicy
+            CachePolicyId: !Ref TilesCachePolicy
         # A server error is passed on, never kept: CloudFront would hold
         # one for ten seconds by default, and a planner restarting would
         # then outlast itself at the edge.
@@ -812,13 +970,15 @@ Resources:
 
   # ---------------------------------------------------------------------
   # Chart tiles, once per cycle: a Fargate Spot task runs the charts job's
-  # refresh (services/jobs/charts) every day -- a no-op until the FAA
-  # publishes a new cycle, then it fetches the country's sheets, draws the
-  # pyramid, packs each kind into its archives and publishes them to the
-  # tiles bucket (wingtip.chart_publish.publish), serving.json last, so every
-  # planner moves to the new cycle at once. Spot: an interrupted run
-  # starts over the next day, the old cycle served until then. Under $1
-  # a cycle.
+  # refresh (services/jobs/charts) every day. In the week before a new
+  # cycle's date, once the FAA has it up, it fetches the country's sheets,
+  # draws the pyramid, packs each kind into its archives and publishes
+  # them to the tiles bucket ahead (wingtip.chart_publish, next.json), which
+  # every planner takes at 0901Z on the date; the next run makes it
+  # serving.json's. The other days it is a read or two. Spot: an
+  # interrupted run starts over the next day, with six more days before the
+  # date, and ChartRefreshFailedRule mails a run that stops. Under $1 a
+  # cycle.
   # ---------------------------------------------------------------------
   EcsCluster:
     Type: AWS::ECS::Cluster
@@ -890,10 +1050,13 @@ Resources:
       # tiles (1.5 million of them) for the 09-03-2026 cycle, and about
       # 29 GB more of the 512-pixel "@2x" palette tiles from the
       # 12-24-2026 cycle; then each kind's archive written beside its
-      # loose tiles before they go, the sectional's @2x the largest.
+      # loose tiles before they go, the sectional's @2x the largest. 160 GB,
+      # not 100: a run may draw the cycle in force and then stage the next
+      # one ahead (charts.next_cycle.stage_to_bucket), two cycles on one
+      # disk; the extra is about $0.10 a run.
       Cpu: "2048"
       Memory: "8192"
-      EphemeralStorage: { SizeInGiB: 100 }
+      EphemeralStorage: { SizeInGiB: 160 }
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       TaskRoleArn: !GetAtt ChartRefreshTaskRole.Arn
       ContainerDefinitions:
@@ -936,7 +1099,7 @@ Resources:
     Type: AWS::Events::Rule
     DependsOn: EcsClusterCapacityProviders
     Properties:
-      Description: Publish the FAA's current chart cycle if it is not published yet; a no-op on the other 55 days.
+      Description: Publish the FAA's current chart cycle if it is not published yet, and stage the next one ahead of its date in the week before it; a read or two on the other days.
       ScheduleExpression: cron(30 8 * * ? *)
       State: ENABLED
       Targets:
@@ -1068,14 +1231,34 @@ Resources:
   # ---------------------------------------------------------------------
   # Spending: an email at 80% of $50 a month.
   # ---------------------------------------------------------------------
-  # The owner's alerts by email: a failed nightly backup (backup.sh), and
-  # the app not answering (HealthAlarm).
+  # The owner's alerts by email: a failed nightly backup (backup.sh), the
+  # app not answering (HealthAlarm), and the alarms below. Each is in
+  # docs/RUNBOOKS.md with what to do.
   BackupAlertTopic:
     Type: AWS::SNS::Topic
     Condition: HasBudget
     Properties:
       DisplayName: Wingtip Maps alerts
       Subscription: [{ Protocol: email, Endpoint: !Ref BudgetEmail }]
+
+  # EventBridge publishes the chart refresh's failures and the
+  # certificate's expiry warnings to the topic; CloudWatch's alarms need
+  # no policy of their own.
+  AlertTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Condition: HasBudget
+    Properties:
+      Topics: [!Ref BackupAlertTopic]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: events.amazonaws.com }
+            Action: sns:Publish
+            Resource: !Ref BackupAlertTopic
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Ref AWS::AccountId
 
   # Is the app up, as a pilot reaches it: through CloudFront to the
   # gateway's health, which counts its database, every 30 seconds from
@@ -1114,6 +1297,194 @@ Resources:
       TreatMissingData: breaching
       AlarmActions: [!Ref BackupAlertTopic]
       OKActions: [!Ref BackupAlertTopic]
+
+  # ---------------------------------------------------------------------
+  # Alarms: what the health check through CloudFront cannot see. The
+  # server's own checks (infra/server/health.sh, every five minutes) send
+  # the Wingtip namespace's figures; each alarm emails the owner, and
+  # again when it clears. docs/RUNBOOKS.md has what to do for each.
+  # ---------------------------------------------------------------------
+  # The system disk (images, swap, the cron jobs' logs).
+  RootDiskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The server's system disk is over 85% full (docs/RUNBOOKS.md, "The disk filling").
+      Namespace: Wingtip
+      MetricName: RootDiskUsedPercent
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 85
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # The data disk (Postgres, the FAA data, the chart sheets): it grows in
+  # place (DataVolumeGb) before it fills.
+  DataDiskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The server's data disk is over 85% full (docs/RUNBOOKS.md, "The disk filling").
+      Namespace: Wingtip
+      MetricName: DataDiskUsedPercent
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 85
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # A service not running, or unhealthy (and restarted by health.sh), at
+  # three checks running: a deploy's restart or a planner warming up (its
+  # health check allows ten minutes) does not count.
+  ServicesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: A service on the server (ingest, weather, the planner, the gateway, Postgres or Caddy) has not been running or healthy for 15 minutes (docs/RUNBOOKS.md, "A service down").
+      Namespace: Wingtip
+      MetricName: ServicesNotHealthy
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Minimum
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # Caddy's Let's Encrypt certificate for origin.<domain>, renewed 30 days
+  # out: under 14 days left, renewal has been failing for two weeks.
+  OriginCertAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The origin's certificate (Caddy, Let's Encrypt) has under 14 days left or cannot be read (docs/RUNBOOKS.md, "Certificate renewal").
+      Namespace: Wingtip
+      MetricName: OriginCertDaysLeft
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Maximum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 14
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # No whole nightly backup for over a day: backup.sh mails its own
+  # failures, and this catches one that never ran.
+  BackupLateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: No nightly backup has reached S3 for over 26 hours (docs/RUNBOOKS.md, "Restore a backup").
+      Namespace: Wingtip
+      MetricName: BackupAgeHours
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Minimum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 26
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # The checks themselves stopped (cron gone, the server wedged): no data
+  # for 15 minutes is the alarm. A Spot replacement's few minutes may send
+  # one pair, as HealthAlarm does.
+  ChecksMissingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The server has sent no health figures for 15 minutes (docs/RUNBOOKS.md, "A Spot interruption").
+      Namespace: Wingtip
+      MetricName: ChecksRun
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: SampleCount
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # The gateway's own monitor (UptimeWatch: a service down 5 minutes, a
+  # feed stale 15, an FAA data set past its cycle) mails through SES, which
+  # can itself be what is broken (credentials, the sandbox). Its ALERT
+  # lines are counted from the log here, so they reach the owner without it.
+  GatewayAlertFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: HasBudget
+    Properties:
+      LogGroupName: !Ref ServerLogGroup
+      FilterPattern: '"ALERT"'
+      MetricTransformations:
+        - { MetricNamespace: Wingtip, MetricName: GatewayAlerts, MetricValue: "1", DefaultValue: 0, Unit: Count }
+
+  GatewayAlertAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The gateway's monitor raised an alert (a service down, a feed stale or a data set past its cycle); its ALERT line in the gateway's log says which (docs/RUNBOOKS.md, "A feed outage").
+      Namespace: Wingtip
+      MetricName: GatewayAlerts
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+
+  # The chart refresh task stopped by anything but its own clean exit: a
+  # failed draw or publish, or Spot taking it back. The old cycle is served
+  # until the next day's run (docs/RUNBOOKS.md, "A bad or late FAA cycle").
+  ChartRefreshFailedRule:
+    Type: AWS::Events::Rule
+    Condition: HasBudget
+    Properties:
+      Description: The chart refresh task stopped without finishing.
+      EventPattern:
+        source: [aws.ecs]
+        detail-type: [ECS Task State Change]
+        detail:
+          clusterArn: [!GetAtt EcsCluster.Arn]
+          lastStatus: [STOPPED]
+          $or:
+            - containers: { exitCode: [{ anything-but: 0 }] }
+            - stopCode: [{ anything-but: EssentialContainerExited }]
+      Targets:
+        - Id: alert
+          Arn: !Ref BackupAlertTopic
+          InputTransformer:
+            InputPathsMap: { reason: "$.detail.stoppedReason", task: "$.detail.taskArn" }
+            InputTemplate: '"Wingtip Maps: the chart refresh task <task> stopped without finishing (<reason>). The old cycle is served until the next run; docs/RUNBOOKS.md, A bad or late FAA cycle."'
+
+  # CloudFront's certificate is ACM's, renewed by itself while its DNS
+  # record stands; ACM says so 45 days out when it cannot.
+  CertificateExpiryRule:
+    Type: AWS::Events::Rule
+    Condition: HasBudget
+    Properties:
+      Description: The app's ACM certificate is near its expiry and has not renewed.
+      EventPattern:
+        source: [aws.acm]
+        detail-type: [ACM Certificate Approaching Expiration]
+        resources: [!Ref Certificate]
+      Targets:
+        - Id: alert
+          Arn: !Ref BackupAlertTopic
 
   MonthlyBudget:
     Type: AWS::Budgets::Budget

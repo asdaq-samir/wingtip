@@ -2003,6 +2003,17 @@
             "title": "Procedures",
             "type": "array"
           },
+          "publications": {
+            "$ref": "#/components/schemas/FaaPublications",
+            "default": {
+              "plates": {
+                "state": "current"
+              },
+              "supplement": {
+                "state": "current"
+              }
+            }
+          },
           "radio_notes": {
             "default": [],
             "items": {
@@ -2482,7 +2493,7 @@
         "type": "object"
       },
       "AirspaceBand": {
-        "description": "One class of airspace over a point, from `floor_ft` to\n`ceiling_ft` MSL (wingtip.airspace_at): its name where it is a B, C or\nD; the VFR minimums in it (None in A); what it takes to go in; the\nequipment it asks for; and the 91.117 speed limit there.",
+        "description": "One class of airspace over a point, from `floor_ft` to\n`ceiling_ft` MSL (wingtip.airspace_at): its name where it is a B, C or\nD, and its primary airport (`ident`); the VFR minimums in it (None in\nA); what it takes to go in; the\nequipment it asks for; and the 91.117 speed limit there.",
         "properties": {
           "ceiling_ft": {
             "title": "Ceiling Ft",
@@ -2518,6 +2529,17 @@
           "floor_ft": {
             "title": "Floor Ft",
             "type": "number"
+          },
+          "ident": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ident"
           },
           "minimums": {
             "anyOf": [
@@ -3918,6 +3940,77 @@
           "selected"
         ],
         "title": "Candidate",
+        "type": "object"
+      },
+      "CfrGroup": {
+        "description": "A subpart, or the sections before the first.",
+        "properties": {
+          "head": {
+            "title": "Head",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/CfrSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "head",
+          "sections"
+        ],
+        "title": "CfrGroup",
+        "type": "object"
+      },
+      "CfrSection": {
+        "description": "A section, or an appendix or SFAR read as one.",
+        "properties": {
+          "head": {
+            "title": "Head",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "paragraphs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paragraphs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "head",
+          "paragraphs"
+        ],
+        "title": "CfrSection",
+        "type": "object"
+      },
+      "CfrText": {
+        "description": "A CFR part's text in one edition (the eCFR's issue date).",
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/CfrGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "head": {
+            "title": "Head",
+            "type": "string"
+          }
+        },
+        "required": [
+          "head",
+          "groups"
+        ],
+        "title": "CfrText",
         "type": "object"
       },
       "ChangesAsk": {
@@ -9408,6 +9501,25 @@
         "title": "ExperienceItem",
         "type": "object"
       },
+      "FaaPublications": {
+        "description": "The card's plates (the d-TPP: diagram, procedures, minimums) and its\nChart Supplement page, each by the edition its links are of.",
+        "properties": {
+          "plates": {
+            "$ref": "#/components/schemas/PublicationEdition",
+            "default": {
+              "state": "current"
+            }
+          },
+          "supplement": {
+            "$ref": "#/components/schemas/PublicationEdition",
+            "default": {
+              "state": "current"
+            }
+          }
+        },
+        "title": "FaaPublications",
+        "type": "object"
+      },
       "FeedHealth": {
         "description": "Every live feed as last checked (each minute), and after how many\nminutes stale a feed is an alert; `webhook` whether alerts are POSTed\nanywhere (FEED_ALERT_WEBHOOK).",
         "properties": {
@@ -9809,6 +9921,104 @@
           "hex"
         ],
         "title": "FlightDetail",
+        "type": "object"
+      },
+      "FlightPlates": {
+        "description": "The plates Keep for the Air keeps for a flight, with their size,\nabout, before any is fetched. `range_nm` is the diversion range (the\nengine's `diversion_range_nm`: the reserve's `reserve_min` at the\nairplane's cruise, or its tanks' reach, `basis`), null with no\nairplane. `alternate` is the one filed, or the engine's pick\n(`alternate_picked`, 14 CFR 91.169(c)). `cycle` is the d-TPP cycle the\ncharts are of (`state` \"kept\" where the FAA's could not be had), and\n`next_at` when the next takes over.",
+        "properties": {
+          "alternate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alternate"
+          },
+          "alternate_picked": {
+            "title": "Alternate Picked",
+            "type": "boolean"
+          },
+          "basis": {
+            "enum": [
+              "reserve",
+              "tanks",
+              "no_airplane"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "charts": {
+            "title": "Charts",
+            "type": "integer"
+          },
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/KeptPlateField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          },
+          "range_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Nm"
+          },
+          "reserve_min": {
+            "title": "Reserve Min",
+            "type": "number"
+          },
+          "state": {
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "range_nm",
+          "reserve_min",
+          "basis",
+          "cycle",
+          "state",
+          "next_at",
+          "alternate",
+          "alternate_picked",
+          "fields",
+          "charts",
+          "bytes"
+        ],
+        "title": "FlightPlates",
         "type": "object"
       },
       "FlightRoute": {
@@ -10857,6 +11067,11 @@
             "title": "Destination",
             "type": "string"
           },
+          "passes": {
+            "default": false,
+            "title": "Passes",
+            "type": "boolean"
+          },
           "reason": {
             "default": "fuel",
             "enum": [
@@ -10865,6 +11080,17 @@
             ],
             "title": "Reason",
             "type": "string"
+          },
+          "short": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShortFlight"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "stops": {
             "items": {
@@ -12210,6 +12436,79 @@
         "title": "InspectionsAsk",
         "type": "object"
       },
+      "InstructorVerification": {
+        "description": "Whether the FAA airmen registry bears the instructor out (the\nengine's instructor_verification).",
+        "properties": {
+          "reason": {
+            "description": "verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.",
+            "title": "Reason",
+            "type": "string"
+          },
+          "registry_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The FAA's unique id of the record matched, where one was.",
+            "title": "Registry Id"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "words": {
+            "description": "The verdict as the pilot reads it.",
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "verified",
+          "registry_id",
+          "reason",
+          "words"
+        ],
+        "title": "InstructorVerification",
+        "type": "object"
+      },
+      "InstructorVerificationAsk": {
+        "description": "An instructor about to sign for a student: both names as on their\ncertificates, the day, and the FAA records other accounts sign as.",
+        "properties": {
+          "bound_elsewhere": {
+            "default": [],
+            "description": "FAA unique ids another Wingtip account already signs as.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Bound Elsewhere",
+            "type": "array"
+          },
+          "instructor_name": {
+            "title": "Instructor Name",
+            "type": "string"
+          },
+          "signed_on": {
+            "format": "date",
+            "title": "Signed On",
+            "type": "string"
+          },
+          "student_name": {
+            "default": "",
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instructor_name",
+          "signed_on"
+        ],
+        "title": "InstructorVerificationAsk",
+        "type": "object"
+      },
       "ItwsAlert": {
         "description": "One ITWS alert (wingtip.itws): what (`alert`: microburst, wind\nshear, gust front, tornado, storm cell) and its words as a pilot is\ntold them (\"Runway 27L arrival microburst alert 40 kt, runway to 3\nmile final\", AIM 4-3-7); a runway alert's runway, direction, code,\nvalue in knots and span.",
         "properties": {
@@ -12431,6 +12730,51 @@
           "title"
         ],
         "title": "KeptItem",
+        "type": "object"
+      },
+      "KeptPlateField": {
+        "description": "A field whose plates are kept: its part in the flight, how far it is\noff the route (a diversion's), and the charts its part keeps (the\nengine's `plates_kept`).",
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/TerminalChart"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "off_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Off Nm"
+          },
+          "role": {
+            "enum": [
+              "departure",
+              "destination",
+              "stop",
+              "alternate",
+              "diversion"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "role",
+          "charts"
+        ],
+        "title": "KeptPlateField",
         "type": "object"
       },
       "Leg": {
@@ -13017,6 +13361,104 @@
         "title": "LegProcedure",
         "type": "object"
       },
+      "Library": {
+        "description": "The shelf in its order.",
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/LibraryDocument"
+            },
+            "title": "Documents",
+            "type": "array"
+          }
+        },
+        "required": [
+          "documents"
+        ],
+        "title": "Library",
+        "type": "object"
+      },
+      "LibraryDocument": {
+        "description": "One document of the shelf, by the name the engine's citations give\nit (cfr-14-91, aim, ac-61-65, phak).",
+        "properties": {
+          "bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bytes"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "edition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "pdf",
+              "text"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "group",
+          "kind",
+          "edition",
+          "label",
+          "date",
+          "bytes"
+        ],
+        "title": "LibraryDocument",
+        "type": "object"
+      },
       "LightingNote": {
         "description": "A sentence of the remarks the engine could not read as systems: its\ncontractions written out, every other word kept (`words`), and as\nsent (`as_written`).",
         "properties": {
@@ -13272,10 +13714,33 @@
             "title": "Fuel Arm In",
             "type": "number"
           },
+          "fuel_grade": {
+            "anyOf": [
+              {
+                "enum": [
+                  "avgas",
+                  "jet_a"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fuel Grade"
+          },
           "fuel_lb_per_gal": {
-            "default": 6.0,
-            "title": "Fuel Lb Per Gal",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fuel Lb Per Gal"
           },
           "fuel_max_gal": {
             "title": "Fuel Max Gal",
@@ -15379,6 +15844,30 @@
         "title": "NextCycle",
         "type": "object"
       },
+      "NoFuelStop": {
+        "description": "A flight short of fuel the planner offers no stop on, and why: the\nfuel on board at the start under its start, taxi and reserve already\n(`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in\nreach of the tanks.",
+        "properties": {
+          "departure": {
+            "title": "Departure",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "on_board": {
+            "default": false,
+            "title": "On Board",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "departure",
+          "destination"
+        ],
+        "title": "NoFuelStop",
+        "type": "object"
+      },
       "NotamReason": {
         "description": "Why it bears on the flight, or does not, in the engine's words.",
         "properties": {
@@ -15409,7 +15898,7 @@
         "type": "object"
       },
       "NotamsRanked": {
-        "description": "The flight's NOTAMs best first, every one heard (`notams`), how many\nare said first (`top`), the day the NOTAM feed was first heard\n(`coverage_since`: earlier NOTAMs never changed since are not held) and\nwhat could not be checked (\"tfrs\").",
+        "description": "The flight's NOTAMs best first, every one heard (`notams`), how many\nare said first (`top`), the day the NOTAM feed was first heard\n(`coverage_since`), whether the planner holds every NOTAM in force\n(`full_set`) and what could not be checked (\"tfrs\").",
         "properties": {
           "coverage_since": {
             "anyOf": [
@@ -15421,6 +15910,11 @@
               }
             ],
             "title": "Coverage Since"
+          },
+          "full_set": {
+            "default": false,
+            "title": "Full Set",
+            "type": "boolean"
           },
           "notams": {
             "items": {
@@ -15660,138 +16154,6 @@
           "carol_url"
         ],
         "title": "NtsbCase",
-        "type": "object"
-      },
-      "NtsbEvent": {
-        "description": "One NTSB case of the airplane (wingtip.history.ntsb), its texts\nverbatim: where and when (the local date), its phase of flight and\nhighest injury in the NTSB's words, its probable cause once the final\nreport is out, and its narrative (the final report's, else the\npreliminary's factual one).",
-        "properties": {
-          "carol_url": {
-            "title": "Carol Url",
-            "type": "string"
-          },
-          "city": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "City"
-          },
-          "country": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Country"
-          },
-          "date": {
-            "title": "Date",
-            "type": "string"
-          },
-          "docket_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Docket Url"
-          },
-          "ev_id": {
-            "title": "Ev Id",
-            "type": "string"
-          },
-          "highest_injury": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Highest Injury"
-          },
-          "narrative": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Narrative"
-          },
-          "narrative_kind": {
-            "anyOf": [
-              {
-                "enum": [
-                  "final",
-                  "preliminary"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Narrative Kind"
-          },
-          "ntsb_no": {
-            "title": "Ntsb No",
-            "type": "string"
-          },
-          "phase": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phase"
-          },
-          "probable_cause": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Probable Cause"
-          },
-          "state": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "State"
-          }
-        },
-        "required": [
-          "ntsb_no",
-          "ev_id",
-          "date",
-          "carol_url"
-        ],
-        "title": "NtsbEvent",
         "type": "object"
       },
       "Obstacle": {
@@ -18323,6 +18685,143 @@
         "title": "PlatePage",
         "type": "object"
       },
+      "PlateStateCharts": {
+        "description": "A state's set of `cycle`: every open field the d-TPP files under it\nand its charts, each fetched as the card's Charts tab fetches it.",
+        "properties": {
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/PlateStateField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cycle",
+          "next_at",
+          "id",
+          "name",
+          "fields"
+        ],
+        "title": "PlateStateCharts",
+        "type": "object"
+      },
+      "PlateStateField": {
+        "description": "One field of a state's set and its charts.",
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/TerminalChart"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "charts"
+        ],
+        "title": "PlateStateField",
+        "type": "object"
+      },
+      "PlateStateSet": {
+        "description": "A state's plates as Downloads offers them: its fields and charts\nand their size, about.",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "charts": {
+            "title": "Charts",
+            "type": "integer"
+          },
+          "fields": {
+            "title": "Fields",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "fields",
+          "charts",
+          "bytes"
+        ],
+        "title": "PlateStateSet",
+        "type": "object"
+      },
+      "PlateStates": {
+        "description": "The states whose plates can be kept, of the d-TPP `cycle` (null\nwhere no index could be had), and when the next takes over.",
+        "properties": {
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "states": {
+            "items": {
+              "$ref": "#/components/schemas/PlateStateSet"
+            },
+            "title": "States",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cycle",
+          "next_at",
+          "state",
+          "states"
+        ],
+        "title": "PlateStates",
+        "type": "object"
+      },
       "PointOffFix": {
         "description": "A point named as the pilot's own point off the nearest fix a pilot\nknows (wingtip.fixes.frd_near): \"VPBNG/095/14.2\", its fix, its magnetic\ncourse from it (a VOR's radial where `radial`), its distance, and its\nname, \"14.2 nm on 095\u00b0 from VPBNG\".",
         "properties": {
@@ -18999,6 +19498,65 @@
         "title": "ProfileAirspace",
         "type": "object"
       },
+      "ProfileCloud": {
+        "description": "A TAF station's forecast cloud base on the side view\n(wingtip.profile_weather): where along the route, its base MSL (the\nceiling over the flight above the field, plus its elevation), and when\nits TAF was issued.",
+        "properties": {
+          "along_nm": {
+            "title": "Along Nm",
+            "type": "number"
+          },
+          "base_ft": {
+            "title": "Base Ft",
+            "type": "number"
+          },
+          "issued": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued"
+          },
+          "station": {
+            "title": "Station",
+            "type": "string"
+          }
+        },
+        "required": [
+          "station",
+          "along_nm",
+          "base_ft"
+        ],
+        "title": "ProfileCloud",
+        "type": "object"
+      },
+      "ProfileFreezing": {
+        "description": "The freezing level over a point of the route, ft MSL; at or below\nit where the forecast is freezing at its lowest level already.",
+        "properties": {
+          "along_nm": {
+            "title": "Along Nm",
+            "type": "number"
+          },
+          "at_or_below": {
+            "default": false,
+            "title": "At Or Below",
+            "type": "boolean"
+          },
+          "ft": {
+            "title": "Ft",
+            "type": "number"
+          }
+        },
+        "required": [
+          "along_nm",
+          "ft"
+        ],
+        "title": "ProfileFreezing",
+        "type": "object"
+      },
       "ProfileGround": {
         "properties": {
           "along_nm": {
@@ -19017,9 +19575,99 @@
         "title": "ProfileGround",
         "type": "object"
       },
-      "ProfileObstacle": {
-        "description": "An obstacle of the FAA's DOF near the route's line: where along it,\nand its top, feet MSL.",
+      "ProfileIcing": {
+        "description": "A G-AIRMET icing area the route crosses: from where to where along\nit, between which altitudes (ft MSL; the floor the freezing level\nwhere `from_freezing_level`), and when it is valid and was issued.",
         "properties": {
+          "from_freezing_level": {
+            "default": false,
+            "title": "From Freezing Level",
+            "type": "boolean"
+          },
+          "from_nm": {
+            "title": "From Nm",
+            "type": "number"
+          },
+          "high_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Ft"
+          },
+          "issued": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued"
+          },
+          "low_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Ft"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "to_nm": {
+            "title": "To Nm",
+            "type": "number"
+          },
+          "valid_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid At"
+          }
+        },
+        "required": [
+          "from_nm",
+          "to_nm"
+        ],
+        "title": "ProfileIcing",
+        "type": "object"
+      },
+      "ProfileObstacle": {
+        "description": "An obstacle of the FAA's DOF near the route's line: where along it,\nits top, feet MSL, and its height above the ground there, feet AGL\n(the DOF's AMSL and AGL columns).",
+        "properties": {
+          "agl_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agl Ft"
+          },
           "along_nm": {
             "title": "Along Nm",
             "type": "number"
@@ -19052,6 +19700,70 @@
           "alt_ft"
         ],
         "title": "ProfilePoint",
+        "type": "object"
+      },
+      "ProfileWeatherSource": {
+        "description": "Whose forecast a figure is and for when: its name, its run, ISO\nUTC, and the time it is read at.",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run"
+          },
+          "valid_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid At"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "ProfileWeatherSource",
+        "type": "object"
+      },
+      "PublicationEdition": {
+        "description": "Which edition of one of the FAA's publications a card's links are of\n(wingtip.publications.editions): an FAA outage is said, not read as a\nfield with no plates.",
+        "properties": {
+          "edition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition"
+          },
+          "state": {
+            "default": "current",
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "title": "PublicationEdition",
         "type": "object"
       },
       "PyramidPass": {
@@ -19367,6 +20079,59 @@
           "detail"
         ],
         "title": "RecentError",
+        "type": "object"
+      },
+      "RecordsBatch": {
+        "description": "The answers to a RecordsBatchAsk, each list in the order asked.",
+        "properties": {
+          "endorsements": {
+            "items": {
+              "$ref": "#/components/schemas/Endorsements"
+            },
+            "title": "Endorsements",
+            "type": "array"
+          },
+          "experience": {
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/ExperienceItem"
+              },
+              "type": "array"
+            },
+            "title": "Experience",
+            "type": "array"
+          }
+        },
+        "required": [
+          "experience",
+          "endorsements"
+        ],
+        "title": "RecordsBatch",
+        "type": "object"
+      },
+      "RecordsBatchAsk": {
+        "description": "Many students' records asked at once, for an instructor's page:\neach student's experience (ExperienceAsk) and every endorsements ask\n(EndorsementsAsk: a student's solo day, a review's 61.93(d) checks,\na signed list's last good days), answered in the same order. One\nround trip for the page rather than two a student and two a review.",
+        "properties": {
+          "endorsements": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EndorsementsAsk"
+            },
+            "maxItems": 500,
+            "title": "Endorsements",
+            "type": "array"
+          },
+          "experience": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ExperienceAsk"
+            },
+            "maxItems": 500,
+            "title": "Experience",
+            "type": "array"
+          }
+        },
+        "title": "RecordsBatchAsk",
         "type": "object"
       },
       "RegistryDocument": {
@@ -20371,6 +21136,62 @@
         "title": "RouteProfile",
         "type": "object"
       },
+      "RouteStat": {
+        "description": "One route and method as the planner has answered it since it\nstarted (app.route_metrics): calls, those of 500 or more, their share,\nand the time at the 50th and 95th percentile in milliseconds (none\nbefore a call).",
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "error_rate": {
+            "title": "Error Rate",
+            "type": "number"
+          },
+          "errors": {
+            "title": "Errors",
+            "type": "integer"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "p50_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50 Ms"
+          },
+          "p95_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Ms"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          }
+        },
+        "required": [
+          "route",
+          "method",
+          "count",
+          "errors",
+          "error_rate"
+        ],
+        "title": "RouteStat",
+        "type": "object"
+      },
       "RouteTfr": {
         "description": "A TFR within a few miles of the route and in force at some time\nduring the flight: how far along the route it is, whether the route\ngoes through it, and whether it is in force now.",
         "properties": {
@@ -20537,6 +21358,67 @@
           "active_now"
         ],
         "title": "RouteTfr",
+        "type": "object"
+      },
+      "RouteWeather": {
+        "description": "The weather on the route's side view (wingtip.profile_weather),\nalong the same hops as RouteProfile's ground: the cloud bases, the\nfreezing level and its source, the icing, and which of the three\ncould not be read (`unavailable`: \"clouds\", \"freezing\", \"icing\"),\nunknown rather than none.",
+        "properties": {
+          "clouds": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileCloud"
+            },
+            "title": "Clouds",
+            "type": "array"
+          },
+          "for_time": {
+            "title": "For Time",
+            "type": "string"
+          },
+          "freezing": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileFreezing"
+            },
+            "title": "Freezing",
+            "type": "array"
+          },
+          "freezing_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileWeatherSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "icing": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileIcing"
+            },
+            "title": "Icing",
+            "type": "array"
+          },
+          "unavailable": {
+            "default": [],
+            "items": {
+              "enum": [
+                "clouds",
+                "freezing",
+                "icing"
+              ],
+              "type": "string"
+            },
+            "title": "Unavailable",
+            "type": "array"
+          }
+        },
+        "required": [
+          "clouds",
+          "freezing",
+          "icing",
+          "for_time"
+        ],
+        "title": "RouteWeather",
         "type": "object"
       },
       "RunAlert": {
@@ -21525,6 +22407,48 @@
         "title": "SaaStatuses",
         "type": "object"
       },
+      "SameField": {
+        "description": "For each ident asked, in order, whether it names the field.",
+        "properties": {
+          "same": {
+            "items": {
+              "type": "boolean"
+            },
+            "title": "Same",
+            "type": "array"
+          }
+        },
+        "required": [
+          "same"
+        ],
+        "title": "SameField",
+        "type": "object"
+      },
+      "SameFieldAsk": {
+        "description": "Which of `idents` name the field `field`: a lesson's field and the\nstops and ends of the flights put to its instructor.",
+        "properties": {
+          "field": {
+            "maxLength": 8,
+            "title": "Field",
+            "type": "string"
+          },
+          "idents": {
+            "default": [],
+            "items": {
+              "maxLength": 8,
+              "type": "string"
+            },
+            "maxItems": 500,
+            "title": "Idents",
+            "type": "array"
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "title": "SameFieldAsk",
+        "type": "object"
+      },
       "ServiceStatus": {
         "properties": {
           "detail": {
@@ -21673,6 +22597,25 @@
           "grass_ground_roll_pct"
         ],
         "title": "ShortField",
+        "type": "object"
+      },
+      "ShortFlight": {
+        "description": "A flight between two landings, by its two ends.",
+        "properties": {
+          "departure": {
+            "title": "Departure",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          }
+        },
+        "required": [
+          "departure",
+          "destination"
+        ],
+        "title": "ShortFlight",
         "type": "object"
       },
       "SpecialUse": {
@@ -22136,6 +23079,14 @@
             "title": "Recent Errors",
             "type": "array"
           },
+          "routes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RouteStat"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
           "services": {
             "$ref": "#/components/schemas/Services"
           },
@@ -22351,1045 +23302,6 @@
           "fields"
         ],
         "title": "StopFields",
-        "type": "object"
-      },
-      "StudioDraft": {
-        "description": "A crash draft: the event as reported (local date and time, place),\nthe airplane (N-number, its Mode S code where the registry gave one),\nwhere it stands, and what the identity check found. `track` is \"adsb\",\nor \"none\" for a draft of the place alone; `fatal` None where no source\nsays, which holds publishing as a fatal event does.",
-        "properties": {
-          "aircraft": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Aircraft"
-          },
-          "captions": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StudioDraftCaptions"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "city": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "City"
-          },
-          "fatal": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fatal"
-          },
-          "hex": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hex"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "identity": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StudioDraftIdentity"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "identity_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Identity By"
-          },
-          "kit_at": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Kit At"
-          },
-          "lat": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lat"
-          },
-          "local_date": {
-            "title": "Local Date",
-            "type": "string"
-          },
-          "local_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Local Time"
-          },
-          "lon": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lon"
-          },
-          "n_number": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "N Number"
-          },
-          "noticed_at": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Noticed At"
-          },
-          "rendered_at": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rendered At"
-          },
-          "sources": {
-            "items": {
-              "$ref": "#/components/schemas/StudioDraftSource"
-            },
-            "title": "Sources",
-            "type": "array"
-          },
-          "state": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "State"
-          },
-          "status": {
-            "enum": [
-              "needs_identity",
-              "ready",
-              "rendered",
-              "dismissed"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "track": {
-            "anyOf": [
-              {
-                "enum": [
-                  "adsb",
-                  "none"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Track"
-          }
-        },
-        "required": [
-          "id",
-          "status",
-          "local_date",
-          "sources"
-        ],
-        "title": "StudioDraft",
-        "type": "object"
-      },
-      "StudioDraftCaptions": {
-        "description": "The film's words, facts only: a title, \"Preliminary ...\", \"No ADS-B\ntrack\" where there is none, the sources' words quoted, the credits.",
-        "properties": {
-          "credits": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Credits",
-            "type": "array"
-          },
-          "quotes": {
-            "items": {
-              "$ref": "#/components/schemas/StudioDraftQuote"
-            },
-            "title": "Quotes",
-            "type": "array"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "track": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Track"
-          }
-        },
-        "required": [
-          "title",
-          "status",
-          "quotes",
-          "credits"
-        ],
-        "title": "StudioDraftCaptions",
-        "type": "object"
-      },
-      "StudioDraftCheck": {
-        "description": "One of the identity check's checks (the engine's occurrence_identity).",
-        "properties": {
-          "check": {
-            "title": "Check",
-            "type": "string"
-          },
-          "ok": {
-            "title": "Ok",
-            "type": "boolean"
-          },
-          "words": {
-            "title": "Words",
-            "type": "string"
-          }
-        },
-        "required": [
-          "check",
-          "ok",
-          "words"
-        ],
-        "title": "StudioDraftCheck",
-        "type": "object"
-      },
-      "StudioDraftIdentity": {
-        "description": "The engine's verdict on the draft's identity, each check made, the\nwindow it read the track in and the report nearest the place.",
-        "properties": {
-          "checks": {
-            "items": {
-              "$ref": "#/components/schemas/StudioDraftCheck"
-            },
-            "title": "Checks",
-            "type": "array"
-          },
-          "nearest": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StudioDraftNearest"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "verdict": {
-            "enum": [
-              "confirmed",
-              "no_track",
-              "needs_human"
-            ],
-            "title": "Verdict",
-            "type": "string"
-          },
-          "window": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StudioDraftWindow"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "verdict",
-          "checks"
-        ],
-        "title": "StudioDraftIdentity",
-        "type": "object"
-      },
-      "StudioDraftIdentityAsk": {
-        "description": "The developer's word on a draft's identity: right (`confirm`), or\nnot; with an N-number where the report gave none, which the job then\nchecks against the registry and the track as it checks its own.",
-        "properties": {
-          "confirm": {
-            "title": "Confirm",
-            "type": "boolean"
-          },
-          "n_number": {
-            "anyOf": [
-              {
-                "pattern": "^[Nn]?[1-9][0-9A-Za-z]{0,4}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "N Number"
-          }
-        },
-        "required": [
-          "confirm"
-        ],
-        "title": "StudioDraftIdentityAsk",
-        "type": "object"
-      },
-      "StudioDraftNearest": {
-        "description": "The track's report in the window nearest the reported place.",
-        "properties": {
-          "distance_nm": {
-            "title": "Distance Nm",
-            "type": "number"
-          },
-          "lat": {
-            "title": "Lat",
-            "type": "number"
-          },
-          "lon": {
-            "title": "Lon",
-            "type": "number"
-          },
-          "t": {
-            "title": "T",
-            "type": "number"
-          }
-        },
-        "required": [
-          "t",
-          "lat",
-          "lon",
-          "distance_nm"
-        ],
-        "title": "StudioDraftNearest",
-        "type": "object"
-      },
-      "StudioDraftQuote": {
-        "properties": {
-          "source": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source"
-          },
-          "url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Url"
-          },
-          "words": {
-            "title": "Words",
-            "type": "string"
-          }
-        },
-        "required": [
-          "words"
-        ],
-        "title": "StudioDraftQuote",
-        "type": "object"
-      },
-      "StudioDraftSource": {
-        "description": "One source's word of the event, as it gave it: \"faa_statement\",\n\"faa_notice\" or \"ntsb\"; its page (or the notice's file); its heading\nand its words, unchanged, which a caption quotes.",
-        "properties": {
-          "heading": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Heading"
-          },
-          "source": {
-            "title": "Source",
-            "type": "string"
-          },
-          "text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text"
-          },
-          "url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Url"
-          }
-        },
-        "required": [
-          "source"
-        ],
-        "title": "StudioDraftSource",
-        "type": "object"
-      },
-      "StudioDraftWindow": {
-        "description": "The time window the report gives, s since 1970 (UTC).",
-        "properties": {
-          "end": {
-            "title": "End",
-            "type": "number"
-          },
-          "start": {
-            "title": "Start",
-            "type": "number"
-          }
-        },
-        "required": [
-          "start",
-          "end"
-        ],
-        "title": "StudioDraftWindow",
-        "type": "object"
-      },
-      "StudioGround": {
-        "description": "The ground's height under each point asked, ft MSL, in order: the\nelevation tiles (USGS 3DEP and SRTM, wingtip.elevation).",
-        "properties": {
-          "ground_ft": {
-            "items": {
-              "type": "number"
-            },
-            "title": "Ground Ft",
-            "type": "array"
-          }
-        },
-        "required": [
-          "ground_ft"
-        ],
-        "title": "StudioGround",
-        "type": "object"
-      },
-      "StudioGroundAsk": {
-        "description": "Points along a replayed track, [lat, lon] each, for the ground\nunder them: the Studio's profile strip.",
-        "properties": {
-          "points": {
-            "items": {
-              "maxItems": 2,
-              "minItems": 2,
-              "prefixItems": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "number"
-                }
-              ],
-              "type": "array"
-            },
-            "maxItems": 400,
-            "title": "Points",
-            "type": "array"
-          }
-        },
-        "required": [
-          "points"
-        ],
-        "title": "StudioGroundAsk",
-        "type": "object"
-      },
-      "StudioMetar": {
-        "description": "A station's METAR, as it sent it (IEM's archive).",
-        "properties": {
-          "lat": {
-            "title": "Lat",
-            "type": "number"
-          },
-          "lon": {
-            "title": "Lon",
-            "type": "number"
-          },
-          "raw": {
-            "title": "Raw",
-            "type": "string"
-          },
-          "station": {
-            "title": "Station",
-            "type": "string"
-          },
-          "time": {
-            "title": "Time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "station",
-          "lat",
-          "lon",
-          "time",
-          "raw"
-        ],
-        "title": "StudioMetar",
-        "type": "object"
-      },
-      "StudioNotam": {
-        "description": "A NOTAM in force then, as sent, at its field's position (None for\none at no field).",
-        "properties": {
-          "end": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "End"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "lat": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lat"
-          },
-          "lon": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lon"
-          },
-          "start": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start"
-          },
-          "text": {
-            "title": "Text",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "text"
-        ],
-        "title": "StudioNotam",
-        "type": "object"
-      },
-      "StudioNotams": {
-        "description": "The NOTAMs and TFRs in force at a moment inside a box, from the day's\narchive kept here (wingtip.history.notam_archive); `archived` False\nwhere no archive covers that UTC day.",
-        "properties": {
-          "archived": {
-            "title": "Archived",
-            "type": "boolean"
-          },
-          "day": {
-            "title": "Day",
-            "type": "string"
-          },
-          "notams": {
-            "items": {
-              "$ref": "#/components/schemas/StudioNotam"
-            },
-            "title": "Notams",
-            "type": "array"
-          },
-          "tfrs": {
-            "items": {
-              "$ref": "#/components/schemas/StudioTfr"
-            },
-            "title": "Tfrs",
-            "type": "array"
-          }
-        },
-        "required": [
-          "archived",
-          "day",
-          "notams",
-          "tfrs"
-        ],
-        "title": "StudioNotams",
-        "type": "object"
-      },
-      "StudioRadarFrame": {
-        "description": "The NEXRAD composite at one five-minute mosaic: its time and its\nXYZ tile template on IEM's tile cache.",
-        "properties": {
-          "tiles": {
-            "title": "Tiles",
-            "type": "string"
-          },
-          "valid": {
-            "title": "Valid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "valid",
-          "tiles"
-        ],
-        "title": "StudioRadarFrame",
-        "type": "object"
-      },
-      "StudioReport": {
-        "description": "One report of the day: when (s since 1970), where, its altitude\n(ft; the transponder's pressure altitude for adsb.lol's day, see\n`altitude`; None on the ground), ground speed (kt), track (degrees\ntrue), whether it was on the ground, and the altimeter setting.",
-        "properties": {
-          "alt_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Alt Ft"
-          },
-          "ground": {
-            "default": false,
-            "title": "Ground",
-            "type": "boolean"
-          },
-          "gs_kt": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Gs Kt"
-          },
-          "lat": {
-            "title": "Lat",
-            "type": "number"
-          },
-          "lon": {
-            "title": "Lon",
-            "type": "number"
-          },
-          "qnh_hpa": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Qnh Hpa"
-          },
-          "t": {
-            "title": "T",
-            "type": "number"
-          },
-          "track_deg": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Track Deg"
-          }
-        },
-        "required": [
-          "t",
-          "lat",
-          "lon"
-        ],
-        "title": "StudioReport",
-        "type": "object"
-      },
-      "StudioTaf": {
-        "description": "A station's TAF, as the NWS issued it (IEM's archive).",
-        "properties": {
-          "issued": {
-            "title": "Issued",
-            "type": "string"
-          },
-          "raw": {
-            "title": "Raw",
-            "type": "string"
-          },
-          "station": {
-            "title": "Station",
-            "type": "string"
-          }
-        },
-        "required": [
-          "station",
-          "issued",
-          "raw"
-        ],
-        "title": "StudioTaf",
-        "type": "object"
-      },
-      "StudioTfr": {
-        "description": "A TFR in force then: its NOTAM's id, title, times and text, and its\nareas (GeoJSON MultiPolygon, rounded to about 11 m).",
-        "properties": {
-          "end": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "End"
-          },
-          "geometry": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Geometry"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "start": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start"
-          },
-          "text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "StudioTfr",
-        "type": "object"
-      },
-      "StudioTrack": {
-        "description": "An airplane's reports on a UTC day, for the Studio's replay\n(wingtip.traffic.day_tracks), with where they came from, which the\nStudio shows (ODbL 1.0 asks for it).",
-        "properties": {
-          "altitude": {
-            "enum": [
-              "pressure",
-              "reported"
-            ],
-            "title": "Altitude",
-            "type": "string"
-          },
-          "day": {
-            "title": "Day",
-            "type": "string"
-          },
-          "hex": {
-            "title": "Hex",
-            "type": "string"
-          },
-          "license": {
-            "title": "License",
-            "type": "string"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "points": {
-            "items": {
-              "$ref": "#/components/schemas/StudioReport"
-            },
-            "title": "Points",
-            "type": "array"
-          },
-          "registration": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Registration"
-          },
-          "source": {
-            "title": "Source",
-            "type": "string"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          }
-        },
-        "required": [
-          "hex",
-          "day",
-          "points",
-          "altitude",
-          "source",
-          "license"
-        ],
-        "title": "StudioTrack",
-        "type": "object"
-      },
-      "StudioWatched": {
-        "description": "An airplane followed here (its card opened), whose reports are\nrecorded (wingtip.traffic.recorded): one the Studio can replay without\nasking adsb.lol.",
-        "properties": {
-          "days": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Days",
-            "type": "array"
-          },
-          "hex": {
-            "title": "Hex",
-            "type": "string"
-          },
-          "registration": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Registration"
-          }
-        },
-        "required": [
-          "hex",
-          "days"
-        ],
-        "title": "StudioWatched",
-        "type": "object"
-      },
-      "StudioWeather": {
-        "description": "The weather as it was over a replayed flight\n(wingtip.history.weather_then): the METARs of the stations near its\ntrack from an hour before to an hour after, the TAFs in force over it,\nand the radar's frames, with where they came from.",
-        "properties": {
-          "credit": {
-            "title": "Credit",
-            "type": "string"
-          },
-          "metars": {
-            "items": {
-              "$ref": "#/components/schemas/StudioMetar"
-            },
-            "title": "Metars",
-            "type": "array"
-          },
-          "radar": {
-            "items": {
-              "$ref": "#/components/schemas/StudioRadarFrame"
-            },
-            "title": "Radar",
-            "type": "array"
-          },
-          "source": {
-            "title": "Source",
-            "type": "string"
-          },
-          "tafs": {
-            "items": {
-              "$ref": "#/components/schemas/StudioTaf"
-            },
-            "title": "Tafs",
-            "type": "array"
-          }
-        },
-        "required": [
-          "metars",
-          "tafs",
-          "radar",
-          "source",
-          "credit"
-        ],
-        "title": "StudioWeather",
-        "type": "object"
-      },
-      "StudioWeatherAsk": {
-        "description": "A replayed flight's span (s since 1970, UTC) and points along its\ntrack, [lat, lon] each, for the weather as it was.",
-        "properties": {
-          "end": {
-            "title": "End",
-            "type": "number"
-          },
-          "points": {
-            "items": {
-              "maxItems": 2,
-              "minItems": 2,
-              "prefixItems": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "number"
-                }
-              ],
-              "type": "array"
-            },
-            "maxItems": 200,
-            "title": "Points",
-            "type": "array"
-          },
-          "start": {
-            "title": "Start",
-            "type": "number"
-          }
-        },
-        "required": [
-          "start",
-          "end",
-          "points"
-        ],
-        "title": "StudioWeatherAsk",
         "type": "object"
       },
       "SurfaceAirspace": {
@@ -24336,6 +24248,18 @@
             "title": "Legs Without Wind",
             "type": "integer"
           },
+          "lights": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lights"
+          },
           "night": {
             "anyOf": [
               {
@@ -24359,6 +24283,26 @@
             ],
             "default": null,
             "title": "Night Passengers"
+          },
+          "no_fuel_stop": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/NoFuelStop"
+            },
+            "title": "No Fuel Stop",
+            "type": "array"
+          },
+          "on_board_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "On Board Gal"
           },
           "planned_at": {
             "anyOf": [
@@ -25674,7 +25618,7 @@
         "type": "object"
       },
       "WordsSources": {
-        "description": "A reading's sources, in the order they bear on the flight; for the\nNOTAMs, the day the NOTAM feed was first heard (`coverage_since`, ISO\ndate) and what could not be checked (\"tfrs\"). The feed (SWIM's FNS)\nsends what is issued or changed once it is heard, so NOTAMs issued\nbefore that day and never changed are not in the store: the list is\nwhat was heard since, not every NOTAM in force (the owner, 2026-11-09,\nchose the feed alone over the FAA NOTAM API's full load).",
+        "description": "A reading's sources, in the order they bear on the flight; for the\nNOTAMs, the day the NOTAM feed was first heard (`coverage_since`, ISO\ndate) and what could not be checked (\"tfrs\"). The feed (SWIM's FNS)\nsends what is issued or changed once it is heard, so NOTAMs issued\nbefore that day and never changed are not in the store: the list is\nwhat was heard since, not every NOTAM in force, until NMS's full set\nis held (decision 0059, amending 0023).",
         "properties": {
           "coverage_since": {
             "anyOf": [
@@ -25860,6 +25804,54 @@
           }
         },
         "summary": "Inspections"
+      }
+    },
+    "/api/aircraft/inspections-batch": {
+      "post": {
+        "description": "Many airplanes' inspections in one call, each as\n/api/aircraft/inspections answers it, in the order asked: a pilot's\naircraft list and the daily reminders ask every airplane at once, at\nmost MAX_BATCH.",
+        "operationId": "inspections_batch_api_aircraft_inspections_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/InspectionsAsk"
+                },
+                "maxItems": 500,
+                "title": "Asks",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Inspections"
+                  },
+                  "title": "Response Inspections Batch Api Aircraft Inspections Batch Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspections Batch"
       }
     },
     "/api/aircraft/problems": {
@@ -27586,7 +27578,8 @@
               "application/json": {
                 "schema": {}
               },
-              "image/png": {}
+              "image/png": {},
+              "image/webp": {}
             },
             "description": "Successful Response"
           },
@@ -27659,7 +27652,8 @@
               "application/json": {
                 "schema": {}
               },
-              "image/png": {}
+              "image/png": {},
+              "image/webp": {}
             },
             "description": "Successful Response"
           },
@@ -29138,6 +29132,70 @@
         }
       }
     },
+    "/api/faa-chart/pdf/{source}/{edition}/{pdf}": {
+      "get": {
+        "description": "One of the FAA's charts in force as its PDF, kept for its edition,\nfor the web's own-ship airport diagram, which reads the page's own\nlatitude and longitude labels and hot spots (the engine's\ndiagram_labels, diagram_hot_spot_labels) where the phones read the\nsame PDF themselves.",
+        "operationId": "faa_chart_pdf_api_faa_chart_pdf__source___edition___pdf__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source",
+            "required": true,
+            "schema": {
+              "title": "Source",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "edition",
+            "required": true,
+            "schema": {
+              "title": "Edition",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pdf",
+            "required": true,
+            "schema": {
+              "title": "Pdf",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No such chart in force"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "description": "The FAA could not be reached"
+          }
+        },
+        "summary": "Faa Chart Pdf",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
     "/api/forecast/run": {
       "post": {
         "description": "The dry run against the forecast for the hours it flies: a product\nthat cannot be had is named in `unavailable`, the rest still read.",
@@ -29506,6 +29564,150 @@
         "summary": "Icing On The Route",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/library": {
+      "get": {
+        "description": "Every document on the shelf, in its order: the FAA's books, the AIM,\nthe circulars and the CFR parts, each with the edition kept and its\ndate, or none yet where it has never been had.",
+        "operationId": "library_shelf_api_library_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Library"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Library Shelf",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/library/{doc}/{edition}.pdf": {
+      "get": {
+        "description": "A document's PDF in the edition kept.",
+        "operationId": "library_pdf_api_library__doc___edition__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc",
+            "required": true,
+            "schema": {
+              "title": "Doc",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "edition",
+            "required": true,
+            "schema": {
+              "title": "Edition",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "206": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "The byte range asked for (Range: bytes=a-b)"
+          },
+          "404": {
+            "description": "Not on the shelf, or not the edition kept"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Library Pdf",
+        "x-gateway": {
+          "access": "public",
+          "cache": true,
+          "headers": [
+            "Content-Length",
+            "Content-Range",
+            "Accept-Ranges",
+            "ETag"
+          ],
+          "range": true
+        }
+      }
+    },
+    "/api/library/{doc}/{edition}/text": {
+      "get": {
+        "description": "A CFR part's text in the edition kept (the eCFR's issue date): its\nsubparts and sections, each section's paragraphs.",
+        "operationId": "library_text_api_library__doc___edition__text_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc",
+            "required": true,
+            "schema": {
+              "title": "Doc",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "edition",
+            "required": true,
+            "schema": {
+              "title": "Edition",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CfrText"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Not a CFR part on the shelf, or not the edition kept"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Library Text",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
         }
       }
     },
@@ -30236,6 +30438,16 @@
           },
           {
             "in": "query",
+            "name": "tanks",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Tanks",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "checkpoints",
             "required": false,
             "schema": {
@@ -30870,6 +31082,16 @@
           },
           {
             "in": "query",
+            "name": "tanks",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Tanks",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "checkpoints",
             "required": false,
             "schema": {
@@ -30907,7 +31129,7 @@
     },
     "/api/notams/ranked": {
       "post": {
-        "description": "Every NOTAM the FAA's feed has sent for the fields the route lands\nat and every TFR near it, best first: in force while the flight is\nthere, at its departure, stops or destination, on the runway in use,\nclosing a field, its altitudes taking in the cruise altitude, on an\nairspace the route passes (14 CFR 91.103). `top` are said first; the\nrest are folded, never dropped. `coverage_since`, the day the feed\nwas first heard (UTC).",
+        "description": "Every NOTAM the FAA's feed has sent for the fields the route lands\nat and every TFR near it, best first: in force while the flight is\nthere, at its departure, stops or destination, on the runway in use,\nclosing a field, its altitudes taking in the cruise altitude, on an\nairspace the route passes (14 CFR 91.103). `top` are said first; the\nrest are folded, never dropped. `coverage_since`, the day the feed\nwas first heard (UTC); `full_set`, whether every NOTAM in force is\nheld (NMS's load, decision 0059) or only those heard since.",
         "operationId": "notams_ranked_api_notams_ranked_post",
         "requestBody": {
           "content": {
@@ -31627,6 +31849,123 @@
         "summary": "Instructor Records Since"
       }
     },
+    "/api/pilot/instructor-verification": {
+      "post": {
+        "description": "Whether the instructor about to sign is a flight instructor the FAA\nairmen registry bears out (the engine's instructor_verification, over\nthe flight instructors of that last name ingest keeps, wingtip.airmen):\nan endorsement counts as signed only where it is (14 CFR 61.189(a)).",
+        "operationId": "instructor_verification_api_pilot_instructor_verification_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructorVerificationAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructorVerification"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Instructor Verification"
+      }
+    },
+    "/api/pilot/records-batch": {
+      "post": {
+        "description": "Many students' experience and endorsements in one call, each as\n/api/pilot/experience and /api/pilot/endorsements answer it, in the\norder asked: an instructor's page asks its students and the reviews\nwaiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).",
+        "operationId": "records_batch_api_pilot_records_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordsBatchAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordsBatch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Records Batch"
+      }
+    },
+    "/api/pilot/same-field": {
+      "post": {
+        "description": "Which of the idents name the field, in the order asked: the\ngateway's lessons put to an instructor a student's flights that\nlanded at the lesson's field, by whichever of its names each was\nplanned with (BUR, KBUR; ANC, PANC).",
+        "operationId": "same_field_api_pilot_same_field_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SameFieldAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SameField"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Same Field"
+      }
+    },
     "/api/places/search": {
       "get": {
         "description": "Where a place typed is, for Nearest to find the fields near it\nrather than near own ship: the airports whose ident or name starts\nwith it, the towns that do (the Census gazetteer), and a street\naddress where it starts with a house number (the Census geocoder) --\neach with where it is (wingtip.geocode).",
@@ -32111,6 +32450,16 @@
           },
           {
             "in": "query",
+            "name": "tanks",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Tanks",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "checkpoints",
             "required": false,
             "schema": {
@@ -32143,6 +32492,214 @@
           }
         },
         "summary": "Plan"
+      }
+    },
+    "/api/plates/flight": {
+      "get": {
+        "description": "The plates Keep for the Air keeps for a flight, and their size,\nabout, said before they are fetched: the departure's, the\ndestination's, each stop's and the alternate's -- `alternate` filed,\nor the engine's pick of those that will do at `eta` (UTC; now where\nnot given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --\nand those of the fields within diversion range of the route (the\nengine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and\n`burn_gph`, the picked airplane's own; none with no airplane).",
+        "operationId": "flight_plates_api_plates_flight_get",
+        "parameters": [
+          {
+            "description": "The flight's fields in order, departure to destination: \"KSFO,KPRB,KSBA\".",
+            "in": "query",
+            "name": "route",
+            "required": true,
+            "schema": {
+              "description": "The flight's fields in order, departure to destination: \"KSFO,KPRB,KSBA\".",
+              "title": "Route",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The route flown, \"lat,lon;lat,lon\" (the nav log's); straight legs between the fields where none.",
+            "in": "query",
+            "name": "fixes",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "The route flown, \"lat,lon;lat,lon\" (the nav log's); straight legs between the fields where none.",
+              "title": "Fixes",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "alternate",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Alternate",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "eta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Eta"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tas_kt",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tas Kt"
+            }
+          },
+          {
+            "in": "query",
+            "name": "usable_gal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Usable Gal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "burn_gph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Burn Gph"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightPlates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Flight Plates",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/plates/states": {
+      "get": {
+        "description": "The states whose plates Downloads offers, each with its size,\nabout, of the d-TPP cycle in force, and when the next takes over\n(0901Z on its AIRAC date), when a kept state is fetched again.",
+        "operationId": "plate_states_api_plates_states_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateStates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Plate States",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/plates/states/{cycle}/{state}": {
+      "get": {
+        "description": "A state's plates of `cycle`: each open field and its charts, which\nthe device fetches as the card's Charts tab does (/api/faa-chart).\n404 for a cycle not served or a state with no plates.",
+        "operationId": "plate_state_api_plates_states__cycle___state__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "title": "State",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateStateCharts"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plate State",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/retrain": {
@@ -32486,6 +33043,97 @@
         }
       }
     },
+    "/api/route-profile/weather": {
+      "get": {
+        "description": "The weather on the route's side view, along the same hops as\n/api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing\nlevel and the G-AIRMETs' icing for a flight departing `depart` (now\nwhere not given; a naive time is UTC) and taking `ete_min`, each with\nits source and time (wingtip.profile_weather), from the weather store.",
+        "operationId": "route_profile_weather_api_route_profile_weather_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dep",
+            "required": true,
+            "schema": {
+              "title": "Dep",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dest",
+            "required": true,
+            "schema": {
+              "title": "Dest",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stops",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Stops",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "depart",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Depart"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ete_min",
+            "required": false,
+            "schema": {
+              "default": 0.0,
+              "maximum": 1440,
+              "minimum": 0,
+              "title": "Ete Min",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteWeather"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Route Profile Weather",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
     "/api/status": {
       "get": {
         "description": "One snapshot of the whole stack, for Settings' Dev tab. The\nnetwork probes run side by side so a service that is down costs one\ntimeout, not one per service.",
@@ -32654,643 +33302,6 @@
         "summary": "Stops Near",
         "x-gateway": {
           "access": "public"
-        }
-      }
-    },
-    "/api/studio/drafts": {
-      "get": {
-        "description": "Every crash draft, the newest event first.",
-        "operationId": "studio_drafts_api_studio_drafts_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/StudioDraft"
-                  },
-                  "title": "Response Studio Drafts Api Studio Drafts Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Studio Drafts",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/drafts-to-notice": {
-      "get": {
-        "description": "The ready drafts with a kit the developer has not been mailed about.",
-        "operationId": "studio_drafts_to_notice_api_studio_drafts_to_notice_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/StudioDraft"
-                  },
-                  "title": "Response Studio Drafts To Notice Api Studio Drafts To Notice Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Studio Drafts To Notice",
-        "x-internal": "gateway"
-      }
-    },
-    "/api/studio/drafts/{draft_id}": {
-      "get": {
-        "description": "One draft, with its kit's captions where the kit is made.",
-        "operationId": "studio_draft_api_studio_drafts__draft_id__get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioDraft"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Draft",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/drafts/{draft_id}/dismiss": {
-      "post": {
-        "description": "Set the draft aside: no film, no mail.",
-        "operationId": "studio_draft_dismiss_api_studio_drafts__draft_id__dismiss_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioDraft"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Draft Dismiss",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/drafts/{draft_id}/identity": {
-      "post": {
-        "description": "The developer's word: the identity is right (ready; with a new\nN-number, checked again by the job first), or it is not (the match\nforgotten, waiting for a person).",
-        "operationId": "studio_draft_identity_api_studio_drafts__draft_id__identity_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StudioDraftIdentityAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioDraft"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Draft Identity",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/drafts/{draft_id}/noticed": {
-      "post": {
-        "description": "The developer mailed about the draft: not again.",
-        "operationId": "studio_draft_noticed_api_studio_drafts__draft_id__noticed_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioDraft"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Draft Noticed",
-        "x-internal": "gateway"
-      }
-    },
-    "/api/studio/drafts/{draft_id}/rendered": {
-      "post": {
-        "description": "The Studio's film of a ready draft made (scripts/dev/studio-render.mjs,\nthrough the page). Publishing stays a person's.",
-        "operationId": "studio_draft_rendered_api_studio_drafts__draft_id__rendered_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioDraft"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Draft Rendered",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/drafts/{draft_id}/track": {
-      "get": {
-        "description": "The ADS-B track the draft's identity was confirmed on, as its kit\nkeeps it: a same-day trace, kept before it rolled off. A 404 for a\ndraft with none (\"No ADS-B track\"): never a guessed path.",
-        "operationId": "studio_draft_track_api_studio_drafts__draft_id__track_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioTrack"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Draft Track",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/ground": {
-      "post": {
-        "description": "The ground under a replayed track's points, ft MSL, for its profile\nstrip (wingtip.elevation: the elevation tiles, then USGS's EPQS).",
-        "operationId": "studio_ground_api_studio_ground_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StudioGroundAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioGround"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Ground",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/notams": {
-      "get": {
-        "description": "The NOTAMs and TFRs in force at `at` inside the box, from that UTC\nday's archive (wingtip.history.notam_archive); `archived` false where\nnone was kept that day.",
-        "operationId": "studio_notams_api_studio_notams_get",
-        "parameters": [
-          {
-            "description": "The moment, s since 1970",
-            "in": "query",
-            "name": "at",
-            "required": true,
-            "schema": {
-              "description": "The moment, s since 1970",
-              "title": "At",
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "lat_min",
-            "required": true,
-            "schema": {
-              "maximum": 90,
-              "minimum": -90,
-              "title": "Lat Min",
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "lat_max",
-            "required": true,
-            "schema": {
-              "maximum": 90,
-              "minimum": -90,
-              "title": "Lat Max",
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "lon_min",
-            "required": true,
-            "schema": {
-              "maximum": 180,
-              "minimum": -180,
-              "title": "Lon Min",
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "lon_max",
-            "required": true,
-            "schema": {
-              "maximum": 180,
-              "minimum": -180,
-              "title": "Lon Max",
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioNotams"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Notams",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/ntsb": {
-      "get": {
-        "description": "The NTSB's cases of the airplane dated within a day either side\n(wingtip.history.ntsb); none where there are none, or the store is not\nbuilt yet.",
-        "operationId": "studio_ntsb_api_studio_ntsb_get",
-        "parameters": [
-          {
-            "description": "The registration, N-number or other",
-            "in": "query",
-            "name": "registration",
-            "required": true,
-            "schema": {
-              "description": "The registration, N-number or other",
-              "maxLength": 12,
-              "minLength": 2,
-              "title": "Registration",
-              "type": "string"
-            }
-          },
-          {
-            "description": "The UTC day of the flight",
-            "in": "query",
-            "name": "day",
-            "required": true,
-            "schema": {
-              "description": "The UTC day of the flight",
-              "format": "date",
-              "title": "Day",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/NtsbEvent"
-                  },
-                  "title": "Response Studio Ntsb Api Studio Ntsb Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Ntsb",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/track": {
-      "get": {
-        "description": "The airplane's reports on a UTC day (wingtip.traffic.day_tracks): a\npast day from the store, fetched from adsb.lol's history once where it\nis not there yet; today's from its recent trace. A 404 for a name the\nregistry does not know, a 422 for a day to come, a 503 where adsb.lol\ncannot be read now.",
-        "operationId": "studio_track_api_studio_track_get",
-        "parameters": [
-          {
-            "description": "N-number or ICAO address",
-            "in": "query",
-            "name": "q",
-            "required": true,
-            "schema": {
-              "description": "N-number or ICAO address",
-              "maxLength": 12,
-              "minLength": 2,
-              "title": "Q",
-              "type": "string"
-            }
-          },
-          {
-            "description": "The UTC day",
-            "in": "query",
-            "name": "day",
-            "required": true,
-            "schema": {
-              "description": "The UTC day",
-              "format": "date",
-              "title": "Day",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioTrack"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Track",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/watched": {
-      "get": {
-        "description": "The airplanes followed here, with the UTC days their recorded\nreports fall on, newest first (wingtip.traffic.day_tracks.watched_days).",
-        "operationId": "studio_watched_api_studio_watched_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/StudioWatched"
-                  },
-                  "title": "Response Studio Watched Api Studio Watched Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Studio Watched",
-        "x-gateway": {
-          "access": "developer"
-        }
-      }
-    },
-    "/api/studio/weather": {
-      "post": {
-        "description": "The METARs, TAFs and radar frames over a replayed flight\n(wingtip.history.weather_then): a 422 for a span that ends before it\nstarts or is longer than two days, a 503 where IEM cannot be read now.",
-        "operationId": "studio_weather_api_studio_weather_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StudioWeatherAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StudioWeather"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Studio Weather",
-        "x-gateway": {
-          "access": "developer"
         }
       }
     },

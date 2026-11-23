@@ -11,7 +11,9 @@ export const acDay = (iso: string) => usFormDay(fromIso(iso));
  *  the record comes newest first. Picked by the shared engine
  *  (engine/crates/pilot/src/pilot/endorsements.rs), as the iPhone app picks. */
 export function inForce(signed: SignedEndorsement[]): Map<string, SignedEndorsement> {
-  const picked = callEngine("endorsements_in_force", { signed: signed.map((e) => ({ code: e.code, voided: e.voided })) });
+  const picked = callEngine("endorsements_in_force", {
+    signed: signed.map((e) => ({ code: e.code, voided: e.voided, verified: e.instructorVerified })),
+  });
   return new Map(picked.map(([code, at]) => [code, signed[at]!]));
 }
 

@@ -91,6 +91,9 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `logbook` | Logbook | yes | yes | yes | The pilot's logbook and currency. |
 | `coach` | Coach | yes | yes | yes | The training coach. |
 | `minimums` | Personal Minimums | yes | yes | yes | The weather the pilot will not take off or land in. |
+| `documents` | Documents | yes | yes | yes | The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph. |
+| `scratchpad` | Scratchpad | yes | yes | yes | This flight's scratchpads: pages of ink with a pencil or a finger, blank or a form (CRAFT, ATIS, PIREP), kept on the device; from You and the Brief. |
+| `balance` | Weight & Balance | yes | yes | yes | The airplane's loading weighed as the pilot types (the engine's gonogo_balance), the fuel by its grade, against its envelope; from the Brief. |
 | `guide` | Guide | yes | yes | -- | How the app works, and the practice drills. |
 | `downloads` | Downloads | -- | yes | yes | Charts kept for flying with no signal. |
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |
@@ -113,15 +116,24 @@ The plan's own keys go beside it, and alone they open what they name:
 - `type`: A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own.
 - `rules`: A shared plan's flight rules, vfr or ifr.
 - `tail`: A shared plan's N-number, only where its pilot chose to send it.
+- `tanks`: A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full.
+- `procs`: A shared plan's instrument procedures, as the address keeps them: each a field, a procedure, its transition and a fix flown direct to, colon-separated, and after a fifth colon L for an approach loaded and not flown or M for one flown on into its missed approach (KDLH:I27:::L), comma-separated (the engine's procedures_read).
 - `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
+- `doc`: A document open in the reader and where in it: the library's by its name (aim, cfr-14-91, phak) or the pilot's own (own:<id>), after an @ a section, a paragraph or a page (aim@7-1-5, cfr-14-91@91.155, phak@p42).
 
 <!-- END generated -->
 
 A link with a route and a screen (`?dep=C81&dest=KDLH&open=brief`) plans
-the route, then opens the screen: the web waits up to 30 s for the route
-(`lib/navigation/wanted`), the phones open it after the route command
-(the screen `CommandHost` runs after a link's command, `Links.Route.then`). The word `open` is taken off
+the route on the web, then opens the screen: the web waits up to 30 s for
+the route (`lib/navigation/wanted`). The word `open` is taken off
 the web's address once used, so a reload or Back does not open it again.
+On the phones any route link, with or without `open=shared`, opens the
+shared-flight preview below and replaces the pilot's plan only at Use This
+Plan: any page or app can open a link, and a plan swapped in the air
+unasked is a safety problem (the deep security review of 2026-11-21, N3).
+A screen named beside it is not opened over the preview, and a link with
+only a destination opens the field's card on the iPhone, whose Fly Here
+plans it.
 
 ## Sharing a flight
 
@@ -131,7 +143,11 @@ alike (the owner, 2026-11-09). Two kinds, one address:
 
 - **Plain:** `/app/plan?open=shared&dep=KMSN&dest=KOSH&stops=KJVL&altitude_ft=3500&depart=2026-11-10T15:00:00Z&type=C172&rules=vfr`,
   the plan in the link itself, which stores nothing on a server and opens
-  signed out. `tail=` only where the pilot ticks Include N-number. Sent from
+  signed out. `tail=` only where the pilot ticks Include N-number;
+  `tanks=` where the pilot set the fuel on a gauge (the iPhone and Android
+  write and read it through the generated link keys, `LinkKey.tanks` and
+  `LinkKey.TANKS`, and Use This Plan sets it on the receiver's gauges;
+  the web's `lib/sharedFlight` neither writes nor reads it yet). Sent from
   the route's Share (the web's route menu and its cards' Share in the bar,
   iOS's Share menu, Android's FPL Share) through the platform's own share
   sheet: the Web Share API, or the link copied; `ShareLink`; the Android
@@ -165,15 +181,18 @@ otherwise.
 
 Since the one search (the owner's approved design, 2026-11-09, branch
 `claude/one-search-web`) the web's sheet has no tabs. Its first row is one
-field, "Search airports and airplanes" (the web has no Ask since decision 0041), with the microphone its
-trailing button, and the page toggle at its end, where the account
-button was until the owner swapped the two (2026-11-14: "Swap the fpl
-toggle and account buttons"); the account button rides the sheet's top
-under the 3D. FPL's first row is the same size: the airplane's strip
-(N-number, altitude, •••) with the toggle at its end, the route one row
-under it in whichever of its three layouts, under the route its figures,
-and at the sheet's foot the floating bar of Brief, Nav Log, Profile and
-Share, the figures alone and large at the pill (2026-11-16); Search's
+field, "Search" (named "Search airports and airplanes") (the web has no Ask since decision 0041), with the microphone its
+trailing button, and the page toggle, the word FPL, at its start and the
+account button at its end (the owner, 2026-11-20: "move the fpl button on
+the left side of search and avatar to the right side"). FPL's first row is
+the same size: its Search button at the start, the title, the airplane's and
+the altitude's pills and the ✕ (Clear Route, asking first) at the end, the
+route one row under it in its one layout (decision 0047), and at the
+sheet's foot the floating bar of Brief, Nav Log, Routes and More, the
+Apple way, with the figures (Leg or Dest, Distance, ETE, Track, GPS alt)
+held just over it, sliding under it to be the pill as the sheet goes down,
+the figures alone and large at the pill (2026-11-16, 2026-11-22; the File
+button beside the bar hidden until filing works, 2026-11-22); Search's
 page under the search is the search's own page (with nothing typed, or
 the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
@@ -191,25 +210,26 @@ list is where it was.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan: the route (one layout, decision 0047), its cards, nav log rows | the sheet (with a route, folded to its line); the search's Your Flight card | 1 → **0** with a route to read, 1 more to edit (a tap on the line; Done folds it), 1 from the search | Opened: the cards held or dragged by their grips to reorder, swiped to remove; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; the route's field typed or pasted; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
-| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Distance switches nm and sm; in flight the phone's GPS altitude ends the strip, "GPS alt", to 10 ft (the owner, 2026-11-17) |
+| Plan: the route (one layout, decision 0047), its cards, nav log rows | the sheet (with a route, folded to its line); the search's Your Flight card | 1 → **0** with a route to read, 1 more to edit (a tap on the line; Done folds it), 1 from the search | Opened: the cards held or dragged by their grips to reorder, swiped to remove; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; the route's field typed or pasted; altitude and departure time open popovers; each edit offers its own Undo toast ("KMSN Removed", "Altitude Changed") |
+| Figures at the sheet's foot | none | 0 | Track is the GPS track in degrees magnetic (the owner, 2026-11-21); ETE/ETA and To swap; Distance switches nm and sm; in flight the phone's GPS altitude ends the strip, "GPS alt", to 10 ft (the owner, 2026-11-17) |
 | Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
 | Nav log card | plan → Nav Log tile; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
-| Profile | plan → Profile tile | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |
+| Profile | plan → the altitude pill's Profile glyph (2026-11-20) | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
-| Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
+| Saved Flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
 | Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder (Edit's grip), swipe left to remove (a full swipe removes), Undo in the toast; the airplanes after the airports in each, and in the search page's rows |
 | Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from in the one search's field, scoped to it (no second field) |
 | Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place; a card in the sheet over the search with ✕ (one card rule, 2026-11-10; was a dimmed sheet on a phone) |
-| Airplane card, past flight | Tap traffic; the airplane found in the one search (heard on the map by callsign or address, kept, or the FAA registry's in the air); a Favorite's or Recent's tile; its past row | 1, 2 | Replay; search → Do → Show Traffic turns the traffic on the map. The traffic's own page, with a second search field, went for the one search (the owner, 2026-11-14), and an old `?aircraft=1` link lands on the search |
+| Airplane card, past flight (another airplane's past flights with Extras' Other Airplanes on) | Tap traffic; the airplane found in the one search (heard on the map by callsign or address, kept, or the FAA registry's in the air); a Favorite's or Recent's tile; its past row | 1, 2 | Replay; search → Do → Show Traffic turns the traffic on the map. The traffic's own page, with a second search field, went for the one search (the owner, 2026-11-14), and an old `?aircraft=1` link lands on the search |
 | Your Airplane or an airplane kept, added | search → Favorites' Add → Airplane; the Airplane tile's Add | 1 → 2 | The one search asks for it ("Search for your airplane", "Search for an airplane to keep"); the one picked is kept, not opened |
 | A route point's airport picked | its pill or its menu's Change → the one search, scoped ("Search for a destination") | 1 → 2, as before | Enter takes what is typed until the rows answer it; picked, back where it was asked from |
 | Questions (Ready to Fly's prompt, a source's report as sent) | as they come; a source chip | 0 / 1 | SheetDialog: a sheet from the bottom on a phone with its ✕ (Fly Anyway the prompt's answer), a dialog from `md` up |
 | Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the base map ("Overlay" until 2026-11-14), every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy; the one full-height card, ✕ top right, nothing dimmed |
-| Settings (was Account and Settings, Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place; covers the title row and the search, its ✕ back |
-| Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
+| Settings (was Account and Settings, Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Map, In Flight, Extras, Data, Help & About; layout tiles in place; covers the title row and the search, its ✕ back |
+| Airplanes, Flights, Logbook, Minimums, Documents, Checklists, Coach, Practice (with Extras' Training Tools on) | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
+| Documents (new, 2026-11-21) | account button → Documents; the search's Do ("documents"); a cite tapped anywhere (the Brief's why, an airspace card's entry rules) opens the reader at its paragraph | 2; a cite **1** | Own PDFs added, renamed in the row, deleted with an Undo; Keep for the Air at each row's end; the reader's bookmarks and its page left at kept on the device; `?doc=` (`aim@7-1-5`, `cfr-14-91@91.155`, `phak@p42`) opens the reader from a link on the web and the iPhone and iPad (a `doc` key of design/screens.json), and on Android (`Links.Doc`; there a PDF shared in from another app is kept and opened, and on a tablet the reader opens beside the library and the map, android.md 3.20). On the iPhone and iPad (2026-11-21): the same row on You, own PDFs also from the share sheet and by drag and drop, Keep in iCloud (off by default), the reader's Contents in the inspector beside the page on an iPad, Markup with Apple Pencil, a document in a window of its own (Open in New Window), ⌘F, ⌘[ and ⌘] |
 | Status, Guide, About | account button → row on the page; About also the map's or the search page's Legal | 3 → **2** | -- |
 | Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |
 | Squawks | account button → Airplanes → airplane → row | 4 | Squawks inline |
@@ -235,14 +255,17 @@ with the sheet at rest: the search or a row of the plan is 1.
 **One row (owner decision 2026-11-10).** The "Flight Plan" title bar is
 gone on the iPhone: the sheet's top row is the search with the microphone
 and the account button beside it, and the route card sits under it (the
-route, Ready to Fly, the figures, Brief, Nav Log, Airplane, •••). Saved
-Flights, Share and Undo, which were the bar's, are in the route card's
-•••: Flights 1 → 2, Share 1 → 2 (its ways a submenu, 3 to pick one), Undo
-1 → 2, and Undo is still 0 taps by shaking the iPhone or ⌘Z.
+route, Ready to Fly, the figures, Brief, Nav Log, File, ••• and ✕). The
+••• is the web's More since 2026-11-21: Share Link and Open in
+ForeFlight (Route Options the bar's Routes since 2026-11-22), then Saved Flights and Show Route As; the nav log's
+Share holds the other ways out, the checkpoints for ForeFlight and Print.
+Undo is the undo bar's after each change (a stop or a procedure removed,
+the route cleared or replaced, a Direct To: 1 tap for six seconds), and 0
+taps by shaking the iPhone or ⌘Z.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL) | the sheet itself | 1 → **0** | From/To and altitude inline; stops Edit (delete, move), **Add a Stop (the search)**; each point's menu; Undo bar |
+| Plan (was FPL) | the sheet itself | 1 → **0** | From/To until the route is whole and planned, then **the timeline: a point's ident changes it through the search (2 taps), its mark is its menu (1), its gauge sets its fuel (1), the departure's time and a stop's leave-again time are pickers on their lines (1)**; altitude inline; stops Edit (delete, move), **Add a Stop (the search, asked to pick: a tap on Nearest, a Favorite, a Recent or a result puts it in, 2 taps)**, **Type Route at its end (the whole route typed or pasted, 2 taps)**; a field's runways and procedures on its line, an approach's Brief, Dry Run and Plate from its head row (2 taps); Undo bar |
 | Search (was Airport) | the field | 1 | Nothing typed: Your Flight, Favorites (fields and airplanes), Recents, Nearest; typed: Airports, Waypoints and Navaids, Airplanes, Do (Direct To, screens, Ask) |
 | Airport card | Tap a field; a search row; a list's row (Nearest, Favorites, Recents); hold for its preview; a link's `place=` | 1 | The one card from every way in: Fly Here (the flight's time when planned), Depart, Add Stop, Diagram; the floating bar's Add to Plan, Favorite, Share, •••; its sections' picker pinned under the bar once its head scrolls away; frequencies copy on hold |
 | Airplane profile | any N-number or airplane figure; the search's N-number or own airplane; a link's `airplane=` | 1–2 | **One profile card**: its own card from the plan or the search, pushed in the card it was tapped in; Fly This Airplane; every figure edited in place (an inline ask's Edit opens it at that figure) |
@@ -251,15 +274,15 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
-| Profile | the route card's ••• → Profile; the cruise altitude in the route section; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
+| Profile | the cruise altitude in the route section, its caution marked on it; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
-| Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
-| Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
+| Share | the route card's ••• → Share Link or Open in ForeFlight; the Nav Log's Share → a way, the checkpoints for ForeFlight, Print | 2 / 3 | -- |
+| Undo | the undo bar at the plan's foot after a change (was the route card's ••• → Undo, 2); shake; ⌘Z | 2 → **1**, shake 0 | -- |
 | Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
-| Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |
-| Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists, Map) | the account button → row (pushed in the Settings card) | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
-| Hold, Clearance (forms) | a point's Hold Here…; the radio's button, shown only with Comms Assist on (Settings › In Flight › ATC, off by default; the owner, 2026-11-13) | 2 / 1 | Cancel and Add / Done; with an edit, a swipe down is held and Cancel asks first |
+| Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Map, In Flight, Extras, Data, Help & About; every switch and picker in place; Sign In or the account's page with Sign Out |
+| Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice with Extras' Training Tools on, Your Airplanes, Checklists, Map) | the account button → row (pushed in the Settings card) | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
+| Hold, Clearance (forms) | a point's Hold Here…; the radio's button, shown only with Settings › Extras › ATC Copilot on and then Comms Assist on (Settings › In Flight › ATC, off by default; the owner, 2026-11-13) | 2 / 1 | Cancel and Add / Done; with an edit, a swipe down is held and Cancel asks first |
 | Emergency | the instruments bar; Settings' Emergency row; "mayday" in the search | 1 / 2 | Full screen, close at the top right; its frequencies copy |
 | An alert ahead, a copilot message | the banner | 0 | Tapped: the airspace card; the message's Direct To and More Info |
 
@@ -278,25 +301,52 @@ in the search is not counted.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10) |
-| Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
+| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Titled "Flight Plan", Search at its bar's start (back to the search, the route kept) and ✕ at its end ("Clear Route?" first, 2026-11-21); the airplane's pill (its ⓘ the airplane's card), the altitude's (its end the Profile) and the time's (Material's time picker); the route as a timeline, each point's ⋮ (its menu) and times at its end, a stop's "Leaves" a tap that sets its time on the ground; route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop, which greys a closed field or one already on the route; each field of the route opens its card, and once open by its card has its Land and Takeoff RWY menus (Into the Wind first) and "+ ARR", "+ APCH", "+ DEP" under it, a picked procedure's head row (its kind's menu) and fixes (each ⋮: Direct To, Cross at…) on the line; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10); at its foot the floating toolbar (Brief, its findings counted on its glyph, Nav Log, More) over the figure strip, File beside it, greyed until the plan can be filed |
+| Route Options | the plan's Routes, in its tab bar (2026-11-22) | 1 | Use puts an option's stops in the route ("Route Replaced", with its Undo) |
+| File Flight Plan | hidden until filing works (the owner, 2026-11-22; `FILING_OFFERED`); was the plan's File, beside its toolbar | — | Persons on board typed; Copy the Flight Plan; File with Flight Service where connected and signed in; 1800wxbrief.com and Flight Service's numbers |
+| Nav Log, Profile | the flight's card → Nav Log (the foot's toolbar, or the figures); the altitude pill's end, the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Add as Stop, Call and Favorite under its head, in sight at half; Overview, Weather, Frequencies, Runways, Charts, NOTAMs pinned right under them, and the field's report in a line |
 | A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
-| Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Follow, Favorite, Share; Flights (▶ replays one), Info, Figures |
+| Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Favorite, Share, Info, Figures; Follow and Flights (▶ replays one) on the pilot's own, or on any with Extras' Other Airplanes on |
 | Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
-| You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency; a swipe down closes it |
-| Settings | the avatar → its gear; also the Map card's gear | 2 | Map, In Flight, Data, Help & About (Sunlight is the Map card's Look since 2026-11-14); a swipe down closes it |
+| You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency, Connected Apps; a swipe down closes it |
+| Settings | the avatar → its gear; also the Map card's gear | 2 | Look, Map, In Flight, Extras, Data, Help & About (Sunlight is the Map card's Look since 2026-11-14); a swipe down closes it |
 | Saved Flights | the avatar → Flights | 2 | A flight planned again with a tap |
 | Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | Four sections of four tiles each, Chart, Base map, Layers and Look (Theme, Appearance, Sunlight, Own Ship; the owner, 2026-11-14), each a tap; the terminal charts always drawn, no switch; its gear opens Settings at its Map group (Airport Weather, glide ring) |
 | Logbook, Training (the Coach) | the avatar → its row | 2 | Logbook entries edited in the row; Delete with an Undo |
 | Downloads, Passenger Briefing, ATC, About | the avatar → its gear → Settings' row (Data, In Flight, Help & About) | 3 | Downloads delete with no confirm or Undo |
-| Clearance | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |
+| Clearance (with Extras' ATC Copilot on) | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |
 | Dry run | the plan's Dry Run; or search "dry run" (with a route) | 2 / typing | Play, speed, forecast; Back ends it |
 | Emergency (a card on the sheet's stack, opened at full height) | Instruments bar; search "emergency"; You → Emergency | 1 | Its frequencies copy; the card bar's ← and ✕; closed by ✕ alone, never a swipe |
 | Alerts ahead, a copilot message | the banner | 1 | Tapped: the Ahead sheet, More Info on a Class B, C or D; the message's Fly to and More Info |
-| Nearest, Ask | Instruments bar; the sparkle; Nearest also under the search | 1 | a field opens on Nearest's stack |
+| Nearest, Ask (Ask with Extras' Ask on, on a phone with Gemini Nano, in a build with `-Pwingtip.genai=true`) | Instruments bar; the sparkle; Nearest also under the search | 1 | a field opens on Nearest's stack |
+
+### Settings' Extras: the parked features
+
+The feature review (store/feature-review.md, the owner's word of
+2026-11-21) parks a feature by one stock switch, off to start, in a
+Settings group of its own, **Extras**, right after In Flight on each
+app. A feature parked stays in the code and its tests; while its switch
+is off it is not shown, started or fetched, and a setting inside it
+saved on before acts as off. Kept on the device: the web's
+`lib/extras.ts` (`wingtip.extras`), the iPhone's `Extras.swift`
+(UserDefaults `extras.<key>`), Android's `Extras.kt` (`extras.<key>`).
+
+| Row (key) | Web | iOS | Android | Not reachable while it is off |
+|---|---|---|---|---|
+| ATC Copilot (`atcCopilot`) | yes | yes | yes | The radio's button (the web's map mic circle and radio layer), the clearance card and its listener, the strip's Clearance chip (phones), and the ATC page's Comms Assist and ATC Alerts rows. The ATC page keeps the in-flight Copilot (field advice), which is not parked |
+| ADS-B Receiver (`adsbReceiver`) | -- | yes | yes | The cockpit receiver's socket, its chip on the map, its FIS-B reports and NEXRAD, its Ready to Fly item, and its Auto/Off picker (iOS in Data, Android in In Flight) |
+| Other Airplanes (`otherAirplanes`) | yes | yes | yes | For an airplane not the pilot's own (on their records, or the one the plan flies): Follow, the Flights tab, past flights and their replay, NTSB cases, ownership history, documents filed and "usually based at". Its saved alerts are kept but not watched. The pilot's own airplane keeps all of it |
+| Model Weather (`modelWeather`) | yes | yes | yes | The flow layer's choice on the Map card; nothing of it is fetched or drawn |
+| 3D (`threeD`) | yes | -- | -- | The map's 3D button, the clearance key's 3D and the dry run's pilot's view; the map stays flat |
+| Training Tools (`trainingTools`) | yes | yes | -- | Practice: the 91.125 light-signal and 91.155 flash cards, the holding-entry visualiser and the 91.185 lost-comms calculator (the web's Training page and Guide; the iPhone's You, Guide and Coach). The diversion drill on Nearest is not parked |
+| Ask (`ask`) | -- | -- | yes | Ask, the sparkle, AI words, Add from a Photo and Data's On-Phone AI row. The store build leaves ML Kit GenAI out besides (`-Pwingtip.genai=true` brings it back) |
+
+Parked without a switch in the apps: the MCP connector (the server's
+`MCP_ENABLED`, false on production) and the Apple Watch app (left out of
+the iPhone's build, `apps/ios/project.yml`).
 
 ## Contextual actions: where each lives
 
@@ -314,7 +364,7 @@ or overflow).
 | A logbook entry | Edit, Delete, Undo | **in the row; Undo row (new)** | **in the row; Undo row (new)** | **in the row; Undo row (new)** |
 | A frequency | Copy (Tune nowhere: no radio link) | **tap (new)** | **hold (new)** | **tap (new)** |
 | A flight just ended | Debrief the approaches · Log it | FlightLoggedSheet | FlightLoggedSheet | FlightLoggedSheet |
-| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | -- (ProceduresRow picks the procedure only; gap) | -- (no approach list on Android; gap) |
+| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | **FPL's timeline: "+ APCH" on the field's line picks it, its head row picks another and holds Approach Brief, Dry Run (one sheet, a segmented control between them) and Plate (its card), each fix's ring Direct To and Cross at… (2026-11-21)** | **the plan's timeline: "+ APCH" on the field's row picks it (with "+ ARR", "+ DEP" and the Land and Takeoff RWY menus, Into the Wind first), its head row picks another, each fix's ⋮ Direct To and Cross at… (2026-11-21)**; its head row's Approach Brief, Dry Run and Plate, and None's Undo (round 2) |
 | An alert | what it is and its fix | AlertsBanner opens it | **the airspace card; copilot: Direct To, More Info (new)** | **the Ahead sheet; copilot: Fly to, More Info (new)** |
 | A Go / No-Go item, a Brief line | its fix | opens its page | targets only | **not tappable (gap)** |
 
@@ -337,10 +387,12 @@ The nav follow-ups (2026-11-09) closed the first list's gaps 1 to 8 as far
 as each platform has the screen. What is left needs a decision, a server
 change or another branch's work:
 
-1. **Approach actions on the phones.** iOS's `ProceduresRow` only picks a
-   procedure and its transition (this page said earlier it had a procedure
-   menu; it does not), and Android lists no approaches at all, so neither
-   has Brief, Dry Run, Load into Route or Plate on an approach row.
+1. **Approach actions on Android.** Closed in audit round 2
+   (2026-11-21): Android's approach on the plan's line opens its Approach
+   Brief, Dry Run (one sheet, Material's segmented buttons between them)
+   and Plate from its head row's menu, as the iPhone's, and a procedure
+   taken off a field there (None) has the Snackbar's Undo ("ILS RWY 36
+   Removed").
 2. **No Tune anywhere.** No platform reaches a radio; Copy is the action.
    The web nav log and ATIS rows, Android's ATC card, nav log, D-ATIS and
    the strip's chips show no frequency to copy (the ATC card is

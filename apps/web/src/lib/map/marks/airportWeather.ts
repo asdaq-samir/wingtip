@@ -1,6 +1,6 @@
 import type { AirportPin } from "../../api/types";
 import { callEngine } from "../../engine/engine";
-import { reportedDirection } from "../../format";
+import { reportedDirection, reportedVisibility } from "../../format";
 import { barbId } from "./stationModel";
 
 /**
@@ -36,16 +36,11 @@ export interface WeatherMarks {
   variable: string;
 }
 
-/** A visibility as a METAR writes it: "1/2 SM", "1 1/2 SM", "10 SM". */
+/** A visibility as a METAR writes it: "1/2 SM", "1 5/8 SM", "10 SM",
+ *  at the reportable value at or below it (reportedVisibility). */
 export function visibilityWords(sm: number): string {
-  const whole = Math.floor(sm);
-  const part = sm - whole;
-  const fraction = [
-    [0.25, "1/4"],
-    [0.5, "1/2"],
-    [0.75, "3/4"],
-  ].find(([at]) => Math.abs(part - (at as number)) < 0.05)?.[1];
-  const figure = fraction ? (whole ? `${whole} ${fraction}` : fraction) : String(Math.round(sm));
+  const [whole, fraction] = reportedVisibility(sm);
+  const figure = fraction ? (whole ? `${whole} ${fraction}` : fraction) : String(whole);
   return `${figure} SM`;
 }
 

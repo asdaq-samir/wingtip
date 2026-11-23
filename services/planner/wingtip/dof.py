@@ -14,13 +14,13 @@ wingtip.faa_data downloads it with the NASR tables.
 import json
 import re
 import threading
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
 from cachetools import LRUCache
 
-from . import data_cycles, outside
+from . import data_cycles, geo_boxes, outside
 from .atomic import atomic_path
 
 # The FAA's site 403s a bare python-requests User-Agent.
@@ -77,17 +77,18 @@ _DOF_LIT = frozenset("RDHMSFCWL")
 _DOF_ZIP = re.compile(r'href="(https://aeronav\.faa\.gov/Obst_Data/DOF_(\d{6})\.zip)"')
 
 
-def dof_zip_url(html: str, on: date) -> str:
-    """The newest DOF zip on the FAA's DOF page that is out by `on`. The
-    page lists the previous edition first, then the current one, each
-    named by the last day of the changes it holds and released two days
-    later (the page's "Release Date"; the engine's `data_cycle` "dof").
-    The first link was taken, and the planner read the 2 Aug 2026
+def dof_zip_url(html: str, on: date | datetime | None = None) -> str:
+    """The newest DOF zip on the FAA's DOF page that is out by `on` (now).
+    The page lists the previous edition first, then the current one and
+    the next, each named by the last day of the changes it holds and
+    released two days later (the page's "Release Date"; the engine's
+    `data_cycle` "dof", which this asks rather than add the two days
+    itself). The first link was taken, and the planner read the 2 Aug 2026
     obstacles for six weeks after the 27 Sep edition was out."""
     released = []
     for url, stamp in _DOF_ZIP.findall(html):
         changes_to = datetime.strptime(stamp, "%y%m%d").date()
-        if changes_to + timedelta(days=2) <= on:
+        if data_cycles.has_begun("dof", changes_to, on):
             released.append((changes_to, url))
     if not released:
         raise RuntimeError(f"No released DOF zip on {DOF_INDEX_URL}")
@@ -99,7 +100,7 @@ def dof_link() -> str:
     the obstacle file (wingtip.apra)."""
     resp = outside.get(DOF_INDEX_URL, headers=FAA_HEADERS, timeout=30)
     resp.raise_for_status()
-    return dof_zip_url(resp.text, data_cycles.in_force_day())
+    return dof_zip_url(resp.text)
 
 
 def _dof_records(dof_dat_path: Path) -> tuple[pd.DataFrame, int]:
@@ -265,10 +266,8 @@ def load_obstacles(dof_dat_path, bbox: tuple, min_agl_ft: float = 200) -> pd.Dat
     height back out of the dict, ten thousand rows at a time.
     """
     all_obstacles = _load_all_obstacles(dof_dat_path)
-    min_lat, min_lon, max_lat, max_lon = bbox
-    wanted = (
-        (all_obstacles["agl_ft"] >= min_agl_ft)
-        & all_obstacles["lat"].between(min_lat, max_lat)
-        & all_obstacles["lon"].between(min_lon, max_lon)
+    # The box read as its one or two halves either side of 180 (geo_boxes).
+    wanted = (all_obstacles["agl_ft"] >= min_agl_ft).to_numpy() & geo_boxes.in_box(
+        bbox, all_obstacles["lat"].to_numpy(), all_obstacles["lon"].to_numpy()
     )
     return all_obstacles[wanted].reset_index(drop=True)

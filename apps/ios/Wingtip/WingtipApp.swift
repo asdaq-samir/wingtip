@@ -10,13 +10,9 @@ import TipKit
 struct WingtipApp: App {
     @State private var session: Session
     @State private var charts = Charts()
-    /// Where every card and page opens (Navigator): one for the app, the
-    /// views given it in the environment.
-    @State private var nav: Navigator
     /// The screens' own models (ScreenModels), one each for the app, the
     /// flight (FlightSession) among them.
     @State private var screens: ScreenModels
-    @Environment(\.scenePhase) private var scenePhase
     /// iOS's hand-over of the chart downloads finished in the background.
     @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
 
@@ -31,9 +27,6 @@ struct WingtipApp: App {
         // The intents' share of them, by App Intents' own dependencies.
         AppDependencyManager.shared.add(dependency: screens.briefAsk)
         AppDependencyManager.shared.add(dependency: screens.autoLogbook)
-        let nav = Navigator()
-        nav.screens = screens
-        _nav = State(initialValue: nav)
         // Signing out forgets the flight's own records too (Session.signOut).
         let session = Session()
         session.flight = screens.flight
@@ -49,66 +42,36 @@ struct WingtipApp: App {
 
     var body: some Scene {
         let flight = screens.flight
-        let (plan, ownShip) = (flight.plan, flight.ownShip)
+        // The app's window, and on an iPad as many as the pilot opens (File
+        // > New Window, Stage Manager, an external display), each its own
+        // map and cards over the one flight (MainWindow).
         WindowGroup {
-            RootView()
-                // Every list's section titles the system's prominent ones,
-                // 20 points in the text colour (the owner's "section titles
-                // 20 pt", docs/decisions/0021), drawn by the system rather
-                // than a hand-built title (the owner, 2026-11-10).
-                .headerProminence(.increased)
-                // An emailed sign-in link asks before it signs anyone in.
-                .modifier(LinkSignInPrompt(session: session))
-                .modifier(AppModels(session: session, charts: charts, nav: nav, screens: screens))
-                .task { ownShip.start() }
-                .task { await session.refresh() }
-                // The deletes an earlier launch held behind their Undo and
-                // never sent, sent once the pilot is signed in (PendingDeletes).
-                .task(id: session.signedIn) {
-                    if session.signedIn { await PendingDeletes().sendLeftOver(PendingDeletes.gateway) }
-                }
-                .task { await charts.load() }
-                .task { OfflineDownloads.shared.start() }
-                .task { await plan.restore() }
-                // Under IFR, the alternate checked for the plan's ETA, asked
-                // again as the plan or the alternate filed changes (AlternateCheck).
-                .task(id: AlternateCheck.key(for: plan)) { await flight.alternate.refresh(plan: plan) }
-                // The flight in progress on the Lock Screen and in the
-                // Dynamic Island (FlightActivity, a Live Activity: the
-                // owner's ask, 2026-11-03, as Apple recommends for anything
-                // ongoing), watched every few seconds: the dry run's, or
-                // own ship's with a route planned.
-                .task { await Repeating.every(5) { FlightActivity.shared.observe(plan: plan, dryRun: flight.dryRun, ownShip: ownShip, inFlight: flight.inFlight,
-                                                                                 copilot: screens.copilot, atc: screens.atcCopilot,
-                                                                                 weather: flight.weatherWatch.latest) } }
-                // The next flight on the Home Screen and the Lock Screen
-                // (WidgetFeed, FlightWidget in WingtipWidgets): the plan, its
-                // verdict and the departure's weather, written to the App
-                // Group only as they change, on the same clock; and the
-                // fields the weather widget's settings offer first.
-                .task {
-                    await Repeating.every(15) {
-                        WidgetFeed.shared.update(plan: plan, verdict: flight.verdict)
-                        WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
-                    }
-                }
-                // The route's weather watched after the Brief (WeatherWatch):
-                // a look every quarter hour while the app runs, and iOS's
-                // background refresh asked for as it goes behind.
-                .task { await Repeating.every(60) { flight.weatherWatch.tick(plan: plan) } }
-                .onChange(of: scenePhase) { _, phase in if phase == .background { Task { await WeatherWatch.schedule() } } }
-                // A logged flight's track that could not be sent (no
-                // signal after landing) sent again each time the app is
-                // in front with a network (AutoLogbook, UnsentTracks).
-                .task(id: scenePhase) { if scenePhase == .active { await screens.autoLogbook.sendUnsentWhenOnline() } }
-                .task { await flight.watchLink.run(plan: plan, ownShip: ownShip) }
-                // The cockpit's ADS-B receiver on the Wi-Fi, read once a
-                // second while the setting is Auto (Receiver).
-                .task { await Receiver.shared.run() }
+            MainWindow(session: session, charts: charts, screens: screens)
         }
+        .commands { WingtipCommands() }
         .backgroundTask(.appRefresh(WeatherWatch.taskId)) { [watch = flight.weatherWatch] in
             await watch.look()
             await WeatherWatch.schedule()
         }
+        // A chart in a window of its own beside the map (PictureWindow),
+        // opened from the plate viewer or a chart's row on an iPad. Links,
+        // files and Siri go to the app's own window, never to a chart's.
+        WindowGroup("Chart", id: PictureRequest.window, for: PictureRequest.self) { $request in
+            if let request {
+                PictureWindow(request: request)
+                    .modifier(AppModels(session: session, charts: charts, nav: Navigator(), screens: screens))
+            }
+        }
+        .handlesExternalEvents(matching: [])
+        // A document of the library, or the pilot's own, in a window of its
+        // own beside the map (DocumentWindow), as a chart's is; its links
+        // go to the app's own window too.
+        WindowGroup("Document", id: DocPlace.window, for: DocPlace.self) { $place in
+            if let place {
+                DocumentWindow(place: place)
+                    .modifier(AppModels(session: session, charts: charts, nav: Navigator(), screens: screens))
+            }
+        }
+        .handlesExternalEvents(matching: [])
     }
 }

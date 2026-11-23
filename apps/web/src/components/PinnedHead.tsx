@@ -15,8 +15,8 @@ import { cn } from "cn";
  * search's row, a fixed height). Its frost reaches up over its scroller's
  * own room over the first line (--pinned-room, which the scroller sets: the
  * grabber's in a card), so it starts where it sticks. Its row is the round
- * buttons' height (a round IconButton's size-9), so the whole of it is that room
- * and 3rem (PINNED_BELOW), where what pins under it sticks: an airport
+ * buttons' height (a round IconButton's 44 points), so the whole of it is that room
+ * and 3.5rem (PINNED_BELOW), where what pins under it sticks: an airport
  * card's tabs (PlaceCard). At the sheet's smallest size with
  * a card open it is all of the card in sight (data-sheet-head, SheetParts).
  * For the browser tests it is card-head-pinned; its row is the caller's
@@ -61,6 +61,6 @@ const PINNED_FLUSH =
   "frost-head sticky top-(--sheet-head,0px) z-20 px-4 pt-[calc(var(--corner-inset,0.75rem)+0.375rem)] pb-1.5 print:static";
 
 /** Where what pins under a card's PinnedHead sticks, by plain CSS: the
- *  head's own top, its room over its row, and its 3rem (0.375rem, the
- *  36-point row, 0.375rem). */
-export const PINNED_BELOW = "top-[calc(var(--sheet-head,0px)+var(--pinned-room,0px)+3rem)]";
+ *  head's own top, its room over its row, and its 3.5rem (0.375rem, the
+ *  44-point row, 0.375rem). */
+export const PINNED_BELOW = "top-[calc(var(--sheet-head,0px)+var(--pinned-room,0px)+3.5rem)]";

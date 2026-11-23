@@ -48,7 +48,9 @@ interface TokenBox {
   arrowAt: (before: number) => void;
 }
 
-const ARROW = "size-3 shrink-0 text-muted-foreground";
+// The route's arrows that are no button, the glyph the arrows' buttons
+// draw (20), laid in the 12 they had (-mx-1), so the line lays out as it did.
+const ARROW = "-mx-1 size-5 shrink-0 text-muted-foreground";
 // A missing end's word, where its field was: in the field's grey, at the
 // field's size, a row's (TEXT.row: 16 at the least, so as not to be
 // smaller than what is typed beside it, 17 to a finger).
@@ -78,6 +80,8 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
   const procs = first ? procedures.filter((p) => sameField(p.ident, point)) : [];
   const waypoint = waypoints.has(point);
   const unknown = box.unknown === point;
+  // The departure asked for in the arrow's own button, its word after it.
+  const asking = i === 0 && !box.typedAtStart;
   const stepped = (by: -1 | 1) => points.map((p, j) => (j === i ? points[i + by]! : j === i + by ? point : p));
   const fuel = !last && first ? fuelStops.filter((f) => sameField(f.departure, point)).slice(0, 1) : [];
   return (
@@ -104,18 +108,23 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           onClick={() => box.arrowAt(i)}
           data-testid="route-arrow"
           aria-label={i === 0 ? "Add the departure" : `Add a stop between ${points[i - 1]} and ${point}`}
-          // The stock Button at the arrow's own size, in the grey, tinted under
-          // a pointer, never grown: its area a pseudo-element 44 tall and
-          // half the gap wider each side (ml-2 from the pill before it,
-          // which ends the token before).
+          // The stock Button in the grey, tinted under a pointer. Alone, the
+          // app's one icon button, 36 round a 20 glyph (the iOS audit's P18,
+          // the owner's "make all buttons same size as Apple Maps",
+          // 2026-11-20), where it was 16 by 20 round a 12, about a row's own
+          // "→": its box seen by nothing (no fill, its corner under half its
+          // side) and laid in the arrow's 16 by 20 alone (-mx-2.5, -my-2), so
+          // the line lays out as it did, 8 from the pill before it (which
+          // ends the token before), its area index.css's 44 round the box.
+          // With "Departure" after it, its words' width, its area a
+          // pseudo-element 44 tall and half the gap wider each side.
           className={cn(
-            "h-5 w-4 rounded-full text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
-            "after:-inset-x-1 after:-inset-y-3",
-            i > 0 && "ml-2",
-            i === 0 && "w-auto",
+            "text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
+            asking ? "relative h-5 w-auto rounded-full hit-x-1 hit-y-3" : "-mx-2.5 -my-2 size-9 rounded-md [&_svg]:size-5!",
+            i > 0 && "-ml-0.5",
           )}
         >
-          {i === 0 && !box.typedAtStart && <span className={ASKING}>Departure</span>}
+          {asking && <span className={ASKING}>Departure</span>}
           <ArrowRight className="size-3" />
         </Button>
       )}

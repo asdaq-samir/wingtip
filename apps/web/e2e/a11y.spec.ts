@@ -1,6 +1,6 @@
-import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
-import { openConsole, openTab, settle, settled, showTabs, slow, consolePage, mapStill } from "./helpers";
+import { openConsole, openTab, settle, showTabs, slow, consolePage, mapStill } from "./helpers";
+import { atRest, violations } from "./a11yAxe";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -14,34 +14,6 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
  * and its tiles are pictures of a chart.
  */
 
-/** Every animation on the page finished (a spinner's, which never does,
- *  left out): a sheet sliding in is glass over a moving map, and its
- *  words were read against that. */
-async function atRest(page: Page) {
-  await settled(page.locator("body"));
-  await mapStill(page);
-}
-
-async function violations(page: Page, within?: string) {
-  await atRest(page);
-  let axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).exclude(".maplibregl-canvas-container");
-  // The viewport no longer forbids zoom (#265, 2026-11-08), so
-  // meta-viewport stays on. The sheet's thin grabber is exempt from
-  // target-size (WCAG 2.2, not in these tags) as Apple Maps' is.
-  // A sheet over the page: what is under its dimming is not what is read.
-  if (within) axe = axe.include(within);
-  const results = await axe.analyze();
-  return results.violations
-    .filter((v) => v.impact === "serious" || v.impact === "critical")
-    .map(
-      (v) =>
-        `${v.id} (${v.impact}): ${v.nodes
-          .slice(0, 3)
-          .map((n) => n.target.join(" "))
-          .join(" | ")}`,
-    );
-}
-
 test("the search bar, with no route", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
@@ -51,7 +23,7 @@ test("the search bar, with no route", async ({ page }) => {
 test("a route's panel out, each of its tabs", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   for (const tab of ["Nav Log", "Weather", "Brief", "Performance"] as const) {
     await openTab(page, tab);
     await atRest(page);
@@ -118,7 +90,7 @@ for (const look of [
     await inLook(page, look);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
-    await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+    await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
     await expect(page.locator("html")).toHaveAttribute("data-brand", look.brand);
     expect(await violations(page)).toEqual([]);
   });
@@ -130,7 +102,7 @@ test("asked for more contrast, the glass is solid", async ({ page }) => {
   await page.emulateMedia({ contrast: "more" });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   const glass = await page.locator(".liquid-glass").evaluateAll((els) =>
     els
       .filter((el) => (el as HTMLElement).offsetParent)
@@ -151,7 +123,7 @@ test("asked for more contrast, the glass is solid", async ({ page }) => {
 test("at twice the text size the route's panel reflows: nothing sideways, the figures whole", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   // Every rem twice the size, as a browser's text zoom or the iPhone's
   // largest Larger Text sets the root (features/shell/dynamicType).
   await page.evaluate(() => {
@@ -159,10 +131,19 @@ test("at twice the text size the route's panel reflows: nothing sideways, the fi
   });
   await atRest(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  // The flight's figures shrink to fit rather than cut (FigureStrip): the
-  // fuel's whole figure is still in its box.
-  const fuel = page.getByTestId("navlog-fuel");
-  expect(await fuel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  // The flight's figures stay whole in their columns (FigureStrip): the
+  // figure's run not cut short with "…", and its button inside its column.
+  // The dd's own scrollWidth was read before, which counts the button's
+  // invisible 44-point area (hit-x-2's ::after, a rem's half either side),
+  // let past the dd on purpose, and never saw a cut figure, the run's
+  // overflow hidden inside the button.
+  const ete = page.getByTestId("navlog-ete");
+  const fit = await ete.evaluate((el) => {
+    const run = el.querySelector("[data-fitted]")!.parentElement!;
+    const [cell, face] = [el.getBoundingClientRect(), (run.closest("button") ?? run).getBoundingClientRect()];
+    return { cut: run.scrollWidth > run.clientWidth + 1, inside: face.left >= cell.left - 1 && face.right <= cell.right + 1 };
+  });
+  expect(fit).toEqual({ cut: false, inside: true });
 });
 
 test("by keyboard: a visible focus ring, and the chart's airports reached and opened", async ({ page }) => {

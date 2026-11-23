@@ -48,23 +48,23 @@ pub struct PilotDays {
 /// (61.57(c)), each where it can be had.
 pub fn pilot_due(d: PilotDays) -> Vec<Due> {
     [
-        dated("flight-review", "Flight review", "14 CFR 61.56(c)", d.flight_review_until, "Your flight review runs out".into()),
-        dated("medical", "Medical certificate", "14 CFR 61.23", d.medical_expires_on, "Your medical certificate runs out".into()),
+        dated("flight-review", "Flight Review", "14 CFR 61.56(c)", d.flight_review_until, "Your flight review runs out".into()),
+        dated("medical", "Medical Certificate", "14 CFR 61.23", d.medical_expires_on, "Your medical certificate runs out".into()),
         dated(
             "day-passengers",
-            "Passengers by day",
+            "Passengers by Day",
             "14 CFR 61.57(a)",
             d.day_passengers_until,
             "You may carry passengers by day until".into(),
         ),
         dated(
             "night-passengers",
-            "Passengers at night",
+            "Passengers at Night",
             "14 CFR 61.57(b)",
             d.night_passengers_until,
             "You may carry passengers at night until".into(),
         ),
-        dated("instrument", "Instrument currency", "14 CFR 61.57(c)", d.instrument_until, "Your instrument currency runs out".into()),
+        dated("instrument", "Instrument Currency", "14 CFR 61.57(c)", d.instrument_until, "Your instrument currency runs out".into()),
     ]
     .into_iter()
     .flatten()
@@ -112,35 +112,35 @@ pub struct Kept {
 pub fn aircraft_due(a: AircraftDays, kept: Vec<Kept>) -> Vec<Due> {
     let t = &a.tail;
     let mut out: Vec<Due> = Vec::new();
-    out.extend(dated("annual", "Annual inspection", "14 CFR 91.409(a)", a.annual_until, format!("{t}'s annual inspection runs out")));
+    out.extend(dated("annual", "Annual Inspection", "14 CFR 91.409(a)", a.annual_until, format!("{t}'s annual inspection runs out")));
     if let Some(hours) = a.hundred_hour_due_at.filter(|_| a.for_hire) {
         out.push(Due {
             what: "hundred-hour",
             item_id: None,
-            label: "100-hour inspection".into(),
+            label: "100-Hour Inspection".into(),
             rule: Some("14 CFR 91.409(b)".into()),
             until: None,
             due_at_hours: Some(hours),
             lead: format!("{t}'s 100-hour inspection is due"),
         });
     }
-    out.extend(dated("elt", "ELT inspection", "14 CFR 91.207(d)", a.elt_until, format!("{t}'s ELT inspection runs out")));
+    out.extend(dated("elt", "ELT Inspection", "14 CFR 91.207(d)", a.elt_until, format!("{t}'s ELT inspection runs out")));
     out.extend(dated(
         "elt-battery",
-        "ELT battery",
+        "ELT Battery",
         "14 CFR 91.207(c)",
         a.elt_battery_due_on,
         format!("{t}'s ELT battery is to be replaced by"),
     ));
     out.extend(dated(
         "static",
-        "Altimeter and static system",
+        "Altimeter and Static System",
         "14 CFR 91.411(a)",
         a.static_until,
         format!("{t}'s altimeter and static system test runs out"),
     ));
     out.extend(dated("transponder", "Transponder", "14 CFR 91.413(a)", a.transponder_until, format!("{t}'s transponder test runs out")));
-    out.extend(dated("vor-check", "VOR check for IFR", "14 CFR 91.171(a)(2)", a.vor_until, format!("{t}'s VOR check runs out")));
+    out.extend(dated("vor-check", "VOR Check for IFR", "14 CFR 91.171(a)(2)", a.vor_until, format!("{t}'s VOR check runs out")));
     for k in kept.into_iter().filter(|k| k.due_on.is_some() || k.due_at_hours.is_some()) {
         let reference = k.reference.filter(|r| !r.trim().is_empty());
         let (rule, named) = match (k.ad, &reference) {

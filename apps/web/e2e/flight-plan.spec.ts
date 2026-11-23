@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { FILING_OFF, FILING_OFFERED } from "./filing";
 import { slow, settle, openTab, openSection, openConsole, openPanel } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 import { pickAirplane } from "./startState";
@@ -10,6 +11,8 @@ import { pickAirplane } from "./startState";
  * airway between its fixes, the alternate) it is ifr.spec's, on the
  * routes it plans already.
  */
+
+test.skip(!FILING_OFFERED, FILING_OFF);
 
 test("under VFR the flight plan flies direct, with no alternate, and says where to file it", async ({ page, context }) => {
   test.slow();
@@ -41,9 +44,9 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
   await expect(form.getByTestId("flight-plan-file")).toContainText("close it when you land");
   // The whole form, an item to a line.
   await form.getByTestId("flight-plan-copy").click();
-  await expect(form.getByTestId("flight-plan-copy")).toHaveText("Copied");
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   const text = await page.evaluate(() => navigator.clipboard.readText());
-  expect(text.split("\n").slice(0, 2)).toEqual(["KMSN to KOSH", "Item 8  Flight rules: VFR"]);
+  expect(text.split("\n").slice(0, 2)).toEqual(["KMSN to KOSH", "Item 8  Flight Rules: VFR"]);
   expect(text).toContain("Item 15  Route: DCT");
 });
 
@@ -130,13 +133,13 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
   const wx = await opened;
   await wx.waitForURL((url) => url.hostname === "www.1800wxbrief.com");
   await wx.close();
-  await expect(form.getByTestId("flight-plan-open-wx")).toContainText("Copied");
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text).toContain("Item 10a  Equipment: SDFGRY");
   expect(text).toContain("Item 10b  Surveillance: B1");
-  expect(text).toContain("Item 19  Persons on board: 2");
-  expect(text).toContain("Item 19  Color and markings: White blue stripes");
-  expect(text).toContain("Item 19  Pilot in command: Avery B. Pilot, 608-555-0100, home base KMSN");
+  expect(text).toContain("Item 19  Persons on Board: 2");
+  expect(text).toContain("Item 19  Color and Markings: White blue stripes");
+  expect(text).toContain("Item 19  Pilot in Command: Avery B. Pilot, 608-555-0100, home base KMSN");
 });
 
 test("where Flight Service is connected, the form is filed from here in the pilot's name", async ({ page }) => {

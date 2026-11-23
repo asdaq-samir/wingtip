@@ -13,13 +13,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -27,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.pilot.MinimumsStore
@@ -47,9 +46,11 @@ fun LiveAirportRows(ident: String, model: LiveAirportModel = hiltViewModel()) {
     val context = LocalContext.current
     val minimums by remember(context) { MinimumsStore.of(context) }.minimums.collectAsStateWithLifecycle()
     LaunchedEffect(minimums.visibilitySm) { model.judgeAgainst(minimums.visibilitySm) }
-    DisposableEffect(ident) {
+    // Asked only while the card can be seen: an activity stopped with the
+    // card still composed asks nothing (Android keeps the process).
+    LifecycleStartEffect(ident) {
         model.watch(ident)
-        onDispose { model.stop() }
+        onStopOrDispose { model.stop() }
     }
     if (state.ident != ident.trim().uppercase()) return
     Column(Modifier.fillMaxWidth()) {
@@ -82,7 +83,8 @@ fun LiveAirportRows(ident: String, model: LiveAirportModel = hiltViewModel()) {
 
 @Composable
 private fun BroadcastGroup(b: LiveAirportModel.Broadcast) {
-    var sent by rememberSaveable(b.title) { mutableStateOf(false) }
+    // Whether the words as sent are shown, held as the state itself.
+    val sent = rememberSaveable(b.title) { mutableStateOf(false) }
     SectionTitle(b.title)
     b.glance?.let { glance ->
         Row(glance, bold = true, lead = { Icon(Icons.Filled.Radio, contentDescription = null) })
@@ -94,10 +96,10 @@ private fun BroadcastGroup(b: LiveAirportModel.Broadcast) {
             content = { Text(row.label) },
         )
     }
-    TextButton(onClick = { sent = !sent }) {
-        Text(stringResource(if (sent) R.string.live_hide_sent else R.string.live_as_sent))
+    TextButton(onClick = { sent.value = !sent.value }) {
+        Text(stringResource(if (sent.value) R.string.live_hide_sent else R.string.live_as_sent))
     }
-    if (sent) {
+    if (sent.value) {
         Text(b.text, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     Credit(stringResource(R.string.live_atis_credit))

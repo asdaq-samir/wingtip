@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 
+from ..router_basics import MAX_STOPS
 from ..settings import get_settings
 from . import airplane
 from .airport_tools import Ident
@@ -19,7 +20,7 @@ from ..generated.planner_calls import go_no_go, plan
 from .calls import ENGINE_SOURCE, METAR_SOURCE, NOTAM_SOURCE, WINDS_SOURCE, editions, pick, pilot, rounded
 from .tool_meta import READS, read_only
 
-Stops = Annotated[list[str], Field(max_length=8, description="Airports or waypoints landed at or flown by, in order.")]
+Stops = Annotated[list[str], Field(max_length=MAX_STOPS, description="Airports or waypoints landed at or flown by, in order.")]
 # Bounds on what a caller may type, not a rule: whether an altitude may be
 # flown (91.119, 91.159, Class A) is the engine's, through /api/plan, which
 # says so in the plan's cautions (warn, never limit, decision 0008).
@@ -78,7 +79,8 @@ def register(server: MCPServer) -> None:
         description="Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or "
         "the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, "
         "wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. "
-        "Times and fuel need one of the pilot's airplanes by tail number.",
+        "Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; "
+        "show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
         title="Plan a route",
         annotations=read_only("Plan a route"),
         meta=READS,

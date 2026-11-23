@@ -22,7 +22,7 @@ from cachetools import TTLCache
 
 from .config import REQUEST_HEADERS, get_settings
 from . import chart_faces, outside
-from . import chart_cycle, chart_serving, chart_sheets
+from . import chart_cuts, chart_cycle, chart_serving, chart_sheets
 from .chart_coverage import COVERAGE, covers
 from .chart_kinds import Box, ChartKind, KINDS, SECTIONAL, is_chart_member, zip_url
 from .chart_sheets import Chart, Raster
@@ -164,6 +164,9 @@ def prepare_all(kinds: tuple = tuple(KINDS), cycle: str | None = None, redetect:
                 chart = _redetect(chart)
             charts.append(chart)
             log.info("%s/%s ready (%d of %d, %.0f s)", key, name, i, len(names), time.time() - started)
+    # What the cycle's sheets cut out, kept for the check a person looks at
+    # before the cycle is served (wingtip.chart_cuts).
+    chart_cuts.write_record(cycle)
     return charts
 
 

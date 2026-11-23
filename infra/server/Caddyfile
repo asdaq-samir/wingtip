@@ -21,6 +21,41 @@
 	}
 
 	@cloudfront header X-Origin-Secret {$ORIGIN_SECRET}
+
+	# The map's tiles go straight to the planner, not through the gateway:
+	# the chart's raster tiles, the terrain's and the overlays' archive
+	# with its index. They are public (the planner marks them SHARED,
+	# app.gateway) and the same for every pilot, and through Spring each
+	# one carried some 1.2 KB of headers a pilot's tile never needs -- a
+	# fresh XSRF-TOKEN cookie, the page's CSP, chunked encoding -- and a
+	# second hop (audit/tiles.md #2). Only these addresses, written out
+	# whole, reach the planner this way, by GET or HEAD: the planner
+	# trusts the gateway's X-Pilot-Id on other routes, so nothing else of
+	# its may be reached but through the gateway, and the request's
+	# cookies and any X-Pilot-Id are dropped on the way.
+	@tiles {
+		header X-Origin-Secret {$ORIGIN_SECRET}
+		method GET HEAD
+		path_regexp ^/api/planner/(chart-tile/[a-z_]+/[0-9]+/[0-9]+/[0-9]+(@2x)?\.png|terrain-tile/[0-9]+/[0-9]+/[0-9]+\.png|overlay-tiles(/[A-Za-z0-9._-]+\.pmtiles)?)$
+	}
+	handle @tiles {
+		# The gateway hands /api/planner/X to the planner as /api/X
+		# (UpstreamRoutes), so this does the same: stripping the whole
+		# prefix asked the planner for /chart-tile/..., a 404. And the
+		# planner answers only its own names (app/local_guard.py), so it is
+		# asked as "planner", not by the origin's name, which it refuses.
+		uri replace /api/planner/ /api/ 1
+		reverse_proxy planner:8000 {
+			header_up Host planner
+			header_up -Cookie
+			header_up -X-Pilot-Id
+			header_up -X-Origin-Secret
+			header_up -Forwarded
+			header_up -X-Forwarded-Prefix
+			header_down X-Content-Type-Options nosniff
+		}
+	}
+
 	handle @cloudfront {
 		# The pilot's address is the last one in X-Forwarded-For: CloudFront
 		# appends the viewer's to whatever the request came with, and only

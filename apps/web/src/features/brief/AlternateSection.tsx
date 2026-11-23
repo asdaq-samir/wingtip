@@ -83,16 +83,16 @@ export default function AlternateSection(where: AlternateWhere) {
                   />
                   {data.alternate.taf && <ListRow title={<span className="font-mono break-words">{data.alternate.taf}</span>} />}
                   {data.alternate.alternate_minimums_url && (
-                    <ListRow title="Its alternate minimums" href={data.alternate.alternate_minimums_url} chevron />
+                    <ListRow title="Its Alternate Minimums" href={data.alternate.alternate_minimums_url} chevron />
                   )}
-                  <ListRow title="Take it off" onClick={() => file(null)} data-testid="alternate-remove" />
+                  <ListRow title="Take It Off" onClick={() => file(null)} data-testid="alternate-remove" />
                 </ListGroup>
               )}
               {/* Fields with a TAF near enough, at or above their alternate
                 minimums at the ETA there (the engine's ifr_alternate_check,
                 14 CFR 91.169(c)); those that publish their own after, for the
                 pilot to check against them. */}
-              <ListGroup title="Alternates that will do">
+              <ListGroup title="Alternates That Will Do">
                 {data.suggestions.length === 0 ? (
                   <ListRow title="None found" description="File one you have checked yourself." />
                 ) : (

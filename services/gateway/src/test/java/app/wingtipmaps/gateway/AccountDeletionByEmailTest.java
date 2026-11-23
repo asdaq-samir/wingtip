@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -20,6 +22,9 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -57,7 +62,7 @@ class AccountDeletionByEmailTest extends AccountTestBase {
     /** The token in the link the last email carried. */
     private String emailedToken() {
         ArgumentCaptor<SimpleMailMessage> sent = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mail).send(sent.capture());
+        verify(mail, timeout(5_000)).send(sent.capture());
         String text = sent.getValue().getText();
         assertThat(text).contains("/delete-account/confirm?token=");
         return text.substring(text.indexOf("token=") + "token=".length()).trim();
@@ -67,7 +72,7 @@ class AccountDeletionByEmailTest extends AccountTestBase {
     void thePageAsksForTheAddressWithoutSigningIn() throws Exception {
         mockMvc.perform(get("/delete-account"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Delete your Wingtip Maps account")))
+                .andExpect(content().string(containsString("Delete Your Wingtip Maps Account")))
                 .andExpect(content().string(containsString("name=\"email\"")));
     }
 
@@ -95,7 +100,7 @@ class AccountDeletionByEmailTest extends AccountTestBase {
 
         assertThat(rowsOf(leaving)).containsOnly(0);
         assertThat(rowsOf(staying)).isEqualTo(before);
-        assertThat(plannerAsked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
+        assertThat(FakePlanner.asked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
     }
 
     @Test
@@ -109,14 +114,17 @@ class AccountDeletionByEmailTest extends AccountTestBase {
         Pilot pilot = pilotWithEverything();
         ask(pilot.getEmail());
         String token = emailedToken();
-        // As a sign-in link: refused.
-        mockMvc.perform(post("/api/auth/magic-link/verify")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("token", token))
-                .andExpect(status().isBadRequest());
+        // As a sign-in link: refused, and with its purpose written in
+        // front, which is the string its row is hashed over, refused too.
+        for (String asSignIn : new String[] {token, "delete-account:" + token}) {
+            mockMvc.perform(post("/api/auth/magic-link/verify")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                            .param("token", asSignIn))
+                    .andExpect(status().isBadRequest());
+        }
         // A good sign-in link for the same address cannot delete either.
-        String signIn = "sign-in-" + System.nanoTime();
+        String signIn = String.format("%043d", System.nanoTime());
         magicLinks.save(
                 new MagicLink(pilot.getEmail(), sha256(signIn), Instant.now().plusSeconds(600)));
         mockMvc.perform(post("/delete-account/confirm")
@@ -153,5 +161,30 @@ class AccountDeletionByEmailTest extends AccountTestBase {
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("email", "pilot@example.com"))
                 .andExpect(status().isForbidden());
+    }
+
+    /** The deep security review of 2026-11-21: the mail went out on the
+     *  request's own thread, for an address with an account only, so the
+     *  answer's time told which addresses have one. It is answered while
+     *  the mail server is still busy, as an unknown address is. */
+    @Test
+    void theAnswerDoesNotWaitForTheMailServer() throws Exception {
+        Pilot pilot = pilotWithEverything();
+        CountDownLatch smtp = new CountDownLatch(1);
+        AtomicBoolean delivered = new AtomicBoolean();
+        doAnswer(asked -> {
+                    smtp.await(3, TimeUnit.SECONDS);
+                    delivered.set(true);
+                    return null;
+                })
+                .when(mail)
+                .send(any(SimpleMailMessage.class));
+        try {
+            ask(pilot.getEmail());
+            assertThat(delivered).as("answered before the mail server was done").isFalse();
+        } finally {
+            smtp.countDown();
+        }
+        verify(mail, timeout(5_000)).send(any(SimpleMailMessage.class));
     }
 }

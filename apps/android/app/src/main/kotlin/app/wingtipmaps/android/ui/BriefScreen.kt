@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
@@ -22,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -40,16 +45,26 @@ import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.alternate.AlternateRows
+import app.wingtipmaps.android.balance.BalancePage
+import app.wingtipmaps.android.brief.AdverseGroup
+import app.wingtipmaps.android.brief.CautionRows
 import app.wingtipmaps.android.brief.DepartureWindowStrip
+import app.wingtipmaps.android.brief.FlightFigures
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
+import app.wingtipmaps.android.library.Cited
+import app.wingtipmaps.android.library.rememberCiteActions
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ready.ReadyToFlyRow
+import app.wingtipmaps.android.receiver.ReceiverBriefReports
+import app.wingtipmaps.android.scratchpad.ScratchpadPage
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.FindingIcon
 import app.wingtipmaps.android.strip.GlanceAction
@@ -67,7 +82,9 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * verdict first in its words and colour, the actions it asks for under it
  * (at most three, decision 0012), then each finding -- the weather, the
  * airspace, the altitude, the fuel, the runways, the loading, the risk --
- * with its glyph and its line, as the web's Brief opens. The planner's and
+ * with its glyph and its line, as the web's Brief opens; then the Adverse
+ * Conditions and the flight's figures (BriefGlance), and when to go at
+ * the foot. The planner's and
  * the engine's words throughout (BriefModel). Ready to fly heads it
  * (ReadyToFlyRow), its Plan the Route closing every card onto the plan
  * (`onSetRoute`). A No-Go
@@ -80,6 +97,17 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
     val plan by planModel.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val signedIn = pilot != null
+    var tool by remember { mutableStateOf<Tool?>(null) }
+    // A tool asked for by its name (a link, the search: OpenScreen), once
+    // the Brief is open.
+    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(wanted) {
+        when (ScreenRequests.take(setOf(Screen.SCRATCHPAD, Screen.BALANCE))) {
+            Screen.SCRATCHPAD -> tool = Tool.SCRATCHPAD
+            Screen.BALANCE -> tool = Tool.BALANCE
+            else -> Unit
+        }
+    }
     LaunchedEffect(plan.totals, plan.planning) { model.brief(plan) }
     val route = (listOf(plan.dep) + plan.stops + plan.dest).filter { it.isNotBlank() }.joinToString(" → ").ifEmpty { null }
     CardPage(title = stringResource(R.string.brief), exit = exit, subtitle = route) { padding ->
@@ -100,8 +128,6 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                 KeptAgeLine(KeptForAir.GO_NO_GO, state.keptAtMs)
                 // The plan it briefs: when it was made and whose winds it flies.
                 PlannedLine(plan.totals)
-                // "When should I go?": the hours across, under the verdict.
-                DepartureWindowStrip(plan, signedIn)
                 state.risk?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
                 // The verdict and findings in plain words, on the pilot's tap,
                 // beside them (docs/android-ai.md).
@@ -112,21 +138,68 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                 state.items.forEach { item ->
                     // The finding said first, as its glyph shows it.
                     val said = "${findingSaid(BriefModel.finding(item.finding))}: ${item.label}. ${item.detail}"
+                    // The one reading hides the cite links: each is the row's action.
+                    val cites = rememberCiteActions(item.detail)
                     ListItem(
-                        supportingContent = { Text(item.detail) },
+                        // Its why with each cited rule a tap to its paragraph.
+                        supportingContent = { Cited(item.detail) },
                         leadingContent = { FindingIcon(BriefModel.finding(item.finding)) },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clearAndSetSemantics { contentDescription = said },
+                        modifier = Modifier.clearAndSetSemantics {
+                            contentDescription = said
+                            if (cites.isNotEmpty()) customActions = cites
+                        },
                         content = { Text(item.label) },
                     )
+                }
+                // What could not be checked, and an ADIZ or a border on the
+                // way, one caution each at the findings' end; then the
+                // Adverse Conditions on the route, as a briefer gives them
+                // first (AIM 7-1-5(b)(1)), and the flight's figures (the
+                // web's option 2, the owner's pick of 2026-11-21).
+                state.glance?.let { glance ->
+                    CautionRows(glance)
+                    AdverseGroup(glance.adverse)
+                    FlightFigures(glance)
                 }
                 // Under IFR, the alternate (14 CFR 91.169), filed here.
                 AlternateRows(planModel)
                 // In the weather's adverse conditions: the forecast icing a leg.
                 IcingRows(plan)
+                // The route's fields as the cockpit's receiver heard them
+                // over FIS-B, with their age: weather with no internet.
+                ReceiverBriefReports((listOf(plan.dep) + plan.stops + plan.dest).filter { it.isNotBlank() })
+                // "When should I go?": the hours across, at the foot, the
+                // "when" after the "whether".
+                DepartureWindowStrip(plan, signedIn)
+                // The flight's own tools, each full screen: the loading
+                // against the airplane's limits, and the scratchpad.
+                ToolRow(R.string.balance, R.string.balance_line) { tool = Tool.BALANCE }
+                ToolRow(R.string.scratchpad, R.string.scratchpad_line) { tool = Tool.SCRATCHPAD }
             }
         }
     }
+    when (tool) {
+        Tool.BALANCE -> BalancePage(planModel, onClose = { tool = null })
+        Tool.SCRATCHPAD -> ScratchpadPage(planModel, onClose = { tool = null })
+        null -> {}
+    }
+}
+
+/** The Brief's tools, opened full screen over it. */
+private enum class Tool { BALANCE, SCRATCHPAD }
+
+/** A tool's row: its name in the tint, as a thing tapped is, and what it
+ *  holds under it (ScreenRow's look). */
+@Composable
+private fun ToolRow(@StringRes title: Int, @StringRes line: Int, onClick: () -> Unit) {
+    ListItem(
+        onClick = onClick,
+        supportingContent = { Text(stringResource(line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth(),
+        content = { Text(stringResource(title), color = MaterialTheme.colorScheme.primary) },
+    )
 }
 
 /**

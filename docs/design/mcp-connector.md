@@ -10,7 +10,9 @@ account, so the tools know their airplanes and flights. Decision 0036 records
 it.
 
 This page says what was checked and where (section 1), how it is built
-(2 to 6), and what is left for the owner (7). The developer's how-to, which
+(2 to 6, the live view in 4b), and what is left for the owner (7).
+Decision 0061 adds the live view beside the chat and the flight edited
+by tools; what was read for it, on 2026-11-22, is in that decision. The developer's how-to, which
 connects a local stack to Claude or ChatGPT, is
 [docs/MCP-CONNECTOR.md](../MCP-CONNECTOR.md).
 
@@ -187,8 +189,8 @@ sequenceDiagram
 | Metadata | `/.well-known/oauth-authorization-server` (RFC 8414); `/.well-known/oauth-protected-resource/mcp` (RFC 9728, the planner's) |
 | Registration | RFC 7591 at `/oauth2/register`, open, public clients only (`none`), PKCE required, consent required; 10 an hour per address, a name of 100 characters, 4 callbacks of 200, a 16 KB body (`RegistrationLimit`, `ConnectorClients`); clients nobody connected through let go a day after, and connections whose tokens have all run out a day after the last, each night (`ConnectorHousekeeping`) |
 | Callbacks allowed | `https://claude.ai/api/mcp/auth_callback`, `https://chatgpt.com/connector_platform_oauth_redirect`, `https://chatgpt.com/connector/oauth/*`, loopback `localhost` and `127.0.0.1` on any port (`MCP_REDIRECT_URIS`) |
-| Scopes | `wingtip:read` (tools), `wingtip:write` (save a flight); both in `scopes_supported`, so the pilot approves both once; no `openid` |
-| Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id`; on every call the planner also asks the gateway (`/internal/mcp/connection`) whether the connection still stands, so a disconnect or a deleted account cuts it off at once |
+| Scopes | `wingtip:read` (every tool but the writes, the edits of the flight being planned among them), `wingtip:flights` (save, replace and delete saved flights; not the old `wingtip:write`, which a pilot consented to as saving alone, and which V53 leaves granting nothing, so each pilot is asked again); both in `scopes_supported`, so both are asked when connecting, and the consent page has writing as a ticked box the pilot may untick; no `openid` |
+| Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id`; on every call the planner also asks the gateway (`/internal/mcp/connection`, with the token itself, as an RFC 7662 introspection) whether that token still stands, so a revoked token, a disconnect or a deleted account cuts it off at once, though another connection through the same client stands |
 | Refresh token | 30 days, rotated on every use; a spent one presented again revokes the whole connection (`RotatedRefreshTokens`, V42) |
 | Signing key | `MCP_SIGNING_KEY` (PKCS#8 PEM); blank makes one at start, so tokens end with a restart (development only) |
 
@@ -207,7 +209,7 @@ clients are Spring's own pieces put together for it (`PublicRefresh`,
 
 ## 4. The tools
 
-All read-only but one. Each answer carries `sources`: the FAA data set and
+Read-only but the four writes. Every figure is the planner's or the engine's, asked as the app asks it; the connector works none out. Each answer carries `sources`: the FAA data set and
 the edition held (`wingtip.data_cycles`, as the app's Status page shows), or
 the live product (METAR and TAF from aviationweather.gov, NOTAMs from the FAA
 NOTAM System), or the engine. Times and fuel need an airplane: with none
@@ -216,29 +218,130 @@ never a stock airplane's (decision 0011).
 
 | Tool | Answers | From |
 |---|---|---|
-| `search_airports` | airports whose identifier or name starts with the text | `GET /api/airports/search` |
+| `search_airports` | airports whose identifier or name starts with the text, a page at a time | `GET /api/airports/search` |
 | `airport_info` | the airport card without its weather: elevation, surface airspace class, tower, runways, frequencies, pattern, lighting, contact, FAA diagram and Chart Supplement links | `GET /api/airport/{ident}` |
 | `airport_weather` | METAR and TAF as sent and read; the nearest report or the modelled weather where a field has none | `GET /api/airport/{ident}` |
-| `airport_notams` | the field's NOTAMs and nearby TFRs, ranked by the engine | `GET /api/airport/{ident}/notams` |
+| `airport_notams` | the field's NOTAMs and nearby TFRs, ranked by the engine, a page at a time | `GET /api/airport/{ident}/notams` |
+| `airport_procedures` | the field's approaches, arrivals and departures from the CIFP, each with the id `change_approach` takes, its chart name, runway and transitions | `GET /api/airport/{ident}/procedures` |
 | `nearest_airports` | the nearest fields to a point or an airport, filtered by runway length, tower, public use | `GET /api/airports/nearest` |
 | `plan_route` | the nav log: altitude and why, each leg's courses, heading, wind, ground speed, time and fuel, the totals with reserve and margin, the cautions, a link to open it in Wingtip | `GET /api/plan` |
 | `flight_briefing` | the Go / No-Go line, each finding, the risk assessment | `POST /api/go-no-go` |
+| `winds_aloft` | the wind and temperature at a field or a point and altitude, or each leg of a route at its cruise, with the forecast's valid time and whose it is (AWC's GFA, the GFS in its place) | `wingtip.winds_aloft` (the store the nav log reads; the engine's `wind_aloft_at`), or `GET /api/plan` for a route |
+| `route_hazards` | the SIGMETs, Convective SIGMETs, AIRMETs (Alaska's), G-AIRMETs and PIREPs along a route for the flight's time, each with its altitudes beside the cruise, where and when the flight meets it, a page at a time; the Brief's Adverse Conditions rows over them; Center Weather Advisories said not held yet | `GET /api/plan`, `GET /api/briefing`, the engine's `gonogo_adverse_rows` |
+| `route_airspace` | the Class B, C and D the route crosses with floors and entry rules, the special-use areas, the TFRs near it (crossed or not, altitudes, hours) a page at a time, the ADIZs, special VFR at each field in a surface area, and any field closed, private or military | `GET /api/plan`, `GET /api/briefing`, the engine's `airspace_entry_rules`, `route_adiz`, `special_vfr` and `field_status` |
+| `sun_times` | sunrise, sunset and civil twilight at a field or point on a date, and from that evening 14 CFR 1.1's night, 61.57(b)'s hour after sunset and 91.209(a)'s lights, each saying its rule; a sun that does not set or rise said so | the engine's `sun_times` |
+| `airplane_performance` | the pilot's own airplane at a field: weight and balance at takeoff and landing against its POH's limits, and its short-field distances on the runway the wind favours against its length; no airplane refused (naming `pick_airplane`), a missing figure (the empty weight and moment, the station loads, the POH's tables) named, never filled in | gateway `/internal/mcp/aircraft`, `GET /api/briefing`, the engine's `gonogo_balance`, `gonogo_default_load` and `gonogo_runway_checks` |
 | `my_airplanes` | the pilot's airplanes and their figures, inspections and open squawks | gateway `/internal/mcp/aircraft` |
-| `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when); never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
+| `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when), a page at a time; never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
 | `save_flight` | plans the route and saves it to the pilot's Flights | `GET /api/plan`, then gateway `POST /internal/mcp/flights` |
+| `show_flight` | opens the flight in the live view (4b) | `GET /api/plan` |
+| `add_stop`, `remove_stop`, `move_stop` | the flight with a stop put in, taken out or moved | `GET /api/plan` |
+| `set_cruise_altitude`, `set_departure_time` | the flight at another altitude (or the legal fastest), leaving at another time (or now) | `GET /api/plan` |
+| `change_approach` | an approach at one of the route's fields loaded, activated, deactivated, removed, its missed approach unsuspended or suspended | the engine's `procedures_read` and `procedures_write`, `GET /api/airport/{ident}/procedures`, `GET /api/plan` |
+| `add_fuel_stops`, `remove_fuel_stops` | the fuel stops the plan's fuel check says the flight needs put in (`wingtip.fuel_rounds`), or taken out; with no airplane, refused (no fuel figures to check), and a flight short with no field in reach said short | `GET /api/plan` |
+| `set_fuel_on_board`, `pick_airplane` | the tanks leaving a field; one of the pilot's airplanes, or none | `GET /api/plan`, gateway `/internal/mcp/aircraft` |
+| `open_saved_flight` | a saved flight as the flight to edit | gateway `/internal/mcp/flights` |
+| `save_flight_plan` | the flight being planned saved as a new flight (write, adds) | gateway `POST /internal/mcp/flights` |
+| `update_saved_flight` | the saved flight it came from replaced with it; another route only with `replace_route` (write, destructive, the model's alone) | gateway `PUT /internal/mcp/flights/{id}` |
+| `update_saved_flight_from_view` | the view's Update button: the same, between the same airports only (write, destructive, the view's alone) | gateway `PUT /internal/mcp/flights/{id}` |
+| `delete_saved_flight` | a saved flight deleted (write, destructive) | gateway `DELETE /internal/mcp/flights/{id}` |
+
+Lists come a page at a time (`limit` and `offset`), each answer with
+`total`, `count`, `offset`, `has_more` and `next_offset` (`calls.paged`).
+The route tools beside the nav log (`winds_aloft`, `route_hazards`,
+`route_airspace`) and the field tools (`sun_times`, `airplane_performance`)
+came from the mcp-builder review's coverage list (2026-11-22); fuel prices
+wait on a source. Where no endpoint answers (the winds at a point, the
+sun), the tool asks the planner's own module or the engine by name, as the
+Go / No-Go does in-process.
+`plan_route` and `save_flight` take a route by its airports and answer in
+text; `show_flight`, the edits and `save_flight_plan` carry the whole
+flight (fuel stops, approaches, fuel on board) and draw it in the live
+view; each pair's descriptions say which is which.
 
 Hints, on every tool: `title`, `readOnlyHint`, `destructiveHint`,
 `idempotentHint`, `openWorldHint: false` (Wingtip's own data and the pilot's
 own account), and `_meta.securitySchemes` with the scope it needs.
 
-**The one write.** `save_flight` adds a flight and never changes or deletes
-one, so it is `readOnlyHint: false, destructiveHint: false`. Claude prompts
-for any tool that is not read-only unless the pilot has said "Always allow";
-ChatGPT asks before write actions. It was kept because the confirmation is
-the host's own and the action is additive and undone in the app by deleting
-the flight. Should a directory reviewer read it otherwise, drop the tool
-(and the `wingtip:write` scope) rather than mark it destructive, which it
-is not.
+**The writes.** All of them need `wingtip:flights`, which the pilot may
+untick on the consent page. `save_flight` and `save_flight_plan` only add a
+flight, so they are `readOnlyHint: false, destructiveHint: false`, and the
+host asks before each (Claude unless the pilot chose "Always allow";
+ChatGPT before every write). Replacing and deleting overwrite what the
+pilot saved, so `update_saved_flight`, `update_saved_flight_from_view` and
+`delete_saved_flight` are `destructiveHint: true`, which Claude always asks
+about. Each is held where the host's ask cannot help:
+
+- A flight put to an instructor for the solo cross-country review
+  (14 CFR 61.93(c)(3)) is never replaced. The review and its endorsement
+  show that flight's row, so the gateway answers a 409 and the tool says to
+  save the plan as a new flight.
+- The saved flight's id comes back from the AI app, which a text it read can
+  steer. So the gateway refuses a plan between other airports than the saved
+  flight's unless the call asks `replaceRoute`. Only `update_saved_flight`
+  can ask it (`replace_route`), and only the model can call that tool
+  (`_meta.ui.visibility: ["model"]`), with the host's confirmation.
+- The view's button is `update_saved_flight_from_view` (visibility
+  `["app"]`). It cannot replace the route, and it is labelled with the saved
+  flight's own route from the pilot's records ("Update KMSN–KDLH"). Where
+  the plan goes elsewhere, the button saves a new flight instead.
+- `delete_saved_flight` is the model's alone: the view offers no delete, and
+  a call from the view would skip the host's ask.
+- A replaced flight keeps its share link, and the answer says that whoever
+  holds the link now sees the new route.
+
+The edits are read-only: they change the flight handed to them and keep
+nothing (the security review of 2026-11-22).
+
+**Third parties' text is data.** The answers quote text Wingtip did not
+write: NOTAMs (written by airport operators and the FAA), METAR, TAF and
+PIREP remarks, a field's remarks, registry names. The pilot's AI app reads
+them beside the pilot's own words, so a NOTAM could try to give it
+instructions. The server's `instructions` tell the model such text is data
+to report, never instructions, and no tool is called because it asks; every
+planner answer loses the characters a pilot never sees (control characters,
+Unicode's format characters, the tag characters that spell ASCII
+invisibly) before it is handed on (`calls.as_data`). The one write is
+confirmed by the pilot in the host, and adds a flight only (the deep
+security review of 2026-11-21).
+
+### 4b. The live view (decision 0061)
+
+The tools that answer a flight (`show_flight`, the edits,
+`open_saved_flight`, `save_flight_plan`, `update_saved_flight`,
+`update_saved_flight_from_view`) carry
+`_meta.ui.resourceUri: ui://wingtip/flight`, an MCP App (the MCP Apps
+extension, spec 2026-01-26, the Python SDK's `mcp.server.apps`). Claude
+opens it beside the chat (the resource asks for the side panel,
+`preferredDisplayMode`) and draws each answer in it.
+
+- **The page** is the web's (`apps/web/claude-view.html`,
+  `features/claude-view`), one self-contained file built inside the app's
+  build and served by the gateway at `/app/claude-view.html`; the planner
+  reads it from the gateway, keeps it five minutes, and serves it
+  (`app.mcp.view_resource`). The app's own modules are built as free of
+  side effects (`vite.claude-view.config.ts`), since one file inlines every
+  lazy chunk a barrel reaches, and the page is held to 1.3 MB
+  (`vite-plugins/claudeView.ts`; 1.08 MB on 2026-11-22, 4.0 MB before). Its CSP names Wingtip's own origin alone, for
+  the chart's tiles, as images only (`resourceDomains`, no
+  `connectDomains`): the view fetches nothing.
+- **The answer** is the flight (`app.mcp.flight_state`, the web's own
+  address keys) and its view (`app.mcp.flight_view`): the points, the
+  course thinned to 400 points, the legs and totals, the engine's
+  `strip_fuel` for the figure strip, the approaches and their state, the
+  sectional's tile layer, the link, and a server-made time and count. The
+  model reads one line of figures, the flight to pass to the next tool and
+  the link (`content`); the view reads the rest (`structuredContent`).
+- **The view** draws the chart as a still picture (tiles and SVG; the
+  sandbox runs no worker and no WebAssembly), FPL's figure strip, the
+  route's points with a stop's Remove, each approach's Activate,
+  Deactivate, Unsuspend or Suspend Missed and Remove, Add or Remove Fuel
+  Stops, Save or Update Saved and Open in Wingtip. A tap calls the same
+  tool through Claude (`tools/call`) and tells Claude what the pilot did
+  and the flight now (`ui/update-model-context`). Claude mounts a view
+  for each answer: the newest keeps the say, the older ones read only
+  (a `BroadcastChannel` election on the server's time and count).
+- **Nothing is kept** between calls: the flight is handed in and back.
 
 The tool list is a contract: `services/planner/tests/mcp_tools.snapshot.json`
 holds every name, description, schema and hint, and
@@ -281,7 +384,10 @@ logbook, and send nothing to Anthropic or OpenAI unless the pilot asked.
   Anthropic's egress range allowed through any WAF in front of the gateway.
 - **Anthropic's directory:** submit at claude.ai's developer portal, with a
   test account holding airplanes and flights, the public documentation page,
-  and the privacy policy.
+  and the privacy policy; an MCP App adds 3 to 5 carousel screenshots
+  (PNG, 1000 px wide or more, each with its prompt). The listing's words,
+  the help page and the screenshots to take are
+  [store/connector-listing.md](../store/connector-listing.md).
 - **OpenAI's app directory:** verify the organization in the OpenAI Platform
   Dashboard, then submit with the demo account and the privacy policy.
 - **The privacy review:** the policy's new section is a draft, like the rest

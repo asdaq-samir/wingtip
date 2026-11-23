@@ -30,7 +30,6 @@ IMAGES = {
     "ml/Dockerfile.ml": "ml",
     "services/jobs/retrain/Dockerfile": "retrain",
     "services/jobs/charts/Dockerfile": "charts",
-    "services/jobs/crash/Dockerfile": "crash-leads",
 }
 
 
@@ -108,3 +107,14 @@ def test_the_bake_files_build_each_image_on_the_base_target(bake):
     for path, name in IMAGES.items():
         if name in targets:
             assert 'contexts   = { wingtip-base = "target:base" }' in targets[name], (bake, name)
+
+
+@pytest.mark.parametrize("path", [p for p in IMAGES if p != "ml/Dockerfile.ml"] + ["infra/dev-services/Dockerfile"])
+def test_the_runtime_image_drops_pip(path):
+    """trivy (2026-11-21): pip's vendored urllib3, msgpack and setuptools were
+    the runtime images' findings; nothing runs pip once the image is built.
+    The notebook image keeps it, for a notebook's own installs."""
+    text = (ROOT / path).read_text()
+    assert "pip uninstall -y -q --root-user-action=ignore pip" in text
+    # After the image's own installs, which need it.
+    assert text.rindex("pip uninstall") > text.rfind("pip install -r")

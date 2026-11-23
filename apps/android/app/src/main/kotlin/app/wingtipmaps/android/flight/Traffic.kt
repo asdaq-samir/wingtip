@@ -16,15 +16,19 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.ownShipHex
 import app.wingtipmaps.android.engine.generated.trafficFresh
 import app.wingtipmaps.android.engine.generated.trafficMarks
+import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -101,6 +105,12 @@ class Traffic(
     private val _heardAtMs = MutableStateFlow<Long?>(null)
     val heardAtMs: StateFlow<Long?> = _heardAtMs.asStateFlow()
 
+    /** The airplanes as the map draws them: each with its mark and when it was heard. */
+    val targets: Flow<List<TrafficDrawing.Target>> = combine(planes, marks, heardAtMs) { planes, marks, heardAtMs ->
+        val heard = heardAtMs ?: AppClock.nowMs()
+        planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
+    }
+
     /** The middle of the map and the miles to its corner, as the map last
      *  rested: the screen sets them. */
     var mapCentre: Pair<Double, Double>? = null
@@ -144,6 +154,10 @@ class Traffic(
     /** One answer about a point, where traffic is on and there is one. */
     private suspend fun ask(fix: OwnShip.Fix?) {
         if (!on.value) return
+        // Put away on the ground, nothing is drawn or told: Android keeps
+        // the process, and the clock would ask every 10 s. Flying (own
+        // ship's service up) it goes on, for the near ones' heads-up.
+        if (ticker.background && !OwnShipService.running) return
         lastFix = fix
         val at = fix?.let { it.lat to it.lon } ?: mapCentre ?: return
         val radius = mapRadiusNm.coerceIn(10.0, 60.0)
@@ -267,10 +281,20 @@ class Traffic(
          *  bearing from it and whether it is told. */
         fun marks(planes: List<TrafficAircraft>, fix: OwnShip.Fix?): Result<List<Mark>> =
             Engine.trafficMarks(
-                fix?.altitudeFt,
+                markedFt(fix?.altitudeFt),
                 planes.map { EngineContract.TrafficMarksInputPlanesItem(it.altitudeFt, it.verticalFpm, it.lat, it.lon, it.pressureAltitude) },
                 fix?.let { EngineContract.TrafficMarksInputOwn(it.lat, it.lon) },
             )
+
+        /** Own ship's height as the traffic is marked against it: to the
+         *  nearest 10 ft, as the web's TrafficGl and the iPhone's
+         *  Traffic.markedFt read it, so the three apps give one airplane
+         *  the same mark. A 5 ft change of own height moves the engine's
+         *  1,000 ft near band (2,000 ft for a pressure altitude,
+         *  traffic_marks after 14 CFR 91.159's spacing) and its hundreds
+         *  only for an airplane within 5 ft of a boundary: far inside the
+         *  error of a phone's GNSS height and of the airplane's own report. */
+        fun markedFt(ft: Double?): Double? = ft?.let { (it / 10).roundToInt() * 10.0 }
 
         /** A height against own ship's in words for a notification: "500
          *  ft above", "1,200 ft below", "at your height". */
@@ -278,15 +302,17 @@ class Traffic(
             val rounded = (deltaFt / 100).roundToInt() * 100
             return when {
                 rounded == 0 -> "at your height"
-                rounded > 0 -> "${"%,d".format(rounded)} ft above"
-                else -> "${"%,d".format(-rounded)} ft below"
+                // Grouped as the FAA writes it whatever the phone's region:
+                // "%,d" wrote "1.200 ft above" on a German phone.
+                rounded > 0 -> "${Format.altitude(rounded.toDouble())} above"
+                else -> "${Format.altitude(-rounded.toDouble())} below"
             }
         }
 
         /** What the Open Database License asks of a map that draws
          *  adsb.lol's data: its source and the licence, named. */
         fun credit(source: String?): String {
-            val credits = mapOf("adsb.lol" to "Traffic adsb.lol, ODbL", "ADS-B Exchange" to "ADS-B Exchange", "adsb.fi" to "adsb.fi")
+            val credits = mapOf("adsb.lol" to "Traffic adsb.lol, ODbL", "ADS-B Exchange" to "ADS-B Exchange")
             val named = (source ?: "adsb.lol").split(" and ").mapNotNull { credits[it] }
             val first = named.firstOrNull() ?: return "Traffic adsb.lol, ODbL"
             return if (first == "Traffic adsb.lol, ODbL") named.joinToString(" · ") else "Traffic ${named.joinToString(" · ")}"

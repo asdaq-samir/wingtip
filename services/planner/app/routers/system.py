@@ -16,7 +16,7 @@ from fastapi import APIRouter, HTTPException
 from wingtip import chart_cycle, chart_upkeep, chartlabels, checkpoint_notes, data_cycles, model_registry, retry, weather
 from wingtip.terrain import DEFAULT_FAA_CACHE_DIR
 
-from .. import chart_model, chart_refresh, errors
+from .. import chart_model, chart_refresh, errors, route_metrics
 from ..chart_cycle import check as chart_cycle_check
 from ..feeds import watch as feeds_watch
 from ..router_basics import PROCESSED_DIR, paths
@@ -32,6 +32,7 @@ from ..schemas.system import (
     PipelineStage,
     PipelineStatus,
     RetrainStarted,
+    RouteStat,
     ServiceStatus,
     Status,
     TrainingReadiness,
@@ -263,6 +264,18 @@ def status() -> Status:
             recent_errors=errors.recent(),
             data_cycles=cycles,
             feeds=feeds_watch.snapshot_or_none(),
+            routes=[
+                RouteStat(
+                    route=r.route,
+                    method=r.method,
+                    count=r.count,
+                    errors=r.errors,
+                    error_rate=r.error_rate,
+                    p50_ms=r.p50_ms,
+                    p95_ms=r.p95_ms,
+                )
+                for r in route_metrics.METRICS.snapshot()
+            ],
         )
 
 

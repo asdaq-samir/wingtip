@@ -112,7 +112,8 @@
    cannot move, and stays inline so a long one still ends in an
    ellipsis), rather than blinking: the element is keyed on its value, so
    each new value is a new one, as iOS's numeric content transition
-   rolls its digits. Still with Reduce Motion, and in the Native look. */
+   rolls its digits. Still with Reduce Motion, in the Native look, and in
+   flight (FigureStrip's `still`: the GPS figures change every second). */
 @utility figure-roll {
   @media (prefers-reduced-motion: no-preference) {
     @variant branded {

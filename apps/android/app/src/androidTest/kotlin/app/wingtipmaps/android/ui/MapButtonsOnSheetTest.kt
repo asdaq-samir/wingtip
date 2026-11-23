@@ -61,7 +61,7 @@ class MapButtonsOnSheetTest {
     }
 
     private val position get() = compose.onNode(hasContentDescription(context.getString(R.string.own_ship_button)))
-    private val ask get() = compose.onNode(hasContentDescription(context.getString(R.string.ask_about_flight)))
+    private val ask get() = compose.onNode(hasContentDescription(context.getString(R.string.wording_ask_about_the_flight)))
 
     @Test
     fun theButtonsRideTheSheetsTopAtTheRight() {

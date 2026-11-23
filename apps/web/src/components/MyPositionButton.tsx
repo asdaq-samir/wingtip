@@ -1,9 +1,8 @@
 import { useEffect } from "react";
-import { Navigation, Route } from "lucide-react";
+import { Expand, Navigation } from "lucide-react";
 import { showError } from "../lib/problems";
 import { cn } from "cn";
 import IconButton from "./IconButton";
-import { Toggle } from "@base-ui/react/toggle";
 import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
 import { DRY_RUN_ZOOM } from "../lib/map/position/dryRun";
 
@@ -14,7 +13,10 @@ import { DRY_RUN_ZOOM } from "../lib/map/position/dryRun";
  * panned away (OwnShipGl stops following) a tap brings it back the
  * same way; a tap while it is following puts the position away. The
  * arrow is iOS's, drawn fine: filled while the map follows, an outline
- * otherwise, and pulsing while the GPS has nothing yet. It was two switches at the
+ * otherwise, and pulsing while the GPS has nothing yet. A plain button named
+ * by what a tap does, as its route face always was: as a pressed toggle it
+ * was read "Hide my position, pressed", the name and the state saying
+ * opposite things (WAI-ARIA APG, Button; WCAG 4.1.2). It was two switches at the
  * foot of the settings, Show my position and Keep the map on me, with
  * the coordinates under them.
  *
@@ -33,7 +35,7 @@ export default function MyPositionButton() {
   const recentre = useOwnShip((s) => s.recentre);
   useEffect(() => {
     // Said once, as it happens: a refusal of the browser's prompt.
-    if (error) showError("No position", error);
+    if (error) showError("No Position", error);
   }, [error]);
   // Precise Location off: said once as the position comes in that way,
   // since everything drawn from it may be a mile or more out.
@@ -70,7 +72,7 @@ export default function MyPositionButton() {
     if (routeFace) {
       showRoute();
     } else if (!ownShipAvailable()) {
-      showError("No position over this connection", "The browser gives a page the phone's position only over https.");
+      showError("No Position over This Connection", "The browser gives a page the phone's position only over https.");
     } else if (!enabled) {
       setEnabled(true);
       recentre();
@@ -102,7 +104,10 @@ export default function MyPositionButton() {
       {/* Fine and sharp-cornered, as iOS's own arrow is: lucide's is
           drawn with round joins at 2, a heavier mark than any around it. */}
       {routeFace ? (
-        <Route strokeWidth={1.5} className="size-5" />
+        // Arrows out to the corners, the whole route fitted in: FPL's toggle
+        // has the route's own glyph, and the two read the same (the owner,
+        // 2026-11-20: "Can fit to route and fpl have different icons?").
+        <Expand strokeWidth={1.5} className="size-5" />
       ) : (
         <Navigation
           strokeWidth={1.5}
@@ -112,13 +117,5 @@ export default function MyPositionButton() {
       )}
     </>
   );
-  // On the route's face a plain button; on the position's, Base UI's
-  // Toggle, pressed while the position shows.
-  return routeFace ? (
-    <IconButton {...own}>{face}</IconButton>
-  ) : (
-    <Toggle pressed={enabled} render={<IconButton {...own} />}>
-      {face}
-    </Toggle>
-  );
+  return <IconButton {...own}>{face}</IconButton>;
 }

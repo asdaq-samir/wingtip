@@ -25,6 +25,7 @@ export const CHART = {
   specialUse: "#e0662a",
   fixInk: "#1c1a17",
   vfrGreen: "#148a3b",
+  vfrGreenText: "#117a35",
   runwayHard: "#4a4f57",
   runwaySoft: "#7d8a6a",
   procedure: "#5b5bd6",
@@ -103,7 +104,7 @@ export const BADGE = {
   car: "#2563eb",
   food: "#be185d",
   lodging: "#7e3fb8",
-  stopFuel: "#d97706",
+  stopFuel: "#b45309",
   stopFood: "#dc2626",
   stopRepair: "#0f766e",
   stopTraining: "#0369a1",
@@ -194,6 +195,17 @@ export const SIGNAL = {
   white: "#f8fafc",
 };
 
+export const MARKUP = {
+  highlightYellow: "#f2b600",
+  highlightGreen: "#52c41a",
+  highlightBlue: "#2f8cff",
+  highlightPink: "#e02ad8",
+  penBlack: "#1c1a17",
+  penBlue: "#0066d6",
+  penRed: "#dc2626",
+  penGreen: "#148a3b",
+};
+
 /** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */
 export const INK = {
   inkMagenta: "#b3338c",
@@ -206,12 +218,11 @@ export const TYPE_CLASS = {
   hero: "text-(length:--type-hero) leading-(--lead-hero)",
   card: "text-(length:--type-card) leading-(--lead-card)",
   heading: "text-(length:--type-heading) leading-(--lead-heading)",
-  title: "text-base pointer-coarse:text-[1.0625rem]",
-  row: "text-base pointer-coarse:text-[1.0625rem]",
-  prose: "text-base pointer-coarse:text-[0.9375rem]",
-  detail: "text-sm pointer-coarse:text-[0.9375rem]",
+  title: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
+  row: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
+  prose: "text-base pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
+  detail: "text-sm pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
   note: "text-(length:--type-note) leading-(--lead-note)",
-  tab: "text-(length:--type-tab) leading-(--lead-tab)",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
   badge: "text-(length:--type-badge) leading-(--lead-badge)",
   caption: "text-(length:--type-caption) leading-(--lead-caption)",
@@ -231,8 +242,7 @@ export const TYPE_POINTS = {
   prose: 15,
   detail: 15,
   note: 13,
-  tab: 13,
-  tabBar: 12,
+  tabBar: 13,
   badge: 12,
   caption: 11,
   chip: 13,
@@ -243,7 +253,7 @@ export const TYPE_POINTS = {
 /** Motion: durations in seconds, curves as cubic-bezier points. */
 export const MOTION = {
   sheet: 0.3,
-  sheetEase: [0, 0, 0.58, 1],
+  sheetEase: [0.23, 1, 0.32, 1],
   drawer: 0.45,
   drawerEase: [0.32, 0.72, 0, 1],
   fade: 0.2,
@@ -275,14 +285,9 @@ export const MAP = {
   airspaceFaded: 0.35,
   airspaceHeld: 1.8,
   airspaceLabelFaded: 0.6,
-  labelSmall: 11,
-  label: 12,
-  labelLarge: 13,
-  labelCount: 14,
-  labelRunway: 16,
-  labelHalo: 2,
-  labelHaloNight: 0.6,
 } as const;
+
+export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
 type FlowStop = [number, [number, number, number, number]];
@@ -354,10 +359,26 @@ export const TAP_TARGET = 44;
 /** Sizes, in points: a chip's height, the map panel's widths and the desktop's least width. */
 export const SIZE = {
   tapTarget: 44,
+  flyingTarget: 60,
   chip: 32,
-  mapButton: 48,
+  mapButton: 44,
+  roundButton: 44,
+  pill: 24,
+  rowMark: 32,
+  chartMark: 30,
+  searchDisc: 36,
+  rowBadge: 28,
+  glyphCaption: 12,
+  glyphNote: 16,
+  glyphRow: 20,
+  glyphBadge: 18,
+  glyphBar: 24,
+  glyphMap: 20,
+  glyphCardAction: 20,
   tabBar: 64,
+  regular: 660,
   panel: 384,
   panelWide: 448,
+  inspector: 1180,
   desktop: 1024,
 } as const;

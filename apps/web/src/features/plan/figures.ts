@@ -5,6 +5,7 @@ import { duration, grouped, NOT_KNOWN, spokenDistance, spokenDuration, spokenFue
 import { SM_PER_NM } from "../../lib/geo";
 import { callEngine } from "../../lib/engine/engine";
 import { pointName } from "../../lib/identSchema";
+import { sameField } from "../../lib/procedures";
 
 /** One of the flight's figures: its name over it, its unit after it. */
 interface Figure {
@@ -44,10 +45,14 @@ interface TripInput {
    *  calculations as in the profile") -- the hop it is on, the distance and
    *  time left, the arrival, and the fuel required less what it has burnt. */
   flown?: Flown | null;
+  /** The engine's strip_fuel answer, where it was asked elsewhere: the
+   *  connector's live view, whose host runs no WebAssembly, is sent the
+   *  planner's (app.mcp.flight_view). */
+  strip?: ReturnType<typeof stripFuel>;
 }
 
 /** The flight to the next landing: the route's first hop where it has
- *  stops (the tanks filled at each, app.planning.route_totals), else the
+ *  stops (the tanks filled at each, wingtip.route_join.route_totals), else the
  *  whole route -- what the strip's figures are of; a dry run's, the hop it
  *  is flying (`hop`). */
 export function nextLanding(totals: Totals | null, destination: string, hop = 0): { to: string; totals: Totals | null } {
@@ -55,10 +60,14 @@ export function nextLanding(totals: Totals | null, destination: string, hop = 0)
   return flight ? { to: flight.destination, totals: flight.totals } : { to: destination, totals };
 }
 
-/** The strip's fuel from the planner's totals, the engine's
- *  (strip_fuel), the iPhone's and Android's own: the fuel required to the
- *  landing of hop `hop` (the tanks filled at each stop), less what a
- *  flight under way has burnt, and the flights the tanks fall short on. */
+/** The fuel figure from the planner's totals, the engine's (strip_fuel),
+ *  the one the iPhone's and Android's strips show: the fuel required to
+ *  the landing of hop `hop` (the tanks filled at each stop), less what a
+ *  flight under way has burnt, and the flights the tanks fall short on.
+ *  The web's strip shows the Track in its place (TripFigures); the web
+ *  says this figure in the Nav Log card's head (figuresLine) and the
+ *  flights short (shortFlights), the tanks themselves in the timeline's
+ *  gauges. */
 function stripFuel(totals: Totals | null, hop = 0, burntGal: number | null = null) {
   return callEngine("strip_fuel", {
     fuel_required_gal: totals?.fuel_required_gal ?? null,
@@ -99,6 +108,7 @@ export function tripFigures({
   toDestination = false,
   flown = null,
   statute = false,
+  strip: given,
 }: TripInput): Figure[] {
   const guessed = !totals && !local && estimate ? guess(estimate) : null;
   const from = depart || new Date().toISOString();
@@ -127,7 +137,7 @@ export function tripFigures({
   // To the destination, past the stops, where the pilot asked for it: the
   // whole route's distance and time. The fuel stays the next landing's,
   // what goes in the tanks before this flight: they are filled at each
-  // stop (app.planning.route_totals), and the route has no one figure.
+  // stop (wingtip.route_join.route_totals), and the route has no one figure.
   const next = toDestination ? { to: destination, totals } : landing;
   const leg = next.totals;
   // A dry run's left from where the airplane is: to the hop's landing, or
@@ -136,7 +146,7 @@ export function tripFigures({
   const distance = left ? left.nm : (leg?.distance_nm ?? null);
   const minutes = left ? left.min : (leg?.ete_min ?? null);
   const time = minutes === null ? "—" : duration(minutes);
-  const strip = stripFuel(totals, flown?.hop ?? 0, flown ? flown.burntGal : null);
+  const strip = given ?? stripFuel(totals, flown?.hop ?? 0, flown ? flown.burntGal : null);
   const required = strip.required_gal;
   const start = flown ? new Date(flown.now * 1000).toISOString() : from;
   const fuel = required == null ? null : one(required);
@@ -170,8 +180,12 @@ export function tripFigures({
 }
 
 /** The flights of a route the tanks do not hold the fuel for: each hop
- *  between two landings, or the whole route with no stops -- "C81 → KMSN". */
-export function shortFlights(totals: Totals | null): { name: string; shortGal: number }[] {
+ *  between two landings, or the whole route with no stops -- "C81 → KMSN";
+ *  `noStop` where the planner found no field with fuel that the tanks
+ *  reach on it (the totals' fuel_stops have none for it), so the pilot is
+ *  told the flight stays short rather than offered nothing (warn, never
+ *  limit). */
+export function shortFlights(totals: Totals | null): { name: string; shortGal: number; noStop: boolean }[] {
   if (!totals) return [];
   // Each named by its two ends' own names (pointName), found by the
   // flight's index (`hop`), not the engine's raw idents, where a pilot's
@@ -179,7 +193,9 @@ export function shortFlights(totals: Totals | null): { name: string; shortGal: n
   // with no stops has no flight to name: "".
   return stripFuel(totals).short.map((s) => {
     const hop = s.hop == null ? undefined : totals.hops[s.hop];
-    return { name: hop ? `${pointName(hop.departure)} → ${pointName(hop.destination)}` : "", shortGal: s.short_gal };
+    const from = hop?.departure ?? totals.hops[0]?.departure;
+    const noStop = !(totals.fuel_stops ?? []).some((f) => f.reason !== "break" && (from == null || sameField(f.departure, from)));
+    return { name: hop ? `${pointName(hop.departure)} → ${pointName(hop.destination)}` : "", shortGal: s.short_gal, noStop };
   });
 }
 /** The figures from the airplane's book alone (TripFigures' `estimate`):

@@ -10,7 +10,7 @@ import { noTips, openConsole, openAccount, showTabs } from "./helpers";
  */
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test("Delete account asks, then deletes the account and everything in it, and signs out", async ({ page }) => {
+test("Delete Account asks, then deletes the account and everything in it, and signs out", async ({ page }) => {
   test.setTimeout(120_000);
   const address = `delete-${Date.now()}@example.com`;
   // The tips and the first-launch notice given, on every load: deleting
@@ -37,17 +37,13 @@ test("Delete account asks, then deletes the account and everything in it, and si
   await openAccount(page);
   await console.getByTestId("role-menu").click();
   await page.getByTestId("delete-account").click();
-  // Asked first: Cancel keeps it -- on a phone the sheet's close, in its
-  // title row.
-  await page
-    .getByRole("alertdialog")
-    .getByRole("button", { name: /^(Cancel|Close)$/ })
-    .click();
+  // Asked first: Cancel keeps it.
+  await page.getByRole("alertdialog").getByRole("button", { name: "Cancel" }).click();
   expect((await page.request.get("/api/me")).status()).toBe(200);
 
   await console.getByTestId("role-menu").click();
   await page.getByTestId("delete-account").click();
-  await page.getByRole("alertdialog").getByRole("button", { name: "Delete account" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete Account" }).click();
 
   // Signed out, here and on the server.
   await expect(page).toHaveURL(/\/app\/plan/);

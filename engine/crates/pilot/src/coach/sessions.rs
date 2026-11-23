@@ -182,7 +182,7 @@ fn for_weak(w: Weak) -> Template {
         wings: Some(Wings { area, acs }),
     };
     match w {
-        Weak::Unstable => t("Stabilized approaches: on speed, on the glidepath and on the centreline by 500 ft above the field, and a go-around where not (AC 61-98D 2.1.4)", Needs::Glidepath, 60, "Takeoffs and landings", "PA.IV.B"),
+        Weak::Unstable => t("Stabilized approaches: on speed, on the glidepath and on the centerline by 500 ft above the field, and a go-around where not (AC 61-98D 2.1.4)", Needs::Glidepath, 60, "Takeoffs and landings", "PA.IV.B"),
         Weak::ApproachDeviation => t("Approaches flown within full scale and at each step-down's altitude", Needs::Approach, 90, "Basic flying skills", "IR.VI.A"),
         Weak::Pattern => t("Traffic patterns at pattern altitude, entry to landing", Needs::Any, 45, "Takeoffs and landings", "PA.III.B"),
         Weak::Cruise => t("A cross-country leg by pilotage and dead reckoning, held to its altitude and course", Needs::Any, 90, "Positive aircraft control", "PA.VI.A"),

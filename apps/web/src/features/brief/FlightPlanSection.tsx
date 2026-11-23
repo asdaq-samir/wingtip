@@ -8,10 +8,12 @@ import { NumberField } from "../../components/ui/number-field";
 import { WHOLE } from "../../components/ui/numberFormats";
 import { formText, personsOnBoard, withPersonsOnBoard, type FlightPlanForm } from "./flightPlanForm";
 import { showError } from "../../lib/problems";
-import { copyText, useCopied } from "../../lib/share";
+import { done as confirm } from "../../lib/doneNote";
+import { copyText } from "../../lib/share";
 import { api, describeError } from "../../lib/api/client";
 import type { FlightPlanFilingRequest } from "../../lib/api/types";
 import { pilotQuery } from "../../lib/queryClient";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The Brief tab's Flight Plan: the FAA's form (FAA Form 7233-4) filled in
@@ -35,8 +37,6 @@ const usePersons = create<{ typed: Record<string, string>; set: (key: string, va
 }));
 
 export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanForm[]; ifr: boolean }) {
-  // "Copied" on the row tapped, for a moment, where it was tapped.
-  const [copied, setCopied] = useCopied();
   // Filing from here, where Flight Service is connected: never until the
   // owner's agreement with its provider, and then signed in.
   const { data: pilot } = useQuery(pilotQuery);
@@ -55,14 +55,15 @@ export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanFor
   const file = useMutation({
     mutationFn: ({ plan }: { i: number; plan: FlightPlanFilingRequest }) => api.flightService.file(plan),
     onSuccess: (done, { i }) => setFiled((f) => ({ ...f, [i]: done.reference })),
-    onError: (err) => showError("Could not file the flight plan", describeError(err)),
+    onError: (err) => showError("Could Not File the Flight Plan", describeError(err)),
   });
-  const copy = async (key: string, text: string) => {
+  // "Copied" by the row tapped, for a moment (lib/doneNote).
+  const copy = async (row: Element, text: string) => {
     try {
       await copyText(text);
-      setCopied(key);
+      confirm("Copied", { near: row });
     } catch (err) {
-      showError("Could not copy the flight plan", (err as Error).message);
+      showError("Could Not Copy the Flight Plan", describeError(err));
     }
   };
 
@@ -105,13 +106,13 @@ export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanFor
                 ),
               )}
               <ListRow
-                title={copied === `route-${i}` ? "Copied" : "Copy the route"}
-                onClick={() => void copy(`route-${i}`, route)}
+                title="Copy the Route"
+                onClick={(event) => void copy(event.currentTarget, route)}
                 data-testid="flight-plan-copy-route"
               />
               <ListRow
-                title={copied === `form-${i}` ? "Copied" : "Copy the flight plan"}
-                onClick={() => void copy(`form-${i}`, formText(form))}
+                title="Copy the Flight Plan"
+                onClick={(event) => void copy(event.currentTarget, formText(form))}
                 data-testid="flight-plan-copy"
               />
               {/* The form copied in the tap, then the FAA's site opened in
@@ -119,14 +120,14 @@ export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanFor
                   it, to paste in. */}
               <ListRow
                 title="Open in 1800wxbrief"
-                description={copied === `wx-${i}` ? "Copied" : "Copies this flight plan to paste in"}
+                description="Copies this flight plan to paste in"
                 href="https://www.1800wxbrief.com"
-                onClick={() => void copy(`wx-${i}`, formText(form))}
+                onClick={(event) => void copy(event.currentTarget, formText(form))}
                 data-testid="flight-plan-open-wx"
               />
               {flightService?.connected && (
                 <ListRow
-                  title={filed[i] ? "Filed with Flight Service" : "File with Flight Service"}
+                  title={filed[i] ? "Filed with Flight Service" : WORDING.fileWithFlightService}
                   description={
                     filed[i]
                       ? `Reference ${filed[i]}`
@@ -147,7 +148,7 @@ export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanFor
             opened with Flight Service on leaving and closed on landing, a
             search starting half an hour past the ETA unclosed (AIM 5-1-5,
             5-1-14): said on the row, where it was a footnote. */}
-        <ListGroup title="File it">
+        <ListGroup title="File It">
           <ListRow
             title="1800wxbrief.com"
             description={ifr ? "At least 30 min before departure" : "Open it as you leave, close it when you land"}

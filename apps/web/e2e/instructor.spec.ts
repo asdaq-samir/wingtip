@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { signInByEmail } from "./emailSignIn";
-import { controlsInSight, library, noTips, openConsole, openPanel, sideDrawer } from "./helpers";
+import { controlsInSight, library, noTips, openConsole, openPanel, openBriefMenu } from "./helpers";
 import { fillDate } from "./ariaFields";
 
 /**
@@ -119,7 +119,7 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   const needs = desk.getByTestId("student-needs").filter({ hasText: "Avery B. Student" });
   await expect(needs).toBeVisible();
   await expect(needs).toContainText(/Solo KUGN KRFD KUGN today · no risk assessment/);
-  await expect(needs).toContainText("Sign off");
+  await expect(needs).toContainText("Sign Off");
   await expect(desk.getByTestId("student-row").filter({ hasText: "Avery B. Student" })).toContainText("1 waiting on you");
   await needs.click();
   const review = desk.getByTestId("review");
@@ -160,7 +160,7 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   // Opened as the tabs alone: the panel half way, its route box in sight.
   await openPanel(page);
   await controlsInSight(page);
-  await sideDrawer(page).getByTestId("share-route").click();
+  await openBriefMenu(page);
   await expect(page.getByTestId("save-flight-button")).toBeEnabled({ timeout: 90_000 });
   await page.getByTestId("ask-review").click();
   const sheet = page.getByTestId("review-sheet");

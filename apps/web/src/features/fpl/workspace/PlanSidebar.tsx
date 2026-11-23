@@ -1,4 +1,4 @@
-import { lazy, useEffect } from "react";
+import { lazy, useEffect, useEffectEvent } from "react";
 import { fromChunk } from "../../../lib/fromChunk";
 import { loadAccountPanels } from "../../pilot";
 import type { LatLon } from "../../../lib/geo";
@@ -12,7 +12,10 @@ import { loadRecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "..
 import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import type { KeptAircraft } from "../../../lib/preferences";
+import { afterRouteDrawn } from "../../../lib/routeDrawn";
 import Waits from "./Waits";
+import SearchBox from "../search/SearchBox";
+import { useAirplaneHistory } from "../../../lib/airplane/ownAirplane";
 
 /** The one search's parts on chunks of their own, out of the first load
  *  (its 1.10 MB budget, scripts/first-load.mjs): its own page, drawn once
@@ -94,16 +97,18 @@ export default function PlanSidebar({
   const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, query, setHomeAirport, toggleFavoriteAirport } = vm.search;
   usePrefetchAircraftTiles();
   useEffect(() => {
-    const later = window.setTimeout(() => {
+    // Once the route opened has drawn (lib/routeDrawn), out of its first seconds.
+    return afterRouteDrawn(() => {
       searchHome.prefetch();
       recentsPage.prefetch();
       recentRoutesPage.prefetch();
     }, 1500);
-    return () => window.clearTimeout(later);
   }, []);
-  // An airplane's card, over whichever place is up, as an airport's is.
+  // An airplane's card, over whichever place is up, as an airport's is; a past flight's only
+  // where its history is offered (useAirplaneHistory: the pilot's own, or Other Airplanes on).
+  const history = useAirplaneHistory(flight);
   const flightCard =
-    flight && past ? (
+    flight && past && history ? (
       <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
     ) : flight ? (
       <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={selectPlace} />
@@ -112,6 +117,21 @@ export default function PlanSidebar({
   // the search's page or the map: its Add Stop is the pick, put in where
   // the pilot asked, as a row tapped in the search would be.
   const stopAsked = !!model.pick?.stop;
+  // A stop asked for starts at the search, never at an airport's card left
+  // open from before (one on the map, kept in the address): it showed in
+  // the ask's place, as if Add a Stop opened that field (the owner,
+  // 2026-11-20: "Add stop opens the first stop after departure every time
+  // I tap it"). A card opened during the ask is kept.
+  const asked = model.pick;
+  const closeLeftCard = useEffectEvent(() => {
+    if (place) closePlace();
+  });
+  useEffect(() => {
+    if (asked?.stop) closeLeftCard();
+  }, [asked]);
+  // A picker's ask draws the one search's field in the body, under the
+  // ask's title in the sheet's first row (OneSearchField, Apple Maps' Add Stop).
+  const askField = model.pick && !model.pick.waiting ? <SearchBox model={model} inputRef={vm.search.searchInput} using /> : null;
   // The airport's card, in the panel's body.
   const placeCard = place && (
     <Waits>
@@ -119,7 +139,11 @@ export default function PlanSidebar({
         key={place}
         ident={place}
         from={measuredFrom}
-        onClose={closePlace}
+        // A stop asked for from FPL: the card's ✕ ends the ask and goes
+        // back to FPL, where the pilot asked from, not to the search's page
+        // (the owner, 2026-11-20: "When I add stop from fpl and search for
+        // airport, then close, it goes back to search page instead of fpl").
+        onClose={stopAsked ? model.cancel : closePlace}
         // The route set from the card ends the search it was opened from,
         // its words and Cancel let go, as the top hit's Fly Here does
         // (one-search.spec's smoke test, 2026-11-12).
@@ -193,6 +217,9 @@ export default function PlanSidebar({
       {/* Always built, the sheet's first page (Search, PageToggle):
           kept while FPL is up, as it was left. */}
       <TabKept away={cardUp || nearOpen}>
+        {/* A picker's field, over whatever answers it: one field, kept as
+            the body under it turns from the lists to the results. */}
+        {askField && <div className="flex shrink-0 px-4 pt-2">{askField}</div>}
         {favoritesOpen ? (
           <TabPage>
             <Waits>
@@ -251,7 +278,9 @@ export default function PlanSidebar({
             <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
           </TabPage>
         ) : (
-          stripsDrawn && <SearchHome vm={vm} />
+          stripsDrawn && (
+            <SearchHome vm={vm} pickIdent={model.pick ? model.pickIdent : undefined} refusal={model.pick ? model.refusal : undefined} />
+          )
         )}
       </TabKept>
     </>

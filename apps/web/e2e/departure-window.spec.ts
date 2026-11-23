@@ -65,7 +65,7 @@ test("the Brief says when to go: an hour strip under the verdict, the best windo
   await signedInWithAnswer(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
   // The Brief's card opens half way, as every card does (e7bb15ec8), the
   // strip under its foot, where no scroll reaches: pulled all the way up.
@@ -74,8 +74,8 @@ test("the Brief says when to go: an hour strip under the verdict, the best windo
   const strip = glance.getByTestId("departure-window");
   await expect(strip).toBeVisible({ timeout: slow(30_000) });
 
-  // The verdict first, then the strip (the owner's "Verdict first").
-  const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
+  // The verdict first, under the Brief's name, then the strip (the owner's "Verdict first").
+  const top = async (id: string) => (await sideDrawer(page).getByTestId("brief-card").getByTestId(id).first().boundingBox())!.y;
   expect(await top("brief-verdict")).toBeLessThan(await top("departure-window"));
 
   // The best window in a line over the hours, in the device's clock.
@@ -114,7 +114,7 @@ test("signed out, the Brief has no When to go and the planner is not asked", asy
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
   await expect(sideDrawer(page).getByTestId("brief-glance")).toBeVisible({ timeout: slow(30_000) });
   await expect(sideDrawer(page).getByTestId("departure-window")).toHaveCount(0);

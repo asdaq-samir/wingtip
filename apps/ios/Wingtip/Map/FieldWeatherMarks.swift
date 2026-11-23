@@ -61,7 +61,10 @@ enum FieldWeatherMarks {
     /// The station model's first line as a METAR writes it: "2 SM BR",
     /// the visibility in statute miles with the weather as reported.
     static func visibilityLine(_ sm: Double?, wx: String?) -> String? {
-        let visibility = sm.map { "\(Self.number($0)) SM" }
+        let visibility = sm.map { sm in
+            let (whole, fraction) = Format.reportedVisibility(sm)
+            return "\(fraction.map { whole > 0 ? "\(whole) \($0)" : $0 } ?? String(whole)) SM"
+        }
         let line = [visibility, wx].compactMap { $0 }.joined(separator: " ")
         return line.isEmpty ? nil : line
     }
@@ -83,11 +86,6 @@ enum FieldWeatherMarks {
     /// The covers that make a ceiling (14 CFR 1.1: broken, overcast, or an
     /// obscuration's vertical visibility).
     private static let ceilingCovers: Set<String> = ["BKN", "OVC", "VV"]
-
-    /// A figure with no trailing zeros: 2, 1.5, 0.25.
-    private static func number(_ x: Double) -> String {
-        x == x.rounded() ? String(Int(x)) : String(format: "%g", x)
-    }
 
     /// The mark for `report`: `demonstratedKt` the picked airplane's
     /// maximum demonstrated crosswind, nil with none picked or no figure
@@ -159,15 +157,21 @@ enum FieldWeatherMarks {
         return worse(now: now, atEta: atEta)
     }
 
-    /// The last readings asked and their answer: the map asks on every
-    /// render, the engine only when the readings change.
-    @MainActor private static var lastWorse: (now: [EngineContract.WorseField], atEta: [EngineContract.WorseField], answer: Set<String>)?
+    /// Who asks: the route's fields (RootMap, each render) and the
+    /// alternates' (FieldWeatherState), each kept in its own slot. One
+    /// slot shared, the two asks evicted each other and each asked the
+    /// engine again.
+    enum Asker: Hashable { case route, alternates }
+
+    /// The last readings each asker asked and their answer: the map asks
+    /// on every render, the engine only when the readings change.
+    @MainActor private(set) static var lastWorse: [Asker: (now: [EngineContract.WorseField], atEta: [EngineContract.WorseField], answer: Set<String>)] = [:]
 
     /// The same from the readings in hand (the shared fixtures' shape).
     @MainActor
-    static func worse(now: [EngineContract.WorseField], atEta: [EngineContract.WorseField]) -> Set<String> {
+    static func worse(now: [EngineContract.WorseField], atEta: [EngineContract.WorseField], asker: Asker = .route) -> Set<String> {
         guard !atEta.isEmpty else { return [] }
-        if let last = lastWorse, last.now == now, last.atEta == atEta { return last.answer }
+        if let last = lastWorse[asker], last.now == now, last.atEta == atEta { return last.answer }
         let worse: Set<String>
         do {
             let answer = try Engine.weatherWorse(then: .init(metars: nil, advisories: nil, tafs: now),
@@ -179,7 +183,7 @@ enum FieldWeatherMarks {
             Log.app.error("weather_worse refused the map's fields: \(error.localizedDescription, privacy: .public)")
             worse = []
         }
-        lastWorse = (now, atEta, worse)
+        lastWorse[asker] = (now, atEta, worse)
         return worse
     }
 
@@ -194,7 +198,7 @@ enum FieldWeatherMarks {
             guard let w = reports[field.ident]?.weather else { return nil }
             return .init(ident: field.ident, ceilingFt: w.ceilingFt, visibilitySm: w.visibilitySm, ceilingUnknown: w.ceilingUnknown, arrival: true)
         }
-        return worse(now: now, atEta: shown)
+        return worse(now: now, atEta: shown, asker: .alternates)
     }
 
     // MARK: The airplane

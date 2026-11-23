@@ -2,6 +2,7 @@ package app.wingtipmaps.android.live
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.generated.AirportRvr
 import app.wingtipmaps.android.api.generated.DigitalAtis
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -21,8 +22,9 @@ import javax.inject.Inject
  * lib/liveReports), its one model: the field's D-ATIS read into its
  * figures (read_datis, through the planner), its runway visual range
  * against the pilot's minimum (rvr_check), and the Command Center's
- * programs there, asked again each minute while the card is open, as
- * RVR is made each minute (AIM 7-1-13). A report that fails says
+ * programs there, asked again each minute while the card is open and
+ * the app in front (LiveAirportRows), as RVR is made each minute (AIM
+ * 7-1-13); the programs each five minutes, as the iPhone asks them. A report that fails says
  * nothing: the field may have none, and the card's METAR stands.
  */
 @HiltViewModel
@@ -49,6 +51,8 @@ class LiveAirportModel @Inject constructor(
     var minimumSm: Double? = null
         private set
     private var lastRvr: AirportRvr? = null
+    /** The field and the time the programs were last heard for. */
+    private var flowHeard: Pair<String, Long>? = null
 
     /** A minimum picked or put off: the rows judged again from the
      *  readings already in, with no new ask. */
@@ -65,7 +69,8 @@ class LiveAirportModel @Inject constructor(
         val field = ident.trim().uppercase()
         if (field == _state.value.ident && watching?.isActive == true) return
         watching?.cancel()
-        _state.value = State(ident = field)
+        // The same field again (the app back in front): what was heard stands until the new answer.
+        if (field != _state.value.ident) _state.value = State(ident = field)
         if (field.length < 3) return
         watching = viewModelScope.launch {
             while (true) {
@@ -83,7 +88,9 @@ class LiveAirportModel @Inject constructor(
     private suspend fun refresh(field: String) {
         val atis = quietly { source.atis(field) }?.broadcasts?.map(::broadcast)
         val rvr = quietly { source.rvr(field) }?.also { lastRvr = it }?.let(::rvrRows)
-        val programs = quietly { source.flow(listOf(field)) }?.programs?.mapNotNull(LiveWords::programLine)
+        val now = AppClock.nowMs()
+        val flowDue = flowHeard.let { it == null || it.first != field || now - it.second >= FLOW_MS }
+        val programs = if (!flowDue) null else quietly { source.flow(listOf(field)) }?.also { flowHeard = field to now }?.programs?.mapNotNull(LiveWords::programLine)
         _state.update {
             if (it.ident != field) it
             else it.copy(atis = atis ?: it.atis, rvr = rvr ?: it.rvr, programs = programs ?: it.programs)
@@ -124,5 +131,8 @@ class LiveAirportModel @Inject constructor(
         /** How long a report is fresh: RVR is made each minute (AIM 7-1-13),
          *  ITWS's products expire in three. */
         const val LIVE_MS = 60_000L
+        /** The Command Center's programs change by the quarter hour, not
+         *  the minute: asked each five minutes (iOS's AirportLive.flowEveryS). */
+        const val FLOW_MS = 5 * 60_000L
     }
 }

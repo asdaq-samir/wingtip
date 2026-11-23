@@ -135,8 +135,15 @@ test("a tap on a Class D ring opens its card, with its ceiling and hours", async
       // A Class D ring is 35 px across its radius at the card's zoom on a
       // phone, so the clearance is the mark's own reach (22 px) and a little;
       // and clear of the map's buttons down the right edge (BUTTONS_CLEAR).
+      // And on the chart itself, nothing over it: a desktop's side panel
+      // floats over the map's left (sheet/insets' insetsOf, its `left`),
+      // the card in it, and a ring under it took no tap (the nightly of
+      // 2026-11-21, the desktop's card never opened).
+      const onChart = (x: number, y: number) =>
+        !!document.elementFromPoint(box.left + x, box.top + y)?.closest(".maplibregl-canvas-container");
       for (const ring of onRings) {
         if (ring.y < 80 || ring.y > box.height * 0.48 || ring.x < 20 || ring.x > box.width - 64) continue;
+        if (!onChart(ring.x, ring.y)) continue;
         if (fields.some((f) => f.chip && Math.hypot(f.x - ring.x, f.y - ring.y) < 26)) continue;
         if (!dAlone(ring.x, ring.y)) continue;
         return { x: box.left + ring.x, y: box.top + ring.y };
@@ -168,7 +175,7 @@ test("a tap on a Class D ring opens its card, with its ceiling and hours", async
   await expect(card).toContainText("Hours");
   // On a phone, one close, the card's own in its head, the tabs static
   // over it (the owner, 2026-11-09).
-  if (page.viewportSize()!.width < 768) {
+  if (page.viewportSize()!.width < 660) {
     await expect(page.locator("[data-sheet-card]").getByTestId("sheet-card-close")).toHaveCount(1);
     await page.screenshot({ path: "test-results/look/airspace-card.png" });
   }

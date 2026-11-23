@@ -39,8 +39,9 @@ def _leg_with_wind(monkeypatch, wind_dir, wind_speed, tas=100.0, oat_c=None, alt
     a = {"name": "A", "category": "departure", "lat": 45.0, "lon": -90.0}
     b = {"name": "B", "category": "destination", "lat": 45.0, "lon": -89.0}  # due east, 090
     leg = navlog.legs([a, b], altitude_ft, {"cruise_tas_kt": tas, "fuel_burn_gph": 8.5}, "12")[0]
-    # Looked up once, at the leg's midpoint, for the forecast period asked.
-    assert asked == [(45.0, -89.5, altitude_ft, "12")]
+    # Looked up once, half way along the leg's geodesic (edge-places:
+    # altitude.midpoint), a touch north of the parallel, for the period asked.
+    assert asked == [(45.001095, -89.5, altitude_ft, "12")]
     return leg
 
 

@@ -11,7 +11,7 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
 
 - `apps/android/`: a Gradle project of one module, `app`, in the Kotlin DSL,
   every version in the catalog `gradle/libs.versions.toml`, on Gradle
-  9.9.1 and AGP 9.6.0-alpha04, whose built-in Kotlin compiles the app (no Kotlin
+  9.9.2 and AGP 9.6.0-alpha05, whose built-in Kotlin compiles the app (no Kotlin
   Android plugin), for API 37 (compiled against 37.2, the newest minor SDK), on Java 25 (the gateway's LTS): Gradle
   runs on the Temurin 25 that `gradle/gradle-daemon-jvm.properties`
   names, fetched once into `~/.gradle/jdks` by the foojay resolver, and
@@ -52,7 +52,10 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     `scripts/build/api-models-apps.sh` writes from the planner's and the
     gateway's OpenAPI documents with quicktype, committed and checked by
     CI, so a renamed field fails the build; the pilot and AirportPin
-    stay by hand), `NavLog.kt` (the nav log's streamed lines, by hand);
+    stay by hand). Every model is read by `Gateway.json`
+    (`ignoreUnknownKeys`, `coerceInputValues`), and enums are plain
+    strings, so a field or an enum value a server adds before the app
+    knows it never fails a decode (`ApiToleranceTest`), `NavLog.kt` (the nav log's streamed lines, by hand);
   - `Charts`, `Session`, `Plan`: the models of state, ViewModels with
     their state in flows (which chart, who is signed in, the route and
     what the planner said of it), and `Links` (the site's links the app
@@ -88,7 +91,12 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     over the map: Material's modal sheet with a start-aligned title and
     a Close at the end, decision 0015) and `FlexibleSheet` (a page over
     the map under Material 3 Expressive's flexible top app bar, which
-    collapses as it scrolls); `ui/TabletopPanes` puts the map above a
+    collapses as it scrolls); `ui/WidePanes` lays a tablet's or a
+    foldable's window out (the panel at the start, and from expanded
+    width a thing's card in a supporting pane at the end, as the iPad's
+    inspector; `ui/PaneRoom`, docs/design/android.md §3.17), with the
+    keyboard's shortcuts (`navigation/Shortcut`) and drops on the window
+    (`ui/WindowDrop`); `ui/TabletopPanes` puts the map above a
     half-folded phone's fold and the panel below it, and
     `route/RouteToolbar` floats Undo, Redo and Add Point over the map on
     a wide window while the plan is open;
@@ -96,8 +104,17 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     shared `apps/web/src/lib/fixtures/formats.json` (FormatTest), which
     design/tokens.json generates: FL-045 on the cruise controls
     (decision 0009), 4,500 ft, 1h 5m, 0:18, 1432Z, 045° with north 360.
+    Every figure is written in Locale.US whatever the phone's region
+    (no bare `"%,d".format` or `"%.1f".format`, which wrote "1.200 ft"
+    on a German phone), and a figure the pilot types is read by
+    `format/Typed.kt`, which takes a decimal comma ("8,5") as the point.
 - `app/src/test`: JUnit, on the JVM. `app/src/androidTest`: on an
   emulator, with the web's shared fixtures as the test APK's assets.
+  The engine does not load on the JVM, so a pure function that asks it
+  takes the rule as a parameter whose default is the engine's
+  (`SameField`, `ChartCycle`, `StationMarks.Rules`), and its JVM test
+  gives the answers, from the shared fixtures where they list the ask
+  (`FieldRules` in the tests, `dataCycles.json`).
 
 ## Rules
 
@@ -312,6 +329,24 @@ and `glOverlays.ts`):
   rewritten against the plan (the web's `addProtocol`), which MapLibre
   Native has no hook for; it is not drawn. The volumes' taps open nothing
   of their own: their lines on the chart open the card as before.
+- **Terrain Hazards** (`map/Hazard`, `HazardLayer`, `HazardPrefs`,
+  `HazardRows`; the web's `features/plan-map/hazard`): ForeFlight's
+  Hazard Advisor on the chart. The Map card has Terrain Hazards under
+  the layers (Off, On, In Flight; off by default) and, while it is not
+  off, Red Within (the engine's `clearances_ft`), stock segmented
+  buttons, kept in the settings file. The engine's `hazard_view` takes
+  the setting, own ship's speed and GPS height (to 50 ft, so a fix a
+  second repaints nothing while level) and the plan's highest leg, and
+  answers whether to draw and the red and amber lines; a
+  `ColorReliefLayer` on the relief's own terrain source (`TerrainDem`,
+  shared with the hillshade and removed only once neither draws from it)
+  takes them as its stops, and the DOF's obstacles round the view
+  (`/api/terrain/obstacles`, from the app's zoom 9) are rings where the
+  engine levels them red or amber. The Profile card draws the same DOF
+  obstacles along the route as posts in `profile_obstacles`' levels, the
+  tallest three named MSL (AGL), with the TAF cloud bases, the freezing
+  level and the G-AIRMET icing from `/api/route-profile/weather`, and a
+  key under it naming each line's source and time (`ProfileHazards`).
 - **Model Weather** (`map/flow`, the web's `features/weather-flow`): the
   Map card has Model Weather, a menu of the web's twelve fields.
   `ModelWeather` holds the planner's timeline (`/api/weather/flow`, every
@@ -360,7 +395,34 @@ region draws from the file with or without signal and the rest of the
 map from the network as before; the TAC and IFR area archives follow
 the terminal switch as the style is built. The style is built again as
 a download lands. The cycle's update, its expiry at 0901Z on the next
-one's date and the sweep once the update is whole are the iPhone's.
+one's date (the engine's `data_cycle`, asked at the minute) and the sweep
+once the update is whole are the iPhone's, and so is the next cycle's
+region updated ahead drawn over the old chart from 0901Z on its date
+while the phone is offline (`OfflineStore.keptInForce`; the style built
+again when it turns, asked each minute).
+
+The FAA's plates are kept two ways, each chart's PDF whole as this phone
+opens it (`offline/ChartKeeper`, under the plates' kind of `KeptForAir`;
+`PlateViewer` and the diagram read a kept one first, and a kept procedure
+on the Charts tab opens in the app's viewer rather than the browser). Keep
+for the Air keeps the flight's: the charts `/api/plates/flight` names (the
+departure's, the destination's and each stop's, the alternate's, filed or
+the engine's 91.169 pick, and the fields within the picked airplane's
+diversion range, the engine's `diversion_range_nm` from its own cruise and
+fuel, none with no airplane picked), asked from the plan's fields, its
+course line thinned to 60 points and its ETA (`FlightPlatesAsk`); `plates`
+counts on board only when every chart named is. Its size is said under
+the row before the tap, and under Ready to Fly's fix ("This flight's
+plates: about 52 MB, 9 fields, within 118 nm of the route."). Downloads'
+Plates section keeps a state's (`/api/plates/states`, `StatePlates`):
+each sized, asked in a stock alert, fetched by WorkManager
+(`StatePlatesWorker`, four charts at a time, going on from a stop), its
+record and chart lists in the app's files (`plate-states/`). Deleting one
+leaves a chart another kept state or flight holds (a region's
+takeoff-minimums booklet). Once a kept state's `next_at` (the cycle's
+0901Z, the planner's) has passed, the hourly check and the one at app
+start fetch the cycle the planner then serves and delete the old cycle's
+charts when it is done.
 
 With no signal in the air (the offline audit of 2026-11-10): Emergency
 and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
@@ -419,6 +481,16 @@ runner:
   the release build's `ReleaseEngineTest` (below).
 - No upload to Google Play from CI: the bundle is uploaded by hand
   (Releasing to Google Play, below).
+
+Every build also collects the open-source licences of the libraries it
+packs (AboutLibraries' Gradle plugin, `aboutLibraries` in
+`app/build.gradle.kts`), for About's "Open-Source Licences"
+(`about/LicencesScreen`), and fails on a licence not on its list: a GPL,
+LGPL or AGPL library, or one that grants no right to ship it, cannot reach
+Google Play. The engine's crates and Inter's glyphs are added from
+`app/aboutlibraries` (the engine's licence written there by
+`scripts/build/licences.sh engine`; docs/legal/credits.md, "Open-source
+licences").
 
 `WINGTIP_HOST` is the build's host (the repo variable `WINGTIP_URL`'s);
 it is the gateway's address and the App Links domain in the manifest.
@@ -524,15 +596,62 @@ The owner's steps, once:
    for a new app: let Google generate the app-signing key. A new
    personal developer account then runs a closed test with at least 12
    testers for 14 days before production.
-5. **Restrict the Google Maps key** (`GOOGLE_MAPS_ANDROID_KEY`) to the
-   package name and the SHA-256 of Play's app-signing certificate (Play
-   Console › Test and release › App integrity), as well as the upload
-   key's for builds installed outside Play.
-6. **Each release:** raise `ANDROID_VERSION_CODE` above the last
-   upload's (the workflow passes none yet, so set it for the run, or in
-   `app/build.gradle.kts`), take the bundle from that run, and upload it.
-   The foreground-service declarations and the Data safety form are in
+5. **Each release:** the release build's version code is the workflow's
+   run number (`ANDROID_VERSION_CODE`, set by `scripts/ci/android_build.sh`),
+   so each upload is above the last. With the `PLAY_SERVICE_ACCOUNT`
+   secret, main's push puts the bundle on the internal testing track
+   by itself (`scripts/ci/play_internal.py`, docs/store/beta.md); without
+   it, take the bundle from the run and upload it by hand. The
+   foreground-service declarations and the Data safety form are in
    docs/store (foreground-services.md, privacy-labels.md).
+
+## The cockpit on a tablet: the plate beside the map, the scratchpad, weight and balance, the runway advisor
+
+The market-gap report's items 4, 5, 8 and 9 (2026-11-21: "port over
+everything to phones and iPads and android tablets"), each made of stock
+parts and each asking the engine every figure:
+
+- **The plate beside the map** (`plates/PlateBeside.kt`): at Material's
+  expanded width (840 dp and up), a plate card's Beside the Map keeps the
+  FAA's page in Material's `SupportingPaneScaffold` beside the map (the
+  map the main pane, the plate the supporting one, `VerticalDragHandle`
+  between them to set their widths), own ship on it where the engine's
+  `plate_page_point` puts it (`PlatePosition`, the plan view only). The
+  map is wrapped once where `RootScreen` makes it (`MapWithPlate`);
+  narrower, it is the map alone and the plate stays full screen
+  (`PlateViewer`). Both read the page with `PlatePage`.
+- **The scratchpad** (`scratchpad/`, from the Brief): a flight's pages
+  as Material's scrollable tabs, New Page's templates -- Blank, CRAFT
+  Clearance (AIM 4-4-3's items), ATIS (AIM 4-1-13's), Takeoff and Landing
+  -- each field a stock text field (the keyboard, or a stylus's
+  handwriting into the field), over Jetpack Ink's writing area (`InkArea`:
+  `InProgressStrokes`, the stock pressure pen, `CanvasStrokeRenderer`),
+  each stroke kept as ink-storage encodes it. The pages stay on the phone
+  in `files/scratchpad/<route>.json` (`ScratchModel`, `KeptFile`), linked
+  to the flight by its route, as Ready to fly keys a flight.
+- **Weight and balance** (`balance/`, from the Brief): the airplane's
+  loading from its profile, each station's pounds and the fuel typed in,
+  the engine's `gonogo_balance` at takeoff and landing (14 CFR 91.9(a)),
+  and the CG envelope drawn with Compose's Canvas as the web's
+  `EnvelopeChart` draws it (`EnvelopeChart.kt`). The fuel is weighed by
+  its grade, picked on Material's segmented buttons: "As the POH says"
+  first, then the engine's `fuel_grades` (FAA-H-8083-1B). Which weight a
+  gallon wins is the engine's (`gonogo_balance`: the grade picked, then
+  the POH's figure, then the airplane's grade's), as on the web and the
+  iPhone. The empty airplane is
+  the pilot's own record where given, its arm the engine's
+  (`gonogo_default_load`); a missing figure is asked for in place
+  (`AskFigures`, "weight_balance"); with no airplane picked, nothing is
+  loaded (decision 0011).
+- **The runway proximity advisor** (`ui/RunwayAdvisor.kt`, on the
+  own-ship airport diagram): each fix, the engine's `runway_proximity`
+  with the airport card's runways (NASR's thresholds and widths), its
+  elevation, its published pattern height and the diagram's hot spots
+  (`diagram_hot_spot_labels`, found on the page as the graticule's labels
+  are, then `diagram_hot_spots`), shown over the page
+  (`RunwayAdviceBanner`), its words said once each by TextToSpeech
+  (`RunwayVoice`, when the answer's key changes), and the hot spots
+  ringed on the page. A reminder, never a clearance.
 
 ## The flight pieces, and what is still to come
 
@@ -583,12 +702,12 @@ In flight (#218, the owner's option A of 2026-11-08), as the iPhone:
 the top of the map, left of the buttons, shows what is ahead
 (`ui/InFlightViews.kt`'s AlertsBanner, the planner's or the packs'
 alerts, which were worked out and never shown before) over the
-instruments bar -- groundspeed, track, GPS altitude, vertical speed; on
+instruments bar -- groundspeed, track, GPS altitude (mean sea level: `getMslAltitudeMeters` or the geoid conversion, else "—", never the ellipsoid height), vertical speed; on
 the route the next field's distance, time to go and desired track, the
 distance off course and the destination's arrival with the fuel the
 plan leaves; Nearest one tap away (a sheet of the nearest fields, which
-are within a still-air glide by `glide_reaches`); and "Planning aid ·
-not for navigation". The glide ring is a dashed line under the route
+are within a still-air glide by `glide_reaches`); and "A Planning Aid, Not for
+Navigation" (`R.string.wording_planning_aid_notice_title`). The glide ring is a dashed line under the route
 (`ChartMap`'s `glide`), over the higher of the packs' ground (ahead's
 `ground_ft`) and the nearest field. FiguresStrip counts down from the
 airplane on the route. Settings › In Flight has Speak Alerts Ahead
@@ -599,17 +718,45 @@ latitude and longitude marks, read with Android 15's PDF text (SDK
 extension 13); an older Android shows the diagram without the airplane
 and says why.
 
-A cockpit ADS-B receiver (`receiver/`): a Stratux, Sentry, Garmin GDL
-39/52 or uAvionix receiver's GDL 90 on UDP port 4000, gathered by a
+A cockpit ADS-B receiver (`receiver/`), behind `RECEIVER_ENABLED`
+(build.gradle.kts, on: Android needs no entitlement; [receivers.md](receivers.md)):
+a Stratux, Sentry, SkyEcho or open-mode Stratus's GDL 90 on UDP port 4000, gathered by a
 `DatagramSocket` with the Wi-Fi's multicast lock (`ReceiverSocket`) and
-read by the engine once a second (`receiver_read`); a foreground service
-of the connected-device type (`ReceiverService`) keeps it going with the
-screen off while a receiver is heard. Its traffic is drawn ahead of the
+read by the engine once a second into the picture it holds between reads
+(`HeldPicture` over the engine's `ReceiverSession`, `receiver_delta`:
+only the bytes go over, and only the receiver, own ship, its traffic and
+revisions of the FIS-B come back); a foreground service
+of the connected-device type (`ReceiverService`) kept it going with the
+screen off, and is left out of the manifest while the receiver is parked
+(below). Its traffic is drawn ahead of the
 internet's (`receiver_traffic`, through `Traffic`), a chip on the map
 names it, a field's FIS-B METAR and TAF show on its card with no report
 from the weather service (`receiver_reports`), and FIS-B NEXRAD is drawn
-over the chart (`receiver_nexrad`, `map/NexradLayer.kt`). Settings › In
-Flight has ADS-B Receiver (`ReceiverSettingRows`): Auto or Off.
+over the chart (`receiver_nexrad`, `map/NexradLayer.kt`), its age on the
+chip. Its GPS becomes own ship where the device has none or where it is
+twice as good, the device's taken back once it is 3 s old
+(`receiver_position`, `flight/OwnShipSource.kt`); a height above the
+ellipsoid is put on the geoid by `AltitudeConverterCompat`. The chip
+says whose position is shown, an airplane's card "Heard by Stratux 3 s
+ago" (`ReceiverHeard`), and the Brief lists the route's FIS-B reports
+(`ReceiverBriefReports`). Settings › In Flight has ADS-B Receiver
+(`ReceiverSettingRows`): Auto or Off, and the position's source, shown
+while Extras has it on.
+
+Settings › Extras (`Extras.kt`, `ui/ExtrasGroup.kt`; the feature review,
+docs/store/feature-review.md, 2026-11-21) parks five features, a stock
+switch each, all off to start and kept as `extras.<key>` (the web's
+lib/extras keys): ATC Copilot (Comms Assist, the ATC alerts, the
+clearance card; the in-flight copilot's field advice is not parked),
+ADS-B Receiver, Other Airplanes (Follow, past flights and the history on
+an airplane card not the pilot's own, and the watches of one), Model
+Weather (the Map card's field and the flow layer) and Ask (Gemini Nano:
+Ask, AI words and a photographed page's read). Off, a feature is not
+shown, started or fetched, and a setting inside it saved on acts as off.
+The first store build declares no microphone or connected-device
+foreground service, and leaves ML Kit GenAI out: `genai-prompt` and
+`src/genai`'s `NanoClient` are built only with `-Pwingtip.genai=true`,
+else `src/nogenai`'s stub, which has no model.
 
 Still to come: Sunlight in Settings › Look (the owner's choice (b) of
 AND-6, 2026-11-14), the saved flights' Edit, Debrief and Delete, the

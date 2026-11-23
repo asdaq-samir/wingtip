@@ -4,23 +4,22 @@ import Observation
 /// The NOTAM card's words and times, apart from the views so the tests
 /// read them (FieldNotamsTests). The web's fieldNotams and notamTimes.
 enum FieldNotamWords {
-    /// The field's idents as a NOTAM may write them ("OSH", "KOSH").
-    static func idents(_ ident: String) -> [String] {
-        let bare = ident.count == 4 && ident.hasPrefix("K") ? String(ident.dropFirst()) : ident
-        var seen: [String] = []
-        for one in [ident, bare, "K\(bare)"] where !seen.contains(one) { seen.append(one) }
-        return seen
+    /// The field's idents as a NOTAM may write them ("OSH", "KOSH"): the
+    /// engine's field_names (FAA JO 7350.9GG 4-1).
+    static func idents(_ ident: String) throws -> [String] {
+        try Engine.fieldNames(ident: ident)
     }
 
-    /// Its number as a briefer reads it, the field's own name off it on the
-    /// field's card ("11/060", not "ORD 11/060"); another place's kept.
-    static func number(_ notam: APIRankedNotam, ident: String) -> String {
-        guard let own = idents(ident).first(where: { notam.id.hasPrefix("\($0) ") }) else { return notam.id }
+    /// Its number as a briefer reads it, the field's own name (`idents`)
+    /// off it on the field's card ("11/060", not "ORD 11/060"); another
+    /// place's kept.
+    static func number(_ notam: APIRankedNotam, idents: [String]) -> String {
+        guard let own = idents.first(where: { notam.id.hasPrefix("\($0) ") }) else { return notam.id }
         return String(notam.id.dropFirst(own.count + 1))
     }
 
     /// A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it.
-    static func readTfr(_ notam: APIRankedNotam) throws -> EngineContract.TfrReadAnswer {
+    nonisolated static func readTfr(_ notam: APIRankedNotam) throws -> EngineContract.TfrReadAnswer {
         let t = notam.tfr
         return try Engine.tfrRead(kind: t?.kind, rule: t?.rule, title: t?.title, floorFt: t?.floorFt, floorRef: t?.floorRef,
                                   ceilingFt: t?.ceilingFt, ceilingRef: t?.ceilingRef, overField: t?.overField,
@@ -41,14 +40,14 @@ enum FieldNotamWords {
     /// in force has none: it is in the list, marked Inactive (the owner,
     /// 2026-11-11: "If notam is not active, no need to put a caution badge
     /// on the thing").
-    static func marks(_ notams: [APIRankedNotam], ident: String, place: AirportPlace?) -> NotamMarks {
+    static func marks(_ notams: [APIRankedNotam], idents: [String], place: AirportPlace?) -> NotamMarks {
         let approaches = (place?.procedures ?? []).filter { $0.kind == "IAP" }
         let runways = (place?.runways ?? []).map { $0.ends ?? "" }
         let lights = (place?.lights ?? []).map { EngineContract.NotamSubjectInputLightsItem(code: $0.code, name: $0.name, runways: $0.runways) }
         let frequencies = (place?.frequencies ?? []).map { EngineContract.NotamSubjectInputFrequenciesItem(type: $0.type, mhz: $0.frequencyMhz) }
         var marks = NotamMarks()
         for notam in notams where notam.inForce != false {
-            guard let badges = try? Engine.notamSubject(text: notam.raw, tfr: notam.kind == "tfr", idents: idents(ident), runways: runways,
+            guard let badges = try? Engine.notamSubject(text: notam.raw, tfr: notam.kind == "tfr", idents: idents, runways: runways,
                                                         lights: lights, approaches: approaches.map(\.name), frequencies: frequencies).badges
             else { continue }
             for badge in badges {

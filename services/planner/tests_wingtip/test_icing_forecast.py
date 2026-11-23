@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 import pytest
 import requests
+from cachetools import TTLCache
 
 from wingtip import icing_forecast
 
@@ -110,3 +111,22 @@ def test_a_section_of_another_shape_is_unchecked(monkeypatch):
 def test_the_legs_and_fixes_must_agree():
     with pytest.raises(ValueError):
         icing_forecast.along([(41.9, -87.9)], [6000], [40], None, NOW, now=NOW)
+
+
+def test_a_section_is_kept_a_quarter_hour_then_asked_again(monkeypatch):
+    clock = [NOW]
+    monkeypatch.setattr(icing_forecast, "_HELD", TTLCache(maxsize=2000, ttl=icing_forecast.HELD_S, timer=lambda: clock[0]))
+    asked = []
+
+    def get(url, headers, timeout):
+        asked.append(url)
+        return _Answer(_section(8000, 2))
+
+    monkeypatch.setattr(icing_forecast.outside, "get", get)
+    a, b = (45.0, -93.0), (45.5, -92.0)
+    first = icing_forecast._section(a, b, 1, ISSUED)
+    assert icing_forecast._section(a, b, 1, ISSUED) == first
+    assert len(asked) == 1
+    clock[0] += icing_forecast.HELD_S + 1
+    icing_forecast._section(a, b, 1, ISSUED)
+    assert len(asked) == 2

@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.atc
 
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.format.Format
 
 /** What a tap can do with an item on this phone: fly direct (the plan's
  *  Direct To), or keep the next frequency or the code in sight. */
@@ -16,7 +17,8 @@ enum class ItemAction { DIRECT, FREQUENCY, SQUAWK }
  */
 object AtcWords {
     private fun capital(words: String) = words.replaceFirstChar { it.uppercase() }
-    private fun three(deg: Int) = deg.toString().padStart(3, '0')
+    // Three figures, north as 360, never 000 (FAA Order JO 7110.65, 2-4-17).
+    private fun three(deg: Int) = Format.headingFigures(deg.toDouble())
 
     /** The eight points a hold is said from, as a chart abbreviates them. */
     private val POINTS = mapOf(

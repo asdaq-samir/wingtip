@@ -82,7 +82,18 @@ fn text<'a>(v: &'a Value, key: &str) -> Option<&'a str> {
     v.get(key).and_then(Value::as_str)
 }
 
-/// A SIGMET's hazard in words (FAA-H-8083-28B 26.2.4.1.1's SIGMET criteria).
+/// "AIRMET" for one of Alaska's AIRMETs (awc::airmets), which the store
+/// keeps beside the SIGMETs, else "SIGMET".
+fn advisory_kind(a: &Value) -> &'static str {
+    if text(a, "type") == Some("AIRMET") {
+        "AIRMET"
+    } else {
+        "SIGMET"
+    }
+}
+
+/// A SIGMET's hazard in words (FAA-H-8083-28B 26.2.4.1.1's SIGMET
+/// criteria), or an Alaska AIRMET's (26.3, the AIRMETs' hazards).
 fn sigmet_words(a: &Value) -> String {
     let hazard = text(a, "hazard").unwrap_or("");
     if hazard.contains("CONVECTIVE") || text(a, "type").is_some_and(|t| t.to_uppercase().contains("CONVECTIVE")) {
@@ -90,14 +101,19 @@ fn sigmet_words(a: &Value) -> String {
     }
     let words = match hazard {
         "TURB" => "turbulence",
+        "SFC WND" => "strong surface winds",
+        "LLWS" => "low-level wind shear",
         "ICE" => "icing",
         "IFR" => "IFR conditions",
         "MTN OBSCN" => "mountains obscured",
-        "ASH" => "volcanic ash",
+        "ASH" | "VA" => "volcanic ash",
+        "TS" => "thunderstorms",
+        "MTW" => "mountain waves",
+        "TC" => "a tropical cyclone",
         "" => "a hazard",
         other => other,
     };
-    format!("SIGMET for {words}")
+    format!("{} for {words}", advisory_kind(a))
 }
 
 /// An SPC categorical outlook's label in words (SPC, "About the SPC
@@ -123,7 +139,7 @@ pub fn areas_met(input: &Input) -> Vec<Area> {
     let sigmets = input.sigmets.iter().map(|a| Area {
         kind: Kind::Sigmet,
         words: sigmet_words(a),
-        source: "AWC SIGMET".to_owned(),
+        source: format!("AWC {}", advisory_kind(a)),
         low_ft: num(a, "altitude_low_ft"),
         high_ft: num(a, "altitude_high_ft"),
         valid_from: num(a, "valid_from"),

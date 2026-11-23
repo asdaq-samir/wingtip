@@ -16,9 +16,10 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { useConfirm } from "../../components/useConfirm";
 import { useDevMode, type AppMode } from "../../hooks/use-dev-mode";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** Each page as the menu names it. */
-const MODE_NAMES: Record<AppMode, string> = { pilot: "Pilot", developer: "Developer", studio: "Studio" };
+const MODE_NAMES: Record<AppMode, string> = { pilot: "Pilot", developer: "Developer" };
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { useDeleteAccount } from "./useDeleteAccount";
@@ -45,7 +46,7 @@ export function AccountGroup() {
 }
 
 /**
- * The mode menu alone -- Pilot, Developer or Studio, a copy of the account's
+ * The mode menu alone -- Pilot or Developer, a copy of the account's
  * data, signing out, deleting the account -- where the address is set apart from it: at the right of
  * Setup's Account title, the address under that title, at the owner's
  * ask ("Email doesn't need to be in the table, it can be under account").
@@ -57,11 +58,11 @@ function AccountMenu() {
   const deleteAccount = useDeleteAccount();
   const exportAccount = useExportAccount();
   const [askDelete, deleteDialog] = useConfirm({
-    title: "Delete your account?",
+    title: WORDING.deleteAccountQuestion,
     description:
       "Your airplanes, flights, logbook, saved tracks and the checkpoint notes you wrote go, on every " +
       "device, and you are signed out. This can't be undone.",
-    confirmLabel: "Delete account",
+    confirmLabel: WORDING.deleteAccount,
     destructive: true,
     onConfirm: () => deleteAccount.mutate(),
   });
@@ -75,7 +76,7 @@ function AccountMenu() {
               variant="ghost"
               size="sm"
               data-testid="role-menu"
-              className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+              className={cn("relative -mr-2 px-2 font-normal text-tint hit-y-2 after:inset-x-0", TEXT.row)}
             />
           }
         >
@@ -102,11 +103,6 @@ function AccountMenu() {
           <DropdownMenuRadioGroup value={devMode.mode} onValueChange={(v) => devMode.go(v as AppMode)}>
             <DropdownMenuRadioItem value="pilot">Pilot</DropdownMenuRadioItem>
             {devMode.allowed && <DropdownMenuRadioItem value="developer">Developer</DropdownMenuRadioItem>}
-            {devMode.allowed && (
-              <DropdownMenuRadioItem value="studio" data-testid="mode-studio">
-                Studio
-              </DropdownMenuRadioItem>
-            )}
           </DropdownMenuRadioGroup>
           {pilot && (
             <>
@@ -114,10 +110,10 @@ function AccountMenu() {
               {/* A copy of everything the account keeps, as one file: the
                 right to take one's data away, beside deleting it. */}
               <DropdownMenuItem onClick={() => exportAccount.mutate()} disabled={exportAccount.isPending}>
-                Export my data
+                Export My Data
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()} disabled={logout.isPending}>
-                Sign out
+                Sign Out
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
@@ -127,7 +123,7 @@ function AccountMenu() {
                 // holds the focus has its own taken back.
                 onClick={() => setTimeout(askDelete)}
               >
-                Delete account…
+                {WORDING.deleteAccount}
               </DropdownMenuItem>
             </>
           )}

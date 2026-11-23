@@ -4,7 +4,7 @@ import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../marks/chartColors";
 import { ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
-import { turnSide } from "../../marks/routeTurns";
+import { useTurnedNames } from "../useTurnedNames";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
@@ -21,7 +21,7 @@ import {
   selectedLegFilter,
 } from "../glRoute";
 import { useGlProbe } from "../useGlProbe";
-import { GL_FONT, LABEL_HALO, LABEL_SIZE, TAP } from "./common";
+import { TAP, labelHalo, labelInk, labelText } from "./common";
 import { useGlSymbols } from "../useGlSymbols";
 import { WAY_CHIPS_LOWEST } from "./WaysGl";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
@@ -96,8 +96,7 @@ const NAMES: SymbolLayerSpecification = {
   minzoom: glZoom(NAME_ZOOM),
   layout: {
     "text-field": ["get", "name"],
-    "text-font": GL_FONT,
-    "text-size": LABEL_SIZE.normal,
+    ...labelText("checkpointName"),
     "text-variable-anchor": ["left", "right"],
     // Clear of its own dot's picture, which MapLibre's collision sees whole:
     // 16 points from its middle (markPictures' dotPicture, 26 across and 3
@@ -107,7 +106,7 @@ const NAMES: SymbolLayerSpecification = {
     "text-justify": "auto",
     "symbol-sort-key": ["get", "number"],
   },
-  paint: { "text-color": CHART.fixInk, ...LABEL_HALO },
+  paint: { "text-color": labelInk(CHART.fixInk), ...labelHalo("checkpointName") },
 };
 
 /**
@@ -228,26 +227,8 @@ export function RouteGl({
   useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_CHIPS_LOWEST });
   // Each turn's dot drawn, and the side its name is put, for the tests.
   useGlProbe("route-turns", ["route-fix-dots"], (f) => ({ name: f.properties.text, out: f.properties.out }));
-  // A route point's name stays outside its turn as the map turns: its
-  // side follows the map's bearing, in steps of 15 degrees.
-  useEffect(() => {
-    const turn = () => {
-      if (!glMap.getLayer(ROUTE_FIX_NAMES)) return;
-      const side = turnSide(Math.round(glMap.getBearing() / 15) * 15);
-      // Set again only when it changes (a layer put back by a new style
-      // comes back with the north-up side).
-      if (JSON.stringify(glMap.getLayoutProperty(ROUTE_FIX_NAMES, "text-anchor")) === JSON.stringify(side["text-anchor"])) return;
-      glMap.setLayoutProperty(ROUTE_FIX_NAMES, "text-anchor", side["text-anchor"]);
-      glMap.setLayoutProperty(ROUTE_FIX_NAMES, "text-offset", side["text-offset"]);
-    };
-    turn();
-    glMap.on("rotate", turn);
-    glMap.on("idle", turn);
-    return () => {
-      glMap.off("rotate", turn);
-      glMap.off("idle", turn);
-    };
-  }, [glMap]);
+  // A route point's name stays outside its turn as the map turns.
+  useTurnedNames(ROUTE_FIX_NAMES);
   // A tap on the course within a finger's reach of it, nothing nearer
   // taken first (LEG_RANK), the nearest leg's sheet.
   const { map } = useGlMap();

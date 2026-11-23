@@ -1,87 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
-import { flushSync } from "react-dom";
-import { aircraftKey, choiceOf, tailTyped } from "../../../lib/aircraftChoice";
-import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
-import { useAirplaneHits, riseToSee } from "../../plan";
-import { useHeardHits } from "./useHeardHits";
-import type { TrafficAircraft } from "../../../lib/api/types";
-import { registeredQuery } from "../../../lib/airplane/lookup";
-import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
-import { queryClient } from "../../../lib/queryClient";
-import { keptOf, keptPlane } from "./keptAircraft";
+import { useMemo, useState } from "react";
+import { tailTyped } from "../../../lib/aircraftChoice";
+import { riseToSee } from "../../plan";
+import { usePreferences } from "../../../lib/preferences";
 import { useRadioActions } from "../../../lib/atcRadio";
-import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
-import { wantScreen } from "../../../lib/navigation/wanted";
-import { focusAsShown } from "../../../lib/focusAsShown";
-import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
+import { useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
-import { POSITION_NAME, positionIdent } from "../../../lib/identSchema";
+import { pickRefusal } from "../../../lib/pickRefusal";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "./searchPlaceholder";
 import type { AirportSearchRow } from "../../../lib/airportIndex";
-import { SCREEN_KEYS, DIRECT_KEY } from "../../../hooks/use-shortcuts";
 import { useAirportIndex } from "../../../lib/airportIndex";
 import { readQuery, nearOf, useSearchResults } from "../../search";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import type { PlanSlices } from "../vm/planSlices";
-
-/** One airplane the search found: the pilot's own (their record, or one
- *  kept on this device), one the FAA's registry has by the N-number typed,
- *  or a type the planner has a book for. */
-export interface AirplaneHit {
-  key: string;
-  title: string;
-  detail: string;
-  pick: () => void;
-  /** The plan flown in it: one of the pilot's own airplanes, picked as
-   *  the plan's airplane straight from the result (the top hit's "Fly This
-   *  Airplane", Apple Maps' quick actions in a result, 2026-11-10). */
-  fly?: () => void;
-  /** Whether it is in the air, said in place as the live find answers (lib/airplane/lookup). */
-  live?: { text: string; problem: boolean };
-  /** In the air: its flight's card, tracked (FlightCard). */
-  track?: () => void;
-}
-
-/** One thing to do: an action, a screen, or the words typed sent as a search round a place (Apple Maps' "Search
- *  Nearby" suggestion, the owner's screenshot, 2026-11-10). */
-export interface DoHit {
-  key: string;
-  label: string;
-  keys?: string;
-  kind: "action" | "screen" | "nearby";
-  run: () => void;
-}
-
-/** The screens the search's Do offers by their titles: a link opens any of
- *  them, and none of them needs an argument (a shared flight does). The
- *  tabs that were are the search, the plan and the account, which the
- *  sheet has without a row. */
-const OFFERED: ScreenId[] = [
-  "brief",
-  "navlog",
-  "profile",
-  "nearest",
-  "emergency",
-  "flights",
-  "favorites",
-  "checklists",
-  "airplanes",
-  "logbook",
-  "coach",
-  "minimums",
-  "guide",
-  "about",
-];
-
-/** What is typed found in a name, ignoring case. */
-const finds = (typed: string, name: string) => name.toLowerCase().includes(typed.toLowerCase());
-
-/** Where the airplane is now, as a route's point, read at the tap. */
-const positionNow = () => {
-  const fix = useOwnShip.getState().fix;
-  return fix ? positionIdent(fix) : null;
-};
+import { useSearchAirplanes, type AirplaneHit } from "./searchAirplanes";
+import { doHits } from "./searchDoes";
+import { useSearchAskFocus } from "./useSearchAskFocus";
 
 /**
  * The one search's view model (the one-search design, 2026-11-09) over the
@@ -105,10 +39,11 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   // A search sent (useSearchResults): its list in the sheet while the
   // field is not being typed in, its fields on the map.
   const sent = useSearchResults((s) => s.sent);
-  const index = useAirportIndex(true, typed.length > 0);
   const [direct, setDirect] = useState(false);
   // A picker's ask: airports only (the waypoints too for a stop), its pick.
   const { pick, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
+  // Read while a picker asks too, for the closed fields it refuses (pickIdent).
+  const index = useAirportIndex(true, typed.length > 0 || !!pick);
   const [problem, setProblem] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
@@ -116,36 +51,17 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   // An N-number is the engine's to tell (tailTyped): none until it is there.
   const engine = useEngineReady();
   const tail = direct || !engine ? null : tailTyped(typed);
-  // The airplanes found, from the one source the FPL's airplane field shares (useAirplaneHits):
-  // the pilot's own open their profile and fly from the top hit, the kept their flight, the
-  // registry's its profile with whether it is in the air, a type the pilot's airplanes.
-  const hits = useAirplaneHits({ typed, tail, live: true, enabled: !direct && !pick });
-  // And those the map hears by their callsign or address (useHeardHits), each once.
-  const known = new Set([...hits.kept.map((k) => k.kept.hex), hits.registry?.lookup.hex]);
-  const heard = useHeardHits(typed, !direct && !pick).filter((h) => !known.has(h.plane.hex));
-  // Kept as asked, else opened: the one rule (useSearchPanel's pickAirplane).
-  const keep = (kept: KeptAircraft, open: (hex: string) => void) => {
-    pickAirplane(kept, open);
-    if (airplaneAsk) done();
-  };
-  // One named by its N-number asked for to keep -- the pilot's own, the
-  // registry's -- by the address on the FAA's record (asked already, so at once).
-  const keepTail = async (tail: string) => {
-    const record = await queryClient.fetchQuery(registeredQuery(tail)).catch(() => null);
-    if (record?.mode_s_hex) keep(keptOf({ ...record, mode_s_hex: record.mode_s_hex }), () => {});
-    else setProblem(`The FAA's registry gives no address for ${tail}, so it can't be kept.`);
-  };
-  const airplanes: AirplaneHit[] = [
-    ...hits.own.map(({ record: r, ...row }) => ({
-      ...row,
-      pick: () => (airplaneAsk ? void keepTail(r.tailNumber) : openAirplaneProfile(r.tailNumber)),
-      fly: airplaneAsk ? undefined : () => changeAircraft(aircraftKey(choiceOf(r, hits.profiles ?? []))),
-    })),
-    ...hits.kept.map(({ kept: a, ...row }) => ({ ...row, pick: () => keep(a, selectFlight) })),
-    ...(hits.registry ? [registryHit(hits.registry, selectFlight, airplaneAsk ? keepTail : null)] : []),
-    ...heard.map(({ plane, ...row }) => ({ ...row, pick: () => keep(keptPlane(plane), () => selectFlight(plane.hex, plane)) })),
-    ...(airplaneAsk ? [] : hits.types.map(({ profile: _, ...row }) => ({ ...row, pick: () => wantScreen("airplanes") }))),
-  ];
+  const airplanes = useSearchAirplanes({
+    typed,
+    tail,
+    enabled: !direct && !pick,
+    airplaneAsk,
+    pickAirplane,
+    changeAircraft,
+    selectFlight,
+    setProblem,
+    done: () => done(),
+  });
 
   const airports = useMemo(() => (airplaneAsk ? [] : search.rows.filter((r) => r.kind !== "fix")), [airplaneAsk, search.rows]);
   const noFixes = direct || airplaneAsk || (!!pick && !pick.fixes);
@@ -174,36 +90,7 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   // Whether a position is known, for a departure asked for (useStopAsked); the fix read at the tap:
   // the whole fix drew the workspace again at every GPS fix (PERF-1).
   const positioned = useOwnShip((s) => s.enabled && s.fix !== null);
-  const does: DoHit[] = [];
-  // The departure asked for: where the airplane is, first, as Maps' From
-  // offers My Location -- a route may start at a present position, as Fly
-  // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13).
-  if ((pick?.label === "Departure" || pick?.position) && positioned && (!typed || finds(typed, POSITION_NAME)))
-    does.push({ key: "my-position", label: POSITION_NAME, kind: "action", run: () => pickIdent(positionNow() ?? "") });
   const trafficOn = usePreferences((p) => p.traffic);
-  if (!direct && !pick && !airplaneAsk) {
-    const out = does;
-    const first = airports[0];
-    // Direct To the first airport found, where the radio can fly one.
-    if (first && directTo)
-      out.push({ key: "direct-first", label: `Direct to ${first.ident}`, kind: "action", run: () => void flyDirect(first.ident) });
-    const actions: DoHit[] = [
-      { key: "direct", label: "Direct To…", keys: DIRECT_KEY, kind: "action", run: () => (setDirect(true), setQuery("")) },
-      // The traffic on the map, where its page was (2026-11-14): the airplanes
-      // heard are found by this search, and a tap on one opens its card.
-      { key: "traffic", label: "Show Traffic", kind: "action", run: () => (done(), usePreferences.getState().setTraffic(true)) },
-    ];
-    for (const a of actions)
-      if (!typed || finds(typed, a.label)) if ((a.key !== "direct" || directTo) && (a.key !== "traffic" || !trafficOn)) out.push(a);
-    for (const id of OFFERED) {
-      const title = SCREENS[id].title;
-      if (typed && !finds(typed, title)) continue;
-      if (!typed && !SCREEN_KEYS[id] && id !== "emergency") continue;
-      out.push({ key: `screen-${id}`, label: title, keys: SCREEN_KEYS[id], kind: "screen", run: () => (done(), wantScreen(id)) });
-    }
-    // The words typed sent as a search round a place, Apple's "Search Nearby" row, first.
-    if (typed) out.push({ key: "nearby", label: typed, kind: "nearby", run: () => send(typed) });
-  }
 
   // Sent: round the place it names, else own ship or Nearest's place, else
   // the departure (nearOf); the field let go, what was typed kept in it.
@@ -226,8 +113,10 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     riseToSee(setPanel);
   };
 
+  // Why this airport cannot be picked now (Closed; On the route already), for the rows to grey.
+  const refusal = (ident: string) => pickRefusal(pick, index, ident);
   const pickIdent = (ident: string) => {
-    if (!ident) return; // My Location with the fix gone since
+    if (!ident || refusal(ident)) return; // My Location with the fix gone since; a field refused
     const to = pick;
     done();
     to?.onPick(ident.toUpperCase());
@@ -297,43 +186,30 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     else if (routed) pickView("plan");
   };
 
-  // ⌘K, `/`, the Map menu's row and D ask for the field (lib/oneSearch):
-  // focused within the ask, so the keyboard comes up.
-  const input = vm.search.searchInput;
-  useEffect(() => {
-    let stop = () => {};
-    const unsubscribe = useSearchAsk.subscribe(({ ask }) => {
-      if (!ask) return;
-      takeSearchAsk();
-      setDirect(ask.mode === "direct");
-      setProblem(null);
-      // A picker's ask on the Search page, where its field and rows are:
-      // asked from FPL (the route box's Departure), it focused a field on
-      // the page not up, and nothing seemed to happen (2026-11-13). Any
-      // ask while that page is put away likewise. The page drawn up before
-      // the focus: put away it is inert (SheetPage), and an inert field
-      // takes no focus, so the route box's stop asked for none came.
-      if (ask.mode === "pick" || input.current?.closest("[inert]")) flushSync(() => pickView("search"));
-      input.current?.focus();
-      // Asked as a card goes (the Profile's Add a Stop): the sheet under it
-      // is still hidden, and the field takes the focus as it shows.
-      stop();
-      stop = focusAsShown(
-        () => input.current,
-        () => input.current?.focus(),
-      );
-    });
-    return () => {
-      unsubscribe();
-      stop();
-    };
-  }, [input, pickView]);
+  // ⌘K, `/`, the Map menu's row and D ask for the field (lib/oneSearch).
+  useSearchAskFocus({ input: vm.search.searchInput, pickView, setQuery, setDirect, setProblem });
+  const does = doHits({
+    typed,
+    direct,
+    pick,
+    airplaneAsk,
+    positioned,
+    trafficOn,
+    airports,
+    canDirect: !!directTo,
+    pickIdent,
+    flyDirect,
+    startDirect: () => (setDirect(true), setQuery("")),
+    done,
+    send,
+  });
 
   return {
     typed,
     direct,
     pick,
     pickIdent,
+    refusal,
     // Its own, else why a picker's last pick would not do (the first flight's).
     problem: problem ?? pick?.problem ?? null,
     focused,
@@ -366,23 +242,3 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
 }
 
 export type OneSearchModel = ReturnType<typeof useOneSearch>;
-
-/** The registry's row in the one search: its profile, whether it is in the air under it, and
- *  Track where it is. */
-function registryHit(
-  row: NonNullable<ReturnType<typeof useAirplaneHits>["registry"]>,
-  selectFlight: (hex: string, plane?: TrafficAircraft) => void,
-  /** Asked for one to keep: kept by its N-number, not opened. */
-  keep: ((tail: string) => Promise<void>) | null,
-): AirplaneHit {
-  const { key, title, detail, lookup } = row;
-  const { inAir } = lookup;
-  return {
-    key,
-    title,
-    detail,
-    live: lookup.inAirWords,
-    pick: () => (keep ? void keep(title) : openAirplaneProfile(title)),
-    track: !keep && inAir.state === "flying" ? () => selectFlight(inAir.plane.hex, inAir.plane) : undefined,
-  };
-}

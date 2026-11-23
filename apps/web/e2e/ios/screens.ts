@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { controlsInSight, openNavLog, grabberTo, openSection, openTab, settle, sideDrawer, slow, frontSheet } from "../helpers";
+import { controlsInSight, openNavLog, grabberTo, openSection, openTab, settle, sideDrawer, slow } from "../helpers";
 import { markWith } from "../marks";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
@@ -34,10 +34,10 @@ export const SCREENS: Screen[] = [
     name: "flight planning drawer",
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=full`);
-      await expect(sideDrawer(page).getByTestId("route-head").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
+      await expect(sideDrawer(page).getByTestId("route-editor").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
         timeout: slow(30000),
       });
-      await expect(sideDrawer(page).getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+      await expect(sideDrawer(page).getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
     },
   },
   {
@@ -49,7 +49,7 @@ export const SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
       await controlsInSight(page);
       // The plan in, its figures whole: not judged fading in.
-      await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(30000) });
+      await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(30000) });
       await expect(page.getByTestId("share-route")).toBeEnabled();
     },
   },
@@ -61,7 +61,7 @@ export const SCREENS: Screen[] = [
       // panel back to half, and the map's tooltips came up under the
       // pointer where the panel had been, fading in, read at 1:1 (P15).
       await openTab(page, "Nav Log");
-      await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
+      await page.getByTestId("navlog-ete").waitFor({ timeout: slow(120000) });
       // The nav log in its own sheet, from the route's box.
       await openNavLog(page);
       // A tap's click, without Playwright's own scroll into view first:
@@ -77,16 +77,16 @@ export const SCREENS: Screen[] = [
     [
       ["Preflight", "verdict"],
       ["Depart", "takeoff-landing"],
-      ["En route", "weather-places"],
+      ["En Route", "weather-places"],
       ["Arrive", "weather-places"],
     ] as const
   ).map(([tab, shown]): Screen => ({
     name: `panel, ${tab} tab`,
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=full`);
-      await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
+      await page.getByTestId("navlog-ete").waitFor({ timeout: slow(120000) });
       await openTab(page, tab);
-      if (tab === "En route") await openSection(page, "Along the Route");
+      if (tab === "En Route") await openSection(page, "Along the Route");
       await expect(sideDrawer(page).locator('[role="tabpanel"]:not([hidden]):not([inert])').getByTestId(shown).first()).toBeVisible({
         timeout: slow(30000),
       });
@@ -113,7 +113,12 @@ export const SCREENS: Screen[] = [
       }
       if (part === ", its Weather tab") {
         await sideDrawer(page).getByTestId("place-tab-weather").click();
-        await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
+        // Then pulled all the way up, as a pilot does to read it: a tab
+        // picked leaves the card where it is (rules.md, the pilot's drag
+        // chooses the size), and the wait for it to rise on its own held
+        // at half on every phone but the largest, where the click's own
+        // scroll into view had pulled it up.
+        await grabberTo(page, "full");
         await expect(sideDrawer(page).getByTestId("place-weather-summary")).toBeVisible();
       }
     },

@@ -45,6 +45,37 @@ final class InFlight {
     private var fieldAsking: Task<Void, Never>?
     /// The GPS altitudes of the last seconds, for the vertical speed.
     private var altitudes: [(t: Double, ft: Double)] = []
+    /// The route's half of in_flight's input, built once per plan change
+    /// (its course, checkpoints, legs and totals) rather than at every fix:
+    /// waste-phones item 7, the line, the points and the legs made and
+    /// RouteShare.points worked out twice a second.
+    @ObservationIgnored private var routeKept: (key: RouteKey, route: Route?)?
+
+    /// What the route's half is built from.
+    struct RouteKey: Equatable {
+        let course: Course?
+        let checkpoints: [Checkpoint]
+        let legs: [Leg]
+        let totals: Totals?
+    }
+
+    /// The route as in_flight reads it.
+    struct Route {
+        let line: [[Double]]
+        let points: [EngineContract.InFlightInputPointsItem]
+        let legs: [EngineContract.InFlightInputLegsItem]
+        let usableGal: Double?
+        let taxiGal: Double?
+        let refuelAt: [Int]?
+    }
+
+    private func route(_ plan: Plan) -> Route? {
+        let key = RouteKey(course: plan.course, checkpoints: plan.checkpoints, legs: plan.legs, totals: plan.totals)
+        if let kept = routeKept, kept.key == key { return kept.route }
+        let built = Self.route(plan)
+        routeKept = (key, built)
+        return built
+    }
 
     /// How often the nearest field is asked for the ring's ground, s: a
     /// field's elevation changes slowly as an airplane flies.
@@ -82,12 +113,18 @@ final class InFlight {
         var refused: [String] = []
         func asked<T>(_ what: String, _ body: () throws -> T?) -> T? {
             do { return try body() } catch {
-                refused.append("\(what): \(error.localizedDescription)")
+                // The engine's reason to the log; the line names the figure.
+                _ = Problems.say("The \(what) could not be worked out", error)
+                refused.append(what)
                 return nil
             }
         }
         underway = asked("flying speed") { try Flight.underway(fix.groundspeedKt) } ?? false
-        progress = asked("route") { try Self.progress(fix, plan: plan, now: now) }
+        // Where the airplane is on the route only once it moves: parked,
+        // the engine's answer is never on the route (ON_ROUTE_NM needs
+        // motion), the strip shows the planned totals, and the whole line
+        // went to the engine once a second for nothing.
+        progress = underway ? asked("route") { try Self.progress(fix, route: route(plan), now: now) } : nil
         verticalFpm = asked("vertical speed") {
             try Engine.verticalSpeed(samples: altitudes.map { .init(tS: $0.t, altitudeFt: $0.ft) })
         }
@@ -98,7 +135,7 @@ final class InFlight {
             try Engine.glideRing(lat: at.latitude, lon: at.longitude, altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
                                  terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: ratio)
         }
-        problem = refused.isEmpty ? nil : "Not worked out: " + refused.joined(separator: "; ")
+        problem = refused.isEmpty ? nil : "Not worked out: " + refused.joined(separator: ", ") + "."
         if underway { askField(at, now: now) }
     }
 
@@ -117,31 +154,45 @@ final class InFlight {
         return airplanes.value(.glideRatio, plan: plan)
     }
 
+    /// The route's half of the engine's `in_flight`; nil with no route.
+    static func route(_ plan: Plan) -> Route? {
+        guard let course = plan.course, course.coordinates.count >= 2 else { return nil }
+        let points = RouteShare.points(plan)
+        return Route(line: course.coordinates.map { [$0.latitude, $0.longitude] },
+                     points: points.map { .init(name: $0.name, lat: $0.lat, lon: $0.lon) },
+                     legs: plan.legs.map { .init(distanceNm: $0.distanceNm, fuelGal: $0.fuelGal) },
+                     usableGal: plan.totals?.usableFuelGal, taxiGal: plan.totals?.taxiGal,
+                     refuelAt: refuelAt(plan, points: points))
+    }
+
     /// The engine's `in_flight` for a fix on the plan's route; nil with no
     /// route, thrown where the engine refuses.
     static func progress(_ fix: OwnShip.Fix, plan: Plan, now: Date = Date()) throws -> Progress? {
-        guard let course = plan.course, course.coordinates.count >= 2 else { return nil }
+        try progress(fix, route: route(plan), now: now)
+    }
+
+    static func progress(_ fix: OwnShip.Fix, route: Route?, now: Date = Date()) throws -> Progress? {
+        guard let route else { return nil }
         return try Engine.inFlight(
             fix: .init(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, trackDeg: fix.trackDeg, speedKt: fix.groundspeedKt),
-            line: course.coordinates.map { [$0.latitude, $0.longitude] },
-            points: RouteShare.points(plan).map { .init(name: $0.name, lat: $0.lat, lon: $0.lon) },
-            legs: plan.legs.map { .init(distanceNm: $0.distanceNm, fuelGal: $0.fuelGal) },
-            fuelStartGal: plan.totals?.usableFuelGal,
+            line: route.line,
+            points: route.points,
+            legs: route.legs,
+            fuelStartGal: route.usableGal,
             // The tanks filled again at each stop, less the profile's start
             // and taxi allowance there and at the start, by the engine
             // (AV-4); with no allowance given none is taken off.
-            fuelFullGal: plan.totals?.usableFuelGal,
-            taxiFuelGal: plan.totals?.taxiGal,
-            refuelAt: refuelAt(plan),
+            fuelFullGal: route.usableGal,
+            taxiFuelGal: route.taxiGal,
+            refuelAt: route.refuelAt,
             nowS: now.timeIntervalSince1970)
     }
 
     /// The points (indices into RouteShare.points) the plan refuels at:
     /// each stop, where the planner's hops begin (the tanks filled at each,
-    /// app.planning.route_totals); none on a route without stops.
-    static func refuelAt(_ plan: Plan) -> [Int]? {
+    /// wingtip.route_join.route_totals); none on a route without stops.
+    static func refuelAt(_ plan: Plan, points: [(name: String, lat: Double, lon: Double, checkpoint: Checkpoint?)]) -> [Int]? {
         guard (plan.totals?.hops ?? []).count > 1 else { return nil }
-        let points = RouteShare.points(plan)
         let ends = points.indices.filter { points[$0].checkpoint == nil }
         return ends.count > 2 ? Array(ends.dropFirst().dropLast()) : nil
     }

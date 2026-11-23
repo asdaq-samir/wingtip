@@ -12,37 +12,43 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 
 /**
- * "Removed KJVL · Undo" after an edit that changed the route (Plan.undo),
+ * "KJVL Removed · Undo" after an edit that took something away (Plan.undo),
  * as Material's own Snackbar with its Undo action, in the screen's
  * [host] (the owner, 2026-11-10: stock components in place of the
- * hand-built Undo row). Its timing, its dismissal and what TalkBack says
- * are the Snackbar's own. Undo takes the plan one step back; let go, the
- * edit is kept, unless a newer one has come since, which shows its own.
+ * hand-built Undo row): a stop removed, Clear Route ("Route Cleared"),
+ * the route replaced whole by Fly Here, Depart From or a new one ("Route
+ * Replaced"), a Direct To; the web's words. An added or moved stop and a
+ * field's fuel set are steps all the same, taken back by the wide
+ * window's Undo, but put up no Snackbar (`Kind.loud`; the owner,
+ * 2026-11-21). Its timing, its dismissal and what TalkBack says are the
+ * Snackbar's own. Undo takes the plan one step back, the fuel set with
+ * it; let go, the edit is kept, unless a newer one has come since.
  */
 @Composable
 fun RouteUndoSnackbar(plan: Plan, host: SnackbarHostState) {
     val note by plan.undo.note.collectAsStateWithLifecycle()
-    val words = note?.let { shown ->
-        stringResource(
-            when (shown.kind) {
-                RouteUndo.Kind.REMOVED -> R.string.undo_removed
-                RouteUndo.Kind.MOVED -> R.string.undo_moved
-                RouteUndo.Kind.ADDED -> R.string.undo_added
-                RouteUndo.Kind.DIRECT -> R.string.undo_direct
-                RouteUndo.Kind.FLY_HERE -> R.string.undo_fly_here
-                RouteUndo.Kind.DEPART_FROM -> R.string.undo_depart_from
-                RouteUndo.Kind.CLEARED -> R.string.undo_cleared
-            },
-            shown.ident,
-        )
+    val removed = stringResource(R.string.undo_removed, note?.ident.orEmpty())
+    val direct = stringResource(R.string.undo_direct, note?.ident.orEmpty())
+    val cleared = stringResource(R.string.undo_cleared)
+    val replaced = stringResource(R.string.undo_replaced)
+    val words = note?.takeIf { it.kind.loud }?.let { shown ->
+        when (shown.kind) {
+            RouteUndo.Kind.REMOVED -> removed
+            RouteUndo.Kind.DIRECT -> direct
+            RouteUndo.Kind.CLEARED -> cleared
+            else -> replaced
+        }
     }
     val undo = stringResource(R.string.undo)
     // Keyed on the edit: a newer one (or an Undo from the toolbar) takes
-    // this one's Snackbar down as it goes.
+    // this one's Snackbar down as it goes. Material's short time, as the
+    // web's Undo went from 8 s to 5 (the HIG review's 12, 2026-11-21): two
+    // or three words to read and one tap; TalkBack's own timeout setting
+    // lengthens it for those who need it (the Snackbar's own).
     LaunchedEffect(note?.id) {
         val shown = note ?: return@LaunchedEffect
         val said = words ?: return@LaunchedEffect
-        when (host.showSnackbar(said, actionLabel = undo, withDismissAction = true, duration = SnackbarDuration.Long)) {
+        when (host.showSnackbar(said, actionLabel = undo, withDismissAction = true, duration = SnackbarDuration.Short)) {
             SnackbarResult.ActionPerformed -> plan.undoEdit()
             SnackbarResult.Dismissed -> plan.undo.dismiss(shown.id)
         }

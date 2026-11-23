@@ -109,10 +109,14 @@ function Calendar<T extends DateValue>({
             </CalendarGridHeader>
             <CalendarGridBody>
               {(date) => (
+                // Its whole square the day's to a finger, its round corners
+                // too (a square ::after, taking no room and drawn by
+                // nothing): at the corners a tap went to the grid's cell
+                // round it (the iOS audit's P1 on the departure picker).
                 <CalendarCell
                   date={date}
                   data-day={date.toString()}
-                  className="group/day relative mt-2 aspect-square size-(--cell-size) cursor-default rounded-(--cell-radius) p-0 text-center outline-none select-none data-outside-month:text-muted-foreground data-disabled:text-muted-foreground data-disabled:opacity-50 data-unavailable:text-muted-foreground data-unavailable:line-through"
+                  className="group/day relative mt-2 aspect-square size-(--cell-size) after:absolute after:inset-0 after:content-[''] cursor-default rounded-(--cell-radius) p-0 text-center outline-none select-none data-outside-month:text-muted-foreground data-disabled:text-muted-foreground data-disabled:opacity-50 data-unavailable:text-muted-foreground data-unavailable:line-through"
                 >
                   {({ formattedDate, isSelected, isFocusVisible }) => (
                     // A day's number in its cell's colour (muted outside the

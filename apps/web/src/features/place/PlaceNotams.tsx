@@ -6,8 +6,11 @@ import { SheetCard } from "../../components/SheetCard";
 import StatusBadge from "../../components/StatusBadge";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { NotamAsSent } from "../../components/NotamAsSent";
+import KeptAge from "../../components/KeptAge";
+import { notamCredit } from "../../lib/notamCoverage";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
+import { instantOf } from "../../lib/format";
 import {
   headingOf,
   readNotam,
@@ -23,6 +26,7 @@ import {
 import { NotamsState } from "./NotamsState";
 import { timeLines } from "./notamTimes";
 import { TfrDetails } from "./TfrDetails";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The NOTAMs section's test id. */
 const SECTION = "place-notams";
@@ -180,9 +184,10 @@ function NotamWhat({ what }: { what: string }) {
  *  otherwise. In force unless the planner says it is not (in_force false). */
 function NotamState({ n }: { n: FieldNotam }) {
   const active = n.in_force !== false;
-  const starts = n.starts ? Date.parse(n.starts) : NaN;
+  // Read as fieldNotams' dateOf reads it: no zone is UTC, not local.
+  const starts = instantOf(n.starts);
   const now = useMinuteClock();
-  const later = !active && !Number.isNaN(starts) && starts > now;
+  const later = !active && starts !== null && starts > now;
   return (
     <StatusBadge variant={active ? "active" : later ? "later" : "cold"} className="w-fit shrink-0" data-testid="place-notam-state">
       {active || later ? undefined : "Inactive"}
@@ -191,11 +196,22 @@ function NotamState({ n }: { n: FieldNotam }) {
 }
 
 /** That the TFRs could not be read rather than that there are none, under
- *  the list. */
-function Unchecked({ data }: { data: FieldNotams | undefined }) {
-  return data && data.unchecked.length > 0 ? (
-    <p className={cn("pt-2 text-caution-ink", TEXT.note)}>The TFR list could not be read: check the FAA's TFRs before flying.</p>
-  ) : null;
+ *  the list; and, while the planner holds only the NOTAMs heard since a
+ *  day, that the list is not the full set (lib/notamCoverage, decision
+ *  0059), as the Brief's says it. Not for a field outside the NOTAM system
+ *  (`none`), which has no NOTAMs to miss. */
+function Unchecked({ data, none }: { data: FieldNotams | undefined; none: string | null }) {
+  if (!data) return null;
+  return (
+    <>
+      {data.unchecked.length > 0 && <p className={cn("pt-2 text-caution-ink", TEXT.note)}>{WORDING.tfrListNotRead}</p>}
+      {!data.full_set && !none && (
+        <p className={cn("pt-2 text-caution-ink", TEXT.note)} data-testid="place-notams-coverage">
+          {notamCredit(data.coverage_since)}
+        </p>
+      )}
+    </>
+  );
 }
 
 /** The NOTAMs by what they are about, the engine's heading (notam_read:
@@ -222,11 +238,11 @@ function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] 
  * "None heard", where the field is outside the NOTAM system.
  */
 export function PlaceNotamsSection({ ident, none = null }: { ident: string; none?: string | null }) {
-  const { data, isError, total, shown, long, all, toggle } = useFieldNotams(ident);
+  const { data, isError, query, atMs, failed, total, shown, long, all, toggle } = useFieldNotams(ident);
   if (!data && !isError) return null;
   // "3 of 9" at the right while closed, as FirstFew's sections.
   const count = long && !all ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${shown.length} of ${total}`}</span> : undefined;
-  const state = <NotamsState data={data} isError={isError} none={none} />;
+  const state = <NotamsState data={data} query={query} none={none} />;
   return (
     <div className="scroll-mt-16 pt-5" data-testid={SECTION}>
       <PillSection
@@ -236,6 +252,10 @@ export function PlaceNotamsSection({ ident, none = null }: { ident: string; none
         expanded={long ? all : undefined}
         right={count}
       >
+        {/* "Fetched 42 min ago" over a list kept from before the signal
+            was lost, amber past the engine's hour for NOTAMs (kept_age;
+            14 CFR 91.103, AIM 5-1-3), as the route's list says it. */}
+        <KeptAge kind="notams" path={`/api/planner/airport/${ident}/notams`} atMs={atMs} failed={failed} className="px-1" />
         {/* Opened, every one in the stock Collapsible's content, under its
             kind (Runway, Taxiway, Obstacle ...), the kinds in the order
             their first NOTAM ranks, as ForeFlight heads its list's groups
@@ -252,7 +272,7 @@ export function PlaceNotamsSection({ ident, none = null }: { ident: string; none
             ))}
           </CollapsibleContent>
         )}
-        <Unchecked data={data} />
+        <Unchecked data={data} none={none} />
       </PillSection>
     </div>
   );

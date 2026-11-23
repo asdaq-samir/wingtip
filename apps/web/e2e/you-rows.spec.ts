@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, noTips, openConsole, settle, showTabs } from "./helpers";
+import { extrasOn } from "./extras";
 
 /**
  * You, the avatar's card (the owner's option A, 2026-11-13): Airplanes
@@ -14,6 +15,8 @@ import { consoleSheet, noTips, openConsole, settle, showTabs } from "./helpers";
 test.use({ storageState: { cookies: [], origins: [] } });
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(noTips);
+  // The Practice row's Training Tools, parked, on (Settings' Extras, src/lib/extras).
+  await extrasOn(page, "trainingTools");
 });
 
 async function you(page: Page) {
@@ -47,7 +50,7 @@ test("Checklists are inside Airplanes, and Training holds the Coach and Practice
   await expect(sheet.getByTestId("setup-coach-row")).not.toContainText("Sign In");
   await sheet.getByTestId("practice-row").click();
   await expect(sheet.getByTestId("practice-page")).toBeVisible();
-  await sheet.getByRole("button", { name: /^Holding entries/ }).click();
+  await sheet.getByRole("button", { name: /^Holding Entries/ }).click();
   await expect(sheet.getByTestId("hold-entry")).toBeVisible();
 });
 
@@ -58,9 +61,22 @@ test("You is a card over the sheet as every card is: the avatar over one list, t
   // The stock Drawer's nested drawer over the map's sheet (the owner,
   // 2026-11-13: "make everything a nested drawer except the welcome one").
   expect(await sheet.evaluate((el) => !!el.closest('[data-slot="map-panel"] [data-sheet-card]'))).toBe(true);
-  // One list of rows in order, each opening its page.
+  // One list of rows in order, each opening its page; Pilot Details is a
+  // tap on the avatar and name, not a row (the owner, 2026-11-20). The
+  // Scratchpad beside the Documents (gap-ipad-cockpit) and Connected Apps
+  // last (the AI apps through the connector, round2-security).
   const rows = sheet.getByTestId("library-section").getByRole("button");
-  await expect(rows).toHaveText([/^Pilot Details/, /^Airplanes/, /^Flights/, /^Logbook/, /^Minimums/, /^Training/, /^Emergency/]);
+  await expect(rows).toHaveText([
+    /^Airplanes/,
+    /^Flights/,
+    /^Logbook/,
+    /^Minimums/,
+    /^Documents/,
+    /^Scratchpad/,
+    /^Training/,
+    /^Emergency/,
+    /^Connected Apps/,
+  ]);
   await expect(sheet.getByTestId("library-section").getByRole("group")).toHaveCount(1);
   // Signed out: Sign In said once, the head's large line, no "You" and no
   // "Sign In to Use" on the greyed rows (the owner, 2026-11-13: "Instead

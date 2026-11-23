@@ -142,18 +142,25 @@ struct FieldNotamsSection: View {
     var body: some View {
         @Bindable var notams = notams
         Section {
+            // The NOTAMs kept for the air, shown with no signal, with their
+            // age, amber past kept_age's hour (AIM 5-1-3), as the route's.
+            if !notams.ident.isEmpty, notams.ranked != nil {
+                KeptAgeLine(kind: .notams, key: KeptForAir.fieldNotamsKey(notams.ident))
+            }
             if let problem = notams.problem {
                 ProblemLine(problem)
             } else if let ranked = notams.ranked, ranked.notams.isEmpty {
                 // Never "no NOTAMs": none heard since the feed's time (decision
-                // 0023), or for a private field none issued (airport_notams_none).
+                // 0059, NotamCoverage), or for a private field none issued
+                // (airport_notams_none).
                 switch notams.outsideNotams {
                 case .success(let outside?): Text(outside).foregroundStyle(.secondary)
-                case .success(nil): Text(ranked.coverageSince.map { "None heard since \($0)" } ?? "None heard").foregroundStyle(.secondary)
+                case .success(nil):
+                    Text(NotamCoverage.none(since: ranked.coverageSince, full: ranked.fullSet ?? false)).foregroundStyle(.secondary)
                 case let failed: ProblemLine(failed, "Whether this field has NOTAMs")
                 }
             } else if notams.ranked == nil {
-                Text("A NOTAM's words and its times").loading("Fetching NOTAMs")
+                Text("A NOTAM's words and its times").loading(Wording.fetchingNotams)
             }
             if !(notams.all && notams.long) { rows(notams.shown) }
             if notams.long {
@@ -167,11 +174,19 @@ struct FieldNotamsSection: View {
                     Text("All \(notams.notams.count) NOTAMs")
                 }
             }
+            // Only what the feed has sent since its day, not the full set
+            // (decision 0059), as the web's card says under its list; not
+            // for a field outside the NOTAM system.
+            if let ranked = notams.ranked, ranked.fullSet != true, case .success(nil) = notams.outsideNotams {
+                Text(NotamCoverage.line(since: ranked.coverageSince, full: false))
+                    .font(WingtipType.note).foregroundStyle(WingtipInk.caution)
+                    .accessibilityIdentifier("place-notams-coverage")
+            }
         } header: {
             header
         } footer: {
             if notams.ranked?.unchecked?.isEmpty == false {
-                Text("The TFR list could not be read: check the FAA's TFRs before flying.").foregroundStyle(WingtipInk.caution)
+                Text(Wording.tfrListNotRead).foregroundStyle(WingtipInk.caution)
             }
         }
     }
@@ -204,7 +219,7 @@ struct FieldNotamPage: View {
     let notam: APIRankedNotam
 
     var body: some View {
-        let number = "NOTAM \(FieldNotamWords.number(notam, ident: notams.ident))"
+        let number = "NOTAM \(FieldNotamWords.number(notam, idents: notams.idents))"
         let tfr = notam.kind == "tfr"
         List {
             Section {
@@ -233,39 +248,6 @@ struct FieldNotamPage: View {
             ToolbarItem(placement: .topBarLeading) {
                 ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }
             }
-        }
-    }
-}
-
-/// A TFR's own sections under its lines: its place's name (tfr_read, its
-/// dates off, as the time lines say them; the owner, 2026-11-12: "dates
-/// are twice"), its instructions as the FAA gives them a line each in
-/// sentence case with their codes kept (faa_words), and whom it names to
-/// call, each telephone a link that dials.
-struct TfrDetailsSections: View {
-    let notam: APIRankedNotam
-    let read: EngineContract.TfrReadAnswer?
-
-    var body: some View {
-        let t = notam.tfr
-        if let place = read?.place { Section { Text(place) } }
-        if let lines = t?.instructions, !lines.isEmpty {
-            Section("Instructions") {
-                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in Text(AirportWords.faaWords(line)) }
-            }
-        }
-        if let facility = t?.facility { contact("Coordination Facility", facility) }
-        if let contact = t?.contact { self.contact("Point of Contact", contact) }
-    }
-
-    private func contact(_ title: String, _ c: APITfrContact) -> some View {
-        Section(title) {
-            Text(c.name)
-            if let phone = c.phone, let dial = URL(string: "tel:+1" + phone.filter(\.isNumber)) {
-                Link(destination: dial) { Label(phone, systemImage: WingtipIcon.call).monospacedDigit() }
-                    .accessibilityLabel("Call \(phone)")
-            }
-            if let frequency = c.frequency { LabeledContent("Frequency", value: frequency).monospacedDigit() }
         }
     }
 }

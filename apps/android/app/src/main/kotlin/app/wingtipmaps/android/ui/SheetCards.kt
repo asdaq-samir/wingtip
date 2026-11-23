@@ -10,11 +10,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.about.AboutScreen
+import app.wingtipmaps.android.account.ConnectedAppsCard
 import app.wingtipmaps.android.aircraft.YourAirplanesPage
 import app.wingtipmaps.android.airplane.AirplaneCard
 import app.wingtipmaps.android.altitude.ProfileCard
@@ -25,12 +28,16 @@ import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.clearance.ClearancePage
 import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.emergency.EmergencyCard
+import app.wingtipmaps.android.filing.FilingPage
 import app.wingtipmaps.android.flights.FlightsCard
+import app.wingtipmaps.android.library.DocumentsPage
+import app.wingtipmaps.android.library.ReaderPage
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.plates.PlateCard
 import app.wingtipmaps.android.plates.PlatePick
 import app.wingtipmaps.android.route.RouteLegCard
+import app.wingtipmaps.android.route.RouteOptionsCard
 import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
@@ -95,12 +102,13 @@ private fun Card(
                 search.pickAirport(R.string.home_airport_pick) { ident -> onPicked(ident); sheet.show(SheetPage.PilotDetails) }
             }
         }
-        SheetPage.Minimums -> Page(stringResource(R.string.minimums), exit) { MinimumsScreen() }
+        SheetPage.Minimums -> Page(stringResource(R.string.screen_minimums), exit) { MinimumsScreen() }
         SheetPage.Settings -> Page(stringResource(R.string.settings), exit) { SettingsScreen(open = sheet::push) }
         SheetPage.Atc -> Page(stringResource(R.string.atc), exit) { AtcPage() }
         SheetPage.Help -> Page(stringResource(R.string.help_and_about), exit) { HelpPage(open = sheet::push) }
         SheetPage.Logbook -> LogbookScreen(exit, onCoach = { sheet.push(SheetPage.Coach) })
         SheetPage.Flights -> FlightsCard(plan, exit, onUsed = showPlan)
+        SheetPage.ConnectedApps -> ConnectedAppsCard(exit)
         SheetPage.Coach -> CoachScreen(exit)
         SheetPage.Downloads -> Page(stringResource(R.string.offline_downloads), exit) { DownloadsScreen() }
         SheetPage.Passengers -> Page(stringResource(R.string.passenger_briefing), exit) { PassengerScreen(plan) }
@@ -110,12 +118,31 @@ private fun Card(
             ClearancePage(plan, fix, exit, onEntered = showPlan)
         }
         SheetPage.YourAirplanes -> YourAirplanesPage(exit)
+        SheetPage.Documents -> DocumentsPage(exit, open = sheet::push)
+        is SheetPage.Reader -> Reader(page.place, exit)
         SheetPage.Profile -> ProfileCard(plan, exit)
         SheetPage.NavLog -> NavLogCard(plan, exit, onLeg = { sheet.push(SheetPage.Leg(it)) }, onAddStopAfter = search::addStopAfter)
         SheetPage.Emergency -> EmergencyCard(plan, control, exit)
+        SheetPage.RouteOptions -> RouteOptionsCard(plan, exit, onUsed = showPlan)
+        SheetPage.Filing -> FilingPage(plan, session, exit)
         is SheetPage.Checklist -> {
             val kind = ChecklistKind.entries.firstOrNull { it.name == page.kind } ?: ChecklistKind.NORMAL
             Page(stringResource(R.string.checklists_of, page.airplane.uppercase()), exit) { ChecklistScreen(airplane = page.airplane, kind = kind) }
+        }
+    }
+}
+
+/** The reader: beside the library on a wide window (the list-detail
+ *  scene's detail pane, SheetPage.listsBeside), and on a phone the whole
+ *  screen, a full-screen dialog over the sheet as the plates are, Back
+ *  and its ✕ coming back to the library or the cite it was opened from. */
+@Composable
+private fun Reader(place: String, exit: CardExit) {
+    if (isWide()) {
+        ReaderPage(place, onClose = exit.back)
+    } else {
+        Dialog(onDismissRequest = exit.back, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            ReaderPage(place, onClose = exit.back)
         }
     }
 }

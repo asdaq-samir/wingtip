@@ -38,6 +38,8 @@ private struct CardHost: ViewModifier {
                     // The map usable above a card up to half height; a
                     // question or a form stays modal (the scrolling rule).
                     .presentationBackgroundInteraction(card.page.modal ? .disabled : .enabled(upThrough: .half))
+                    // Solid at every detent, as the plan's sheet (RootView).
+                    .presentationBackground(WingtipInk.sheet)
                     .environment(\.cardExpanded, nav.cardDetent == .large)
                     .environment(\.cardAtPill, nav.cardDetent == RootView.pill)
                     // The map's buttons ride the card's top while it is up,
@@ -45,8 +47,12 @@ private struct CardHost: ViewModifier {
                     .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetEdge.card = $0 }
                     .onDisappear { sheetEdge.card = nil }
                     .modifier(TopHosts(active: true))
+                    .modifier(ReaderCover(active: true))
             }
             .modifier(TopHosts(active: nav.card == nil))
+            // The reader over the window: from the card's sheet while one
+            // is presented (the iPhone's), else from here (ReaderCover).
+            .modifier(ReaderCover(active: nav.presented == nil))
     }
 }
 
@@ -92,8 +98,6 @@ struct TopHosts: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            // What the app is, once at first launch (PlanningAidNotice).
-            .modifier(PlanningAidAlert(active: active))
             // A figure asked for a point of the route (FlightUI).
             .modifier(PointAlerts(active: active))
             // The airplanes' figures kept on this device, offered to the

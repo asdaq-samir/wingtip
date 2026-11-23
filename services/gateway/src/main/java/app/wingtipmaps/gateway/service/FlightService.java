@@ -11,12 +11,16 @@ import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
 import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
+import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightTrackRepository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponseException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
@@ -32,14 +36,20 @@ public class FlightService {
     private final FlightRepository flights;
     private final AircraftRepository aircraft;
     private final FlightTrackRepository tracks;
+    private final CrossCountryReviewRepository reviews;
     /** Boot's own, for a track's points kept as JSON. */
     private final JsonMapper json;
 
     public FlightService(
-            FlightRepository flights, AircraftRepository aircraft, FlightTrackRepository tracks, JsonMapper json) {
+            FlightRepository flights,
+            AircraftRepository aircraft,
+            FlightTrackRepository tracks,
+            CrossCountryReviewRepository reviews,
+            JsonMapper json) {
         this.flights = flights;
         this.aircraft = aircraft;
         this.tracks = tracks;
+        this.reviews = reviews;
         this.json = json;
     }
 
@@ -59,13 +69,67 @@ public class FlightService {
      *  attach, not offering a hint that can be dropped. */
     @Transactional
     public Flight save(Pilot pilot, SaveFlightRequest request) {
-        Aircraft flownIn = request.aircraftId() == null
+        Flight flight =
+                new Flight(pilot, flownIn(pilot, request), request.departureIdent(), request.destinationIdent());
+        return flights.save(filed(flight, request));
+    }
+
+    /** This pilot's saved flight planned again as `request` has it: its
+     *  route, airplane, altitudes, picks, time and nav log, its name, notes
+     *  and share kept (the connector's update_saved_flight); empty where
+     *  the flight is not theirs. A 409 where the flight was put to an
+     *  instructor for the solo cross-country review 14 CFR 61.93(c)(3)
+     *  asks: the review and the endorsement that answers it show the
+     *  flight's own row (CrossCountryReviewDto), so planning it again in
+     *  place would put a route the instructor never reviewed under their
+     *  signature (the security review of 2026-11-22, M1). The app never
+     *  changes a saved flight's route; the connector saves a new one.
+     *
+     *  <p>A 409 too where the plan goes between other airports than the
+     *  saved flight, unless `replaceRoute`: the saved flight's id comes
+     *  back from the pilot's AI app, which a text it read can steer, so a
+     *  plan written over another flight of theirs is refused until the
+     *  model says so and the host has asked the pilot (the connector's
+     *  replace_route, which the live view cannot set; the security review
+     *  of 2026-11-22, L5). */
+    @Transactional
+    public Optional<Flight> replan(Pilot pilot, Long id, SaveFlightRequest request, boolean replaceRoute) {
+        Aircraft flown = flownIn(pilot, request);
+        Optional<Flight> theirs = get(pilot, id);
+        if (theirs.isPresent() && reviews.existsByFlightId(id)) {
+            throw refused("This flight was put to an instructor for the solo cross-country review, so its route "
+                    + "stays as reviewed: save the new plan as a new flight.");
+        }
+        if (!replaceRoute && theirs.isPresent() && !sameEnds(theirs.get(), request)) {
+            Flight saved = theirs.get();
+            throw refused("Saved flight " + id + " goes " + saved.getDepartureIdent() + " to "
+                    + saved.getDestinationIdent() + ", not " + request.departureIdent() + " to "
+                    + request.destinationIdent() + ": ask the pilot, then replace its route on purpose, or save "
+                    + "the plan as a new flight.");
+        }
+        return theirs.map(f ->
+                flights.save(filed(f.replanned(flown, request.departureIdent(), request.destinationIdent()), request)));
+    }
+
+    private static boolean sameEnds(Flight saved, SaveFlightRequest request) {
+        return saved.getDepartureIdent().equalsIgnoreCase(request.departureIdent())
+                && saved.getDestinationIdent().equalsIgnoreCase(request.destinationIdent());
+    }
+
+    private static ErrorResponseException refused(String why) {
+        return new ErrorResponseException(
+                HttpStatus.CONFLICT, ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, why), null);
+    }
+
+    private Aircraft flownIn(Pilot pilot, SaveFlightRequest request) {
+        return request.aircraftId() == null
                 ? null
                 : aircraft.findByIdAndPilotId(request.aircraftId(), pilot.getId())
                         .orElseThrow(() -> new NoSuchAircraftException(request.aircraftId()));
+    }
 
-        Flight flight = new Flight(pilot, flownIn, request.departureIdent(), request.destinationIdent())
-                .withStops(
+    private static Flight filed(Flight flight, SaveFlightRequest request) {
+        flight.withStops(
                         request.stops() == null
                                 ? null
                                 : request.stops().stream()
@@ -103,7 +167,7 @@ public class FlightService {
                     request.risk().level(),
                     request.risk().factors());
         }
-        return flights.save(flight);
+        return flight;
     }
 
     /** Renames this pilot's flight or changes its notes; empty where the

@@ -8,7 +8,7 @@ import {
   settled,
   sideDrawer,
   slow,
-  openRoute,
+  typeRoute,
   grabberTo,
 } from "./helpers";
 import { courseBox } from "./mapProbes";
@@ -40,7 +40,7 @@ test("the route box's pills sit as close to their marks and arrows as each other
   await page.goto("/app/plan?dep=C81&stops=KUGN&dest=KPWK");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const slide = sideDrawer(page).getByTestId("route-slide");
   await expect(slide.getByRole("group")).toHaveCount(3);
   // Each pill's ident, from its mark's right to the next arrow's glyph:
@@ -67,13 +67,13 @@ test("the route box's pills sit as close to their marks and arrows as each other
 });
 
 test("a stop taken out fits the map to the course again, above the half sheet", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; from md up the card is at the side");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; from md up the card is at the side");
   await page.goto("/app/plan?dep=C81&stops=KDPA&dest=KPWK");
   await settle(page);
   await openPanel(page);
   // Opened to edit, all the way up, the stop taken out, and back at half,
   // where the route folds (the one layout).
-  await openRoute(page);
+  await typeRoute(page);
   await settled(sideDrawer(page));
   // The same two ends: the fit was once per departure and destination,
   // and a stop put in or taken out left the map where it was.
@@ -86,11 +86,11 @@ test("a stop taken out fits the map to the course again, above the half sheet", 
 });
 
 test("a destination typed as the sheet goes down is fitted to the room the sheet leaves, not left half way", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; from md up the card is at the side");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; from md up the card is at the side");
   await page.goto("/app/plan?dep=C81&dest=KUGN");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await settled(sideDrawer(page));
   await mapStill(page);
   const field = sideDrawer(page).getByTestId("route-type");

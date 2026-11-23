@@ -31,8 +31,9 @@ const ci = !!process.env.CI;
 // -- which the "mobile" project below, a viewport alone, never has, so
 // none of the touch sizes or hit areas were under test. Sizes in CSS px,
 // which are points; heights are whole screens. Every run, CI's included,
-// takes three of them: a phone in portrait, a phone on its side and the
-// large iPad -- about half a minute a shard. IOS_AUDIT=1 takes all eight
+// takes four of them: a phone in portrait, a phone on its side and the
+// large iPad both ways up, the iPad being the primary device (decision
+// 0058) -- about half a minute a shard. IOS_AUDIT=1 takes them all
 // (with --project=webkit-iphone on two workers, --workers=2: WebKit ran
 // slow alongside six others). The other projects leave the folder alone.
 const iosDevice = (name: string, width: number, height: number, deviceScaleFactor: number) => ({
@@ -49,6 +50,7 @@ const iosDevices = [
   iosDevice("ipad-slide-over", 320, 1000, 2),
   iosDevice("ipad-mini", 744, 1133, 2),
   iosDevice("ipad-pro-13", 1032, 1376, 2),
+  iosDevice("ipad-pro-13-landscape", 1376, 1032, 2),
   // The iPhone Duo (2026), Apple's foldable: closed, its 5.4-inch cover
   // screen (1398 x 2034 at 3x); open, its 7.6-inch inner one (1878 x
   // 2670 at 3x) upright and on its side -- Apple's specifications.
@@ -63,7 +65,7 @@ const iosDevices = [
     use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE },
   },
 ];
-const iosEveryRun = ["iphone-16-pro", "iphone-landscape", "ipad-pro-13"];
+const iosEveryRun = ["iphone-16-pro", "iphone-landscape", "ipad-pro-13", "ipad-pro-13-landscape"];
 const iosAudit = process.env.IOS_AUDIT ? iosDevices : iosDevices.filter((d) => iosEveryRun.includes(d.name));
 
 export default defineConfig({
@@ -141,23 +143,41 @@ export default defineConfig({
     {
       name: "mobile",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 390, height: 844 }, storageState: DEVELOPER_STATE },
     },
     {
       name: "desktop",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 1280, height: 800 }, storageState: DEVELOPER_STATE },
     },
     // The phone's sheet in Safari's engine at an iPhone's size and touch
     // (sheet-webkit.spec): its one @smoke after merge with mobile's, the
-    // owner's iPhone having found the sheet's bugs Chromium did not.
+    // owner's iPhone having found the sheet's bugs Chromium did not; and
+    // the touch styles the iPad's ipad-touch.spec checks, on the iPhone.
     {
       name: "webkit-phone",
       dependencies: ["setup"],
-      testMatch: /sheet-webkit\.spec\.ts/,
+      testMatch: /(sheet-webkit|ipad-touch)\.spec\.ts/,
       use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE },
+    },
+    // The iPad, the device most pilots fly with (decision 0058; the owner,
+    // 2026-11-21: "Primary app users are on iPad"), in Safari's engine, its
+    // touch and its user agent, on an 11-inch iPad Pro upright (834 x 1194):
+    // the smoke and flight-critical journeys, and the ipad-* specs, each
+    // setting the window to every iPad size, held either way, and every
+    // Split View and Stage Manager width it is measured at. After merge
+    // with mobile's, in a wave's validation and at night
+    // (scripts/ci/browser_specs.py). Its own grep keeps the night from
+    // running the whole suite a fourth time in WebKit; a grep reads a
+    // test's file path too, so the ipad-* specs are named by it.
+    {
+      name: "webkit-ipad",
+      dependencies: ["setup"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      grep: /@smoke|@flight-critical|ipad-[a-z-]+\.spec\.ts/,
+      use: { ...devices["iPad Pro 11"], storageState: DEVELOPER_STATE },
     },
     ...iosAudit,
   ],

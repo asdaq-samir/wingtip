@@ -23,10 +23,12 @@
 use crate::json;
 use crate::pack::f64_at;
 use crate::pack::Pack;
+use crate::pack_kept::kept;
 use crate::view::{
     in_box, meets, oriented, reaches, representative, rings_of, round5, simplified, text_at, tolerance_for, Bbox, Polygon, Pt,
 };
 use crate::{sua_limit, sua_place, sua_tab};
+use std::collections::{HashMap, HashSet};
 use wingtip_core::sort::StableSort;
 
 /// The special-use areas the map draws, by TYPE_CODE: those inked as
@@ -63,6 +65,9 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
     let view: Bbox = [west, south, east, north];
     let tolerance = tolerance_for(south, north);
     let mut found: Vec<(bool, String, String, bool)> = Vec::new();
+    // (kind, name, excluded) of each area found: the duplicate check a
+    // lookup, not a scan of every area before.
+    let mut seen: HashSet<(String, String, bool)> = HashSet::new();
     let mut out: Vec<(bool, String)> = Vec::new();
     for p in packs {
         let (Some(layer), Some(alt), Some(names), Some(rec)) =
@@ -85,7 +90,7 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
             // by it, so it neither hides the area nor has its tab.
             let codes = described.and_then(|d| text_at(d, r, 8)).and_then(|t| json::parse(t).ok());
             let excluded = matches!(codes.as_ref().and_then(|c| c.get("excluded")), Some(json::Value::Bool(true)));
-            if found.iter().any(|(_, k, n, x)| *k == kind && n == name && *x == excluded) {
+            if seen.contains(&(kind.clone(), name.to_owned(), excluded)) {
                 continue;
             }
             let Some(polygons) = rings_of(wkb).map(oriented) else { continue };
@@ -106,6 +111,7 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
             if rings.is_empty() {
                 continue;
             }
+            seen.insert((kind.clone(), name.to_owned(), excluded));
             found.push((restricted, kind.clone(), name.to_owned(), excluded));
             let mut o = String::from("{\"type\":");
             json::string(&mut o, &kind);
@@ -170,32 +176,51 @@ fn tab(o: &mut String, polygons: &[Polygon], name: &str, kind: &str, floor: sua_
     o.push('}');
 }
 
+/// A pack's charted fixes, every row fixes_in_view would list wherever
+/// it is, in the table's order: (ident, lat, lon, vfr), read once a pack
+/// (crate::pack_kept).
+fn charted_fixes(p: &Pack) -> Vec<(String, f64, f64, bool)> {
+    let Some(t) = p.section("fixes").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { return Vec::new() };
+    let (id, lat, lon, usage, charts) =
+        (t.col("FIX_ID"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("FIX_USE_CODE"), t.col("CHARTS"));
+    let mut out = Vec::new();
+    for r in &t.rows {
+        let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
+        let ident = get(id).to_uppercase();
+        let (Ok(la), Ok(lo)) = (get(lat).parse::<f64>(), get(lon).parse::<f64>()) else { continue };
+        if ident.is_empty() {
+            continue;
+        }
+        let on: Vec<&str> = get(charts).split(',').map(str::trim).filter(|c| !c.is_empty()).collect();
+        let vfr = get(usage) == "VFR" && on.iter().any(|c| VFR_CHARTS.contains(c));
+        if !vfr && !on.contains(&ENROUTE_LOW_CHART) {
+            continue;
+        }
+        out.push((ident, la, lo, vfr));
+    }
+    out
+}
+
 /// The fixes inside the box, JSON: `{"fixes": [{"ident", "lat", "lon", "vfr"}]}`,
 /// the Enroute Low chart's intersections (`vfr` false) and the charted
 /// VFR waypoints (`vfr` true), by ident; one filed twice at one place, once.
 pub fn fixes_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f64) -> String {
     let view: Bbox = [west, south, east, north];
     let mut fixes: Vec<(String, f64, f64, bool)> = Vec::new();
+    // Each ident's places so far: one filed twice at one place is found by
+    // a lookup, not a scan of every fix before.
+    let mut at: HashMap<String, Vec<(f64, f64)>> = HashMap::new();
     for p in packs {
-        let Some(t) = p.section("fixes").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { continue };
-        let (id, lat, lon, usage, charts) =
-            (t.col("FIX_ID"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("FIX_USE_CODE"), t.col("CHARTS"));
-        for r in &t.rows {
-            let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
-            let ident = get(id).to_uppercase();
-            let (Ok(la), Ok(lo)) = (get(lat).parse::<f64>(), get(lon).parse::<f64>()) else { continue };
-            if ident.is_empty() || !in_box((lo, la), view) {
+        for (ident, la, lo, vfr) in kept(p, "fixes-in-view", charted_fixes).iter() {
+            if !in_box((*lo, *la), view) {
                 continue;
             }
-            let on: Vec<&str> = get(charts).split(',').map(str::trim).filter(|c| !c.is_empty()).collect();
-            let vfr = get(usage) == "VFR" && on.iter().any(|c| VFR_CHARTS.contains(c));
-            if !vfr && !on.contains(&ENROUTE_LOW_CHART) {
+            let places = at.entry(ident.clone()).or_default();
+            if places.iter().any(|(a, b)| (a - la).abs() < 1e-6 && (b - lo).abs() < 1e-6) {
                 continue;
             }
-            if fixes.iter().any(|f| f.0 == ident && (f.1 - la).abs() < 1e-6 && (f.2 - lo).abs() < 1e-6) {
-                continue;
-            }
-            fixes.push((ident, la, lo, vfr));
+            places.push((*la, *lo));
+            fixes.push((ident.clone(), *la, *lo, *vfr));
         }
     }
     fixes.stable_sort_by(|a, b| a.0.cmp(&b.0));

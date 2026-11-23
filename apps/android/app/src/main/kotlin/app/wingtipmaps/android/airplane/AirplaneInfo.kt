@@ -77,15 +77,16 @@ private fun Group(@StringRes title: Int, rows: @Composable () -> Unit) {
  * AirplaneInfo and AirplaneHistory): its public record in claude/plane-data's
  * order -- Registration, Airplane, Engine, Airworthiness, then where it is
  * usually based, its safety and ownership history and the documents filed.
- * The FAA aircraft registry is public data, so its owner is shown for every
- * airplane as the FAA publishes it (the owner, 2026-11-14: "For owner info
- * though, it's public info"), the town, never the street; an owner who
- * asked the FAA to withhold their name (49 U.S.C. 44114(b)) is not in the
- * record, and its row says so. `state.record` is the registry's, at once;
- * `state.details` the rest, null while asked.
+ * The registrant is named only on the pilot's own airplane (`own`) or where
+ * it is an organisation; anyone else is their kind and state
+ * (RegistryNames, App Review 5.1.1(viii)); the town, never the street. An
+ * owner who asked the FAA to withhold their name (49 U.S.C. 44114(b)) is
+ * not in the record, and its row says so. `state.record` is the
+ * registry's, at once; `state.details` the rest, null while asked. Its
+ * history only where it is offered (`history`, OtherAirplanes).
  */
 @Composable
-fun AirplaneInfo(state: AirplaneLookup.State) {
+fun AirplaneInfo(state: AirplaneLookup.State, own: Boolean, history: Boolean) {
     val details = state.details
     val full = details?.registration ?: state.record
     if (full == null) {
@@ -97,10 +98,11 @@ fun AirplaneInfo(state: AirplaneLookup.State) {
         val thrust = engine?.thrustLb ?: full.thrustLb
         val power = hp?.let { stringResource(R.string.info_hp, it) } ?: thrust?.let { stringResource(R.string.info_lb_thrust, it) }
         Group(R.string.info_registration) {
-            Fact(R.string.info_owner, full.owner ?: stringResource(R.string.info_not_in_record))
-            Fact(R.string.info_owner_type, full.ownerType)
-            Fact(R.string.info_town, listOfNotNull(full.city, full.state ?: full.country?.takeIf { it != "US" }).joinToString(", "))
-            Fact(R.string.info_co_owners, full.coOwnerNames?.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: full.coOwners?.takeIf { it > 0 })
+            Fact(R.string.info_owner, RegistryNames.owner(full, own) ?: stringResource(R.string.info_not_in_record))
+            // Not named, the Owner row is already the kind and state.
+            if (RegistryNames.named(full.ownerType, own)) Fact(R.string.info_owner_type, full.ownerType)
+            Fact(R.string.info_town, RegistryNames.town(full, own))
+            Fact(R.string.info_co_owners, RegistryNames.coOwners(full, own))
             Fact(R.string.info_status, full.status)
             Fact(R.string.info_issued, day(full.certificateIssued))
             Fact(R.string.info_expires, day(full.expires))
@@ -139,7 +141,7 @@ fun AirplaneInfo(state: AirplaneLookup.State) {
             Fact(R.string.info_holder, ref?.tcHolder)
         }
     }
-    AirplaneHistory(details, state.detailsProblem)
+    if (history) AirplaneHistory(details, state.detailsProblem, own)
 }
 
 /** Its history past the record: where it is usually based, its NTSB cases
@@ -147,7 +149,7 @@ fun AirplaneInfo(state: AirplaneLookup.State) {
  *  registrations (this airframe's first) and the documents filed, each
  *  group saying in place where it has none. */
 @Composable
-private fun AirplaneHistory(details: AirplaneDetails?, problem: String?) {
+private fun AirplaneHistory(details: AirplaneDetails?, problem: String?, own: Boolean) {
     if (details == null) {
         Group(R.string.info_history) {
             if (problem != null) ProblemLine(problem, Modifier.padding(horizontal = WingtipSpace.Lg)) else Row(stringResource(R.string.info_fetching_history), muted = true)
@@ -175,7 +177,7 @@ private fun AirplaneHistory(details: AirplaneDetails?, problem: String?) {
             Row(
                 joined(p.nNumber, stringResource(if (p.sameAirframe == true) R.string.info_this_airframe else R.string.info_another_airplane), p.status),
                 joined(
-                    listOfNotNull(p.manufacturer, p.model).joinToString(" ").ifEmpty { null }, p.year, p.owner, town(p.city, p.state),
+                    listOfNotNull(p.manufacturer, p.model).joinToString(" ").ifEmpty { null }, p.year, RegistryNames.pastOwner(p.ownerType, p.owner, p.city, p.state),
                     p.cancelDate?.let { stringResource(R.string.info_canceled, day(it).orEmpty()) }, p.exportCountry?.let { stringResource(R.string.info_exported, it) },
                 ),
             )
@@ -189,7 +191,7 @@ private fun AirplaneHistory(details: AirplaneDetails?, problem: String?) {
         if (reservation != null) {
             Row(
                 stringResource(R.string.info_reserved),
-                joined(reservation.registrant, town(reservation.city, reservation.state), day(reservation.reserved), reservation.kind, reservation.changeTo?.let { stringResource(R.string.info_changing_to, it) }),
+                joined(RegistryNames.reservedBy(reservation.registrant, reservation.city, reservation.state, own), day(reservation.reserved), reservation.kind, reservation.changeTo?.let { stringResource(R.string.info_changing_to, it) }),
             )
         }
     }

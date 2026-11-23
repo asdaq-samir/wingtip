@@ -124,10 +124,14 @@ pub(super) fn fuel(f: &Fuel) -> (&'static str, String) {
                 None => "Not worked out".into(),
             },
         ),
+        // What is left over is said as beyond the reserve, not "spare":
+        // the reserve is itself fuel that may not be planned away (14 CFR
+        // 91.151(a) for VFR, 91.167(a)(3) for IFR), so only the rest is
+        // the pilot's to spend.
         Some(margin) => (
             "ok",
             format!(
-                "Needs {} gal with taxi and a {}; {} gal spare",
+                "Needs {} gal with taxi and a {}; {} gal beyond reserve",
                 js_num(one(f.required_gal.unwrap_or(0.0))),
                 reserve_words(f.reserve_min),
                 js_num(one(margin))

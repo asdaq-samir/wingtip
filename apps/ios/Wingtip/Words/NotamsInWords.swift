@@ -22,12 +22,12 @@ enum NotamsInWords {
     }
 
     /// One NOTAM as the model reads it: as sent, then the engine's reasons.
-    static func figure(id: String, raw: String, reasons: [String]) -> WordsSource {
+    nonisolated static func figure(id: String, raw: String, reasons: [String]) -> WordsSource {
         let why = reasons.joined(separator: "; ")
         return WordsSource(id: "notam:\(id)", label: "NOTAM \(id)", text: why.isEmpty ? raw : "\(raw)\nWhy it matters: \(why).")
     }
 
-    static func said(_ figures: [WordsSource], device: any WordsProvider = OnDeviceWords()) async -> SaidWords {
+    static func said(_ figures: [WordsSource], device: some WordsProvider = OnDeviceWords()) async -> SaidWords {
         guard figures.contains(where: { $0.id.hasPrefix("notam:") }) else {
             return SaidWords(words: .none(OnDeviceWords.model, "No NOTAMs to say."), origin: .none)
         }
@@ -52,7 +52,7 @@ struct NotamWordsSection: View {
     var body: some View {
         Group {
             if writing || !(said?.words.sentences.isEmpty ?? true) {
-                WordsSection(title: "The NOTAMs in words", said: said, writing: writing)
+                WordsSection(title: "The NOTAMs in Words", said: said, writing: writing)
             }
         }
         .task(id: ranked.map(\.id)) {

@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import WatchConnectivity
 
@@ -14,18 +15,37 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// The airplane's checklist as last read, with the text it was read
     /// from, so the engine reads it again only when the text changes.
     private var checklistText: String?
-    private var checklist: Checklist?
-    /// The last context sent, so an unchanged one is not sent again.
-    private var sentContext: Data?
+    /// The checklist as the watch's own type, read once per text.
+    private var watchChecklist: WatchChecklist?
+    /// The last context sent, its time of sending left out, so an
+    /// unchanged one is not sent again.
+    private var sentContext: WatchContext?
+    /// When the fix in `sentContext` was taken into it.
+    private var fixSentAt = Date.distantPast
+
+    /// The watch reads the phone's fix only to ask for the fields nearest
+    /// it, where its own location does not come (NearestView): a move of
+    /// about a mile, or five minutes, is a new answer worth waking it for.
+    /// Each second's fix made every context new, and one was sent every 5 s.
+    static let fixMoveNm = 1.0
+    static let fixEveryS: TimeInterval = 5 * 60
 
     override init() { super.init() }
+
+    /// Whether this build carries the watch app, in the app's Watch folder.
+    /// It is parked and left out of the iPhone's build (project.yml; the
+    /// feature review, 2026-11-21), and without it no session is
+    /// activated, nothing is sent and nothing is answered.
+    nonisolated static var bundled: Bool {
+        FileManager.default.fileExists(atPath: Bundle.main.bundleURL.appending(path: "Watch").path(percentEncoded: false))
+    }
 
     /// Activated, then kept up: every few seconds the picked airplane's
     /// checklist (kept on this phone) and the fix are sent,
     /// where the phone has a paired watch with the app on it. Returns
     /// only when the task that runs it is cancelled.
     func run(plan: Plan, ownShip: OwnShip) async {
-        guard WCSession.isSupported() else { return }
+        guard WCSession.isSupported(), Self.bundled else { return }
         let session = WCSession.default
         session.delegate = self
         session.activate()
@@ -41,32 +61,46 @@ final class WatchLink: NSObject, WCSessionDelegate {
         if text != checklistText {
             checklistText = text
             // One the engine cannot read is not sent; the phone's own
-            // checklist screen says why (ChecklistModel.problem).
-            checklist = text.isEmpty ? nil : try? ChecklistText.parse(text)
+            // checklist screen says why (ChecklistModel.problem). Re-read
+            // as the watch's own type, from the same JSON: one shape, two
+            // compiled copies.
+            let checklist = text.isEmpty ? nil : try? ChecklistText.parse(text)
+            watchChecklist = checklist.flatMap { c -> WatchChecklist? in
+                guard let data = try? JSONEncoder().encode(c) else { return nil }
+                return try? JSONDecoder().decode(WatchChecklist.self, from: data)
+            }
         }
-        let fix = ownShip.fix.map {
+        let now = Date()
+        let fresh = ownShip.fix.map {
             WatchFix(lat: $0.coordinate.latitude, lon: $0.coordinate.longitude, altitudeFt: $0.altitudeFt,
                      trackDeg: $0.trackDeg, groundspeedKt: $0.groundspeedKt, at: $0.at)
         }
-        // The checklist re-read as the watch's own type, from the same
-        // JSON: one shape, two compiled copies.
-        let watchChecklist = checklist.flatMap { c -> WatchChecklist? in
-            guard let data = try? JSONEncoder().encode(c) else { return nil }
-            return try? JSONDecoder().decode(WatchChecklist.self, from: data)
-        }
-        let context = WatchContext(tail: plan.tail, checklist: watchChecklist, fix: fix, sentAt: Date())
+        let fix = Self.fixToSend(fresh, sent: sentContext?.fix, sentAt: fixSentAt, now: now)
         // Compared without the time of sending, which is always new.
-        var same = context
-        same.sentAt = Date(timeIntervalSince1970: 0)
-        guard let key = try? WatchCoding.encoder.encode(same), key != sentContext,
-              let data = try? WatchCoding.encoder.encode(context) else { return }
+        let same = WatchContext(tail: plan.tail, checklist: watchChecklist, fix: fix, sentAt: .distantPast)
+        guard same != sentContext else { return }
+        var context = same
+        context.sentAt = now
+        guard let data = try? WatchCoding.encoder.encode(context) else { return }
         do {
             try session.updateApplicationContext([WatchMessageKey.context: data])
-            sentContext = key
+            if fix != sentContext?.fix { fixSentAt = now }
+            sentContext = same
         } catch {
             // Sent again next tick; a watch out of reach is not a problem
             // the pilot can act on.
         }
+    }
+
+    /// The fix to send: the last one sent until the airplane has moved
+    /// `fixMoveNm` from it (the engine's distance_nm) or `fixEveryS` has
+    /// passed; none once own ship has none.
+    static func fixToSend(_ fresh: WatchFix?, sent: WatchFix?, sentAt: Date, now: Date) -> WatchFix? {
+        guard let fresh, let sent, now.timeIntervalSince(sentAt) < fixEveryS,
+              let moved = try? Flight.distanceNm(CLLocationCoordinate2D(latitude: sent.lat, longitude: sent.lon),
+                                                 CLLocationCoordinate2D(latitude: fresh.lat, longitude: fresh.lon)),
+              moved < fixMoveNm else { return fresh }
+        return sent
     }
 
     /// The watch's question answered from the planner. The handler is
@@ -83,7 +117,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
         // replyHandler:)); the task below is its only caller, so handing
         // it over is safe though the SDK does not mark it Sendable.
         nonisolated(unsafe) let reply = replyHandler
-        Task.detached {
+        Task {
             let nearest = await WatchLink.nearest(request)
             let answer = (try? WatchCoding.encoder.encode(nearest)) ?? Data()
             reply([WatchMessageKey.nearest: answer])
@@ -100,7 +134,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
             }
             return NearestReply(airports: airports, problem: nil)
         } catch {
-            return NearestReply(airports: [], problem: "The phone could not reach the planner: \(error.localizedDescription)")
+            return NearestReply(airports: [], problem: Problems.say(Wording.plannerNotReached, error))
         }
     }
 

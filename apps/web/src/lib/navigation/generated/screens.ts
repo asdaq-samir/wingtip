@@ -21,6 +21,9 @@ export const SCREENS = {
   logbook: { title: "Logbook" },
   coach: { title: "Coach" },
   minimums: { title: "Personal Minimums" },
+  documents: { title: "Documents" },
+  scratchpad: { title: "Scratchpad" },
+  balance: { title: "Weight & Balance" },
   guide: { title: "Guide" },
   shared: { title: "Shared Flight" },
   about: { title: "About" },
@@ -30,7 +33,7 @@ export const SCREENS = {
 export type ScreenId = keyof typeof SCREENS;
 
 /** The plan's own keys a link carries beside `open` (a shared flight's among them). */
-export const LINK_KEYS = ["dep", "dest", "stops", "place", "flight", "airplane", "tfr", "navaid", "altitude_ft", "depart", "type", "rules", "tail", "share"] as const;
+export const LINK_KEYS = ["dep", "dest", "stops", "place", "flight", "airplane", "tfr", "navaid", "altitude_ft", "depart", "type", "rules", "tail", "tanks", "procs", "share", "doc"] as const;
 
 export type LinkKey = (typeof LINK_KEYS)[number];
 

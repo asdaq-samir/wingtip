@@ -11,17 +11,14 @@ import { type BriefingState, clockTime, type BriefingPart } from "../plan";
 import { useFlightBriefing } from "./useFlightBriefing";
 import { WEATHER_SOURCE_LABEL } from "./briefingFigures";
 import { TakeoffLandingSection } from "./PreflightSections";
-import AirportSections from "./AirportSections";
+import AirportSections from "./AirportSectionsPart";
 import WeatherAlongRoute from "./WeatherAlongRoute";
 import AlternateSection from "./AlternateSection";
 import type { FiledProcedure } from "./flightPlanForm";
 import { Pending } from "./BriefingBits";
 import PreflightPart from "./PreflightPart";
 import EnroutePart from "./EnroutePart";
-
-// Save and the review asked from the route, at the path the routePanel
-// chunk imports them from.
-export { ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "./SaveFlight";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 interface Props {
   /** Which of the panel's tabs this is drawn in: its sections only; null,
@@ -175,7 +172,7 @@ export default memo(function FlightBriefingView(props: Props) {
         // of how the planner got there -- a row a step, its working folded
         // under it, the steps the FL chip's popover shows (AltitudeReasoning).
         // From `nav.altitude_selection`, which arrives with the nav log.
-        <AccordionSection title="Cruise Altitude">
+        <AccordionSection title={WORDING.cruiseAltitude}>
           {!nav ? (
             <Pending>Waiting on the nav log&apos;s altitude…</Pending>
           ) : (
@@ -267,7 +264,7 @@ export function BriefingNotices({ briefing: state }: { briefing: BriefingState }
         <CloudOff />
         <AlertTitle>Could not check {gaps.join(", ")}</AlertTitle>
         <AlertDescription className={cn("text-caution-ink", TEXT.prose)}>
-          aviationweather.gov didn’t respond. Verify separately before flight.
+          aviationweather.gov did not answer. Verify them separately before flight.
         </AlertDescription>
       </Alert>
     </div>

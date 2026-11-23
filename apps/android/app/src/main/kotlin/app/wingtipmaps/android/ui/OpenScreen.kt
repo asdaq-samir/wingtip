@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.ui
 
+import app.wingtipmaps.android.Extra
+import app.wingtipmaps.android.Extras
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
@@ -33,7 +35,9 @@ internal object OpenScreen {
             Screen.NAVLOG -> Where.Page(SheetPage.NavLog)
             // The carousel's Search page, by its own name or the old Airport tab's.
             Screen.SEARCH, Screen.AIRPORT -> Where.Search
-            Screen.BRIEF -> Where.Page(SheetPage.Brief)
+            // The Brief, and its own tools full screen over it, which the
+            // Brief opens as it takes them (BriefPage).
+            Screen.BRIEF, Screen.SCRATCHPAD, Screen.BALANCE -> Where.Page(SheetPage.Brief)
             Screen.NEAREST -> Where.Page(SheetPage.Nearest)
             Screen.ASK -> Where.Page(SheetPage.Ask)
             Screen.EMERGENCY -> Where.Page(SheetPage.Emergency)
@@ -41,6 +45,7 @@ internal object OpenScreen {
             Screen.AIRPLANE, Screen.CHECKLISTS -> Where.Page(SheetPage.Airplane())
             Screen.SETUP -> Where.Page(SheetPage.Settings)
             Screen.MINIMUMS -> Where.Page(SheetPage.Minimums)
+            Screen.DOCUMENTS -> Where.Page(SheetPage.Documents)
             Screen.LOGBOOK, Screen.COACH -> Where.Page(SheetPage.Logbook)
             Screen.FLIGHTS -> Where.Page(SheetPage.Flights)
             Screen.DOWNLOADS -> Where.Page(SheetPage.Downloads)
@@ -50,8 +55,8 @@ internal object OpenScreen {
         }
 
     /** The screens the page opened takes from ScreenRequests itself: the
-     *  airplane card's checklist, the Logbook's Coach. */
-    val takenInside: Set<Screen> = setOf(Screen.CHECKLISTS, Screen.COACH)
+     *  airplane card's checklist, the Logbook's Coach, the Brief's tools. */
+    val takenInside: Set<Screen> = setOf(Screen.CHECKLISTS, Screen.COACH, Screen.SCRATCHPAD, Screen.BALANCE)
 
     /** The app's screen a word typed or said in the search names
      *  (FieldCommands), where this phone has it; "profile" is a card (pageOf). */
@@ -83,11 +88,13 @@ internal object OpenScreen {
      * A screen's word from the search, opened: what is on this phone opens
      * by its name; the clearance card and the map's settings as cards; the
      * dry run flown over the map (`onDryRun`); the rest is said to be the
-     * web's for now, where it was asked.
+     * web's for now, where it was asked. The radio's clearance card opens
+     * only while Settings' Extras has the ATC Copilot on (`atc`).
      */
-    fun field(screen: FieldScreen, routed: Boolean, onDryRun: () -> Unit = {}): String? {
+    fun field(screen: FieldScreen, routed: Boolean, atc: Boolean = Extras.now(Extra.ATC_COPILOT), onDryRun: () -> Unit = {}): String? {
         if (screen in needRoute && !routed) return "Plan a route first."
         pageOf(screen)?.let {
+            if (it == SheetPage.Clearance && !atc) return "Turn on ATC Copilot in Settings, under Extras."
             CardRequests.open(it)
             return null
         }
@@ -96,7 +103,7 @@ internal object OpenScreen {
             return null
         }
         val named = screenOf(screen)
-            ?: return "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} isn't on this phone yet."
+            ?: return "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} is not on this phone yet."
         ScreenRequests.ask(named)
         return null
     }

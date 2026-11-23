@@ -45,7 +45,7 @@ def swift(haptics, camel):
         "/// The taps felt on a key action, as SwiftUI's sensory feedback",
         "/// (`.sensoryFeedback(WingtipHaptic.altitude, trigger:)`); the system",
         "/// leaves them out where the pilot has turned system haptics off.",
-        "enum WingtipHaptic {",
+        "nonisolated enum WingtipHaptic {",
     ]
     for k, t in haptics.items():
         if "$description" in t:

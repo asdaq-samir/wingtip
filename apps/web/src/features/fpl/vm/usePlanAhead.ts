@@ -6,9 +6,11 @@ import { aircraftKey } from "../../../lib/aircraftChoice";
 import { planHrefOf, recentHrefOf } from "../../../lib/flightLink";
 import { altitudesOf, altitudesParam, routeOf, stopsOf } from "../../../lib/identSchema";
 import { usePreferences } from "../../../lib/preferences";
-import { chartCycle, courseQuery, flightsQuery, queryClient } from "../../../lib/queryClient";
+import { chartCycle, courseQuery, queryClient } from "../../../lib/queryClient";
+import { flightsQuery } from "../../../lib/queryClientRecords";
 import { sameStops, type PlannedRoute, navlogQuery, type PlanParams } from "../../plan";
 import { loadAddress } from "../../../lib/address";
+import { engineReady } from "../../../lib/engine/engine";
 
 /** How many of the latest Recents, and of Saved, are planned ahead. */
 const PLANNED_AHEAD = 3;
@@ -63,6 +65,10 @@ export function usePlanAhead({
     const idle = window.requestIdleCallback ?? ((go: () => void) => window.setTimeout(go, 2000));
     const cancel = window.cancelIdleCallback ?? window.clearTimeout;
     const handle = idle(async () => {
+      // The routes' stops and altitudes are read by the engine's rules
+      // (lib/identSchema): a page idle before its .wasm is there waits.
+      await engineReady;
+      if (gone) return;
       for (const href of aheadRoutes.slice(0, PLANNED_AHEAD * 2)) {
         // Read as the page reads its own address (lib/address), so the plan
         // asked for ahead is the one the page will ask for.

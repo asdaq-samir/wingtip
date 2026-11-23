@@ -5,7 +5,7 @@ import AccordionSection from "../../components/AccordionSection";
 import AfterPaint from "../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { NumberField as StockNumberField } from "../../components/ui/number-field";
-import type { AircraftProfile, Briefing, Course } from "../../lib/api/types";
+import type { AircraftProfile, Briefing, Course, Loading } from "../../lib/api/types";
 import { runwayChecks, type RunwayDistance } from "./runwayCheck";
 import { useRunwayPicks, phasesOf, type Phase } from "../plan/lazy";
 import { FINDING_TONE } from "../../lib/findings";
@@ -13,12 +13,14 @@ import FindingIcon from "../../components/FindingIcon";
 import { windOnRunway, useLoad } from "../plan";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, pounds } from "../../lib/format";
-import { armText } from "../../lib/weightBalance";
+import { armText, fuelGrades, type FuelGrade } from "../../lib/weightBalance";
+import PullDown, { type PullDownOption } from "../../components/PullDown";
 import { AirplaneLink } from "../../components/airplane/AirplaneLink";
 import { AskFigure } from "../../components/airplane/AskFigure";
 import { useNotInProfileSummary } from "./notInProfileSummary";
 import { NO_RUNWAYS } from "../../lib/emptyWords";
 import { loadEnvelopeChart } from "../navlog";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The envelope's picture: Recharts, loaded with the section. */
 const EnvelopeChart = lazy(() => loadEnvelopeChart());
@@ -43,10 +45,7 @@ function NumberField({
     // pseudo-element behind them (isolate keeps it over the row): a tap
     // just above or below the 32 pt field still lands in it, and the
     // field does not grow.
-    <label
-      htmlFor={id}
-      className="relative isolate flex items-center gap-1.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']"
-    >
+    <label htmlFor={id} className="relative isolate flex items-center gap-1.5 hit-y-1.5 after:-z-10">
       <StockNumberField
         id={id}
         minValue={0}
@@ -60,6 +59,15 @@ function NumberField({
       <span className={cn("w-6 text-muted-foreground", TEXT.detail)}>{unit}</span>
     </label>
   );
+}
+
+/** The fuel grade's menu: the POH's own weight a gallon first, then the
+ *  engine's grades, each with its gallon's weight. */
+function fuelGradeOptions(loading: Loading): PullDownOption<FuelGrade | "poh">[] {
+  return [
+    { value: "poh", label: loading.fuel_lb_per_gal == null ? "As in the POH" : `As in the POH · ${loading.fuel_lb_per_gal} lb/gal` },
+    ...fuelGrades().map((g) => ({ value: g.grade, label: `${g.name} · ${g.lb_per_gal} lb/gal` })),
+  ];
 }
 
 /**
@@ -83,12 +91,12 @@ export function WeightBalanceSection({
     : `${pounds(result.takeoff.weightLb)} at ${armText(result.takeoff)}${result.problems.length ? "" : " · within limits"}`;
   return (
     <AccordionSection
-      title="Weight & Balance"
+      title={WORDING.weightAndBalance}
       summary={summary}
       aside={
         result && result.problems.length > 0 ? (
           <Flag finding="stop" testId="wb-flag">
-            Out of limits
+            Out of Limits
           </Flag>
         ) : undefined
       }
@@ -98,17 +106,17 @@ export function WeightBalanceSection({
       ) : (
         <div className="space-y-4" data-testid="weight-balance">
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
-          <ListGroup title="The airplane" action={<AirplaneLink focus="empty_weight_lb" testId="wb-airplane-profile" />}>
-            <ListRow title="Empty weight">
+          <ListGroup title="The Airplane" action={<AirplaneLink focus="empty_weight_lb" testId="wb-airplane-profile" />}>
+            <ListRow title={WORDING.emptyWeight}>
               <NumberField
                 value={load.emptyWeightLb}
                 unit="lb"
-                label="Empty weight"
+                label="Empty Weight"
                 onChange={(n) => setLoad({ ...load, emptyWeightLb: n })}
                 testId="wb-empty-weight"
               />
             </ListRow>
-            <ListRow title="Empty arm">
+            <ListRow title="Empty Arm">
               <NumberField value={load.emptyArmIn} unit="in" label="Empty arm" onChange={(n) => setLoad({ ...load, emptyArmIn: n })} />
             </ListRow>
           </ListGroup>
@@ -137,6 +145,17 @@ export function WeightBalanceSection({
                 label="Fuel"
                 onChange={(n) => setLoad({ ...load, fuelGal: n })}
                 testId="wb-fuel"
+              />
+            </ListRow>
+            {/* Its grade, a gallon's weight the engine's (fuel_grades); the
+                POH's own figure until the pilot picks one. */}
+            <ListRow title="Fuel grade">
+              <PullDown
+                label="Fuel grade"
+                value={load.fuelGrade ?? "poh"}
+                options={fuelGradeOptions(loading)}
+                onChange={(g) => setLoad({ ...load, fuelGrade: g === "poh" ? null : g })}
+                testId="wb-fuel-grade"
               />
             </ListRow>
           </ListGroup>
@@ -235,7 +254,7 @@ export function TakeoffLandingSection({
       aside={
         short.length ? (
           <Flag finding="stop" testId="tl-flag">
-            Runway too short
+            Runway Too Short
           </Flag>
         ) : gusty.length ? (
           <Flag finding="caution" testId="crosswind-flag">
@@ -325,7 +344,7 @@ export function TakeoffLandingSection({
                   />
                 ) : (
                   <ListRow
-                    title="Density altitude"
+                    title={WORDING.densityAltitude}
                     description={`Pressure altitude ${altFt(c.pressureAltFt)} ft${c.tempC != null ? ` · ${Math.round(c.tempC)} °C` : ""} ${c.reported ? "reported" : "(standard day; no report)"}`}
                     value={feet(Math.round(c.densityAltFt / 10) * 10)}
                     data-testid="density-altitude"

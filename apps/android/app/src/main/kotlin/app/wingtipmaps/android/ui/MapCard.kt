@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Hexagon
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.TextIncrease
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,14 +40,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.Extra
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
+import app.wingtipmaps.android.map.HazardRows
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.ModelWeatherRow
 import app.wingtipmaps.android.map.WeatherLoopRows
 import app.wingtipmaps.android.plates.PlateCardModel
+import app.wingtipmaps.android.rememberExtra
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -60,8 +64,9 @@ object MapCardTags {
  * The Map card, the map's Layers button opens (the owner's three homes,
  * 2026-11-13; Google Maps' own Layers sheet, its "Map details" tiles):
  * what is on the map, and nothing else -- the layers as tiles three to a
- * row, each a glyph over its name, filled in the tint while on, then the
- * radar and satellite loop and the model weather. A gear in the card's
+ * row, each a glyph over its name, filled in the tint while on, then
+ * Terrain Hazards (HazardRows), the radar and satellite loop and the model
+ * weather. A gear in the card's
  * bar, Material's place for its own actions, opens Settings at its Map
  * group (SettingsAt), its ← back to this card. There is no Map Settings
  * page any more; 3D is the round map button (ThreeDButton).
@@ -87,10 +92,13 @@ fun MapCard(exit: CardExit, open: (SheetPage) -> Unit) {
         ) {
             SectionTitle(stringResource(R.string.map_layers))
             LayerTiles()
+            // The ground and obstacles coloured against the altitude flown (map/HazardLayer).
+            HazardRows()
             // The radar and satellite loop and its speed (map/WeatherLoop),
-            // and the model weather's field (map/flow).
+            // and the model weather's field (map/flow), offered only while
+            // Settings' Extras has Model Weather on.
             WeatherLoopRows()
-            ModelWeatherRow()
+            if (rememberExtra(Extra.MODEL_WEATHER)) ModelWeatherRow()
         }
     }
 }
@@ -101,8 +109,8 @@ private class Layer(val key: String, val name: String, val icon: ImageVector, va
 /**
  * What the map draws over the chart (MapLayersStore, kept across
  * launches), in the web's words and order: Airspace, VORs and Fixes,
- * Terminal Area Charts, Private Fields, Military Fields, then Traffic
- * and Approach Plates.
+ * Terminal Area Charts, Private Fields, Military Fields, then Traffic,
+ * Approach Plates and Larger Map Labels.
  */
 @Composable
 private fun LayerTiles(flight: FlightModel = hiltViewModel()) {
@@ -123,6 +131,9 @@ private fun LayerTiles(flight: FlightModel = hiltViewModel()) {
         Layer("military", stringResource(R.string.layer_military), Icons.Filled.Shield, layers.military) { store.set(MapLayersStore.Switch.MILITARY, it) },
         Layer("traffic", stringResource(R.string.traffic), Icons.Filled.Flight, trafficOn) { traffic.setOn(it) },
         Layer("plates", stringResource(R.string.layer_plates), Icons.Filled.Description, look.shown) { plates.setShown(it) },
+        // The map's words with the pilot's font scale, up to 1.2 times
+        // (MapLabels; the web's Larger Map Labels, the owner, 2026-11-21).
+        Layer("labels", stringResource(R.string.wording_larger_map_labels), Icons.Filled.TextIncrease, layers.largerLabels) { store.set(MapLayersStore.Switch.LARGER_LABELS, it) },
     )
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         tiles.chunked(TILES_A_ROW).forEach { row ->

@@ -9,6 +9,7 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.LoopFrame
 import app.wingtipmaps.android.api.planned
+import app.wingtipmaps.android.flight.Ticker
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CancellationException
@@ -98,6 +99,9 @@ class WeatherLoop private constructor(private val context: Context, private val 
 
     private suspend fun fetchForever(kind: LoopKind) {
         while (true) {
+            // Only for the map on the screen: put away, nothing is asked
+            // until the app is back (Android keeps the process).
+            Ticker.shared.inFront.first { it }
             try {
                 // Kept as it comes, and the kept list where the network fails
                 // (KeptForAir): its frames' tiles the map's cache may hold.

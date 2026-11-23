@@ -89,6 +89,9 @@ object WingtipColors {
         /** A VFR reporting point's green on the map. */
         val VfrGreen = Color(0xFF148A3B)
         const val VFR_GREEN_HEX = "#148a3b"
+        /** A VFR reporting point's ident on the map: the green a step deeper for words, 5.4:1 on the white halo, where vfr-green was 4.4:1, under the 4.5:1 small words need (WCAG 1.4.3). */
+        val VfrGreenText = Color(0xFF117A35)
+        const val VFR_GREEN_TEXT_HEX = "#117a35"
         /** A paved runway's surface (ForeFlight's dark grey over its street map). */
         val RunwayHard = Color(0xFF4A4F57)
         const val RUNWAY_HARD_HEX = "#4a4f57"
@@ -256,9 +259,9 @@ object WingtipColors {
         const val FOOD_HEX = "#be185d"
         val Lodging = Color(0xFF7E3FB8)
         const val LODGING_HEX = "#7e3fb8"
-        /** The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel. */
-        val StopFuel = Color(0xFFD97706)
-        const val STOP_FUEL_HEX = "#d97706"
+        /** The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel. The fuel badge's amber, #b45309, a step deeper than the #d97706 picked: the white pump on it was 3.2:1, and the iPad's accessibility audit failed Find Nearby's Fuel row on it; 5.0:1 now (WCAG 2.2 1.4.3). */
+        val StopFuel = Color(0xFFB45309)
+        const val STOP_FUEL_HEX = "#b45309"
         val StopFood = Color(0xFFDC2626)
         const val STOP_FOOD_HEX = "#dc2626"
         val StopRepair = Color(0xFF0F766E)
@@ -492,6 +495,26 @@ object WingtipColors {
         const val RED_HEX = "#dc2626"
         val White = Color(0xFFF8FAFC)
         const val WHITE_HEX = "#f8fafc"
+    }
+    object Markup {
+        /** The highlighter's first ink, where it starts. */
+        val HighlightYellow = Color(0xFFF2B600)
+        const val HIGHLIGHT_YELLOW_HEX = "#f2b600"
+        val HighlightGreen = Color(0xFF52C41A)
+        const val HIGHLIGHT_GREEN_HEX = "#52c41a"
+        val HighlightBlue = Color(0xFF2F8CFF)
+        const val HIGHLIGHT_BLUE_HEX = "#2f8cff"
+        val HighlightPink = Color(0xFFE02AD8)
+        const val HIGHLIGHT_PINK_HEX = "#e02ad8"
+        /** The pen's first ink, where it starts. */
+        val PenBlack = Color(0xFF1C1A17)
+        const val PEN_BLACK_HEX = "#1c1a17"
+        val PenBlue = Color(0xFF0066D6)
+        const val PEN_BLUE_HEX = "#0066d6"
+        val PenRed = Color(0xFFDC2626)
+        const val PEN_RED_HEX = "#dc2626"
+        val PenGreen = Color(0xFF148A3B)
+        const val PEN_GREEN_HEX = "#148a3b"
     }
 }
 
@@ -1215,13 +1238,102 @@ object WingtipMap {
     const val AIRSPACE_FADED = 0.35
     const val AIRSPACE_HELD = 1.8
     const val AIRSPACE_LABEL_FADED = 0.6
-    const val LABEL_SMALL = 11
-    const val LABEL = 12
-    const val LABEL_LARGE = 13
-    const val LABEL_COUNT = 14
-    const val LABEL_RUNWAY = 16
-    const val LABEL_HALO = 2
-    const val LABEL_HALO_NIGHT = 0.6
+}
+
+/** From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1. */
+object WingtipMapZoom {
+    /** The farthest out the airports' layer is drawn, where its marks are smallest; each field within it from its own tier's zoom below. */
+    const val AIRPORTS_FARTHEST = 4.0
+    /** Towered fields (field_mark_rank's first tier), a few states on a phone, with the Class B and C they are named for. */
+    const val AIRPORT_TOWERED = 5.0
+    /** Public fields with a hard runway of 3,000 ft or more (field_mark_rank's second tier). */
+    const val AIRPORT_LONG_HARD = 7.0
+    /** Every other public field (field_mark_rank's third tier). */
+    const val AIRPORT_PUBLIC = 8.0
+    /** Private fields (field_mark_rank's fourth tier), behind their switch. */
+    const val AIRPORT_PRIVATE = 10.0
+    /** Heliports (field_mark_rank's last tier). */
+    const val AIRPORT_HELIPORT = 11.0
+    /** Every drawn field's ident from this zoom; farther out only a Class B field's, as there an ident is wider than the room between two towered fields. */
+    const val AIRPORT_IDENTS = 6.0
+    /** Class B rings. */
+    const val AIRSPACE_B = 5.0
+    /** Class C rings. */
+    const val AIRSPACE_C = 5.0
+    /** Class D rings. */
+    const val AIRSPACE_D = 7.0
+    /** Class E at the surface and a Class C's or D's surface-area extensions (E2, E3, E4): in the tiles, not drawn on the 2D map. */
+    const val AIRSPACE_E_SURFACE = 8.0
+    /** Every other Class E (E5, E6, E7): in the tiles, not drawn on the 2D map. */
+    const val AIRSPACE_E = 9.0
+    /** The rings at their full width with their band inside; farther out half their width and no band, so a Class C is a ring and not a dot. */
+    const val AIRSPACE_FULL = 7.0
+    /** The airspace and special-use altitude tabs: farther out they were the largest marks on the map, over the fields' names (the owner, 2026-11-20). */
+    const val AIRSPACE_LABELS = 9.0
+    /** Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21). */
+    const val SPECIAL_USE = 7.0
+    /** The VORs a pilot tunes (NASR's NAV_TYPE VOR, VOR/DME and VORTAC), from a region's zoom. The app's alone: the charts job's tiles hold every navaid from its own zooms (overlay_layers). */
+    const val VOR = 8.0
+    /** The VFR waypoints and the low enroute chart's fixes. The app's alone: the charts job's tiles hold every fix from its own zooms (overlay_layers). */
+    const val FIX = 10.0
+}
+
+/** The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo. */
+object WingtipMapLabel {
+    enum class Halo { LIGHT, DARK, NONE }
+    /** A kind's look: its size by zoom (the app's levels; one stop is a fixed size), its weight and its halo. */
+    class Kind(val size: List<Pair<Double, Double>>, val bold: Boolean, val halo: Halo)
+    const val SIZE_SMALL = 11f
+    const val SIZE_NORMAL = 12f
+    const val SIZE_LARGE = 13f
+    const val SIZE_COUNT = 14f
+    const val SIZE_RUNWAY = 16f
+    const val SIZE_PICKED = 17f
+    const val HALO = 2f
+    const val HALO_NIGHT = 0.85f
+    const val SCALE_MAX = 1.2f
+    /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */
+    val NIGHT_INK = mapOf("#2465b8" to "#82b4ff", "#c0309f" to "#f28ddc", "#117a35" to "#62d48e", "#1c1a17" to "#eef1f5", "#dc2626" to "#ff8a8a", "#d70015" to "#ff8a8a", "#c2410c" to "#fb9466", "#2563eb" to "#8fb4ff", "#b45309" to "#fbbf24", "#7c3aed" to "#bba1ff", "#78716c" to "#cdc8c3", "#be185d" to "#f58cc4", "#0f766e" to "#4fd1c5", "#57534e" to "#cfcac5", "#9333ea" to "#c99cff")
+    /** A field's ident beside its mark, in its symbol's blue or magenta (Chart User's Guide, Airports): the tiles' fields, a Class B field's, a stop's. */
+    val AIRPORT_IDENT = Kind(listOf(4.0 to 11.0, 10.0 to 12.0, 13.0 to 13.0), true, Halo.LIGHT)
+    /** The open card's field's ident, white over its ring. */
+    val AIRPORT_PICKED = Kind(listOf(0.0 to 17.0), true, Halo.DARK)
+    /** A VOR's ident and frequency on its blue tag, "GCO (108.25)", as ForeFlight writes it. */
+    val NAVAID_IDENT = Kind(listOf(7.0 to 11.0, 11.0 to 12.0), true, Halo.NONE)
+    /** An enroute fix's or a VFR waypoint's ident, in capitals as NASR names it, the navaids' size. */
+    val FIX_IDENT = Kind(listOf(7.0 to 11.0, 11.0 to 12.0), true, Halo.LIGHT)
+    /** An airspace's or a special-use area's altitudes on its dark tab, as the sectional sets them; the map's smallest words at every zoom, so the tabs are never the largest marks on the chart. */
+    val AIRSPACE_TAB = Kind(listOf(0.0 to 11.0), true, Halo.NONE)
+    /** A 3D shelf's altitudes on its tab, standing over the tilted map. */
+    val SHELF_TAB = Kind(listOf(0.0 to 12.0), true, Halo.NONE)
+    /** A runway end's number, white on the dark halo, turned as painted. */
+    val RUNWAY_NUMBER = Kind(listOf(13.5 to 11.0, 17.0 to 16.0), true, Halo.DARK)
+    /** A checkpoint's name beside its dot: a place's name, in regular as the chart sets a town's, under the bold idents. */
+    val CHECKPOINT_NAME = Kind(listOf(0.0 to 12.0), false, Halo.LIGHT)
+    /** A checkpoint's number on its dot. */
+    val CHECKPOINT_NUMBER = Kind(listOf(0.0 to 11.0), true, Halo.NONE)
+    /** A route field's ident on its dark pill: the route's words over the chart's. */
+    val ROUTE_IDENT = Kind(listOf(0.0 to 12.0), true, Halo.NONE)
+    /** A route point's name, a top of climb's or descent's, on its white pill. */
+    val ROUTE_POINT = Kind(listOf(0.0 to 11.0), true, Halo.NONE)
+    /** A traffic pattern leg's name on its teal chip. */
+    val PATTERN_LEG = Kind(listOf(0.0 to 11.0), true, Halo.NONE)
+    /** A way's chip: its time in bold, its name in regular. */
+    val WAY = Kind(listOf(0.0 to 12.0), true, Halo.NONE)
+    /** A procedure's or a plate's tag of several lines, drawn as a picture (drawTag). */
+    val FIX_TAG = Kind(listOf(0.0 to 13.0), true, Halo.NONE)
+    /** A SIGMET's, an AIRMET's or a TFR's words along its outline, in its colour. */
+    val HAZARD = Kind(listOf(0.0 to 11.0), true, Halo.LIGHT)
+    /** A field's weather beside it: a variable wind, its visibility and weather. */
+    val AIRPORT_WEATHER = Kind(listOf(0.0 to 11.0), true, Halo.LIGHT)
+    /** A PIREP's level on its chip. */
+    val PIREP = Kind(listOf(0.0 to 12.0), true, Halo.NONE)
+    /** Traffic's height and callsign on its dark tag. */
+    val TRAFFIC = Kind(listOf(0.0 to 11.0), true, Halo.NONE)
+    /** A cluster's count on its blue disc. */
+    val CLUSTER_COUNT = Kind(listOf(0.0 to 14.0), true, Halo.NONE)
+    /** Model Weather's pinned value on its white pill. */
+    val FLOW_PIN = Kind(listOf(0.0 to 13.0), true, Halo.NONE)
 }
 
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */
@@ -1250,10 +1362,26 @@ object WingtipFlow {
 
 object WingtipSize {
     val TapTarget = 48.dp
+    val FlyingTarget = 60.dp
     val Chip = 32.dp
-    val MapButton = 48.dp
+    val MapButton = 44.dp
+    val RoundButton = 44.dp
+    val Pill = 24.dp
+    val RowMark = 32.dp
+    val ChartMark = 30.dp
+    val SearchDisc = 36.dp
+    val RowBadge = 28.dp
+    val GlyphCaption = 12.dp
+    val GlyphNote = 16.dp
+    val GlyphRow = 20.dp
+    val GlyphBadge = 18.dp
+    val GlyphBar = 24.dp
+    val GlyphMap = 20.dp
+    val GlyphCardAction = 20.dp
     val TabBar = 64.dp
+    val Regular = 660.dp
     val Panel = 384.dp
     val PanelWide = 448.dp
+    val Inspector = 1180.dp
     val Desktop = 1024.dp
 }

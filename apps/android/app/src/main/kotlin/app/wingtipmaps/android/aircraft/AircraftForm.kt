@@ -7,6 +7,7 @@ import app.wingtipmaps.android.documents.model.HandbookProfile
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.aircraftProblems
+import app.wingtipmaps.android.format.Typed
 
 /**
  * The "Your Airplane" form's fields as typed (the web's own-airplane
@@ -55,9 +56,9 @@ data class AircraftForm(
     /** The gateway's request, where this form's [problems] are none. */
     fun request(problems: Map<Field, String>): AircraftRequest? {
         if (problems.isNotEmpty()) return null
-        val tas = cruiseTasKt.trim().toDoubleOrNull() ?: return null
-        val burn = fuelBurnGph.trim().toDoubleOrNull() ?: return null
-        fun opt(s: String) = s.trim().toDoubleOrNull()
+        val tas = Typed.number(cruiseTasKt) ?: return null
+        val burn = Typed.number(fuelBurnGph) ?: return null
+        fun opt(s: String) = Typed.number(s)
         fun words(s: String) = s.trim().ifEmpty { null }
         return AircraftRequest(
             tailNumber = tailNumber.trim().uppercase(), typeDesignator = typeDesignator.trim().uppercase(),

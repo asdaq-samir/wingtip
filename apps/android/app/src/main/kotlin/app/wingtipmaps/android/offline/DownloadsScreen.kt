@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
@@ -45,7 +47,8 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * ForeFlight's and Garmin Pilot's downloads are: the kinds and density
  * picked, each region's size before it is fetched, the downloads in the
  * background with their progress, the storage they take, delete, and
- * the update when the FAA's next cycle is out. The state is DownloadsModel's.
+ * the update when the FAA's next cycle is out; and the FAA's plates by
+ * state (platesSection). The state is DownloadsModel's.
  */
 @Composable
 fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
@@ -57,7 +60,13 @@ fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
     val scale by model.scale.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val problem by model.problem.collectAsStateWithLifecycle()
-    var search by rememberSaveable { mutableStateOf("") }
+    val plateStates by model.plateStates.collectAsStateWithLifecycle()
+    val platesFailed by model.platesFailed.collectAsStateWithLifecycle()
+    val keptStates by model.keptStates.collectAsStateWithLifecycle()
+    val platesRunning by model.platesRunning.collectAsStateWithLifecycle()
+    var askingPlates by rememberSaveable { mutableStateOf<String?>(null) }
+    val searchField = rememberTextFieldState()
+    val search = searchField.text.toString()
     var asking by rememberSaveable { mutableStateOf<String?>(null) }
     var map by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) { model.load() }
@@ -93,7 +102,7 @@ fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
                 onPick = model::setScale,
             )
             ActionSettingRow(stringResource(R.string.offline_pick_map), index = 0, count = 1, modifier = Modifier.padding(vertical = WingtipSpace.Sm)) { map = true }
-            OutlinedTextField(search, { search = it }, Modifier.fillMaxWidth(), singleLine = true,
+            OutlinedTextField(searchField, Modifier.fillMaxWidth(), lineLimits = TextFieldLineLimits.SingleLine,
                 label = { Text(stringResource(R.string.offline_search)) })
             ProblemLine(problem)
         }
@@ -112,7 +121,12 @@ fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
                 )
             }
         }
+        // The FAA's plates by state, by the same search (PlatesSection).
+        platesSection(PlatesView(plateStates, platesFailed, keptStates, platesRunning, search, { askingPlates = it.id }, model::retryState, model::deleteState))
     }
+    val plateSet = plateStates?.states?.firstOrNull { it.id == askingPlates }
+    val plateCycle = plateStates?.cycle
+    if (plateSet != null && plateCycle != null) ConfirmStatePlates(plateSet, plateCycle, { askingPlates = null }) { model.keepState(plateSet) }
     val region = catalog?.regions?.firstOrNull { it.id == asking }
     if (region != null) ConfirmDownload(region, bytes(DownloadsModel.size(region, archives)) ?: sizing, { asking = null }) { model.download(region.id) }
     if (map) {
@@ -155,7 +169,7 @@ private fun KeptRow(
         }
         kept.failed?.let {
             ProblemLine(stringResource(R.string.offline_stopped, it))
-            TextButton(onClick = onRetry) { Text(stringResource(R.string.offline_try_again)) }
+            TextButton(onClick = onRetry) { Text(stringResource(R.string.wording_try_again)) }
         }
         if (updatable && newest != null) TextButton(onClick = onUpdate) { Text(stringResource(R.string.offline_update_to, newest)) }
         TextButton(onClick = onDelete) { Text(stringResource(R.string.offline_delete)) }

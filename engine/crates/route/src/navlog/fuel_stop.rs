@@ -59,13 +59,27 @@ pub fn worst_burn_per_nm(legs: &[(f64, Option<f64>)], over_nm: f64) -> Option<f6
 /// the trip under VFR -- its stops' turnarounds counted -- is in the dark
 /// (sun::night_on_the_way): one long flight day at both ends was not, and
 /// its stops' flights landing after dark are. Under IFR the reserve is
-/// 91.167(a)(3)'s already.
+/// 91.167(a)(3)'s already, and the last stretch keeps the fuel on to the
+/// alternate too (91.167(a)(2): the totals' `alternate_gal`, the last
+/// flight's alternate leg's fuel), which the fuel check counts: without it
+/// a flight short only by its alternate was short with no stop offered
+/// (the aviation audit of 2026-11-21, F7.1). Each IFR stop is itself a
+/// first point of intended landing (91.167(a)(1)); its own alternate is
+/// not counted (route options' Figures says why).
 pub struct Need {
     pub fuel_per_nm: f64,
     pub min_per_nm: f64,
     pub usable_gal: f64,
+    /// The fuel in the tanks as the flight leaves (the totals'
+    /// `on_board_gal`: the pilot's own, else full), for its first stretch.
+    pub start_gal: f64,
     pub taxi_gal: f64,
     pub reserve_gal: f64,
+    pub alternate_gal: f64,
+    /// Whether the fuel on board at the start, less the start and taxi, is
+    /// under the reserve already: no field is in reach of it, so no stop is
+    /// offered, and the app says why (warn, never limit).
+    pub on_board_short: bool,
 }
 
 pub fn fuel_stop_need(totals: &Obj, legs: &[(f64, Option<f64>)], start: (f64, f64), end: (f64, f64), depart_s: f64) -> R<Option<Need>> {
@@ -88,12 +102,16 @@ pub fn fuel_stop_need(totals: &Obj, legs: &[(f64, Option<f64>)], start: (f64, f6
     }
     let per_nm = fuel / distance;
     let worst = worst_burn_per_nm(legs, (usable - taxi - reserve) / per_nm).filter(|w| *w != 0.0).unwrap_or(per_nm);
+    let start_gal = totals.opt("on_board_gal")?.unwrap_or(usable);
     Ok(Some(Need {
         fuel_per_nm: worst.max(per_nm) * detour,
         min_per_nm: ete / distance * detour,
         usable_gal: usable,
+        start_gal,
         taxi_gal: taxi,
         reserve_gal: reserve,
+        alternate_gal: if ifr { totals.opt("alternate_gal")?.unwrap_or(0.0) } else { 0.0 },
+        on_board_short: start_gal - taxi < reserve,
     }))
 }
 
@@ -103,8 +121,11 @@ impl Need {
             ("fuel_per_nm", number(self.fuel_per_nm)),
             ("min_per_nm", number(self.min_per_nm)),
             ("usable_gal", number(self.usable_gal)),
+            ("start_gal", number(self.start_gal)),
             ("taxi_gal", number(self.taxi_gal)),
             ("reserve_gal", number(self.reserve_gal)),
+            ("alternate_gal", number(self.alternate_gal)),
+            ("on_board_short", Value::Bool(self.on_board_short)),
         ])
     }
 }
@@ -124,5 +145,29 @@ mod tests {
         assert_eq!(worst_burn_per_nm(&[(10.0, None)], 5.0), None);
         assert_eq!(worst_burn_per_nm(&[], 5.0), None);
         assert_eq!(worst_burn_per_nm(&[(0.0, Some(1.0))], 5.0), None);
+    }
+
+    fn short_by(rules: &str, on_board: f64) -> Need {
+        let totals = crate::json::parse(&format!(
+            r#"{{"fuel_margin_gal": -2.0, "usable_fuel_gal": 40.0, "on_board_gal": {on_board}, "distance_nm": 300.0, "fuel_gal": 30.0,
+                "ete_min": 180.0, "taxi_gal": 1.0, "reserve_gal": 7.5, "rules": "{rules}", "night": true, "alternate_gal": 3.0}}"#
+        ))
+        .unwrap();
+        let obj = Obj::read("t", &totals).unwrap();
+        fuel_stop_need(&obj, &[], (0.0, 0.0), (0.0, 5.0), 0.0).unwrap().unwrap()
+    }
+
+    #[test]
+    fn under_ifr_the_need_carries_the_alternates_fuel() {
+        // 14 CFR 91.167(a)(2): the alternate counts under IFR alone.
+        assert_eq!(short_by("ifr", 40.0).alternate_gal, 3.0);
+        assert_eq!(short_by("vfr", 40.0).alternate_gal, 0.0);
+    }
+
+    #[test]
+    fn too_little_on_board_for_the_reserve_is_said() {
+        // 8 gal on board, 1 gal taxi: 7 to fly, under the 7.5 gal reserve.
+        assert!(short_by("vfr", 8.0).on_board_short);
+        assert!(!short_by("vfr", 9.0).on_board_short);
     }
 }

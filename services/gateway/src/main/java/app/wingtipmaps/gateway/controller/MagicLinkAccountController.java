@@ -69,6 +69,9 @@ public class MagicLinkAccountController {
         if (!recent.allow("client:" + SlidingWindowLimiter.clientOf(request), perClientPerHour, now)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
         }
+        if (!MagicLinkController.isLinkToken(token)) {
+            return ResponseEntity.notFound().build();
+        }
         return magicLinks
                 .findByTokenHash(MagicLinkController.hash(token))
                 .filter(link ->

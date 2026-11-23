@@ -1,3 +1,4 @@
+import { patternsOf } from "../lib/trafficPattern";
 import { ADDRESS_HISTORY_KEYS, AIRPLANE_KEY, HISTORY_KEYS } from "./planHistoryKeys";
 
 /**
@@ -68,13 +69,38 @@ export interface PlanHistory {
 export const started = (now: PlanState, at: number): PlanHistory => ({ past: [], now, future: [], at });
 
 /** The plan as the address has it now, taken in: a change of the pilot's
- *  is a step back, with what it did in words where it took something away
- *  (`note`, for the Undo bar); one the page made as it settled is folded
+ *  is a step back, and one that took something away (a stop, point or
+ *  procedure removed, Clear Route, the route replaced whole) says so in
+ *  words (`note`, for the Undo toast); every other edit is a step with no
+ *  toast, undone by Cmd-Z (the owner, 2026-11-21); one the page made as it settled is folded
  *  into the step before. */
 export function observed(h: PlanHistory, next: PlanState, at: number): { history: PlanHistory; note: string | null } {
   if (sameState(h.now, next)) return { history: h, note: null };
-  if (at - h.at < SETTLE_MS) return { history: { ...h, now: next }, note: null };
+  if (at - h.at < SETTLE_MS || byTheWind(h.now, next)) return { history: { ...h, now: next }, note: null };
   return { history: { past: [...h.past, h.now].slice(-LIMIT), now: next, future: [], at }, note: describeEdit(h.now, next) };
+}
+
+/** The keys a runway picked into the wind writes (useRunwayPicks). */
+const RUNWAY_KEYS: readonly string[] = ["pattern", "takeoff", "auto"];
+
+/** A change the page made by itself whenever the weather comes in or the
+ *  wind turns, not the pilot's: only runways picked into the wind, each
+ *  named in `auto` ("land:KDLH", features/plan's autoOf), as
+ *  useRunwayPicks' preselect writes them. A pilot's own pick takes its
+ *  runway out of `auto`, so it is never taken for one. With the route's
+ *  weather slower than SETTLE_MS, the page's pick at C81 and KDLH was an
+ *  Undo toast of its own on a fresh load (brief-glance.spec). */
+function byTheWind(before: PlanState, after: PlanState): boolean {
+  if (HISTORY_KEYS.some((key) => !RUNWAY_KEYS.includes(key) && (before[key] ?? "") !== (after[key] ?? ""))) return false;
+  const wind = new Set((after.auto ?? "").split(","));
+  return (["pattern", "takeoff"] as const).every((which) => {
+    const was = patternsOf(before[which] ?? null),
+      now = patternsOf(after[which] ?? null);
+    const kind = which === "pattern" ? "land" : "takeoff";
+    return [...new Set([...was.keys(), ...now.keys()])].every(
+      (ident) => was.get(ident) === now.get(ident) || (now.has(ident) && wind.has(`${kind}:${ident}`)),
+    );
+  });
 }
 
 /** One step back: the plan to put in the address, or null with none. */
@@ -94,8 +120,8 @@ export function redone(h: PlanHistory, at: number): PlanHistory | null {
 const listOf = (value: string | undefined) => (value ? value.split(",").filter(Boolean) : []);
 
 /** What a change took away, in the bar's words ("Route Cleared", "KMSN
- *  removed"); null for one that only added or changed a figure, which the
- *  keyboard still undoes. */
+ *  removed"); null for one that only added or changed something, which
+ *  `observed` says by the part it touched ("Altitude Changed"). */
 export function describeEdit(before: PlanState, after: PlanState): string | null {
   const hadRoute = !!(before.dep || before.dest);
   if (hadRoute && !after.dep && !after.dest) return "Route Cleared";
@@ -118,6 +144,7 @@ const PARTS: readonly (readonly [string, readonly string[]])[] = [
   ["Altitude", ["altitude_ft", "altitude_nearest", "altitude_choice", "altitudes"]],
   ["Procedures", ["procs", "cross", "holds", "pattern", "takeoff", "auto"]],
   ["Stops", ["fuel", "ground", "alternate"]],
+  ["Fuel", ["tanks"]],
   ["Departure Time", ["depart"]],
   ["Airplane", [AIRPLANE_KEY]],
 ];

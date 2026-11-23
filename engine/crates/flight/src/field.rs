@@ -82,10 +82,29 @@ pub fn military(ownership: Option<&str>, facility_use: Option<&str>) -> Option<&
     Some(if up(facility_use) == "PU" { "joint" } else { "military" })
 }
 
-/// NASR APT_BASE's SITE_TYPE_CODE for a field an airplane lands on, whose
-/// mark comes before a heliport's: airport (A), seaplane base (C),
-/// gliderport (G), ultralight park (U) and balloonport (B).
+/// NASR APT_BASE's SITE_TYPE_CODE for a field an aircraft other than a
+/// helicopter lands on, whose map mark comes before a heliport's: airport
+/// (A), seaplane base (C), gliderport (G), ultralight park (U) and
+/// balloonport (B). Not all of them are an airplane's: LAND_AIRPLANE_SITES.
 pub const LANDING_SITES: [&str; 5] = ["A", "C", "G", "U", "B"];
+
+/// NASR APT_BASE's SITE_TYPE_CODE for a field with a runway an airplane on
+/// wheels lands on: an airport (A), a gliderport (G) and an ultralight
+/// park (U), each a strip of ground. Not a heliport (H), a pad; nor a
+/// balloonport (B), a launch site with no runway; nor a seaplane base (C),
+/// whose runways are water (the NASR subscriber files' APT_BASE and
+/// APT_RWY layouts). What every list of fields to land at, a nearest
+/// field, a stop or a glide's, is held to; the airport card still shows
+/// the others, named for their kind (site_words).
+pub const LAND_AIRPLANE_SITES: [&str; 3] = ["A", "G", "U"];
+
+/// Whether a field is one an airplane on wheels lands at, by its NASR
+/// SITE_TYPE_CODE (LAND_AIRPLANE_SITES), read trimmed and in capitals.
+/// With no code (no NASR record) the host's own list decides, as for its
+/// status (is_open): true.
+pub fn land_airplane_site(code: Option<&str>) -> bool {
+    code.is_none_or(|c| LAND_AIRPLANE_SITES.contains(&c.trim().to_ascii_uppercase().as_str()))
+}
 
 /// The words for a field's kind of landing site, from NASR APT_BASE's
 /// SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout: A airport,
@@ -121,6 +140,19 @@ pub fn hard_surface(code: &str) -> bool {
     let parts: Vec<String> = code.split(['-', '/']).map(|p| p.trim().to_ascii_uppercase()).filter(|p| !p.is_empty()).collect();
     let hard = |p: &String| HARD_SURFACES.contains(&p.as_str());
     !parts.is_empty() && parts.iter().all(|p| hard(p) || p == "TRTD") && parts.iter().any(hard)
+}
+
+/// Whether a runway's surface is water: NASR APT_RWY's SURFACE_TYPE_CODE
+/// WATER (the NASR subscriber files' APT_RWY layout), or OurAirports'
+/// "WATER", "WAT" or "W", read trimmed and in capitals, its first part
+/// where the code is mixed. A seaplane's lane, as at Lake Hood (LHD), whose
+/// water lanes lie beside its gravel strip: no landing for an airplane on
+/// wheels, which every profile here is (none says floats or an amphibian).
+/// The one statement for the glide's and the diversion's runway and the
+/// runway picked into the wind.
+pub fn water_surface(code: &str) -> bool {
+    let first = code.trim().split(['-', '/', ' ']).next().unwrap_or("").to_ascii_uppercase();
+    matches!(first.as_str(), "WATER" | "WAT" | "W")
 }
 
 /// The hard runway (asphalt, concrete and the like: the FAA Aeronautical
@@ -188,30 +220,25 @@ pub fn mark_rank(site_type: &str, facility_use: &str, towered: bool, hard_ft: u3
     MarkRank { tier, order: class * RUNWAY_ROOM + (RUNWAY_ROOM - 1 - hard_ft.min(RUNWAY_ROOM - 1)), size }
 }
 
-/// A field's FAA ident, trimmed and uppercased: a field in the contiguous
-/// US whose FAA location identifier is three letters is named by ICAO with
-/// a K before them (FAA JO 7350.9, Location Identifiers), and the CIFP, a
-/// domestic NOTAM or a pilot may use either, so a K and three letters or
-/// figures is the three. "kdlh" is DLH; "KABCD" and "K12" stay as they are.
-/// The one copy for the route, the clearance, the NOTAMs and the in-flight
-/// copilot.
-pub fn bare_field(ident: &str) -> String {
-    let s = ident.trim().to_ascii_uppercase();
-    if s.len() == 4 && s.starts_with('K') && s.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()) {
-        s[1..].to_owned()
-    } else {
-        s
-    }
-}
-
-/// Whether two idents name one field: "KOSH" and "OSH" (bare_field).
-pub fn same_field(a: &str, b: &str) -> bool {
-    bare_field(a) == bare_field(b)
-}
+pub use crate::ident::{bare_field, field_names, same_field};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // JO 7350.9GG 4-1: the K form in the contiguous states; NASR's ICAO_ID
+    // where the K is not the rule; none for an ident with a figure.
+    #[test]
+    fn a_fields_names_are_its_icao_k_and_faa_forms() {
+        assert_eq!(field_names("dlh", None), ["KDLH", "DLH"]);
+        assert_eq!(field_names("KDLH", None), ["KDLH", "DLH"]);
+        assert_eq!(field_names("C81", None), ["C81"]);
+        assert_eq!(field_names("KC81", None), ["KC81", "C81"]);
+        assert_eq!(field_names("JNU", Some("PAJN")), ["PAJN", "KJNU", "JNU"]);
+        assert_eq!(field_names("SJU", Some("tjsj")), ["TJSJ", "KSJU", "SJU"]);
+        assert_eq!(field_names("PAEN", None), ["PAEN"]);
+        assert_eq!(field_names("ENA", Some("")), ["KENA", "ENA"]);
+    }
 
     // NASR APT_BASE's ownership codes, each side of the rule.
     #[test]
@@ -305,5 +332,30 @@ mod tests {
         for code in ["ASPH-TURF", "TURF", "GRVL", "TRTD", "WATER", ""] {
             assert!(!hard_surface(code), "{code}");
         }
+    }
+
+    // APT_RWY's WATER and OurAirports' codes for it; a hard or soft
+    // surface is not water.
+    #[test]
+    fn water_runways_are_water() {
+        for code in ["WATER", " water ", "WAT", "W", "WATER-E"] {
+            assert!(water_surface(code), "{code}");
+        }
+        for code in ["ASPH", "TURF", "GRVL", "GRAVEL", "WOOD", ""] {
+            assert!(!water_surface(code), "{code}");
+        }
+    }
+
+    // NASR's SITE_TYPE_CODEs: a strip of ground is an airplane's, a pad,
+    // a balloon launch site or a lake is not.
+    #[test]
+    fn only_strips_of_ground_are_an_airplanes() {
+        for code in ["A", "G", "U", " a "] {
+            assert!(land_airplane_site(Some(code)), "{code}");
+        }
+        for code in ["H", "B", "C", ""] {
+            assert!(!land_airplane_site(Some(code)), "{code}");
+        }
+        assert!(land_airplane_site(None));
     }
 }

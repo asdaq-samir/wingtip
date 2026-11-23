@@ -2,12 +2,13 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import FindingIcon from "../../components/FindingIcon";
 import { TEXT } from "../../lib/text";
-import { feetRange } from "../../lib/format";
+import { clockAndZulu, feetRange } from "../../lib/format";
 import type { Leg } from "../../lib/api/types";
 import type { FlightBriefing } from "./useFlightBriefing";
 import { severityWord } from "./useIcingForecast";
-import { altFt, clockTime } from "../plan";
+import { altFt } from "../plan";
 import { Pending } from "./BriefingBits";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * Under IFR, in Adverse Conditions: the AWC's forecast icing on each leg
@@ -23,7 +24,7 @@ export default function ForecastIcingRows({ vm, legs }: { vm: FlightBriefing; le
   if (icingForecast.isError) {
     return (
       <p className={cn("pt-2 text-caution-ink", TEXT.detail)} data-testid="icing-forecast-unchecked">
-        The forecast icing could not be checked — aviationweather.gov didn’t respond. Verify separately before flight.
+        {WORDING.forecastIcingNotChecked}
       </p>
     );
   }
@@ -33,9 +34,9 @@ export default function ForecastIcingRows({ vm, legs }: { vm: FlightBriefing; le
   }
   return (
     <ListGroup
-      title="Forecast Icing"
+      title={WORDING.forecastIcing}
       // The source and its issue, a credit.
-      footer={`AWC CIP and FIP, issued ${clockTime(new Date(found.issued))}`}
+      footer={`AWC CIP and FIP, issued ${clockAndZulu(new Date(found.issued))}`}
       className="pt-2"
     >
       {found.legs.map((leg) => {

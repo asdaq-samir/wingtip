@@ -100,7 +100,7 @@ extension Planner {
 extension Gateway {
     static let clients: [Servers.Wait: GatewayAPI.Client] = Dictionary(uniqueKeysWithValues: Servers.Wait.allCases.map {
         ($0, GatewayAPI.Client(serverURL: Config.gateway, configuration: Servers.configuration, transport: Servers.transport($0),
-                               middlewares: [CSRF(), Refusals(gateway: true)]))
+                               middlewares: [CSRF(), DeviceZone(), Refusals(gateway: true)]))
     })
 
     /// One of the gateway's calls, made with the generated client.
@@ -122,9 +122,10 @@ extension Gateway {
 
 /// The planner's operation paths are `/api/…`; through the gateway's proxy
 /// they are `/api/planner/…` (Config.plannerPath).
-struct PlannerPath: ClientMiddleware {
+nonisolated struct PlannerPath: ClientMiddleware {
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
         request.path = request.path.map(Config.plannerPath)
         return try await next(request, body, baseURL)
@@ -135,11 +136,12 @@ struct PlannerPath: ClientMiddleware {
 /// and DELETE echoes the XSRF-TOKEN cookie the gateway set in a header, as
 /// the web app's client does. The cookie is written on any of the
 /// gateway's answers once asked for: one GET first where there is none yet.
-struct CSRF: ClientMiddleware {
+nonisolated struct CSRF: ClientMiddleware {
     static let header = HTTPField.Name("X-XSRF-TOKEN")!
 
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
         if request.method != .get, request.method != .head {
             if Gateway.csrfToken == nil { _ = try? await Gateway.me() }
@@ -149,16 +151,33 @@ struct CSRF: ClientMiddleware {
     }
 }
 
+/// The zone the phone keeps, on every call to the gateway, which reads the
+/// pilot's currency and paperwork on the pilot's own day (PilotDay), not
+/// UTC's, which turns over in the U.S. evening: on the last evening of 61.57's
+/// 90 days the pilot was told they were no longer current.
+nonisolated struct DeviceZone: ClientMiddleware {
+    static let header = HTTPField.Name("X-Time-Zone")!
+
+    @concurrent
+    func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+        var request = request
+        request.headerFields[Self.header] = TimeZone.current.identifier
+        return try await next(request, body, baseURL)
+    }
+}
+
 /// Every answer's cookies kept (a sign-in, a renewed session, a sign-out),
 /// and an answer of 400 or more thrown in the server's own words: the
 /// planner's FastAPI `detail` (Planner.Failure), the gateway's
 /// ErrorResponse (GatewayRefusal). The path names the call (an ident in it
 /// is public); the query may hold a position and is left out of the log.
-struct Refusals: ClientMiddleware {
+nonisolated struct Refusals: ClientMiddleware {
     let gateway: Bool
 
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         let (response, answer) = try await next(request, body, baseURL)
         SessionCookies.keep()
         let status = response.status.code
@@ -172,7 +191,7 @@ struct Refusals: ClientMiddleware {
     }
 }
 
-extension OpenAPIValueContainer {
+nonisolated extension OpenAPIValueContainer {
     /// A number however the JSON wrote it: the runtime reads 42 as an Int
     /// and 42.5 as a Double.
     var number: Double? { (value as? Double) ?? (value as? Int).map(Double.init) }

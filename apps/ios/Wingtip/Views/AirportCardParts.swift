@@ -59,7 +59,7 @@ struct AirportTiles: View {
                 // it has kept a miss for the cycle), else the whole page.
                 let crop = place.airportDiagramRunways != false
                 PictureTile(caption: "Diagram", label: "\(ident) airport diagram, full screen") {
-                    shown = .paths("\(ident) airport diagram", [Planner.diagramPath(ident: ident, cycle: cycle)])
+                    shown = .paths("\(ident) Airport Diagram", [Planner.diagramPath(ident: ident, cycle: cycle)])
                 } picture: {
                     RemotePicture(path: Planner.diagramPath(ident: ident, cycle: cycle, runwaysOnly: crop), fit: !crop).background(Color.white)
                 }
@@ -71,10 +71,10 @@ struct AirportTiles: View {
                 }
             }
             if let photo = photos?.photo {
-                // Its photographer and licence, as Commons' licences ask.
+                // Its photographer and licence, linked to its page, as Commons' licences ask.
                 let credit = photo.credit + ((photo.license ?? "").isEmpty ? "" : " · " + (photo.license ?? ""))
                 PictureTile(caption: "From the Ground", label: "\(ident) from the ground, full screen") {
-                    shown = .paths("\(ident) from the ground", [photo.url], credit: credit)
+                    shown = .paths("\(ident) from the ground", [photo.url], credit: credit, creditLink: photo.sourceUrl.flatMap(URL.init(string:)))
                 } picture: {
                     RemotePicture(path: photo.url)
                 }

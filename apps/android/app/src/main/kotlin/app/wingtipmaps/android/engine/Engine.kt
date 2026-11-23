@@ -51,6 +51,20 @@ object Engine {
     inline fun <reified In, reified Out> rule(name: String, input: In): Result<Out> =
         runCatching { call<In, Out>(name, input) }.onFailure { failed(name, it) }
 
+    /** The answer of a state the engine holds (the receiver's
+     *  ReceiverSession, HeldPicture) to a rule of the contract, read as the
+     *  rule's answer type: a refusal or an answer outside the contract held
+     *  in the Result and logged, as `rule` does. */
+    inline fun <reified Out> held(name: String, ask: () -> String): Result<Out> =
+        runCatching {
+            val text = try {
+                ask()
+            } catch (e: app.wingtipmaps.android.engine.ffi.EngineException) {
+                throw EngineException(e.message ?: "$name: the engine gave no answer")
+            }
+            json.decodeFromString<Out>(text)
+        }.onFailure { failed(name, it) }
+
     /** A failed rule in the log, by its name and the engine's words; the
      *  input may hold a position, so it is not written. android.util.Log is
      *  absent from the JVM's unit tests, where nothing is logged. */

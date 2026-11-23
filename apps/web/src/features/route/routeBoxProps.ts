@@ -21,8 +21,8 @@ export interface RouteBoxProps extends RouteParts {
   /** A point's own altitude set, or (null) given back to the plan. */
   onAltitudeChange: (ident: string, feet: number | null) => void;
   onChange: (route: RouteParts) => void;
-  /** SIDs and STARs typed among the points ("BAEE1", lib/procedures'
-   *  TYPED_PROCEDURE), taken out of them, for the route's procedures to
+  /** SIDs and STARs typed among the points ("BAEE1", the engine's
+   *  route_procedures), taken out of them, for the route's procedures to
    *  pick, with the route they were typed into. */
   onTypedProcedures?: (typed: TypedProcedure[], route: { dep: string; dest: string }) => void;
   /** A stop asked for from elsewhere -- a problem's Add a stop or Fly
@@ -64,10 +64,18 @@ export interface RouteBoxProps extends RouteParts {
   unknownPoint?: UnknownPlace | null;
   /** Half a route cleared, by the stock ✕ at the box's end while nothing
    *  is typed (the owner, 2026-11-18): its one Clear before there is a
-   *  route, as More's is after. None where it does not apply. */
+   *  route, as FPL's ✕ is after. None where it does not apply. */
   onClear?: () => void;
   /** A route just cleared put back, by Undo at the empty box's end, till
    *  a new one is started (the owner, 2026-11-18): the plan's own Undo
    *  (lib/planUndo), none where there is nothing of the route to undo. */
   onUndo?: () => void;
+  /** The route's whole line wrapped over as many lines as it takes, in a
+   *  box `height` tall at the least, scrolling inside past it: the grouped
+   *  box turned into the route's field by its toggle (TypeRouteButton), its
+   *  size and shape kept (the owner, 2026-11-22: "Route box should be as
+   *  tall as the grouped box, same shape. So it can show everything
+   *  including the approach pills etc."). Else the one row that slides. */
+  wrapped?: boolean;
+  height?: number;
 }

@@ -67,7 +67,7 @@ struct ModelWeatherBar: View {
                     heading
                     Spacer(minLength: 0)
                     if model.field == .precip {
-                        Picker("Precipitation span", selection: Bindable(model).span) {
+                        Picker("Precipitation Span", selection: Bindable(model).span) {
                             ForEach(ModelWeather.Span.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.segmented)
@@ -134,8 +134,11 @@ struct ModelWeatherBar: View {
     }
 
     private var status: String? {
+        // With no connection said so (the offline audit), not as the
+        // model weather missing nor "Fetching…" for good.
+        if model.offline, model.layer == nil { return "Model weather: no connection" }
         if model.failed { return "Model weather isn't available right now" }
-        if model.layer == nil { return "Fetching model weather…" }
+        if model.layer == nil { return Wording.fetchingModelWeather }
         if model.frames.isEmpty { return "No model weather yet" }
         return nil
     }
@@ -161,7 +164,7 @@ struct ModelWeatherLegend: View {
                     .accessibilityLabel("Turn off model weather")
                     .floatingGlass(in: Circle())
                     Menu {
-                        Picker("Weather on the map", selection: Bindable(model).field) {
+                        Picker("Weather on the Map", selection: Bindable(model).field) {
                             ForEach(FlowFieldKind.allCases.filter { $0 != .off }) { Text($0.label).tag($0) }
                         }
                         ModelWeatherLevelPicker()

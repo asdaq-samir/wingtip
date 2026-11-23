@@ -49,3 +49,29 @@ export function tileOf(lat: number, lon: number, z: number): { x: number; y: num
   const { x, y } = tileFraction(lat, lon, z);
   return { x: Math.floor(x), y: Math.floor(y) };
 }
+
+/** The tile pixels a slippy map's tile is drawn at (the chart's 256). */
+export const TILE_PX = 256;
+
+/** The highest whole zoom, between `min` and `max`, at which the points
+ *  all fit a `width` by `height` pixel box with `pad` pixels round them:
+ *  a still picture of the chart framing a route (the connector's live
+ *  view, which draws its tiles with no map library). */
+export function fitZoom(
+  points: { lat: number; lon: number }[],
+  width: number,
+  height: number,
+  pad: number,
+  min: number,
+  max: number,
+): number {
+  if (points.length === 0) return min;
+  const xs = points.map((p) => mercX(p.lon));
+  const ys = points.map((p) => mercY(p.lat));
+  const spanX = Math.max(...xs) - Math.min(...xs);
+  const spanY = Math.max(...ys) - Math.min(...ys);
+  const across = Math.max(1, width - 2 * pad) / TILE_PX;
+  const down = Math.max(1, height - 2 * pad) / TILE_PX;
+  const fits = Math.floor(Math.log2(Math.min(spanX > 0 ? across / spanX : Infinity, spanY > 0 ? down / spanY : Infinity)));
+  return Math.max(min, Math.min(max, Number.isFinite(fits) ? fits : max));
+}

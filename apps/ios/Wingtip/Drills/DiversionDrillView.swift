@@ -16,7 +16,7 @@ struct DiversionDrillView: View {
     /// The figures a student estimates, by the planner's keys; how far
     /// off is reasonable is the planner's (ALLOWANCES).
     private static let estimates: [(key: String, label: String, unit: String)] = [
-        ("mh", "Magnetic heading", "°"), ("gs", "Ground speed", "kt"), ("ete", "Time", "min"), ("fuel", "Fuel", "gal"),
+        ("mh", Wording.magneticHeading, "°"), ("gs", Wording.groundSpeed, "kt"), ("ete", "Time", "min"), ("fuel", "Fuel", "gal"),
     ]
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     private var checked: Bool { model.checked }
@@ -42,12 +42,12 @@ struct DiversionDrillView: View {
             } else {
                 Section {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        LabeledContent(checked ? "You took" : "On the clock",
+                        LabeledContent(checked ? "You Took" : "On the Clock",
                                        value: stopwatch((model.stopped ?? context.date).timeIntervalSince(model.started ?? context.date)))
                             .monospacedDigit()
                     }
                 }
-                Section("Divert to") {
+                Section("Divert To") {
                     if model.finding {
                         Text("Finding the fields round you…").foregroundStyle(.secondary)
                     } else if let failed = model.fieldsProblem {
@@ -116,10 +116,7 @@ struct DiversionDrillView: View {
     }
 
     /// Minutes and seconds, as a stopwatch shows them: "2:07".
-    private func stopwatch(_ seconds: TimeInterval) -> String {
-        let s = max(0, Int(seconds))
-        return String(format: "%d:%02d", s / 60, s % 60)
-    }
+    private func stopwatch(_ seconds: TimeInterval) -> String { Format.stopwatch(seconds) }
 }
 
 #Preview("DiversionDrillView") {

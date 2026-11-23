@@ -1,0 +1,15 @@
+Thank you for flying Wingtip Maps before anyone else. It is a planning aid, not for navigation: check the chart, the NOTAMs and an official briefing before you fly, as you always do.
+
+What to try, in whatever order suits you:
+
+1. Plan a flight you know. Open FPL, type From and To (for example your home field and a field you fly to), and tap Plan. Are the checkpoints ones you would pick from the sectional? Is the cruise altitude one you would fly?
+2. Read the nav log and the Brief. Are the headings, times, fuel and winds what your own plan gives? Is anything in the Brief wrong, missing or in the way?
+3. IFR pilots: file-style routes with airways, a SID or STAR, an approach, and the alternate under IFR. Do the altitudes, the 1-2-3 alternate and the plates agree with yours?
+4. Instructors: the logbook, the Coach and the instructor pages. Would you use them with a student?
+5. Tap around the map: an airport's card (weather, runways, frequencies, charts), Nearest, an airspace, traffic, and the Map button's layers.
+6. Take it flying as a passenger or in the right seat, never as your only reference: own ship, the alerts ahead, the Live Activity on the Lock Screen.
+7. Download a region in Settings, Downloads, and try it in airplane mode.
+
+Tell us when a figure is wrong. Say which flight, the figure, what you expected and where your figure comes from. A wrong figure is a safety problem, and we fix those first.
+
+To send feedback: take a screenshot and tap Share Beta Feedback (TestFlight), or use Settings, About, Send Feedback. Feedback reaches only us.

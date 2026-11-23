@@ -1,5 +1,5 @@
 {
-  "_note": "A departure for the simulator exports (the engine's sim_flight, lib/replay/simExport): 10 s taxiing north at 20 kt, a climb at 1,500 ft/min from 700 ft pressure altitude with the crew's altimeter setting 1022.4 hPa sent twice, then 140 s unheard (a gap) and level at 5,000 ft with no setting. Held in engine/facade/tests/sim.rs and apps/web/src/lib/replay/simExport/simExport.test.ts.",
+  "_note": "A departure for the simulator exports (the engine's sim_flight, lib/replay/simExport): 10 s taxiing north at 20 kt, a climb at 1,500 ft/min from 700 ft pressure altitude with the crew's altimeter setting 1022.4 hPa sent twice, then 140 s unheard (a gap) and level at 5,000 ft with no setting. Held in engine/facade/tests/sim.rs.",
   "departureThenGap": {
     "reports": [
       {

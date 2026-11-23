@@ -55,10 +55,13 @@ export interface PlanParams {
   ground?: string;
   /** The pilot's holds ("VPBNG:270:R:1M:2T", features/plan/routeHolds). */
   holds?: string;
+  /** The fuel set in the tanks leaving a field ("KOSH:30,KJVL:0",
+   *  identSchema's tanksOf); one not named, full. */
+  tanks?: string;
   /** Checkpoints between the route's points, as the map shows them (the
    *  settings' Waypoints); without, the nav log runs point to point. */
   checkpoints?: boolean;
-  settling?: boolean; // Wind runways or procedures still coming: the nav log waits, asked once (WEB-14).
+  settling?: boolean; // Procedures still being drawn: the nav log waits, asked once (WEB-14).
   /** A local flight's time aloft, in minutes (one airport to itself). */
   localMin?: number;
   /** The flight rules it is planned under: IFR's minimum altitudes,
@@ -85,6 +88,8 @@ export type BriefingState =
 
 /** Where the runways left from are in a plan's key (planKeyOf). */
 export const PLAN_KEY_RUNWAYS = 14;
+/** Where the fuel set in the tanks is in a plan's key (planKeyOf). */
+export const PLAN_KEY_TANKS = 19;
 
 /** Everything the nav log is computed from. */
 export function planKeyOf({
@@ -108,6 +113,7 @@ export function planKeyOf({
   altitudeNearest = false,
   patterns = "",
   altitudeStarts = "",
+  tanks = "",
 }: PlanParams) {
   return [
     dep,
@@ -130,6 +136,8 @@ export function planKeyOf({
     ground,
     holds,
     altitudeNearest,
+    // Before the landing runways, which stay the key's last (usePlan's holdKey).
+    tanks,
     patterns,
   ];
 }
@@ -191,6 +199,7 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
               patterns,
               ahead,
               plan.altitudeStarts,
+              plan.tanks,
             ),
             "nav log",
           ),

@@ -161,6 +161,21 @@ interface GatewayApi {
     suspend fun assignLesson(@Path("studentId") studentId: kotlin.Long, @Body appWingtipmapsAndroidApiGeneratedGatewayAssignLessonRequest: app.wingtipmaps.android.api.generated.gateway.AssignLessonRequest): Response<app.wingtipmaps.android.api.generated.gateway.TrainingDto>
 
     /**
+     * GET api/me/avatar
+     * The signed-in pilot&#39;s photo
+     * Their avatar&#39;s image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).
+     * Responses:
+     *  - 200: The image
+     *  - 401: No session
+     *  - 404: They have set no photo
+     *
+     * @param v The photo&#39;s version, which only makes its address new (optional)
+     * @return [Unit]
+     */
+    @GET("api/me/avatar")
+    suspend fun avatar(@Query("v") v: kotlin.Long? = null): Response<Unit>
+
+    /**
      * POST api/flight-service/briefings
      *
      *
@@ -172,6 +187,19 @@ interface GatewayApi {
      */
     @POST("api/flight-service/briefings")
     suspend fun brief(@Body appWingtipmapsAndroidApiGeneratedGatewayFlightPlanFilingRequest: app.wingtipmaps.android.api.generated.gateway.FlightPlanFilingRequest): Response<Unit>
+
+    /**
+     * GET api/diagnostics/versions
+     * The apps&#39; faults and speed figures by build
+     * Counted over the last few days (at most the 30 a fault is kept); the developer&#39;s.
+     * Responses:
+     *  - 200: OK
+     *
+     * @param days  (optional, default to 7)
+     * @return [app.wingtipmaps.android.api.generated.gateway.AppVersionsDto]
+     */
+    @GET("api/diagnostics/versions")
+    suspend fun byVersion(@Query("days") days: kotlin.Int? = 7): Response<app.wingtipmaps.android.api.generated.gateway.AppVersionsDto>
 
     /**
      * POST api/speed/field
@@ -211,6 +239,19 @@ interface GatewayApi {
      */
     @GET("api/auth/magic-link/verify")
     suspend fun confirm(@Query("token") token: kotlin.String): Response<Unit>
+
+    /**
+     * GET api/me/connections
+     * The signed-in pilot&#39;s connected AI apps
+     * Each connection made through the connector, newest first: its id, the app&#39;s name, the scopes granted, when its token was last issued and until when it may be renewed.
+     * Responses:
+     *  - 200: Their connections
+     *  - 401: No session
+     *
+     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.ConnectionDto>]
+     */
+    @GET("api/me/connections")
+    suspend fun connections(): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.ConnectionDto>>
 
     /**
      * GET api/logbook/currency
@@ -280,6 +321,21 @@ interface GatewayApi {
     suspend fun deleteTrack(@Path("id") id: kotlin.Long): Response<Unit>
 
     /**
+     * DELETE api/me/connections/{id}
+     * Disconnect one connected AI app
+     * Its access and refresh tokens are revoked at once, so the app&#39;s next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+     * Responses:
+     *  - 204: Disconnected
+     *  - 401: No session
+     *  - 404: No such connection of theirs
+     *
+     * @param id The connection&#39;s id, as listed
+     * @return [Unit]
+     */
+    @DELETE("api/me/connections/{id}")
+    suspend fun disconnect(@Path("id") id: kotlin.String): Response<Unit>
+
+    /**
      * DELETE api/training/instructors/{id}
      *
      *
@@ -321,7 +377,7 @@ interface GatewayApi {
     /**
      * GET api/me/export
      * Everything kept for the signed-in pilot, as one JSON file
-     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot&#39;s own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar&#39;s photo as a data: URL; the pilot&#39;s own checkpoint notes, reminders and connected AI apps (never a token); sent as a download.
      * Responses:
      *  - 200: The file
      *  - 401: No session
@@ -675,6 +731,20 @@ interface GatewayApi {
     suspend fun reminders(): Response<app.wingtipmaps.android.api.generated.gateway.RemindersDto>
 
     /**
+     * DELETE api/me/avatar
+     * Take out the signed-in pilot&#39;s photo
+     * Their initials show again.
+     * Responses:
+     *  - 204: Taken out
+     *  - 401: No session
+     *  - 404: They had no photo
+     *
+     * @return [Unit]
+     */
+    @DELETE("api/me/avatar")
+    suspend fun removeAvatar(): Response<Unit>
+
+    /**
      * DELETE api/instructor/students/{studentId}/lessons/{id}
      *
      *
@@ -768,6 +838,24 @@ interface GatewayApi {
      */
     @PUT("api/instructor")
     suspend fun set(@Body appWingtipmapsAndroidApiGeneratedGatewayInstructorRequest: app.wingtipmaps.android.api.generated.gateway.InstructorRequest): Response<app.wingtipmaps.android.api.generated.gateway.InstructorDto>
+
+    /**
+     * PUT api/me/avatar
+     * Set the signed-in pilot&#39;s photo
+     * One image, as the form&#39;s photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.
+     * Responses:
+     *  - 204: Kept; GET /api/me gives its new address
+     *  - 400: The photo was empty
+     *  - 401: No session
+     *  - 413: Over 512 KB
+     *  - 415: Not a JPEG, PNG or WebP image
+     *
+     * @param photo
+     * @return [Unit]
+     */
+    @Multipart
+    @PUT("api/me/avatar")
+    suspend fun setAvatar(@Part("photo") photo: kotlin.String): Response<Unit>
 
     /**
      * PUT api/me/contact
@@ -880,7 +968,7 @@ interface GatewayApi {
     /**
      * POST api/auth/apple/native
      * Sign in with Apple from the iOS app
-     * Checks the native sheet&#39;s identity token (Apple&#39;s keys, issuer, this app&#39;s bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+     * Checks the native sheet&#39;s identity token (Apple&#39;s keys, issuer, this app&#39;s bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
      * Responses:
      *  - 200: Signed in; `next` is where to go
      *  - 401: Not a token Apple issued to this app, or no verified email
@@ -906,18 +994,6 @@ interface GatewayApi {
     suspend fun squawks(@Path("id") id: kotlin.Long): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.SquawkDto>>
 
     /**
-     * POST api/subscription/trial
-     * Start the free month
-     * Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store&#39;s introductory offer.
-     * Responses:
-     *  - 200: OK
-     *
-     * @return [app.wingtipmaps.android.api.generated.gateway.SubscriptionDto]
-     */
-    @POST("api/subscription/trial")
-    suspend fun startTrial(): Response<app.wingtipmaps.android.api.generated.gateway.SubscriptionDto>
-
-    /**
      * GET api/flight-service
      *
      *
@@ -941,18 +1017,6 @@ interface GatewayApi {
      */
     @GET("api/instructor/students/{studentId}/training")
     suspend fun student(@Path("studentId") studentId: kotlin.Long): Response<app.wingtipmaps.android.api.generated.gateway.TrainingDto>
-
-    /**
-     * GET api/subscription
-     * The pilot&#39;s subscription, with this month&#39;s uses against each cap
-     *
-     * Responses:
-     *  - 200: OK
-     *
-     * @return [app.wingtipmaps.android.api.generated.gateway.SubscriptionDto]
-     */
-    @GET("api/subscription")
-    suspend fun subscriptionGet(): Response<app.wingtipmaps.android.api.generated.gateway.SubscriptionDto>
 
     /**
      * GET api/flights/{id}/track

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- You → Documents (library/): the pilot's own PDFs, the FAA's shelf and
+     the reader, in the web's words (features/documents). -->
+<resources>
+    <string name="documents">Documents</string>
+    <string name="documents_yours">Your Documents</string>
+    <string name="documents_add">Add a PDF</string>
+    <string name="documents_added">Added %1$s · %2$s</string>
+    <string name="documents_not_had">Not in the library yet</string>
+    <string name="documents_fetching">Fetching the library…</string>
+    <string name="documents_not_reached">Library Not Reached</string>
+    <string name="documents_not_reached_body">The FAA\'s documents cannot be listed now. Those you keep for the air are listed here with no signal.</string>
+    <string name="documents_keep">Keep for the Air</string>
+    <string name="documents_keep_sized">Keep for the Air, %1$s</string>
+    <string name="documents_keeping">Keeping for the air</string>
+    <string name="documents_kept_remove">Kept for the Air: Remove</string>
+    <string name="documents_more_for">More for %1$s</string>
+    <string name="documents_rename">Rename</string>
+    <string name="documents_name">Document Name</string>
+    <string name="documents_deleted">%1$s Deleted</string>
+    <string name="reader_fetching">Fetching the document…</string>
+    <string name="reader_reading">Reading the document…</string>
+    <string name="reader_search">Search This Document</string>
+    <string name="reader_previous">Previous Match</string>
+    <string name="reader_next">Next Match</string>
+    <string name="reader_not_found">Not Found</string>
+    <string name="reader_contents">Contents</string>
+    <string name="reader_bookmarks">Bookmarks</string>
+    <string name="reader_notes">Notes</string>
+    <string name="reader_no_contents">No Contents</string>
+    <string name="reader_no_contents_body">This document has no table of contents.</string>
+    <string name="reader_no_bookmarks">No Bookmarks</string>
+    <string name="reader_no_bookmarks_body">Tap the bookmark to mark the page you are on.</string>
+    <string name="reader_no_notes">No Notes</string>
+    <string name="reader_no_notes_body">Highlight a line in Markup to add a note to it.</string>
+    <string name="reader_bookmark">Bookmark This Page</string>
+    <string name="reader_bookmark_remove">Remove Bookmark</string>
+    <string name="reader_invert">Invert Colors</string>
+    <string name="reader_share">Share This Page</string>
+    <string name="reader_markup">Markup</string>
+    <string name="reader_pen">Pen</string>
+    <string name="reader_highlighter">Highlighter</string>
+    <string name="reader_undo_mark">Undo Last Mark</string>
+    <string name="reader_clear_page">Clear This Page</string>
+    <string name="reader_note">Note</string>
+    <string name="reader_note_add">Add a Note</string>
+    <string name="reader_note_delete">Delete Highlight</string>
+    <string name="reader_page">Page %1$d</string>
+    <string name="reader_page_of">Page %1$d of %2$d</string>
+    <string name="reader_rename_bookmark">Rename Bookmark</string>
+    <string name="reader_bookmark_name">Bookmark Name</string>
+</resources>

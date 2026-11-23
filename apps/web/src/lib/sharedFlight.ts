@@ -1,6 +1,7 @@
 import { addressParams } from "./address";
+import type { EngineAnswer } from "./engine/engine";
 import type { FlightRules } from "./preferences";
-import { LINK_KEYS, SCREEN_LINK } from "./navigation/generated/screens";
+import { LINK_KEYS, SCREEN_LINK, type LinkKey } from "./navigation/generated/screens";
 
 /**
  * A flight shared by link (design/screens.json's `shared` screen,
@@ -8,8 +9,9 @@ import { LINK_KEYS, SCREEN_LINK } from "./navigation/generated/screens";
  * app. Two kinds, one address, `/app/plan?open=shared&...`:
  *
  * - a plain link, the plan in the address itself -- its route, cruise
- *   altitude, departure time, airplane type and rules, and the N-number
- *   only where the pilot chose to send it -- which stores nothing anywhere;
+ *   altitude, departure time, airplane type and rules, the fuel set on
+ *   FPL's gauges, and the N-number only where the pilot chose to send it
+ *   -- which stores nothing anywhere;
  * - a saved flight's share, its token (`share=`), read from the gateway
  *   (GET /api/shared-flights/{token}) until its pilot stops sharing it.
  *
@@ -30,20 +32,65 @@ export interface SharedPlan {
   rules: FlightRules | null;
   /** The N-number, only where its pilot chose to send it. */
   tail: string | null;
+  /** The fuel its pilot set on FPL's gauges as the airplane leaves a
+   *  field, whole gallons by ident (the link's `tanks`, the planner's own
+   *  "KJVL:0,KMSN:20"); none named, full. */
+  tanks: Record<string, number>;
+  /** The instrument procedures its pilot picked (the link's `procs`, the
+   *  address's own "KDLH:I27:::L"), each with whether an approach is only
+   *  loaded or flown on into its missed approach (lib/procedures). */
+  procs?: string | null;
 }
 
-export type SharedLink = { kind: "plan"; plan: SharedPlan } | { kind: "saved"; token: string };
+export type SharedLink =
+  | { kind: "plan"; plan: SharedPlan }
+  | { kind: "saved"; token: string }
+  /** A route file opened (.fpl or .gpx; features/shared-flight's
+   *  routeFile): the engine's reading of it, previewed as a link is. */
+  | { kind: "file"; fileName: string; read: EngineAnswer<"route_file_read"> };
 
 /** The screen's word in `open=` (design/screens.json). */
 const SHARED = "shared";
 
 const IDENT = /^[A-Z0-9]{2,8}$/;
+/** A link's `procs` as the address writes it: fields, procedures,
+ *  transitions, fixes and states in capitals and figures, "-", ":" and
+ *  ",". Anything else is no picks; the engine reads each as it loads. */
+const PROCS = /^[A-Z0-9:,-]{1,400}$/;
 const TOKEN = /^[A-Za-z0-9_-]{16,32}$/;
 
 const identOrNull = (raw: string | null | undefined) => {
   const text = raw?.trim().toUpperCase() ?? "";
   return IDENT.test(text) ? text : null;
 };
+
+/** The fuel's key, design/screens.json's own, as iOS and Android read it
+ *  (their generated LinkKey.tanks). */
+const TANKS: LinkKey = "tanks";
+/** And its procedures' (design/screens.json's `procs`). */
+const PROCS_KEY: LinkKey = "procs";
+
+/** The link's `tanks` as the planner writes it, "KJVL:0,KMSN:20", by
+ *  ident; "" for none. */
+const tanksWords = (tanks: Record<string, number>) =>
+  Object.keys(tanks)
+    .sort()
+    .map((ident) => `${ident}:${tanks[ident]}`)
+    .join(",");
+
+/** A link's `tanks` read warily, as Android's SharedPlan reads it: each
+ *  part an ident and whole gallons, 0 to 9,999; a part that is not one is
+ *  left out, never guessed. Without the engine (lib/identSchema's tanksOf
+ *  is its), as the link is read before the engine has loaded. */
+function tanksOfLink(raw: string | null): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of (raw ?? "").split(",")) {
+    const [who, gallons, extra] = part.split(":");
+    const ident = identOrNull(who);
+    if (ident && extra === undefined && /^\d{1,4}$/.test(gallons?.trim() ?? "")) out[ident] = Number(gallons);
+  }
+  return out;
+}
 
 /** The link that sends a plan: every key the plan has, none it lacks. */
 export function sharedPlanLink(plan: SharedPlan, origin: string): string {
@@ -54,6 +101,9 @@ export function sharedPlanLink(plan: SharedPlan, origin: string): string {
   if (plan.type) params.set("type", plan.type.toUpperCase());
   if (plan.rules) params.set("rules", plan.rules);
   if (plan.tail) params.set("tail", plan.tail.toUpperCase());
+  const tanks = tanksWords(plan.tanks);
+  if (tanks) params.set(TANKS, tanks);
+  if (plan.procs) params.set(PROCS_KEY, plan.procs);
   return `${origin}${SCREEN_LINK.path}?${params}`;
 }
 
@@ -85,6 +135,8 @@ export function sharedLinkOf(params: URLSearchParams): SharedLink | null {
       type: identOrNull(params.get("type")),
       rules: rules === "vfr" || rules === "ifr" ? rules : null,
       tail: identOrNull(params.get("tail")),
+      tanks: tanksOfLink(params.get(TANKS)),
+      procs: PROCS.test(params.get(PROCS_KEY)?.toUpperCase() ?? "") ? params.get(PROCS_KEY)!.toUpperCase() : null,
     },
   };
 }
@@ -97,8 +149,8 @@ export function withoutSharedLink(params: URLSearchParams): URLSearchParams {
   return kept;
 }
 
-/** The address that makes a plain link's plan this one's: its route and
- *  altitude, and its departure time while that is still ahead; nothing
+/** The address that makes a plain link's plan this one's: its route,
+ *  altitude and fuel set, and its departure time while that is still ahead; nothing
  *  of the old plan's kept, as a new route keeps none. (A saved flight's
  *  is lib/flightLink planHrefOf's, with its own altitudes and picks.) */
 export function paramsForSharedPlan(plan: SharedPlan, now = Date.now()): URLSearchParams {
@@ -108,6 +160,8 @@ export function paramsForSharedPlan(plan: SharedPlan, now = Date.now()): URLSear
     stops: plan.stops.length ? plan.stops.join(",") : null,
     altitude_ft: plan.altitudeFt,
     depart: plan.depart && Date.parse(plan.depart) > now ? plan.depart : null,
+    tanks: tanksWords(plan.tanks) || null,
+    procs: plan.procs ?? null,
   });
 }
 

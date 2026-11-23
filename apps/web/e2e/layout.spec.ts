@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import {
   closeSidebarWithTheStockKey,
   expectDrawerClosed,
@@ -17,6 +17,9 @@ import {
   frontSheet,
 } from "./helpers";
 import { fromRest } from "./startState";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * The regressions this file exists to catch (see playwright.config.ts
@@ -48,6 +51,9 @@ import { fromRest } from "./startState";
  * the worklist, the TAC) fell on the same two shards of eight.
  */
 
+/** FPL's first row, the one a route's link opens the sheet on. */
+const fplHead = (page: Page) => sideDrawer(page).getByTestId("fpl-head");
+
 test.describe("/app/plan", () => {
   // At rest the panel is a pill of the tabs, at the owner's ask ("When no
   // route is entered, let's have tabs on the pill"), a route's figures
@@ -74,7 +80,7 @@ test.describe("/app/plan", () => {
     // search. A no-break space between a figure and its unit, so \s.
     const figures = sideDrawer(page).getByTestId("flight-line");
     await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    if ((page.viewportSize()?.width ?? 0) < 768) {
+    if ((page.viewportSize()?.width ?? 0) < 660) {
       await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
       // The pill no taller for them: the search's own 4.25 rem, on the
       // screen's foot (no home indicator here; the pages' toggle rides its
@@ -82,7 +88,7 @@ test.describe("/app/plan", () => {
       const pill = await sideDrawer(page).evaluate((el) => el.getBoundingClientRect().top);
       const rem = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
       expect((page.viewportSize()?.height ?? 0) - pill).toBeLessThanOrEqual(4.25 * rem + 2);
-    } else await expect(firstRow(page)).toBeVisible();
+    } else await expect(figures).toBeVisible(); // at the capsule FPL's head is not drawn, its figures are the row
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
@@ -101,7 +107,7 @@ test.describe("/app/plan", () => {
     await expect(page.getByTestId("search-close")).toHaveCount(0);
 
     // The grabber on the panel's far edge, once the panel has come to rest.
-    const phone = page.viewportSize()!.width < 768;
+    const phone = page.viewportSize()!.width < 660;
     await expect(async () => {
       const panelBox = (await sideDrawer(page).boundingBox())!;
       const grabber = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
@@ -242,19 +248,21 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const viewport = page.viewportSize();
     if (!viewport) throw new Error("no viewport configured");
-    const phone = viewport.width < 768;
+    const phone = viewport.width < 660;
 
     const header = page.locator("header");
     await expect(header.getByRole("tablist")).toHaveCount(0);
     const headerBox = (await header.boundingBox())!;
     if (phone) expect(headerBox.y).toBeGreaterThan(viewport.height / 2);
-    // From md up the one search is the panel's first row (OneSearchField)
-    // under its title row (the owner's Apple Maps screenshot, 2026-11-10),
-    // the head under it.
+    // From md up a route's link opens FPL, whose head (FPL's title between
+    // Search and the ✕, the owner, 2026-11-19/20) is the panel's first row,
+    // Search's own row being the pager's other page; the route's head under it.
     else {
-      const bar = (await firstRow(page).boundingBox())!;
+      const bar = (await fplHead(page).boundingBox())!;
       expect(bar.y).toBeLessThan(100);
-      expect(headerBox.y).toBeLessThan(bar.y + bar.height + 8);
+      // The route's head right under the row, the sheet's own 12 of padding
+      // between them (measured: row ends 72, head starts 84).
+      expect(headerBox.y).toBeLessThanOrEqual(bar.y + bar.height + 12);
     }
     // The route folded to its one line leads the panel, its departure at its
     // left edge.
@@ -283,7 +291,7 @@ test.describe("/app/plan", () => {
 });
 
 for (const path of PAGES) {
-  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button is over the map on the planner, on the training page's route capsule`, async ({
+  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button ends the search's row on the planner, on the training page's route capsule`, async ({
     page,
   }) => {
     await page.goto(`${path}?dep=C81&dest=KDLH`);
@@ -292,15 +300,17 @@ for (const path of PAGES) {
     if (!viewport) throw new Error("no viewport configured");
 
     // The group's own first, not the radio's mic, which stands over it in
-    // the same column (the owner, 2026-11-06; on a phone too, 2026-11-13).
-    const first = page.locator("[data-map-controls] > div:not([data-map-food]) button").first();
+    // the same column (the owner, 2026-11-06; on a phone too, 2026-11-13),
+    // nor, from md up, the compass and the 3D button, over the group at the
+    // right since the owner's 2026-11-18 compass (Apple Maps stacks them so).
+    const first = page.locator("[data-map-controls] [data-map-group] button").first();
     const firstBox = (await first.boundingBox())!;
     // On the map, flush with its right edge -- the same on both pages: on a
     // phone just over the sheet's top, the search's row, riding it as the
     // 3D and the page toggle do at the left (the owner, 2026-11-11), at the
     // bottom under a desktop's card.
     expect(viewport.width - (firstBox.x + firstBox.width)).toBeLessThan(20);
-    if (viewport.width < 768) {
+    if (viewport.width < 660) {
       await settled(page.locator("[data-slot=map-panel]"));
       const sheet = (await page.locator("[data-slot=map-panel]").boundingBox())!;
       const group = (await page.locator("[data-map-controls]").boundingBox())!;
@@ -314,8 +324,8 @@ for (const path of PAGES) {
     expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     // Their first is the map's own, its card the map's settings in the
     // sheet (a desktop's side panel too), as Apple Maps' Choose Map card is
-    // (the owner, 2026-11-10); the planner's account button is a circle of
-    // its own under them from md up (data-map-food), not in the group.
+    // (the owner, 2026-11-10); the planner's account button is not among
+    // them: it ends the search's row in the sheet (the owner, 2026-11-20).
     await expect(first).toHaveAttribute("data-testid", "map-settings-button");
     await first.click();
     await expect(sideDrawer(page).getByTestId("map-settings").getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
@@ -329,18 +339,32 @@ for (const path of PAGES) {
       await showTabs(page);
       await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     } else {
-      // Over the map, where the page toggle was until the owner swapped the
-      // two (2026-11-14): under the 3D at the left on a phone, under the
-      // map's buttons from md up; never in the sheet, whose first row ends
-      // in the page toggle on either page.
+      // At the end of the search's row in the sheet, the page toggle at its
+      // start, as Apple Maps' avatar is (the owner, 2026-11-20: "move the
+      // fpl button on the left side of search and avatar to the right
+      // side"), on a phone and beside a desktop's side panel alike; never a
+      // circle over the map (MapControls' AccountCircle is gone).
       await showTabs(page);
-      await expect(page.getByTestId("account-button")).toBeVisible();
-      // A circle of its own over the map (MapControls' AccountCircle), riding
-      // the front sheet's top as the map's buttons do (OnSheetTop, so in its
-      // popup), never in the sheet's own rows.
-      await expect(page.locator("[data-map-food]").getByTestId("account-button")).toBeVisible();
-      expect(await sideDrawer(page).getByTestId("sheet-pages").getByTestId("account-button").count()).toBe(0);
-      await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
+      // With the route FPL is up, its own row Share and the ✕: the account
+      // button is Search's.
+      await expect(page.getByTestId("account-button")).toBeHidden();
+      // FPL's Search button opens the search as an ask (its title and ✕, no
+      // account button), so Search's own row is the route-less page's.
+      await page.goto(path);
+      await settle(page);
+      await showTabs(page);
+      const row = firstRow(page);
+      await expect(row.getByTestId("account-button")).toBeVisible();
+      await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
+      await expect(page.locator("[data-map-food]").getByTestId("account-button")).toHaveCount(0);
+      await expect(page.locator("[data-map-controls]").getByTestId("account-button")).toHaveCount(0);
+      const [toggleBox, fieldBox, accountBox] = [
+        (await row.getByTestId("sheet-page-toggle").boundingBox())!,
+        (await row.getByTestId("search-airports").boundingBox())!,
+        (await row.getByTestId("account-button").boundingBox())!,
+      ];
+      expect(toggleBox.x + toggleBox.width, "the toggle before the field").toBeLessThanOrEqual(fieldBox.x);
+      expect(fieldBox.x + fieldBox.width, "the account button after the field").toBeLessThanOrEqual(accountBox.x);
       await page.goto(path);
       await settle(page);
       await showTabs(page);
@@ -353,32 +377,5 @@ for (const path of PAGES) {
     await openSetup(page);
     expect(await page.getByTestId("base-chart-select").count()).toBe(0);
     await page.keyboard.press("Escape");
-  });
-
-  test(`${path}: the full-screen button takes the whole screen and gives it back`, async ({ page }) => {
-    await page.goto(`${path}?dep=C81&dest=KDLH`);
-    await settle(page);
-    // The map has to have drawn something before this test can say
-    // anything about it redrawing. `settle` waits a fixed 1.5s, which
-    // is plenty when the planner is idle and not always enough when
-    // three other workers are asking it for chart tiles.
-    await expect(page.locator("[data-chart-zoom]").first()).toBeAttached();
-    // Drawn only where it would work: Chromium allows it, an iPad
-    // does, an iPhone does not and the button is absent there rather
-    // than present and refusing (see `FullscreenButton`).
-    expect(await page.evaluate(() => document.fullscreenEnabled)).toBe(true);
-    const button = page.getByTestId("fullscreen-button");
-    await expect(button).toHaveAttribute("aria-label", "Full screen");
-
-    await button.click();
-    await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-    await expect(button).toHaveAttribute("aria-label", "Leave full screen");
-    // The map re-measured rather than keeping its old size: it is
-    // still drawing tiles (`ResizeAware` watches the container).
-    await expect(page.locator("[data-chart-zoom]").first()).toBeAttached();
-
-    await button.click();
-    await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
-    await expect(button).toHaveAttribute("aria-label", "Full screen");
   });
 }

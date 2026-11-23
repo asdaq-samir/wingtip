@@ -1,0 +1,116 @@
+import Foundation
+
+/// A route typed or pasted whole, as the web's Type the Route takes it
+/// into the route's field (RouteEditor, the owner's 2026-11-21 ask for it
+/// at Add a Stop's end): "KPWK DCT OBK V100 KLAS", a clearance's or a filed
+/// flight plan's. The engine reads it as item 15 of FAA Form 7233-4 has it
+/// (AIM Appendix 4, its `route_read`): DCT taken out, a speed and level
+/// group the cruise's, the rest the route's points in order. The first is
+/// left from, the last landed at, and those between flown through, each
+/// checked by the planner as it plans (a word it knows no place by is said
+/// on FPL with its Remove, PlanProblemView). A SID or a STAR typed among
+/// them ("KMSP BAEE1 BAE ... OSH OSHH2 KATW") is the route's procedure, not
+/// a point: the engine's `route_procedures` names them, as the web's route
+/// box reads them, each with the points typed either side of it.
+enum TypedRoute {
+    struct Read: Equatable, Sendable {
+        var dep: String
+        var stops: [String]
+        var dest: String
+        /// The cruise a level group asked for, feet MSL; nil for none or VFR's.
+        var cruiseFt: Double?
+        /// The SIDs and STARs typed, to be picked at the route's ends.
+        var procedures: [EngineContract.RouteProceduresAnswerItem] = []
+    }
+
+    /// The route the words say; nil where they name fewer than two points.
+    /// Thrown where the engine cannot read them.
+    static func read(_ text: String) throws -> Read? {
+        var points: [String] = []
+        var cruiseFt: Double?
+        // Word by word, as the web's route field reads them (filedWords):
+        // a position's "@42.1,-88.2" kept whole, where the reader splits on
+        // its comma, and a level group anywhere the cruise asked for.
+        for word in text.split(whereSeparator: \.isWhitespace).map(String.init) {
+            if word.contains(",") {
+                points.append(word.uppercased())
+                continue
+            }
+            let read = try Engine.routeRead(text: word)
+            cruiseFt = cruiseFt ?? read.cruiseFt
+            points += read.points
+        }
+        let procedures = try Engine.routeProcedures(words: points)
+        let names = Set(procedures.map(\.name))
+        points.removeAll { names.contains($0) }
+        guard let dep = points.first, let dest = points.last, points.count >= 2 else { return nil }
+        return Read(dep: dep, stops: Array(points.dropFirst().dropLast()), dest: dest, cruiseFt: cruiseFt, procedures: procedures)
+    }
+
+    /// The typed SIDs and STARs as picks, each found among its field's
+    /// procedures as the web's typedProcedure finds it: a departure from
+    /// `dep`, its transition the point typed after it where the procedure
+    /// has that transition, else an arrival into `dest` by the point
+    /// before it. `missed` names those neither field publishes; `list` is
+    /// a field's procedures (Planner.procedures), nil where it could not
+    /// be had.
+    @MainActor
+    static func picks(_ read: Read, list: @MainActor (String) async -> ProcedureList?) async -> (picks: [ProcedurePick], missed: [String]) {
+        var picks: [ProcedurePick] = []
+        var missed: [String] = []
+        var lists: [String: ProcedureList?] = [:]
+        for typed in read.procedures {
+            var found: ProcedurePick?
+            for (field, kind, join) in [(read.dep, "departure", typed.after), (read.dest, "arrival", typed.before)] {
+                if lists[field] == nil { lists[field] = .some(await list(field)) }
+                guard let listed = lists[field] ?? nil,
+                      let procedure = listed.procedures.first(where: { $0.kind == kind && $0.id == typed.name }) else { continue }
+                let transition = join.flatMap { procedure.transitions.contains($0) ? $0 : nil }
+                found = ProcedurePick(ident: field, id: procedure.id, kind: kind, name: procedure.name, transition: transition)
+                break
+            }
+            if let found {
+                picks.removeAll { $0.ident == found.ident && $0.kind == found.kind }
+                picks.append(found)
+            } else {
+                missed.append(typed.name)
+            }
+        }
+        return (picks, missed)
+    }
+
+    /// What is said where typed procedures were not found, the web's words:
+    /// "OSHH3 is not a departure from KMSP or an arrival into KATW".
+    static func missedWords(_ missed: [String], read: Read) -> String {
+        "\(missed.joined(separator: " and ")) \(missed.count > 1 ? "are" : "is") not a departure from \(read.dep) or an arrival into \(read.dest). "
+            + "A SID is typed after the departure and a STAR before the destination, as in a filed route."
+    }
+
+    /// The route as the field starts with it: its points in order, a space
+    /// between, so a pilot edits the route there rather than typing it again.
+    static func words(dep: String, stops: [String], dest: String) -> String {
+        ([dep] + stops + [dest]).filter { !$0.isEmpty }.joined(separator: " ")
+    }
+}
+
+extension Plan {
+    /// The route typed whole put in place of the one there, at the cruise
+    /// it asks for where it asks one (the pilot's own, as a clearance's
+    /// "maintain" is), with the typed SIDs and STARs picked in place of the
+    /// fields' picks of their kind, planned again. Undo takes it back
+    /// ("Route replaced").
+    func useTypedRoute(_ read: TypedRoute.Read, picks: [ProcedurePick] = []) {
+        dep = read.dep
+        stops = read.stops
+        dest = read.dest
+        for pick in picks {
+            procedures.removeAll { $0.ident == pick.ident && $0.kind == pick.kind }
+            procedures.append(pick)
+        }
+        if let feet = read.cruiseFt {
+            ownAltitudeFt = feet
+            ownAltitudeLegal = false
+        }
+        plan()
+    }
+}

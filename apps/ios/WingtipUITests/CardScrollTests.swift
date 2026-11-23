@@ -23,9 +23,14 @@ final class CardScrollTests: XCTestCase {
             for (entry, id, title) in [(CardTests.Entry.link("setup"), "card-setup", nil), (.card("+map"), "card-map", "Map")] {
                 let context = "\(title ?? "You") at \(size.name)"
                 let app = CardTests.open(entry, size: size.arguments)
-                XCTAssertTrue(CardTests.card(app, id).waitForExistence(timeout: 20), "\(context): did not open")
-                for _ in 0..<8 { app.swipeUp() }
-                let close = CardTests.close(app)
+                let card = CardTests.card(app, id)
+                XCTAssertTrue(card.waitForExistence(timeout: 20), "\(context): did not open")
+                // Swiped on the card itself on the iPad, where the screen's
+                // middle is the map beside it.
+                for _ in 0..<8 { (CardTests.split ? card : app as XCUIElement).swipeUp() }
+                // You is a page on the iPad's sidebar stack, its way back
+                // its Back (CardTests.away).
+                let close = CardTests.away(app, from: card)
                 XCTAssertTrue(close.exists && close.isHittable, "\(context): the close scrolled away")
                 if let title {
                     XCTAssertTrue(app.navigationBars[title].exists, "\(context): the title left the bar")
@@ -41,6 +46,10 @@ final class CardScrollTests: XCTestCase {
     /// at full a drag down from the top lowers it.
     @MainActor
     func testADragGrowsAndLowersTheCardBeforeItScrolls() throws {
+        // The sheet's detents are the iPhone's: the iPad's card is in the
+        // inspector, a column with no height to drag (docs/design/ios.md
+        // §16: "Avoid: a sheet over the map on regular width").
+        if CardTests.split { throw XCTSkip("Not on an iPad, whose inspector holds the card with no sheet to size") }
         for size in CardTests.sizes {
             let app = CardTests.launch(["-card", "+map"], size: size.arguments)
             let card = CardTests.card(app, "card-map")
@@ -50,7 +59,9 @@ final class CardScrollTests: XCTestCase {
             CardTests.settled(grabber)
             XCTAssertNotEqual(grabber.value as? String, "Expanded", "the Map card did not open half way at \(size.name)")
             let title = app.navigationBars["Map"]
-            let firstRow = app.descendants(matching: .any)["layer-traffic"]
+            // The card's first row, whichever it is (the Chart section's
+            // pictures since 698a7c9da, the layers under them).
+            let firstRow = card.cells.firstMatch
             let rowY = firstRow.frame.minY - title.frame.minY
             card.swipeUp()
             CardTests.settled(grabber)
@@ -77,11 +88,11 @@ final class CardScrollTests: XCTestCase {
             let at = help.frame.minY
             help.tap()
             XCTAssertTrue(app.navigationBars["Help & About"].waitForExistence(timeout: 10), "Help & About did not open at \(size.name)")
-            app.navigationBars.buttons.element(boundBy: 0).tap()
+            CardTests.back(app).tap()
             XCTAssertTrue(help.waitForExistence(timeout: 10) && help.isHittable, "Back lost the list's place at \(size.name)")
             XCTAssertEqual(help.frame.minY, at, accuracy: 4, "Back moved the list at \(size.name)")
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            CardTests.close(app).tap()
+            CardTests.back(app).tap()
+            CardTests.away(app, from: CardTests.card(app, "card-setup")).tap()
             let account = app.buttons["account-button"]
             XCTAssertTrue(account.waitForExistence(timeout: 10), "no account button at \(size.name)")
             account.tap()
@@ -100,17 +111,31 @@ final class CardScrollTests: XCTestCase {
             let app = CardTests.launch(["-card", "+clearance"], size: size.arguments)
             let card = CardTests.card(app, "card-clearance")
             XCTAssertTrue(card.waitForExistence(timeout: 20), "the clearance did not open at \(size.name)")
-            let field = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.firstMatch
+            // At the accessibility sizes the form's field is below the half
+            // card: the card swiped up until it is in sight. The card's own
+            // field: on the iPad the FPL's From and To stay in the sidebar
+            // beside it, and the first field of the app was From.
+            let fields = card.descendants(matching: .any).matching(NSPredicate(
+                format: "elementType == %d OR elementType == %d",
+                XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue))
+            for _ in 0..<4 where !(fields.firstMatch.waitForExistence(timeout: 3) && fields.firstMatch.isHittable) {
+                card.swipeUp()
+            }
+            let field = fields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 10), "no field to type in at \(size.name)")
             field.tap()
             field.typeText("CLEARED TO KOSH")
-            app.navigationBars["Clearance"].swipeDown(velocity: .fast)
-            app.navigationBars["Clearance"].swipeDown(velocity: .fast)
-            XCTAssertTrue(card.exists, "a swipe threw the edit away at \(size.name)")
+            // A swipe down is the iPhone's sheet's; the iPad's inspector
+            // has none to throw the form away by.
+            if !CardTests.split {
+                app.navigationBars["Clearance"].swipeDown(velocity: .fast)
+                app.navigationBars["Clearance"].swipeDown(velocity: .fast)
+                XCTAssertTrue(card.exists, "a swipe threw the edit away at \(size.name)")
+            }
             app.navigationBars.buttons["Cancel"].tap()
             let asked = app.staticTexts["Discard your changes?"]
             XCTAssertTrue(asked.waitForExistence(timeout: 10), "Cancel did not ask at \(size.name)")
-            XCTAssertTrue(app.buttons["Discard Changes"].exists, "the question has no Discard Changes at \(size.name)")
+            XCTAssertTrue(app.buttons["Discard"].exists, "the question has no Discard at \(size.name)")
             // Keep Editing, the dialog's cancel: a button where the dialog
             // is an action sheet, and a tap outside it where iOS 26 shows
             // it as a popover from Cancel, which leaves its cancel out.

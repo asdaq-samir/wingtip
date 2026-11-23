@@ -1,6 +1,6 @@
 """The NTSB's aviation database, fetched when the NTSB remakes it and read
-into the store the planner asks (wingtip.history.ntsb), for the Studio's
-replay of a real flight.
+into the store the planner asks (wingtip.history.ntsb), for an
+airplane card's NTSB cases.
 
 data.ntsb.gov/avdata gives every case since 2008 as one Access database,
 avall.zip (97 MB, avall.mdb inside, 564 MB, on 2026-11-12), remade on the
@@ -48,9 +48,9 @@ import tempfile
 import time
 import zipfile
 from collections.abc import Iterator
-from html.parser import HTMLParser
 from pathlib import Path
 
+from bs4 import BeautifulSoup
 from wingtip import outside
 from wingtip.config import REQUEST_HEADERS
 from wingtip.history import ntsb
@@ -86,39 +86,15 @@ def _save(state: dict) -> None:
     _state_path().write_text(json.dumps(state))
 
 
-class _Table(HTMLParser):
-    """The directory table's cells, each row's by the ids the page gives
-    them (fileName, fileDate, fileSize), read with the standard library's
-    HTML parser rather than a regular expression over the markup."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.rows: list[dict[str, str]] = []
-        self._cell: str | None = None
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag == "tr":
-            self.rows.append({})
-        elif tag == "td" and self.rows:
-            self._cell = dict(attrs).get("id")
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag == "td":
-            self._cell = None
-
-    def handle_data(self, data: str) -> None:
-        if self._cell:
-            self.rows[-1][self._cell] = self.rows[-1].get(self._cell, "") + data
-
-
 def read_directory(page: str) -> dict[str, dict]:
     """The directory's files, {name: {"date" (ISO, as the page gives it,
-    the NTSB's own clock), "size"}}."""
-    table = _Table()
-    table.feed(page)
-    table.close()
+    the NTSB's own clock), "size"}}: each row's cells by the ids the page
+    gives them (fileName, fileDate, fileSize), read with BeautifulSoup
+    over the standard library's HTML parser, as crash.statements reads
+    the FAA's page."""
     out = {}
-    for row in table.rows:
+    for tr in BeautifulSoup(page, "html.parser").find_all("tr"):
+        row = {td["id"]: td.get_text() for td in tr.find_all("td") if td.get("id")}
         try:
             name = row["fileName"].strip()
             when = dt.datetime.strptime(row["fileDate"].strip(), "%m/%d/%Y %I:%M:%S %p")

@@ -73,6 +73,18 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+    # The schema is the owner's: on a stack with a role of its own for the
+    # app (compose, the AWS server), Flyway signs in as the database's
+    # owner (SPRING_FLYWAY_USER / SPRING_FLYWAY_PASSWORD, set there and
+    # nowhere here, so a stack without them runs Flyway as the app's own
+    # user, the tests' Testcontainers among them), and db/callback's
+    # afterMigrate.sql gives the app's role rows only (docs/SECURITY.md,
+    # N4). Its name and password come from SPRING_DATASOURCE_*; empty, as
+    # in the tests, the callback does nothing.
+    locations: classpath:db/migration,classpath:db/callback
+    placeholders:
+      app_user: ${SPRING_DATASOURCE_USERNAME:}
+      app_password: ${SPRING_DATASOURCE_PASSWORD:}
   # The magic-link email flow's own sender (MagicLinkController).
   # Declared unconditionally, unlike Google/Apple's own credentials --
   # spring-boot-starter-mail only auto-configures a JavaMailSender bean
@@ -215,8 +227,8 @@ app:
   # Sign in with Apple (OAuthClientsConfig, AppleRevocation): the web's
   # team, key and Services ID and the .p8 key's PEM, its line breaks kept;
   # whether the iOS app's sign-in must carry its nonce (AppleNonce,
-  # docs/NATIVE.md: off until the app sends one); and where a deleted
-  # pilot's grant is revoked.
+  # docs/NATIVE.md: off until the app sends one); where a deleted
+  # pilot's grant is revoked; and where the iOS app's code is traded.
   apple:
     team-id: ${APPLE_TEAM_ID:}
     key-id: ${APPLE_KEY_ID:}
@@ -224,6 +236,9 @@ app:
     private-key: ${APPLE_PRIVATE_KEY:}
     require-nonce: ${APP_APPLE_REQUIRE_NONCE:false}
     revoke-url: https://appleid.apple.com/auth/revoke
+    # The iOS app's authorization code traded for its refresh token
+    # (AppleAppTokens), so deleting the account can revoke it too.
+    token-url: https://appleid.apple.com/auth/token
   # Sign in with Google (OAuthClientsConfig).
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
@@ -268,16 +283,6 @@ app:
   # The emailed link's own throttle (MagicLinkController): requests an
   # hour per address and per caller. docker-compose.yml loosens both for
   # the local stack, where the e2e suite signs in.
-  # The subscription to the paid features (SubscriptionService): whether
-  # this deployment sells it at all (off for the proof of concept, at the
-  # owner's ask: the page then says nothing of it and the debrief is
-  # everyone's), the free month's length, once an account, and the
-  # addresses given it without paying, comma-separated (an instructor, a
-  # tester). A developer always has it.
-  subscription:
-    enabled: ${APP_SUBSCRIPTION_ENABLED:false}
-    trial-days: ${APP_SUBSCRIPTION_TRIAL_DAYS:30}
-    comped-emails: ${APP_SUBSCRIPTION_COMPED_EMAILS:}
   # The MCP connector a pilot adds to their own Claude or ChatGPT
   # (docs/design/mcp-connector.md, security/mcp): the MCP server's
   # address, the audience of every token issued (blank: the public
@@ -303,6 +308,8 @@ app:
     unused-client-days: ${MCP_UNUSED_CLIENT_DAYS:1}
     housekeeping-cron: ${MCP_HOUSEKEEPING_CRON:0 45 3 * * *}
   magic-link:
+    # Per address from each caller; an address takes six callers' worth in
+    # all (MagicLinkController.ADDRESS_CALLERS).
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
     # Asks of whose account a link is for (MagicLinkAccountController).
@@ -343,13 +350,6 @@ app:
     down-after: ${APP_MONITORING_DOWN_AFTER:PT5M}
     alert-emails: ${APP_ALERT_EMAILS:}
     weather-url: ${WEATHER_SERVICE_URL:}
-
-  # The Studio's crash drafts (CrashDraftMail, docs/STUDIO-PIPELINE.md):
-  # every five minutes (cron, UTC; "-" turns it off) the planner is asked
-  # which ready drafts nobody has been mailed about, and each is mailed to
-  # the developer-emails with its link under public-base-url.
-  studio:
-    drafts-cron: ${APP_STUDIO_DRAFTS_CRON:0 */5 * * * *}
 
 # The flight watch (FlightWatchService): how often the watched flights
 # departing within the window are re-briefed and the planner asked what

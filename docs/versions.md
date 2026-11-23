@@ -47,12 +47,12 @@ The owner, 2026-11-09, standing:
 
 | Tool | Version | Read by |
 |---|---|---|
-| Java | Temurin 25 (`temurin-25`, the LTS) | the gateway (pom `java.version`, `maven:4.0.0-rc-7-eclipse-temurin-25`, `eclipse-temurin:25-jre`) and Android (Gradle's daemon JVM, Java 25 bytecode) |
+| Java | Temurin 25 (`temurin-25`, the LTS) | the gateway (pom `java.version`, `maven:4.0.0-rc-7-eclipse-temurin-25-resolute`, `eclipse-temurin:25-jre-resolute`, both on Ubuntu 26.04) and Android (Gradle's daemon JVM, Java 25 bytecode) |
 | Python | 3.15.2 | every service and job image (`python:3.15-slim`), CI's setup-python, the dev container |
 | Rust | 1.100.0, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
 | Node | 26 | `apps/web/.nvmrc`, the web build (`node:26-slim`), CI |
-| Gradle | 9.9.1 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
-| Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
+| Gradle | 9.9.2 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
+| Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25-resolute`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |
 | Formatters | ruff 0.17.5, SwiftFormat 0.64.6, ktlint 2.0.0-ALPHA-4, palantir-java-format 2.103.0, Prettier 3.10.1 | `scripts/dev/format.sh` (SwiftFormat and ktlint installed by mise) |
@@ -64,13 +64,14 @@ floor say the oldest Python the code reads on, not the one it runs on.
 
 ### Web (`apps/web/package.json`, its lockfile)
 
-React 19.3.1, Vite 8.3.7, TypeScript 6.0.3, React Router 8.5.1
+React 19.3.1, Vite 8.3.7, TypeScript 6.0.3, React Router 8.5.2
 (`react-router`; `react-router-dom` went with v8), Base UI 1.9.0
 (`@base-ui/react`) under shadcn 4.23.0 in its `base-vega` style
 (`components.json`, neutral base), React Aria 3.53.1 and React Aria
 Components 1.22.1 (date, time and number fields, drag and drop, long
-press), Tailwind CSS 4.3.5, MapLibre GL 6.17.0, TanStack Query 5.107.1
-and Table 9.3.1, zod 4.6.7, ESLint 10.14.0 with typescript-eslint
+press), Tailwind CSS 4.3.5, MapLibre GL 6.19.0, TanStack Query 5.108.2
+and Table 9.3.1, react-hook-form 7.92.0, recharts 3.11.0, lucide-react
+1.77.0, react-hotkeys-hook 5.4.0, zod 4.6.7, ESLint 10.14.0 with typescript-eslint
 8.72.2, vitest 5.1.0, knip 6.44.2, Playwright 1.65.0 (CI's image
 `mcr.microsoft.com/playwright:v1.65.0-noble`).
 
@@ -84,9 +85,9 @@ mode with complete strict concurrency.
 
 ### Android (`apps/android/gradle/libs.versions.toml`)
 
-AGP **9.6.0-alpha04** (its built-in Kotlin compiles the app), Kotlin
+AGP **9.6.0-alpha05** (its built-in Kotlin compiles the app), Kotlin
 **2.5.0-RC**, KSP 2.3.13, the Compose alpha BOM (`compose-bom-alpha`)
-2026.11.00, which carries Material 3 **1.5.0-rc01** (for Material 3
+2026.11.01, which carries Material 3 **1.5.0-rc01** (for Material 3
 Expressive) and Material adaptive 1.4.0-alpha03 with its Navigation 3
 scenes, Navigation 3 **1.3.0-alpha04**, Lifecycle **2.12.0-alpha05**,
 Activity 1.14.0-alpha03, Hilt (Dagger) 2.60.1 with AndroidX Hilt 1.4.0,
@@ -125,7 +126,7 @@ written here.
 | What | Pinned | Newest | Why it waits | Moves when |
 |---|---|---|---|---|
 | TypeScript | 6.0.3 | 7.x | typescript-eslint 8.72 supports TypeScript below 6.1 only ([its support range](https://typescript-eslint.io/users/dependency-versions/)), and openapi-typescript 7.13, its newest, asks for 5.x (let onto 6 by an override in package.json); on 7 neither the lint nor `npm run types` would run (commit dd9dae944, 2026-11-09) | typescript-eslint declares TypeScript 7, and openapi-typescript runs on it |
-| Material 3 (Android) | 1.5.0-rc01 | 1.5.0-rc01 (1.4.0 the newest stable) | Not held back: the release candidate is taken on purpose, as 1.4.0 keeps Expressive internal (decision 0016); it comes from the alpha BOM since 2026-11-12 | 1.5.0 stable ships |
+| Material 3 (Android) | 1.6.0-alpha01 | 1.6.0-alpha01 (1.4.0 the newest stable) | Not held back: the newest alpha, taken on purpose (decision 0016; audit round 2, 2026-11-21), with Compose's UI 1.14.0-alpha01, each over the alpha BOM until a BOM carries them | a BOM carries them |
 | Java | 25 (LTS) | 27 (non-LTS, September 2026) | The gateway and Android stay on one Java, the LTS the owner named on 2026-11-09 ("Java 25 everywhere"), which AGP's D8 and Spring Boot 4.1 both take | The next LTS, or the owner's word |
 | APScheduler (`wingtip.schedule`) | 3.11.3 | 4.0.0a6 | 4.0's alphas rewrite the API (data stores, async first) and have had no release since 2025-04-27, while 3.11.3, its maintained line, came on 2026-06-28 | 4.0 has a release newer than the 3.x line's |
 | maven-compiler-plugin | 3.16.0 | 4.0.0-beta-5 | 4.0's beta deprecates `annotationProcessorPaths` (a warning on every build), and its replacement, a dependency of type `classpath-processor`, put Lombok on javac's processor path alone, not its class path, so the gateway did not compile (`target/javac.args`, 2026-11-14, on Maven 4.0.0-rc-7); Lombok as a `jar` and a `processor` dependency both is read as one | A compiler 4.0 release that puts a `classpath-processor` on both paths |

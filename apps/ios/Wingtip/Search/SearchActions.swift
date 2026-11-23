@@ -117,6 +117,8 @@ enum SearchActions {
         case .flights: "tray.full"
         case .checklists: "checklist"
         case .logbook: "book"
+        case .scratchpad: "pencil.and.scribble"
+        case .balance: "scalemass"
         default: "arrow.forward.circle"
         }
     }

@@ -115,9 +115,38 @@ struct OfflineChartsTests {
     @Test func anEditionExpiresAt0901ZOnTheNextOnesDay() {
         let kept = Self.kept()
         let utc = ISO8601DateFormatter()
+        // The minute before, of and after the 24 Dec 2026 edition takes over.
         #expect(!kept.expired(now: utc.date(from: "2026-12-24T09:00:00Z")!))
         #expect(kept.expired(now: utc.date(from: "2026-12-24T09:01:00Z")!))
-        #expect(!Self.kept(expires: nil).expired(now: .distantFuture))
+        #expect(kept.expired(now: utc.date(from: "2026-12-24T09:02:00Z")!))
+        #expect(OfflineKept.isoDay("10-29-2026") == "2026-10-29" && OfflineKept.isoDay("latest") == nil)
+    }
+
+    /// Offline across a changeover, the chart answer still the old
+    /// cycle's: inside a region of the next cycle kept ahead, the next one
+    /// is drawn from 0901Z on its date, the engine's `data_cycle` asked;
+    /// past it, the old chart (the data-cycles audit's 14).
+    @Test func theKeptNextCycleIsDrawnInItsRegionFrom0901Z() throws {
+        let store = Self.scratch()
+        let old = Self.kept(done: [])
+        let next = Self.kept(cycle: "12-24-2026", expires: "2027-02-18", done: [])
+        store.update(old.id) { $0 = old }
+        store.update(next.id) { $0 = next }
+        try store.finish(cycle: "12-24-2026", region: "Chicago", archive: "sec@2x", file: try Self.sampleFile())
+        let utc = ISO8601DateFormatter()
+        let before = utc.date(from: "2026-12-24T09:00:00Z")!, after = utc.date(from: "2026-12-24T09:01:00Z")!
+        #expect(store.keptInForce(after: "10-29-2026", now: before) == nil)
+        #expect(store.tile(cycle: "10-29-2026", kind: "sec", z: 12, x: 7, y: 25, scale: 2, now: before) == nil)
+        #expect(store.keptInForce(after: "10-29-2026", now: after) == "12-24-2026")
+        #expect(store.tile(cycle: "10-29-2026", kind: "sec", z: 12, x: 7, y: 25, scale: 2, now: after) == Data("12,7,25".utf8))
+        // Never an older cycle in place of the one asked for.
+        #expect(store.keptInForce(after: "12-24-2026", now: after) == nil)
+        // Past the kept region the old chart is drawn: none of the next one's there.
+        store.update(next.id) {
+            $0 = OfflineKept(region: "Chicago", name: "Chicago", cycle: "12-24-2026", expires: "2027-02-18", boxes: [[-88, 41, -87, 42]],
+                             wanted: ["sec@2x": Self.sample.count], done: ["sec@2x"])
+        }
+        #expect(store.tile(cycle: "10-29-2026", kind: "sec", z: 12, x: 7, y: 25, scale: 2, now: after) == nil)
     }
 
     @Test func anExpiredEditionGoesOnlyOnceItsUpdateIsWhole() {

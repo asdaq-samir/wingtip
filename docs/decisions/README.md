@@ -23,18 +23,18 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0015 | [Close goes back one level; no Back buttons](0015-close-goes-back.md) | 2026-10-22 | Accepted, amended 2026-11-10 |
 | 0016 | [Stock components over hand-rolled ones](0016-stock-components.md) | 2026-10-28 | Accepted, amended 2026-11-10 |
 | 0017 | [Discrete settings are menus or segmented controls, not sliders](0017-menus-not-sliders.md) | 2026-10-15 | Accepted |
-| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted, amended 2026-11-10 (the web's sheet solid) |
+| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted, amended 2026-11-10 (the web's sheet solid), 2026-11-21 (the iPhone's too) |
 | 0019 | [No explanatory footnotes on pilot screens](0019-no-explanatory-footnotes.md) | 2026-10-16 | Accepted |
 | 0020 | [The app says "airplane"](0020-airplane-not-aircraft.md) | 2026-11-06 | Accepted |
 | 0021 | [Labels are Title Case; the FAA's text is sentence case with codes kept](0021-title-case-labels.md) | 2026-10-23 | Accepted |
 | 0022 | [The app is free for now](0022-free-app-for-now.md) | 2026-11-02 | Accepted |
-| 0023 | [NOTAMs come from the SWIM feed; no FAA NOTAM API key](0023-notams-from-swim-only.md) | 2026-11-09 | Accepted |
+| 0023 | [NOTAMs come from the SWIM feed; no FAA NOTAM API key](0023-notams-from-swim-only.md) | 2026-11-09 | Amended by 0059 |
 | 0024 | [Dependabot opens no pull requests](0024-no-dependabot-prs.md) | 2026-11-09 | Accepted |
 | 0025 | [Chart tiles, retina included, are palette PNGs](0025-palette-png-tiles.md) | 2026-11-08 | Accepted |
 | 0026 | [The map has no OpenStreetMap layer](0026-no-openstreetmap.md) | 2026-09-21 | Accepted |
 | 0027 | [Machine learning is scikit-learn only](0027-scikit-learn-only.md) | 2026-11-06 | Accepted |
 | 0028 | [The database is plain Postgres](0028-plain-postgres.md) | 2026-11-08 | Accepted |
-| 0029 | [The FPL sheet stays as it is; the nav log stays behind the ••• button](0029-fpl-sheet-as-is.md) | 2026-11-09 | Accepted |
+| 0029 | [The FPL sheet stays as it is; the nav log stays behind the ••• button](0029-fpl-sheet-as-is.md) | 2026-11-09 | Accepted, amended 2026-11-21 by 0049 |
 | 0030 | [Controls never grow to reach 44 points](0030-nothing-grows-hit-areas.md) | 2026-10-22 | Accepted |
 | 0031 | [Each platform may look its own best](0031-platform-looks.md) | 2026-11-04 | Accepted, amended 2026-11-10 |
 | 0032 | [An architecture change updates the diagram too](0032-docs-include-diagrams.md) | 2026-11-07 | Accepted |
@@ -44,13 +44,27 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |
 | 0037 | [The order of a wave is enforced, not remembered](0037-order-enforced.md) | 2026-11-11 | Accepted |
 | 0038 | [Web first; the phones on the owner's word](0038-web-first.md) | 2026-11-11 | Accepted |
-| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted |
+| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted; its crash half left with Studio (0060) |
 | 0040 | [The iPhone app's oldest iOS is 27, and the Watch's watchOS 27](0040-ios-27-floor.md) | 2026-11-12 | Accepted |
 | 0041 | [The server's Claude features are taken out](0041-claude-taken-out.md) | 2026-11-12 | Accepted |
 | 0042 | [Each change runs its own tests; the wave is validated on GitHub](0042-fast-checks.md) | 2026-11-13 | Accepted |
 | 0043 | [A closed field is never shown or offered as an open one](0043-closed-fields-never-open.md) | 2026-11-13 | Accepted |
 | 0044 | [A red run ends early, a push is judged by what it adds, and the phones gate their own trees](0044-red-runs-end-early.md) | 2026-11-15 | Accepted |
-| 0045 | [FPL for every pilot: one head, one route field, ages, explanations and one Undo](0045-fpl-for-every-pilot.md) | 2026-11-17 | Accepted |
+| 0045 | [FPL for every pilot: one head, one route field, ages, explanations and one Undo](0045-fpl-for-every-pilot.md) | 2026-11-17 | Accepted, amended 2026-11-21 by 0049 and 0050 |
 | 0046 | [A row is swiped away and held to move, by React Aria's own recipe and the browser's own drag](0046-row-gestures.md) | 2026-11-17 | Accepted |
 | 0047 | [FPL has one route layout: folded to read, opened to edit](0047-one-fpl-layout.md) | 2026-11-17 | Accepted |
 | 0048 | [The browser specs a change reaches gate its merge](0048-browser-specs-gate.md) | 2026-11-19 | Accepted |
+| 0049 | [FPL's More holds three items, every edit offers its own Undo, and File is a button of its own](0049-more-three-items-one-undo.md) | 2026-11-21 | Accepted |
+| 0050 | [FPL's head is Search and the ✕, its foot is the figures and the floating bar](0050-fpl-head-and-foot.md) | 2026-11-21 | Accepted |
+| 0051 | [A confirmation is the stock centred alert at every width](0051-confirmation-centred-alert.md) | 2026-11-20 | Accepted |
+| 0052 | [The map shows the big fields and their airspace from zoom 5](0052-map-low-zoom-fields-and-airspace.md) | 2026-11-21 | Accepted |
+| 0053 | [A route outside the United States is warned of: its figures are by US rules](0053-us-rules-outside-the-us.md) | 2026-11-21 | Accepted |
+| 0054 | [A wave's heavy validation runs on GitHub, and waves are small](0054-validation-on-github.md) | 2026-11-21 | Accepted |
+| 0055 | [The store apps name an airplane's registrant only where it is the pilot's own or an organisation](0055-registry-names-in-store-apps.md) | 2026-11-21 | Accepted |
+| 0056 | [One set of words on all three apps, generated from one table](0056-one-set-of-words.md) | 2026-11-21 | Accepted |
+| 0057 | [A documents library and reader, and every cited rule a tap to its paragraph](0057-documents-library.md) | 2026-11-21 | Proposed |
+| 0058 | [The iPad is the primary device](0058-ipad-primary.md) | 2026-11-21 | Accepted |
+| 0059 | [The full NOTAM set comes from the FAA's NOTAM Management Service API](0059-notams-full-set-from-nms.md) | 2026-11-21 | Accepted |
+| 0060 | [Feature review: keep, park, cut](0060-feature-review-keep-park-cut.md) | 2026-11-21 | Accepted |
+| 0061 | [Wingtip inside Claude: a live view beside the chat, and the flight edited by tools](0061-wingtip-inside-claude.md) | 2026-11-22 | Accepted |
+| 0062 | [Validation checks each branch early, reruns only what failed, and ends with one full run](0062-smart-validation.md) | 2026-11-22 | Accepted |

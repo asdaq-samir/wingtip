@@ -233,3 +233,28 @@ def faa_chart_page(source: str, edition: str, pdf: str, page: int) -> FileRespon
     if path is None:
         raise HTTPException(404, f"No page {page} of {pdf} in {source} {edition}.")
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": DIAGRAM_CACHE})
+
+
+@router.get(
+    "/api/faa-chart/pdf/{source}/{edition}/{pdf}",
+    response_class=Response,
+    responses={
+        200: {"content": {"application/pdf": {}}},
+        404: {"description": "No such chart in force"},
+        502: {"description": "The FAA could not be reached"},
+    },
+    openapi_extra=SHARED,
+)
+def faa_chart_pdf(source: str, edition: str, pdf: str) -> Response:
+    """One of the FAA's charts in force as its PDF, kept for its edition,
+    for the web's own-ship airport diagram, which reads the page's own
+    latitude and longitude labels and hot spots (the engine's
+    diagram_labels, diagram_hot_spot_labels) where the phones read the
+    same PDF themselves."""
+    try:
+        data = publication_pages.chart_pdf(source, edition, pdf)
+    except publications.FaaUnreachable:
+        raise HTTPException(502, "The FAA could not be reached.") from None
+    if data is None:
+        raise HTTPException(404, f"No {pdf} in {source} {edition}.")
+    return Response(data, media_type="application/pdf", headers={"Cache-Control": DIAGRAM_CACHE})

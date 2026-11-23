@@ -3,7 +3,7 @@ import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre
 import type { AirportPin } from "../../../lib/api/types";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
-import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE } from "../../../lib/map/gl/layers/common";
+import { labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { weatherMarksOf } from "../../../lib/map/marks/airportWeather";
 import { airportWeatherDrawn } from "../../../lib/map/marks/airportWeatherPrefs";
@@ -17,8 +17,7 @@ const SOURCE = "airport-weather";
 /** The station model from zoom 10, where the chart's fields stand apart
  *  enough for its lines beside each (the owner's pick, 2026-11-10: "about
  *  10 on web and Android"); with the look Station, from 7, a region's
- *  scale, where the fields' own symbols start keeping only a little apart
- *  (glOverlays' icon-padding) and the lines give way where they don't fit. */
+ *  scale, where the lines give way where they don't fit. */
 const STATION_CLOSE = MAP.zoomStationClose;
 const STATION_ALWAYS = MAP.zoomStationAlways;
 
@@ -39,14 +38,16 @@ const wind = (id: string, filter: ExpressionSpecification): SymbolLayerSpecifica
     "icon-rotate": ["get", "dir"],
     ...ROTATE_ON_MAP,
     "text-field": ["get", "variable"],
-    "text-font": GL_FONT_BOLD,
-    "text-size": LABEL_SIZE.small,
+    ...labelText("airportWeather"),
     "text-anchor": "top",
     "text-offset": [0, 1.3],
     "text-padding": 1,
     "text-optional": true,
   },
-  paint: { "text-color": ["case", ["get", "over"], CHART.warning, CHART.fixInk] as ExpressionSpecification, ...LABEL_HALO },
+  paint: {
+    "text-color": labelInk(["case", ["get", "over"], CHART.warning, CHART.fixInk] as ExpressionSpecification),
+    ...labelHalo("airportWeather"),
+  },
 });
 
 /** Close in, the station model: every reported wind, calm its circle. */
@@ -61,14 +62,13 @@ const LINES: SymbolLayerSpecification = {
   filter: ["!=", ["get", "lines"], ""],
   layout: {
     "text-field": ["get", "lines"],
-    "text-font": GL_FONT_BOLD,
-    "text-size": LABEL_SIZE.small,
+    ...labelText("airportWeather"),
     "text-anchor": "right",
     "text-justify": "right",
     "text-offset": [-1.5, 0],
     "text-padding": 1,
   },
-  paint: { "text-color": CHART.fixInk, ...LABEL_HALO },
+  paint: { "text-color": labelInk(CHART.fixInk), ...labelHalo("airportWeather") },
 };
 
 /** Farther out, at any zoom the station model is not drawn at, the barb

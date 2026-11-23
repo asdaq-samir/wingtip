@@ -33,7 +33,7 @@ struct PilotGuideView: View {
                 .disabled(askedFirstFlight)
                 .accessibilityIdentifier("first-flight-again")
             }
-            Section("Checkpoint Colours") {
+            Section("Checkpoint Colors") {
                 ForEach(Self.buckets, id: \.score) { b in
                     Label {
                         Text(b.words)
@@ -44,9 +44,9 @@ struct PilotGuideView: View {
                     }
                 }
             }
-            Section("Practice") { PracticeRows() }
+            PracticeSection()
             Section("More") {
-                NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView() }
+                NavigationLink("Your Airplane in the Day's Air") { AirplaneInTheAirView() }
             }
         }
         .navigationTitle("Guide")

@@ -1,9 +1,10 @@
 import Foundation
+import Synchronization
 
 /// A region's charts kept on the phone (Setup → Downloads): which region
 /// of which cycle, the archives wanted and those on disk whole, and the
 /// cycle packs fetched with it.
-struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
+nonisolated struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
     var id: String { "\(cycle)/\(region)" }
     let region: String
     let name: String
@@ -22,22 +23,37 @@ struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
     var complete: Bool { Set(done) == Set(wanted.keys) }
     var bytes: Int { wanted.values.reduce(0, +) }
 
-    /// Past its date: an edition is replaced at 0901Z on the next one's
-    /// effective day (the FAA's 28 and 56 Day Product Schedule, as the
-    /// planner's wingtip.data_cycles.in_force_day has it). Said on the
-    /// list, never removed for it alone (warn, never limit; docs/decisions/0008).
+    /// Past its date: the engine's `data_cycle` on the FAA's 56-day chart
+    /// schedule, asked at the minute, as an edition is replaced at 0901Z on
+    /// the next one's date ("Effective 0901 UTC"). The rule was worked out
+    /// here as `expires` plus nine hours and a minute. Said on the list,
+    /// never removed for it alone (warn, never limit; docs/decisions/0008).
     func expired(now: Date = .now) -> Bool {
-        guard let day = expires.flatMap(Self.utcDay) else { return false }
-        return now >= day.addingTimeInterval(9 * 3600 + 60)
+        guard let effective = Self.isoDay(cycle),
+              let answer = try? Engine.dataCycle(kind: "chart", effective: effective, on: Self.utcTime(now)) else { return false }
+        return answer.state == "expired"
     }
 
-    /// "2026-12-24" as that day's 0000Z.
-    static func utcDay(_ text: String) -> Date? {
-        let parts = text.split(separator: "-").compactMap { Int($0) }
-        guard parts.count == 3 else { return nil }
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+    /// Whether a kept cycle has taken over by `now`: in force, or since
+    /// replaced (the engine's `data_cycle`, 0901Z on its date). A region of
+    /// the next cycle kept ahead is drawn from then on (`keptInForce`).
+    static func begun(_ cycle: String, now: Date = .now) -> Bool {
+        guard let effective = isoDay(cycle),
+              let answer = try? Engine.dataCycle(kind: "chart", effective: effective, on: utcTime(now)) else { return false }
+        return answer.state == "in_force" || answer.state == "expired"
+    }
+
+    /// A chart cycle's name, "10-29-2026" as the FAA's links write it, as
+    /// "2026-10-29"; nil where it is no such name.
+    static func isoDay(_ cycle: String) -> String? {
+        let parts = cycle.split(separator: "-")
+        guard parts.count == 3, parts.allSatisfy({ Int($0) != nil }) else { return nil }
+        return "\(parts[2])-\(parts[0])-\(parts[1])"
+    }
+
+    /// A moment as the engine reads it, "2026-12-24T09:01:00Z".
+    static func utcTime(_ date: Date) -> String {
+        date.formatted(.iso8601)
     }
 }
 
@@ -48,13 +64,24 @@ struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
 /// the map fetched as it went (TileStore, under Caches), and the planner
 /// can always cut them again. The map reads a tile here first
 /// (TileStore.read), then its own store, then the network.
-final class OfflineStore: @unchecked Sendable {
+///
+/// What changes (the list, the open archives, the cycles begun) is one
+/// `State` behind one mutex, which the map's tile loads take; no file is
+/// read, written or removed while it is held, so a tile never waits on a
+/// manifest write or a region's folder being deleted.
+final nonisolated class OfflineStore: Sendable {
     static let shared = OfflineStore()
 
     let root: URL
-    private let lock = NSLock()
-    private var kept: [OfflineKept]?
-    private var readers: [URL: PMTilesReader] = [:]
+    private nonisolated struct State {
+        var kept: [OfflineKept]?
+        var readers: [URL: PMTilesReader] = [:]
+        /// Kept cycles known to have begun: once begun, always.
+        var begun: Set<String> = []
+        /// Bumped by each change, so the manifest last written is the newest.
+        var version = 0
+    }
+    private let state = Mutex(State())
 
     init(root: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -69,37 +96,55 @@ final class OfflineStore: @unchecked Sendable {
 
     /// Every region kept, newest cycle first, by name.
     func all() -> [OfflineKept] {
-        lock.withLock { loaded() }.sorted { ($0.cycle.reversedDate, $0.name) > ($1.cycle.reversedDate, $1.name) }
+        loaded().sorted { ($0.cycle.reversedDate, $0.name) > ($1.cycle.reversedDate, $1.name) }
     }
 
+    /// The list, read from the manifest the first time (outside the lock).
     private func loaded() -> [OfflineKept] {
-        if let kept { return kept }
+        if let kept = state.withLock({ $0.kept }) { return kept }
         let read = (try? Data(contentsOf: manifest)).flatMap { try? JSONDecoder().decode([OfflineKept].self, from: $0) } ?? []
-        kept = read
-        return read
+        return state.withLock { s in
+            if let kept = s.kept { return kept }
+            s.kept = read
+            return read
+        }
     }
 
     /// One region changed, added, or (nil) removed with its files.
     func update(_ id: String, _ change: (inout OfflineKept?) -> Void) {
-        lock.withLock {
-            var list = loaded()
+        _ = loaded()
+        let gone: OfflineKept? = state.withLock { s in
+            var list = s.kept ?? []
             var entry = list.first { $0.id == id }
             let before = entry
             change(&entry)
             list.removeAll { $0.id == id }
             if let entry { list.append(entry) }
-            if entry == nil, let gone = before {
-                let folder = root.appending(path: "\(gone.cycle)/\(gone.region)")
-                readers = readers.filter { !$0.key.path.hasPrefix(folder.path) }
-                try? FileManager.default.removeItem(at: folder)
-            }
-            kept = list
-            try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            var folder = root
-            var values = URLResourceValues()
-            values.isExcludedFromBackup = true
-            try? folder.setResourceValues(values)
+            s.kept = list
+            s.version += 1
+            guard entry == nil, let before else { return nil }
+            let folder = root.appending(path: "\(before.cycle)/\(before.region)").path
+            s.readers = s.readers.filter { !$0.key.path.hasPrefix(folder) }
+            return before
+        }
+        if let gone { try? FileManager.default.removeItem(at: root.appending(path: "\(gone.cycle)/\(gone.region)")) }
+        writeManifest()
+    }
+
+    /// The list as it is now, written; again where it changed meanwhile,
+    /// so whichever of two writes ends last, the file is the newest list.
+    private func writeManifest() {
+        try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        var folder = root
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? folder.setResourceValues(values)
+        var written = -1
+        while true {
+            let (list, version) = state.withLock { ($0.kept ?? [], $0.version) }
+            guard version != written else { return }
             try? JSONEncoder().encode(list).write(to: manifest, options: .atomic)
+            written = version
         }
     }
 
@@ -116,28 +161,51 @@ final class OfflineStore: @unchecked Sendable {
         }
     }
 
-    /// A tile of the cycle from a downloaded region: the density asked for
-    /// first, else the other (a 256-pixel tile drawn over the same map
-    /// rect, ChartTileRenderer). nil where no region kept holds it.
-    func tile(cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int) -> Data? {
+    /// The newest kept cycle later than `cycle` that has taken over by
+    /// `now`, nil where none has: the phone offline across a changeover,
+    /// its chart answer still the old cycle's, draws the next cycle where
+    /// a region of it is kept, from 0901Z on its date (the data-cycles
+    /// audit's 14, the owner's word 2026-11-21). Past the region the old
+    /// chart stays, and Ready to Fly says it is out of date.
+    func keptInForce(after cycle: String, now: Date = .now) -> String? {
+        let later = Set(all().map(\.cycle).filter { $0.reversedDate > cycle.reversedDate }).sorted { $0.reversedDate > $1.reversedDate }
+        return later.first { kept in
+            if state.withLock({ $0.begun.contains(kept) }) { return true }
+            guard OfflineKept.begun(kept, now: now) else { return false }
+            _ = state.withLock { $0.begun.insert(kept) }
+            return true
+        }
+    }
+
+    /// A tile of the cycle from a downloaded region: of the kept cycle in
+    /// force where one later than `cycle` covers it (`keptInForce`), else
+    /// of `cycle`; the density asked for first, else the other (a 256-pixel
+    /// tile drawn over the same map rect, ChartTileRenderer). nil where no
+    /// region kept holds it.
+    func tile(cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int, now: Date = .now) -> Data? {
         let names = [Self.archive(kind: kind, scale: scale), Self.archive(kind: kind, scale: scale == 1 ? 2 : 1)]
         let (lat, lon) = Self.centre(z: z, x: x, y: y)
-        let regions = lock.withLock { loaded() }.filter { $0.cycle == cycle && $0.covers(lat: lat, lon: lon, z: z) }
-        for name in names {
-            for region in regions where region.done.contains(name) {
-                if let data = reader(path(cycle: cycle, region: region.region, archive: name))?.tile(z: z, x: x, y: y) {
-                    return data
+        let cycles = [keptInForce(after: cycle, now: now), cycle].compactMap { $0 }
+        let covering = loaded().filter { $0.covers(lat: lat, lon: lon, z: z) }
+        for drawn in cycles {
+            for name in names {
+                for region in covering where region.cycle == drawn && region.done.contains(name) {
+                    if let data = reader(path(cycle: drawn, region: region.region, archive: name))?.tile(z: z, x: x, y: y) {
+                        return data
+                    }
                 }
             }
         }
         return nil
     }
 
+    /// The archive, opened once (outside the lock) and kept.
     private func reader(_ url: URL) -> PMTilesReader? {
-        lock.withLock {
-            if let kept = readers[url] { return kept }
-            guard let opened = try? PMTilesReader(url: url) else { return nil }
-            readers[url] = opened
+        if let kept = state.withLock({ $0.readers[url] }) { return kept }
+        guard let opened = try? PMTilesReader(url: url) else { return nil }
+        return state.withLock { s in
+            if let kept = s.readers[url] { return kept }
+            s.readers[url] = opened
             return opened
         }
     }
@@ -172,7 +240,7 @@ final class OfflineStore: @unchecked Sendable {
     }
 }
 
-extension OfflineKept {
+nonisolated extension OfflineKept {
     /// Whether a tile centred here may be in the region's archives: inside
     /// a box, or near one by a tile's width (the cut keeps every tile its
     /// boxes touch).
@@ -184,7 +252,7 @@ extension OfflineKept {
     }
 }
 
-extension String {
+nonisolated extension String {
     /// A chart cycle's name ("10-29-2026") as a sortable "2026-10-29".
     var reversedDate: String {
         let parts = split(separator: "-")

@@ -10,7 +10,7 @@ import Foundation
 /// Caches, which iOS may clear and the next look fetches again. The disk
 /// holds the pyramid's own tiles as fetched; the map decodes them
 /// (ChartTileRenderer) and keeps the decoded ones in memory (TileCache).
-final class TileStore: Sendable {
+final nonisolated class TileStore: Sendable {
     static let shared = TileStore()
 
     /// The map's own fetches: Caches.
@@ -87,8 +87,11 @@ final class TileStore: Sendable {
     }
 
     /// Everything but the cycle flown now, in both places: an edition gone
-    /// by is no use.
-    func keepOnly(cycle: String) {
+    /// by is no use. Thousands of files at a cycle's turn, so on the
+    /// concurrent pool, never the main actor (the first launch after the
+    /// FAA's cycle turns would hang on it).
+    @concurrent
+    func keepOnly(cycle: String) async {
         for place in [root, keptRoot] {
             guard let editions = try? FileManager.default.contentsOfDirectory(at: place, includingPropertiesForKeys: nil) else { continue }
             for edition in editions where edition.lastPathComponent != cycle {

@@ -45,7 +45,7 @@ def test_each_product_is_a_job_at_its_planning_pace():
     on = main.schedule.scheduler()
     main.Schedule().jobs(on)
     jobs = on.get_jobs()
-    assert [job.id for job in jobs] == [p.name for p in main.PRODUCTS]
+    assert [job.id for job in jobs] == [p.name for p in main.products()]
     assert jobs[0].trigger.interval.total_seconds() == get_settings().reports_every_s
 
 
@@ -80,10 +80,20 @@ def test_the_health_check_says_how_fresh_each_product_is(monkeypatch):
     assert body["products"]["metars"]["age_s"] == 60.0 and not body["products"]["metars"]["stale"]
     assert body["products"]["tafs"]["stale"] and not body["products"]["tafs"]["servable"]
     assert body["products"]["winds-06"]["fetched_at"] is None and body["products"]["winds-06"]["stale"]
-    assert set(body["products"]) == {p.name for p in main.PRODUCTS}
+    assert set(body["products"]) == {p.name for p in main.products()}
     # The planner reading the store makes it "in use".
     weather._dataset("metars")
     assert main.health()["in_use"] is True
+
+
+def test_the_flow_layer_is_fetched_only_while_it_is_on(monkeypatch):
+    # Parked (the feature review, 2026-11-21): off unless WEATHER_FLOW_ON.
+    get_settings.cache_clear()
+    assert "flow" not in {p.name for p in main.products()}
+    monkeypatch.setenv("WEATHER_FLOW_ON", "1")
+    get_settings.cache_clear()
+    assert "flow" in main.Schedule().products
+    get_settings.cache_clear()
 
 
 def test_every_product_the_planner_reads_is_on_the_schedule():

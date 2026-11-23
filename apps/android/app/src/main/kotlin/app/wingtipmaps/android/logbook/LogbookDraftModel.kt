@@ -15,6 +15,8 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,13 +26,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.TimeZone
 import kotlin.time.Clock
 
 /**
  * "Flight Logged"'s view model, the flight logged with no typing (the
  * web's useAutoLogbook): the track recorded (FlightRecorder) read by the
- * engine on the phone once a minute of points; when it finds the airplane
+ * engine on the phone once a minute of points, once the airplane has
+ * flown and off the main thread (up to 5,000 points); when it finds the airplane
  * has landed and come to rest, the planner draws the entry with the
  * fields and approaches round it (POST /api/logbook-draft), the pilot
  * reviews it, changes what they like and logs it (POST /api/logbook) --
@@ -43,13 +47,15 @@ class LogbookDraftModel(
     private val shelf: TrackShelf,
     private val rules: DraftRules = EngineDraft,
     private val source: LogbookSource = ServerLogbook,
+    /** Where the engine reads the track: not the main thread. */
+    private val readOn: CoroutineDispatcher = Dispatchers.Default,
     private val utcOffsetMin: () -> Double = { TimeZone.getDefault().getOffset(AppClock.nowMs()) / 60_000.0 },
 ) : ViewModel() {
     /** Hilt's, the recorded flight handed in by its host: the engine's
      *  rules, the gateway's logbook and the phone's offset from UTC now. */
     @AssistedInject
     constructor(@Assisted flight: RecordedFlight, @Assisted shelf: TrackShelf, rules: DraftRules, source: LogbookSource, clock: Clock) :
-        this(flight, shelf, rules, source, { TimeZone.getDefault().getOffset(clock.now().toEpochMilliseconds()) / 60_000.0 })
+        this(flight, shelf, rules, source, utcOffsetMin = { TimeZone.getDefault().getOffset(clock.now().toEpochMilliseconds()) / 60_000.0 })
 
     @AssistedFactory
     interface Factory {
@@ -106,13 +112,15 @@ class LogbookDraftModel(
         askIfWanted()
     }
 
-    /** The engine's reading, once each minute of points. */
-    private fun look(recorded: Recorded) {
-        val minute = recorded.points.size / LOOK_EVERY_POINTS
+    /** The engine's reading, once each minute of points, and only once the
+     *  airplane has flown: ground alone has no landing to find (the
+     *  iPhone's look). Collected in turn, so `looked` is never raced. */
+    private suspend fun look(recorded: Recorded) {
+        val minute = if (recorded.flown) recorded.points.size / LOOK_EVERY_POINTS else 0
         if (looked == minute to recorded.askedTo) return
         looked = minute to recorded.askedTo
         val seen = recorded.points.take(minute * LOOK_EVERY_POINTS)
-        val reading = if (seen.size >= 2) rules.read(seen) else null
+        val reading = if (seen.size >= 2) withContext(readOn) { rules.read(seen) } else null
         val ended = DraftEntry.ended(reading, seen, recorded.askedTo)
         if (ended == _state.value.endedAt) return
         asking?.cancel()
@@ -208,8 +216,8 @@ class LogbookDraftModel(
     /** Not a flight to log: the track let go. */
     fun discard() = flight.forget()
 
-    /** The tracks kept unsent sent again, now: Try Again, and each time
-     *  the app is in front with a network (AutoLogbookHost). */
+    /** The tracks kept unsent sent again, now: Try Again. WorkManager
+     *  sends them otherwise, once there is a network (UnsentTracksWorker). */
     fun sendUnsent() {
         viewModelScope.launch { shelf.send(source::saveTrack) }
     }

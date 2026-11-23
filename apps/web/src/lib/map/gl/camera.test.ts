@@ -94,6 +94,52 @@ describe("the camera's one owner", () => {
     expect(calls.at(-1)).toMatchObject({ name: "fitBounds", options: { bearing: -35 } });
   });
 
+  it("fits over the room the sheet is settling at, not the padding part way through its ease", () => {
+    const { map, calls } = fakeMap();
+    const bounds: [[number, number], [number, number]] = [
+      [0, 0],
+      [2, 1],
+    ];
+    const margin = { top: 8, bottom: 8, left: 8, right: 8 };
+    cameraOf(map).fit(bounds, { margin, duration: 0, pad: { top: 170, bottom: 0, left: 0, right: 0 } });
+    expect(calls.map((c) => c.name)).toEqual(["setPadding", "fitBounds"]);
+    expect(calls[0]!.options).toEqual({ top: 170, bottom: 0, left: 0, right: 0 });
+    // The room the map has already: no second call.
+    calls.length = 0;
+    cameraOf(map).fit(bounds, { margin, duration: 0, pad: { top: 0, bottom: 0, left: 0, right: 0 } });
+    expect(calls.map((c) => c.name)).toEqual(["fitBounds"]);
+  });
+
+  it("aims a fit made at once again at the room the panel settles in just after, not once the pilot has moved the map", () => {
+    const { map, calls, fire, state } = fakeMap();
+    const camera = cameraOf(map);
+    const margin = { top: 8, bottom: 8, left: 8, right: 8 };
+    const bounds: [[number, number], [number, number]] = [
+      [0, 0],
+      [2, 1],
+    ];
+    const side = { top: 0, bottom: 0, left: 464, right: 0 };
+    camera.fit(bounds, { margin, duration: 0 });
+    // Made at once: at rest by the time the room comes.
+    state.moving = false;
+    camera.room(side, "still", ease);
+    expect(calls.map((c) => c.name)).toEqual(["fitBounds", "easeTo"]);
+    expect(calls.at(-1)!.options).toMatchObject({ padding: side });
+    // Fitted again, then a card come over the sheet: the chart kept still.
+    calls.length = 0;
+    camera.fit(bounds, { margin, duration: 0 });
+    state.moving = false;
+    camera.room({ ...side, bottom: 400 }, "still", ease, true);
+    expect(calls.map((c) => c.name)).not.toContain("easeTo");
+    // Fitted again, then moved by hand: the room keeps the chart still.
+    calls.length = 0;
+    camera.fit(bounds, { margin, duration: 0 });
+    state.moving = false;
+    fire("movestart", { originalEvent: {} });
+    camera.room({ ...side, left: 0 }, "still", ease);
+    expect(calls.map((c) => c.name)).not.toContain("easeTo");
+  });
+
   it("turns north up on the compass's tap, a follow waiting behind it and kept on", () => {
     const { map, calls, state } = fakeMap();
     state.bearing = 40;
@@ -156,6 +202,19 @@ describe("the camera's one owner", () => {
     camera.follow("dry-run", [0.401, 0]);
     nextFrame();
     expect(calls).toHaveLength(1);
+  });
+
+  it("moves the map once a fix for own ship a few pixels on, and eases it when the step is larger", () => {
+    const { map, calls, state } = fakeMap();
+    const camera = cameraOf(map);
+    // 0.03 degrees is 3 px on the fake map: under the jump's 8.
+    camera.follow("own-ship", [0.03, 0]);
+    nextFrame();
+    expect(calls.map((c) => c.name)).toEqual(["jumpTo"]);
+    state.center = { lng: 0.03, lat: 0 };
+    camera.follow("own-ship", [0.5, 0]);
+    nextFrame();
+    expect(calls.at(-1)!.name).toBe("easeTo");
   });
 
   it("keeps a tracked airplane where it is on the screen, moving the map by its own move, not drawing it to the middle", () => {

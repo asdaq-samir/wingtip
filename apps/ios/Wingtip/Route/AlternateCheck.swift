@@ -88,7 +88,7 @@ final class AlternateCheck {
         defer { asking = false }
         do {
             let fresh = try await Planner.call {
-                try await $0.alternate(query: .init(dest: ask.dest, eta: ISO8601DateFormatter().string(from: ask.eta), tasKt: ask.tasKt.rounded(),
+                try await $0.alternate(query: .init(dest: ask.dest, eta: ask.eta.formatted(.iso8601), tasKt: ask.tasKt.rounded(),
                                                     alternate: ask.alternate.isEmpty ? nil : ask.alternate)).ok.body.json
             }
             guard !Task.isCancelled else { return }
@@ -100,7 +100,7 @@ final class AlternateCheck {
             // Said where the alternate is shown; the last answer is not
             // kept for a question it was not the answer to.
             answer = nil
-            problem = "The alternate couldn't be checked: \(error.localizedDescription)"
+            problem = Problems.words("The alternate could not be checked", error)
             Log.planner.notice("the alternate check failed: \(error.localizedDescription, privacy: .public)")
         }
     }

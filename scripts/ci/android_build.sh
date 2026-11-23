@@ -23,6 +23,9 @@ tasks=(testDebugUnitTest lintDebug)
 if [[ "${OWN_RUN:-}" == true ]]; then tasks+=(assembleDebug); fi
 if [[ "${RELEASE:-}" == true ]]; then
   tasks+=(assembleRelease bundleRelease)
+  # Play takes an upload only above the last one's version code: the
+  # workflow's run number, which only grows (app/build.gradle.kts).
+  export ANDROID_VERSION_CODE="${ANDROID_VERSION_CODE:-${GITHUB_RUN_NUMBER:-1}}"
   if [[ -n "${ANDROID_UPLOAD_KEYSTORE:-}" && -n "${ANDROID_UPLOAD_PASSWORD:-}" ]]; then
     keystore="${RUNNER_TEMP:-$(mktemp -d)}/upload.jks"
     printf '%s' "$ANDROID_UPLOAD_KEYSTORE" | base64 --decode > "$keystore"
@@ -36,4 +39,12 @@ fi
 ./gradlew --stacktrace --build-cache "${tasks[@]}"
 if [[ "${RELEASE:-}" == true ]]; then
   python3 "$here/android_16k.py" app/build/outputs/apk/release/*.apk app/build/outputs/bundle/release/*.aab
+fi
+# Main's signed bundle to Play's internal testing, where the repository has
+# the service account (PLAY_SERVICE_ACCOUNT; docs/store/beta.md). The
+# package is the build's (ANDROID_NATIVE_APP_ID, else app/build.gradle.kts's
+# default).
+if [[ "${RELEASE:-}" == true && -n "${PLAY_SERVICE_ACCOUNT:-}" && -n "${WINGTIP_UPLOAD_KEYSTORE:-}" ]]; then
+  PLAY_PACKAGE="${ANDROID_NATIVE_APP_ID:-app.wingtipmaps.android.native}" \
+    python3 "$here/play_internal.py" app/build/outputs/bundle/release/app-release.aab app/build/outputs/mapping/release/mapping.txt
 fi

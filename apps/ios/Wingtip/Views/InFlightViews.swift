@@ -40,7 +40,7 @@ struct CheckpointNotesView: View {
                 }
             }
         }
-        .navigationTitle("Checkpoint notes")
+        .navigationTitle("Checkpoint Notes")
         // The notes kept for the route, asked again as the route changes;
         // signed out, there are none to ask for.
         .task(id: "\(plan.dep)|\(plan.dest)|\(plan.stops)|\(session.signedIn)") { await load() }
@@ -66,7 +66,7 @@ struct CheckpointNotesView: View {
             }
         } catch {
             guard !Task.isCancelled else { return }
-            problem = "The route's notes couldn't be fetched: \(error.localizedDescription)"
+            problem = Problems.say("The route's notes could not be fetched", error)
         }
     }
 
@@ -82,7 +82,7 @@ struct CheckpointNotesView: View {
                 // A failed save takes its own text back out, where the note
                 // still holds it.
                 if notes[key]?.text == text { notes[key] = before }
-                problem = "The note could not be saved: \(error.localizedDescription)"
+                problem = Problems.say("The note could not be saved", error)
             }
         }
     }
@@ -114,8 +114,8 @@ struct FlightServiceView: View {
                     DatePicker("Departs", selection: $departs, in: Date()...)
                     let asked = Result { try request() }
                     if let request = try? asked.get() {
-                        LabeledContent("Cruising speed", value: request.cruisingSpeed)
-                        LabeledContent("Cruising level", value: request.cruisingLevel)
+                        LabeledContent("Cruising Speed", value: request.cruisingSpeed)
+                        LabeledContent("Cruising Level", value: request.cruisingLevel)
                         LabeledContent("Route", value: request.route)
                         // Words only: the same minutes said plainly where the engine cannot write HHMM.
                         LabeledContent("Total EET", value: (try? FilingForm.hhmm(request.eetMinutes)) ?? "\(request.eetMinutes) min")
@@ -138,7 +138,7 @@ struct FlightServiceView: View {
                     Section("Standard Briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
                 }
             }
-            Section(model.status?.connected == true ? "Or" : "File it with Flight Service") {
+            Section(model.status?.connected == true ? String(localized: "Or") : Wording.fileWithFlightService) {
                 // Whether filing here is connected, where that couldn't be asked.
                 ProblemLine(model.statusProblem)
                 Link(destination: URL(string: "https://www.1800wxbrief.com")!) {
@@ -164,7 +164,7 @@ struct FlightServiceView: View {
         let digits = endurance.filter(\.isNumber)
         guard digits.count == 4, let hours = Int(digits.prefix(2)), let minutes = Int(digits.suffix(2)), minutes < 60 else { return nil }
         let pob = Int(persons.filter(\.isNumber)).flatMap { (1...999).contains($0) ? $0 : nil }
-        return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(tas), departure: plan.dep, departureTime: ISO8601DateFormatter().string(from: departs), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
+        return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(tas), departure: plan.dep, departureTime: departs.formatted(.iso8601), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
     }
 }
 
@@ -205,17 +205,17 @@ struct FlownTrackView: View {
                 // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
                 DebriefSections(flight: flight, points: track.points)
                 Section {
-                    Button(tracking.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
+                    Button(tracking.flown.isEmpty ? Wording.showOnMap : Wording.hideFromMap) {
                         tracking.flown = tracking.flown.isEmpty ? points : []
                     }
                     Button("Delete the Track", role: .destructive) {
                         Task {
-                            do { try await Gateway.deleteTrack(flight); self.track = nil; tracking.flown = []; replay.clear(replayKey) } catch { problem = error.localizedDescription }
+                            do { try await Gateway.deleteTrack(flight); self.track = nil; tracking.flown = []; replay.clear(replayKey) } catch { problem = Problems.say("The track could not be deleted", error) }
                         }
                     }
                 }
             } else if loaded {
-                ContentUnavailableView("No track kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
+                ContentUnavailableView("No Track Kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
                                        description: Text(ownShip.trail.points.count > 1
                                            ? "Keep the path this iPhone flew, or put in a GPX file."
                                            : "Put in the flight's track from a GPX file."))
@@ -228,17 +228,17 @@ struct FlownTrackView: View {
                     Button("Keep the Path This iPhone Flew") {
                         let saved = ownShip.trail.asSavedTrack
                         Task {
-                            do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
+                            do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = Problems.say("The track could not be saved", error) }
                         }
                     }
                 }
-                Button("Put In a GPX File…") { importing = true }
+                Button("Put in a GPX File…") { importing = true }
                 ProblemLine(problem)
             }
         }
         .navigationTitle(title)
         .task {
-            do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
+            do { track = try await Gateway.track(flight) } catch { problem = Problems.say("The track could not be fetched", error) }
             loaded = true
         }
         .onDisappear { replay.clear(replayKey) }
@@ -248,7 +248,7 @@ struct FlownTrackView: View {
             defer { if reading { url.stopAccessingSecurityScopedResource() } }
             let found: [SavedTrackPoint]?
             do { found = try GPXTrack.points(try Data(contentsOf: url)) } catch {
-                problem = "The file couldn't be read: \(error.localizedDescription)"
+                problem = Problems.say("The file could not be read", error)
                 return
             }
             guard let read = found, !read.isEmpty else {
@@ -257,7 +257,7 @@ struct FlownTrackView: View {
             }
             let saved = SavedTrack(points: read, source: "gpx")
             Task {
-                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
+                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = Problems.say("The track could not be saved", error) }
             }
         }
     }
@@ -270,7 +270,7 @@ enum RouteShare {
     /// on the other pilot's phone or browser; the N-number only when asked.
     static func link(_ plan: Plan, includeTail: Bool = false) -> URL {
         SharedPlan(dep: plan.dep, dest: plan.dest, stops: plan.stops, altitudeFt: (plan.ownAltitudeFt ?? plan.altitudeFt).map { Int($0) },
-                   type: plan.aircraft == Plan.noAirplane ? nil : plan.aircraft.uppercased(), rules: FlightRules.saved(), tail: plan.tail).link(includeTail: includeTail)
+                   type: plan.aircraft == Plan.noAirplane ? nil : plan.aircraft.uppercased(), rules: FlightRules.saved(), tail: plan.tail, tanks: plan.extras.tanks).link(includeTail: includeTail)
     }
 
     static func fileName(_ plan: Plan) -> String {
@@ -362,7 +362,7 @@ struct ForgetNotesButton: View {
                             said = removed == 1 ? "1 note forgotten" : "\(removed) notes forgotten"
                             problem = nil
                         } catch {
-                            problem = "Your notes couldn't be forgotten: \(error.localizedDescription)"
+                            problem = Problems.say("Your notes could not be forgotten", error)
                         }
                     }
                 }

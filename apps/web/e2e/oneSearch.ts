@@ -17,8 +17,7 @@ export const firstRow = (page: Page) =>
 
 /** One of the sheet's two pages up, by the round toggle at the end of
  *  the sheet's first row (PageToggle; the owner, 2026-11-14): 0 Search,
- *  1 FPL. The toggle shows the page it goes to, so it is tapped only while
- *  it shows `at`. A card over the sheet covers the row: closed first by
+ *  1 FPL. Search's toggle goes to FPL; FPL's Search button goes back. A card over the sheet covers the row: closed first by
  *  Escape, as a pilot closes it; and at FPL's pill, where the figures are
  *  in the row's place, the sheet raised to half. */
 export async function showPage(page: Page, at: 0 | 1) {
@@ -31,9 +30,18 @@ export async function showPage(page: Page, at: 0 | 1) {
     await expect(cards).toHaveCount(open - 1);
   }
   const toggle = page.getByTestId("sheet-page-toggle");
-  if (!(await toggle.isVisible())) await grabberTo(page, "half");
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
+  if (at === 0) {
+    // FPL has no toggle: its way back is its head's Search button, which
+    // turns to Search's resting page (the FPL button back), the route kept
+    // (the owner, 2026-11-21).
+    const search = page.getByTestId("fpl-search");
+    if (!(await search.isVisible())) await grabberTo(page, "half");
+    await search.click();
+    await expect(toggle).toBeVisible();
+  } else {
+    if (!(await toggle.isVisible())) await grabberTo(page, "half");
+    await toggle.click();
+  }
   await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", String(at));
 }
 

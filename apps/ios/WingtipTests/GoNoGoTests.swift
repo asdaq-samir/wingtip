@@ -13,11 +13,11 @@ struct GoNoGoTests {
     {"line":{"finding":"stop","words":"No-go as planned: Weight & balance"},
      "items":[
       {"key":"weather","label":"Weather","finding":"caution","detail":"IFR G-AIRMET along the route","tab":"enroute","section":"Adverse Conditions"},
-      {"key":"airspace","label":"TFRs & special use","finding":"ok","detail":"None on the route","tab":"preflight","section":"TFRs & Special Use"},
+      {"key":"airspace","label":"TFRs & Special Use","finding":"ok","detail":"None on the route","tab":"preflight","section":"TFRs & Special Use"},
       {"key":"altitude","label":"Altitude","finding":"ok","detail":"5,500 ft · Lowest plan","tab":"enroute","section":"Cruise Altitude"},
-      {"key":"fuel","label":"Fuel","finding":"ok","detail":"Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal spare","tab":"preflight","section":"Fuel"},
+      {"key":"fuel","label":"Fuel","finding":"ok","detail":"Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal beyond reserve","tab":"preflight","section":"Fuel"},
       {"key":"runways","label":"Runways","finding":"unknown","detail":"Not worked out for this airplane","tab":"depart","section":"Takeoff"},
-      {"key":"balance","label":"Weight & balance","finding":"stop","detail":"The baggage, 170 lb in all, is over its 120 lb","tab":"preflight","section":"Weight & Balance"},
+      {"key":"balance","label":"Weight & Balance","finding":"stop","detail":"The baggage, 170 lb in all, is over its 120 lb","tab":"preflight","section":"Weight & Balance"},
       {"key":"risk","label":"Risk","finding":"caution","detail":"Raised · 8 points","tab":"preflight","section":"Risk Assessment"}],
      "risk":{"score":8,"level":"caution","line":"Raised · 8 points","words":"Bring it down where you can (a later time, a shorter leg, an instructor along), or talk it over.",
       "factors":[{"key":"hazards","label":"1 SIGMET or G-AIRMET along the route","why":"Adverse conditions","points":2,"stop":false,"finding":"caution"},
@@ -83,7 +83,7 @@ struct GoNoGoTests {
         #expect(PersonalMinimums.Key.ceilingFt.choices == [1000, 1500, 2000, 2500, 3000, 4000, 5000])
         #expect(PersonalMinimums.Key.ceilingFt.words(1500) == "1,500 ft")
         #expect(PersonalMinimums.Key.visibilitySm.words(5) == "5 sm")
-        #expect(PersonalMinimums.Key.windKt.title == "Wind, with gusts" && PersonalMinimums.Key.windKt.words(25) == "25 kt")
+        #expect(PersonalMinimums.Key.windKt.title == "Wind, with Gusts" && PersonalMinimums.Key.windKt.words(25) == "25 kt")
         var minimums = PersonalMinimums()
         minimums[.crosswindKt] = 12
         #expect(minimums.crosswindKt == 12 && minimums[.ceilingFt] == nil)

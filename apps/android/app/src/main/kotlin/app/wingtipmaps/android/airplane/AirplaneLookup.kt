@@ -77,9 +77,15 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
     val state: StateFlow<State> = _state.asStateFlow()
     private val jobs = mutableListOf<Job>()
 
+    /** Its past flights asked too: only where its history is offered
+     *  (OtherAirplanes); else its address is kept, for Favorite, and no
+     *  flight of it fetched. */
+    private var withFlights = false
+
     /** Everything asked for `tail` at once, each answer drawn as it comes. */
-    fun open(tail: String) {
-        if (_state.value.tail == tail) return
+    fun open(tail: String, flights: Boolean) {
+        if (_state.value.tail == tail && withFlights == flights) return
+        withFlights = flights
         jobs.forEach { it.cancel() }
         jobs.clear()
         _state.value = State(tail = tail)
@@ -94,7 +100,7 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                InAir.Failed(Problems.say("Couldn't check whether it's in the air", e))
+                InAir.Failed(Problems.say("Whether it is in the air could not be checked", e))
             }
             _state.update { it.copy(inAir = inAir) }
             (inAir as? InAir.Flying)?.hex?.let(::flightsOf)
@@ -106,7 +112,7 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(detailsProblem = Problems.say("Its history couldn't be fetched", e)) }
+                _state.update { it.copy(detailsProblem = Problems.say("Its history could not be fetched", e)) }
             }
         }
         jobs += viewModelScope.launch {
@@ -119,6 +125,7 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
     private fun flightsOf(hex: String) {
         if (_state.value.hex != null) return
         _state.update { it.copy(hex = hex.lowercase()) }
+        if (!withFlights) return
         jobs += viewModelScope.launch {
             try {
                 val flights = Planner.pastFlights(hex).flights
@@ -126,7 +133,7 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(flightsProblem = Problems.say("Its flights couldn't be fetched", e)) }
+                _state.update { it.copy(flightsProblem = Problems.say("Its past flights could not be fetched", e)) }
             }
         }
     }

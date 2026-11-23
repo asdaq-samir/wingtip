@@ -11,7 +11,7 @@ import { Collapsible, CollapsibleTrigger } from "./ui/collapsible";
 // 25-point title, eight was 41 and missed (the web audit's WEB-45), and
 // the eight under the head keep it off the first row.
 const MORE = cn(
-  "group relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-x-2 after:-inset-y-2.5",
+  "group relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring hit-x-2 hit-y-2.5",
   SECTION_TITLE,
 );
 const CHEVRON = "size-5 text-tint transition-transform";

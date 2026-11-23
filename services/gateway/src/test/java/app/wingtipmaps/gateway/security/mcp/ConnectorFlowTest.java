@@ -52,7 +52,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * authorizations and consents are Spring's JDBC stores, on V40's tables.
  */
 @SpringBootTest(
-        properties = {"app.public-base-url=http://localhost", "app.mcp.enabled=true", "app.mcp.internal-token=t"})
+        properties = {
+            "app.public-base-url=http://localhost",
+            "app.mcp.enabled=true",
+            "app.mcp.internal-token=0123456789abcdef0123456789abcdef"
+        })
 @AutoConfigureMockMvc
 @Testcontainers
 class ConnectorFlowTest {
@@ -119,7 +123,7 @@ class ConnectorFlowTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        assertThat(page).contains("Sign in to connect Claude").contains("name=\"_csrf\"");
+        assertThat(page).contains("Sign In to Connect Claude").contains("name=\"_csrf\"");
 
         // Signed in: the waiting request is carried on, once.
         Pilot pilot = signIn(session, UUID.randomUUID() + "@example.com");
@@ -133,7 +137,7 @@ class ConnectorFlowTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString())
-                .contains("Nothing to connect");
+                .contains("Nothing to Connect");
 
         // The pilot's consent, which names where the answer goes.
         String consent = mvc.perform(get(URI.create(authorize)).cookie(session))
@@ -149,7 +153,12 @@ class ConnectorFlowTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        assertThat(page).contains("claude.ai").contains("Save flights to your Wingtip account");
+        assertThat(page)
+                .contains("claude.ai")
+                .contains("Save, change and delete your saved flights")
+                // Writing is a box the pilot may untick; reading is not.
+                .contains("type=\"checkbox\" name=\"scope\" value=\"" + ConnectorSettings.WRITE + "\"")
+                .contains("type=\"hidden\" name=\"scope\" value=\"" + ConnectorSettings.READ + "\"");
 
         String callback = mvc.perform(post("/oauth2/authorize")
                         .cookie(session)
@@ -183,8 +192,8 @@ class ConnectorFlowTest {
         assertThat(jwt.getJWTClaimsSet().getSubject()).isEqualTo(String.valueOf(pilot.getId()));
         assertThat(jwt.getJWTClaimsSet().getIssuer()).isEqualTo("http://localhost");
         assertThat(jwt.getJWTClaimsSet().getStringClaim("client_id")).isEqualTo(clientId);
-        assertThat(jwt.getJWTClaimsSet().getStringClaim("scope"))
-                .isEqualTo(ConnectorSettings.READ + " " + ConnectorSettings.WRITE);
+        assertThat(jwt.getJWTClaimsSet().getStringClaim("scope").split(" "))
+                .containsExactlyInAnyOrder(ConnectorSettings.READ, ConnectorSettings.WRITE);
         assertThat(jwt.getHeader().getAlgorithm().getName()).isEqualTo("RS256");
         String jwks = mvc.perform(get("/oauth2/jwks")).andReturn().getResponse().getContentAsString();
         RSAKey key = (RSAKey) JWKSet.parse(jwks).getKeyByKeyId(jwt.getHeader().getKeyID());
@@ -204,8 +213,8 @@ class ConnectorFlowTest {
         SignedJWT again = SignedJWT.parse(JsonPath.read(refreshed, "$.access_token"));
         assertThat(again.getJWTClaimsSet().getAudience()).containsExactly(RESOURCE);
         assertThat(again.getJWTClaimsSet().getSubject()).isEqualTo(String.valueOf(pilot.getId()));
-        assertThat(again.getJWTClaimsSet().getStringClaim("scope"))
-                .isEqualTo(ConnectorSettings.READ + " " + ConnectorSettings.WRITE);
+        assertThat(again.getJWTClaimsSet().getStringClaim("scope").split(" "))
+                .containsExactlyInAnyOrder(ConnectorSettings.READ, ConnectorSettings.WRITE);
         mvc.perform(post("/oauth2/token")
                         .param("grant_type", "refresh_token")
                         .param("refresh_token", refresh)

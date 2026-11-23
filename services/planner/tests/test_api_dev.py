@@ -96,6 +96,7 @@ def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
         "metars",
         "tafs",
         "airsigmets",
+        "airmets",
         "pireps",
         "gairmets",
         "winds-06",

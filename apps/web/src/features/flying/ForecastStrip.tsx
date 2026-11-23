@@ -36,7 +36,9 @@ export function ForecastStrip({ run, ends }: { run: DryRun; ends: RouteEnds | nu
   if (!vm.on) return null;
   if (vm.error) {
     return (
-      <p className={cn("px-2 pt-1 text-destructive", TEXT.note)}>The forecast for the run couldn't be had: {describeError(vm.error)}</p>
+      <p className={cn("px-2 pt-1 text-destructive", TEXT.note)}>
+        The forecast for the run could not be fetched: {describeError(vm.error)}
+      </p>
     );
   }
   if (!vm.answer) {

@@ -4,6 +4,7 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.fieldNames
 import app.wingtipmaps.android.engine.generated.notamRead
 import app.wingtipmaps.android.engine.generated.tfrRead
 import java.time.Instant
@@ -29,11 +30,12 @@ object FieldNotams {
 
     fun isTfr(n: RankedNotam): Boolean = n.kind == TFR
 
-    /** The field's idents as a NOTAM may write them ("OSH", "KOSH"). */
-    fun identsOf(ident: String): List<String> {
-        val bare = if (ident.length == 4 && ident.startsWith("K")) ident.drop(1) else ident
-        return listOf(ident, bare, "K$bare").distinct()
-    }
+    /** The field's idents as a NOTAM may write them ("OSH", "KOSH"): the
+     *  engine's field_names (FAA JO 7350.9GG 4-1), given in the JVM's unit
+     *  tests, where the engine does not load; the ident alone where it
+     *  cannot be asked. */
+    fun identsOf(ident: String, names: (String) -> List<String>? = { Engine.fieldNames(it).getOrNull() }): List<String> =
+        names(ident) ?: listOf(ident)
 
     /** The NOTAM read by the engine (notam_read); null where it fails, the
      *  NOTAM's words as sent standing in then. */
@@ -77,8 +79,8 @@ object FieldNotams {
 
     /** Its number as a briefer reads it, the field's own name off it on the
      *  field's card ("11/060", not "ORD 11/060"); another place's kept. */
-    fun number(n: RankedNotam, ident: String): String {
-        val own = identsOf(ident).firstOrNull { n.id.startsWith("$it ") }
+    fun number(n: RankedNotam, ident: String, names: List<String> = identsOf(ident)): String {
+        val own = names.firstOrNull { n.id.startsWith("$it ") }
         return own?.let { n.id.drop(it.length + 1) } ?: n.id
     }
 

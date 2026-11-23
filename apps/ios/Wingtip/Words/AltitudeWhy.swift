@@ -30,7 +30,7 @@ enum AltitudeWhy {
     /// The reasons for the altitude flown, from the planner's altitude line
     /// (NavLogAltitude, worked out by the engine's select_cruise_altitude)
     /// and the engine on the phone; nil with no altitude.
-    static func reasons(_ line: NavLogAltitude, flownFt: Double?, choice: String?) -> Reasons? {
+    nonisolated static func reasons(_ line: NavLogAltitude, flownFt: Double?, choice: String?) -> Reasons? {
         guard let flownFt = flownFt ?? line.altitudeFt else { return nil }
         let s = line.altitudeSelection
         let ifr = s.rules?.lowercased() == "ifr"
@@ -50,7 +50,7 @@ enum AltitudeWhy {
             : "14 CFR 91.159(a): more than 3,000 ft above the surface, odd thousands plus 500 ft on a magnetic course of 0° through 179°, even thousands plus 500 ft on 180° through 359°"
         let given: String
         switch legal {
-        case nil: given = "; the cruising altitudes it gives here couldn't be worked out."
+        case nil: given = "; the cruising altitudes it gives here could not be worked out."
         case let list? where list.isEmpty: given = "; it gives no cruising altitude between the floor and the ceiling here."
         case let list?: given = "; the cruising altitudes it gives here are \(list.prefix(6).map { Format.altitude($0) }.joined(separator: ", "))."
         }
@@ -92,7 +92,7 @@ enum AltitudeWhy {
     }
 
     /// The reasons said, or the engine's own words for them.
-    static func said(_ reasons: Reasons, model: any AltitudeWhyModel = AppleAltitudeWhy()) async -> OnDeviceAnswer {
+    static func said(_ reasons: Reasons, model: some AltitudeWhyModel = AppleAltitudeWhy()) async -> OnDeviceAnswer {
         let log = FigureLog()
         log.add([reasons.flown], by: "flown")
         do {

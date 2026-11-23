@@ -230,7 +230,7 @@ describe("on the device where it can be", () => {
     forgetSpeechCheck();
     const ended = vi.fn();
     await listen([], undefined, () => {}, ended);
-    expect(ended).toHaveBeenCalledWith("Speech can't be recognised on this device; type the clearance instead.");
+    expect(ended).toHaveBeenCalledWith("Speech cannot be recognised on this device; type the clearance instead.");
   });
 });
 

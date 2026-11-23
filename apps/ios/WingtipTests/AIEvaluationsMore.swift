@@ -1,18 +1,18 @@
 import Evaluations
 import Foundation
+import Testing
 @testable import Wingtip
-import XCTest
 
 /// The on-device AI added after the NOTAMs and the clearance, scored with
 /// Apple's Evaluations framework on the shared fixtures as AIEvaluations
 /// scores those: a logbook remark drafted from the entries of
 /// logbookCsv.json, and why the plan flies its altitude from the cases of
 /// altitude.json (the engine's legal_cruising_altitudes). Each runs Apple's
-/// on-device model where the simulator or the phone has it, and is skipped
+/// on-device model where the simulator or the phone has it, and returns early
 /// where it does not. What each scores is what the app promises: no
 /// figure of the model's own (after the guard the app runs), words that
 /// survive the guard at all, and the matter named.
-final class AIEvaluationsMoreTests: XCTestCase {
+struct AIEvaluationsMoreTests {
     /// A figure of the model's own is a safety defect: every sample must
     /// keep to the figures. How often the words survive the guard, and
     /// name what they are about, is quality. On the iOS 27.2 simulator, at
@@ -24,38 +24,44 @@ final class AIEvaluationsMoreTests: XCTestCase {
     static let keptFloor = EvalBar.quality(device: 0.5, simulator: 0.35)
     static let namesFloor = EvalBar.quality(device: 0.5, simulator: 0.35)
 
-    func testARemarkKeepsToTheEntry() async throws {
-        try await EvalBar.modelOrSkip()
+    @Test func aRemarkKeepsToTheEntry() async throws {
+        if let why = await EvalBar.modelUnavailableWhy() {
+            print("SKIPPED \(Self.self).\(#function): \(why)")
+            return
+        }
         let evaluation = RemarkEvaluation(samples: try EvalBar.asked(try RemarkEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
-        XCTAssertEqual(result.aggregateValue(.mean(of: RemarkEvaluation.noInvented)), 1, result.groupedSummary)
-        XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: RemarkEvaluation.kept)), Self.keptFloor, result.groupedSummary)
-        XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: RemarkEvaluation.namesIt)), Self.namesFloor, result.groupedSummary)
+        #expect(result.aggregateValue(.mean(of: RemarkEvaluation.noInvented)) == 1, "\(result.groupedSummary)")
+        #expect(result.aggregateValue(.mean(of: RemarkEvaluation.kept)) >= Self.keptFloor, "\(result.groupedSummary)")
+        #expect(result.aggregateValue(.mean(of: RemarkEvaluation.namesIt)) >= Self.namesFloor, "\(result.groupedSummary)")
     }
 
-    func testWhyThisAltitudeKeepsToTheEnginesReasons() async throws {
-        try await EvalBar.modelOrSkip()
+    @Test func whyThisAltitudeKeepsToTheEnginesReasons() async throws {
+        if let why = await EvalBar.modelUnavailableWhy() {
+            print("SKIPPED \(Self.self).\(#function): \(why)")
+            return
+        }
         let evaluation = AltitudeWhyEvaluation(samples: try EvalBar.asked(try AltitudeWhyEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
-        XCTAssertEqual(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.noInvented)), 1, result.groupedSummary)
-        XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.kept)), Self.keptFloor, result.groupedSummary)
-        XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.namesIt)), Self.namesFloor, result.groupedSummary)
+        #expect(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.noInvented)) == 1, "\(result.groupedSummary)")
+        #expect(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.kept)) >= Self.keptFloor, "\(result.groupedSummary)")
+        #expect(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.namesIt)) >= Self.namesFloor, "\(result.groupedSummary)")
     }
 
     /// The samples are built from the fixtures and the metrics judge known
     /// answers right, with or without a model.
-    func testTheNewEvaluationsJudgeKnownAnswers() throws {
+    @Test func theNewEvaluationsJudgeKnownAnswers() throws {
         let remarks = try RemarkEvaluation.samples()
-        let first = try XCTUnwrap(remarks.first)
-        XCTAssertTrue(RemarkEvaluation.names("Cross-country KUGN to KRFD.", first))
-        XCTAssertTrue(RemarkEvaluation.inventsNothing("Cross-country KUGN to KRFD, 2 landings.", first))
-        XCTAssertFalse(RemarkEvaluation.inventsNothing("Cross-country KUGN to KRFD, 7 landings.", first))
+        let first = try #require(remarks.first)
+        #expect(RemarkEvaluation.names("Cross-country KUGN to KRFD.", first))
+        #expect(RemarkEvaluation.inventsNothing("Cross-country KUGN to KRFD, 2 landings.", first))
+        #expect(!RemarkEvaluation.inventsNothing("Cross-country KUGN to KRFD, 7 landings.", first))
         let altitudes = try AltitudeWhyEvaluation.samples()
-        let a = try XCTUnwrap(altitudes.first)
-        XCTAssertNotNil(AltitudeWhyEvaluation.reasons(a))
-        XCTAssertTrue(AltitudeWhyEvaluation.names("Eastbound, so an odd thousand plus 500.", a))
+        let a = try #require(altitudes.first)
+        #expect(AltitudeWhyEvaluation.reasons(a) != nil)
+        #expect(AltitudeWhyEvaluation.names("Eastbound, so an odd thousand plus 500.", a))
     }
 }
 

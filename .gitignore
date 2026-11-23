@@ -25,6 +25,18 @@ services/gateway/target/
 .vscode/
 
 .env
+# Any other environment file, and keys and certificates by their kind,
+# wherever they are saved: an App Store Connect key (.p8), an Android
+# upload keystore, a certificate's private key. The repository is
+# public, so one of these would be one `git add` from everyone.
+.env.*
+!.env.example
+*.p8
+*.p12
+*.jks
+*.keystore
+*.pem
+*.key
 
 # Trained model artifacts. Regenerable from the labels and code
 # (collect -> engineer-features -> retrain -> promote, all seeded on

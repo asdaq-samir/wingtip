@@ -11,10 +11,10 @@ import app.wingtipmaps.android.api.Assistant
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantLine
 import app.wingtipmaps.android.api.AssistantSource
-import com.google.mlkit.genai.prompt.Content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import org.xmlpull.v1.XmlPullParser
+import java.util.Locale
 
 /**
  * Ask answered on the phone by Gemini Nano (docs/android-ai.md), with the
@@ -51,15 +51,13 @@ object OnPhoneAsk {
     fun stream(messages: List<Assistant.Message>, context: AssistantContext?): Flow<AssistantLine> = channelFlow {
         val plan = contextWords(context)
         val system = listOf(instructions, AiTask.RULES, plan).filter { it.isNotEmpty() }.joinToString("\n\n")
-        val turns = messages.map { m ->
-            Content.Builder().role(if (m.role == "user") Content.Role.USER else Content.Role.MODEL).text(m.content).build()
-        }
+        val turns = messages.map { m -> Nano.Turn(user = m.role == "user", text = m.content) }
         val looking = app.getString(R.string.ai_looking_up)
         val heard = mutableListOf<AssistantSource>()
         send(AssistantLine.OnPhone)
-        val words = Nano.converse(system, turns, tools.declarations, maxTokens = 400, onTool = { trySend(AssistantLine.Tool(it, looking)) }) { call ->
-            tools.run(call).also { answer ->
-                heard += AssistantSource("${call.name}-${heard.size}", label(call.name, call.arguments.values.joinToString(" ") { v -> AgentTools.plain(v).toString() }), AgentTools.json(answer).toString())
+        val words = Nano.converse(system, turns, tools.tools, maxTokens = 400, onTool = { trySend(AssistantLine.Tool(it, looking)) }) { name, args ->
+            tools.run(name, args).also { answer ->
+                heard += AssistantSource("$name-${heard.size}", label(name, args.values.joinToString(" ")), AgentTools.json(answer).toString())
             }
         }
         val kept = FigureGuard.keep(words.orEmpty(), heard.map { it.text } + messages.map { it.content } + plan)
@@ -79,7 +77,8 @@ object OnPhoneAsk {
         if (c.dep.isNotEmpty() && c.dest.isNotEmpty()) lines += "The route planned: ${(listOf(c.dep) + c.stops + c.dest).joinToString(" ")}."
         if (c.aircraft.isNotEmpty()) lines += "The airplane chosen: ${c.aircraft}." else lines += "No airplane is chosen; give no airplane figure."
         c.altitudeFt?.let { lines += "Cruise altitude: ${it.toLong()} ft." }
-        c.ownShip?.let { lines += "The airplane is at ${"%.4f".format(it.lat)}, ${"%.4f".format(it.lon)}." }
+        // Locale.US: a German phone wrote "46,7842, -92,1005", four numbers to the model.
+        c.ownShip?.let { lines += "The airplane is at ${String.format(Locale.US, "%.4f, %.4f", it.lat, it.lon)}." }
         c.pilot?.homeBase?.let { lines += "The pilot's home field: $it." }
         return lines.joinToString(" ")
     }

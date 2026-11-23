@@ -1,0 +1,658 @@
+{
+  "_note": "Each weather rule's figures and boundaries, written down from 14 CFR 1.1 and 91.175(h), the AIM and the Aviation Weather Handbook, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "cases": [
+    {
+      "name": "FEW008 SCT012 BKN025 OVC018: the ceiling is 1,800, the lowest broken or overcast",
+      "rule": "ceiling_visibility",
+      "input": {
+        "layers": [
+          {
+            "cover": "FEW",
+            "base_ft": 800
+          },
+          {
+            "cover": "SCT",
+            "base_ft": 1200
+          },
+          {
+            "cover": "BKN",
+            "base_ft": 2500
+          },
+          {
+            "cover": "OVC",
+            "base_ft": 1800
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "ceiling_ft",
+          "value": 1800,
+          "tolerance": 0
+        }
+      ],
+      "source": "14 CFR 1.1: \"Ceiling means the height above the earth's surface of the lowest layer of clouds or obscuring phenomena that is reported as 'broken', 'overcast', or 'obscuration', and not classified as 'thin' or 'partial'.\""
+    },
+    {
+      "name": "Scattered only: no ceiling",
+      "rule": "ceiling_visibility",
+      "input": {
+        "layers": [
+          {
+            "cover": "SCT",
+            "base_ft": 900
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "ceiling_ft",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 1.1: \"Ceiling means the height above the earth's surface of the lowest layer of clouds or obscuring phenomena that is reported as 'broken', 'overcast', or 'obscuration', and not classified as 'thin' or 'partial'.\""
+    },
+    {
+      "name": "An obscuration, VV003, under an overcast at 1,000: the ceiling is 300",
+      "rule": "ceiling_visibility",
+      "input": {
+        "layers": [
+          {
+            "cover": "OVC",
+            "base_ft": 1000
+          }
+        ],
+        "vertical_visibility_ft": 300
+      },
+      "expect": [
+        {
+          "path": "ceiling_ft",
+          "value": 300,
+          "tolerance": 0
+        }
+      ],
+      "source": "14 CFR 1.1: \"Ceiling means the height above the earth's surface of the lowest layer of clouds or obscuring phenomena that is reported as 'broken', 'overcast', or 'obscuration', and not classified as 'thin' or 'partial'.\""
+    },
+    {
+      "name": "1,600 m is 0.99 statute miles, said as 15/16, the step at or below",
+      "rule": "ceiling_visibility",
+      "input": {
+        "visibility": {
+          "value": 1600,
+          "unit": "m"
+        }
+      },
+      "expect": [
+        {
+          "path": "visibility_sm",
+          "value": 0.9375,
+          "tolerance": 0
+        }
+      ],
+      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28). A US report gives sixteenths below 3 sm and never rounds a visibility up (FAA JO 7900.5E's reportable values), so the engine says the step at or below (metres_to_sm)."
+    },
+    {
+      "name": "5,000 m is 3.11 statute miles, said as 3, the step at or below",
+      "rule": "ceiling_visibility",
+      "input": {
+        "visibility": {
+          "value": 5000,
+          "unit": "m"
+        }
+      },
+      "expect": [
+        {
+          "path": "visibility_sm",
+          "value": 3.0,
+          "tolerance": 0
+        }
+      ],
+      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28). From 3 sm a US report gives whole miles and never rounds a visibility up (FAA JO 7900.5E's reportable values), so the engine says 3 (metres_to_sm)."
+    },
+    {
+      "name": "2 1/2 SM is 2.5",
+      "rule": "ceiling_visibility",
+      "input": {
+        "visibility": {
+          "value": 2.5,
+          "unit": "sm"
+        }
+      },
+      "expect": [
+        {
+          "path": "visibility_sm",
+          "value": 2.5,
+          "tolerance": 0
+        }
+      ],
+      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28)."
+    },
+    {
+      "name": "-FZRA in a METAR and FZDZ in a TAF are freezing precipitation; FZFG and a remark are not",
+      "rule": "freezing_precip",
+      "input": {
+        "fields": [
+          {
+            "ident": "KDLH",
+            "metar": "KDLH 211253Z 05012KT 3SM -FZRA BR OVC008 M02/M03 A2990 RMK FZRAB15",
+            "taf": "KDLH 211120Z 2112/2212 04010KT 5SM -SN OVC015 TEMPO 2114/2118 1SM FZDZ"
+          },
+          {
+            "ident": "KMSP",
+            "metar": "KMSP 211253Z 36008KT 1/2SM FZFG OVC003 M05/M06 A3010",
+            "taf": null
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "found",
+          "length": 2
+        },
+        {
+          "path": "found.0.group",
+          "equals": "-FZRA"
+        },
+        {
+          "path": "found.0.source",
+          "equals": "METAR"
+        },
+        {
+          "path": "found.1.group",
+          "equals": "FZDZ"
+        },
+        {
+          "path": "found.1.source",
+          "equals": "TAF"
+        },
+        {
+          "path": "line",
+          "contains": "KDLH"
+        }
+      ],
+      "source": "AIM 7-1-20: \"Freezing precipitation is freezing rain or freezing drizzle falling through or outside of visible cloud.\" A METAR's remarks (FZRAB15, when it began) are no report of it now; freezing fog (FZFG) is no precipitation."
+    },
+    {
+      "name": "Snow at freezing temperatures is no freezing precipitation",
+      "rule": "freezing_precip",
+      "input": {
+        "fields": [
+          {
+            "ident": "KMSP",
+            "metar": "KMSP 211253Z 36008KT 10SM -SN OVC030 M05/M10 A3010"
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "found",
+          "length": 0
+        },
+        {
+          "path": "line",
+          "equals": null
+        }
+      ],
+      "source": "AIM 7-1-20: \"Freezing precipitation is freezing rain or freezing drizzle falling through or outside of visible cloud.\" A METAR's remarks (FZRAB15, when it began) are no report of it now; freezing fog (FZFG) is no precipitation."
+    },
+    {
+      "name": "A 1/2 SM minimum is RVR 2,400: 1,800 is under it",
+      "rule": "rvr_check",
+      "input": {
+        "runways": [
+          {
+            "runway": "27",
+            "touchdown_ft": 1800,
+            "midpoint_ft": null,
+            "rollout_ft": null
+          }
+        ],
+        "minimum_sm": 0.5,
+        "minimum_rvr_ft": null
+      },
+      "expect": [
+        {
+          "path": "minimum_ft",
+          "value": 2400,
+          "tolerance": 0
+        },
+        {
+          "path": "judged",
+          "equals": true
+        },
+        {
+          "path": "runways.0.under",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.175(h)(2), comparable values of RVR and ground visibility: RVR 1,600 ft 1/4 SM, 2,400 1/2, 3,200 5/8, 4,000 3/4, 4,500 7/8, 5,000 1, 6,000 1 1/4."
+    },
+    {
+      "name": "RVR 2,400 against 1/2 SM is at it, not under",
+      "rule": "rvr_check",
+      "input": {
+        "runways": [
+          {
+            "runway": "27",
+            "touchdown_ft": 2400,
+            "midpoint_ft": null,
+            "rollout_ft": null
+          }
+        ],
+        "minimum_sm": 0.5,
+        "minimum_rvr_ft": null
+      },
+      "expect": [
+        {
+          "path": "runways.0.under",
+          "equals": false
+        }
+      ],
+      "source": "14 CFR 91.175(h)(2), comparable values of RVR and ground visibility: RVR 1,600 ft 1/4 SM, 2,400 1/2, 3,200 5/8, 4,000 3/4, 4,500 7/8, 5,000 1, 6,000 1 1/4."
+    },
+    {
+      "name": "A 3/8 SM minimum, between rows, asks the next row up, 2,400",
+      "rule": "rvr_check",
+      "input": {
+        "runways": [
+          {
+            "runway": "27",
+            "touchdown_ft": 2000,
+            "midpoint_ft": null,
+            "rollout_ft": null
+          }
+        ],
+        "minimum_sm": 0.375,
+        "minimum_rvr_ft": null
+      },
+      "expect": [
+        {
+          "path": "minimum_ft",
+          "value": 2400,
+          "tolerance": 0
+        },
+        {
+          "path": "runways.0.under",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.175(h)(2), comparable values of RVR and ground visibility: RVR 1,600 ft 1/4 SM, 2,400 1/2, 3,200 5/8, 4,000 3/4, 4,500 7/8, 5,000 1, 6,000 1 1/4. Between rows, the higher RVR (the safer side)."
+    },
+    {
+      "name": "Past 1 1/4 SM no RVR shows it: not judged",
+      "rule": "rvr_check",
+      "input": {
+        "runways": [
+          {
+            "runway": "27",
+            "touchdown_ft": 6000,
+            "midpoint_ft": null,
+            "rollout_ft": null
+          }
+        ],
+        "minimum_sm": 1.5,
+        "minimum_rvr_ft": null
+      },
+      "expect": [
+        {
+          "path": "judged",
+          "equals": false
+        },
+        {
+          "path": "minimum_ft",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.175(h)(2), comparable values of RVR and ground visibility: RVR 1,600 ft 1/4 SM, 2,400 1/2, 3,200 5/8, 4,000 3/4, 4,500 7/8, 5,000 1, 6,000 1 1/4. The table ends at 1 1/4 SM and 6,000 ft."
+    },
+    {
+      "name": "The lowest of touchdown, midpoint and rollout is the one compared",
+      "rule": "rvr_check",
+      "input": {
+        "runways": [
+          {
+            "runway": "27",
+            "touchdown_ft": 3000,
+            "midpoint_ft": 2200,
+            "rollout_ft": 2600
+          }
+        ],
+        "minimum_sm": null,
+        "minimum_rvr_ft": 2400
+      },
+      "expect": [
+        {
+          "path": "runways.0.reading_ft",
+          "value": 2200,
+          "tolerance": 0
+        },
+        {
+          "path": "runways.0.under",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.175(h)(2) as above; a reading under the minimum at one part of the runway is not hidden by another's (the safer side)."
+    },
+    {
+      "name": "RVR 3,200 is the table's 5/8 SM",
+      "rule": "rvr_check",
+      "input": {
+        "runways": [
+          {
+            "runway": "27",
+            "touchdown_ft": 3200,
+            "midpoint_ft": null,
+            "rollout_ft": null
+          }
+        ],
+        "minimum_sm": null,
+        "minimum_rvr_ft": 2400
+      },
+      "expect": [
+        {
+          "path": "runways.0.comparable_sm",
+          "value": 0.625,
+          "tolerance": 0
+        }
+      ],
+      "source": "14 CFR 91.175(h)(2), comparable values of RVR and ground visibility: RVR 1,600 ft 1/4 SM, 2,400 1/2, 3,200 5/8, 4,000 3/4, 4,500 7/8, 5,000 1, 6,000 1 1/4."
+    },
+    {
+      "name": "A G-AIRMET snapshot is told 90 minutes either side",
+      "rule": "gairmet_hazards",
+      "input": {},
+      "expect": [
+        {
+          "path": "snapshot_s",
+          "value": 5400,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) 26.3.1.1: G-AIRMETs are snapshots three hours apart; a snapshot is told for a time within half that gap, 90 minutes (5,400 s), either side."
+    },
+    {
+      "name": "The snapshots crossing the route within 90 minutes of the flight",
+      "rule": "gairmets_along_route",
+      "input": {
+        "advisories": [
+          {
+            "hazard": "Icing",
+            "valid": 1789994600,
+            "coords": [
+              [
+                42.4,
+                -88.2
+              ],
+              [
+                42.4,
+                -87.8
+              ],
+              [
+                42.6,
+                -87.8
+              ],
+              [
+                42.6,
+                -88.2
+              ]
+            ],
+            "raw": "on the route, 90 minutes before"
+          },
+          {
+            "hazard": "Icing",
+            "valid": 1789994599,
+            "coords": [
+              [
+                42.4,
+                -88.2
+              ],
+              [
+                42.4,
+                -87.8
+              ],
+              [
+                42.6,
+                -87.8
+              ],
+              [
+                42.6,
+                -88.2
+              ]
+            ],
+            "raw": "on the route, a second more"
+          },
+          {
+            "hazard": "Icing",
+            "valid": 1790009000,
+            "coords": [
+              [
+                42.4,
+                -88.2
+              ],
+              [
+                42.4,
+                -87.8
+              ],
+              [
+                42.6,
+                -87.8
+              ],
+              [
+                42.6,
+                -88.2
+              ]
+            ],
+            "raw": "on the route, 90 minutes after"
+          },
+          {
+            "hazard": "Icing",
+            "valid": 1790000000,
+            "coords": [
+              [
+                42.4,
+                -80.2
+              ],
+              [
+                42.4,
+                -79.8
+              ],
+              [
+                42.6,
+                -79.8
+              ],
+              [
+                42.6,
+                -80.2
+              ]
+            ],
+            "raw": "away from the route"
+          }
+        ],
+        "path": [
+          [
+            42.0,
+            -88.0
+          ],
+          [
+            43.0,
+            -88.0
+          ]
+        ],
+        "start": 1790000000,
+        "end": 1790003600
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 2
+        },
+        {
+          "path": "0.raw",
+          "equals": "on the route, 90 minutes before"
+        },
+        {
+          "path": "1.raw",
+          "equals": "on the route, 90 minutes after"
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) 26.3.1.1: G-AIRMETs are snapshots three hours apart; a snapshot is told for a time within half that gap, 90 minutes (5,400 s), either side."
+    },
+    {
+      "name": "PIREPs in a box: the last 90 minutes at or under 18,000 ft, the urgent last",
+      "rule": "pireps_in_box",
+      "input": {
+        "reports": [
+          {
+            "observed": 1789999400,
+            "lat": 43.0,
+            "lon": -88.0,
+            "altitude_ft": 4000,
+            "urgent": true,
+            "raw": "urgent"
+          },
+          {
+            "observed": 1789994600,
+            "lat": 42.5,
+            "lon": -88.0,
+            "altitude_ft": 5500,
+            "urgent": false,
+            "raw": "90 minutes old"
+          },
+          {
+            "observed": 1789994599,
+            "lat": 42.5,
+            "lon": -88.0,
+            "altitude_ft": 5500,
+            "urgent": false,
+            "raw": "90 minutes and a second"
+          },
+          {
+            "observed": 1789999940,
+            "lat": 42.5,
+            "lon": -88.0,
+            "altitude_ft": 18000,
+            "urgent": false,
+            "raw": "18,000 ft"
+          },
+          {
+            "observed": 1789999940,
+            "lat": 42.5,
+            "lon": -88.0,
+            "altitude_ft": 18001,
+            "urgent": false,
+            "raw": "18,001 ft"
+          },
+          {
+            "observed": 1789999940,
+            "lat": 42.5,
+            "lon": -86.9,
+            "altitude_ft": 4000,
+            "urgent": false,
+            "raw": "east of the box"
+          }
+        ],
+        "box": [
+          42.0,
+          -89.0,
+          43.0,
+          -87.0
+        ],
+        "now": 1790000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 3
+        },
+        {
+          "path": "0.raw",
+          "equals": "90 minutes old"
+        },
+        {
+          "path": "1.raw",
+          "equals": "18,000 ft"
+        },
+        {
+          "path": "2.raw",
+          "equals": "urgent"
+        }
+      ],
+      "source": "The rule's own window, the last 90 minutes, and its ceiling, Class A's floor: 14 CFR 71.33, Class A from 18,000 ft MSL, so a report at 18,000 ft is told and one at 18,001 is not."
+    },
+    {
+      "name": "PIREPs along a route: within 30 nm either side, urgent first, each with how far along",
+      "rule": "pireps_along_route",
+      "input": {
+        "reports": [
+          {
+            "observed": 1789999400,
+            "lat": 42.5,
+            "lon": -88.0,
+            "altitude_ft": 4000,
+            "urgent": false,
+            "raw": "routine, halfway"
+          },
+          {
+            "observed": 1789999400,
+            "lat": 42.9,
+            "lon": -88.0,
+            "altitude_ft": 4000,
+            "urgent": true,
+            "raw": "urgent, near the end"
+          },
+          {
+            "observed": 1789999400,
+            "lat": 42.7,
+            "lon": -87.4,
+            "altitude_ft": 4000,
+            "urgent": false,
+            "raw": "26 nm east, inside 30"
+          },
+          {
+            "observed": 1789999400,
+            "lat": 42.7,
+            "lon": -87.3,
+            "altitude_ft": 4000,
+            "urgent": false,
+            "raw": "31 nm east, outside 30"
+          }
+        ],
+        "path": [
+          [
+            42.0,
+            -88.0
+          ],
+          [
+            43.0,
+            -88.0
+          ]
+        ],
+        "now": 1790000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 3
+        },
+        {
+          "path": "0.raw",
+          "equals": "urgent, near the end"
+        },
+        {
+          "path": "1.raw",
+          "equals": "routine, halfway"
+        },
+        {
+          "path": "1.along_track_nm",
+          "value": 30.0,
+          "tolerance": 0.2
+        },
+        {
+          "path": "2.raw",
+          "equals": "26 nm east, inside 30"
+        }
+      ],
+      "source": "The rule's own window, the last 90 minutes, and its ceiling, Class A's floor: 14 CFR 71.33, Class A from 18,000 ft MSL, so a report at 18,000 ft is told and one at 18,001 is not. The corridor is the rule's own 30 nm; half a degree of latitude is 30 nm (a minute of latitude a nautical mile), and 0.6 and 0.7 degree of longitude at 42.7 N are 26.5 and 30.9 nm."
+    }
+  ]
+}

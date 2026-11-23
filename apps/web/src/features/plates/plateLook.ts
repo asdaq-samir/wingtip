@@ -4,6 +4,10 @@ import type { ProcedureDrawing } from "../../lib/api/types";
 import { persist } from "zustand/middleware";
 import { usePreferences } from "../../lib/preferences";
 
+/** A d-TPP approach page's shape as the planner draws it: its room in
+ *  the card beside the map before the page comes, so nothing moves. */
+export const PLATE_SHAPE = "387 / 594";
+
 /** How solid a plate's page is at first: enough to read the plate, the
  *  chart still faintly under it, as ForeFlight opens one on the map
  *  (the iPhone's and Android's PlateLook, the same figure). */

@@ -1,13 +1,32 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { frontSheet, showTabs, grabberTo, inSheet } from "./sheetHelpers";
+import { showPage } from "./oneSearch";
 
-/** The console out, all the way up: the account button (over the map, on
- *  either page, gone all the way up) opens the account page (Setup) itself.
- *  At the pill, where the developer's page rests, the page is under the
- *  pill's edge. */
+/** The account button in sight: at the end of the search's row (the
+ *  owner, 2026-11-20; OneSearchField), so on Search, with no card over the
+ *  row and the field not in use (Cancel in its place). The developer's page
+ *  keeps it in its own bar (no sheet-pages, so showPage leaves it). */
+async function accountInSight(page: Page) {
+  const account = page.getByTestId("account-button");
+  if (await account.isVisible()) return;
+  const cards = page.locator("[data-sheet-card][data-open]");
+  for (let open = await cards.count(); open > 0; open--) {
+    await cards.last().focus();
+    await page.keyboard.press("Escape");
+    await expect(cards).toHaveCount(open - 1);
+  }
+  await showPage(page, 0);
+  const cancel = page.getByTestId("one-search-cancel");
+  if (await cancel.isVisible()) await cancel.click();
+  if (!(await account.isVisible())) await grabberTo(page, "half");
+}
+
+/** The console out, all the way up: the account button (the search's row's
+ *  end) opens the account page (Setup) itself. At the pill, where the
+ *  developer's page rests, the page is under the pill's edge. */
 export async function openConsole(page: Page) {
   await showTabs(page);
-  if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
+  await accountInSight(page);
   await page.getByTestId("account-button").click();
   await expect(page.getByTestId("console-sheet")).toBeVisible(); // there before it is raised
   await expandConsole(page);
@@ -41,7 +60,7 @@ export async function pickControl(page: Page, control: "theme-select" | "brand-s
  *  as Apple Maps' Choose Map card is. Escape puts it away. */
 export async function openMapSettings(page: Page) {
   // The map's buttons are under a phone's sheet all the way up: the pill.
-  if ((page.viewportSize()?.width ?? 0) < 768 && (await frontSheet(page).getAttribute("data-panel")) === "full")
+  if ((page.viewportSize()?.width ?? 0) < 660 && (await frontSheet(page).getAttribute("data-panel")) === "full")
     await grabberTo(page, "peek");
   await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
   await expect(page.getByTestId("map-settings")).toBeVisible();
@@ -53,7 +72,7 @@ export async function openMapSettings(page: Page) {
  *  every card is: its grabber brings it all the way, as a finger's drag
  *  does. From `md` up the side panel has one height, and this does nothing. */
 export async function expandConsole(page: Page) {
-  if (page.viewportSize()!.width >= 768) return;
+  if (page.viewportSize()!.width >= 660) return;
   await expect(page.getByTestId("console-sheet")).toBeVisible();
   await grabberTo(page, "full");
 }
@@ -115,8 +134,9 @@ export async function openAccount(page: Page) {
   // 2026-11-13), once the sign-in is known: greyed signed out with no dev
   // mode, You's own head then the way in (its Sign In).
   await expect(sheet.getByText("Checking your sign-in…")).toHaveCount(0);
+  // You's avatar and name (pilot-row), there signed in or in dev mode.
   const row = sheet.getByTestId("pilot-row");
-  if (await row.isEnabled()) await row.click();
+  if (await row.count()) await row.click();
 }
 
 /** One of the console's places by name: the developer's console's tab of

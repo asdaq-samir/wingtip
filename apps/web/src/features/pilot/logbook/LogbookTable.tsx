@@ -68,7 +68,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
         <BaseButton
           onClick={() => setSort(nextSort(sort, c.id))}
           className={cn(
-            "relative inline-flex items-center gap-1 rounded-sm outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring",
+            "relative inline-flex items-center gap-1 rounded-sm outline-none hit-2 focus-visible:ring-2 focus-visible:ring-ring",
             c.figure && "flex-row-reverse",
             on ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
@@ -87,7 +87,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
         <BaseButton
           onClick={() => (vm.changing === row.original.id ? vm.stopChanging() : vm.change(row.original.id))}
           aria-expanded={vm.changing === row.original.id}
-          className="relative font-semibold text-tint outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative font-semibold text-tint outline-none hit-2 focus-visible:ring-2 focus-visible:ring-ring"
           data-testid="logbook-entry-open"
         >
           {text}
@@ -101,7 +101,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
   return (
     // The scroll's own padding under the sticky header, so a row focused by
     // Tab is never hidden under it (WCAG 2.4.11, web.md §4).
-    <div className="max-h-[70vh] scroll-pt-11 overflow-y-auto rounded-lg border border-border" data-testid="logbook-table">
+    <div className="max-h-[70dvh] scroll-pt-11 overflow-y-auto rounded-lg border border-border" data-testid="logbook-table">
       <Table className={cn("tabular-nums", TEXT.detail)}>
         <TableHeader className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl solid:bg-background dark:bg-popover/85">
           {table.getHeaderGroups().map((group) => (

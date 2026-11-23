@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { aircraftListQuery, currencyQuery, pilotQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { aircraftListQuery, currencyQuery } from "../../lib/queryClientRecords";
 import { usePreferences } from "../../lib/preferences";
 
 /** The signed-in pilot, their currency, and the airplane of theirs being flown. */

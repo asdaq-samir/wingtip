@@ -51,6 +51,11 @@ export interface FratInput {
    *  period (an hour after sunset to an hour before sunrise), the nav log's
    *  `night_passengers`; left out, `night` stands for it. */
   nightPassengers?: boolean | null;
+  /** Whether any of the flight is in 14 CFR 91.209(a)'s period for
+   *  position lights, sunset to sunrise, the nav log's `lights`: an open
+   *  squawk deferred for day flight grounds it; left out, `night` stands
+   *  for it. */
+  lights?: boolean | null;
   /** The nav log's fuel margin, gallons; below zero the tanks do not
    *  hold the fuel and its reserve. */
   fuelMarginGal: number | null;
@@ -108,6 +113,7 @@ export function assess(input: FratInput): Assessment {
     hazards: input.hazards,
     night: input.night,
     night_passengers: input.nightPassengers ?? null,
+    lights: input.lights ?? null,
     fuel_margin_gal: input.fuelMarginGal,
     ifr: input.ifr ?? false,
     // Left out for a stock profile, which has none; null for the pilot's

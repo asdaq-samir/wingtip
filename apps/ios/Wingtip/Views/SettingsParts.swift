@@ -89,7 +89,7 @@ struct PilotDetailsView: View {
                             .accessibilityIdentifier("pilot-name")
                     }
                     LabeledContent("Email", value: pilot.email)
-                    NavigationLink { ContactView() } label: {
+                    NavigationLink(value: SheetPage.contact) {
                         LabeledContent("Contact") { if let home = pilot.homeBase { Text(home) } }
                     }
                 } footer: {
@@ -99,7 +99,7 @@ struct PilotDetailsView: View {
                     ExportDataButton()
                 }
                 Section {
-                    Button("Sign Out", role: .destructive) {
+                    Button(Wording.signOut, role: .destructive) {
                         Task { await session.signOut(); plan.forgetPilot(); dismiss() }
                     }
                 }
@@ -127,7 +127,7 @@ struct PilotDetailsView: View {
                 await session.refresh()
                 problem = nil
             } catch {
-                problem = "Your name was not saved: \(error.localizedDescription)"
+                problem = Problems.say("Your name could not be saved", error)
             }
         }
     }

@@ -32,8 +32,12 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   as extensions. The documents are fitted to the generator first
   (`api-models-apps.mjs`'s `openapi`): FastAPI's `anyOf` with null is a
   type that includes null (the generator skipped those properties when it
-  was first tried, 24 October), enums are strings, and operations are named
-  by their functions. Still by hand: Spring Security's `/logout` and the
+  was first tried, 24 October), enums are strings, every object is open
+  to keys it does not name, and operations are named by their functions.
+  So a server that ships first never fails a phone not yet updated: a
+  field the app does not know is passed over, and an enum value it does
+  not know arrives as the string the server sent, which the app's code
+  reads to its `default:` (`ApiToleranceTests`). Still by hand: Spring Security's `/logout` and the
   data export's download, which the documents do not describe as the app
   needs them, and the planner's pictures, which Nuke loads (`PictureViewer`,
   with Keep for the Air's pictures as its data loader's answer offline).
@@ -75,6 +79,11 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   them into the engine. Every other figure
   comes from the planner; the app shows the server's answer, with its
   date when offline.
+- Figures are written by `Format` in en_US whatever the phone's region
+  (a number's bare `.formatted()` wrote "4.500" on a German phone), and a
+  figure the pilot types is read by `Format/Typed.swift`, which takes the
+  decimal keypad's comma ("8,5") as the point: a field that kept only
+  digits and points read it as 85.
 - The ACS table (`AcsTable`) is the web's own `apps/web/src/lib/acs.json`,
   bundled by project.yml as `acs.json`.
 - Judge every screen on the phone against Apple's Human Interface
@@ -115,8 +124,8 @@ Where the Swift copies still differ, the fixtures leave the case out:
 
 ## The words, with no signal
 
-The Brief's "The weather in words" and the Go / No-Go's "The flight in
-words" (`Wingtip/Words/`) are a few plain sentences over the figures,
+The Brief's "The Weather in Words" and the Go / No-Go's "The Flight in
+Words" (`Wingtip/Words/`) are a few plain sentences over the figures,
 each with the chips of the figures it rests on; a chip opens the report
 as sent. Every figure is the engine's or the planner's; a model only
 writes the sentences, and never a figure of its own:
@@ -235,11 +244,11 @@ owner, 2026-11-03):
   `vertical_speed`, `glide_ring` -- and FiguresStrip, both strip layouts,
   the bar and the map read it. At flying speed `Views/InstrumentsBar.swift`
   sits over the map under the alerts and the radio: groundspeed, track
-  (magnetic on a route, else marked T), GPS altitude, vertical speed; on
+  (magnetic on a route, else marked T), GPS altitude (Core Location's sea-level `altitude`, none when `verticalAccuracy` is 0 or less, never `ellipsoidalAltitude`), vertical speed; on
   the route the next waypoint's distance, time to go and desired track,
   the distance off course and the destination's arrival in Zulu with the
   fuel the plan leaves; Nearest (the Nearest list with Divert) one tap
-  away; and "Planning aid · not for navigation". The glide ring is drawn
+  away; and "A Planning Aid, Not for Navigation" (`Wording.planningAidNoticeTitle`). The glide ring is drawn
   dashed about the airplane (`FlightMapLayer`'s `GlidePolyline`) over the
   higher of the packs' ground under it (the packs' ahead answer's
   `ground_ft`, asked with the alerts network or none) and the nearest
@@ -248,25 +257,79 @@ owner, 2026-11-03):
   placed by the diagram's own latitude and longitude marks (the free
   d-TPP's diagrams have no GeoPDF georeference; KORD's and a few others
   have no marks, and say so).
-- **A cockpit ADS-B receiver** (`Wingtip/Receiver/`): a Stratux, Sentry,
-  Garmin GDL 39/52 or uAvionix receiver on the Wi-Fi sends GDL 90 to UDP
-  port 4000; `ReceiverListener` (Network.framework) gathers it and once a
-  second the engine reads it (`receiver_read`, `engine/crates/receiver`).
-  Its traffic is drawn ahead of the internet's, merged by ICAO address
-  (`receiver_traffic`, through `Traffic`); a chip on the map says
-  "Stratux · 12 targets · GPS"; a field's FIS-B METAR and TAF show on its
-  card's Weather tab when the weather service has none
-  (`receiver_reports`); FIS-B NEXRAD is drawn over the chart
-  (`receiver_nexrad`, `NexradMapLayer`). Settings › Data has ADS-B
-  Receiver: Auto or Off. A receiver that only broadcasts to the network
-  is heard once Apple grants the multicast entitlement.
+- **A cockpit ADS-B receiver** (`Wingtip/Receiver/`), parked behind
+  `WingtipReceiver` (project.yml, `Receiver.enabled`, off until Apple
+  grants the multicast entitlement; [receivers.md](receivers.md)): a
+  Stratux, Sentry, SkyEcho or a Stratus in open mode on the Wi-Fi sends
+  GDL 90 to UDP port 4000; `ReceiverListener` (Network.framework) gathers
+  it and once a second the engine reads it into the picture it holds
+  between reads (`HeldPicture` over the engine's `ReceiverSession`,
+  `receiver_delta`, `engine/crates/receiver/src/held.rs`), off the main
+  actor, and not at all when nothing was heard and nothing ages. Only the
+  bytes go over and only the receiver, own ship, its traffic and a
+  revision of the FIS-B texts and NEXRAD come back, so the hundreds of kB
+  of FIS-B never cross each second; the NEXRAD is asked again only when
+  its revision moves, a field's reports when its card asks. A listener that fails (the port
+  taken, Local Network refused) says so on the setting's row
+  (`Receiver.problem`) and is tried again only when the network or the
+  setting changes. Its GPS becomes own ship where the device has
+  none, as a Wi-Fi iPad has, or where it is twice as good, and the
+  device's is taken back once it is 3 s old (`receiver_position`,
+  `OwnShipSource`, `OwnShip.fromReceiver`). Its traffic is drawn ahead of
+  the internet's, merged by ICAO address (`receiver_traffic`, through
+  `Traffic`), and an airplane's card says "Heard by Stratux 3 s ago"; a
+  chip on the map says "Stratux · 12 targets · GPS", whose position is
+  shown and the NEXRAD's age; a field's FIS-B METAR and TAF show on its
+  card's Weather tab when the weather service has none, and the route's
+  in the Brief's From Your Receiver (`receiver_reports`); FIS-B NEXRAD is
+  drawn over the chart (`receiver_nexrad`, `NexradMapLayer`). Settings ›
+  Data has ADS-B Receiver: Auto or Off, and the position's source; off
+  in Settings › Extras (below) nothing listens.
+- **Settings › Extras** (`Wingtip/Extras.swift`, `Views/ExtrasSection.swift`;
+  the feature review, docs/store/feature-review.md, 2026-11-21): the parked
+  features, a stock switch each after In Flight, off by default, kept in
+  UserDefaults as `extras.<key>` -- ATC Copilot (`atcCopilot`: Comms
+  Assist, the ATC alerts, the clearance card and its Listen and Read back,
+  the radio's shortcuts; `ClearanceListener` listens only with it on),
+  ADS-B Receiver (`adsbReceiver`: `Receiver.listening`), Other Airplanes
+  (`otherAirplanes`: another airplane's Alert/Follow, Debrief, flights,
+  base and history, and its watches asked; `Extra.airplaneHistory`, the
+  pilot's own always), Model Weather (`modelWeather`: the Map card's menus,
+  nothing fetched) and Training Tools (`trainingTools`: Practice; the
+  diversion drill is Nearest's and stays). Off, a setting saved inside one
+  acts as off. A UI test turns one on with `-extras.<key> "<true/>"`.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
   collected and the required-reason APIs used; the session is cookies in
   `HTTPCookieStorage`, and `UserDefaults` holds no secret.
 - **Strict concurrency** (`SWIFT_STRICT_CONCURRENCY: complete` in
   project.yml): Swift 6's language mode (`SWIFT_VERSION: "6.0"`), so a
   data race is a compile error, and every warning is one too
-  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`).
+  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`). Approachable Concurrency is on
+  (`SWIFT_APPROACHABLE_CONCURRENCY`, Swift 6.2): a `nonisolated async`
+  function runs on its caller's actor, and work meant for the thread
+  pool is a `@concurrent` function, awaited where it is needed, not a
+  `Task.detached`. State shared with MapKit's or Network's threads is in
+  a `Mutex` (Synchronization) the compiler checks; `@unchecked Sendable`
+  is left only on subclasses of MapKit's renderers and tile overlays and
+  on `TileCache` (NSCache), each saying why. The app target is main
+  actor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor`): what is
+  not marked runs on the main actor, as the screens and their models do,
+  and what runs elsewhere says so with `nonisolated` on its type or
+  member -- the engine's calls and the contract's generated types
+  (`engine-contract-apps.sh` writes them so), the design tokens
+  (`design-tokens.sh`), the servers' middleware, coders and errors, the
+  map's tile pipeline (`Tiles/`), MapKit's overlay and renderer
+  subclasses, the kept files (`KeptForAir`, `OfflineStore`, `CyclePacks`),
+  the receiver's listener, the on-device model's tools and figures, the
+  App Group's store the widgets read, and what the App Intents call (the
+  intents themselves are left to App Intents' own isolation: an explicit
+  `nonisolated` refuses their `@Parameter` properties). A nested type
+  does not take its container's `nonisolated`, so each says its own. The
+  widgets, the watch and the unit tests are main actor by default too;
+  the UI tests are not, every class there being an XCTestCase, whose
+  initialisers and setUp are XCTest's nonisolated ones. The libraries
+  (WingtipEngine, PlannerAPI, GatewayAPI) stay nonisolated for their
+  callers.
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
   language is a column, not a rewrite. xcodebuild extracts the strings
@@ -274,6 +337,14 @@ owner, 2026-11-03):
   adds or drops a string, `scripts/build/ios-strings.sh` syncs the catalog
   from the build's `.stringsdata` (`xcrun xcstringstool sync`), and CI's
   iOS job fails with `--check` when the committed one differs.
+- **Acknowledgements** (`Wingtip/Settings.bundle`, About's
+  "Acknowledgements", which opens the app's page in Settings): the
+  open-source licences of the Swift packages, written by LicensePlist from
+  a build's SourcePackages, with the engine's crates and Apple's NOTICE
+  files (`license_plist.yml`). After a change of package, run
+  `scripts/build/licences.sh ios <DerivedData>/SourcePackages` and commit
+  the bundle; CI's iOS job fails with `--check` when it is stale
+  (docs/legal/credits.md, "Open-source licences").
 - **Scene restoration**: the pages a scene was on come back with it
   (`@SceneStorage` in `RootView`).
 - **A UI smoke test** (`WingtipUITests/LaunchTests`): the app launched
@@ -320,7 +391,7 @@ passengers waits for the server on AWS.
 
 `apps/ios/WingtipWatch/` (the owner's ask, 2026-11-03) is a companion of the
 iOS app, bundle id `app.wingtipmaps.ios.watchkitapp`, watchOS 26 and
-later (decision 0040's amendment), embedded in the phone's app and installed with it: three pages,
+later (decision 0040's amendment): three pages,
 Timers (a flight timer and a hold/approach timer, each a `Stopwatch`
 worked out from the clock at each draw under a `TimelineView`, so it is
 right when the display wakes), Checklist (the picked airplane's sections
@@ -337,11 +408,15 @@ out of reach). Every message is a small Codable struct in
 `Wingtip/Shared/WatchMessages.swift`, compiled into both apps and
 round-tripped in `WingtipWatchTests`. No complication yet.
 
-The workflow does not build the watch scheme yet: the `Wingtip` scheme
-builds the watch app as the embedded companion, and `WingtipWatch`'s
-tests need a watch simulator paired with the iPhone one, picked as a
-pair (`xcrun simctl list pairs`) and given as `-destination
-"platform=watchOS Simulator,id=…"`. In the developer account the watch
+It is parked (the feature review, 2026-11-21): the phone's app no longer
+embeds it (project.yml), so the App Store build has no watch app, its
+screenshots or its questions, and `WatchLink` activates no session
+without it in the bundle (`WatchLink.bundled`). The target and its sources
+stay, built by the `WingtipWatch` scheme alone; to bring it back, the
+`Wingtip` target depends on it again with `embed: true`. No workflow
+builds that scheme: `WingtipWatch`'s tests need a watch simulator paired
+with the iPhone one, picked as a pair (`xcrun simctl list pairs`) and
+given as `-destination "platform=watchOS Simulator,id=…"`. In the developer account the watch
 app needs its own app id (`app.wingtipmaps.ios.watchkitapp`) and a
 provisioning profile beside the phone's for TestFlight.
 
@@ -491,6 +566,27 @@ has Terrain, Flat | 3D, segmented as the web's Map menu has it.
   altitude for one, so each airplane keeps the engine's TCAS tag
   (`traffic_marks`, "+12" against own ship) as its height.
 
+**Terrain Hazards** (`Map/TerrainHazard.swift`, `Map/HazardTiles.swift`,
+`Map/HazardLayer.swift`, `Map/HazardRows.swift`). The web's hazard
+colouring, the Map card's row under its layers: Off (the default), On,
+or In Flight, and while it is not off Red Within, segmented from the
+engine's `hazard_view` clearances. The engine is given own ship's GPS
+speed and height (to 50 ft) and the plan's cruise and picks the altitude,
+whether to draw, and the red and amber lines. MapKit has no colour
+relief, so `HazardTileOverlay` (an `MKTileOverlay`) fetches the planner's
+terrarium terrain tile through the generated client, decodes its heights
+once (kept in an `NSCache`), and colours each pixel clear, amber or red
+against the lines off the main thread. MapKit's stock tile renderer keeps
+the tiles it draws and reloads them only when the lines move. The DOF's
+obstacles round the view (the half-degree box the web uses, from its
+zoom 9) are levelled by the engine and drawn as dots, red and amber
+only. It is held off the map in 3D with the chart. On the Profile, the
+side view's obstacles are posts coloured by `profile_obstacles`, with the
+tallest three named MSL (AGL). The TAF cloud bases, the freezing level
+and the icing from `/api/route-profile/weather` are drawn over them
+(`Profile/ProfileHazardMarks.swift`), and a key under the chart says
+each one's source and time (`Profile/ProfileWeatherKey.swift`).
+
 **Model weather** (`ModelWeather/`). The Map card's Model Weather menu
 (Off and the web's twelve fields) and, where the field has them, its
 Level menu (Surface ... FL300, Max; the engine's `flow_levels`).
@@ -548,13 +644,42 @@ asks `OfflineStore.tile`), at the density asked for or else the other,
 then from the tiles it fetched as it went, then the network.
 `PMTilesReader` is the phone's own reader of the format (spec v3): the
 header once, each directory once as it is needed, then the tile's own
-bytes, by ranged reads of the file, never mapped whole (Alaska's
-sectional at 2x is 7 GB). When the planner has the next cycle, a kept
+bytes, by ranged reads of the file (`pread`, so no lock is held over
+the disk), never mapped whole (Alaska's sectional at 2x is 7 GB). Every
+offset and length is checked against the file: a damaged or truncated
+archive is a tile it does not have, never a crash
+(`PMTilesDamageTests`). When the planner has the next cycle, a kept
 region offers "Update to" it; on the day the old edition is replaced
-(0901Z on the next one's date) it is said to be expired and kept until
+(0901Z on the next one's date, the engine's `data_cycle` asked at the
+minute) it is said to be expired and kept until
 its update is whole, then removed (`OfflineStore.sweep`; warn, never
-limit). `WingtipTests/OfflineChartsTests` reads an archive the planner's
+limit). Offline across a changeover, the chart answer still the old
+cycle's, a region of the next cycle updated ahead is drawn from 0901Z on
+its date (`OfflineStore.keptInForce`, the engine's `data_cycle`; asked
+each minute by `Charts.watchChangeover`, which draws the map again when
+it turns); past the region the old chart stays, and Ready to Fly says it
+is out of date. `WingtipTests/OfflineChartsTests` reads an archive the planner's
 writer made, leaf directories and all.
+
+Downloads' Plates keeps the FAA's plates a state at a time, as ForeFlight
+and Garmin Pilot download them: the planner lists each state's open
+fields and their charts of the d-TPP cycle in force with their size
+(`/api/plates/states`, `/api/plates/states/{cycle}/{state}`), asked once
+("Download California's plates?", its charts, fields, size and cycle),
+and each chart is kept as Keep for the Air keeps a flight's
+(`KeepPlates`), with the app open. `StatePlates` holds the record of the
+kept states (`state-plates/kept.json` and each state's list, under
+Application Support): its cycle, the charts done of those wanted, the
+failures with Try Again, swipe to Delete, which deletes the state's files
+but those another kept state also holds (a region's takeoff-minimums
+booklet is in each of its states) or a route kept for the air holds (Keep
+for the Air's manifest names its files). The section's footer names the cycle
+and when it ends ("Cycle 2611, until 24 Dec 0901Z"). With the app active
+(at launch, back in the foreground and each minute) a stopped download
+goes on, and a kept state whose cycle the planner's `next_at` says has
+been replaced is fetched for the cycle the planner now serves, the old
+one's files deleted once the new one is whole (`refreshDue`;
+`WingtipTests/StatePlatesTests`).
 
 The web app has no Downloads: a browser cannot be relied on to keep
 gigabytes (Safari may clear a site's storage after seven days without a
@@ -577,7 +702,7 @@ offline audit of 2026-11-10:
   without weather": the packs hold no METAR, elevation or runway. The
   search's Nearest group and the Watch's take the same fallback
   (`Planner.nearestOrPacks`). With no GPS fix both say "Finding your
-  position…" for ten seconds, then "No GPS position" and what to do, or
+  position…" for ten seconds, then "No GPS Position" and what to do, or
   with Location off a link to Settings.
 - **Direct To and a diversion** need the planner for the new route's legs.
   The route before is held until the nav log is whole; with no connection
@@ -589,7 +714,19 @@ offline audit of 2026-11-10:
   frame's tiles 25 nm either side of the course at zooms 5 to 8, at most
   300 (`Offline/KeepRadar`, drawn by the loop where IEM can't be
   reached), each field's FAA diagram PDF for the own-ship diagram, and the
-  route profile where the plan's own fetch had not brought it.
+  route profile where the plan's own fetch had not brought it. Its plates
+  are the flight's, as the planner names them (`/api/plates/flight`,
+  `wingtip.plate_sets`): every chart of the departure, the destination
+  and each stop, the alternate's (the one filed, else the engine's 91.169
+  pick) and those of the fields within diversion range of the route (the
+  engine's `diversion_range_nm`, from the picked airplane's own cruise and
+  fuel; with none picked, none, and the line asks for one). Each is kept
+  as the card's Charts tab shows it, its pages and their pictures, four at
+  a time (`Offline/KeepPlates`), and the plates are on board only when
+  every one was kept. Where the keep is offered (FPL's button, Ready to
+  Fly's fix) their size is said first: "This flight's plates: about 42 MB,
+  6 fields, within 90 nm of the route." (`KeepForAir.sizePlates`, asked
+  again as the plan changes).
 - **The corridor's chart tiles** are kept in Application Support
   (`kept-chart-tiles`, excluded from backup), which iOS does not purge;
   the tiles the map fetches as it pans stay under Caches (`TileStore`).
@@ -630,10 +767,9 @@ Tests: `OfflineFieldsTests`, `FlightExtrasTests` (Direct To put back),
   again each time the app comes to the front with a network.
 - **Purpose strings** name the voice questions (microphone, speech) and
   the position read on in the background while flying (location).
-- **The first launch** puts up one stock alert, "A Planning Aid, Not for
-  Navigation", with About's planning-aid words and the listing's
-  not-for-navigation paragraph, accepted once (`PlanningAidNotice`). The
-  UI tests' launch arguments skip it (`-planningAid` asks for it).
+- **The first launch** puts up no notice (round 3, as the web and
+  Android): the planning-aid words are in About, on the instruments bar
+  and at the kneeboard's foot.
 - **Push in the App Store build.** `project.yml` keeps `aps-environment`
   development, which the archive's development signing needs; the App
   Store export re-signs with the distribution profile, whose value,
@@ -670,8 +806,8 @@ a nonce it issued to this session, used once:
 2. Set `ASAuthorizationAppleIDRequest.nonce` to the nonce's SHA-256 as
    lowercase hex (`SHA256.hash(data: Data(nonce.utf8))`, each byte `%02x`).
    Apple writes that into the token's `nonce` claim.
-3. `POST /api/auth/apple/native` with `{"identityToken": ..., "nonce":
-   "<the nonce itself, not its hash>"}`.
+3. `POST /api/auth/apple/native` with `{"identityToken": ...,
+   "authorizationCode": ..., "nonce": "<the nonce itself, not its hash>"}`.
 
 The gateway checks the nonce is the one this session was given and the
 token's claim is its hash; a nonce is spent by the attempt, so a failed one
@@ -682,6 +818,87 @@ the app that sends it has shipped, the owner sets
 `APP_APPLE_REQUIRE_NONCE=true` on the gateway, and a token without one is
 refused. A token that carries a nonce claim is always refused without it.
 
+## Sign in with Apple: revoked when the account goes
+
+Apple asks an app that offers Sign in with Apple to revoke the pilot's
+tokens at Apple when the account is deleted (App Review 5.1.1(v); Apple's
+"Revoke tokens" and TN3194), so the app leaves the pilot's Apple Account
+list of apps using Sign in with Apple. The identity token alone gives the
+server nothing to revoke, so the app sends the sheet's
+`authorizationCode` too (`SignInView`, `Session.signInWithApple`). The
+gateway trades it at Apple's `/auth/token` with the bundle id as the
+client and a client secret signed for it with the team's key
+(`AppleAppTokens`, `AppleClientSecret`; the same `APPLE_TEAM_ID`,
+`APPLE_KEY_ID` and `APPLE_PRIVATE_KEY` as the web's sign-in, the key
+enabled for Sign in with Apple on the app's App ID), and keeps the refresh
+token with the pilot and the client it was issued to (`pilots
+.apple_token_client`, V49). Deleting the account revokes it with that
+client (`AppleRevocation`); the web's own token goes with the Services
+ID as before. Both are best effort: a sign-in or a deletion never fails
+because Apple did not answer. A pilot who signed in on the iPhone before
+this build has no token kept; their next sign-in keeps one.
+
+### Checking on a device: does revoking the web's grant end the iPhone's? (N6)
+
+One token is kept a pilot (`pilots.apple_refresh_token`, with
+`apple_token_client`), so an iPhone sign-in writes over the web's, and the
+web grant is then never revoked when the account is deleted (the deep
+security review of 2026-11-21, N6). Revoking the web token before keeping
+the iPhone's would fix that, unless Apple treats the two as one grant
+(the Services ID grouped under the app's primary App ID) and the revoke
+ends the new iPhone sign-in too. Apple's documentation does not say which,
+so it is measured on a device before any code changes. It needs:
+
+- an iPhone with a build of this branch signed for the real bundle id, and
+  the web app, both on one gateway with Sign in with Apple configured (the
+  rehearsal stack, `infra/rehearsal/run.sh`, or a dev stack with the
+  team's key);
+- a test Apple Account used for nothing else, and its settings open at
+  account.apple.com, Sign-In and Security, Sign in with Apple;
+- `psql` on that gateway's database, and the team's key to sign a client
+  secret (`AppleClientSecret`'s claims: iss the team id, sub the client,
+  aud `https://appleid.apple.com`, ES256 with the key id).
+
+Steps, writing down each answer:
+
+1. In the Apple Account's settings, stop using Sign in with Apple for
+   Wingtip Maps if it is listed, so each grant below is new.
+2. Sign in on the web with Apple. In the database:
+   `SELECT apple_token_client, left(apple_refresh_token, 12) FROM pilots
+   WHERE email = '<address>';` The client is the Services ID. Copy the
+   whole token aside as WEB. The account's list shows Wingtip Maps once.
+3. Sign in on the iPhone with the same Apple Account. The same query now
+   gives the bundle id; copy the token as APP. Note whether the account's
+   list shows one entry or two.
+4. Revoke WEB as the gateway would, with the Services ID:
+   `curl -s -o /dev/null -w '%{http_code}' https://appleid.apple.com/auth/revoke
+   -d client_id=<services id> -d client_secret=<secret signed for it>
+   -d token=<WEB> -d token_type_hint=refresh_token` (200 expected).
+5. Then, for the iPhone's grant:
+   - refresh APP: `curl -s https://appleid.apple.com/auth/token
+     -d client_id=<bundle id> -d client_secret=<secret signed for it>
+     -d grant_type=refresh_token -d refresh_token=<APP>`: an
+     `id_token` back means the grant stands, `invalid_grant` that it ended;
+   - on the iPhone, Settings, the Apple Account, Sign in with Apple: Wingtip
+     Maps still listed, or gone (the app itself never asks
+     `ASAuthorizationAppleIDProvider.getCredentialState`, so its own
+     session says nothing here);
+   - the Apple Account's list still shows Wingtip Maps, or not.
+6. The other way round, from step 1 with a fresh grant: sign in on the
+   iPhone first, then the web, revoke APP with the bundle id, and check
+   the web's (refresh WEB with the Services ID).
+7. Delete the account in the app and check that neither list shows
+   Wingtip Maps any longer.
+
+What the answers decide (record them under N6 in docs/SECURITY.md):
+
+- **Step 5's grant stands:** revoke the kept token with its own client
+  before writing over it (`PilotService.keepAppleRefreshToken`), so a
+  deletion revokes the one grant left.
+- **Step 5's grant ends:** keep a token each client (the web's and the
+  app's in their own columns, a migration after the highest on any
+  `claude/` branch), never revoke on replace, and revoke both at deletion.
+
 ## Building
 
 The Mac mini has Xcode (`.tool-versions`' `xcode`, 27.2 and the iOS 27.2
@@ -691,12 +908,20 @@ SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
 
 - a pull request that touches `apps/ios/`, the engine, the web files the
   app bundles (`apps/web/src/lib/fixtures`, `apps/web/src/lib/acs.json`)
-  or the workflow: XcodeGen, then `xcodebuild test` on the newest iPhone
-  simulator with `-only-testing` the unit tests (`WingtipTests`) and
-  `CardSmokeTests` (an airport card opened from the search, scrolled with
-  its close in sight, closed back to the search), about ten minutes;
+  or the workflow: XcodeGen, the build, then the unit tests
+  (`WingtipTests`, the `WingtipUnit` scheme) on the newest iPhone
+  simulator (`scripts/ci/ios_test.sh`), a few minutes;
   DerivedData is restored from main's last build, its inputs stamped by
   content (`scripts/ci/content-mtimes.py`) so only what changed compiles;
+- `main`'s push: those and `CardSmokeTests` (an airport card opened from
+  the search, scrolled with its close in sight, closed back to the search)
+  on the newest iPhone and the newest iPad, each its own runner, the iPad
+  being the device most pilots fly with (decision 0058);
+- a wave's validation (`validate-wave.yml`): the iPhone's set as on
+  `main`, and the iPad's whole suite in four legs on four runners
+  (`IPAD_LEG_1` to `IPAD_LEG_3` in `scripts/ci/ios_test.sh` and the
+  rest), some 30 to 35 minutes each with the build on a slow hosted
+  runner, where the night's one leg takes 34 to 48;
 - every night (`native-ios.yml`, `full`): the whole suite (the launch,
   flow and accessibility tests, the store shots and the card rule's full
   suites, `CardRuleTests` and `CardScrollTests`) on the iPhone, the iPad
@@ -731,4 +956,7 @@ it is the gateway's address and the app's associated domain.
    sign-in.
 7. **TestFlight:** add yourself as an internal tester. The next push to
    `main` that changes the app (or Run workflow on Native iOS) uploads a
-   build; it appears in TestFlight after Apple processes it.
+   build; it appears in TestFlight after Apple processes it. Once
+   processed, `scripts/ci/testflight_beta.py` gives it its What to Test
+   and sends it to the external group **Pilots** with Beta App Review
+   asked for (docs/store/beta.md, the pilot beta).

@@ -10,6 +10,12 @@ non-accident flight. It answers four questions:
 3. Can it record a smooth video with nobody at the keyboard?
 4. How does it look with and without AutoOrtho's public-domain USGS imagery?
 
+What the trial films is for the trial alone: X-Plane's licence (its
+EULA, read 2026-11-21) is "for non-commercial purposes only" and forbids
+distributing its artwork without Laminar Research's permission, so no
+film of it, the demo's least of all, is published without Laminar's
+professional licence or written leave (STUDIO-PIPELINE.md, "The rules").
+
 The kit:
 
 - **`tools/xplane-driver/`**: an XPPython3 plugin (`PI_wingtip_replay.py`
@@ -18,6 +24,9 @@ The kit:
 - **`scripts/dev/xplane-trial.sh`**: checks what is installed, gets the
   sample flight out of the Studio, copies everything into X-Plane, and
   collects the videos.
+
+The same plugin also flies the scripted test flight that checks the
+apps' in-flight features (docs/SIM-FLIGHT.md, `scripts/dev/sim-flight.sh`).
 
 ## The sample flight
 

@@ -85,6 +85,10 @@ def _switch(value):
     return value.strip() != "0" if isinstance(value, str) else value
 
 
+#: The shortest MCP_INTERNAL_TOKEN taken, as the gateway's own minimum.
+MIN_INTERNAL_TOKEN = 32
+
+
 def _none_if_blank(value):
     """An unset-or-empty variable as None, the way `os.environ.get(...)
     or None` read it: compose passes `${VAR:-}` through as an empty
@@ -118,14 +122,17 @@ class Settings(BaseSettings):
     weather_store: Path = DATA_DIR / "raw" / "weather"
     #: wingtip.notams' SQLite store of NOTAMs.
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
+    #: adsb.lol's API key (x-api-key), its day's quota above an address's 500 (wingtip.traffic.common).
+    adsblol_api_key: str | None = None
     #: ADS-B Exchange's RapidAPI key; None turns that source off (wingtip.traffic).
     adsbx_rapidapi_key: str | None = None
     #: ADS-B Exchange requests a month at most, short of the plan's 10,000.
     adsbx_monthly_requests: int = 9000
     #: Where the month's ADS-B Exchange count is kept across restarts.
     adsbx_usage_file: Path = DATA_DIR / "raw" / "adsbx_usage.json"
-    #: Whether adsb.fi's open data is asked for watched airplanes (0 in production until adsb.fi agrees).
-    adsbfi_open_data: bool = True
+    #: Whether the FAA's radar from SWIM is shown only while a current LADD
+    #: list is kept (wingtip.traffic.ladd); 0 only where nothing is public.
+    ladd_required: bool = True
     #: wingtip.traffic.store's SQLite store of the live feeds (the FAA's radar,
     #: the followed airplanes and their tracks, where the map looks): written by
     #: ingest (services/ingest) and the planner both, on the data folder they share.
@@ -138,6 +145,9 @@ class Settings(BaseSettings):
     # The planner (services/planner/app)
     #: The logging level for the planner.
     log_level: str = "INFO"
+    #: How the planner, the weather service and ingest write their log:
+    #: "text", or "json" (production) for CloudWatch Logs Insights (wingtip.log_lines).
+    log_format: str = "text"
     #: Whether the FAA aircraft registry is downloaded and read (0 on a test stack).
     registry_refresh: bool = True
     #: The contact URL or email Planespotters.net's photo API asks a server
@@ -152,13 +162,12 @@ class Settings(BaseSettings):
     chart_landmarks_dir: Path | None = None
     #: Whether the planner starts the charts job when a cycle or its overlay tiles are due (0 in production, which schedules it).
     charts_auto_refresh: bool = True
-    #: Whether the crash-leads job (services/jobs/crash, `python -m crash every`)
-    #: runs, and how often, minutes: the Studio's crash drafts.
-    crash_leads_auto: bool = True
-    crash_leads_every_min: int = 30
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
+    #: Whether the documents library's FAA publications and CFR parts are
+    #: fetched here once a day (wingtip.library; 0 on a test stack).
+    faa_library_refresh: bool = True
     #: The "HH:MM-HH:MM" window a cycle's render may start in, or blank for any time.
     charts_refresh_window: str = "01:00-06:00"
     #: How many render processes the charts job's run of a cycle gets (compose passes it to both).
@@ -214,13 +223,13 @@ class Settings(BaseSettings):
 
     read_switches = field_validator(
         "charts_fetch_for_tiles",
-        "adsbfi_open_data",
+        "ladd_required",
         "registry_refresh",
         "cycle_pack",
         "landmarks_build",
         "charts_auto_refresh",
-        "crash_leads_auto",
         "faa_data_auto_refresh",
+        "faa_library_refresh",
         "chart_reads_in_process",
         "charts_cycle_auto",
         mode="before",
@@ -235,6 +244,17 @@ class Settings(BaseSettings):
         return _none_if_blank(value.rstrip("/") if isinstance(value, str) else value)
 
     read_blank_as_unset = field_validator("chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", mode="before")(_none_if_blank)
+
+    @field_validator("mcp_internal_token")
+    @classmethod
+    def read_internal_token(cls, value):
+        """The connector's shared secret, 32 characters or more where set:
+        it alone opens every pilot's records on the gateway's internal
+        port, as the gateway checks at its own start (ConnectorSettings,
+        the security review of 2026-11-22)."""
+        if value is not None and len(value.strip()) < MIN_INTERNAL_TOKEN:
+            raise ValueError(f"is shorter than {MIN_INTERNAL_TOKEN} characters (scripts/dev/dev.sh doctor writes one)")
+        return value
 
     @field_validator("chart_tiles_prefix", mode="before")
     @classmethod
@@ -251,6 +271,15 @@ class SettingsError(ValueError):
     """A malformed environment variable, named as compose and infra write it."""
 
 
+def _named(error) -> str:
+    """A bad setting as the error says it: its variable and the value,
+    but never a secret's value (a token or a key), which would be in the
+    log the error goes to."""
+    name = "_".join(str(part) for part in error["loc"]).upper()
+    secret = name.endswith(("_TOKEN", "_KEY"))
+    return f"{name}=<hidden>" if secret else f"{name}={error.get('input')!r}"
+
+
 @functools.cache
 def get_settings() -> Settings:
     """The environment, read and checked once. A malformed value (a word
@@ -259,7 +288,7 @@ def get_settings() -> Settings:
     try:
         return Settings()
     except ValidationError as err:
-        bad = "; ".join(f"{'_'.join(str(part) for part in e['loc']).upper()}={e.get('input')!r}: {e['msg']}" for e in err.errors())
+        bad = "; ".join(f"{_named(e)}: {e['msg']}" for e in err.errors())
         raise SettingsError(f"The environment has a malformed setting: {bad}") from None
 
 

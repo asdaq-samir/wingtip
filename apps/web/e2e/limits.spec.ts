@@ -17,7 +17,10 @@ test("a fresh device opens straight onto the map, and About says what the planne
   });
   await page.goto("/app/plan");
   await settle(page);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // Nothing to accept: no dialog but the map's own sheet, which on a phone
+  // is Base UI's stock Drawer, a non-modal dialog by its own role (decision
+  // 0018; sheet-cards.spec leaves it out the same way).
+  await expect(page.locator('[role="dialog"]:not([data-slot="map-panel"])')).toHaveCount(0);
   await expect(page.getByText("Before you fly")).toHaveCount(0);
 
   // The console's About page says it again in full, at
@@ -36,7 +39,14 @@ test("a fresh device opens straight onto the map, and About says what the planne
   await expect(traffic).toContainText("ODbL 1.0");
   await expect(traffic).toHaveAttribute("href", /opendatacommons\.org/);
   await expect(about.getByTestId("about-source").filter({ hasText: "FAA aeronautical charts" })).toContainText("Public domain");
-  await expect(about).not.toContainText("OpenStreetMap");
+  // No OpenStreetMap map is drawn; its contributors are credited only for
+  // what is made from their data (the airport outlines through Overture,
+  // the time zones), ODbL, as its 4.3 asks.
+  await expect(about.getByTestId("about-source").filter({ hasText: "OpenStreetMap contributors" })).toHaveCount(2);
+  await expect(about.getByTestId("about-source").filter({ hasText: "OpenStreetMap contributors" }).first()).toContainText("ODbL 1.0");
+  await expect(about.getByTestId("about-source").filter({ hasText: "Terrain Tiles" })).toHaveAttribute("href", /tilezen\/joerd/);
+  // Every package's licence, written by the build beside the page.
+  await expect(about.getByTestId("about-licences")).toHaveAttribute("href", "/app/licences.txt");
   await expect(about.getByTestId("legal-privacy")).toHaveAttribute("href", "/app/privacy.html");
   // The demo flight a reviewer can open, the phones' too (lib/demoFlight).
   await expect(about.getByTestId("about-demo-flight")).toHaveAttribute("href", "/app/plan?dep=KMSN&dest=KOSH");

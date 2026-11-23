@@ -1,9 +1,10 @@
 import { useCallback, useMemo } from "react";
-import { altitudesOf, visitKey } from "../../../lib/identSchema";
-import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
-import { clockTime, flightLevel } from "../../../lib/format";
+import { altitudesOf, routeName, visitKey } from "../../../lib/identSchema";
+import { shortName } from "../../../lib/aircraftChoice";
+import { clockTime, flightLevel, zoneName } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
-import { legsWithoutWind, windsOutOfDate } from "../../plan";
+import { legsWithoutWind } from "../../plan";
+import { usePlanFigures } from "./usePlanFigures";
 import { useGeo } from "../../../lib/geo";
 import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
 import { useProgressToast } from "../../../lib/useProgressToast";
@@ -36,10 +37,16 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   useProgressToast(progressWords(s.navStage, s.stage, s.briefing.state === "loading"));
   // The flight's figures before the nav log's, at the pilot's ask for them as soon as can be (TripFigures' `estimate`): this
   // route's course distance, the airplane's book cruise speed and burn (its own where set) and its profile's taxi fuel.
-  const profile = profiles?.find((p) => p.name === aircraft.profile);
-  const cruiseTasKt = cruiseTasOf(aircraft, profiles);
-  const fuelBurnGph = aircraft.fuelBurnGph ?? profile?.fuel_burn_gph ?? null;
-  const taxiFuelGal = engine ? taxiFuelOf(aircraft, profiles) : null;
+  // Each the engine's, asked again only as the airplane, the totals or the minute change (usePlanFigures).
+  const minute = useMinuteClock();
+  const { cruiseTasKt, fuelBurnGph, taxiFuelGal, windsStale } = usePlanFigures({
+    aircraft,
+    profiles,
+    engine,
+    totals: s.totals,
+    minute,
+    depart,
+  });
   // Before the course comes, at the tap: the great circles between the
   // route's points, placed from the airport index the browser keeps
   // (placeOf) -- the figures at once, where they waited a second or more
@@ -113,7 +120,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     },
     [altitudes, s.legs, s.nav, routeAirport],
   );
-  // Its head: the route by name, and its plan under it -- where from and
+  // Its head: "Brief", and its plan under it -- where from and
   // to, the airplane, the altitude, when -- as an airport's card has its
   // name and where it is. Worked out in a memo: the course's and the
   // airplane's fields handed to plain functions in the render counted, to
@@ -123,19 +130,24 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const briefLine = useMemo(() => {
     if (!course) return null;
     const cruiseFt = s.legs.length ? Math.max(...s.legs.map((leg) => leg.altitude_ft)) : null;
-    // The Brief's head's one line: the altitude, when and the airplane. No
-    // airport names: the title has the idents, and the names ran the line
-    // off a phone's width ("FL-145 · leaving now · Chicago Exec to Harry
-    // R…"; the owner, 2026-11-17: "Yes to all recs").
+    // The Brief's head's one line, under its title "Brief" (named as the
+    // Nav Log and the Profile are; the owner, 2026-11-19): the route by its
+    // idents, the altitude, when and the airplane. Idents, not airport
+    // names, which ran the line off a phone's width ("FL-145 · leaving now
+    // · Chicago Exec to Harry R…"; the owner, 2026-11-17: "Yes to all recs").
     return [
+      routeName(planned.dep, planned.dest, planned.stops),
       // Written as the route box writes it (FL-090), the owner's format.
       cruiseFt ? flightLevel(cruiseFt) : null,
-      depart ? `leaving ${clockTime(new Date(depart))}` : "leaving now",
+      // With its zone, "leaving 14:00 CST", as the Depart row and the
+      // timeline write a clock time: a bare "14:00" read as Z or local
+      // (the Brief audit of 2026-11-21, finding 13).
+      depart ? `leaving ${clockTime(new Date(depart))} ${zoneName(new Date(depart))}` : "leaving now",
       shortName(aircraftLabel),
     ]
       .filter(Boolean)
       .join(" · ");
-  }, [course, s.legs, aircraftLabel, depart]);
+  }, [course, s.legs, aircraftLabel, depart, planned.dep, planned.dest, planned.stops]);
   // The flight to save and file, and what the Brief reads of it
   // (useFlightToSave).
   const saving = useFlightToSave({
@@ -153,9 +165,8 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // What planning again would bring in fresh, said by the refresh's dot:
   // winds past the forecast's period the legs were flown on, legs flown
   // with none, and the briefing's weather that could not be fetched again.
-  const minute = useMinuteClock();
   const stale = [
-    windsOutOfDate(s.totals, minute, depart) && "the winds are out of date",
+    windsStale && "the winds are out of date",
     s.totals && legsWithoutWind(s.totals) && "some legs have no winds",
     (s.briefing.state === "failed" || (s.briefing.state === "ready" && s.briefing.refreshError)) && "the weather could not be fetched",
   ].filter((why): why is string => !!why);

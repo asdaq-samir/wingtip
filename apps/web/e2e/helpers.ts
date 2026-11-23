@@ -8,6 +8,7 @@ export {
   slow,
   settle,
   sideDrawer,
+  cardHost,
   frontSheet,
   showTabs,
   openPanel,
@@ -23,7 +24,16 @@ export {
   closeCard,
   cardClose,
 } from "./sheetHelpers";
-export { openRoute, foldRoute, timelineLine, clearTheRoute, controlsInSight, suggestedRoutes } from "./routeHelpers";
+export {
+  openRoute,
+  typeRoute,
+  foldRoute,
+  timelineLine,
+  clearTheRoute,
+  controlsInSight,
+  suggestedRoutes,
+  routeOptionsItem,
+} from "./routeHelpers";
 export {
   openConsole,
   openSetup,
@@ -40,6 +50,7 @@ export {
 } from "./consoleHelpers";
 export {
   openBrief,
+  openBriefMenu,
   openBriefing,
   openTab,
   openNavLog,

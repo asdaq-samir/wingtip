@@ -21,9 +21,13 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.KeptPlan
+import app.wingtipmaps.android.plan.PlanGround
 import app.wingtipmaps.android.plan.PlanShown
+import app.wingtipmaps.android.plan.PlanTanks
 import app.wingtipmaps.android.route.RouteEdits
 import app.wingtipmaps.android.route.RouteUndo
+import app.wingtipmaps.android.route.replaceRoute
+import app.wingtipmaps.android.route.undoable
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -157,33 +161,15 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
         plan(s.dep, s.dest, stops!!)
     }
 
-    /** The last edit that changed the route, for its Undo (RouteUndoSnackbar). */
+    /** The last edit that changed the route, for its Undo (RouteUndoSnackbar;
+     *  taken and put back by route/PlanUndo). */
     val undo = RouteUndo()
 
-    internal fun undoable(kind: RouteUndo.Kind, ident: String) {
-        val s = _state.value
-        // No route before it: nothing to go back to.
-        if (!s.routed) return
-        undo.took(kind, ident, RouteEdits.Route(s.dep, s.stops, s.dest), s.holds, s.direct, s.was)
-    }
+    /** The plan's state changed in place, for an Undo putting back what an
+     *  edit took (route/PlanUndo); no plan asked. */
+    internal fun put(change: (State) -> State) = _state.update(change)
 
-    /** Undo: the route, its holds and its Direct as they were before the
-     *  last edit, planned again; Redo puts that edit back (the wide
-     *  window's route toolbar). Each keeps the route it leaves for the other. */
-    fun undoEdit() { undo.take()?.let { n -> undo.keepRedo(asNow(n)); reapply(n) } }
-
-    fun redoEdit() { undo.takeRedo()?.let { n -> undo.keepUndo(asNow(n)); reapply(n) } }
-
-    private fun asNow(n: RouteUndo.Note) = _state.value.let { s -> n.copy(route = RouteEdits.Route(s.dep, s.stops, s.dest), holds = s.holds, direct = s.direct, was = s.was) }
-
-    private fun reapply(n: RouteUndo.Note) {
-        _state.update { it.copy(holds = n.holds) }
-        plan(n.route.dep, n.route.dest, n.route.stops)
-        _state.update { it.copy(direct = n.direct, was = n.was) }
-    }
-
-    /** One of the planner's airplane types picked; the route, where there
-     *  is one, planned again on its figures. */
+    /** One of the planner's airplane types picked; the route planned again on its figures. */
     fun setAircraft(name: String) {
         _state.update { it.copy(aircraft = name) }
         if (_state.value.routed) plan()
@@ -208,14 +194,13 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
      *  its departure time, planned once. */
     fun useLeg(dep: String, dest: String, stops: List<String>, altitudeFt: Double?, depart: String?) {
         _state.update { it.copy(altitudeFt = altitudeFt, depart = depart) }
-        plan(dep, dest, stops)
+        replaceRoute(dep, dest, stops)
     }
 
-    /** A route and its airplane picked together (About's Demo Flight), so
-     *  the route is planned once, on that airplane's figures. */
+    /** A route and its airplane picked together (About's Demo Flight), planned once on its figures. */
     fun planIn(aircraft: String, dep: String, dest: String, stops: List<String>) {
         _state.update { it.copy(aircraft = aircraft) }
-        plan(dep, dest, stops)
+        replaceRoute(dep, dest, stops)
     }
 
     /** Plans the route as entered: the course first, for the map, then the
@@ -231,7 +216,7 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, PlanAltitudes.query(listOf(asked.dep) + asked.stops + asked.dest) + PlanAlternate.query(asked.rules, asked.dest)).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, (listOf(asked.dep) + asked.stops + asked.dest).let { r -> PlanAltitudes.query(r) + PlanTanks.query(r) + PlanGround.query(r) + app.wingtipmaps.android.plan.PlanProcedures.query(r) } + PlanAlternate.query(asked.rules, asked.dest)).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> PlanAltitudes.heard(message.line)
@@ -334,8 +319,7 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
         store.write(KeptPlan.Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals, s.altitudeFt, s.depart, s.plannedAtMs))
     }
 
-    /** The plan on the page kept now, whole, for the next launch with no
-     *  signal (Ready to fly's Save). */
+    /** The plan kept now, whole, for a launch with no signal (Ready to fly's Save). */
     fun save() = keep()
 
     /** Whether the plan on the page is the one kept, nav log and all, so
@@ -381,8 +365,7 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
-        /** A departure time as written (ISO 8601, with its offset or Z),
-         *  in epoch milliseconds; null where there is none or it is not one. */
+        /** A departure time as written (ISO 8601, its offset or Z) in epoch ms; null where none or not one. */
         fun departMs(iso: String?): Long? =
             iso?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
         /** A hold's length where the pilot sets none: two turns, as the web's and iPhone's begin. */

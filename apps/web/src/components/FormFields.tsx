@@ -8,11 +8,10 @@ import { ariaInvalid } from "./ui/ariaInvalid";
  *  the field (ariaInvalid) where it has an id. */
 type Bound<F extends FieldValues> = { control: Control<F>; name: Path<F>; error?: string };
 
-/** React Aria's DateField bound to a react-hook-form field holding an ISO
- *  day ("" for none): a Controller, as a segmented field cannot be
- *  register()ed. Its ref to the form is the field's first segment, so
- *  the form's own focus on the first field in error (shouldFocusError)
- *  lands in it. */
+/** The date field (ui/date-field) bound to a react-hook-form field holding
+ *  an ISO day ("" for none): a Controller, as a button cannot be
+ *  register()ed. Its ref to the form is the button, so the form's own
+ *  focus on the first field in error (shouldFocusError) lands on it. */
 export function FormDateField<F extends FieldValues>({
   control,
   name,
@@ -27,9 +26,7 @@ export function FormDateField<F extends FieldValues>({
         <DateField
           {...props}
           {...(props.id ? ariaInvalid(props.id, error) : {})}
-          ref={(box: HTMLDivElement | null) =>
-            field.ref(box && { focus: () => box.querySelector<HTMLElement>('[role="spinbutton"]')?.focus() })
-          }
+          ref={field.ref}
           value={field.value}
           onChange={field.onChange}
           onBlur={field.onBlur}

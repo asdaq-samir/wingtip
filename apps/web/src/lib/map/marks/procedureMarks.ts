@@ -4,7 +4,10 @@ import { altFt } from "../../format";
 import { BADGE } from "../../rowBadges";
 import { drawTag, type TagLine } from "../gl/drawTag";
 import { svgPicture, type GlPicture } from "../gl/useGlSymbols";
-import { CHART, MAP } from "../../tokens";
+import { CHART, MAP_LABEL } from "../../tokens";
+
+/** A fix's tag's type, map.label.kind.fix-tag. */
+const TAG_SIZE = MAP_LABEL.kind.fixTag.size;
 
 /**
  * The instrument procedures the pilot picked (the route's Procedures), on
@@ -69,7 +72,7 @@ export function fixMarks(fix: ProcedureFix, words: boolean, stale: boolean, own:
   if (!lines.length) return { diamond, tag: null };
   const tag: GlPicture = {
     id: `proc-tag|${JSON.stringify(lines)}`,
-    draw: () => drawTag({ lines, background: `${CHART.casing}f2`, size: MAP.labelLarge, lineHeight: 16, padX: 6, padY: 2, radius: 6 }),
+    draw: () => drawTag({ lines, background: `${CHART.casing}f2`, size: TAG_SIZE, lineHeight: 16, padX: 6, padY: 2, radius: 6 }),
   };
   return { diamond, tag };
 }

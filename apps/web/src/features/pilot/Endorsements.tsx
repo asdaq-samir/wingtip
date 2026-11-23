@@ -63,7 +63,14 @@ export function SignedRow({
                 <span className="block">
                   {[who, kind?.rule, e.voided ? "Voided" : `Signed ${said(e.signedOn)}`].filter(Boolean).join(" · ")}
                 </span>
-                {!e.voided && <GoodTo until={e.until} />}
+                {/* The FAA airmen registry did not bear its instructor out
+                    (the engine's instructor_verification): kept, not signed. */}
+                {!e.voided && !e.instructorVerified && (
+                  <span className={cn("block", FINDING_TONE.caution)} data-testid="not-verified">
+                    Not verified
+                  </span>
+                )}
+                {!e.voided && e.instructorVerified && <GoodTo until={e.until} />}
               </>
             }
             value={open ? "Hide" : "Read"}
@@ -73,7 +80,8 @@ export function SignedRow({
       />
       <CollapsibleContent>
         <SignedWords text={e.text} signature={e.signature} />
-        {onVoid && !e.voided && <ListRow title={<span className="text-destructive">Void it</span>} disabled={voiding} onClick={onVoid} />}
+        {e.verification && <p className={cn("px-3 pb-2.5 text-muted-foreground", TEXT.note)}>{e.verification}</p>}
+        {onVoid && !e.voided && <ListRow title={<span className="text-destructive">Void It</span>} disabled={voiding} onClick={onVoid} />}
       </CollapsibleContent>
     </Collapsible>
   );
@@ -158,7 +166,7 @@ export function SignForm({
       </ListGroup>
       {crossCountry && (
         // 14 CFR 61.93(d): the instructor's to determine before a solo cross-country.
-        <ListGroup title="Your determination">
+        <ListGroup title="Your Determination">
           {DETERMINATIONS.map((d, i) => (
             <ListRow
               key={d.rule}
@@ -176,7 +184,7 @@ export function SignForm({
       {/* The words, and under them the signature with the date, the
           certificate number and its date, as AC 61-65K asks; once signed it
           is not changed, and a correction voids it for a new one. */}
-      <ListGroup title="Instructor's signature">
+      <ListGroup title="Instructor's Signature">
         <SignedWords text={text} signature={signatureLine(instructor, signedOn)} />
         <ListRow
           title={<span className="font-medium text-tint">Sign as {instructor.fullName}</span>}

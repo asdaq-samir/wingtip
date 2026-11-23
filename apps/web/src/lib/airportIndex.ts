@@ -245,13 +245,27 @@ export function placeOf(index: AirportIndex, ident: string): { lat: number; lon:
     const [lat, lon] = ident.slice(1).split(",").map(Number);
     return Number.isFinite(lat) && Number.isFinite(lon) ? { lat: lat!, lon: lon! } : null;
   }
+  const row = rowOf(index, ident);
+  if (row === undefined || Number.isNaN(index.lat[row]!)) return null;
+  return { lat: index.lat[row]!, lon: index.lon[row]! };
+}
+
+/** The index's row for an ident, by any it is found by. */
+function rowOf(index: AirportIndex, ident: string): number | undefined {
   let rows = byIdent.get(index);
   if (!rows) {
     rows = new Map();
     for (let i = 0; i < index.keys.length; i++) for (const key of index.keys[i]!) if (!rows.has(key)) rows.set(key, i);
     byIdent.set(index, rows);
   }
-  const row = rows.get(ident.toUpperCase());
-  if (row === undefined || Number.isNaN(index.lat[row]!)) return null;
-  return { lat: index.lat[row]!, lon: index.lon[row]! };
+  return rows.get(ident.toUpperCase());
+}
+
+/** The label of a field NASR lists as closed (the engine's field_status,
+ *  as the planner sends it, decision 0043), null where it is open or the
+ *  index does not know it (a waypoint, a position) or is not read yet. */
+export function closedOf(index: AirportIndex | null | undefined, ident: string): string | null {
+  if (!index) return null;
+  const row = rowOf(index, ident);
+  return row === undefined ? null : index.closed[row]!;
 }

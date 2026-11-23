@@ -18,8 +18,10 @@ from ..mcp.calls import planner as _send
 
 def _seg(value: Any) -> str:
     """A path parameter as one segment, so a stray slash cannot reach
-    another path."""
-    return quote(str(value), safe="")
+    another path, nor a segment of dots alone, which the client takes for
+    "this" or "the one above" (RFC 3986 5.2.4) and drops."""
+    text = quote(str(value), safe="")
+    return text.replace(".", "%2E") if not text.strip(".") else text
 
 
 async def index() -> Any:
@@ -35,6 +37,11 @@ async def aircraft_profiles() -> Any:
 async def inspections(*, body: dict[str, Any]) -> Any:
     """POST /api/aircraft/inspections: Inspections"""
     return await _send('POST', '/api/aircraft/inspections', query={}, body=body, headers={})
+
+
+async def inspections_batch(*, body: dict[str, Any]) -> Any:
+    """POST /api/aircraft/inspections-batch: Inspections Batch"""
+    return await _send('POST', '/api/aircraft/inspections-batch', query={}, body=body, headers={})
 
 
 async def check_airplane(*, body: dict[str, Any] | None = None) -> Any:
@@ -282,6 +289,16 @@ async def icing_on_the_route(*, fixes: str, alt_ft: str, leg_min: str, ground_mi
     return await _send('GET', '/api/icing/route', query={'fixes': fixes, 'alt_ft': alt_ft, 'leg_min': leg_min, 'ground_min': ground_min, 'depart': depart}, body=None, headers={})
 
 
+async def library_shelf() -> Any:
+    """GET /api/library: Library Shelf"""
+    return await _send('GET', '/api/library', query={}, body=None, headers={})
+
+
+async def library_text(*, doc: str, edition: str) -> Any:
+    """GET /api/library/{doc}/{edition}/text: Library Text"""
+    return await _send('GET', f"/api/library/{_seg(doc)}/{_seg(edition)}/text", query={}, body=None, headers={})
+
+
 async def digital_atis(*, airport: str) -> Any:
     """GET /api/live/atis: Digital Atis"""
     return await _send('GET', '/api/live/atis', query={'airport': airport}, body=None, headers={})
@@ -312,9 +329,9 @@ async def saa_status(*, designators: str) -> Any:
     return await _send('GET', '/api/live/saa', query={'designators': designators}, body=None, headers={})
 
 
-async def local_flight(*, dep: str, dest: str, duration_min: float | None = None, stops: str | None = None, altitude_ft: float | None = None, altitude_nearest: bool | None = None, altitude_choice: Literal['lowest', 'highest', 'fastest', 'economical'] | None = None, aircraft: str | None = None, cruise_tas_kt: float | None = None, fuel_burn_gph: float | None = None, usable_fuel_gal: float | None = None, climb_tas_kt: float | None = None, climb_fuel_burn_gph: float | None = None, descent_ias_kt: float | None = None, descent_fuel_burn_gph: float | None = None, cruise_power_pct: float | None = None, service_ceiling_ft: float | None = None, climb_rate_fpm: float | None = None, taxi_fuel_gal: float | None = None, glide_ratio: float | None = None, depart: str | None = None, rules: Literal['vfr', 'ifr'] | None = None, alternate: str | None = None, altitudes: str | None = None, altitude_starts: str | None = None, procedures: str | None = None, runways: str | None = None, patterns: str | None = None, wind_runways: bool | None = None, crossings: str | None = None, holds: str | None = None, ground: str | None = None, checkpoints: bool | None = None) -> Any:
+async def local_flight(*, dep: str, dest: str, duration_min: float | None = None, stops: str | None = None, altitude_ft: float | None = None, altitude_nearest: bool | None = None, altitude_choice: Literal['lowest', 'highest', 'fastest', 'economical'] | None = None, aircraft: str | None = None, cruise_tas_kt: float | None = None, fuel_burn_gph: float | None = None, usable_fuel_gal: float | None = None, climb_tas_kt: float | None = None, climb_fuel_burn_gph: float | None = None, descent_ias_kt: float | None = None, descent_fuel_burn_gph: float | None = None, cruise_power_pct: float | None = None, service_ceiling_ft: float | None = None, climb_rate_fpm: float | None = None, taxi_fuel_gal: float | None = None, glide_ratio: float | None = None, depart: str | None = None, rules: Literal['vfr', 'ifr'] | None = None, alternate: str | None = None, altitudes: str | None = None, altitude_starts: str | None = None, procedures: str | None = None, runways: str | None = None, patterns: str | None = None, wind_runways: bool | None = None, crossings: str | None = None, holds: str | None = None, ground: str | None = None, tanks: str | None = None, checkpoints: bool | None = None) -> Any:
     """GET /api/local-flight: Local Flight"""
-    return await _send('GET', '/api/local-flight', query={'dep': dep, 'dest': dest, 'duration_min': duration_min, 'stops': stops, 'altitude_ft': altitude_ft, 'altitude_nearest': altitude_nearest, 'altitude_choice': altitude_choice, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'climb_tas_kt': climb_tas_kt, 'climb_fuel_burn_gph': climb_fuel_burn_gph, 'descent_ias_kt': descent_ias_kt, 'descent_fuel_burn_gph': descent_fuel_burn_gph, 'cruise_power_pct': cruise_power_pct, 'service_ceiling_ft': service_ceiling_ft, 'climb_rate_fpm': climb_rate_fpm, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'rules': rules, 'alternate': alternate, 'altitudes': altitudes, 'altitude_starts': altitude_starts, 'procedures': procedures, 'runways': runways, 'patterns': patterns, 'wind_runways': wind_runways, 'crossings': crossings, 'holds': holds, 'ground': ground, 'checkpoints': checkpoints}, body=None, headers={})
+    return await _send('GET', '/api/local-flight', query={'dep': dep, 'dest': dest, 'duration_min': duration_min, 'stops': stops, 'altitude_ft': altitude_ft, 'altitude_nearest': altitude_nearest, 'altitude_choice': altitude_choice, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'climb_tas_kt': climb_tas_kt, 'climb_fuel_burn_gph': climb_fuel_burn_gph, 'descent_ias_kt': descent_ias_kt, 'descent_fuel_burn_gph': descent_fuel_burn_gph, 'cruise_power_pct': cruise_power_pct, 'service_ceiling_ft': service_ceiling_ft, 'climb_rate_fpm': climb_rate_fpm, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'rules': rules, 'alternate': alternate, 'altitudes': altitudes, 'altitude_starts': altitude_starts, 'procedures': procedures, 'runways': runways, 'patterns': patterns, 'wind_runways': wind_runways, 'crossings': crossings, 'holds': holds, 'ground': ground, 'tanks': tanks, 'checkpoints': checkpoints}, body=None, headers={})
 
 
 async def draft(*, body: dict[str, Any]) -> Any:
@@ -342,9 +359,9 @@ async def model_comparison() -> Any:
     return await _send('GET', '/api/model-comparison', query={}, body=None, headers={})
 
 
-async def navlog_stream(*, dep: str, dest: str, ahead: bool | None = None, stops: str | None = None, altitude_ft: float | None = None, altitude_nearest: bool | None = None, altitude_choice: Literal['lowest', 'highest', 'fastest', 'economical'] | None = None, aircraft: str | None = None, cruise_tas_kt: float | None = None, fuel_burn_gph: float | None = None, usable_fuel_gal: float | None = None, climb_tas_kt: float | None = None, climb_fuel_burn_gph: float | None = None, descent_ias_kt: float | None = None, descent_fuel_burn_gph: float | None = None, cruise_power_pct: float | None = None, service_ceiling_ft: float | None = None, climb_rate_fpm: float | None = None, taxi_fuel_gal: float | None = None, glide_ratio: float | None = None, depart: str | None = None, rules: Literal['vfr', 'ifr'] | None = None, alternate: str | None = None, altitudes: str | None = None, altitude_starts: str | None = None, procedures: str | None = None, runways: str | None = None, patterns: str | None = None, wind_runways: bool | None = None, crossings: str | None = None, holds: str | None = None, ground: str | None = None, checkpoints: bool | None = None) -> Any:
+async def navlog_stream(*, dep: str, dest: str, ahead: bool | None = None, stops: str | None = None, altitude_ft: float | None = None, altitude_nearest: bool | None = None, altitude_choice: Literal['lowest', 'highest', 'fastest', 'economical'] | None = None, aircraft: str | None = None, cruise_tas_kt: float | None = None, fuel_burn_gph: float | None = None, usable_fuel_gal: float | None = None, climb_tas_kt: float | None = None, climb_fuel_burn_gph: float | None = None, descent_ias_kt: float | None = None, descent_fuel_burn_gph: float | None = None, cruise_power_pct: float | None = None, service_ceiling_ft: float | None = None, climb_rate_fpm: float | None = None, taxi_fuel_gal: float | None = None, glide_ratio: float | None = None, depart: str | None = None, rules: Literal['vfr', 'ifr'] | None = None, alternate: str | None = None, altitudes: str | None = None, altitude_starts: str | None = None, procedures: str | None = None, runways: str | None = None, patterns: str | None = None, wind_runways: bool | None = None, crossings: str | None = None, holds: str | None = None, ground: str | None = None, tanks: str | None = None, checkpoints: bool | None = None) -> Any:
     """GET /api/navlog: Navlog Stream"""
-    return await _send('GET', '/api/navlog', query={'dep': dep, 'dest': dest, 'ahead': ahead, 'stops': stops, 'altitude_ft': altitude_ft, 'altitude_nearest': altitude_nearest, 'altitude_choice': altitude_choice, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'climb_tas_kt': climb_tas_kt, 'climb_fuel_burn_gph': climb_fuel_burn_gph, 'descent_ias_kt': descent_ias_kt, 'descent_fuel_burn_gph': descent_fuel_burn_gph, 'cruise_power_pct': cruise_power_pct, 'service_ceiling_ft': service_ceiling_ft, 'climb_rate_fpm': climb_rate_fpm, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'rules': rules, 'alternate': alternate, 'altitudes': altitudes, 'altitude_starts': altitude_starts, 'procedures': procedures, 'runways': runways, 'patterns': patterns, 'wind_runways': wind_runways, 'crossings': crossings, 'holds': holds, 'ground': ground, 'checkpoints': checkpoints}, body=None, headers={})
+    return await _send('GET', '/api/navlog', query={'dep': dep, 'dest': dest, 'ahead': ahead, 'stops': stops, 'altitude_ft': altitude_ft, 'altitude_nearest': altitude_nearest, 'altitude_choice': altitude_choice, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'climb_tas_kt': climb_tas_kt, 'climb_fuel_burn_gph': climb_fuel_burn_gph, 'descent_ias_kt': descent_ias_kt, 'descent_fuel_burn_gph': descent_fuel_burn_gph, 'cruise_power_pct': cruise_power_pct, 'service_ceiling_ft': service_ceiling_ft, 'climb_rate_fpm': climb_rate_fpm, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'rules': rules, 'alternate': alternate, 'altitudes': altitudes, 'altitude_starts': altitude_starts, 'procedures': procedures, 'runways': runways, 'patterns': patterns, 'wind_runways': wind_runways, 'crossings': crossings, 'holds': holds, 'ground': ground, 'tanks': tanks, 'checkpoints': checkpoints}, body=None, headers={})
 
 
 async def notams_ranked(*, body: dict[str, Any]) -> Any:
@@ -427,14 +444,44 @@ async def instructor_records_since(*, today: str) -> Any:
     return await _send('GET', '/api/pilot/instructor-records-since', query={'today': today}, body=None, headers={})
 
 
+async def instructor_verification(*, body: dict[str, Any]) -> Any:
+    """POST /api/pilot/instructor-verification: Instructor Verification"""
+    return await _send('POST', '/api/pilot/instructor-verification', query={}, body=body, headers={})
+
+
+async def records_batch(*, body: dict[str, Any]) -> Any:
+    """POST /api/pilot/records-batch: Records Batch"""
+    return await _send('POST', '/api/pilot/records-batch', query={}, body=body, headers={})
+
+
+async def same_field(*, body: dict[str, Any]) -> Any:
+    """POST /api/pilot/same-field: Same Field"""
+    return await _send('POST', '/api/pilot/same-field', query={}, body=body, headers={})
+
+
 async def places_search(*, q: str | None = None) -> Any:
     """GET /api/places/search: Places Search"""
     return await _send('GET', '/api/places/search', query={'q': q}, body=None, headers={})
 
 
-async def plan(*, dep: str, dest: str, stops: str | None = None, altitude_ft: float | None = None, altitude_nearest: bool | None = None, altitude_choice: Literal['lowest', 'highest', 'fastest', 'economical'] | None = None, aircraft: str | None = None, cruise_tas_kt: float | None = None, fuel_burn_gph: float | None = None, usable_fuel_gal: float | None = None, climb_tas_kt: float | None = None, climb_fuel_burn_gph: float | None = None, descent_ias_kt: float | None = None, descent_fuel_burn_gph: float | None = None, cruise_power_pct: float | None = None, service_ceiling_ft: float | None = None, climb_rate_fpm: float | None = None, taxi_fuel_gal: float | None = None, glide_ratio: float | None = None, depart: str | None = None, rules: Literal['vfr', 'ifr'] | None = None, alternate: str | None = None, altitudes: str | None = None, altitude_starts: str | None = None, procedures: str | None = None, runways: str | None = None, patterns: str | None = None, wind_runways: bool | None = None, crossings: str | None = None, holds: str | None = None, ground: str | None = None, checkpoints: bool | None = None) -> Any:
+async def plan(*, dep: str, dest: str, stops: str | None = None, altitude_ft: float | None = None, altitude_nearest: bool | None = None, altitude_choice: Literal['lowest', 'highest', 'fastest', 'economical'] | None = None, aircraft: str | None = None, cruise_tas_kt: float | None = None, fuel_burn_gph: float | None = None, usable_fuel_gal: float | None = None, climb_tas_kt: float | None = None, climb_fuel_burn_gph: float | None = None, descent_ias_kt: float | None = None, descent_fuel_burn_gph: float | None = None, cruise_power_pct: float | None = None, service_ceiling_ft: float | None = None, climb_rate_fpm: float | None = None, taxi_fuel_gal: float | None = None, glide_ratio: float | None = None, depart: str | None = None, rules: Literal['vfr', 'ifr'] | None = None, alternate: str | None = None, altitudes: str | None = None, altitude_starts: str | None = None, procedures: str | None = None, runways: str | None = None, patterns: str | None = None, wind_runways: bool | None = None, crossings: str | None = None, holds: str | None = None, ground: str | None = None, tanks: str | None = None, checkpoints: bool | None = None) -> Any:
     """GET /api/plan: Plan"""
-    return await _send('GET', '/api/plan', query={'dep': dep, 'dest': dest, 'stops': stops, 'altitude_ft': altitude_ft, 'altitude_nearest': altitude_nearest, 'altitude_choice': altitude_choice, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'climb_tas_kt': climb_tas_kt, 'climb_fuel_burn_gph': climb_fuel_burn_gph, 'descent_ias_kt': descent_ias_kt, 'descent_fuel_burn_gph': descent_fuel_burn_gph, 'cruise_power_pct': cruise_power_pct, 'service_ceiling_ft': service_ceiling_ft, 'climb_rate_fpm': climb_rate_fpm, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'rules': rules, 'alternate': alternate, 'altitudes': altitudes, 'altitude_starts': altitude_starts, 'procedures': procedures, 'runways': runways, 'patterns': patterns, 'wind_runways': wind_runways, 'crossings': crossings, 'holds': holds, 'ground': ground, 'checkpoints': checkpoints}, body=None, headers={})
+    return await _send('GET', '/api/plan', query={'dep': dep, 'dest': dest, 'stops': stops, 'altitude_ft': altitude_ft, 'altitude_nearest': altitude_nearest, 'altitude_choice': altitude_choice, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'climb_tas_kt': climb_tas_kt, 'climb_fuel_burn_gph': climb_fuel_burn_gph, 'descent_ias_kt': descent_ias_kt, 'descent_fuel_burn_gph': descent_fuel_burn_gph, 'cruise_power_pct': cruise_power_pct, 'service_ceiling_ft': service_ceiling_ft, 'climb_rate_fpm': climb_rate_fpm, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'rules': rules, 'alternate': alternate, 'altitudes': altitudes, 'altitude_starts': altitude_starts, 'procedures': procedures, 'runways': runways, 'patterns': patterns, 'wind_runways': wind_runways, 'crossings': crossings, 'holds': holds, 'ground': ground, 'tanks': tanks, 'checkpoints': checkpoints}, body=None, headers={})
+
+
+async def flight_plates(*, route: str, fixes: str | None = None, alternate: str | None = None, eta: str | None = None, tas_kt: float | None = None, usable_gal: float | None = None, burn_gph: float | None = None) -> Any:
+    """GET /api/plates/flight: Flight Plates"""
+    return await _send('GET', '/api/plates/flight', query={'route': route, 'fixes': fixes, 'alternate': alternate, 'eta': eta, 'tas_kt': tas_kt, 'usable_gal': usable_gal, 'burn_gph': burn_gph}, body=None, headers={})
+
+
+async def plate_states() -> Any:
+    """GET /api/plates/states: Plate States"""
+    return await _send('GET', '/api/plates/states', query={}, body=None, headers={})
+
+
+async def plate_state(*, cycle: str, state: str) -> Any:
+    """GET /api/plates/states/{cycle}/{state}: Plate State"""
+    return await _send('GET', f"/api/plates/states/{_seg(cycle)}/{_seg(state)}", query={}, body=None, headers={})
 
 
 async def retrain() -> Any:
@@ -450,6 +497,11 @@ async def route_options(*, dep: str, dest: str, stops: str | None = None, aircra
 async def route_profile(*, dep: str, dest: str, stops: str | None = None) -> Any:
     """GET /api/route-profile: Route Profile"""
     return await _send('GET', '/api/route-profile', query={'dep': dep, 'dest': dest, 'stops': stops}, body=None, headers={})
+
+
+async def route_profile_weather(*, dep: str, dest: str, stops: str | None = None, depart: str | None = None, ete_min: float | None = None) -> Any:
+    """GET /api/route-profile/weather: Route Profile Weather"""
+    return await _send('GET', '/api/route-profile/weather', query={'dep': dep, 'dest': dest, 'stops': stops, 'depart': depart, 'ete_min': ete_min}, body=None, headers={})
 
 
 async def status() -> Any:
@@ -470,76 +522,6 @@ async def stops_along(*, dep: str, dest: str, stops: str | None = None) -> Any:
 async def stops_near(*, lat: float, lon: float, nm: float | None = None) -> Any:
     """GET /api/stops/near: Stops Near"""
     return await _send('GET', '/api/stops/near', query={'lat': lat, 'lon': lon, 'nm': nm}, body=None, headers={})
-
-
-async def studio_drafts() -> Any:
-    """GET /api/studio/drafts: Studio Drafts"""
-    return await _send('GET', '/api/studio/drafts', query={}, body=None, headers={})
-
-
-async def studio_drafts_to_notice() -> Any:
-    """GET /api/studio/drafts-to-notice: Studio Drafts To Notice"""
-    return await _send('GET', '/api/studio/drafts-to-notice', query={}, body=None, headers={})
-
-
-async def studio_draft(*, draft_id: str) -> Any:
-    """GET /api/studio/drafts/{draft_id}: Studio Draft"""
-    return await _send('GET', f"/api/studio/drafts/{_seg(draft_id)}", query={}, body=None, headers={})
-
-
-async def studio_draft_dismiss(*, draft_id: str) -> Any:
-    """POST /api/studio/drafts/{draft_id}/dismiss: Studio Draft Dismiss"""
-    return await _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/dismiss", query={}, body=None, headers={})
-
-
-async def studio_draft_identity(*, body: dict[str, Any], draft_id: str) -> Any:
-    """POST /api/studio/drafts/{draft_id}/identity: Studio Draft Identity"""
-    return await _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/identity", query={}, body=body, headers={})
-
-
-async def studio_draft_noticed(*, draft_id: str) -> Any:
-    """POST /api/studio/drafts/{draft_id}/noticed: Studio Draft Noticed"""
-    return await _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/noticed", query={}, body=None, headers={})
-
-
-async def studio_draft_rendered(*, draft_id: str) -> Any:
-    """POST /api/studio/drafts/{draft_id}/rendered: Studio Draft Rendered"""
-    return await _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/rendered", query={}, body=None, headers={})
-
-
-async def studio_draft_track(*, draft_id: str) -> Any:
-    """GET /api/studio/drafts/{draft_id}/track: Studio Draft Track"""
-    return await _send('GET', f"/api/studio/drafts/{_seg(draft_id)}/track", query={}, body=None, headers={})
-
-
-async def studio_ground(*, body: dict[str, Any]) -> Any:
-    """POST /api/studio/ground: Studio Ground"""
-    return await _send('POST', '/api/studio/ground', query={}, body=body, headers={})
-
-
-async def studio_notams(*, at: float, lat_min: float, lat_max: float, lon_min: float, lon_max: float) -> Any:
-    """GET /api/studio/notams: Studio Notams"""
-    return await _send('GET', '/api/studio/notams', query={'at': at, 'lat_min': lat_min, 'lat_max': lat_max, 'lon_min': lon_min, 'lon_max': lon_max}, body=None, headers={})
-
-
-async def studio_ntsb(*, registration: str, day: str) -> Any:
-    """GET /api/studio/ntsb: Studio Ntsb"""
-    return await _send('GET', '/api/studio/ntsb', query={'registration': registration, 'day': day}, body=None, headers={})
-
-
-async def studio_track(*, q: str, day: str) -> Any:
-    """GET /api/studio/track: Studio Track"""
-    return await _send('GET', '/api/studio/track', query={'q': q, 'day': day}, body=None, headers={})
-
-
-async def studio_watched() -> Any:
-    """GET /api/studio/watched: Studio Watched"""
-    return await _send('GET', '/api/studio/watched', query={}, body=None, headers={})
-
-
-async def studio_weather(*, body: dict[str, Any]) -> Any:
-    """POST /api/studio/weather: Studio Weather"""
-    return await _send('POST', '/api/studio/weather', query={}, body=body, headers={})
 
 
 async def terrain_tile(*, z: int, x: int, y: int) -> Any:

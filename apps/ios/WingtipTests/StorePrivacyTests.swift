@@ -36,6 +36,29 @@ struct StorePrivacyTests {
         #expect(reasons["NSPrivacyAccessedAPICategoryFileTimestamp"] == ["C617.1"])
     }
 
+    /// The widget extension's own manifest, read from the source tree (the
+    /// simulator sees the Mac's files): it reads its own standard defaults
+    /// (Ink's look) as well as the App Group's, so both reasons (the store
+    /// review audit of 2026-11-21; ITMS-91053 otherwise).
+    @Test func theWidgetsManifestGivesBothDefaultsReasons() throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "WingtipWidgets/PrivacyInfo.xcprivacy")
+        let plist = try #require(try PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil) as? [String: Any])
+        let apis = try #require(plist["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
+        let defaults = apis.first { $0["NSPrivacyAccessedAPIType"] as? String == "NSPrivacyAccessedAPICategoryUserDefaults" }
+        #expect(Set(defaults?["NSPrivacyAccessedAPITypeReasons"] as? [String] ?? []) == ["CA92.1", "1C8F.1"])
+        #expect(plist["NSPrivacyTracking"] as? Bool == false)
+    }
+
+    /// Sign in with Apple sends the sheet's authorization code with the
+    /// identity token, for the gateway to trade for the token deleting the
+    /// account revokes (5.1.1(v); AppleAppTokens).
+    @Test func appleSignInCarriesTheAuthorizationCode() throws {
+        let sent = try JSONEncoder().encode(GWAppleToken(authorizationCode: "c.code", identityToken: "i.token", nonce: "n"))
+        let json = try #require(try JSONSerialization.jsonObject(with: sent) as? [String: String])
+        #expect(json == ["authorizationCode": "c.code", "identityToken": "i.token", "nonce": "n"])
+    }
+
     // MARK: Signing out and deleting the account (the store audit's P7)
 
     @Test func forgettingTheDeviceDeletesThePathTheTrackAndTheCache() throws {
@@ -67,22 +90,20 @@ struct StorePrivacyTests {
         #expect(jar.cookies?.isEmpty != false)
     }
 
-    // MARK: The planning-aid notice (the store audit's S2)
-
-    @Test func thePlanningAidNoticeIsShownOnceAndNotUnderTheTests() throws {
-        let defaults = try #require(UserDefaults(suiteName: "notice-\(UUID().uuidString)"))
-        // An app launched as a pilot launches it: no test host around it.
-        let app: [String: String] = [:]
-        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
-        // The UI tests' and the store pictures' launches, as the first flight's.
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh"], environment: app))
-        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh", "-planningAid"], environment: app))
-        // The app hosting the unit tests shows no alert over their windows.
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: ["XCTestConfigurationFilePath": "/x"]))
-        defaults.set(true, forKey: PlanningAidNotice.acceptedKey)
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
-        // The words are About's and the listing's.
-        #expect(PlanningAidNotice.message.hasPrefix(PlanningAid.words))
-        #expect(PlanningAidNotice.message.contains("Not for navigation"))
+    /// A notification's title, a watched airplane and a route's fields say
+    /// what the pilot flies and watches; logged public, they went into any
+    /// sysdiagnose the pilot shared (the deep security review of
+    /// 2026-11-21). Read from the source tree, as the widget's manifest is.
+    @Test func thePilotsWordsAndPlacesAreNeverLoggedPublic() throws {
+        let sources = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "Wingtip")
+        let names = try #require(FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil))
+        let publicPilot = try Regex(#"\\\((title|body|words|hex|dep|dest|email|token), privacy: \.public\)"#)
+        var found: [String] = []
+        for case let url as URL in names where url.pathExtension == "swift" {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            if text.contains(publicPilot) { found.append(url.lastPathComponent) }
+        }
+        #expect(found.isEmpty, "logged public: \(found)")
     }
 }

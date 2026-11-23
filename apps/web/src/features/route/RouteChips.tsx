@@ -15,12 +15,23 @@ export interface RouteProcedure {
    *  lands on (approachRunway), none for one circling only. */
   id: string;
   runway: string | null;
+  /** Its name as the FAA's list gives it ("RNAV (GPS)-B"), and as the
+   *  route says it, with its transition or the fix it was sent to. */
+  name?: string;
   label: string;
   spoken: string;
   /** The fix ATC sent the airplane direct to, and the procedure's fixes it
    *  could be sent to (ProcedureMenu). */
   direct?: string | null;
   fixes?: BranchFix[];
+  /** An approach loaded, not in the route flown until activated; and,
+   *  activated, its missed approach unsuspended (lib/procedures). */
+  loaded?: boolean;
+  missed?: boolean;
+  /** Its missed approach's fixes, the MAP to its hold (the engine's
+   *  procedure_missed, AIM 5-4-21), and the MAP the route is suspended at. */
+  missedFixes?: BranchFix[];
+  suspendAt?: string | null;
 }
 
 const PROCEDURE_GLYPH = { approach: PlaneLanding, arrival: Route, departure: PlaneTakeoff } as const;
@@ -47,7 +58,7 @@ export function FuelStopChip({
   // The stock small Button (the owner, 2026-11-10), outlined dashed in the
   // caution's colour with the pump: suggested, not yet in the route. A
   // finger's 44 round it by a pseudo-element, the button not grown.
-  const look = "relative border-dashed border-caution text-caution-ink after:absolute after:-inset-y-1.5 after:inset-x-0";
+  const look = "relative border-dashed border-caution text-caution-ink hit-y-1.5 after:inset-x-0";
   const face = (
     <>
       <Glyph aria-hidden="true" data-icon="inline-start" />
@@ -118,7 +129,7 @@ export function ProcedureChip({
       aria-label={`${procedure.spoken}: the route's procedures`}
       className={cn(
         before ? "relative mr-1" : "relative ml-1",
-        "h-7 gap-1 rounded-full px-1 font-semibold text-procedure after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] hover:bg-transparent hover:text-procedure native:text-procedure",
+        "h-7 gap-1 rounded-full px-1 font-semibold text-procedure hit-y-2 hover:bg-transparent hover:text-procedure native:text-procedure",
         TEXT.note,
       )}
     >

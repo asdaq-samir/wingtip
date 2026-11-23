@@ -18,7 +18,7 @@ struct CoachView: View {
     var body: some View {
         List {
             if !session.signedIn {
-                ContentUnavailableView("Sign in for your plan", systemImage: "figure.walk.motion", description: Text("Your plan is made from the logbook kept with your account."))
+                ContentUnavailableView("Sign In for Your Plan", systemImage: "figure.walk.motion", description: Text("Your plan is made from the logbook kept with your account."))
             } else {
                 Section("Your Certificate") {
                     Picker("Certificate", selection: Binding(get: { model.certificate }, set: { model.certificate = $0 })) {
@@ -29,7 +29,7 @@ struct CoachView: View {
                 nextLesson
                 trendsSection
                 if let plan = model.plan { planSections(plan) }
-                Section("Practice") { PracticeRows() }
+                PracticeSection()
                 Section("Instructor") {
                     NavigationLink(value: SheetPage.training) { Label("Training and Endorsements", systemImage: "graduationcap") }
                     NavigationLink(value: SheetPage.instructing) { Label("Instructing", systemImage: "person.2") }

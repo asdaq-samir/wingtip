@@ -137,3 +137,29 @@ fn what_is_not_heard_goes() {
     assert!(call("receiver_read", "{}").is_err());
     assert!(call("receiver_read", r#"{"at": 1, "data": "!!"}"#).is_err());
 }
+
+/// receiver_delta, the phones' held read, answers each datagram's small
+/// part as receiver_read's picture has it, and a new revision only for
+/// what the datagram changed: the first brings the receiver and its
+/// traffic, the second the FIS-B texts and NEXRAD.
+#[test]
+fn a_held_read_answers_what_changed() {
+    let f = fixture();
+    let p = pictures(&f);
+    let mut before = Value::Null;
+    let mut deltas = Vec::new();
+    for (d, after) in f["datagrams"].as_array().unwrap().iter().zip(&p) {
+        let data = BASE64.encode(bytes(d["hex"].as_str().unwrap()));
+        let delta = ask("receiver_delta", json!({ "data": data, "at": d["at"], "picture": before }));
+        for k in ["receiver", "ownship", "targets"] {
+            assert_eq!(delta[k], after[k], "{k}");
+        }
+        assert_eq!(delta["texts"].as_u64().unwrap() as usize, after["texts"].as_array().unwrap().len());
+        assert_eq!(delta["blocks"].as_u64().unwrap() as usize, after["nexrad"].as_array().unwrap().len());
+        deltas.push(delta);
+        before = after.clone();
+    }
+    let revisions = |d: &Value| [&d["traffic_revision"], &d["texts_revision"], &d["nexrad_revision"]].map(|v| v.as_u64().unwrap());
+    assert_eq!(revisions(&deltas[0]), [1, 0, 0]);
+    assert_eq!(revisions(&deltas[1])[1..], [1, 1]);
+}

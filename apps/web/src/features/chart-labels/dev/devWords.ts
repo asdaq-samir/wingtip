@@ -27,7 +27,8 @@ export const DATASET_NAMES: Record<string, string> = {
   "Shape_Files/Class_Airspace.shp": "Airspace",
   metars: "METARs",
   tafs: "TAFs",
-  airsigmets: "AIRMETs and SIGMETs",
+  airsigmets: "SIGMETs",
+  airmets: "Alaska AIRMETs",
   pireps: "Pilot reports",
   gairmets: "G-AIRMETs",
   // The GFS's since the FB ended (lib/windsAloft), as the planner names them.

@@ -5,10 +5,12 @@ import { useGeo, type LatLon } from "../../../geo";
 import { useAirplaneChosen } from "../../../preferences";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
-import { FIX_PILL, FIX_PILL_SHIFT } from "../../marks/markPictures";
+import { LEG_POINT_DIAMOND, ROUTE_POINT_PILL } from "../../marks/markPictures";
 import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
 import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
 import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
+import { squareToCourse, turnSide } from "../../marks/routeTurns";
+import { useTurnedNames } from "../useTurnedNames";
 import { useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { chipLayer, pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
@@ -33,7 +35,7 @@ const PATTERN_LAYERS: SymbolLayerSpecification[] = [
     ...pictureLayer("pattern-arrows", "pattern-marks", {}, { "icon-rotate": ["get", "rotate"], "icon-rotation-alignment": "map" }),
     filter: KIND("arrow"),
   },
-  { ...chipLayer("pattern-labels", "pattern-marks", {}, {}, { "text-color": CHART.casing }), filter: KIND("label") },
+  { ...chipLayer("pattern-labels", "pattern-marks", {}, {}, { "text-color": CHART.casing }, "patternLeg"), filter: KIND("label") },
 ];
 
 /** A procedure's fixes: the tag beside each diamond, its left edge seven
@@ -51,30 +53,26 @@ const PROCEDURE_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer("procedure-fix-diamonds", "procedure-fixes"),
 ];
 
-/** A top of climb's or descent's pill: on its point where that is clear,
- *  else a little above, below, then to either side of it (ems of its 11
- *  points; the pill's middle 5 points right of its words'), else left out. */
+/** The layer of a top of climb's or descent's name, whose side turns with
+ *  the map (useTurnedNames). */
+const LEG_POINT_NAMES = "leg-point-names";
+
+/** A top of climb's or descent's diamond, on its point, and its name
+ *  beside it on the pill My Location's name wears on the route
+ *  (ROUTE_POINT_PILL, as routeMarks' route-fixes draw it: the same chip,
+ *  type and ink), square to the course on its upper side (squareToCourse),
+ *  each left out where a mark of the route's own is on it (collision,
+ *  under ROUTE_MARKS_LOWEST). */
 const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
-  chipLayer(
-    "leg-points",
-    "leg-points",
-    { collide: true, sort: 0 },
-    {
-      "text-variable-anchor-offset": [
-        "center",
-        [FIX_PILL_SHIFT, 0],
-        "bottom",
-        [FIX_PILL_SHIFT, -0.9],
-        "top",
-        [FIX_PILL_SHIFT, 0.9],
-        "right",
-        [-1.3, 0],
-        "left",
-        [2.2, 0],
-      ],
-    },
-  ),
+  pictureLayer("leg-points", "leg-points", { collide: true, sort: 0 }),
+  chipLayer(LEG_POINT_NAMES, "leg-points", { collide: true, sort: 0 }, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }),
 ];
+
+/** How near either end of its leg a top of climb or descent is not drawn,
+ *  in nautical miles: there it sits on the field, or on the airplane where
+ *  the leg starts at My Location, and the field's own mark says as much. A
+ *  mark's room on the map, not a figure of flight. */
+const OFF_THE_ENDS_NM = 2;
 
 const pair = (p: LatLon): [number, number] => [p.lat, p.lon];
 const along = (a: LatLon, b: LatLon, f: number): LatLon => ({ lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f });
@@ -142,6 +140,14 @@ const PROCEDURE_RUN = (f: MapGeoJSONFeature) => {
   return { kind: kind.endsWith("hold") ? "hold" : kind, name };
 };
 
+/** A procedure as the map draws it: with an approach's missed approach
+ *  flown on (`missedFlown`, unsuspended on FPL's timeline). */
+export type MapProcedure = ProcedureDrawing & { missedFlown?: boolean };
+
+/** How much of its ink a missed approach is drawn in while suspended: the
+ *  route stops at the MAP, so its legs are there to see, not to fly. */
+const SUSPENDED_OPACITY = 0.45;
+
 /** The instrument procedures picked: their lines in the
  *  approach's ink on a white casing, the missed dashed, holds, and each
  *  fix a diamond with its altitudes and speed from zoom 9; a tap a fix's
@@ -153,7 +159,7 @@ export function ProceduresGl({
   plated = NONE_PLATED,
   onFix,
 }: {
-  drawings: ProcedureDrawing[];
+  drawings: MapProcedure[];
   crossings: Record<string, number>;
   directs: string;
   /** Whether an approach's plate tags its fixes (features/plates'
@@ -176,16 +182,21 @@ export function ProceduresGl({
       ]),
     [drawings],
   );
+  // The missed approach in the route's magenta once unsuspended, as the
+  // route flies it; dimmed in the procedure's ink while suspended at its MAP.
   const missed = useMemo<GlRun[]>(
     () =>
-      drawings.flatMap((d) => [
-        ...d.lines
-          .filter((l) => l.role === "missed")
-          .map((l, i) => ({ points: l.points as [number, number][], colour: inkOf(d), width: 3, name: runName(d, "missed", i) })),
-        ...d.holds
-          .filter((h) => h.missed)
-          .map((h, i) => ({ points: h.points as [number, number][], colour: inkOf(d), width: 2.5, name: runName(d, "missed-hold", i) })),
-      ]),
+      drawings.flatMap((d) => {
+        const look = d.missedFlown ? { colour: CHART.course } : { colour: inkOf(d), opacity: SUSPENDED_OPACITY };
+        return [
+          ...d.lines
+            .filter((l) => l.role === "missed")
+            .map((l, i) => ({ points: l.points as [number, number][], ...look, width: 3, name: runName(d, "missed", i) })),
+          ...d.holds
+            .filter((h) => h.missed)
+            .map((h, i) => ({ points: h.points as [number, number][], ...look, width: 2.5, name: runName(d, "missed-hold", i) })),
+        ];
+      }),
     [drawings],
   );
   useGlLines("procedures", "route", lines, { colour: CHART.casing, width: 7, opacity: 0.9 });
@@ -237,12 +248,14 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
   return null;
 }
 
-/** Each leg's top of climb and of descent (RouteMap's LegPoints): a pill on
- *  the course, a tap its card (`cardOf`) and its ring, the map brought to
- *  it. Under the route's own marks,
- *  so it gives way to them: a little above, below or to either side of
- *  its point where one is on it, or left out (MapLibre's variable anchor
- *  and collision; routeMarks). */
+/** Every leg's top of climb and of descent (RouteMap's LegPoints), each a
+ *  small diamond on the course (LEG_POINT_DIAMOND) named beside it as My
+ *  Location is (LEG_POINT_LAYERS) -- on every leg, not the first alone (the
+ *  owner, 2026-11-20: "toc/tod on every leg if possible") -- none within
+ *  OFF_THE_ENDS_NM of its leg's ends, where the field's or the stop's own
+ *  mark already is. A tap its card (`cardOf`) and
+ *  its ring, the map brought to it. Under the route's own marks, so it
+ *  gives way to them (MapLibre's collision; routeMarks). */
 export function LegPointsGl({
   legs: allLegs,
   onSelectPoint,
@@ -265,14 +278,20 @@ export function LegPointsGl({
             ["tod", "TOD", leg.tod],
           ] as const
         ).flatMap(([kind, words, at]) =>
-          at
+          at && at.along_nm >= OFF_THE_ENDS_NM && leg.distance_nm - at.along_nm >= OFF_THE_ENDS_NM
             ? [
                 {
                   key: `${kind}-${i}`,
                   lat: at.lat,
                   lon: at.lon,
+                  picture: LEG_POINT_DIAMOND,
+                  // Its words on the pill beside it, as My Location's are
+                  // (the owner, 2026-11-20: "label toc and Tod just like my
+                  // location"), and for a reader of the drawn marks (the
+                  // specs' markWith).
                   text: words,
-                  picture: FIX_PILL,
+                  also: [ROUTE_POINT_PILL],
+                  props: { ident: words, out: squareToCourse(leg.true_course_deg) },
                   onTap: () => {
                     // Its card first, every other pick put away, then its ring (lib/map/mapPick).
                     openCard(cardOf(words, at), ["point"]);
@@ -286,6 +305,7 @@ export function LegPointsGl({
     [legs, onSelectPoint, openCard, cardOf],
   );
   useGlSymbols("leg-points", LEG_POINT_LAYERS, marks, { under: ROUTE_MARKS_LOWEST, rank: TAP.rank.checkpoint });
+  useTurnedNames(LEG_POINT_NAMES);
   return null;
 }
 

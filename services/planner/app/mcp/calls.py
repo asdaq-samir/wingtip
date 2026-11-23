@@ -16,6 +16,8 @@ sends through planner() here."""
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from typing import Any
 
 import httpx2
@@ -28,8 +30,11 @@ from ..settings import get_settings
 
 #: Reading the planner with the pilot's own airplanes and flights.
 READ = "wingtip:read"
-#: Saving a flight to the pilot's account.
-WRITE = "wingtip:write"
+#: Saving, changing and deleting the pilot's saved flights. Not the
+#: wingtip:write a pilot once consented to as "Save flights" alone: the
+#: gateway keeps a consent and does not ask again, so the wider grant has
+#: a name of its own (gateway V53, the security review of 2026-11-22, L4).
+WRITE = "wingtip:flights"
 SCOPES = [READ, WRITE]
 
 # One process's count: the planner runs as one (docker-compose.yml, the
@@ -50,7 +55,10 @@ def pilot(scope: str = READ) -> str:
     if token is None or not token.subject:
         raise ToolError("Not signed in to Wingtip: reconnect Wingtip in your AI app's connector settings.")
     if scope not in token.scopes:
-        raise ToolError(f"This connection was not allowed {scope}: disconnect Wingtip, connect it again and approve it.")
+        # The consent page's own words for the write scope, so the pilot
+        # knows which box to tick when they connect again.
+        ask = ' with "Save, change and delete your saved flights" ticked' if scope == WRITE else ""
+        raise ToolError(f"This connection was not allowed {scope}: disconnect Wingtip, connect it again and approve it{ask}.")
     settings = get_settings()
     limits = (
         (RateLimitItemPerMinute(settings.mcp_calls_per_minute), "a minute"),
@@ -93,7 +101,7 @@ async def planner(method: str, path: str, *, query: dict | None = None, body: An
     async with httpx2.AsyncClient(transport=transport, base_url="http://planner", timeout=PLANNER_TIMEOUT_S) as client:
         resp = await client.request(method, path, params=params, json=body, headers=sent)
     if resp.status_code < 400:
-        return resp.json()
+        return as_data(resp.json())
     said = _said(resp)
     if resp.status_code == 404:
         raise ToolError(f"{said} Check the identifier: search_airports finds one by name.")
@@ -104,6 +112,34 @@ async def planner(method: str, path: str, *, query: dict | None = None, body: An
     if resp.status_code == 504:
         raise ToolError(f"{said} Ask again in a minute: the answer is being worked out and kept.")
     raise ToolError(f"Wingtip could not answer ({resp.status_code}): {said}. Try again in a minute.")
+
+
+# What no report a pilot reads needs, and what hides words from the pilot
+# while the model still reads them: control characters but the line
+# breaks and the tab, and Unicode's format characters (category Cf: zero
+# widths, bidirectional overrides, and the tag characters U+E0000 to
+# U+E007F that spell out ASCII invisibly).
+_HIDDEN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def as_data(value: Any) -> Any:
+    """A planner answer as the connector hands it to the pilot's AI app,
+    every string with its hidden characters taken out, through lists and
+    dicts. The answers carry text a third party wrote (a NOTAM's, a METAR's
+    remarks, a field's remarks, a registry name), which the model reads
+    beside the pilot's own words; text the pilot cannot see on the screen
+    could carry instructions only the model would read (the deep security
+    review of 2026-11-21). What can be seen stays as sent, and the server's
+    instructions tell the model it is data (server.INSTRUCTIONS)."""
+    if isinstance(value, str):
+        if value.isascii():
+            return _HIDDEN.sub("", value)
+        return "".join(c for c in _HIDDEN.sub("", value) if unicodedata.category(c) != "Cf")
+    if isinstance(value, list):
+        return [as_data(v) for v in value]
+    if isinstance(value, dict):
+        return {k: as_data(v) for k, v in value.items()}
+    return value
 
 
 def editions(*keys: str) -> list[dict]:
@@ -130,6 +166,21 @@ def rounded(value: Any, places: int = 1) -> Any:
     return value
 
 
+def paged(items: list, offset: int, limit: int) -> dict:
+    """One page of a list a tool answers, with where the next starts: the
+    model asks again with `next_offset` while `has_more` (mcp-builder's
+    pagination: total, count, offset, has_more, next_offset)."""
+    page = items[offset : offset + limit]
+    more = offset + len(page) < len(items)
+    return {
+        "total": len(items),
+        "count": len(page),
+        "offset": offset,
+        "has_more": more,
+        "next_offset": offset + len(page) if more else None,
+    }
+
+
 def pick(row: dict, keys) -> dict:
     """The fields of an answer a tool gives, those with a value."""
     return {k: row[k] for k in keys if row.get(k) is not None}
@@ -137,6 +188,6 @@ def pick(row: dict, keys) -> dict:
 
 #: Where the live products come from, as the app credits them.
 METAR_SOURCE = {"source": "NWS Aviation Weather Center (aviationweather.gov) METAR and TAF, as sent"}
-NOTAM_SOURCE = {"source": "FAA NOTAM System (SWIM FNS feed), as sent; TFRs from tfr.faa.gov"}
+NOTAM_SOURCE = {"source": "FAA NOTAM System (SWIM FNS feed; NMS-API's full set where full_set), as sent; TFRs from tfr.faa.gov"}
 WINDS_SOURCE = {"source": "NWS winds and temperatures aloft forecast (FB)"}
 ENGINE_SOURCE = {"source": "Wingtip engine: dead reckoning, altitudes and fuel, each rule citing its 14 CFR or AIM paragraph"}

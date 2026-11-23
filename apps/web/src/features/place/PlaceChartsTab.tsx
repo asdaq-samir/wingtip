@@ -10,6 +10,7 @@ import { ChartRow } from "../../components/AirportDiagram";
 import { PublicationRows } from "./PublicationRows";
 import { NotamBadge } from "./NotamBadge";
 import { useNotamMarks, type NotamMark } from "./notamBadges";
+import { publicationNotes } from "./publicationWords";
 
 /** The field's charts in the d-TPP under the Charts tab, by what they are for:
  *  the FAA's chart codes (wingtip.publications). The airport's own -- its hot
@@ -84,11 +85,18 @@ export function PlaceChartsTab({
   // a deploy under way), not a page that fails.
   const procedures = place.procedures ?? [];
   const marks = useNotamMarks(place.ident, place);
+  // The FAA not reached: said where the list is, the kept cycle named
+  // where one stands in (lib/problems' "where it happens").
+  const notes = publicationNotes(place);
+  const unavailable = place.publications?.plates?.state === "unavailable";
   return (
     <div data-testid="place-charts">
       <PillSection title="Airport">
         <ListGroup>
-          {!place.airport_diagram_url && !place.airport_diagram_cycle && !sketched && (
+          {notes.map((n) => (
+            <ListRow key={n.title} muted title={n.title} description={n.description} data-testid="publication-note" />
+          ))}
+          {!unavailable && !place.airport_diagram_url && !place.airport_diagram_cycle && !sketched && (
             // Drawn by the FAA for the fields with a tower or a busy
             // ramp; most small fields have none, and are sketched.
             <ListRow muted title="The FAA publishes no airport diagram for this field" />

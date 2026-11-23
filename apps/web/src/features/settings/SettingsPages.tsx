@@ -14,6 +14,8 @@ import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "../../component
 import { useMicPrimer } from "../../components/MicPrimer";
 import { setCommsAssist, useCommsAssist } from "../../lib/atc/commsAssist";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../../lib/atc/listenSetting";
+import { setHelpImprove, useHelpImprove } from "../../lib/helpImprove";
+import { useExtra } from "../../lib/extras";
 import { LEGAL_PAGES } from "../../lib/legal";
 import { useCanListen } from "../../lib/speechLocal";
 import { usePreferences } from "../../lib/preferences";
@@ -56,6 +58,9 @@ export function AtcPage() {
   const [copilotMode, setCopilotMode] = useCopilotMode();
   const atcListen = useAtcListen((s) => s.value);
   const voice = useCanListen();
+  // Comms Assist and the ATC alerts are the ATC Copilot's, parked until
+  // its switch in Extras is on (lib/extras); the copilot is not parked.
+  const atcCopilot = useExtra("atcCopilot");
   // Why the microphone, before the browser asks (MicPrimer).
   const [micPrimer, primeMic] = useMicPrimer();
   return (
@@ -64,12 +69,12 @@ export function AtcPage() {
       <ListGroup>
         {/* The radio's button on the map is off until turned on: comms
             assist is kept but not in the way (the owner, 2026-11-13). */}
-        <SwitchRow title="Comms Assist" on={commsAssist} onChange={setCommsAssist} testId="comms-assist-toggle" />
+        {atcCopilot && <SwitchRow title="Comms Assist" on={commsAssist} onChange={setCommsAssist} testId="comms-assist-toggle" />}
         {/* The ATC copilot (features/atc): the radio listened to while
             flying, calls to us read into cards. Off until the pilot
             turns it on. Not offered where speech cannot be recognised
             on the device (lib/speechLocal). */}
-        {voice && (
+        {voice && atcCopilot && (
           <ListRow title="ATC Alerts">
             <Segmented
               label="ATC alerts"
@@ -103,6 +108,7 @@ export type HelpPages = Record<"guide" | "status" | "log" | "about", { title: st
  *  the status, the log, about and the sources a row each, the legal
  *  pages a link each at its foot. */
 export function HelpPage({ pages }: { pages: HelpPages }) {
+  const helpImprove = useHelpImprove((s) => s.value);
   return (
     <ConsolePages back="Help & About" pages={{ ...pages, sources: { title: "Sources", content: <SourcesPage /> } }}>
       <div className="flex flex-col gap-5">
@@ -116,6 +122,18 @@ export function HelpPage({ pages }: { pages: HelpPages }) {
           <PageRow page="about" title="About" testId="about-link" />
           {/* Where the map's data comes from and how old it is. */}
           <PageRow page="sources" title="Sources" testId="sources-row" />
+        </ListGroup>
+        {/* Faults and speed figures sent with nothing of the pilot's
+            (lib/helpImprove; docs/privacy-inventory.md): on until turned
+            off, as on the phones. */}
+        <ListGroup>
+          <SwitchRow
+            title="Help Improve Wingtip Maps"
+            description="Sends crashes and speed figures, with nothing of yours"
+            on={helpImprove}
+            onChange={setHelpImprove}
+            testId="help-improve-toggle"
+          />
         </ListGroup>
         {/* Privacy, Terms and Legal (about's list of every data source and
             its licence), links at the foot (the owner, 2026-11-11). Sixteen
@@ -146,7 +164,7 @@ function SourcesPage() {
   // How old each weather layer's data is, beside where it comes from.
   const ages = useLayerAges();
   // Whose traffic the map draws, as the map credits it (TrafficGl's
-  // trafficCredit: adsb.lol's, adsb.fi's or ADS-B Exchange's), where it
+  // trafficCredit: adsb.lol's or ADS-B Exchange's), where it
   // always said adsb.lol (the commonality audit's MAP-6, CODE-31);
   // adsb.lol's, the planner's first, before the map has asked.
   // The row's own title says Traffic: the credit without it.
@@ -171,6 +189,9 @@ function SourcesPage() {
           ) : undefined
         }
       />
+      {/* The documents library's (features/documents): the FAA's and the
+          eCFR's, public domain, credited once here as the charts are. */}
+      <ListRow title="Documents" value={<span className="text-foreground">FAA, eCFR</span>} />
       <ListRow
         title="METARs"
         value={<span className="text-foreground">{ages.metars ? `aviationweather.gov · ${ages.metars}` : "aviationweather.gov"}</span>}

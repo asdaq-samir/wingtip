@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { errorIdOf, invalidProps } from "../../lib/fieldError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -7,6 +8,7 @@ import { api } from "../../lib/api/client";
 import type { Pilot } from "../../lib/api/types";
 import { pilotQuery } from "../../lib/queryClient";
 import { AccountGroup } from "./AccountMenu";
+import { AvatarPhoto } from "./AvatarPhoto";
 import { NameFieldRow } from "./NameFieldRow";
 
 // The server's own limits (PilotContactRequest): a number is figures and
@@ -15,7 +17,7 @@ const PHONE = /^[0-9+()\-. ]{0,24}$/;
 const HOME_BASE = /^([A-Za-z0-9]{2,11})?$/;
 
 /**
- * You's Pilot Details: the role's menu (AccountGroup), then what a flight plan asks of the pilot in command
+ * You's Pilot Details: their photo (AvatarPhoto), the role's menu (AccountGroup), then what a flight plan asks of the pilot in command
  * (FAA Form 7233-4, item 19 C/) -- their name as their certificate gives
  * it, the one an endorsement names them by too (Checkride's), and their
  * contact, "including telephone number", good at the ETA in case search
@@ -26,10 +28,12 @@ const HOME_BASE = /^([A-Za-z0-9]{2,11})?$/;
  */
 export default function PilotPage() {
   const { data: pilot } = useQuery(pilotQuery);
-  // The role's menu first (AccountGroup), then the fields, keyed on the
-  // pilot, so they start from what is saved once it is known.
+  // Their photo first, as Contacts heads a card, then the role's menu
+  // (AccountGroup), then the fields, keyed on the pilot, so they start
+  // from what is saved once it is known.
   return (
     <div className="space-y-5">
+      {pilot && <AvatarPhoto pilot={pilot} />}
       <AccountGroup />
       {pilot && <PilotFields key={pilot.id} pilot={pilot} />}
     </div>
@@ -59,27 +63,35 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
     if (phone.trim() === (pilot.phone ?? "") && home.trim().toUpperCase() === (pilot.homeBase ?? "")) return;
     saveContact.mutate({ phone: phone.trim(), homeBase: home.trim() });
   };
-  const problem = (message?: string | null) => (message ? <span className="text-destructive">{message}</span> : undefined);
+  // Said under its title with the id its field is described by, so a reader
+  // says the two together (WCAG 3.3.1).
+  const problem = (field: string, message?: string | null) =>
+    message ? (
+      <span id={errorIdOf(field)} className="text-destructive">
+        {message}
+      </span>
+    ) : undefined;
 
   return (
     <section aria-label="Pilot details">
-      <ListGroup title="For your flight plans">
+      <ListGroup title="For Your Flight Plans">
         <NameFieldRow
           id={`${id}-name`}
           title="Name"
-          description={problem(saveName.error?.message) ?? "As on your pilot certificate"}
+          description={problem(`${id}-name`, saveName.error?.message) ?? "As on your pilot certificate"}
           placeholder="Avery B. Pilot"
           value={name}
           saved={pilot.fullName}
           onChange={setName}
           onSave={saveName.mutate}
           testId="pilot-name"
+          error={saveName.error?.message}
           className="h-8 w-44 text-right sm:w-56"
         />
         <ListRow
           id={`${id}-phone`}
           title="Phone"
-          description={problem(phoneWrong ?? saveContact.error?.message) ?? "One that reaches you at your ETA"}
+          description={problem(`${id}-phone`, phoneWrong ?? saveContact.error?.message) ?? "One that reaches you at your ETA"}
         >
           <FieldHit htmlFor={`${id}-phone`}>
             <Input
@@ -91,14 +103,14 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
               className="h-8 w-44 text-right sm:w-56"
               autoComplete="tel"
               inputMode="tel"
-              aria-invalid={!!phoneWrong}
+              {...invalidProps(`${id}-phone`, phoneWrong ?? saveContact.error?.message)}
               onChange={(e) => setPhone(e.target.value)}
               onBlur={contact}
               data-testid="pilot-phone"
             />
           </FieldHit>
         </ListRow>
-        <ListRow id={`${id}-home`} title="Home base" description={problem(homeWrong)}>
+        <ListRow id={`${id}-home`} title="Home Base" description={problem(`${id}-home`, homeWrong)}>
           <FieldHit htmlFor={`${id}-home`}>
             <Input
               id={`${id}-home`}
@@ -110,7 +122,7 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
               autoCorrect="off"
               autoComplete="off"
               spellCheck={false}
-              aria-invalid={!!homeWrong}
+              {...invalidProps(`${id}-home`, homeWrong)}
               onChange={(e) => setHome(e.target.value)}
               onBlur={contact}
               data-testid="pilot-home-base"

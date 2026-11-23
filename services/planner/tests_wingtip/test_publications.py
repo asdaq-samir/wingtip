@@ -48,6 +48,15 @@ def test_the_supplement_is_the_airports_pages_in_order():
     assert publications._supplements_of(AFD) == {"DLH": ["nc_161_03SEP2026.pdf"], "C81": ["ec_59_03SEP2026.pdf", "ec_60_03SEP2026.pdf"]}
 
 
+def test_a_pdf_named_with_a_path_is_no_chart_and_no_page():
+    """The security reviews of 2026-11-21 (L16): the names go into the
+    card's links, so only a PDF's own name is kept from either index."""
+    metafile = METAFILE.replace(b"00125AD.PDF", b"../../evil/00125AD.PDF")
+    assert [c[2] for c in publications._charts_of(metafile)["DLH"]] == ["NC1TO.PDF"]
+    afd = AFD.replace(b"ec_60_03SEP2026.pdf", b"https://elsewhere.test/x.pdf")
+    assert publications._supplements_of(afd)["C81"] == ["ec_59_03SEP2026.pdf"]
+
+
 def test_the_links_are_the_editions_own(monkeypatch, tmp_path):
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications, "_HELD", {})
@@ -173,7 +182,7 @@ def _pdf_with(pages: list) -> bytes:
 
 
 def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(monkeypatch, tmp_path):
-    publication_pages._pages_of.cache_clear()
+    publication_pages._read.cache_clear()
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     booklet = _pdf_with(["KENOSHA (ENW)", "MADISON DANE COUNTY RGNL/TRUAX FLD (MSN)", "MSN CONTINUED (MSN)", "MILWAUKEE (MKE)"])
     approach = _pdf_with(["ILS OR LOC RWY 18"])
@@ -188,6 +197,15 @@ def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(mon
     assert [p["page"] for p in publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL18.PDF", "KMSN", on)] == [1]
     # A booklet without the field has no pages for it, not another field's.
     assert publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", "KDLH", on) == []
+    # The booklet is read once, whatever fields are asked of it: a made-up
+    # field each time searches the text read, and reads no PDF again.
+    reads = []
+    real = pypdfium2.PdfDocument
+    monkeypatch.setattr(publication_pages.pypdfium2, "PdfDocument", lambda data: reads.append(1) or real(data))
+    for made_up in ("ZZZ1", "ZZZ2", "ZZZ3"):
+        assert publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", made_up, on) == []
+    assert reads == []
+    monkeypatch.setattr(publication_pages.pypdfium2, "PdfDocument", real)
     # A chart of its own keeps every page, though only one is headed with the field.
     answers["00245IL19.PDF"] = _pdf_with(["ILS OR LOC RWY 19 (MSN)", "NOTES", "MORE NOTES"])
     assert [p["page"] for p in publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)] == [1, 2, 3]
@@ -219,7 +237,7 @@ def test_only_the_faas_charts_in_force_are_read(monkeypatch, tmp_path):
 
 
 def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch, tmp_path):
-    publication_pages._pages_of.cache_clear()
+    publication_pages._read.cache_clear()
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications, "_ABSENT", set())
     on = date(2026, 10, 3)

@@ -28,6 +28,8 @@
 //!   the way (73.83), as warnings;
 //! - clearance: the profile's red and yellow preview of the ground and
 //!   obstacles against an altitude (ForeFlight's display defaults);
+//! - hazard: the map's ground and obstacles coloured against the altitude
+//!   flown or planned (Hazard Advisor), and the profile's obstacles;
 //! - advisor: the Altitude Advisor's rows, Fastest and Most economical
 //!   marked, those outside the legal altitudes warned of;
 //! - calls: the names crate::call answers them by.
@@ -46,6 +48,7 @@ pub mod congested_reach;
 pub mod cruising;
 pub mod floor;
 pub mod ground;
+pub mod hazard;
 pub mod mountainous;
 pub mod profile_calls;
 pub mod select;

@@ -38,3 +38,19 @@ fn a_kind_not_known_is_refused_in_words() {
     let err = ask(&json!({ "now": 0, "fetched_at": 0, "kind": "tiles" })).unwrap_err();
     assert!(err.contains("no kind called"), "{err}");
 }
+
+#[test]
+fn plates_fetched_before_0901z_on_the_changeover_day_are_of_the_last_cycle() {
+    // AIRAC 2612 takes over at 0901Z on 26 Nov 2026 ("Effective 0901 UTC",
+    // the Federal Register's amendments). Plates fetched at 0300Z that day
+    // are 2611's; asked at 0900Z they are still current, at 0901Z and after
+    // they are not.
+    let fetched = 1795662000;
+    for (now, finding) in [(1795683600, "ok"), (1795683660, "caution"), (1795683720, "caution")] {
+        let answer = ask(&json!({ "now": now, "fetched_at": fetched, "kind": "plates" })).unwrap();
+        assert_eq!(answer["finding"], json!(finding), "{now}: {answer}");
+    }
+    // Fetched at 0901Z, of the new cycle.
+    let answer = ask(&json!({ "now": 1795683720, "fetched_at": 1795683660, "kind": "plates" })).unwrap();
+    assert_eq!(answer["finding"], json!("ok"), "{answer}");
+}

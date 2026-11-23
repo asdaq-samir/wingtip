@@ -33,4 +33,29 @@ public record ApproachLessonDto(
         List<QuizAnswerDto> quizAnswers,
         @Nullable Integer quizOf,
         @Nullable Instant quizAt,
-        List<FlightSummaryDto> flights) {}
+        List<FlightSummaryDto> flights) {
+
+    /** This lesson with these flights (LessonService#lessonsOf). */
+    public ApproachLessonDto withFlights(List<FlightSummaryDto> landed) {
+        return new ApproachLessonDto(
+                id,
+                studentId,
+                studentName,
+                instructorName,
+                airportIdent,
+                procedureId,
+                procedureName,
+                cycle,
+                fixNotes,
+                dueOn,
+                createdAt,
+                updatedAt,
+                status,
+                briefedAt,
+                flownAt,
+                quizAnswers,
+                quizOf,
+                quizAt,
+                landed);
+    }
+}

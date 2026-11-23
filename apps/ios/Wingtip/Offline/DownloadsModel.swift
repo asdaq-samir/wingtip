@@ -5,7 +5,8 @@ import UIKit
 /// The Downloads screen's state (Setup → Downloads): what the planner can
 /// cut (/api/offline-charts), the chart kinds and density picked, the
 /// regions kept on the phone and how far each has come, and the calls
-/// that keep, update and delete them. The view draws it.
+/// that keep, update and delete them; and the states' plates offered
+/// (/api/plates/states) and kept (StatePlates). The view draws it.
 @MainActor
 @Observable
 final class DownloadsModel {
@@ -21,6 +22,9 @@ final class DownloadsModel {
     private(set) var busy: Set<String> = []
     private(set) var storageUsed: Int64 = 0
     private(set) var storageFree: Int64?
+    /// The states whose plates can be kept, with their cycle and sizes.
+    private(set) var plateStates: APIPlateStates?
+    private(set) var platesProblem: String?
 
     var picked: Set<String> {
         didSet { defaults.set(Array(picked), forKey: Self.kindsKey) }
@@ -34,6 +38,8 @@ final class DownloadsModel {
     private let store: OfflineStore
     private let downloads: OfflineDownloads
     private let defaults: UserDefaults
+    /// The states' plates kept on the phone, the app's (`attach`).
+    private(set) var plates: StatePlates?
     static let kindsKey = "offline.kinds", scaleKey = "offline.scale"
 
     init(store: OfflineStore = .shared, downloads: OfflineDownloads = .shared, defaults: UserDefaults = .standard) {
@@ -54,18 +60,43 @@ final class DownloadsModel {
 
     func load() async {
         refresh()
+        // The states' plates asked beside the regions, not after them.
+        async let states: Void = loadPlates()
         do {
             catalog = try await Planner.call { try await $0.offlineCatalog().ok.body.json }
             problem = nil
         } catch {
-            problem = "The regions could not be listed: \(error.localizedDescription)"
+            problem = Problems.say("The regions could not be listed", error)
         }
+        await states
+    }
+
+    /// The states' plates offered; where the FAA's index could not be had
+    /// the planner names no cycle, and that is said.
+    func loadPlates() async {
+        guard let plates else { return }
+        do {
+            let states = try await plates.offered()
+            plateStates = states
+            platesProblem = states.cycle == nil ? "The FAA's list of plates couldn't be fetched. Try again later." : nil
+        } catch {
+            platesProblem = "The states' plates could not be listed: \(error.localizedDescription)"
+        }
+    }
+
+    /// The app's kept states, from the screen's environment.
+    func attach(_ plates: StatePlates) { self.plates = plates }
+
+    /// A state's plates of the cycle offered kept.
+    func keepPlates(_ id: String) {
+        guard let cycle = plateStates?.cycle else { return }
+        plates?.start(id, cycle: cycle)
     }
 
     /// The kept list and the storage figures read again.
     func refresh() {
         kept = store.all()
-        storageUsed = store.bytes()
+        storageUsed = store.bytes() + Int64((plates?.kept ?? []).reduce(0) { $0 + $1.bytes })
         storageFree = (try? URL.applicationSupportDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]))?
             .volumeAvailableCapacityForImportantUsage
     }
@@ -114,10 +145,10 @@ final class DownloadsModel {
             })
             downloads.fetch(saved, urls: urls)
             let packs = Set(saved.packs)
-            Task.detached { await CyclePacks.shared.keep(regions: packs) }
+            Task { await CyclePacks.shared.keep(regions: packs) }
             problem = nil
         } catch {
-            problem = "The region could not be fetched: \(error.localizedDescription)"
+            problem = Problems.say("The region could not be fetched", error)
         }
         refresh()
     }

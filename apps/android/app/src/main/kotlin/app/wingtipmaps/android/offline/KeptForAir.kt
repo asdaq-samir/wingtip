@@ -5,6 +5,8 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.keptAge
+import app.wingtipmaps.android.readWhole
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -40,22 +42,23 @@ class KeptForAir(private val dir: File) {
 
     fun write(kind: String, key: String, body: String, atMs: Long = AppClock.nowMs()) {
         val to = file(kind, key, "json")
-        val _ = runCatching {
-            to.parentFile?.mkdirs()
-            // Written beside and moved over, so a kill mid-write leaves the
-            // last good answer, never half of one.
-            val part = File(to.path + ".part")
-            part.writeText(JSON.encodeToString(Entry.serializer(), Entry(kind, key, atMs, body)))
-            if (!part.renameTo(to)) part.delete()
-        }
+        // Written whole (AtomicFile, WholeFiles), so a kill mid-write
+        // leaves the last good answer, never half of one.
+        val _ = runCatching { to.writeWhole(JSON.encodeToString(Entry.serializer(), Entry(kind, key, atMs, body))) }
     }
 
     fun read(kind: String, key: String): Entry? =
-        file(kind, key, "json").takeIf { it.isFile }?.let { f -> runCatching { JSON.decodeFromString(Entry.serializer(), f.readText()) }.getOrNull() }
+        file(kind, key, "json").readWhole()?.let { runCatching { JSON.decodeFromString(Entry.serializer(), it) }.getOrNull() }
 
     /** A file kept whole, a diagram's PDF: where it is, whether or not it
      *  is there yet. */
     fun pdf(kind: String, url: String): File = file(kind, url, "pdf")
+
+    /** Every answer kept of `kind`, the flights' plates records among them
+     *  (KeepForAir), for what a deleted state's charts must leave. */
+    fun entries(kind: String): List<Entry> =
+        File(dir, kind).listFiles { f -> f.name.endsWith(".json") }.orEmpty()
+            .mapNotNull { f -> runCatching { JSON.decodeFromString(Entry.serializer(), f.readText()) }.getOrNull() }
 
     /** What the answers named take on the phone, bytes. */
     fun bytes(kind: String, keys: Collection<String>): Long =
@@ -90,6 +93,9 @@ class KeptForAir(private val dir: File) {
         const val NOTAMS = "notams"
         const val PLAN = "plan"
         const val WEATHER_LOOP = "weather_loop"
+        /** The FAA's charts kept whole (ChartKeeper), and under the flight's
+         *  key the planner's list of a flight's (KeepForAir). */
+        const val PLATES = "plates"
 
         /** The route's side view (/api/route-profile): the ground and the
          *  obstacles under it, a cycle's data, so said with no age. Not one

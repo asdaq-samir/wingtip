@@ -36,6 +36,24 @@ struct AirportChartsTab: View {
         }
     }
 
+    struct PublicationNote: Equatable {
+        let title: String
+        var detail: String?
+    }
+
+    /// Where the FAA could not give the card its plates or its Chart
+    /// Supplement page (the planner's `publications`): an outage said in
+    /// place of the empty list, not read as a field with none; a kept
+    /// earlier cycle shown in its place named. The web's publicationNotes.
+    static func publicationNotes(_ place: AirportPlace) -> [PublicationNote] {
+        let editions = [("Plates", place.publications?.plates), ("Chart Supplement", place.publications?.supplement)]
+        return editions.compactMap { what, edition -> PublicationNote? in
+            if edition?.state == "unavailable" { return PublicationNote(title: "\(what) couldn't be fetched from the FAA") }
+            guard edition?.state == "kept", let cycle = edition?.edition else { return nil }
+            return PublicationNote(title: "\(what) from kept cycle \(cycle)", detail: "The cycle in force couldn't be fetched from the FAA")
+        }
+    }
+
     /// The sketch full screen, for a field the FAA draws no diagram for.
     @MainActor
     static func sketch(_ place: AirportPlace) -> ShownPicture {
@@ -43,29 +61,36 @@ struct AirportChartsTab: View {
             .frame(width: 900, height: 900).background(Color.white).environment(\.colorScheme, .light))
         renderer.scale = 2
         let image = renderer.uiImage
-        return ShownPicture(title: "\(place.ident) runways") { image.map { [$0] } ?? [] }
+        return ShownPicture(title: "\(place.ident) Runways") { image.map { [$0] } ?? [] }
     }
 
     var body: some View {
         let charts = place.procedures ?? []
         let sketched = !RunwaySketch.strips(place.runways).isEmpty
         Section("Airport") {
+            ForEach(Self.publicationNotes(place), id: \.title) { note in
+                VStack(alignment: .leading) {
+                    Text(note.title)
+                    if let detail = note.detail { Text(detail).font(.footnote) }
+                }
+                .foregroundStyle(.secondary)
+            }
             if let cycle = place.airportDiagramCycle {
-                row("Airport diagram", "map") {
+                row("Airport Diagram", "map") {
                     shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
                 }
             } else if let url = place.airportDiagramUrl {
-                row("Airport diagram", "map") { shown = .faaChart("\(place.ident) airport diagram", url: url, airport: place.ident) }
+                row("Airport Diagram", "map") { shown = .faaChart("\(place.ident) Airport Diagram", url: url, airport: place.ident) }
             } else if sketched {
-                row("Airport diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
-            } else {
+                row("Airport Diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
+            } else if place.publications?.plates?.state != "unavailable" {
                 Text("The FAA publishes no airport diagram for this field").foregroundStyle(.secondary)
             }
             // The FAA's diagram with the airplane on it, by the diagram's
             // own latitude and longitude marks (#218), under the diagram.
             if let url = place.airportDiagramUrl {
-                row("Diagram with your position", "location.north.circle") { ownShipDiagram = true }
-                    .fullScreenCover(isPresented: $ownShipDiagram) { DiagramOwnShipView(ident: place.ident, url: url) }
+                row("Diagram with Your Position", "location.north.circle") { ownShipDiagram = true }
+                    .fullScreenCover(isPresented: $ownShipDiagram) { DiagramOwnShipView(place: place, url: url) }
             }
             if let supplement = place.chartSupplementUrl {
                 row("Chart Supplement", "book") { shown = .faaChart("\(place.ident) Chart Supplement", url: supplement, airport: place.ident) }
@@ -92,6 +117,9 @@ struct AirportChartsTab: View {
         let plate = row(AirportWords.faaWords(chart.name), symbol, colour: chart.kind == "IAP" || chart.kind == "DP" || chart.kind == "ODP" || chart.kind == "STR" ? Badge.approach : Badge.chart) {
             shown = .faaChart(chart.name, url: chart.url, airport: place.ident)
         }
+        // A secondary click or a long press: the plate in a window of its
+        // own beside the map, on an iPad with windows (OpenInWindowItem).
+        .contextMenu { OpenInWindowItem(request: PictureRequest(title: chart.name, source: .faaChart(url: chart.url, airport: place.ident))) }
         if let mark = notams.marks.approach[chart.url] {
             HStack(spacing: WingtipSpace.sm) {
                 plate.buttonStyle(.borderless)

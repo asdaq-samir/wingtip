@@ -12,7 +12,8 @@ The pace while planning keeps each product inside the time its source
 updates it in: aviationweather.gov's cache files every minute (TAFs every
 ten), the GFS's runs every six hours with an hourly forecast step, GLMP's
 issues hourly at half past, tfr.faa.gov's shapes every few minutes, the
-radar mosaic and the GOES pictures every five minutes.
+radar mosaic and the GOES pictures every five minutes, Alaska's AIRMETs
+from the data API in answers it holds three minutes.
 """
 
 import functools
@@ -33,6 +34,11 @@ class Settings(BaseSettings):
     #: METARs, TAFs, SIGMETs and AIRMETs, PIREPs, G-AIRMETs (aviationweather.gov).
     reports_every_s: float = 240.0
     reports_idle_every_s: float = 1800.0
+    #: Alaska's AIRMETs (aviationweather.gov's data API): as often as the
+    #: API lets its answer be cached, three minutes (Cache-Control
+    #: max-age=180, read 2026-11-21), amendments being unscheduled.
+    airmets_every_s: float = 180.0
+    airmets_idle_every_s: float = 1800.0
     #: The winds aloft (the GFS from NOMADS), each period.
     winds_every_s: float = 2700.0
     winds_idle_every_s: float = 7200.0
@@ -51,6 +57,11 @@ class Settings(BaseSettings):
     #: When each GOES picture was taken (nowCOAST's capabilities).
     satellite_every_s: float = 300.0
     satellite_idle_every_s: float = 1800.0
+    #: Whether the map's flow layer (model weather, app.flow) is fetched at
+    #: all. Off unless WEATHER_FLOW_ON: the layer is parked (the feature
+    #: review, 2026-11-21), off by default in every app, and its GFS, HRRR
+    #: and DAFS downloads are the service's largest feed and memory.
+    flow_on: bool = False
     #: The map's flow layer (app.flow): the HRRR runs hourly, so looked for
     #: four times an hour while planning; a frame already held is not
     #: downloaded again. Every three hours otherwise.

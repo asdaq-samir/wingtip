@@ -1,11 +1,14 @@
 import type { CellData, ColumnDef, RowData, TableFeatures } from "@tanstack/react-table";
 import { tableFeatures } from "@tanstack/react-table";
-import { altFt, bearing, etaAt, flownNmOf, isLegPoint, legOf, one, rowPoint, windAloft, type NavLogRow } from "../plan";
+import { altFt, bearing, etaAt, flownNmOf, isLegPoint, legOf, one, windAloft, type NavLogRow } from "../plan";
 import type { Leg, NavLogAltitude } from "../../lib/api/types";
-import { magneticVariation, windCorrection } from "../../lib/format";
+import { magneticVariation, windCorrection, zoneName } from "../../lib/format";
 import { PointMark } from "./PointMark";
 import { Heading } from "./ColumnHeading";
 import FigureWait from "../../components/FigureWait";
+import { WaypointName } from "./WaypointName";
+import { cn } from "cn";
+import { TEXT } from "../../lib/text";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -54,6 +57,7 @@ export function navLogColumns({
   nav,
   depart,
   numbers,
+  airways,
   metarColourOf,
   onDesk,
   airplane,
@@ -62,6 +66,9 @@ export function navLogColumns({
   depart: string;
   /** Each checkpoint's number, as its dot on the map has it. */
   numbers: Map<string, number>;
+  /** The airway a row's leg joins, by the row's key, with its published
+   *  altitudes (navLogRail): "V191 · MEA 4,000 · MOCA 2,600". */
+  airways: Map<string, string>;
   metarColourOf: (ident: string) => string | undefined;
   onDesk: boolean;
   airplane: boolean;
@@ -98,7 +105,17 @@ export function navLogColumns({
             number={row.original.kind === "checkpoint" ? numbers.get(row.original.key) : undefined}
             weather={metarColourOf}
           />
-          <span className="min-w-0 [overflow-wrap:anywhere]">{rowPoint(row.original).name}</span>
+          <span className="flex min-w-0 flex-col">
+            <WaypointName row={row.original} link={onDesk} />
+            {/* Under IFR the airway joined on the leg to it and its
+                published altitudes, a paper IFR log's route column: the
+                MEA the floor (14 CFR 91.177(a)(1)). */}
+            {airways.has(row.original.key) && (
+              <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="navlog-airway">
+                {airways.get(row.original.key)}
+              </span>
+            )}
+          </span>
         </span>
       ),
       // On a phone a name wraps, and a long word is hyphenated rather
@@ -216,9 +233,13 @@ export function navLogColumns({
   // With a departure time, every row gets its ETA: the departure's own
   // time, then the time each leg ends -- "—" from the first leg that is
   // not in yet or cannot be flown (see navLogRows).
+  // The ETAs are on this device's clock: the column names its zone at the
+  // departure (a flight planned in winter for after the spring change is
+  // CDT, not today's CST), where "local" read as the field's own.
+  const clockZone = depart ? zoneName(new Date(depart)) : "local";
   const etaColumn: ColumnDef<typeof navLogTableFeatures, NavLogRow> = {
     id: "eta",
-    header: () => <Heading name="ETA" unit="local" spoken="Arrival time, local" />,
+    header: () => <Heading name="ETA" unit={clockZone} spoken={`Arrival time, ${clockZone}`} />,
     cell: ({ row }) => etaAt(depart, row.original.minutesFlown),
   };
   if (depart) columns.push(etaColumn);
@@ -226,7 +247,7 @@ export function navLogColumns({
   // the actual time over each fix and the fuel left -- what makes the
   // printed page a nav log to fly with rather than a table to read.
   for (const [id, name, unit, spoken] of [
-    ["ata", "ATA", "local", "Actual arrival time"],
+    ["ata", "ATA", clockZone, "Actual arrival time"],
     ["fuel_rem", "Fuel rem.", "gal", "Fuel remaining, gallons"],
   ] as const) {
     columns.push({

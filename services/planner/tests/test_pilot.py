@@ -113,3 +113,26 @@ def test_the_endorsement_kinds_are_ac_61_65ks():
     kinds = client.get("/api/pilot/endorsement-kinds").json()
     assert [k["code"] for k in kinds][:3] == ["pre-solo-knowledge", "pre-solo-flight", "solo-first"]
     assert {k["paragraph"] for k in kinds} >= {"A.1", "A.10", "A.37"}
+
+
+def test_same_field_reads_each_ident_by_its_nasr_names(monkeypatch):
+    """A lesson at BUR's approach finds a flight planned to KBUR, and one at
+    PANC a flight to ANC, by NASR's ICAO_ID (FAA JO 7350.9GG 4-1), which no
+    K rule finds; a field NASR does not list is named by the ident alone."""
+    from wingtip import nasr_fields
+
+    nasr = {
+        "BUR": {"faa_id": "BUR", "icao_id": "KBUR"},
+        "KBUR": {"faa_id": "BUR", "icao_id": "KBUR"},
+        "ANC": {"faa_id": "ANC", "icao_id": "PANC"},
+        "PANC": {"faa_id": "ANC", "icao_id": "PANC"},
+        "VNY": {"faa_id": "VNY", "icao_id": "KVNY"},
+    }
+    monkeypatch.setattr(nasr_fields, "of_ident", lambda ident, beside: nasr.get(ident.strip().upper()))
+    ask = lambda field, idents: client.post("/api/pilot/same-field", json={"field": field, "idents": idents})  # noqa: E731
+    answer = ask("KBUR", ["BUR", "VNY", "kbur", " "])
+    assert answer.status_code == 200, answer.text
+    assert answer.json() == {"same": [True, False, True, False]}
+    assert ask("PANC", ["ANC", "MRI"]).json() == {"same": [True, False]}
+    # Neither in NASR: the K form of three letters still meets them.
+    assert ask("KXYZ", ["XYZ", "C81"]).json() == {"same": [True, False]}

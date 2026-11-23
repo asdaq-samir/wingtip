@@ -51,7 +51,7 @@ def finding(v: dict, key: str) -> dict:
 def test_finds_nothing_against_a_quiet_day_every_row_saying_what_it_checked():
     items = verdict_items(quiet())
     assert [i["finding"] for i in items] == ["ok"] * 7
-    assert finding(quiet(), "fuel")["detail"] == "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+    assert finding(quiet(), "fuel")["detail"] == "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve"
     assert verdict_line(quiet()) == {"finding": "ok", "words": "Nothing found against this flight"}
 
 
@@ -64,7 +64,7 @@ def test_is_no_go_on_vfr_not_recommended_a_tfr_in_force_too_little_fuel_or_no_al
     )
     assert finding(v, "weather")["detail"] == "VFR not recommended: KDLH currently reporting IFR"
     assert finding(v, "fuel")["detail"] == "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)"
-    assert verdict_line(v) == {"finding": "stop", "words": "No-go as planned: Weather, TFRs & special use, Altitude, Fuel"}
+    assert verdict_line(v) == {"finding": "stop", "words": "No-go as planned: weather, TFRs & special use, altitude, fuel"}
 
 
 def test_under_ifr_cites_the_ifr_reserves_rule():
@@ -88,7 +88,7 @@ def test_asks_for_another_look_at_hazards_an_area_in_use_a_pilots_own_altitude_a
         runways={"crosswind": ["C81"]},
     )
     assert finding(v, "airspace")["detail"] == "VOLK EAST MOA scheduled in use when you pass"
-    assert verdict_line(v)["words"] == "Look again at Weather, TFRs & special use, Altitude, Runways"
+    assert verdict_line(v)["words"] == "Look again at weather, TFRs & special use, altitude, runways"
 
 
 def test_distances_past_the_pohs_tables_are_a_caution_and_a_runway_not_checked_unknown_never_within():
@@ -102,9 +102,9 @@ def test_distances_past_the_pohs_tables_are_a_caution_and_a_runway_not_checked_u
 
 def test_says_what_was_not_worked_out_and_what_is_still_coming():
     unknown = quiet(runways={"worked": False}, balance={"pending": False, "worked": False, "problems": [], "takeoff": None})
-    assert verdict_line(unknown)["words"] == "No problems found; not checked: Runways, Weight & balance"
+    assert verdict_line(unknown)["words"] == "No problems found; not checked: runways, weight & balance"
     coming = quiet(weather={"pending": True}, risk=None)
-    assert verdict_line(coming) == {"finding": "pending", "words": "Still checking: Weather, Risk"}
+    assert verdict_line(coming) == {"finding": "pending", "words": "Still checking: weather, risk"}
 
 
 def test_names_a_near_tfr_and_an_area_not_scheduled_as_nothing_against_it():

@@ -1,7 +1,8 @@
 import type { keepForAir as KeepForAir } from "./keepForAir";
 
 /** Keep for the Air: the route's answers kept with its charts, and what is
- *  on board for Ready to fly, the feature's entries. */
+ *  on board for Ready to fly, the feature's entries; a flight's plates and
+ *  their size, drawn only in You, are lazy.ts's. */
 export { useKeptForAir } from "./useKeptForAir";
 export { forgetKeptRecord, keptRecordStore } from "./keptRecord";
 

@@ -4,6 +4,7 @@ import { sameField } from "../../lib/procedures";
 import { groundMinAt, type Landing, type NavLogRow, type ProcedureAirport, type ProcedureKind, type RunwayEnd } from "../plan";
 import { DepartPicker } from "../navlog/lazy";
 import ProcedureMenu from "./ProcedureMenu";
+import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
 import { patternNote } from "./procedureWords";
 import { endFit } from "./runwayFit";
@@ -25,8 +26,9 @@ export type FieldPart = {
 
 /** A kind's pull-down at a field (ProcedureMenu): the one in the route said
  *  on it, "+ Approach" where none is picked (`add`). The same menu for the
- *  list read in flight (FieldStep) and FPL's timeline (TimelineRoute). */
-export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Kind, look: "chip" | "button" | "add") {
+ *  list read in flight (FieldStep) and FPL's timeline (TimelineRoute),
+ *  a row's words its `face`. */
+export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Kind, look: TriggerLook, face?: ReactNode) {
   const { airports, lists, inRoute, windOf, pickOf, chosenAt, ask, pick, onAt, setLesson } = vm;
   const i = airports.findIndex((f) => sameField(f.ident, a.ident));
   const wind = windOf(a.ident);
@@ -39,6 +41,7 @@ export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Ki
       list={lists[i]?.data}
       query={lists[i]}
       look={look}
+      face={face}
       picked={pickOf(a.ident, kind)}
       label={placed?.label ?? null}
       fixes={placed?.fixes?.map((f) => f.ident)}

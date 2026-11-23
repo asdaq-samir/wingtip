@@ -5,29 +5,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { expect } from "vitest";
-import type { Course, Detection, LoosePick, StreamMessage } from "../../../lib/api/types";
+import type { Detection, LoosePick, StreamMessage } from "../../../lib/api/types";
 import { useTraining } from "./useTraining";
 
-export function courseFixture(): Course {
-  return {
-    departure: { ident: "C81", name: "Campbell", lat: 42.1, lon: -88.1, elevation_ft: 890, kind: "airport" },
-    destination: { ident: "KDLH", name: "Duluth", lat: 46.8, lon: -92.2, elevation_ft: 1428, kind: "airport" },
-    stops: [],
-    distance_nm: 323.4,
-    bearing_deg: 328,
-    course_line: [
-      [42.1, -88.1],
-      [46.8, -92.2],
-    ],
-    checkpoints_ready: false,
-    max_zoom: 12,
-    min_zoom: 4,
-    chart_cycle: "09-03-2026",
-    chart_revision: 0,
-    chart_tiles_base: null,
-    chart_layers: [],
-  };
-}
+export { courseFixture } from "../../../test/courseFixture";
 
 export function detectionFixture(over: Partial<Detection> = {}): Detection {
   return {

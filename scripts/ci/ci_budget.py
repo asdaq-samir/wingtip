@@ -60,19 +60,25 @@ BUDGETS = [
     ("test-flight", 2, 2),
     ("test-sim", 3, 4),
     ("Native Android / build", 5, 10),
-    ("Native iOS / test", 6, 70),
+    # A wave's four legs of the iPad's whole suite (decision 0058), never on a
+    # pull request: a quarter of its tests each, with the build and the
+    # simulator's boot (some 18 minutes on a slow hosted runner, run
+    # 45136421052). Before the next row, which would match them too.
+    ("Native iOS / test (iPad ?/4)", 3, 30),
+    # Each device's leg: the iPhone's "test", main's push's "test (iPad)".
+    ("Native iOS / test*", 6, 70),
     ("CI passed", 1, 1),
     ("Stop on red", 1, 1),
     # The browser specs a pull request reaches (decision 0048), and on
     # main's push the smoke set: a shard holds at most three specs on a
-    # pull request, on main the smoke set's half.
+    # pull request, on main a third of the smoke set.
     ("Browser specs reached", 2, 1),
     ("build (e2e)", 4, 6),
     ("e2e (*/*)", 12, 15),
     # Tier 2: after merge, on main's push.
     ("build (*)", 4, 6),
     # Tier 3: the night.
-    ("Native Android / device", 15, 15),
+    ("Native Android / device (*)", 15, 15),
     ("docs", 10, 10),
     ("Standards", 10, 10),
     ("Flake hunt (*)", 45, 45),
@@ -84,13 +90,15 @@ BUDGETS = [
 # the phones' builds, which a pull request waits for only when it touches
 # what the app builds from.
 TIER1 = 3
-TIER1_LONG = {"Native Android / build", "Native iOS / test", "build (e2e)", "e2e (*/*)"}
+TIER1_LONG = {"Native Android / build", "Native iOS / test*", "build (e2e)", "e2e (*/*)"}
 # The whole run, first job's start to last job's end, by event: a pull
 # request is tier 1; main's push adds tier 2; the night is everything.
 # A run is given at least its longest job's budget (a phone's build), as
 # nothing can make it shorter.
 TOTAL = {"pull_request": TIER1, "push": 14, "night": 20}
 SELF = "CI budget"
+# validate-wave.yml's job that calls ci.yml, as job names begin with it.
+WAVE_CALLER = "CI / "
 # The cache store's size that warns: GitHub evicts past 10 GB a repository.
 STORE_WARN_GB = 9
 
@@ -108,7 +116,14 @@ def when(stamp: str | None) -> datetime.datetime | None:
     return datetime.datetime.fromisoformat(stamp.replace("Z", "+00:00")) if stamp else None
 
 
+def bare(name: str) -> str:
+    """A job's name as ci.yml gives it: in a wave's validation, which calls
+    ci.yml as its job "CI", GitHub puts "CI / " before each."""
+    return name.removeprefix(WAVE_CALLER)
+
+
 def budget(name: str, nightly: bool) -> int | None:
+    name = bare(name)
     for pattern, pr, night in BUDGETS:
         if fnmatch.fnmatchcase(name, pattern):
             return night if nightly else pr
@@ -118,7 +133,7 @@ def budget(name: str, nightly: bool) -> int | None:
 def misses(repo: str, suite: int, token: str) -> list[tuple[str, str]]:
     """(job, cache) for each Cache miss notice this run's jobs left."""
     runs = api(f"repos/{repo}/check-suites/{suite}/check-runs?per_page=100", token)["check_runs"]
-    noted = [r for r in runs if r.get("output", {}).get("annotations_count") and r["name"] != SELF]
+    noted = [r for r in runs if r.get("output", {}).get("annotations_count") and bare(r["name"]) != SELF]
 
     def notes(run: dict) -> list[tuple[str, str]]:
         found = api(f"repos/{repo}/check-runs/{run['id']}/annotations?per_page=50", token)
@@ -130,13 +145,17 @@ def misses(repo: str, suite: int, token: str) -> list[tuple[str, str]]:
 
 def report(repo: str, run_id: str, token: str) -> list[str]:
     run = api(f"repos/{repo}/actions/runs/{run_id}", token)
-    nightly = run["event"] in ("schedule", "workflow_dispatch")
+    # A wave's validation (validate-wave.yml: a push to claude/validate-*,
+    # a rerun's claude/validate-failed/* or a check's claude/check-*) runs
+    # what the night does, or a part of it, and is held to the night's budgets.
+    wave = run["head_branch"].startswith(("claude/validate-", "claude/check-"))
+    nightly = run["event"] in ("schedule", "workflow_dispatch") or wave
     on_main = run["head_branch"] == "main" and run["event"] != "pull_request"
     jobs = api(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token)["jobs"]
     rows, warnings, starts, ends = [], [], [], []
     for job in jobs:
         start, end = when(job.get("started_at")), when(job.get("completed_at"))
-        if job["name"] == SELF or job.get("conclusion") == "skipped" or not start or not end:
+        if bare(job["name"]) == SELF or job.get("conclusion") == "skipped" or not start or not end:
             continue
         starts.append(start)
         ends.append(end)
@@ -155,7 +174,7 @@ def report(repo: str, run_id: str, token: str) -> list[str]:
     if total > total_limit:
         warnings.append(f"the run took {total:.1f} min, first job to last, against a budget of {total_limit}")
     lines = [
-        f"### CI time: {total:.1f} of {total_limit} min ({'night' if nightly else run['event']})",
+        f"### CI time: {total:.1f} of {total_limit} min ({'wave' if wave else 'night' if nightly else run['event']})",
         "",
         "| Job | Minutes | Budget | |",
         "|---|---|---|---|",

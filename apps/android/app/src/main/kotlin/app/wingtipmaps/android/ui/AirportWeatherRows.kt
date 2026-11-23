@@ -23,12 +23,12 @@ fun AirportWeatherRow(index: Int, count: Int) {
     val settings by store.settings.collectAsStateWithLifecycle()
     val labels = linkedMapOf(
         AirportWeatherMode.OFF to stringResource(R.string.airport_weather_off),
-        AirportWeatherMode.CATEGORY to stringResource(R.string.airport_weather_category),
+        AirportWeatherMode.CATEGORY to stringResource(R.string.wording_flight_category),
         AirportWeatherMode.WIND to stringResource(R.string.airport_weather_wind),
         AirportWeatherMode.STATION to stringResource(R.string.airport_weather_station),
     )
     MenuSettingRow(
-        stringResource(R.string.airport_weather),
+        stringResource(R.string.wording_airport_weather),
         labels.getValue(settings.mode),
         labels.map { (mode, label) -> label to { store.pick(mode).let { } } },
         index = index,

@@ -6,7 +6,8 @@ airspace is not in that file, and the planner never looked at it: a
 route across P-56 in Washington, or through an active restricted area,
 came back with a nav log and no word about it. It comes from the FAA's
 own published feature service (ADDS), every area in the country read once
-and held a day, since the areas change on the chart cycle.
+and held a day, and read again after each AIRAC cycle's 0901Z, when the
+areas' amendments take effect.
 
 TFRs are NOTAMs, which this project has no source for; the briefing
 already says so and links to a real briefing service.
@@ -24,12 +25,12 @@ from pathlib import Path
 import requests
 from cachetools import TTLCache
 import shapely
-from shapely.geometry import LineString, Point, shape
+from shapely.geometry import Point, shape
 
-from . import outside
+from . import data_cycles, geo_boxes, outside
 from .atomic import atomic_path
 from .engine import ask as engine
-from .geo import along_track_distance_nm, corridor_bbox
+from .geo import along_track_distance_nm
 
 FEATURE_SERVICE = "https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/Special_Use_Airspace/FeatureServer/0/query"
 
@@ -136,14 +137,14 @@ def _everything() -> list:
     SERVE_HELD_S old while the service does not answer (_held)."""
     with _CACHE_LOCK:
         hit = _CACHE.get("all")
-    if hit is not None and (time.time() - hit[0] < HOLD_S or time.time() < _RETRY_AT):
+    if hit is not None and (time.time() - hit[0] < data_cycles.fresh_s("airac", HOLD_S) or time.time() < _RETRY_AT):
         return hit[1]
     with _FETCH_LOCK:
         with _CACHE_LOCK:
             hit = _CACHE.get("all")
-        if hit is not None and (time.time() - hit[0] < HOLD_S or time.time() < _RETRY_AT):
+        if hit is not None and (time.time() - hit[0] < data_cycles.fresh_s("airac", HOLD_S) or time.time() < _RETRY_AT):
             return hit[1]
-        kept = _read_disk()
+        kept = _read_disk(data_cycles.fresh_s("airac", HOLD_S))
         if kept is not None:
             with _CACHE_LOCK:
                 _CACHE["all"] = kept
@@ -286,12 +287,8 @@ def preload() -> None:
 def _shapes_in(bbox: tuple) -> list:
     """The areas whose bounds meet bbox (min_lat, min_lon, max_lat,
     max_lon), [(feature, shape)]."""
-    min_lat, min_lon, max_lat, max_lon = bbox
-    return [
-        (feature, _shape(geometry))
-        for feature, geometry, (w, s, e, n) in _everything()
-        if w <= max_lon and e >= min_lon and s <= max_lat and n >= min_lat
-    ]
+    # The box read as its one or two halves either side of 180 (geo_boxes).
+    return [(feature, _shape(geometry)) for feature, geometry, (w, s, e, n) in _everything() if geo_boxes.meets(bbox, s, w, n, e)]
 
 
 def everything() -> list:
@@ -309,10 +306,10 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
     cross it. One entry per named area, however many polygons it is drawn
     as."""
     path = list(fixes) if fixes and len(fixes) >= 2 else [route_start, route_end]
-    boxes = [corridor_bbox(a, b, buffer_nm=2.0) for a, b in zip(path, path[1:])]
-    bbox = (min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes))
-    line = LineString([(lon, lat) for lat, lon in path])
-    legs = [LineString([(a[1], a[0]), (b[1], b[0])]) for a, b in zip(path, path[1:])]
+    # The short way round 180, the line cut there (geo_boxes: Adak to Shemya).
+    bbox = geo_boxes.path_box(path, buffer_nm=2.0)
+    line = geo_boxes.line_across(path)
+    legs = [geo_boxes.line_across([a, b]) for a, b in zip(path, path[1:])]
 
     found = {}
     for feature, geometry in _shapes_in(bbox):

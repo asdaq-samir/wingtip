@@ -12,7 +12,6 @@ import app.wingtipmaps.gateway.dto.RemindersDto;
 import app.wingtipmaps.gateway.service.LogbookService;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -103,7 +102,7 @@ public class LogbookController {
                 pilot.getFlightReviewOn(),
                 pilot.getMedicalExpiresOn(),
                 pilot.getIpcOn(),
-                LocalDate.now());
+                PilotDay.today());
     }
 
     private static LogbookEntryDto toDto(LogbookEntry e) {

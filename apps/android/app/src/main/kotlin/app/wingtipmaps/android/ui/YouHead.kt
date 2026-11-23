@@ -54,7 +54,7 @@ fun YouHead(pilot: Pilot?, loaded: Boolean, onDetails: () -> Unit) {
             // A pilot with no name given: the large line asks for one; signed
             // out, Sign In -- both in Pilot Details, its ← back to You.
             pilot != null || loaded -> TextButton(onClick = onDetails, modifier = Modifier.testTag(YouTags.NAME)) {
-                Text(stringResource(if (pilot != null) R.string.add_your_name else R.string.you_sign_in), style = large)
+                Text(stringResource(if (pilot != null) R.string.add_your_name else R.string.wording_sign_in), style = large)
             }
             else -> Text(stringResource(R.string.checking_sign_in), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = WingtipSpace.Sm))
         }

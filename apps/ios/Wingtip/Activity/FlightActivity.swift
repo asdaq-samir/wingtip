@@ -75,7 +75,7 @@ final class FlightActivity {
             told()
             return true
         } catch {
-            problem = error.localizedDescription
+            problem = Problems.say("The flight could not be shown on the Lock Screen", error)
             return false
         }
     }

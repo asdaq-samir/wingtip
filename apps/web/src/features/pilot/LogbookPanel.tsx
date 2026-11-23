@@ -1,11 +1,11 @@
 import { lazy, Suspense } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, Mail, MailX, Target, Users } from "lucide-react";
+import { GraduationCap, Target, Users } from "lucide-react";
 import { cn } from "cn";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { DateField as StockDateField } from "../../components/ui/date-field";
-import TogglePill from "../../components/TogglePill";
+import SwitchRow from "../../components/SwitchRow";
 import { api } from "../../lib/api/client";
 import type { Currency } from "../../lib/api/types";
 import CheckridePage from "./CheckridePage";
@@ -15,7 +15,8 @@ import LogbookFile from "./LogbookFile";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
-import { currencyQuery, pilotQuery, trainingQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { RECORDS_FRESH_MS, currencyQuery, logbookQuery, trainingQuery } from "../../lib/queryClientRecords";
 import LogbookFlights from "./logbook/LogbookFlights";
 import { refreshLogbook } from "./logbook/logbookEntry";
 
@@ -41,8 +42,8 @@ function Until({ date, from, what }: { date: string | null | undefined; from?: s
   );
 }
 
-/** A date the pilot gives (the flight review's, the medical's expiry),
- *  saved as it changes. */
+/** A currency date (the flight review's, the medical's, the IPC's), saved
+ *  as it is picked: a whole day at a time, from the calendar. */
 function DateField({
   value,
   label,
@@ -57,7 +58,7 @@ function DateField({
   return (
     <StockDateField
       aria-label={label}
-      value={value ?? ""}
+      value={value || ""}
       className="h-8 w-40"
       data-testid={testId}
       onChange={(day) => onChange(day || null)}
@@ -95,7 +96,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
 function SignedInLogbook({ aircraft }: { aircraft?: string }) {
   const queryClient = useQueryClient();
   // The file's export reads the flights too (LogbookFlights' own query).
-  const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });
+  const { data: entries } = useQuery(logbookQuery);
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
   const refresh = () => void refreshLogbook(queryClient);
@@ -109,7 +110,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
   });
   // Emailed 30 and 7 days before each of these runs out (ReminderService),
   // at the pilot's ask.
-  const { data: reminders } = useQuery({ queryKey: ["reminders"], queryFn: api.logbook.reminders });
+  const { data: reminders } = useQuery({ queryKey: ["reminders"], queryFn: api.logbook.reminders, staleTime: RECORDS_FRESH_MS });
   const remind = useMutation({
     mutationFn: (on: boolean) => api.logbook.setReminders(on),
     onSuccess: (r) => queryClient.setQueryData(["reminders"], r),
@@ -127,7 +128,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
     <ConsolePages
       back="Logbook"
       pages={{
-        checkride: { title: "Private pilot checkride", content: <CheckridePage /> },
+        checkride: { title: "Private Pilot Checkride", content: <CheckridePage /> },
         instructing: { title: "Instructing", content: <InstructorPage /> },
         coach: {
           title: "Coach",
@@ -175,14 +176,14 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
           counts takeoffs and landings in the same category and class; at
           night, to a full stop. */}
         <ListGroup title="Currency">
-          <ListRow title="Passengers by day" description="3 takeoffs and landings in 90 days">
+          <ListRow title="Passengers by Day" description="3 takeoffs and landings in 90 days">
             <Until date={currency?.dayPassengersUntil} what="day" />
           </ListRow>
-          <ListRow title="Passengers at night" description="3 to a full stop at night in 90 days">
+          <ListRow title="Passengers at Night" description="3 to a full stop at night in 90 days">
             <Until date={currency?.nightPassengersUntil} what="night" />
           </ListRow>
           <ListRow
-            title="Flight review"
+            title="Flight Review"
             description={
               currency?.flightReviewUntil ? <Until date={currency.flightReviewUntil} what="review" /> : "Within 24 calendar months"
             }
@@ -192,16 +193,16 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
           <ListRow title="Medical" description={medicalOn ? <Until date={medicalOn} what="medical" /> : "The day it expires"}>
             <DateField value={medicalOn} label="Medical expires" onChange={(v) => setDates({ medicalExpiresOn: v })} />
           </ListRow>
-          <ListRow title="Reminders" description="An email 30 and 7 days before each runs out, your airplanes' too">
-            <TogglePill
-              pressed={!!reminders?.on}
-              onPressedChange={(on) => remind.mutate(on)}
-              disabled={!reminders || remind.isPending}
-              icon={reminders?.on ? <Mail /> : <MailX />}
-              label="Email"
-              testId="reminders-toggle"
-            />
-          </ListRow>
+          {/* The stock switch, named by its row's title: a pill named "Email"
+              was read without the Reminders it turns on (WCAG 1.3.1, 2.4.6). */}
+          <SwitchRow
+            title="Reminders"
+            description="An email 30 and 7 days before each runs out, your airplanes' too"
+            on={!!reminders?.on}
+            onChange={(on) => remind.mutate(on)}
+            disabled={!reminders || remind.isPending}
+            testId="reminders-toggle"
+          />
         </ListGroup>
 
         {/* Instrument currency (14 CFR 61.57(c), (d)), from the approaches,
@@ -211,7 +212,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
           past, only an instrument proficiency check restores it. */}
         <ListGroup title="Instrument">
           <ListRow
-            title="Instrument currency"
+            title="Instrument Currency"
             description={`${currency?.approachesInWindow ?? 0} of 6 approaches${currency?.holdingInWindow ? ", holding" : ""}${currency?.trackingInWindow ? ", tracking" : ""} in the window`}
           >
             {ipcNeeded ? (
@@ -222,7 +223,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
               <Until date={currency?.instrumentCurrentUntil} from={currency?.instrumentCurrentFrom} what="instrument" />
             )}
           </ListRow>
-          <ListRow title="Proficiency check" description={ipcOn ? `On ${said(ipcOn)}` : "The day of your last IPC"}>
+          <ListRow title="Proficiency Check" description={ipcOn ? `On ${said(ipcOn)}` : "The day of your last IPC"}>
             <DateField value={ipcOn} label="Instrument proficiency check date" testId="ipc-date" onChange={(v) => setDates({ ipcOn: v })} />
           </ListRow>
         </ListGroup>

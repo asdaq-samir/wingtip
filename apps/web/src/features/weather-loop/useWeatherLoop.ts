@@ -31,7 +31,7 @@ interface Player {
   set: (patch: Partial<Omit<Player, "set">>) => void;
 }
 
-const usePlayer = create<Player>()((set) => ({
+export const usePlayer = create<Player>()((set) => ({
   index: null,
   playing: false,
   ready: false,
@@ -39,6 +39,15 @@ const usePlayer = create<Player>()((set) => ({
   peek: null,
   set: (patch) => set(patch),
 }));
+
+/** Whether the frames in view have loaded, set only when it changes: the
+ *  map's layer (WeatherLoopGl) says so at each `sourcedata` and `idle`,
+ *  which come for every tile of every source on the map, the chart's
+ *  among them, and each set drew the loop's layers and its bar again
+ *  while nothing had changed. */
+export function setLoopReady(on: boolean) {
+  if (usePlayer.getState().ready !== on) usePlayer.setState({ ready: on });
+}
 
 /**
  * The radar and satellite loop on the map (the owner, 2026-11-09): the
@@ -122,6 +131,6 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
     seek: (i: number) => set({ index: i, playing: false, started: true }),
     /** The newest frame, followed from then on, the loop paused (the bar's Now). */
     now: () => set({ index: null, playing: false, started: true }),
-    setReady: (on: boolean) => set({ ready: on }),
+    setReady: setLoopReady,
   };
 }

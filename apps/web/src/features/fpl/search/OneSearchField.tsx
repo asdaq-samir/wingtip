@@ -1,17 +1,14 @@
 import { useEffect, useEffectEvent } from "react";
-import { Search } from "lucide-react";
-import { Button } from "../../../components/ui/button";
-import { cn } from "cn";
-import { SHEET_BAR } from "../../../components/panelField";
+import { CardHeadRow } from "../../../components/CardHead";
+import CloseButton from "../../../components/CloseButton";
 import PageToggle from "../../../components/PageToggle";
-import { CommandClear, CommandField } from "../../../components/ui/command";
-import { Kbd } from "../../../components/ui/kbd";
-import { isSearchKey } from "../../../hooks/use-shortcuts";
-import { useIsDesktop } from "../../../hooks/use-desktop";
-import { askSearch, searchKeys, useSearchPick } from "../../../lib/oneSearch";
-import { TEXT } from "../../../lib/text";
-import { useVoice, VoiceButton } from "../../voice";
+import { useSearchKey } from "../../../hooks/use-shortcuts";
+import { askSearch, useSearchPick, type SearchPick } from "../../../lib/oneSearch";
+import { useVoice } from "../../voice";
+import SearchBox from "./SearchBox";
+import { AccountButton } from "../../pilot";
 import type { OneSearchModel } from "./useOneSearch";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /**
  * The sheet's first row (the owner's one-search design, 2026-11-09), where
@@ -24,24 +21,30 @@ import type { OneSearchModel } from "./useOneSearch";
  * dictation types them, as the field's own trailing button; and Cancel
  * beside it while the field is in use -- a search sent let go with it too,
  * as Apple Maps' Cancel does -- as iOS's search fields have it. The
- * page toggle at the row's end while the field is not in use (PageToggle),
- * where the account button was until the owner swapped the two
- * (2026-11-14): the field the same size as FPL's strip in its place
+ * page toggle at the row's start and the account button at its end while
+ * the field is not in use, as Apple Maps' avatar is (the owner,
+ * 2026-11-20: "move the fpl button on the left side of search and avatar
+ * to the right side"; PageToggle, AccountButton): the field the same size as FPL's strip in its place
  * (SHEET_BAR), so a turn changes only what is in the bar. The title row
  * that was over the field went for the map's room (the owner,
  * 2026-11-10); the app's name stays the page's heading, for a screen
  * reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
+/** What a picker's ask is called over its field: its own title (Change
+ *  Stop), else Add Stop for a stop, else what it asks for (Departure). */
+const askTitle = (pick: SearchPick) => pick.title ?? (pick.stop ? WORDING.addStop : pick.label);
+
 export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
-  const desktop = useIsDesktop();
   // What is said typed in the field once a pause ends it, the field
   // focused to go on from there.
   const voice = useVoice("search", (said) => {
     model.setTyped(said);
     inputRef.current?.focus();
   });
-  const using = model.focused || !!model.typed || model.direct || !!model.pick || voice.listening;
+  // A picker's ask is the field in use, but for one that waits for a tap
+  // (the first flight's destination): at rest until the pilot uses it.
+  const using = model.focused || !!model.typed || model.direct || (!!model.pick && !model.pick.waiting) || voice.listening;
   // Drawn, so the pickers ask it for their airport (lib/oneSearch's fields).
   useEffect(() => {
     useSearchPick.setState((s) => ({ fields: s.fields + 1 }));
@@ -53,126 +56,38 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     if (voice.listening && voice.words) typeSaid(voice.words);
   }, [voice.listening, voice.words]);
   // ⌘K anywhere, a field's too: the search, or out of it again.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || !isSearchKey(event)) return;
-      event.preventDefault();
-      if (document.activeElement === inputRef.current) model.cancel();
-      else askSearch();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [model, inputRef]);
+  useSearchKey(() => {
+    if (document.activeElement === inputRef.current) model.cancel();
+    else askSearch();
+  });
+  // A picker's ask (Add Stop, Change Stop, the departure): its title and a
+  // ✕ in this row, the field under them at the top of its suggestions
+  // (OneSearchResults), as Apple Maps' Add Stop sheet (the owner's
+  // screenshot, 2026-11-20: "Title for add stop"). The ✕ is the ask's
+  // Cancel, back where it was asked from.
+  if (model.pick && !model.pick.waiting)
+    return (
+      <div className="w-full" role="search">
+        <h1 className="sr-only">Wingtip Maps</h1>
+        {/* Every card's and page's one head row (CardHeadRow), as Settings'
+            pages and a list in full have theirs. */}
+        <CardHeadRow
+          name={askTitle(model.pick)}
+          nameTestId="search-pick-title"
+          end={<CloseButton label="Cancel" onClick={model.cancel} data-testid="one-search-cancel" />}
+        />
+      </div>
+    );
   return (
     <div className="flex w-full items-center gap-2" role="search">
       <h1 className="sr-only">Wingtip Maps</h1>
-      {/* 46 tall, a white card on the sheet's grey, its own 44-point hit
-          area (the sheet audit's F-P2, 2026-11-10: the title row over it
-          the same height). */}
-      <label
-        className={cn(
-          "relative flex items-center gap-2 pr-0.5 pl-3.5 text-muted-foreground",
-          SHEET_BAR,
-          // Focused, a fine ring in the tint round it, as Apple's field has.
-          "focus-within:ring-1 focus-within:ring-tint",
-          TEXT.row,
-        )}
-      >
-        <Search className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
-        <CommandField
-          ref={inputRef}
-          type="search"
-          enterKeyHint="search"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          // The short words in sight, which fit beside the mic and Cancel at
-          // the larger text sizes; the whole sentence said (F-S2).
-          placeholder={voice.listening ? voice.prompt : model.placeholder}
-          aria-label={model.label}
-          // Open only while its results are in the sheet (PlanSidebar's
-          // search page): the Autocomplete is always open, inline, and
-          // said "expanded" with no list to point at (axe's
-          // aria-required-attr, aria-controls missing).
-          {...(model.typed || model.direct ? {} : { "aria-expanded": false })}
-          data-testid="search-airports"
-          onFocus={model.focus}
-          // The APG combobox's keys (docs/design/web.md §1) are Base UI's
-          // as they are, the first row highlighted for Enter (the root's
-          // autoHighlight), and the clear the search field's own; Escape
-          // lets the field go.
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              model.cancel();
-            }
-            // A picker's Enter before the rows answer what is typed: what
-            // is typed, not the first row of an older answer -- an ident the
-            // lookup does not know (a private strip) still goes through, as
-            // each picker's own field did (airport-search.spec). Base UI's
-            // Enter would take the lit row of the older answer, and it has
-            // no prop for rows that are not the answer yet, so its handler
-            // is kept from running (its documented way, preventBaseUIHandler).
-            const rows = model.airports.length + model.waypoints.length;
-            if (e.key === "Enter" && model.pick && model.typed && (!model.answered || rows === 0)) {
-              e.preventDefault();
-              e.preventBaseUIHandler();
-              model.pickIdent(model.typed);
-            } else if (e.key === "Enter" && model.pick && model.typed && !e.currentTarget.getAttribute("aria-activedescendant")) {
-              // Rows that answered after the typing (the planner's lookup on
-              // a slow link) come in with none lit, Base UI 1.9's fix for
-              // asynchronous results (#5818) notwithstanding: no
-              // aria-activedescendant and no data-highlighted row
-              // (airport-search.spec), so its Enter did nothing. Enter takes
-              // the first, as it would have been lit.
-              const first = model.airports[0]?.ident ?? model.waypoints[0]?.ident;
-              if (first) {
-                e.preventDefault();
-                e.preventBaseUIHandler();
-                model.pickIdent(first);
-              }
-            }
-          }}
-          // The browser's own clear put away for the field's (CommandClear),
-          // the one every field has.
-          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
-        />
-        {/* Base UI's own clear: shown while something is typed, the
-            words cleared through the root's onValueChange, the focus kept. */}
-        <CommandClear aria-label="Clear the search" data-testid="search-clear" />
-        {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
-        {/* The microphone, the field's trailing button: on-device speech
-            only (lib/speechLocal), so none where the browser has no
-            recognizer. In the tint, pressed while it listens. */}
-        {voice.offered && (
-          <VoiceButton
-            field="search"
-            label="Search by voice"
-            onPress={() => {
-              // The search opened as the mic is tapped, so the words show
-              // in the field and why nothing was heard under it.
-              if (!voice.listening) model.focus();
-              voice.press();
-            }}
-            testId="one-search-mic"
-            className="size-9"
-          />
-        )}
-      </label>
-      {using && (
-        <Button
-          variant="plain"
-          size="inline"
-          type="button"
-          onClick={model.cancel}
-          data-testid="one-search-cancel"
-          // Its 44-point hit area the pseudo-element's (index.css), not its own height.
-          className={cn("relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
-        >
-          Cancel
-        </Button>
-      )}
-      {!using && <PageToggle page={0} />}
+      {!using && <PageToggle />}
+      <SearchBox model={model} inputRef={inputRef} using={using} />
+      {/* In use, a round ✕ at the row's end where the avatar was, as Apple
+          Maps' search has on iOS 26, not the word Cancel (the owner,
+          2026-11-20: "Instead just show the close/clear button when typing"). */}
+      {using && <CloseButton label="Cancel" onClick={model.cancel} data-testid="one-search-cancel" />}
+      {!using && <AccountButton />}
     </div>
   );
 }

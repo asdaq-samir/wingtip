@@ -39,7 +39,7 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   await card(page).getByTestId("place-tab-runways").click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   const runways = card(page).getByRole("tabpanel").getByTestId("place-runways");
-  await expect(runways).toContainText("Pattern altitude");
+  await expect(runways).toContainText("Pattern Altitude");
   await expect(runways).toContainText(/Runway \d/);
 
   // Charts: the airport's (none from the FAA: the card's sketch instead),

@@ -2,7 +2,7 @@ import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
-import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
+import { REQUEST_ID_HEADER, TIME_ZONE_HEADER, deviceTimeZone, newRequestId } from "./requestId";
 import { TimedRequest, markInFlight } from "./inFlight";
 import { failIfNotOk } from "./errors";
 
@@ -21,11 +21,12 @@ export function csrfHeaders(method: string): Record<string, string> {
   return match?.[1] ? { "X-XSRF-TOKEN": decodeURIComponent(match[1]) } : {};
 }
 
-/** The two rules above, each call's request id (./requestId) and its wait in flight (./inFlight). */
+/** The two rules above, each call's request id and the device's zone (./requestId) and its wait in flight (./inFlight). */
 const csrfAndFailures: Middleware = {
   onRequest({ request }) {
     for (const [name, value] of Object.entries(csrfHeaders(request.method))) request.headers.set(name, value);
     markInFlight(request).headers.set(REQUEST_ID_HEADER, newRequestId());
+    request.headers.set(TIME_ZONE_HEADER, deviceTimeZone());
     return request;
   },
   async onResponse({ request, response }) {

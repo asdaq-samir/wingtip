@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -42,8 +42,14 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
   for (const name of ["C81 · Depart"]) {
     await inSheet(page, route.getByRole("region", { name }).getByTestId("point-menu"));
     await route.getByRole("region", { name }).getByTestId("point-menu").click();
+    // The menu in sight first: it draws a frame or two after the tap, and
+    // an absence read before then held for nothing, and the Escape after it
+    // went to the mark, leaving the menu to open over the rows below.
+    const menu = page.getByRole("menu", { name: `${name.split(" ")[0]}: more` });
+    await expect(menu).toBeVisible();
     await expect(page.getByTestId("point-menu-direct")).toHaveCount(0);
     await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
   }
 
   // Set from its menu, as the route box's menu sets it: the address's
@@ -67,7 +73,7 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
   await expect(page).not.toHaveURL(/[?&]stops=/);
   await expect(sideDrawer(page).getByTestId("direct-strip")).toContainText("Direct to KDLH");
   await expect(route.getByRole("region", { name: "KMSN · Arrive" })).toHaveCount(0);
-  await expect(duluth).toContainText("Direct to");
+  await expect(duluth).toContainText("Direct To");
   await sideDrawer(page).getByTestId("direct-cancel").click();
   await expect(page).toHaveURL(stopsAre("KMSN"));
   await expect(page).not.toHaveURL(/[?&](direct|was)=/);
@@ -83,7 +89,7 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
 test("on a phone a point's altitude is asked in the floating sheet from the bottom, Cancel and Set in its title row", async ({ page }) => {
   // The sheet consolidation (2026-10-27): it stood in the middle of a
   // phone as a box, its Cancel and Set under the field.
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; wider it is an alert in the middle");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; wider it is an alert in the middle");
   await recordedStops(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);
@@ -174,7 +180,7 @@ test("the pilot's own point off a fix is made from a point's menu or typed as a 
   // point, offered as the pilot's own point: a stop before the destination.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await sideDrawer(page).getByTestId("route-type").fill("vpbng/090/30");
   const own = page.getByTestId("route-own-point");
   await expect(own).toContainText("30 nm on 090° from VPBNG");
@@ -226,7 +232,7 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=VPBNG");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   // The pill's menu is FPL's "⋯"'s, in its words (PointMenuItems).
   const item = page.getByTestId("pill-menu-altitude");

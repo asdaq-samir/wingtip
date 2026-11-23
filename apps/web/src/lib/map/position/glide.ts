@@ -45,6 +45,8 @@ export function reachesField(
   });
 }
 
+let lastUnderway: { speed: number | null; answer: boolean } | null = null;
+
 /** Own ship moving at flying speed: in the air, or about to be. Not yet
  *  known, so not underway, until the engine is in: the flying mode, the
  *  own-ship mark and the Ready to Fly prompt ask it on the page's first
@@ -53,5 +55,13 @@ export function reachesField(
  *  phone, 2026-11-11). The next fix, a second later, asks again. */
 export function underway(fix: Fix | null): boolean {
   if (!engineLoaded()) return false;
-  return callEngine("underway", { speed_kt: fix?.speedKt ?? null });
+  const speed = fix?.speedKt ?? null;
+  // The last speed's answer kept: some ten readers ask it of the same fix
+  // (own ship's mark, the flying mode's and the alerts' store selectors,
+  // the trail, the strip ...), each a turn through the engine's JSON, and
+  // the answer is the speed's alone.
+  if (lastUnderway && Object.is(lastUnderway.speed, speed)) return lastUnderway.answer;
+  const answer = callEngine("underway", { speed_kt: speed });
+  lastUnderway = { speed, answer };
+  return answer;
 }

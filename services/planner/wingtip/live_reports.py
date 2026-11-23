@@ -23,6 +23,7 @@ import time
 
 from . import stores
 from .config import get_settings
+from .engine import ask as engine
 
 STORE = get_settings().reports_store
 #: How long a report is kept past its end, s, for one asked just after.
@@ -60,9 +61,9 @@ def reset() -> None:
 def ident(place: str) -> str:
     """A place as the store keeps it: upper case, and an airport's FAA
     ident for a contiguous-states ICAO one (KORD is ORD), as ITWS, TFMS
-    and the RVR messages' own idents are reduced to."""
-    s = (place or "").strip().upper()
-    return s[1:] if len(s) == 4 and s.startswith("K") and s.isalpha() else s
+    and the RVR messages' own idents are reduced to (the engine's
+    bare_field)."""
+    return engine("bare_field", ident=place or "")
 
 
 def put(

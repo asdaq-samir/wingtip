@@ -1,7 +1,6 @@
 import { useId, useState } from "react";
 import { cn } from "cn";
 import { Textarea } from "../../components/ui/textarea";
-import { TEXT } from "../../lib/text";
 import type { Description } from "../plan";
 
 /**
@@ -68,13 +67,14 @@ export function DescriptionCell({
         rows={1}
         placeholder="How to spot it…"
         // shadcn's own Textarea, sized down to a table cell: one line in
-        // the row, at the row's own size -- 15 to a finger, where it was a
-        // field's 17 among figures of 15 (iOS Safari zooms in on a field
-        // under 16; the viewport no longer forbids it, #265).
+        // the row. Its type is the stock one's own: 14 with a mouse and the
+        // row's 17 to a finger, above the 16 iOS Safari types in without
+        // zooming the page (and leaving it zoomed once the field is done;
+        // the viewport no longer forbids the zoom, #265). It was set to the
+        // row's 15 here, and focusing it zoomed the nav log on an iPad and
+        // an iPhone.
         className={cn(
           "min-h-0 w-full resize-none rounded py-0.5 pr-1 pl-0.5 text-left align-top shadow-none",
-          // TEXT.detail, 14 with a mouse as the Textarea's own md:text-sm is.
-          TEXT.detail,
           // On a selected row, a field: the page's own background and the
           // stock edge, on the selection's tint, so it reads as somewhere
           // to type rather than one more line of the row.

@@ -15,22 +15,23 @@ import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
 import { SharedFlightHost } from "../shared-flight";
+import { DocumentReaderHost } from "../documents";
 import { BootMap } from "../plan-map";
 import { MODES, type Mode } from "./modes";
-import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
+import { isDesktopNow } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
+import { useInspector } from "../../hooks/use-inspector";
 import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "../../lib/workspace";
 
 /** The plain route form, for a workspace with no route box of its own (the
- *  developer's and the Studio's; the planner's is its own, FplRoute): on a
+ *  developer's; the planner's is its own, FplRoute): on a
  *  chunk of its own, with its airport pickers, off the pilot's first load. */
 const RouteForm = lazy(() => import("../../components/RouteForm"));
 
 /**
- * The one page, in three modes: the pilot's planner, the developer's
- * training workspace and the Studio's replays are the same shell around a
- * different workspace --
+ * The one page, in two modes: the pilot's planner and the developer's
+ * training workspace are the same shell around a different workspace --
  * the chart filling the screen, the map's buttons floating over it, and
  * one panel over it the way Maps on an iPhone has one (MapPanel): the
  * route form and the console's button always in sight, and under them
@@ -45,7 +46,7 @@ const RouteForm = lazy(() => import("../../components/RouteForm"));
  */
 export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
-  useShortcuts(useIsDesktop()); // a desktop's keys: / the search, B, N, D, Escape back
+  useShortcuts(); // a keyboard's keys, a desktop's or an iPad's: / the search, B, N, D, Escape back
   const [address, setAddress] = useAddress();
   // The route in the panel: the address's, unless the pilot has typed
   // over it -- and a draft belongs to the address it was typed over. The
@@ -105,6 +106,11 @@ export default function MapPage({ mode }: { mode: Mode }) {
   useWarmAirportIndex(mode === "pilot");
   useHomeAirportSync(); // the account's home base and this device's home airport, one field
   const fullInAddress = address.view === "full";
+  // Where a card opens in the inspector at the map's right (an iPad on its
+  // side, useInspector), the side panel stays as it was under it -- its
+  // search, its head and its plan in sight -- rather than giving way to the
+  // card alone as it does where the card covers it (MapPanel).
+  const inspector = useInspector();
   const panel: PanelState = mode === "pilot" ? (fullInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
   // The panel moves the moment the address says so: nuqs changes the
   // address's state at once, where React Router landed a navigation in a
@@ -198,8 +204,9 @@ export default function MapPage({ mode }: { mode: Mode }) {
   );
   // The panel's top row with it out: the workspace's head, or the route's
   // row; none over a card alone or the console's layer.
+  const aloneOf = (pieces: WorkspacePieces) => !!pieces.alone && !inspector;
   const topRowOf = (pieces: WorkspacePieces, routeRow: ReactNode) =>
-    pieces.alone ? null : pieces.head !== undefined ? pieces.head : routeRow;
+    aloneOf(pieces) ? null : pieces.head !== undefined ? pieces.head : routeRow;
 
   return (
     // The map alone (BootMap: chart and overlay tiles, which ask the engine
@@ -239,6 +246,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 <AutoLogbookHost />
                 {/* A flight another pilot sent, previewed before it is used (features/shared-flight). */}
                 <SharedFlightHost />
+                {/* A document in the reader, by the address's doc: a cite tapped, the library's row, a link (features/documents). */}
+                <DocumentReaderHost />
                 {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />
                 {/* For a keyboard: past the panel to the map in one press.
@@ -263,7 +272,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 {(pieces.around ?? ((panelNode: ReactNode) => panelNode))(
                   <MapPanel
                     label={panelLabel}
-                    controls={pieces.alone ? undefined : pieces.controls}
+                    controls={aloneOf(pieces) ? undefined : pieces.controls}
                     state={panel}
                     onStateChange={setPanel}
                     onInsetsChange={setMapInsets}
@@ -275,7 +284,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     // The first row (the one search), put away under a card; and the pages, Search and FPL (MapPanel).
                     bar={pieces.bar}
                     pages={pieces.pages}
-                    layer={pieces.alone ? "card" : "tab"}
+                    layer={aloneOf(pieces) ? "card" : "tab"}
                     foot={pieces.foot}
                     flying={!!pieces.flying}
                     // Kept too where the row holds the workspace's actions: one can own a card in the

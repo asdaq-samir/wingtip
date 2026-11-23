@@ -35,7 +35,7 @@ def advisories_in(box: tuple, at: float) -> list[dict]:
     A product that cannot be had leaves its own out, not the others."""
     out: list[dict] = []
     try:
-        sigmets = weather._dataset("airsigmets")
+        sigmets = weather.advisories()
     except weather.WeatherServiceError:
         sigmets = []
     for i, a in enumerate(sigmets):

@@ -72,7 +72,7 @@ final class LogbookEntriesModel {
             if editingID == id { cancelEdit() }
             return true
         } catch {
-            rowProblem = "Not kept: \(error.localizedDescription)"
+            rowProblem = Problems.say("The change could not be kept", error)
             return false
         }
     }
@@ -108,7 +108,7 @@ final class LogbookEntriesModel {
         var why: String?
         for (e, _) in sending {
             do { try await calls.delete(e.id) } catch {
-                why = "\(Self.title(e)) could not be deleted: \(error.localizedDescription)"
+                why = Problems.say("\(Self.title(e)) could not be deleted", error)
             }
             pending.release(.logbook, e.id)
         }

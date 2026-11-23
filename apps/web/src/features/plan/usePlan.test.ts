@@ -10,11 +10,14 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { Course, NavLogMessage } from "../../lib/api/types";
+import type { NavLogMessage } from "../../lib/api/types";
 import { useSystemProblems } from "../../lib/problems";
 import { queryClient } from "../../lib/queryClient";
+import { keptStore } from "../../lib/storage";
 import type { PlanParams } from "./planQuery";
 import { usePlan } from "./usePlan";
+import { courseFixture } from "../../test/courseFixture";
+import { params, signedIn } from "./usePlan.fixtures";
 
 vi.mock("../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../lib/api/client")>()),
@@ -23,6 +26,7 @@ vi.mock("../../lib/api/client", async (importOriginal) => ({
     checkpoints: vi.fn(),
     navlog: vi.fn(),
     briefing: vi.fn(),
+    localFlight: vi.fn(),
     saveCheckpointNote: vi.fn(),
     checkpointNotes: vi.fn(),
     me: vi.fn(),
@@ -33,42 +37,6 @@ vi.mock("../../lib/api/client", async (importOriginal) => ({
 
 const { api, ApiError } = await import("../../lib/api/client");
 
-function courseFixture(): Course {
-  return {
-    departure: { ident: "C81", name: "Campbell", lat: 42.1, lon: -88.1, elevation_ft: 890, kind: "airport" },
-    destination: { ident: "KDLH", name: "Duluth", lat: 46.8, lon: -92.2, elevation_ft: 1428, kind: "airport" },
-    stops: [],
-    distance_nm: 323.4,
-    bearing_deg: 328,
-    course_line: [
-      [42.1, -88.1],
-      [46.8, -92.2],
-    ],
-    checkpoints_ready: false,
-    max_zoom: 12,
-    min_zoom: 4,
-    chart_cycle: "09-03-2026",
-    chart_revision: 0,
-    chart_tiles_base: null,
-    chart_layers: [],
-  };
-}
-
-const params: PlanParams = {
-  dep: "C81",
-  dest: "KDLH",
-  stops: [],
-  altitudeFt: "",
-  altitudeChoice: "lowest",
-  depart: "",
-  aircraft: { profile: "c172", label: "Cessna 172" },
-  load: 0,
-  // The map's Checkpoints on: the plan these tests are about finds them.
-  checkpoints: true,
-};
-
-const signedIn = { id: 7, displayName: "A. Pilot", email: "a@example.com", developer: false, fullName: null, phone: null, homeBase: null };
-
 const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 
 beforeEach(() => {
@@ -76,7 +44,9 @@ beforeEach(() => {
   vi.mocked(api.briefing).mockReturnValue(new Promise(() => {})); // never answers; not what these tests are about
   vi.mocked(api.checkpoints).mockReturnValue(new Promise(() => {}));
   vi.mocked(api.me).mockResolvedValue(null);
-  vi.mocked(api.chart).mockReturnValue(new Promise(() => {}));
+  // The chart answers at once, as it does (about a millisecond): the course
+  // waits on its cycle.
+  vi.mocked(api.chart).mockResolvedValue({ chart_cycle: "09-03-2026" } as never);
   vi.mocked(api.checkpointNotes).mockResolvedValue({ departure_ident: "C81", checkpoints: [] });
 });
 
@@ -86,6 +56,8 @@ afterEach(() => {
   // after the file's jsdom had gone, "window is not defined" (CI, 0a7aa8ee).
   cleanup();
   queryClient.clear();
+  // The chart kept from a test's answer is not the next test's first visit's.
+  keptStore("wingtip.chart", null).setState({ value: null });
   vi.clearAllMocks();
 });
 
@@ -107,7 +79,11 @@ describe("checkpoint notes", () => {
     vi.mocked(api.saveCheckpointNote).mockRejectedValue(new ApiError("planner down", 502));
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
-    await act(() => result.current.saveDescription(43, -89, "lost?").catch(() => {}));
+    // The failure reaches the caller (the note's field says it), not
+    // swallowed: then nothing is kept.
+    await act(async () => {
+      await expect(result.current.saveDescription(43, -89, "lost?")).rejects.toThrow("planner down");
+    });
     expect(result.current.descriptions[key]).toBeUndefined();
   });
 
@@ -343,6 +319,18 @@ describe("an altitude asked for", () => {
     expect(result.current.replanning).toBe(true);
   });
 
+  test("as the fuel in the tanks is set, keeps the legs before it, for the gauges to be walked from at once", async () => {
+    vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
+    // The tanks are arg 21, as FuelSet's Done writes them.
+    vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[21] ? waiting() : whole(4500)));
+    const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), { wrapper, initialProps: params });
+    await waitFor(() => expect(result.current.totals).not.toBeNull());
+    rerender({ ...params, tanks: "C81:30" });
+    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some((call) => call[21] === "C81:30")).toBe(true));
+    expect(result.current.legs).toHaveLength(1);
+    expect(result.current.replanning).toBe(true);
+  });
+
   test("on another route, is not held over it", async () => {
     vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
     vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[1] === "KMSP" ? waiting() : whole(4500)));
@@ -355,11 +343,34 @@ describe("an altitude asked for", () => {
 });
 
 describe("the chart cycle", () => {
-  test("the course and checkpoints are asked again in the chart's cycle, as the tiles are", async () => {
+  test("the course and checkpoints are asked once, in the chart's cycle, as the tiles are", async () => {
     vi.mocked(api.chart).mockResolvedValue({ ...courseFixture(), chart_cycle: "11-27-2026" } as never);
     renderHook(() => usePlan(params), { wrapper });
 
     await waitFor(() => expect(api.course).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), "11-27-2026"));
     await waitFor(() => expect(api.checkpoints).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), false, "11-27-2026"));
+    expect(api.course).toHaveBeenCalledTimes(1); // not first without it (a first visit, none kept)
+    expect(api.checkpoints).toHaveBeenCalledTimes(1);
+  });
+
+  test("a chart that does not answer holds the course a second at most", async () => {
+    vi.mocked(api.chart).mockReturnValue(new Promise(() => {}));
+    renderHook(() => usePlan(params), { wrapper });
+
+    await waitFor(() => expect(api.course).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), undefined), { timeout: 2000 });
+  });
+});
+
+describe("a local flight", () => {
+  test("is not asked again as the page mounts again; Load asks again", async () => {
+    vi.mocked(api.localFlight).mockResolvedValue({ ete_min: 60 } as never);
+    const local = { ...params, dest: "C81" };
+    renderHook(() => usePlan(local), { wrapper }).unmount();
+    await waitFor(() => expect(api.localFlight).toHaveBeenCalledTimes(1));
+    const { rerender } = renderHook((p) => usePlan(p), { wrapper, initialProps: local });
+    await act(async () => {});
+    expect(api.localFlight).toHaveBeenCalledTimes(1);
+    rerender({ ...local, load: 1 });
+    await waitFor(() => expect(api.localFlight).toHaveBeenCalledTimes(2));
   });
 });

@@ -30,9 +30,10 @@ interface ReadyWeather {
     /** A field's card's weather; null where it could not be had. */
     suspend fun field(ident: String, role: String): ReadyFacts.FieldWeather?
 
-    /** The flight's NOTAMs, the top ones' text as sent, with when they
-     *  were fetched: the kept ones' time where the network failed. */
-    suspend fun notams(plan: Plan.State, cruiseFt: Double?): KeptForAir.Had<List<String>>
+    /** The flight's NOTAMs, the top ones' text as sent and whether they
+     *  are the full set, with when they were fetched: the kept ones' time
+     *  where the network failed. */
+    suspend fun notams(plan: Plan.State, cruiseFt: Double?): KeptForAir.Had<ReadyFacts.RouteNotams>
 }
 
 /** The planner's, each answer kept for the air as it comes and the kept
@@ -42,9 +43,14 @@ object PlannerReadyWeather : ReadyWeather {
     override suspend fun field(ident: String, role: String) =
         ReadyFacts.fieldWeather(ident, role, KeptForAir.had(KeptForAir.AIRPORTS, ident, AirportPlace.serializer()) { Planner.place(ident) }.value)
 
-    override suspend fun notams(plan: Plan.State, cruiseFt: Double?): KeptForAir.Had<List<String>> {
+    override suspend fun notams(plan: Plan.State, cruiseFt: Double?): KeptForAir.Had<ReadyFacts.RouteNotams> {
         val had = KeptForAir.had(KeptForAir.NOTAMS, ReadyFacts.flightKey(plan), NotamsRanked.serializer()) { Planner.notamsRanked(ask(plan, cruiseFt)) }
-        return KeptForAir.Had(had.value.notams.filter { it.top }.map { it.raw }, had.fetchedAtMs, had.kept)
+        val ranked = had.value
+        return KeptForAir.Had(
+            ReadyFacts.RouteNotams(ranked.notams.filter { it.top }.map { it.raw }, ranked.fullSet ?: false, ranked.coverageSince),
+            had.fetchedAtMs,
+            had.kept,
+        )
     }
 
     /** The ranking's question for the route (Keep for the Air asks the same). */
@@ -93,6 +99,7 @@ class ReadyToFlyModel(
     private var fields: List<ReadyFacts.FieldWeather> = emptyList()
     private var fieldsFor: String? = null
     private var notamsAtMs: Long? = null
+    private var notamsHeld: ReadyFacts.RouteNotams? = null
     private var notamsFor: String? = null
 
     /** The facts as they are now, asked again; the fields' weather fetched
@@ -110,6 +117,7 @@ class ReadyToFlyModel(
         // NOTAMs of another route are not this route's.
         if (key != notamsFor) {
             notamsAtMs = null
+            notamsHeld = null
             _state.update { it.copy(notams = emptyList(), notamsKeptAtMs = null) }
         }
         ask()
@@ -117,7 +125,7 @@ class ReadyToFlyModel(
 
     /** The answer from the facts held, the engine's, or why it failed. */
     private fun ask() {
-        val input = ReadyFacts.input(nowMs(), plan, cruiseFt, local, if (plan.routed) fields else emptyList(), notamsAtMs)
+        val input = ReadyFacts.input(nowMs(), plan, cruiseFt, local, if (plan.routed) fields else emptyList(), notamsAtMs, notamsHeld)
         rule(input).fold(
             { answer -> _state.update { it.copy(answer = answer, problem = null) } },
             { why -> _state.update { it.copy(problem = "Ready to fly could not be worked out: ${why.message}") } },
@@ -160,8 +168,9 @@ class ReadyToFlyModel(
                 val top = weather.notams(asked, cruiseFt)
                 if (ReadyFacts.flightKey(asked) == ReadyFacts.flightKey(plan)) {
                     notamsAtMs = top.fetchedAtMs
+                    notamsHeld = top.value
                     notamsFor = ReadyFacts.flightKey(asked)
-                    _state.update { it.copy(notams = top.value, notamsKeptAtMs = top.fetchedAtMs.takeIf { top.kept }) }
+                    _state.update { it.copy(notams = top.value.top, notamsKeptAtMs = top.fetchedAtMs.takeIf { top.kept }) }
                 }
             } catch (e: CancellationException) {
                 throw e

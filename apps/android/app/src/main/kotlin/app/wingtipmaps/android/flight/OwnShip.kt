@@ -4,45 +4,33 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Looper
 import androidx.core.content.ContextCompat
-import androidx.core.location.LocationCompat
-import androidx.core.location.altitude.AltitudeConverterCompat
-import androidx.datastore.preferences.core.longPreferencesKey
-import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.AheadAlert
-import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.ahead
-import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.underway
-import app.wingtipmaps.android.format.Units
 import app.wingtipmaps.android.logbook.FlightRecorder
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Own ship: where the phone is, which way it is going and how fast, from
  * the fused location provider at one fix a second while the map is
  * shown, as the web app's useOwnShip and the iOS app's OwnShip keep it.
  * Nothing is worked out from the fix here but the figures of flying it:
- * what is ahead on the track, which the planner is asked for
- * (/api/airspace/ahead), or the packs on the phone when it cannot be
- * reached (CyclePacks.ahead).
+ * what is ahead on the track (AheadAsking). The fix itself is DeviceFix's,
+ * the position kept for the next launch KeptPosition's.
  *
  * Kept going with the screen off or the app put away while flying, once
  * the pilot says so: Android's equivalent of iOS's background location
@@ -91,19 +79,17 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
     private val _approximate = MutableStateFlow(false)
     val approximate: StateFlow<Boolean> = _approximate.asStateFlow()
 
-    /** What the track runs into in the next minutes, from the planner or
-     *  the packs. */
-    private val _ahead = MutableStateFlow<List<AheadAlert>>(emptyList())
-    val ahead: StateFlow<List<AheadAlert>> = _ahead.asStateFlow()
-
-    /** The ground under the airplane from the packs kept on the phone,
-     *  asked with what is ahead: the glide ring's ground (InFlight). */
-    private val _groundFt = MutableStateFlow<Double?>(null)
-    val groundFt: StateFlow<Double?> = _groundFt.asStateFlow()
-
     private val provider: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var asking: Job? = null
+    private val aheadAsking = AheadAsking(context, scope)
+
+    /** What the track runs into in the next minutes (AheadAsking). */
+    val ahead: StateFlow<List<AheadAlert>> get() = aheadAsking.ahead
+
+    /** The ground under the airplane from the packs kept on the phone:
+     *  the glide ring's ground (InFlight). */
+    val groundFt: StateFlow<Double?> get() = aheadAsking.groundFt
+
     private var aheadEvery: Ticker.Registration? = null
     private var reading = false
     private var serving = false
@@ -114,60 +100,25 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
     private val _offer = MutableStateFlow(false)
     val offer: StateFlow<Boolean> = _offer.asStateFlow()
 
-    /** Where the airplane last was, kept across launches so the map opens
-     *  on it (the web's useOwnShip lastFix): written at most once a
-     *  minute, the position alone. */
-    private val kept = Kept.of(context, "own-ship")
-    private var keptAtMs = 0L
+    private val kept = KeptPosition(context)
 
     /** The last position kept, latitude and longitude; null before the
      *  first fix the phone ever read. */
-    val lastPosition: Pair<Double, Double>?
-        get() = if (KEPT_LAT !in kept) {
-            null
-        } else {
-            Double.fromBits(kept[KEPT_LAT] ?: 0) to Double.fromBits(kept[KEPT_LON] ?: 0)
-        }
+    val lastPosition: Pair<Double, Double>? get() = kept.last
 
     /** The last position forgotten: signed out, or the account deleted. */
-    fun forgetLastPosition() {
-        kept.edit { it.clear() }
-        keptAtMs = 0L
-    }
-
-    /** The geoid's conversion, one fix at a time and in order, off the
-     *  main thread: its first call reads the model from disk. */
-    private val converting = Dispatchers.Default.limitedParallelism(1)
+    fun forgetLastPosition() = kept.forget()
 
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             val last = result.lastLocation ?: return
-            // The fix's own altitude (Location.getAltitude) is height above
-            // the WGS84 ellipsoid, not above mean sea level: over the US the
-            // geoid lies 30 to 115 ft below it, and the ground alert, the
-            // traffic near and the track are all MSL. Android 14 and later
-            // may give MSL with the fix (Location.getMslAltitudeMeters);
-            // otherwise the geoid model adds it (AltitudeConverterCompat,
-            // androidx.core:core-location-altitude, Android's own
-            // AltitudeConverter on 14 and later). Where neither can, the
-            // fix has no altitude rather than the ellipsoid's.
-            // developer.android.com/reference/android/location/Location#getAltitude()
-            if (!last.hasAltitude() || LocationCompat.hasMslAltitude(last)) {
-                took(fixOf(last))
+            // The altitude above sea level, the geoid's where the fix has
+            // none of its own (DeviceFix says why).
+            if (!DeviceFix.needsConverting(last)) {
+                fromDevice(DeviceFix.of(last))
                 return
             }
-            scope.launch {
-                withContext(converting) {
-                    try {
-                        AltitudeConverterCompat.addMslAltitudeToLocation(context, last)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        // No conversion: the fix goes without an altitude.
-                    }
-                }
-                took(fixOf(last))
-            }
+            scope.launch { fromDevice(DeviceFix.of(DeviceFix.converted(context, last))) }
         }
     }
 
@@ -209,7 +160,7 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
                 return
             }
         }
-        if (aheadEvery == null) aheadEvery = Ticker.shared.every(AHEAD_EVERY_MS) { askAhead() }
+        if (aheadEvery == null) aheadEvery = Ticker.shared.every(AHEAD_EVERY_MS) { aheadAsking.ask(_fix.value, routeLine) }
     }
 
     /** The fixes stopped: the map is put away on the ground. In the air
@@ -220,7 +171,7 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         provider.removeLocationUpdates(callback)
         aheadEvery?.cancel()
         aheadEvery = null
-        asking?.cancel()
+        aheadAsking.cancel()
         // Own ship turned off ends the flight's service; on again in the
         // air, Start Flight is asked again.
         asked.off()
@@ -228,21 +179,36 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         serve(false)
     }
 
-    private fun took(fix: Fix) {
-        // A fix converted after the reading stopped is left out.
-        if (!reading) return
-        // A fix converted late can be overtaken by a newer one that needed
-        // no conversion; time does not go backwards for the trail and the
-        // alerts.
-        if (_fix.value.let { it != null && fix.atMs <= it.atMs }) return
-        _fix.value = fix
-        if (fix.atMs - keptAtMs >= KEEP_EVERY_MS) {
-            keptAtMs = fix.atMs
-            kept.edit {
-                it[KEPT_LAT] = fix.lat.toRawBits()
-                it[KEPT_LON] = fix.lon.toRawBits()
-            }
+    /** Whose fix own ship is: the device's, or the cockpit receiver's GPS
+     *  once one is heard (OwnShipSource, the engine's receiver_position). */
+    private val source = OwnShipSource(context)
+    val weighed: StateFlow<OwnShipSource.Weighed?> get() = source.weighed
+
+    private fun fromDevice(fix: Fix) {
+        scope.launch { next(source.device(fix)) }
+    }
+
+    /** The receiver's own ship after each read (Receiver.onOwnship). */
+    fun fromReceiver(own: EngineContract.ReceiverOwnship?, state: EngineContract.ReceiverState?) {
+        scope.launch { next(source.receiver(own, state)) }
+    }
+
+    private fun next(next: OwnShipSource.Next) {
+        when (next) {
+            is OwnShipSource.Next.Show -> took(next.fix)
+            OwnShipSource.Next.Clear -> if (reading) _fix.value = null
+            OwnShipSource.Next.Keep -> Unit
         }
+    }
+
+    private fun took(fix: Fix) {
+        // A fix converted after the reading stopped is left out. One
+        // converted late and overtaken is OwnShipSource's to leave out; a
+        // device fix handed back after the receiver's may be older than
+        // the receiver's last, and is own ship again all the same.
+        if (!reading) return
+        _fix.value = fix
+        kept.took(fix)
         // The path flown, and the phone's position kept with the screen
         // off only while flying and only once the pilot has said Start
         // Flight: offered as the airplane reaches flying speed, stopped as
@@ -293,68 +259,12 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         }
     }
 
-    /** What is ahead, asked of the latest fix every ten seconds while the
-     *  airplane is at flying speed (the clock's, Ticker): the planner looks
-     *  five minutes along the track (wingtip.alerts). Flying speed is the
-     *  engine's `underway`, the speed the engine's own look ahead starts
-     *  at, so a taxiing airplane asks nothing it would not answer. The
-     *  asking is a job of its own, so the next question cancels one still
-     *  unanswered. */
-    private fun askAhead() {
-        val fix = _fix.value ?: return
-        val track = fix.trackDeg ?: return
-        val gs = fix.groundspeedKt ?: return
-        // Where the engine cannot say, what is ahead is asked anyway: an
-        // alert asked for nothing costs less than one missed.
-        if (!underway(gs).getOrDefault(true)) return
-        asking?.cancel()
-        asking = scope.launch {
-            // The packs' answer is asked either way, for the ground under
-            // the airplane the glide ring stands on, network or none: off
-            // the main thread, as the engine reads nine regions' packs.
-            val offline = withContext(Dispatchers.Default) { CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt, routeLine) }
-            _groundFt.value = offline?.groundFt
-            val alerts = try {
-                Planner.ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // No planner in the air: the same alerts from the packs
-                // kept for the route (CyclePacks.ahead).
-                offline?.alerts ?: return@launch
-            }
-            _ahead.value = alerts
-        }
-    }
-
     companion object {
         /** The planned route's course line, [lat, lon] pairs, for the packs
          *  ahead to follow as well as the track (the map's, as it draws it). */
         @Volatile
         var routeLine: List<List<Double>>? = null
 
-        /** A fix as the flight pieces read it, its altitude above mean sea
-         *  level or none (the callback's comment says why). */
-        fun fixOf(location: Location): Fix =
-            Fix(
-                lat = location.latitude, lon = location.longitude,
-                altitudeFt = mslFeet(if (LocationCompat.hasMslAltitude(location)) LocationCompat.getMslAltitudeMeters(location) else null),
-                trackDeg = if (location.hasBearing()) location.bearing.toDouble() else null,
-                groundspeedKt = if (location.hasSpeed()) location.speed * Units.KT_PER_M_S else null,
-                accuracyM = if (location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,
-                atMs = location.time,
-            )
-
-        /** Feet above mean sea level from metres above it; none stays none,
-         *  never the ellipsoid's height in its place. */
-        fun mslFeet(mslMeters: Double?): Double? = mslMeters?.let { it * Units.FT_PER_M }
-
-        /** How often the position is kept for the next launch's map. */
-        const val KEEP_EVERY_MS = 60_000L
-
-        /** The last position's latitude and longitude, kept as their bits. */
-        private val KEPT_LAT = longPreferencesKey("lat")
-        private val KEPT_LON = longPreferencesKey("lon")
         /** One fix a second. */
         const val EVERY_MS = 1000L
         /** How often what is ahead is asked while moving; the planner looks

@@ -7,8 +7,8 @@ import UIKit
 /// colour with its strength in 255ths, a value between two stops mixed
 /// between them, one past the ends held at the end's (a ramp that clears
 /// at an end, as the precipitation's under its least does, so stays clear).
-struct FlowRamp: Equatable, Sendable {
-    struct Stop: Equatable, Sendable {
+nonisolated struct FlowRamp: Equatable, Sendable {
+    nonisolated struct Stop: Equatable, Sendable {
         var at: Double
         var red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8
     }
@@ -48,7 +48,7 @@ struct FlowRamp: Equatable, Sendable {
 /// equator. The grid's rows are evenly spaced in latitude; each row of the
 /// picture takes the grid's row at its latitude. MapKit's own world ends
 /// at the antimeridian and about 85 degrees, so the box is held inside them.
-enum FlowPaint {
+nonisolated enum FlowPaint {
     /// Rows of the picture for each of the grid's: Mercator stretches the
     /// north, so a few more keep its rows from doubling.
     static let rowsPerGridRow = 2

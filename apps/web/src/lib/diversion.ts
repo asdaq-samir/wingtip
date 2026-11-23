@@ -20,11 +20,12 @@
 import type { EmergencyFields, Leg } from "./api/types";
 import { engineFields } from "./engineFields";
 import { callEngine } from "./engine/engine";
+import { WORDING } from "./wording/generated/wording";
 
 /** The figures a student estimates, and how far off is still reasonable. */
 export const ALLOWANCES = [
-  { key: "mh", label: "Magnetic heading", unit: "°", allowance: 10 },
-  { key: "gs", label: "Ground speed", unit: "kt", allowance: 10 },
+  { key: "mh", label: WORDING.magneticHeading, unit: "°", allowance: 10 },
+  { key: "gs", label: WORDING.groundSpeed, unit: "kt", allowance: 10 },
   { key: "ete", label: "Time", unit: "min", allowance: 3 },
   { key: "fuel", label: "Fuel", unit: "gal", allowance: 1 },
 ] as const;

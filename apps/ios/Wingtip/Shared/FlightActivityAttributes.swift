@@ -10,16 +10,16 @@ import Foundation
 /// must see one and the same type. The figures are the engine's
 /// `in_flight` answers (InFlight), carried as numbers and written on the
 /// screen by Format, as every figure is (FlightActivityLines).
-struct FlightActivityAttributes: ActivityAttributes {
+nonisolated struct FlightActivityAttributes: ActivityAttributes {
     /// Where the flight is, as Flighty's Live Activity changes with it
     /// (Apple's "Spotlight on the Dynamic Island", docs/design/ios.md
     /// §15): started on the ground and not yet flying, in the air, or
     /// landed and at rest.
-    enum Phase: String, Codable, Hashable, Sendable {
+    nonisolated enum Phase: String, Codable, Hashable, Sendable {
         case ready, airborne, arrived
     }
 
-    struct ContentState: Codable, Hashable, Sendable {
+    nonisolated struct ContentState: Codable, Hashable, Sendable {
         /// The flight's phase; nil in a state sent before phases, read as
         /// in the air.
         var phase: Phase?

@@ -109,7 +109,7 @@ export const PANEL_LISTS = ["favorites", "recents", "routes"] as const;
 
 const ALTITUDE_CHOICES = ["fastest", "lowest", "highest", "economical"] as const satisfies readonly AltitudeChoice[];
 
-export const addressParsers = {
+const addressParsers = {
   // The route: its ends and its stops as typed (lib/identSchema reads them).
   dep: parseAsString,
   dest: parseAsString,
@@ -139,6 +139,9 @@ export const addressParsers = {
   cross: parseAsString,
   ground: parseAsString,
   holds: parseAsString,
+  // The fuel in the tanks as the airplane leaves a field, where the pilot
+  // set it on FPL's gauge (lib/identSchema's tanksOf): none named, full.
+  tanks: parseAsString,
   // The departure time (an ISO instant; none is about now), and a local
   // flight's time aloft.
   depart: parseAsString,
@@ -172,6 +175,9 @@ export const addressParsers = {
   navaid: navaidAt,
   // A fix's, a VFR waypoint's or an airspace volume's card (markAt).
   mark: markAt,
+  // A document open in the reader and where in it (features/documents'
+  // docPlace: "aim@7-1-5", "phak@p42", "own:<id>"); checked there.
+  doc: parseAsString,
   // Read once and taken off: a screen a link opens (`open`,
   // lib/navigation's SCREEN_LINK), favorites a link brings, a sign-in the
   // gateway refused.
@@ -261,4 +267,5 @@ export const PLAN_KEYS = [
   "fuel",
   ...PICK_KEYS,
   "altitudes",
+  "tanks",
 ] as const satisfies readonly (keyof AddressParsers)[];

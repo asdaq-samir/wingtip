@@ -26,7 +26,7 @@ The tables, by what they hold:
 
 | For | Tables |
 |---|---|
-| The pilot and sign-in | `pilots`, `magic_links`, `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES`, `subscriptions`, `paid_feature_uses` |
+| The pilot and sign-in | `pilots`, `magic_links`, `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES`, `deleted_accounts`, `email_case_merges` (V50: pilots one address but for case, merged or kept apart for a hand merge) |
 | Airplanes | `aircraft`, `aircraft_due_items`, `aircraft_squawks` |
 | Flights | `flights`, `flight_checkpoints`, `flight_tracks`, `flight_watch`, `reminders_sent` |
 | Logbook and training | `logbook_entries`, `pilot_endorsements`, `signed_endorsements`, `instructor_students`, `cross_country_reviews`, `approach_lessons` |
@@ -114,6 +114,21 @@ The live store (radar, NOTAMs, filed routes, the SWIM reports) is not in
 `data/` locally but on the `live-store` Docker volume
 ([ARCHITECTURE.md](ARCHITECTURE.md#the-shared-stores)).
 
+### The FAA's LADD list
+
+The FAA's terminal radar that ingest reads from SWIM is shown to pilots
+only without the aircraft on the FAA's LADD list (Limiting Aircraft Data
+Displayed), as the SWIM Cloud Distribution Service's Service Access
+Agreement asks of anyone who shows SWIM's data to the public
+(`wingtip.traffic.ladd`). The list is had from the FAA's Aeronautical Data
+Exchange (adx.faa.gov, "IndustryLADD", with an account; ladd@faa.gov for
+access), published monthly and to be in force within five business days:
+the owner saves each one into `data/raw/faa_ladd/` on the server. While no
+list younger than 37 days is there, the radar is shown to no one;
+`LADD_REQUIRED=0` (the local `docker-compose.yml`'s) lets it through on a
+stack that is not public. adsb.lol's and the other community feeds are not
+SWIM's and are not filtered by it.
+
 ### An airplane's public record
 
 An airplane's card (`GET /api/airplanes/{n_number}`,
@@ -123,6 +138,7 @@ An airplane's card (`GET /api/airplanes/{n_number}`,
 |---|---|---|---|
 | Registration (every MASTER field but the street, zip code and county), the make and model's and the engine's reference records, past registrations, documents filed, an N-number's reservation | The FAA's Releasable Aircraft Database (registry.faa.gov/database/ReleasableAircraft.zip), public domain (17 U.S.C. 105); the FAA withholds owners who ask (49 U.S.C. 44114(b)) | `data/raw/faa_registry/registry.sqlite`, read by the planner once a day (`wingtip.registry`, `wingtip.registry_history`): 191 MB on 2026-11-14, from 79 MB, of which the deregistered file is 65 MB with its indexes | The FAA's `ardata.pdf` (5/8/2025): MASTER, ACFTREF, ENGINE, DEREG, DOCINDEX, RESERVED |
 | Accidents and incidents since 2008 | The NTSB's aviation database (data.ntsb.gov/avdata, avall.mdb monthly and weekly deltas), public domain | `ntsb.sqlite` on the `live-store` volume, written by ingest (`wingtip.history.ntsb`); its shape (`SCHEMA` 2) adds each case's kind and the airplane's damage, and a store of an older shape is made again from avall.zip | The NTSB's data dictionary (`eadmspub.pdf`, and the `eADMSPUB_DataDictionary` table) |
+| Flight instructors, for the endorsements' instructor check | The FAA's Airmen Certification Releasable Database (registry.faa.gov/database/CSmmyyyy.zip, monthly), public domain; it has no certificate numbers and leaves out airmen who withheld their address (Public Law 106-181 section 715) | `airmen.sqlite` on the `live-store` volume, written by ingest (`wingtip.airmen`, `ingest.airmen`): only certificate type F, each one's FAA unique id, the two name fields and the certificate's expiry; no address | "Airman Directory Releasable File, Comma Delimited" (January 2020): PILOT_BASIC.csv, PILOT_CERT.csv |
 | Usually based at | The engine's `usual_base` over the flights adsb.lol's traces show (ODbL 1.0) | Not kept beyond the planner's 12-hour memory | engine/crates/flight/src/based.rs |
 | A photo of the airplane | Planespotters.net's photo API (planespotters.net/photo/api): free, no key; the photographer credited next to the image, the image a link to its page, the image loaded by the app straight from the URL given, never stored or passed on, and the answer kept a day at most | Not kept beyond a day in the planner's memory; asked only where `PLANESPOTTERS_CONTACT` names a contact URL or email for its User-Agent | `wingtip.aircraft_photo` |
 
@@ -166,7 +182,7 @@ the ratings are made as they are: 77 labels carried over by position,
 ## Notebooks
 
 `docker compose up ml`, then [localhost:8888](http://localhost:8888)
-(token `wingtip`). The notebooks call the same code as the training run,
+(the address with its token is in `docker compose logs ml`). The notebooks call the same code as the training run,
 so a notebook and the run cannot write two different tables.
 
 | # | Notebook | What it does | Automated as |

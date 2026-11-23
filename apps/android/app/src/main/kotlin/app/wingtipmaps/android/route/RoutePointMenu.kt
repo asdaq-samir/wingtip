@@ -97,7 +97,7 @@ private fun label(action: Action, directOn: Boolean): String = stringResource(
     when (action) {
         Action.MORE_INFO -> R.string.point_more_info
         Action.BRIEF -> R.string.brief
-        Action.DIRECT_TO -> if (directOn) R.string.point_fly_as_planned else R.string.point_direct_to
+        Action.DIRECT_TO -> if (directOn) R.string.point_fly_as_planned else R.string.wording_direct_to
         Action.HOLD_HERE -> R.string.point_hold_here
         Action.ADD_STOP_AFTER -> R.string.point_add_stop_after
         Action.MOVE_UP -> R.string.point_move_up

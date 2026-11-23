@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Lint's own settings for the app (app/build.gradle.kts, lintConfig). -->
+<lint>
+    <!-- Bouncy Castle's PKIX jar, which PdfBox-Android brings for an
+         encrypted PDF's certificates: its own test trust managers are
+         empty, and the app never makes one (its network is OkHttp's with
+         the system's trust and the debug build's local authority). A
+         library's class, not the app's code. -->
+    <issue id="TrustAllX509TrustManager">
+        <ignore path="**/bcpkix-*.jar" />
+    </issue>
+</lint>

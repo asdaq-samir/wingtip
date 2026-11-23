@@ -6,7 +6,7 @@ import Foundation
 /// of 6,378,137 m, and MapLibre Native iOS is not in this app, so the
 /// formulas live here once (Android's is tiles/TileGrid.kt, the web's
 /// lib/map/tileMath.ts).
-enum TileMath {
+nonisolated enum TileMath {
     /// Half the earth's circumference in web Mercator metres.
     static let halfCircumference = Double.pi * 6_378_137
 

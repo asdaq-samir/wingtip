@@ -12,10 +12,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -50,6 +52,8 @@ object YouTags {
     const val NAME = "you-name"
     const val ADDRESS = "you-address"
     const val SETTINGS = "settings-row"
+    const val DOCUMENTS = "you-documents"
+    const val CONNECTED_APPS = "connected-apps-row"
 }
 
 /**
@@ -61,7 +65,8 @@ object YouTags {
  * (no name: Add Your Name, opening Pilot Details, whose ← comes back
  * here). Then one segmented list of what is the pilot's, each row a round
  * badge, its name, where it stands and a chevron: Pilot Details,
- * Airplanes, Logbook, Minimums, Training and Emergency. Signed out it
+ * Airplanes, Flights, Logbook, Minimums, Documents, Training, Emergency
+ * and Connected Apps. Signed out it
  * says so once (the owner, 2026-11-13): its large line is Sign In, opening
  * Pilot Details' sign-in, with no "You" over it, and the account's rows
  * are greyed with nothing more said on each.
@@ -90,21 +95,30 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
         ) {
             YouHead(pilot, loaded, onDetails = { open(SheetPage.PilotDetails) })
             // rules.md's You (section 8.1): Airplanes, Flights, Logbook, Minimums,
-            // Training and Emergency, under the pilot's own details.
-            val rows = 7
+            // Documents, Training, Emergency and Connected Apps, under the pilot's own details.
+            val rows = 9
             SettingsGroup {
                 YouRow(Icons.Filled.Person, stringResource(R.string.pilot_details), pilot?.homeBase, 0, rows) { open(SheetPage.PilotDetails) }
                 YouRow(Icons.Filled.Flight, stringResource(R.string.airplanes), tail, 1, rows) { open(SheetPage.YourAirplanes) }
-                YouRow(Icons.Filled.Route, stringResource(R.string.flights), null, 2, rows, enabled = signedIn) { open(SheetPage.Flights) }
+                YouRow(Icons.Filled.Route, stringResource(R.string.saved_flights), null, 2, rows, enabled = signedIn) { open(SheetPage.Flights) }
                 YouRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.logbook), null, 3, rows, enabled = signedIn) {
                     open(SheetPage.Logbook)
                 }
                 val kept = if (minimums.ceilingFt != null || minimums.visibilitySm != null) Format.ceilingAndVisibility(minimums.ceilingFt, minimums.visibilitySm) else null
                 YouRow(Icons.Filled.VerifiedUser, stringResource(R.string.minimums), kept, 4, rows) { open(SheetPage.Minimums) }
-                YouRow(Icons.Filled.School, stringResource(R.string.training), null, 5, rows, enabled = signedIn) {
+                // Signed out too: the FAA's shelf and the pilot's own PDFs
+                // need no account (decision 0056).
+                YouRow(Icons.AutoMirrored.Filled.LibraryBooks, stringResource(R.string.documents), null, 5, rows, modifier = Modifier.testTag(YouTags.DOCUMENTS)) { open(SheetPage.Documents) }
+                YouRow(Icons.Filled.School, stringResource(R.string.training), null, 6, rows, enabled = signedIn) {
                     open(SheetPage.Coach)
                 }
-                YouRow(Icons.Filled.Emergency, stringResource(R.string.emergency), null, 6, rows) { EmergencyOpen.open(EmergencyOpen.From.LINK) }
+                YouRow(Icons.Filled.Emergency, stringResource(R.string.emergency), null, 7, rows) { EmergencyOpen.open(EmergencyOpen.From.LINK) }
+                // The AI apps connected through the connector, each ended
+                // from here (the deep security review, N2): the account's,
+                // greyed signed out as the others are; last, as on the web.
+                YouRow(Icons.Filled.Power, stringResource(R.string.connected_apps), null, 8, rows, enabled = signedIn, modifier = Modifier.testTag(YouTags.CONNECTED_APPS)) {
+                    open(SheetPage.ConnectedApps)
+                }
             }
         }
     }
@@ -112,9 +126,9 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
 
 /** One of You's rows: a round badge, the name, where it stands, a chevron. */
 @Composable
-private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int, count: Int, enabled: Boolean = true, onClick: () -> Unit) {
+private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int, count: Int, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     ActionSettingRow(
-        title, index = index, count = count, enabled = enabled,
+        title, index = index, count = count, enabled = enabled, modifier = modifier,
         leading = {
             Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(Badge)) {
                 Box(contentAlignment = Alignment.Center) {

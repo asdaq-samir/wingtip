@@ -1,7 +1,7 @@
 """ingest's own knobs from the environment, typed, each with its default,
 as wingtip.config's Settings holds the planner's: the FAA SWIM
-subscription and how often ingest says it is alive. What wingtip itself
-reads (the stores' paths, ADSBFI_OPEN_DATA) stays in wingtip.config, which
+subscription, the NOTAM Management Service's credentials and how often ingest says it is alive. What wingtip itself
+reads (the stores' paths, ADSBLOL_API_KEY) stays in wingtip.config, which
 ingest reads through wingtip as the planner does."""
 
 import functools
@@ -10,7 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Unset SWIM_* are None, which turns that feed off."""
+    """Unset SWIM_* are None, which turns that feed off; so do unset NMS_API_* credentials."""
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     swim_host_sfdps: str | None = None
     swim_vpn_sfdps: str | None = None
     swim_queue_sfdps: str | None = None
+    #: The FAA's NOTAM Management Service API (ingest.nms, decision 0059):
+    #: its host (production's; the FAA's staging host for a test account)
+    #: and the client id and secret the FAA issues with access. Off until
+    #: both are set.
+    nms_api_host: str = "https://api-nms.aim.faa.gov"
+    nms_api_client_id: str | None = None
+    nms_api_client_secret: str | None = None
     #: Whether the history's jobs run (ingest.history): the day's NOTAM and
     #: TFR archive and the NTSB's database (HISTORY=0 on a test stack).
     history: bool = True

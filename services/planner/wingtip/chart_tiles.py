@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 # CHARTS_FETCH_FOR_TILES=0 is CI's (infra/docker-compose.ci.yml): there the
 # warm-up prepares the corridors' own sheets (chart_prepare.prepare_for_bbox, which
 # always fetches), a tile over them is drawn and cached as ever, and a
-# tile that would need any other sheet is left blank (tile_png). The
+# tile that would need any other sheet is left blank (tile_bytes). The
 # browser suite's zoomed-out views sent for 29 sheets beyond the
 # corridor's 10, and the charts cache then carried all 39 to every run;
 # drawn instead from the sheets there were, such a tile was never whole,
@@ -37,6 +37,15 @@ FETCH_FOR_TILES = get_settings().charts_fetch_for_tiles
 
 
 _NONE_TTL_S = 3600
+
+
+class TileUnavailable(RuntimeError):
+    """Where the tiles are published (CHART_TILES_URL, the AWS server), the
+    published archive could not be read just now. The server does not draw
+    the tile itself instead: on its two cores, a CDN or S3 outage turned
+    every tile the map asked for into a sheet fetched and drawn, and the
+    routes, nav logs and Briefs every pilot was waiting on starved (the ops
+    audit, 2026-11-21). The map leaves the tile blank and asks again."""
 
 
 def rasters_covering(kind: ChartKind, bbox: Box, cycle: str | None = None) -> tuple[list, bool]:
@@ -71,12 +80,15 @@ def _archive(kind_key: str, cycle: str, scale: int = 1):
     return tile_archive.over_http(f"{config.CHART_TILES_URL}/{cycle}/{name}", requests) if name else None
 
 
-def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> bytes | None:
-    """The tile's PNG bytes -- from the kind's archive when its pyramid is
-    finished, where a tile it lacks is no tile; else rendered on first
+def tile_bytes(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> bytes | None:
+    """The tile's bytes -- from the kind's archive when its pyramid is
+    finished, lossless WebP (or PNG, packed before 2026-11-21;
+    tile_archive.media_type tells them apart), where a tile it lacks is
+    no tile; else a palette PNG rendered on first
     request and cached on disk for the cycle; None where no chart of
     this kind covers it (a 404 for the map's tile layer to leave blank).
-    `scale` 2 is the high-density tile."""
+    `scale` 2 is the high-density tile. TileUnavailable where the tiles are
+    published and their archive cannot be read."""
     chart_kind = KINDS[kind]
     # Whole numbers, whatever the caller handed in: the tile's file is
     # named by them under the cache (CodeQL's py/path-injection).
@@ -88,10 +100,14 @@ def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> by
     if archive is not None:
         try:
             return archive.get(zoom, x, y)
-        except (OSError, requests.RequestException):
-            # The published copy out of reach for now: drawn here instead,
-            # as before there was one.
+        except (OSError, requests.RequestException) as err:
+            # The published copy out of reach for now: drawn here instead
+            # where tiles are drawn here (locally), never on the AWS server.
             log.warning("%s tile %d/%d/%d not read from its archive", kind, zoom, x, y, exc_info=True)
+            if config.CHART_TILES_URL:
+                raise TileUnavailable(f"{kind} tile {zoom}/{x}/{y}: its archive did not answer") from err
+    elif config.CHART_TILES_URL:
+        raise TileUnavailable(f"{kind} tiles of cycle {cycle} at {scale}x are not published, or the pointer did not answer")
     path = chart_render.tile_path(chart_kind, cycle, x, y, zoom, scale)
     none_marker = path.with_suffix(".none")
     try:
@@ -122,10 +138,10 @@ def tile_image(x: int, y: int, zoom: int, kind: str = "sec") -> Image.Image | No
     """The tile as an RGB image with the uncovered parts white -- what
     the chart reader (wingtip.chartvision) wants: paper, not the black its
     road-and-rail class looks for."""
-    png = tile_png(x, y, zoom, kind)
-    if png is None:
+    data = tile_bytes(x, y, zoom, kind)
+    if data is None:
         return None
-    rgba = Image.open(io.BytesIO(png)).convert("RGBA")
+    rgba = Image.open(io.BytesIO(data)).convert("RGBA")
     paper = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
     return Image.alpha_composite(paper, rgba).convert("RGB")
 

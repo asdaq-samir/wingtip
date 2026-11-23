@@ -31,12 +31,14 @@ final class AirplaneLookup {
     private(set) var flightsProblem: String?
 
     /// Everything but the record, asked together for the N-number and, for
-    /// its flights, the ICAO address the registry gives.
-    func load(tail: String, hex: String?) async {
+    /// its flights, the ICAO address the registry gives; its flights only
+    /// where they are offered (`flights`, Extra.airplaneHistory), else left
+    /// unasked and nil.
+    func load(tail: String, hex: String?, flights offered: Bool) async {
         async let found: Void = find(tail)
         async let record: Void = loadDetails(tail)
         async let picture: Void = loadPhoto(tail)
-        async let flown: Void = loadFlights(hex)
+        async let flown: Void = loadFlights(hex, offered: offered)
         _ = await (found, record, picture, flown)
     }
 
@@ -72,7 +74,8 @@ final class AirplaneLookup {
         photo = try? await Planner.airplanePhoto(tail)
     }
 
-    private func loadFlights(_ hex: String?) async {
+    private func loadFlights(_ hex: String?, offered: Bool) async {
+        guard offered else { return }
         guard let hex else {
             flights = []
             return
@@ -81,7 +84,7 @@ final class AirplaneLookup {
             flights = try await Planner.pastFlights(hex.lowercased()).flights
             flightsProblem = nil
         } catch {
-            flightsProblem = "Its flights couldn't be fetched. Try again in a moment."
+            flightsProblem = "Its flights could not be fetched. Try again in a moment."
         }
     }
 
@@ -112,12 +115,12 @@ final class AirplaneLookup {
         case .unknown where flights == nil:
             return ("Whether it's in the air isn't known now. Try again in a moment.", true)
         case .failed(let offline) where flights == nil:
-            return (offline ? "No connection: whether it's in the air can't be checked." : "Couldn't check whether it's in the air. Try again in a moment.", true)
+            return (offline ? "No connection: whether it's in the air cannot be checked." : "Whether it's in the air could not be checked. Try again in a moment.", true)
         default:
             break
         }
         if let latest = flights?.first(where: { !$0.inAir }) {
-            let since = Self.ago(now.timeIntervalSince1970 - latest.on)
+            let since = Format.ago(now.timeIntervalSince1970 - latest.on) ?? ""
             if latest.landed, let at = latest.destination?.ident { return ("On the ground · landed \(at) \(since)", false) }
             return ("Not in the air · last heard \(since)", false)
         }
@@ -126,7 +129,7 @@ final class AirplaneLookup {
         case .checking: return ("Checking whether it's in the air…", false)
         case .ground: return ("Not in the air now", false)
         case .unknown: return ("Whether it's in the air isn't known now. Try again in a moment.", true)
-        case .failed(let offline): return (offline ? "No connection: whether it's in the air can't be checked." : "Couldn't check whether it's in the air. Try again in a moment.", true)
+        case .failed(let offline): return (offline ? "No connection: whether it's in the air cannot be checked." : "Whether it's in the air could not be checked. Try again in a moment.", true)
         case .flying: return ("In the air", false)
         }
     }
@@ -135,15 +138,6 @@ final class AirplaneLookup {
     var flying: TrafficAircraft? {
         if case .flying(let plane) = inAir { return plane }
         return nil
-    }
-
-    /// "3 h ago", "2 d ago", as the web's ago writes it.
-    static func ago(_ seconds: Double) -> String {
-        let minutes = max(0, Int((seconds / 60).rounded()))
-        if minutes < 1 { return "just now" }
-        if minutes < 90 { return "\(minutes) min ago" }
-        let hours = Int((Double(minutes) / 60).rounded())
-        return hours < 36 ? "\(hours) h ago" : "\(Int((Double(hours) / 24).rounded())) d ago"
     }
 }
 

@@ -9,7 +9,7 @@ import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/g
 import { setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../../../lib/map/gl/glOverlays";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { GL_FONT_BOLD, TAP, selectionRing } from "../../../lib/map/gl/layers/common";
+import { TAP, labelHalo, labelText, selectionRing } from "../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
 import { useAirportWeatherShown } from "../../../lib/map/marks/useAirportWeatherShown";
@@ -36,14 +36,13 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
   filter: ["!", ["get", "chipped"]],
   layout: {
     "text-field": ["get", "ident"],
-    "text-font": GL_FONT_BOLD,
-    "text-size": 17,
+    ...labelText("airportPicked"),
     "text-anchor": "bottom",
     "text-offset": [0, -1.3],
     "text-allow-overlap": true,
     "text-ignore-placement": true,
   },
-  paint: { "text-color": CHART.casing, "text-halo-color": CHART.tag, "text-halo-width": 2.25 },
+  paint: { "text-color": CHART.casing, ...labelHalo("airportPicked") },
 };
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;

@@ -1,6 +1,7 @@
 import type { Aircraft, AircraftChoice, AircraftProfileSummary } from "./api/types";
 import { OWN_AIRPLANE, figureValue, figuresOfChoice } from "./airplane/figures";
 import { callEngine } from "./engine/engine";
+import { useEngineReady } from "./engine/useEngineReady";
 
 /** One value per choice: a pilot's own by id, a stock profile by name.
  *  The nav log's picker keys its options on it, and the Library's Aircraft
@@ -126,6 +127,15 @@ export function tailOf(a: AircraftChoice): string | null {
   if (a.tail) return a.tail.toUpperCase();
   const name = shortName(a.label).toUpperCase();
   return N_NUMBER.test(name) ? name : null;
+}
+
+/** tailOf as a part draws it: a label is told an N-number by the engine,
+ *  so until its .wasm is there only an airplane's own tail is known and
+ *  the part draws again once it is (useEngineReady). A place link on a
+ *  slow phone draws the airplane's parts before the engine has loaded. */
+export function useTailOf(a: AircraftChoice): string | null {
+  const ready = useEngineReady();
+  return ready || a.none || a.tail ? tailOf(a) : null;
 }
 
 /** An airplane the FAA's registry has, picked by its N-number -- in the

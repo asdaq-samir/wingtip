@@ -14,7 +14,7 @@ enum FilingForm {
 
     /// An airway as a route names one: Victor, T, Jet or Q and its number
     /// (the web app's identSchema isAirwayToken).
-    static func airwayToken(_ stop: String) -> Bool {
+    nonisolated static func airwayToken(_ stop: String) -> Bool {
         stop.range(of: "^[VTJQ][0-9]{1,4}$", options: .regularExpression) != nil
     }
 

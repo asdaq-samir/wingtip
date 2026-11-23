@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
 import { useAddressKey } from "../../lib/address";
@@ -30,4 +31,16 @@ export function useAlternate({ dest, eta, tasKt }: AlternateWhere) {
     meta: { silent: true },
   });
   return { filed, ...query };
+}
+
+/** Where the alternate is checked: the nav log's ETA and the airplane's
+ *  cruise, and while the route is planned again (an alternate filed asks
+ *  a new plan, its fuel on to it) the last the plan had for the same
+ *  destination. The section went back to "Checked once the nav log has an
+ *  ETA" under the tap that filed one, the filed alternate's check out of
+ *  sight till the new plan came (ifr.spec). */
+export function useAlternateWhere(dest: string, eta: string | null, tasKt: number | null): AlternateWhere {
+  const [held, setHeld] = useState<AlternateWhere | null>(null);
+  if (eta && (held?.eta !== eta || held.dest !== dest || held.tasKt !== tasKt)) setHeld({ dest, eta, tasKt });
+  return eta || held?.dest !== dest ? { dest, eta, tasKt } : held;
 }

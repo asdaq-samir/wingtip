@@ -6,7 +6,8 @@ import type { DepartureWindowAsk, WindowHour } from "../../lib/api/types";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
 import { currencyInput } from "../../lib/frat";
 import { airplaneChosen, usePreferences } from "../../lib/preferences";
-import { currencyQuery, pilotQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { currencyQuery } from "../../lib/queryClientRecords";
 
 /** The hours are asked once for a route, its airplane and the pilot's
  *  minimums, and kept for ten minutes: the forecasts they read change

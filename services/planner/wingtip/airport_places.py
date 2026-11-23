@@ -7,8 +7,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import geo
-from .airport_tables import DEFAULT_CACHE_PATH, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table
+from . import geo, geo_boxes
+from .airport_tables import DEFAULT_CACHE_PATH, FAA_COUNTRIES, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table, countries_of
 from .airport_us import _US_AIRPORTS_LOCK, _us_airports, _us_airports_of
 from .single_flight import once
 
@@ -18,8 +18,13 @@ _FIELD_KINDS = {"large_airport": "large", "medium_airport": "medium", "small_air
 
 
 def _landing(df: pd.DataFrame) -> pd.DataFrame:
-    """The open landing fields (every list to land at, map mark, Nearest)."""
-    return df[df["type"].isin(list(_FIELD_KINDS)) & df["_closed"].isna()]
+    """The open landing fields (every list to land at, map mark, Nearest):
+    an airport by OurAirports' type, and not one NASR files as a heliport,
+    balloonport or seaplane base (wingtip.field_use's `_airplane`, the
+    engine's field_site_type), which OurAirports calls a small airport at
+    times and an airplane on wheels cannot land at."""
+    airplane = df["_airplane"].ne(False) if "_airplane" in df.columns else True
+    return df[df["type"].isin(list(_FIELD_KINDS)) & df["_closed"].isna() & airplane]
 
 
 def _place_of(row) -> dict:
@@ -140,7 +145,9 @@ def places_in(
     never a small field's weather chip."""
     df = _us_airports(cache_path)
     inside = _landing(df)
-    inside = inside[inside["latitude_deg"].between(south, north) & inside["longitude_deg"].between(west, east)]
+    # A box past -180 or 180 read as its two halves (geo_boxes).
+    box = (south, west, north, east)
+    inside = inside[geo_boxes.in_box(box, inside["latitude_deg"].to_numpy(dtype=float), inside["longitude_deg"].to_numpy(dtype=float))]
     if only is not None:
         inside = inside[_among(inside["ident"], only)]
     rank = inside["type"].map({kind: i for i, kind in enumerate(_FIELD_KINDS)})
@@ -197,7 +204,7 @@ def _abroad_of(path: str, _mtime: float) -> pd.DataFrame:
     planning, which is the US's alone (`_us_airports_of`). Its ident the
     ICAO code where it has one, else OurAirports' own."""
     df = _read_table(path, _mtime)
-    abroad = df[(df["iso_country"] != "US") & df["type"].isin(list(_FIELD_KINDS))].copy()
+    abroad = df[~countries_of(df).isin(FAA_COUNTRIES) & df["type"].isin(list(_FIELD_KINDS))].copy()
     has_icao = abroad["icao_code"].notna() & (abroad["icao_code"] != "")
     abroad["_display_ident"] = abroad["icao_code"].where(has_icao, abroad["ident"])
     return abroad

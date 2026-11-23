@@ -6,20 +6,23 @@ import static org.mockito.Mockito.mock;
 
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.AccountService;
 import app.wingtipmaps.gateway.service.AppleRevocation;
 import app.wingtipmaps.gateway.service.ChangeLines;
 import app.wingtipmaps.gateway.service.CheckpointNotesClient;
-import app.wingtipmaps.gateway.service.CrashDraftMail;
-import app.wingtipmaps.gateway.service.Mailer;
+import app.wingtipmaps.gateway.service.PlannerAsks;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
 import app.wingtipmaps.gateway.upstream.Upstreams;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -31,7 +34,6 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
@@ -40,8 +42,8 @@ import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Every call the gateway makes to the planner by hand -- PlannerClient's
- * rules and the briefing, what ChangeLines, CheckpointNotesClient and
- * CrashDraftMail ask through it, and AccountService's forgetting of a
+ * rules and the briefing, what ChangeLines and CheckpointNotesClient ask
+ * through it, and AccountService's forgetting of a
  * pilot's notes -- held to services/planner/openapi.json, the planner's own
  * document as this jar was built with it. The asks and answers' fields
  * are the planner's own types, generated from that document as the jar
@@ -65,12 +67,7 @@ class PlannerClientContractTest {
         }
     }
 
-    record Clients(
-            PlannerClient planner,
-            AccountService accounts,
-            ChangeLines lines,
-            CheckpointNotesClient notes,
-            CrashDraftMail drafts) {}
+    record Clients(PlannerClient planner, AccountService accounts, ChangeLines lines, CheckpointNotesClient notes) {}
 
     private static final LocalDate DAY = LocalDate.of(2026, 11, 9);
 
@@ -94,17 +91,42 @@ class PlannerClientContractTest {
                     c -> c.planner()
                             .endorsements(
                                     List.of(
-                                            PlannerClient.held("solo", DAY, "C172"),
-                                            PlannerClient.held("solo-xc", DAY, null)),
+                                            PlannerAsks.held("solo", DAY, "C172"),
+                                            PlannerAsks.held("solo-xc", DAY, null)),
                                     DAY.plusDays(3))),
             new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null)),
             new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
             new Call("instructorRecordsSince", c -> c.planner().instructorRecordsSince(DAY)),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
-            new Call("inspections", c -> c.planner().inspections(DAY, DAY, DAY, DAY, 1234.5, DAY, "VOT", 2.0)),
+            new Call("sameField", c -> c.planner().sameField("KBUR", List.of("BUR", "VNY"))),
             new Call(
-                    "inspections (none recorded)",
-                    c -> c.planner().inspections(null, null, null, null, null, null, null, null)),
+                    "verifyInstructor",
+                    c -> c.planner().verifyInstructor("J. J. Jones", "A. Pilot", DAY, List.of("A1234567"))),
+            new Call(
+                    "inspections",
+                    c -> c.planner()
+                            .inspections(List.of(
+                                    new PlannerInspectionsAsk()
+                                            .tailNumber("N12345")
+                                            .forHire(true)
+                                            .annualOn(DAY)
+                                            .eltOn(DAY)
+                                            .eltBatteryDueOn(DAY)
+                                            .staticCheckOn(DAY)
+                                            .transponderCheckOn(DAY)
+                                            .hundredHourAtHours(new BigDecimal("1234.5"))
+                                            .vorCheck(new PlannerVorCheckAsk(
+                                                    new BigDecimal("2.0"), PlannerVorCheckAsk.KindEnum.VOT, DAY)),
+                                    new PlannerInspectionsAsk()))),
+            new Call(
+                    "records",
+                    c -> c.planner()
+                            .records(
+                                    List.of(PlannerAsks.experienceAsk(logbook(), DAY)),
+                                    List.of(
+                                            new PlannerEndorsementsAsk(List.of(PlannerAsks.held("solo", DAY, "C172")))
+                                                    .flightOn(DAY.plusDays(3)),
+                                            new PlannerEndorsementsAsk(List.of())))),
             new Call(
                     "AccountService.delete",
                     c -> c.accounts().delete(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))),
@@ -113,9 +135,7 @@ class PlannerClientContractTest {
                     c -> c.lines().changes("KDLH", "KMSP", List.of("KHYR"), Stub.briefing, Stub.briefing)),
             new Call(
                     "CheckpointNotesClient.mine",
-                    c -> c.notes().mine(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))),
-            // The drafts to notice, each mailed and then marked noticed.
-            new Call("CrashDraftMail.everyFewMinutes", c -> c.drafts().everyFewMinutes()));
+                    c -> c.notes().mine(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))));
 
     /** PlannerClient's methods that ask nothing themselves. */
     private static final Set<String> NOT_CALLS = Set.of("endorsementKind"); // a filter over endorsementKinds()
@@ -210,11 +230,7 @@ class PlannerClientContractTest {
                     .toString();
             PlannerClient client = Upstreams.plannerClient(plannerStub.url());
             Clients clients = new Clients(
-                    client,
-                    accounts(plannerStub.url()),
-                    new ChangeLines(client),
-                    new CheckpointNotesClient(client),
-                    new CrashDraftMail(client, new Mailer(mock(JavaMailSender.class), "x@y"), "dev@example.com", ""));
+                    client, accounts(plannerStub.url()), new ChangeLines(client), new CheckpointNotesClient(client));
             for (Call call : CALLS) {
                 String who = call.method().contains(".") ? call.method() : "PlannerClient." + call.method();
                 List<Stub.Asked> asked = new ArrayList<>();

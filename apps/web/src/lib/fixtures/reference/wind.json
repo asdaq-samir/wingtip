@@ -1,0 +1,157 @@
+{
+  "_note": "Independent worked examples for the wind triangle and a runway's wind components, from the FAA's handbook and knowledge-test supplement (fetched from faa.gov on 2026-11-21), never from the code. Shape and checks as reference/atmosphere.json says.",
+  "cases": [
+    {
+      "name": "The wind triangle: TC 090, TAS 120, wind 045 at 40: WCA 14 left, TH 076, GS 88",
+      "rule": "wind_triangle",
+      "input": {
+        "tc": 90,
+        "tas": 120,
+        "wind_from_deg": 45,
+        "wind_kt": 40
+      },
+      "expect": [
+        {
+          "path": "wca",
+          "value": -14,
+          "tolerance": 1
+        },
+        {
+          "path": "th",
+          "value": 76,
+          "tolerance": 1
+        },
+        {
+          "path": "gs",
+          "value": 88,
+          "tolerance": 1
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, pp. 16-14 to 16-15, Figures 16-20 to 16-23: \"The distance flown in 1 hour (GS) is measured as the numbers of units on the TC line (88 NMPH or 88 knots) ... read the TH directly in degrees (076°) ... the WCA is 14° and the wind is from the left; therefore, subtract 14° from TC of 090°, making the TH 076°.\"",
+      "method": "The handbook draws the triangle and measures it to the knot and degree; the engine solves it by trigonometry (13.6° left, 76.4°, 88.3 kt), so within 1."
+    },
+    {
+      "name": "Chickasha to Guthrie: TC 031, TAS 115, wind 360 at 10: WCA 3 left, TH 028, GS 106",
+      "rule": "wind_triangle",
+      "input": {
+        "tc": 31,
+        "tas": 115,
+        "wind_from_deg": 360,
+        "wind_kt": 10
+      },
+      "expect": [
+        {
+          "path": "wca",
+          "value": -3,
+          "tolerance": 1
+        },
+        {
+          "path": "th",
+          "value": 28,
+          "tolerance": 1
+        },
+        {
+          "path": "gs",
+          "value": 106,
+          "tolerance": 1
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, pp. 16-18 to 16-20, Figure 16-26 (pilot's planning sheet): \"Using a wind of 360° at 10 knots, it is determined the WCA is 3° left. This is subtracted from the TC making the TH 28° ... The GS is determined to be 106 knots.\"",
+      "method": "A flight computer's whole degrees and knots; the engine's 2.6° left, 28.4° and 106.3 kt are within 1."
+    },
+    {
+      "name": "120 kt eastward with the air moving eastward at 20 kt: GS 140",
+      "rule": "wind_triangle",
+      "input": {
+        "tc": 90,
+        "tas": 120,
+        "wind_from_deg": 270,
+        "wind_kt": 20
+      },
+      "expect": [
+        {
+          "path": "gs",
+          "value": 140,
+          "tolerance": 0.01
+        },
+        {
+          "path": "wca",
+          "value": 0,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-9, Figure 16-13: \"If the mass of air is moving eastward at 20 knots ... the progress of the aircraft over the ground is 120 plus 20 or a GS of 140 knots.\" Air moving eastward is a wind from 270.",
+      "method": "Exact arithmetic."
+    },
+    {
+      "name": "120 kt eastward with the air moving westward at 20 kt: GS 100",
+      "rule": "wind_triangle",
+      "input": {
+        "tc": 90,
+        "tas": 120,
+        "wind_from_deg": 90,
+        "wind_kt": 20
+      },
+      "expect": [
+        {
+          "path": "gs",
+          "value": 100,
+          "tolerance": 0.01
+        },
+        {
+          "path": "wca",
+          "value": 0,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-9, Figure 16-13: \"if the mass of air is moving westward at 20 knots, the airspeed of the aircraft remains the same, but GS becomes 120 minus 20 or 100 knots.\"",
+      "method": "Exact arithmetic."
+    },
+    {
+      "name": "Sample Problem 10: runway 17, wind 140 at 25: headwind 22, crosswind 13 from the left",
+      "rule": "wind_components",
+      "input": {
+        "from_deg": 140,
+        "kt": 25,
+        "heading_deg": 170
+      },
+      "expect": [
+        {
+          "path": "headwind_kt",
+          "value": 22,
+          "tolerance": 1
+        },
+        {
+          "path": "crosswind_kt",
+          "value": -13,
+          "tolerance": 1
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-26, Sample Problem 10 (crosswind component chart): \"runway 17 means a direction of 170°; from that subtract the wind direction of 140°. This gives a 30° angular difference ... The headwind component is 22 knots and the crosswind component is 13 knots.\"",
+      "method": "Read off the chart to the knot; the engine's 21.7 and 12.5 kt are within 1. The engine signs a crosswind from the left negative; a wind of 140 on a heading of 170 is from the left."
+    },
+    {
+      "name": "Figure 36's example: 40 kt at 30 degrees: headwind 35, crosswind 20",
+      "rule": "wind_components",
+      "input": {
+        "from_deg": 30,
+        "kt": 40,
+        "heading_deg": 360
+      },
+      "expect": [
+        {
+          "path": "headwind_kt",
+          "value": 35,
+          "tolerance": 1
+        },
+        {
+          "path": "crosswind_kt",
+          "value": 20,
+          "tolerance": 1
+        }
+      ],
+      "source": "FAA-CT-8080-2H (Airman Knowledge Testing Supplement for Sport, Recreational, Remote and Private Pilot, 2018), p. 2-33, Figure 36 (Crosswind Component Graph), its printed example: \"40 knots wind at 30° angle ... C 35 knots headwind component, D 20 knots crosswind component\".",
+      "method": "Read off the graph to the knot; the engine's 34.6 and 20.0 kt are within 1. The example gives no side; the wind is put 30 degrees right of a heading of 360, so the crosswind is positive."
+    }
+  ]
+}

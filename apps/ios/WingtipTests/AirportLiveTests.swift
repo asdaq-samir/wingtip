@@ -30,7 +30,7 @@ struct AirportLiveTests {
         // reading, 1,800 ft, is under it.
         let rows = try LiveWords.rvrRows(rvr.runways, minimumSm: 0.5)
         #expect(rows[0].readings == "1800 · 2200 · 6000+")
-        #expect(rows[0].under == "Under your 1/2 SM minimum (14 CFR 91.175(h))")
+        #expect(rows[0].under == "Under your 1/2 sm minimum (14 CFR 91.175(h))")
         #expect(rows[1].readings == "6000+ · — · —" && rows[1].under == nil)
         // No minimum, nothing judged.
         #expect(try LiveWords.rvrRows(rvr.runways, minimumSm: nil).allSatisfy { $0.under == nil })

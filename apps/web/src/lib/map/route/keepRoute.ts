@@ -1,13 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { api } from "../../api/client";
 import type { ChartLayer, Course } from "../../api/types";
-import { diagramPicture, diagramRunwaysPicture } from "../../diagram";
 import { flatNm, lonScale, M_PER_NM } from "../../geo";
-import { kindCycle, tileUrl } from "../sources/tiles";
+import { kindCycle } from "../sources/tiles";
 import { tileOf, WORLD_WIDTH_M } from "../tileMath";
-import { routeAnswersAsked } from "./routeAnswers";
-import { coursePoints, courseFields } from "../../course";
+import { coursePoints } from "../../course";
+// The route's answers noted as the page asks them, from its first load
+// (routeAnswers' planner middleware): imported here, on the route's own
+// chunk, not with the keep's fetching (keepFetch), which comes at the keep
+// and so missed what the page asked before it, a kept route then opening
+// offline with no course (flight-critical.spec, "offline from the first ask").
+import "./routeAnswers";
 
 /**
  * The tiles a route needs in the air, fetched now so the service
@@ -36,9 +39,8 @@ import { coursePoints, courseFields } from "../../course";
  * page's first load asked before the worker held it.
  */
 export const CORRIDOR_NM = 10;
-const CONCURRENCY = 6;
 
-interface KeepProgress {
+export interface KeepProgress {
   done: number;
   total: number;
   failed: number;
@@ -84,118 +86,6 @@ export function corridorTiles(line: [number, number][], zooms: number[], corrido
  *  kept tiles come back without a network. */
 export function keepingAvailable(): boolean {
   return typeof navigator !== "undefined" && "serviceWorker" in navigator && window.isSecureContext;
-}
-
-/** How long to wait for the service worker to be ready. The dev server
- *  registers none, and `ready` then never settles: "Keeping…" sat there
- *  for ever. */
-export const WORKER_WAIT_MS = 5000;
-
-class NoServiceWorker extends Error {
-  constructor() {
-    super("No service worker is holding this app here, so nothing would be kept. The dev server registers none.");
-    this.name = "NoServiceWorker";
-  }
-}
-
-async function workerReady(): Promise<boolean> {
-  if (!keepingAvailable()) return false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<false>((resolve) => {
-    timer = setTimeout(() => resolve(false), WORKER_WAIT_MS);
-  });
-  try {
-    return await Promise.race([navigator.serviceWorker.ready.then(() => true as const), late]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/** The route's airports' diagrams and their runway crops, by their cards
- *  (cached by the worker too): none for a waypoint, a field with none, or
- *  a card that could not be had. A field may have a diagram and no crop. */
-async function routeDiagrams(course: Course): Promise<string[]> {
-  const idents = [...new Set(courseFields(course).map((a) => a.ident))];
-  const cards = await Promise.allSettled(idents.map((ident) => api.airport(ident)));
-  return cards.flatMap((card) =>
-    card.status === "fulfilled" && card.value.airport_diagram_cycle
-      ? [
-          diagramPicture(card.value.ident, card.value.airport_diagram_cycle),
-          // The runways' crop only where the planner says the cycle has
-          // one: asked for anyway, it was a 404 on every keep (WEB-41).
-          ...(card.value.airport_diagram_runways === false
-            ? []
-            : [diagramRunwaysPicture(card.value.ident, card.value.airport_diagram_cycle)]),
-        ]
-      : [],
-  );
-}
-
-/** The route's Stops (api.stopsAlong, the same address the Stops card
- *  asks, so the worker has the one it reads offline) and, for each of its fields and the
- *  route's own airports, the field's services, its pictures' list and the
- *  pictures themselves: what the Stops card and a field's Info and
- *  pictures ask for, so the worker has them (airport-extras,
- *  airport-pictures). Its own fetches, the lists'; the rest as URLs to
- *  fetch with the tiles. None where the planner cannot be asked. */
-export async function routeStopsKept(course: Course): Promise<string[]> {
-  const own = courseFields(course).map((a) => a.ident);
-  const stops = await api
-    .stopsAlong(course.departure.ident, course.destination.ident, (course.stops ?? []).map((s) => s.ident).join(","))
-    .catch(() => null);
-  const idents = [...new Set([...own, ...(stops?.fields ?? []).map((f) => f.ident)])];
-  const pictures = await Promise.allSettled(idents.map((ident) => api.airportPhotos(ident)));
-  return idents.flatMap((ident, i) => {
-    const found = pictures[i];
-    const shown = found?.status === "fulfilled" ? [found.value.aerial_url, ...(found.value.photo ? [found.value.photo.url] : [])] : [];
-    return [`/api/planner/airport/${encodeURIComponent(ident)}/services`, ...shown];
-  });
-}
-
-/**
- * Fetches every corridor tile of `kind` at `zooms`, the route's
- * airports' diagrams and its stops' services and pictures, reporting progress; resolves with the final
- * count. A tile that fails (a 404 where the kind has no sheet, a
- * dropped connection) is counted and skipped.
- */
-async function keepRouteCharts(
-  course: Course,
-  kind: string,
-  zooms: number[],
-  onProgress: (p: KeepProgress) => void,
-  signal?: AbortSignal,
-): Promise<KeepProgress> {
-  if (!(await workerReady())) throw new NoServiceWorker();
-  // The route's own answers first -- its course, checkpoints, nav log and
-  // briefing, as the page asked them (routeAnswers) -- each read to its
-  // end so the worker keeps it whole: a kept route then plans offline.
-  await Promise.allSettled(routeAnswersAsked().map((url) => fetch(url, { signal }).then((res) => res.arrayBuffer())));
-  const urls = [
-    ...(await routeDiagrams(course)),
-    ...(await routeStopsKept(course)),
-    ...corridorTiles(course.course_line as [number, number][], zooms).map((t) => tileUrl(course, kind, t.z, t.x, t.y)),
-  ];
-  const progress: KeepProgress = { done: 0, total: urls.length, failed: 0 };
-  onProgress({ ...progress });
-  let next = 0;
-  const worker = async () => {
-    while (next < urls.length && !signal?.aborted) {
-      const url = urls[next++]!;
-      try {
-        const res = await fetch(url, { signal, priority: "low" });
-        // A 404 for a runway crop is the field having none (the card draws
-        // its sketch), not a failure to keep.
-        if (!res.ok && !(res.status === 404 && url.includes("/runways/"))) progress.failed++;
-      } catch {
-        if (signal?.aborted) return;
-        progress.failed++;
-      }
-      progress.done++;
-      onProgress({ ...progress });
-    }
-  };
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  return progress;
 }
 
 /**
@@ -264,6 +154,9 @@ export async function keep(course: Course, layer: ChartLayer): Promise<void> {
   };
   write({ status: "keeping", key, progress: null });
   try {
+    // The fetching on a chunk of its own (keepFetch), asked for at the
+    // keep: none of it is a route link's first load (route-load.spec).
+    const { keepRouteCharts } = await import("./keepFetch");
     const progress = await keepRouteCharts(
       course,
       layer.kind,

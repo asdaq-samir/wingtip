@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.route
 
+import app.wingtipmaps.android.FieldRules
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.api.CourseEnd
@@ -63,9 +64,9 @@ class RouteLegTest {
     @Test
     fun directAndRemoveAsTheWebHasThem() {
         val was = RouteEdits.Route("KDPA", listOf("KJVL", "KRFD"), "KMSN")
-        assertEquals(RouteEdits.Route("@42.0000,-88.5000", listOf("KRFD"), "KMSN"), RouteEdits.direct(was, "KRFD", "@42.0000,-88.5000"))
-        assertEquals(RouteEdits.Route("KDPA", emptyList(), "KMSN"), RouteEdits.direct(was, "MSN", null))
-        assertNull(RouteEdits.direct(was, "KORD", null))
-        assertEquals(listOf("KRFD"), RouteEdits.without(was.stops, "JVL"))
+        assertEquals(RouteEdits.Route("@42.0000,-88.5000", listOf("KRFD"), "KMSN"), RouteEdits.direct(was, "KRFD", "@42.0000,-88.5000", FieldRules.same))
+        assertEquals(RouteEdits.Route("KDPA", emptyList(), "KMSN"), RouteEdits.direct(was, "MSN", null, FieldRules.same))
+        assertNull(RouteEdits.direct(was, "KORD", null, FieldRules.same))
+        assertEquals(listOf("KRFD"), RouteEdits.without(was.stops, "JVL", FieldRules.same))
     }
 }

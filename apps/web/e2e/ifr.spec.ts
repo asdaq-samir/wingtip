@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { FILING_OFFERED } from "./filing";
 import {
   closeCard,
   closeNavLog,
@@ -65,16 +66,16 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   // (even thousands, 91.179(b)(1)(ii)).
   await expect(why).toHaveAccessibleName(/under IFR, (\d*[02468],000 feet|FL\d[02468]0)/, { timeout: slow(90000) });
   await openProfile(page);
-  await expect(popover).toContainText("Minimum IFR altitude", { timeout: slow(30000) });
+  await expect(popover).toContainText("Minimum IFR Altitude", { timeout: slow(30000) });
   await expect(popover).toContainText("14 CFR 91.179");
   await expect(popover).not.toContainText("14 CFR 91.159");
   // How the floor was found, under its step.
   // How it was chosen, folded under the altitude's figures.
   await popover.getByText("How the Altitude Was Chosen").click();
-  await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
+  await popover.getByRole("button", { name: /Minimum IFR Altitude/ }).click();
   await expect(popover).toContainText("14 CFR 91.177");
   await closeCard(page, "profile-close");
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(60000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(60000) });
   await openSection(page, "Fuel");
   await expect(page.getByTestId("fuel-detail")).toContainText("45 min IFR reserve (14 CFR 91.167)", { timeout: slow(60000) });
 
@@ -148,10 +149,12 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   const popover = page.getByTestId("profile-card");
   // How it was chosen, folded under the altitude's figures.
   await popover.getByText("How the Altitude Was Chosen").click();
-  await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
+  await popover.getByRole("button", { name: /Minimum IFR Altitude/ }).click();
   await expect(popover).toContainText(/Along V191 from BAE the published MEA, [\d,]+ ft/);
   await closeCard(page, "profile-close");
 
+  // Not while filing is not offered (FILING_OFFERED).
+  if (!FILING_OFFERED) return;
   // The flight plan's form (FAA Form 7233-4): the airway between the
   // fixes it is joined and left at, the departure and the arrival picked
   // at its ends, the level in hundreds of feet.
@@ -166,7 +169,7 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   // C81 has no four-letter indicator.
   await expect(form.getByTestId("flight-plan-departure")).toContainText("DEP/C81");
   await form.getByTestId("flight-plan-copy-route").click();
-  await expect(form.getByTestId("flight-plan-copy-route")).toHaveText("Copied");
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("BAEE1 BAE V191 OSH OSHH2");
 });
 
@@ -174,32 +177,27 @@ test(
   "a SID and a STAR typed among the route's points are picked as its departure and arrival, by their transitions",
   { tag: "@smoke" },
   async ({ page }) => {
-    // The two fields' procedures as the planner would list them, made up:
-    // neither field publishes these.
-    await page.route(
-      (url) => /\/api\/planner\/airport\/(C81|KATW)\/procedures$/.test(url.pathname),
-      (route) => {
-        const airport = new URL(route.request().url()).pathname.split("/")[4];
-        const procedures =
-          airport === "C81"
-            ? [{ id: "BAEE1", kind: "departure", name: "BAEE ONE", transitions: ["BAE"], runway_transitions: [] }]
-            : [{ id: "OSHH2", kind: "arrival", name: "OSHH TWO", transitions: ["OSH"], runway_transitions: [] }];
-        return route.fulfill({ json: { airport, cycle: "261001", stale: false, procedures } });
-      },
-    );
+    // The planner's own procedures, unstubbed (the test-quality audit,
+    // round 2): a pair whose CIFP publishes both -- Minneapolis's ZMBRO1
+    // departure by its BRIBE transition and O'Hare's MADII7 arrival by its
+    // KOHLL transition (FAA CIFP, FAACIFP18's KMSP SID and KORD STAR
+    // records; MADII7's read from the CI stack's cycle 261029). Not JVL1,
+    // O'Hare's arrival named for the Janesville VOR: a typed route's
+    // procedure is four or five letters and its number (the engine's
+    // route_procedures), so a three-letter one is read as a point.
     await page.goto("/app/plan");
     await settle(page);
     await emptyPlan(page);
     const field = page.getByTestId("route-type");
-    await field.fill("C81 BAEE1 BAE OSH OSHH2 KATW");
+    await field.fill("KMSP ZMBRO1 BRIBE KOHLL MADII7 KORD");
     await field.press("Enter");
     // The points without the two, the two the fields' procedures.
-    await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
-    await expect(page).toHaveURL(/[?&]dest=KATW(&|$)/);
-    await expect(page).toHaveURL(/[?&]stops=BAE(%2C|,)OSH(&|$)/);
+    await expect(page).toHaveURL(/[?&]dep=KMSP(&|$)/);
+    await expect(page).toHaveURL(/[?&]dest=KORD(&|$)/);
+    await expect(page).toHaveURL(/[?&]stops=BRIBE(%2C|,)KOHLL(&|$)/);
     await expect
-      .poll(() => new URL(page.url()).searchParams.get("procs")?.split(",").sort().join(","))
-      .toBe("C81:BAEE1:BAE,KATW:OSHH2:OSH");
+      .poll(() => new URL(page.url()).searchParams.get("procs")?.split(",").sort().join(","), { timeout: slow(30_000) })
+      .toBe("KMSP:ZMBRO1:BRIBE,KORD:MADII7:KOHLL");
   },
 );
 
@@ -268,7 +266,8 @@ test("under IFR the Weather tab says whether an alternate is needed, files one w
   await expect.poll(() => navlogs.at(-1), { timeout: slow(30000) }).toBe("KMSN");
   await openSection(page, "Fuel");
   await expect(page.getByTestId("fuel-detail")).toContainText("on to KMSN", { timeout: slow(90000) });
-  // And the flight plan's alternate (item 16).
+  // And the flight plan's alternate (item 16), where filing is offered.
+  if (!FILING_OFFERED) return;
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   await expect(page.getByTestId("flight-plan-alternate")).toContainText("KMSN");

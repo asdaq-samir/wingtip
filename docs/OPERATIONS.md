@@ -1,9 +1,11 @@
 # Operations: what is watched and where alerts go
 
 What tells the owner the app is broken before a pilot writes in: the
-services' uptime, the live feeds' freshness, and the faults and speed
-the apps report from real devices. No third-party tracker is used for
-any of it; everything goes to the app's own gateway and mail.
+services' uptime, the live feeds' freshness, the server's disks,
+certificate and backups, and the faults and speed the apps report from
+real devices. No third-party tracker is used for any of it; everything
+goes to the app's own gateway and mail, and AWS's own alarms.
+[RUNBOOKS.md](RUNBOOKS.md) says what to do about each alert.
 
 ## Where alerts go
 
@@ -17,7 +19,11 @@ any of it; everything goes to the app's own gateway and mail.
   `DOWN` or `BACK` line each; the subject says how many.
 - **The gateway's log**, every alert, mail or none: `ALERT ...` and
   `RECOVERED ...` lines (CloudWatch's `wingtip-gateway` stream in
-  production, README-AWS.md).
+  production, README-AWS.md). In production each `ALERT` line is also
+  counted by the stack's `GatewayAlertFilter`, whose alarm emails the
+  owner through SNS: an alert still arrives when SES is what failed.
+- **AWS's alarms**, by email to the stack's `BudgetEmail` (below,
+  "The server").
 - **The planner's log**, each feed going stale and coming back, and a
   JSON POST to `FEED_ALERT_WEBHOOK` where one is set.
 - **The developer console's Status**, every feed's line as last checked
@@ -40,9 +46,43 @@ shorter than that (a restart, a deploy) says nothing. The feeds are not
 asked of a planner that is down.
 
 The gateway cannot see itself stop. Docker restarts it
-(`restart: unless-stopped`) and its health check fails, which the
-server's own checks see; an outside check of `https://<host>/actuator/health/readiness`
-is what would page for a gateway or host that is down.
+(`restart: unless-stopped`); Route 53's health check through CloudFront
+(`HealthAlarm`, three minutes) pages for a gateway or host that is down,
+and the server's own checks (below) for a container that hangs.
+
+## The server
+
+Every five minutes `infra/server/health.sh` (cron, written by
+`deploy.sh`) sends CloudWatch the server's own figures, namespace
+`Wingtip`, and the stack alarms on them (infra/cloudformation/template.yaml):
+
+| Alarm | Figure | Fires when |
+|---|---|---|
+| `RootDiskAlarm`, `DataDiskAlarm` | each disk's use | 85% or more, two checks running |
+| `ServicesAlarm` | services compose should run that are not, and containers Docker calls unhealthy (each restarted by `health.sh`: Docker's restart policy restarts only a container that exits) | one or more, three checks running (15 min) |
+| `OriginCertAlarm` | days left on Caddy's Let's Encrypt certificate for `origin.<domain>` (0 when unreadable) | under 14 (Caddy renews at 30) |
+| `BackupLateAlarm` | hours since the last whole nightly backup (`backup.sh`'s stamp) | over 26 |
+| `ChecksMissingAlarm` | the checks themselves | none for 15 minutes |
+| `GatewayAlertAlarm` | the gateway's `ALERT` lines | any |
+
+And by EventBridge: the chart refresh task stopping without finishing
+(`ChartRefreshFailedRule`), and ACM's warning that CloudFront's
+certificate is near its expiry (`CertificateExpiryRule`).
+
+The cron jobs' own logs (`/var/log/wingtip-*.log`) are rotated weekly,
+four kept; the containers' go to CloudWatch, a month.
+
+## Logs
+
+One JSON object a line in production (`LOG_FORMAT=json` for the planner,
+weather and ingest, `wingtip.log_lines`; Spring Boot's Elastic Common
+Schema for the gateway), so Logs Insights reads them by field. The page's
+request id (`X-Request-Id`, which the web app sends and the gateway makes
+where it does not, `RequestIdFilter`) is on every gateway line (the MDC's
+`requestId`) and passed on to the planner, whose middleware
+(`app.request_ids`) puts it on every line it writes for that request
+(`request_id`). A message is cut at 4,000 characters and a traceback at
+8,000. Locally they are text lines with the id in brackets.
 
 ## Live feeds
 
@@ -58,13 +98,14 @@ gateway mails that as it begins and ends.
 | SWIM FNS (NOTAMs) | no message for 30 min, or disconnected |
 | SWIM ITWS, SFDPS | disconnected only (quiet by nature) |
 | Every SWIM feed | ingest has not beaten for 60 s |
+| ingest itself, where no SWIM feed is set up | its beat older than 60 s (otherwise every SWIM line is "off" and never alerts) |
 | METARs, TAFs, AIRMETs and SIGMETs, PIREPs, G-AIRMETs | older than 3 of their idle turns (3 × 30 min), or past their validity |
 | Winds aloft (GFS) | older than 3 × 2 h, or past validity |
 | GLMP | older than 3 × 1 h |
 | TFRs | older than 3 × 30 min |
 | NEXRAD frames (radar) | older than 3 × 15 min |
 | GOES frames (satellite) | older than 3 × 30 min |
-| Charts, NASR, CIFP, DOF, offline packs | the edition is past its cycle (56-day charts, 28-day AIRAC; `wingtip.data_cycles`, 14 CFR 91.103) |
+| Charts, NASR, CIFP, DOF, special-use airspace, offline packs | the edition is past its cycle, to the minute: an AIRAC or chart edition takes over at 0901Z on its date, the DOF at 0000Z on its release (56-day charts, 28-day AIRAC; `wingtip.data_cycles`, the engine's `data_cycle`, 14 CFR 91.103). The next NASR cycle and CIFP are fetched a week ahead and put in place at 0902Z (`app.warm_up.at_changeover`); on AWS the charts' next cycle is published ahead and served from 0901Z on its date (README-AWS.md, "Chart cycles"), so this fires only when that failed |
 | The weather service | not answering (its products then unjudged) |
 
 A SWIM feed not set up (no queue in ingest's settings) is "off", not
@@ -80,8 +121,8 @@ folders and install ids, `DiagnosticText`):
 
 | App | Faults | Speed |
 |---|---|---|
-| Web | uncaught errors, unhandled promises, renders React could not finish (`lib/errorReports`) | Core Web Vitals (`lib/speed`, Google's web-vitals), long tasks (`lib/longTasks`) |
-| iPhone | MetricKit's crash, hang, CPU and disk-write diagnostics (`Diagnostics/DiagnosticsReporter`) | MetricKit's launch, resume, hang time, scroll hitches, peak memory, memory exits |
+| Web | uncaught errors, unhandled promises, renders React could not finish (`lib/errorReports`) | Core Web Vitals (`lib/speed`, Google's web-vitals), long tasks (`lib/longTasks`), from a quarter of page loads (`lib/helpImprove`'s `SPEED_SAMPLE`) |
+| iPhone | MetricKit's crash, hang, CPU and disk-write diagnostics (`Diagnostics/DiagnosticsReporter`) | MetricKit's launch, resume, hang time, scroll hitches, peak memory, memory exits, and the day's energy and disk (CPU, GPU and best-accuracy GPS time, foreground and background time, MB written) |
 | Android | `ApplicationExitInfo` (crashes, ANRs with traces, low-memory kills), the uncaught handler (`diagnostics/`) | start-up time, slow frames (JankStats); Play vitals covers the rest once published |
 
 Faults are kept **30 days** in the `diagnostics` table (let go each
@@ -90,4 +131,25 @@ log as one line each, and read by a developer at `GET
 /api/diagnostics?days=N` (newest 200, up to 30 days). Speed figures go
 to `speed_samples` (400 days), read on the console's Speed page. A
 caller may send 30 reports an hour; the rest are dropped.
+Nothing is sent from a device whose pilot turned **Help Improve Wingtip
+Maps** off (Settings, Help & About; on by default, kept on the device:
+`lib/helpImprove`, `Diagnostics/HelpImprove.swift`,
+`diagnostics/HelpImprove.kt`).
+
+## The owner's status page
+
+The web's developer console, System (the developer role only), is the
+status page:
+
+- **Live feeds**: each SWIM feed and weather product, its state, when it
+  last came in and since when it is stale (`app.feeds`).
+- **Routes**: each planner route by its template, its calls since the
+  planner started, those of 500 or more and their share, and p50 and p95
+  times (`app.route_metrics`, Prometheus's client; the same counters in
+  Prometheus's text at the planner's own `/metrics`, not forwarded by the
+  gateway). In memory: a restart starts them again.
+- **Apps**: each build's crashes, hangs and other faults, and its
+  headline speed figures at the 75th percentile, over a day, 7 or 30
+  (`GET /api/diagnostics/versions`, `AppHealthController`).
+- **Recent errors** and **Speed**, as before.
 docs/privacy-inventory.md lists what is collected.

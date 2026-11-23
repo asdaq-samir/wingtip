@@ -38,8 +38,9 @@ struct ProfileCard: View {
         List {
             Section {
                 HStack(alignment: .center, spacing: 0) {
-                    ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: shown,
-                                 clearance: try? clear?.get()) { model.waypoint = $0 }
+                    ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: shown, clearance: try? clear?.get(),
+                                 obstacles: plan.profile.flatMap { try? ProfileRules.obstacles(altitudeFt: shown, profile: $0) } ?? [],
+                                 weather: model.weather) { model.waypoint = $0 }
                         .frame(height: chartHeight)
                         .popover(item: Binding(get: { model.waypoint.map(Pick.init) }, set: { model.waypoint = $0?.id })) { pick in
                             legPopover(pick.id)
@@ -51,6 +52,8 @@ struct ProfileCard: View {
                         .padding(.trailing, WingtipSpace.sm)
                 }
                 .listRowInsets(EdgeInsets())
+                // Whose each weather line is and for when.
+                if !ProfileWeatherKey.lines(model.weather).isEmpty { ProfileWeatherKey(weather: model.weather) }
                 previewRow(shown, clear: clear)
                 ProblemLine(plan.sideProblems[.profile])
                 ProblemLine(dryRun.problem)
@@ -89,7 +92,7 @@ struct ProfileCard: View {
                             if let course = plan.course { dryRun.start(course: course, checkpoints: plan.checkpoints, legs: plan.legs) }
                         }
                     }
-                } label: { Label("Dry run", systemImage: "play.fill") }
+                } label: { Label(Wording.dryRun, systemImage: "play.fill") }
                     .disabled(plan.legs.isEmpty || plan.course == nil)
             }
         }
@@ -99,6 +102,8 @@ struct ProfileCard: View {
         // A stop's "Set Altitude…" opens its popover here (RoutePointMenu).
         .onChange(of: flightUI.altitudeAt) { _, _ in takeAltitudeAt() }
         .onChange(of: plan.altitudeFt) { _, _ in model.previewFt = nil }
+        // The weather along the route, again as the route or its time en route changes.
+        .task(id: "\(plan.idents)|\(plan.totals?.eteMin ?? 0)") { await model.loadWeather(plan: plan) }
     }
 
     /// The point a stop's menu asked the altitude of, its popover put up

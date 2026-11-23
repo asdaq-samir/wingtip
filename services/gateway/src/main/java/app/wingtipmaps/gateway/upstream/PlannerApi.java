@@ -11,15 +11,19 @@ import app.wingtipmaps.gateway.planner.model.PlannerExperienceAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerExperienceItem;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification;
+import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerificationAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotesForgotten;
-import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
+import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
+import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerSameField;
+import app.wingtipmaps.gateway.planner.model.PlannerSameFieldAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,8 +34,7 @@ import org.springframework.web.service.annotation.PostExchange;
 
 /**
  * What this app asks the planner on its own behalf, each a pure answer
- * from what is sent (the engine's rules, a pilot's notes, the Studio's
- * drafts): Spring's HTTP interface, its client made by Boot from the
+ * from what is sent (the engine's rules, a pilot's notes): Spring's HTTP interface, its client made by Boot from the
  * "planner" group (application.yml, UpstreamClients), the asks and answers
  * the planner's own types generated from its document (the pom). A path
  * or a field the planner renames fails PlannerClientContractTest or the
@@ -53,6 +56,11 @@ public interface PlannerApi {
     @PostExchange("/api/pilot/endorsements")
     PlannerEndorsements endorsements(@RequestBody PlannerEndorsementsAsk ask);
 
+    /** Many students' experience and endorsements at once, for an
+     *  instructor's page (PlannerClient#records). */
+    @PostExchange("/api/pilot/records-batch")
+    PlannerRecordsBatch recordsBatch(@RequestBody PlannerRecordsBatchAsk ask);
+
     @GetExchange("/api/pilot/endorsement-kinds")
     List<PlannerEndorsementKind> endorsementKinds();
 
@@ -61,11 +69,23 @@ public interface PlannerApi {
     @GetExchange("/api/pilot/instructor-records-since")
     LocalDate instructorRecordsSince(@RequestParam String today);
 
+    /** Which idents name a field, in the order asked (the engine's
+     *  field_names over NASR's record of each): LessonService's flights. */
+    @PostExchange("/api/pilot/same-field")
+    PlannerSameField sameField(@RequestBody PlannerSameFieldAsk ask);
+
     @PostExchange("/api/pilot/endorsement-fill")
     PlannerEndorsementFilled fill(@RequestBody PlannerEndorsementFillAsk ask);
 
-    @PostExchange("/api/aircraft/inspections")
-    PlannerInspections inspections(@RequestBody PlannerInspectionsAsk ask);
+    /** Whether the FAA airmen registry bears out the instructor about to
+     *  sign (the engine's instructor_verification). */
+    @PostExchange("/api/pilot/instructor-verification")
+    PlannerInstructorVerification verifyInstructor(@RequestBody PlannerInstructorVerificationAsk ask);
+
+    /** Each airplane's inspections_due, in the order asked: an aircraft
+     *  list's and the reminders' one call (PlannerClient#inspections). */
+    @PostExchange("/api/aircraft/inspections-batch")
+    List<PlannerInspections> inspectionsBatch(@RequestBody List<PlannerInspectionsAsk> asks);
 
     /** What is wrong with an airplane's fields, by field (the engine's
      *  aircraft_problems): AircraftLimits. */
@@ -82,10 +102,4 @@ public interface PlannerApi {
 
     @DeleteExchange("/api/checkpoint-notes/mine")
     PlannerPilotNotesForgotten forgetNotes(@RequestHeader(PILOT_HEADER) String pilotId);
-
-    @GetExchange("/api/studio/drafts-to-notice")
-    List<PlannerStudioDraft> draftsToNotice();
-
-    @PostExchange("/api/studio/drafts/{id}/noticed")
-    void noticed(@PathVariable String id);
 }

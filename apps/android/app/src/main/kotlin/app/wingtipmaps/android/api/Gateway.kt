@@ -12,6 +12,7 @@ import app.wingtipmaps.android.map.OverlayCache
 import app.wingtipmaps.android.map.OverlayStore
 import app.wingtipmaps.android.offline.KeptLoopTiles
 import app.wingtipmaps.android.offline.LoopTileFallback
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -27,6 +28,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.coroutines.executeAsync
 import java.io.File
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 
 /**
@@ -40,10 +42,14 @@ import java.util.concurrent.TimeUnit
 @SuppressLint("StaticFieldLeak") // the application's context alone (attach), which lives as long as the process
 object Gateway {
     /** The coder for the servers' JSON: a key not modelled is passed
-     *  over, and a null is left out of a body. The planner's snake case
-     *  is carried by each model's @SerialName (Models.kt). */
+     *  over, a value that does not fit a property with a default (an enum
+     *  value the server added after this build) is that default, and a
+     *  null is left out of a body, so a server that ships first never
+     *  fails a phone not yet updated (ApiToleranceTest). The planner's
+     *  snake case is carried by each model's @SerialName (Models.kt). */
     val json: Json = Json {
         ignoreUnknownKeys = true
+        coerceInputValues = true
         explicitNulls = false
     }
 
@@ -83,6 +89,17 @@ object Gateway {
                 val mark = asked.method != "GET" && asked.url.host == Config.host && asked.header(CSRF) == null && token != null
                 chain.proceed(if (mark) asked.newBuilder().header(CSRF, token).build() else asked)
             }
+            // The zone the phone keeps, on every call to the gateway, which
+            // reads the pilot's currency and paperwork on the pilot's own
+            // day (PilotDay), not UTC's, which turns over in the U.S.
+            // evening: on the last evening of 61.57's 90 days the pilot was
+            // told they were no longer current.
+            .addInterceptor { chain ->
+                val asked = chain.request()
+                chain.proceed(
+                    if (asked.url.host == Config.host) asked.newBuilder().header(TIME_ZONE, ZoneId.systemDefault().id).build() else asked,
+                )
+            }
             // A cache of the answers the gateway and the planner say may be
             // kept (Cache-Control: the chart's tiles for a cycle, the fields
             // and airspace of a box, a field's card for minutes), so a view
@@ -114,6 +131,7 @@ object Gateway {
     val writes: GatewayApi by lazy { NetworkModule.gateway(client.newBuilder().callTimeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS).build()) }
 
     private const val CSRF = "X-XSRF-TOKEN"
+    private const val TIME_ZONE = "X-Time-Zone"
 
     /** The whole-call limits: a read, and a write, which may carry a
      *  scanned page or a track. */
@@ -203,10 +221,7 @@ object Gateway {
     suspend fun saveFile(url: String, file: File, who: String) {
         client.newCall(Request.Builder().url(url).build()).executeAsync().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("$who answered ${response.code}.")
-            file.parentFile?.mkdirs()
-            val part = File(file.path + ".part")
-            part.writeBytes(response.body.bytes())
-            if (!part.renameTo(file)) part.delete()
+            file.writeWhole(response.body.bytes())
         }
     }
 

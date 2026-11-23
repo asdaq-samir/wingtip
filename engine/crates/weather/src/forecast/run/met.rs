@@ -10,6 +10,7 @@ use crate::json::Value;
 use crate::metar;
 use crate::winds::{self, WindAt};
 use wingtip_core::sort::StableSort;
+use wingtip_flight::field::same_field;
 
 /// Whose forecast a figure is.
 #[derive(Clone, Debug, PartialEq)]
@@ -27,7 +28,7 @@ impl Source {
         match self {
             Source::Taf { ident, nm } if *nm < 1.0 => format!("TAF {ident}"),
             Source::Taf { ident, nm } => format!("TAF {ident}, {} nm away", nm.round()),
-            Source::Modelled { valid } => format!("NWS Gridded LAMP, modelled for {}", super::zulu(*valid)),
+            Source::Modelled { valid } => format!("NWS Gridded LAMP, modeled for {}", super::zulu(*valid)),
         }
     }
 }
@@ -71,8 +72,7 @@ fn taf_met(station: &Value, nm: f64, start: f64, end: f64) -> Option<Met> {
 /// says something of the window (field.rs: the reach the briefing and the
 /// altitude plan's clouds take a TAF over).
 fn taf_near(tafs: &[Value], ident: Option<&str>, lat: f64, lon: f64, start: f64, end: f64) -> Option<Met> {
-    if let Some(own) =
-        ident.and_then(|i| tafs.iter().find(|s| s.get("icaoId").and_then(Value::as_str).is_some_and(|id| id == i || id == format!("K{i}"))))
+    if let Some(own) = ident.and_then(|i| tafs.iter().find(|s| s.get("icaoId").and_then(Value::as_str).is_some_and(|id| same_field(id, i))))
         && let Some(m) = taf_met(own, 0.0, start, end)
     {
         return Some(m);

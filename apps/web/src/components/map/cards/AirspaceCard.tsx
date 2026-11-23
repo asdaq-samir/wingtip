@@ -10,8 +10,10 @@ import { useAreaWhileUp } from "../../../lib/map/mapPick";
 import { MapCard } from "../../../lib/map/cards/MapCard";
 import { ListGroup, ListRow } from "../../GroupedList";
 import { callTypes, entryRules } from "../../../lib/airspaceRules";
+import { SpecialVfr } from "../../SpecialVfr";
 import FrequencyButton from "../../FrequencyButton";
 import { airportQuery } from "../../../lib/queryClient";
+import { Cited } from "../../../features/documents";
 
 /**
  * The card a tap on a Class B, C or D line opens (the map draws them from
@@ -56,12 +58,14 @@ export function AirspaceCardBody({ volume, at }: { volume: AirspaceVolume; at?: 
           at the owner's ask for cards that say what a pilot does there
           (2026-10-30). */}
       <div>
-        <ListGroup title="To enter">
+        <ListGroup title="To Enter">
           {entryRules(volume.airspace_class).map((r) => (
-            <ListRow key={r.rule} title={<span className={TEXT.detail}>{r.rule}</span>} description={r.cite} />
+            <ListRow key={r.rule} title={<span className={TEXT.detail}>{r.rule}</span>} description={<Cited text={r.cite} />} />
           ))}
         </ListGroup>
       </div>
+      {/* Special VFR in the surface area, the part of a volume from the surface. */}
+      {volume.floor_sfc && <SpecialVfr airspaceClass={volume.airspace_class} airport={volume.ident} testId="airspace-special-vfr" />}
     </MapCard>
   );
 }
@@ -79,7 +83,7 @@ function AirspaceCall({ volume }: { volume: AirspaceVolume }) {
   if (!shown.length) return null;
   return (
     <div>
-      <ListGroup title={first === "APP" ? "Call approach" : "Call the tower"}>
+      <ListGroup title={first === "APP" ? "Call Approach" : "Call the Tower"}>
         {shown.map((f, i) => (
           <ListRow
             key={`${f.frequency_mhz}-${i}`}

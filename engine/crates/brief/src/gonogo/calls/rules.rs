@@ -133,6 +133,10 @@ pub(crate) fn frat_input(i: In, v: &Value) -> R<frat::Input> {
             None | Some(Value::Null) => None,
             Some(_) => Some(truth(v, "night_passengers")),
         },
+        lights: match v.get("lights") {
+            None | Some(Value::Null) => None,
+            Some(_) => Some(truth(v, "lights")),
+        },
         fuel_margin_gal: i.opt_num(v, "fuel_margin_gal")?,
         ifr: truth(v, "ifr"),
         vor_check,

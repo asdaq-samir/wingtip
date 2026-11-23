@@ -2,6 +2,10 @@ package app.wingtipmaps.android.offline
 
 import android.content.Context
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.dataCycle
+import app.wingtipmaps.android.readWhole
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,8 +14,8 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A region's charts kept on the phone (Setup → Downloads), as the iOS
@@ -36,13 +40,44 @@ data class OfflineKept(
     val complete: Boolean get() = done.toSet() == wanted.keys
     val bytes: Long get() = wanted.values.sum()
 
-    /** Past its date: an edition is replaced at 0901Z on the next one's
-     *  effective day (the FAA's 28 and 56 Day Product Schedule, as the
-     *  planner's wingtip.data_cycles.in_force_day has it). Said on the
-     *  list, never removed for it alone (warn, never limit; decision 0008). */
-    fun expired(now: Instant = AppClock.javaNow()): Boolean {
-        val day = expires?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return false
-        return !now.isBefore(day.atTime(9, 1).toInstant(ZoneOffset.UTC))
+    /** Past its date: the engine's `data_cycle` on the FAA's 56-day chart
+     *  schedule, asked at the minute, as an edition is replaced at 0901Z on
+     *  the next one's date ("Effective 0901 UTC"). The rule was worked out
+     *  here as `expires` plus nine hours and a minute. Said on the list,
+     *  never removed for it alone (warn, never limit; decision 0008). */
+    fun expired(now: Instant = AppClock.javaNow(), cycles: ChartCycle = ChartCycle.ENGINE): Boolean = state(now, cycles) == "expired"
+
+    /** Whether the cycle has taken over by `now`: in force, or since
+     *  replaced (the engine's `data_cycle`, 0901Z on its date). A region of
+     *  the next cycle kept ahead is drawn from then on (OfflineStore.keptInForce). */
+    fun begun(now: Instant = AppClock.javaNow(), cycles: ChartCycle = ChartCycle.ENGINE): Boolean =
+        state(now, cycles).let { it == "in_force" || it == "expired" }
+
+    /** The cycle's state at `now`, asked at the second; null for a name
+     *  that is no cycle's or where the rule cannot say. */
+    private fun state(now: Instant, cycles: ChartCycle): String? =
+        isoDay(cycle)?.let { cycles.state(it, now.truncatedTo(ChronoUnit.SECONDS).toString()) }
+
+    companion object {
+        /** A chart cycle's name, "10-29-2026" as the FAA's links write it, as
+         *  "2026-10-29"; null where it is no such name. */
+        fun isoDay(cycle: String): String? {
+            val parts = cycle.split("-")
+            if (parts.size != 3 || parts.any { it.toIntOrNull() == null }) return null
+            return "${parts[2]}-${parts[0]}-${parts[1]}"
+        }
+    }
+}
+
+/** The engine's `data_cycle` on the FAA's 56-day chart schedule: an
+ *  edition's state ("not_yet", "in_force", "expired") at a time, null
+ *  where it cannot say. A seam, as the engine does not load in the JVM's
+ *  unit tests, which answer from the shared fixtures (dataCycles.json). */
+fun interface ChartCycle {
+    fun state(effective: String, on: String): String?
+
+    companion object {
+        val ENGINE = ChartCycle { effective, on -> Engine.dataCycle(kind = "chart", effective = effective, on = on).getOrNull()?.state }
     }
 }
 
@@ -54,15 +89,17 @@ data class OfflineKept(
  * OfflineLayers), over the network's tiles; the overlays' archive is the
  * map's own OverlayStore, fetched whole with a region.
  */
-class OfflineStore(val root: File) {
+class OfflineStore(val root: File, private val cycles: ChartCycle = ChartCycle.ENGINE) {
     private val manifest = File(root, "manifest.json")
     private val serializer = ListSerializer(OfflineKept.serializer())
     private val json = Json { ignoreUnknownKeys = true }
     private val _kept = MutableStateFlow(read())
+    /** Kept cycles known to have begun: once begun, always. */
+    private val begun = ConcurrentHashMap.newKeySet<String>()
     val kept: StateFlow<List<OfflineKept>> = _kept.asStateFlow()
 
     private fun read(): List<OfflineKept> =
-        runCatching { json.decodeFromString(serializer, manifest.readText()) }.getOrDefault(emptyList())
+        manifest.readWhole()?.let { runCatching { json.decodeFromString(serializer, it) }.getOrNull() }.orEmpty()
 
     fun path(cycle: String, region: String, archive: String): File = File(root, "$cycle/$region/$archive.pmtiles")
 
@@ -78,10 +115,7 @@ class OfflineStore(val root: File) {
         list.removeAll { it.id == id }
         if (after != null) list += after
         if (after == null && before != null) File(root, "${before.cycle}/${before.region}").deleteRecursively()
-        root.mkdirs()
-        val temp = File(root, "manifest.json.tmp")
-        temp.writeText(json.encodeToString(serializer, list))
-        temp.renameTo(manifest)
+        manifest.writeWhole(json.encodeToString(serializer, list))
         _kept.value = list
     }
 
@@ -95,14 +129,32 @@ class OfflineStore(val root: File) {
     }
 
     /**
+     * The newest kept cycle later than `cycle` that has taken over by
+     * `now`, null where none has: the phone offline across a changeover,
+     * its chart answer still the old cycle's, draws the next cycle where a
+     * region of it is kept, from 0901Z on its date (the data-cycles
+     * audit's 14, the owner's word 2026-11-21). Past the region the old
+     * chart stays, and Ready to Fly says it is out of date. The iPhone's
+     * OfflineStore.keptInForce.
+     */
+    fun keptInForce(cycle: String, now: Instant = AppClock.javaNow()): String? =
+        _kept.value.filter { sortable(it.cycle) > sortable(cycle) }.distinctBy { it.cycle }
+            .sortedByDescending { sortable(it.cycle) }
+            .firstOrNull { it.cycle in begun || it.begun(now, cycles).also { b -> if (b) begun += it.cycle } }?.cycle
+
+    /**
      * The archives the map draws for a chart kind of the cycle: each
      * region's at the density asked for, else at the other (a 256-pixel
-     * tile covers the same 256 dp, OfflineLayers), whole ones only.
+     * tile covers the same 256 dp, OfflineLayers), whole ones only; and
+     * after them, drawn over them, those of the kept cycle in force where
+     * it is later (`keptInForce`).
      */
-    fun archives(cycle: String, kind: String, scale: Int): List<File> =
-        _kept.value.filter { it.cycle == cycle }.mapNotNull { kept ->
-            listOf(archive(kind, scale), archive(kind, if (scale == 1) 2 else 1))
-                .firstOrNull { it in kept.done }?.let { path(cycle, kept.region, it) }?.takeIf { it.isFile }
+    fun archives(cycle: String, kind: String, scale: Int, now: Instant = AppClock.javaNow()): List<File> =
+        listOfNotNull(cycle, keptInForce(cycle, now)).flatMap { drawn ->
+            _kept.value.filter { it.cycle == drawn }.mapNotNull { kept ->
+                listOf(archive(kind, scale), archive(kind, if (scale == 1) 2 else 1))
+                    .firstOrNull { it in kept.done }?.let { path(drawn, kept.region, it) }?.takeIf { it.isFile }
+            }
         }
 
     /** The bytes on disk, for the list's Storage Used. */
@@ -114,7 +166,7 @@ class OfflineStore(val root: File) {
      *  changeover day still has a chart. */
     fun sweep(now: Instant = AppClock.javaNow()) {
         val list = all()
-        for (old in list.filter { it.expired(now) }) {
+        for (old in list.filter { it.expired(now, cycles) }) {
             if (list.any { it.region == old.region && it.complete && sortable(it.cycle) > sortable(old.cycle) }) update(old.id) { null }
         }
     }

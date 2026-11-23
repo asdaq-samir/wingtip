@@ -1,5 +1,5 @@
 /** How the airspace over a point is written (AirspaceCard). */
-import type { VfrMinimums } from "./api/types";
+import type { AirspaceBand, VfrMinimums } from "./api/types";
 import { callEngine } from "./engine/engine";
 import { FT_PER_SM, type LatLon } from "./geo";
 import { altFt } from "./format";
@@ -29,3 +29,7 @@ export function pointOf(text: string | null): LatLon | null {
     lon = Number(match[2]);
   return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
 }
+
+/** Whether a band over a point starts at the ground there: its floor at
+ *  or below the ground's height, which a card says as "Surface". */
+export const fromSurface = (band: AirspaceBand, ground: number | null) => ground !== null && band.floor_ft <= ground;

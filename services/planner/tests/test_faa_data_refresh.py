@@ -31,7 +31,10 @@ def test_the_checks_are_jobs_on_the_planners_scheduler(monkeypatch):
     on = main.schedule.scheduler()
     main._schedule_checks(on)
     jobs = {job.id: job for job in on.get_jobs()}
-    assert set(jobs) == {"faa-data-cycles", "faa-editions", "aircraft-registry", "chart-cycle"}
+    # The next cycle's NASR and CIFP put in place at 0902Z (faa-changeover, faa-procedures: data-cycles),
+    # and the documents library once a day (faa-library: documents).
+    faa = {"faa-data-cycles", "faa-editions", "faa-procedures", "faa-changeover", "faa-library"}
+    assert set(jobs) == faa | {"aircraft-registry", "chart-cycle"}
     assert jobs["faa-editions"].trigger.interval.total_seconds() == main.EDITIONS_CHECK_EVERY_S
     assert jobs["chart-cycle"].trigger.interval.total_seconds() == chart_refresh.CHECK_EVERY_S
 

@@ -1,6 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
 import FlightFoot from "./FlightFoot";
-import { routeName } from "../../../lib/identSchema";
 import type { FlightRules } from "../../../lib/preferences";
 import { Shown, useShown } from "../../../lib/shown";
 import Segmented from "../../../components/Segmented";
@@ -47,7 +46,7 @@ export default function PlanCards({
   briefContents: ComponentProps<typeof BriefCard>["contents"];
   briefNotice: ReactNode;
 }) {
-  const { flightRules, planned, routeKey, routed, setFlightRules } = vm.route;
+  const { flightRules, routeKey, routed, setFlightRules } = vm.route;
   const { course, s } = vm.plan;
   const { cardUp, selectPlace } = vm.cards;
   const { addStopField } = vm.stops;
@@ -79,7 +78,7 @@ export default function PlanCards({
             them. */}
       {briefHere && (
         <BriefCard
-          name={routeName(planned.dep, planned.dest, planned.stops)}
+          name="Brief"
           line={briefLine}
           contents={briefContents}
           notice={briefNotice}
@@ -116,7 +115,7 @@ export default function PlanCards({
             rules={
               !s.local && (
                 <Segmented
-                  label="Flight rules"
+                  label="Flight Rules"
                   value={flightRules}
                   onChange={(v) => setFlightRules(v as FlightRules)}
                   testId="flight-rules"

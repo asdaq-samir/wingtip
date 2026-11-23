@@ -6,7 +6,7 @@ import Observation
 /// night, and whether the approach's fixes carry their tags (ForeFlight's
 /// plate settings, the owner's screenshot, 2026-11-11). Kept on the
 /// device, as the map's other switches are (MapExtrasInput.Keys).
-struct PlateLook: Equatable {
+nonisolated struct PlateLook: Equatable {
     /// The page's opacity, from clear (0) to solid (1).
     var opacity: Double = PlateLook.defaultOpacity
     var inverted = false
@@ -19,7 +19,7 @@ struct PlateLook: Equatable {
     /// taps with nothing to show for it.
     static let leastOpacity = 0.1
 
-    enum Keys {
+    nonisolated enum Keys {
         static let opacity = "plate.opacity"
         static let inverted = "plate.inverted"
         static let annotations = "plate.annotations"

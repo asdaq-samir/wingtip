@@ -16,8 +16,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
@@ -31,7 +33,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,7 +79,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenM
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val fix by ownShip.fix.collectAsStateWithLifecycle()
-    var question by rememberSaveable { mutableStateOf("") }
+    val question = rememberTextFieldState()
     var source by remember { mutableStateOf<AssistantSource?>(null) }
     val list = rememberLazyListState()
 
@@ -87,7 +88,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenM
 
     fun send(words: String) {
         if (words.isBlank()) return
-        question = ""
+        question.clearText()
         client.ask(words, context)
     }
 
@@ -126,12 +127,12 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenM
             horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             OutlinedTextField(
-                value = question, onValueChange = { question = it }, modifier = Modifier.weight(1f),
-                placeholder = { Text(stringResource(R.string.ask_about_flight)) }, maxLines = 4,
+                state = question, modifier = Modifier.weight(1f),
+                placeholder = { Text(stringResource(R.string.wording_ask_about_the_flight)) }, lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                keyboardActions = KeyboardActions(onSend = { send(question) }),
+                onKeyboardAction = { send(question.text.toString()) },
             )
-            IconButton(onClick = { send(question) }, enabled = question.isNotBlank()) {
+            IconButton(onClick = { send(question.text.toString()) }, enabled = question.text.isNotBlank()) {
                 Icon(WingtipIcons.send, contentDescription = stringResource(R.string.send), tint = MaterialTheme.colorScheme.primary)
             }
         }
@@ -143,7 +144,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenM
 @Composable
 private fun Suggestions(onAsk: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        SectionTitle(stringResource(R.string.ask_about_flight))
+        SectionTitle(stringResource(R.string.wording_ask_about_the_flight))
         Text(
             stringResource(R.string.ask_help),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,

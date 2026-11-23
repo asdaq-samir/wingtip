@@ -3,6 +3,7 @@ import Foundation
 import ImageIO
 import MapKit
 import OSLog
+import Synchronization
 import UIKit
 
 /// The FAA chart as the map's ground: an overlay over Apple's map, drawn
@@ -20,7 +21,10 @@ import UIKit
 /// (ChartFade) into the USGS's aerial imagery under it (CloseImagery), as
 /// the web map's does, Apple's map under both (canReplaceMapContent off)
 /// where the USGS has none: the runways (RunwaySurface) lie on the real ones.
-final class ChartTileOverlay: NSObject, MKOverlay, @unchecked Sendable {
+///
+/// The tile pipeline (this file, TileStore, TileCache, TileMath, KeepRoute)
+/// is nonisolated: MapKit loads and draws tiles on its own threads.
+final nonisolated class ChartTileOverlay: NSObject, MKOverlay, Sendable {
     let template: TileTemplate
     /// The day's lift (ChartLift) put on each tile as it is decoded.
     let lift: Bool
@@ -31,8 +35,13 @@ final class ChartTileOverlay: NSObject, MKOverlay, @unchecked Sendable {
     let store: TileStore
     let cache: TileCache
     /// Told on the main queue as each tile is answered with a picture: the
-    /// map shows itself once the chart is drawn (ChartMap's reveal).
-    var onTile: (@MainActor @Sendable () -> Void)?
+    /// map shows itself once the chart is drawn (ChartMap's reveal). Set on
+    /// the main actor, read on the tile loads' threads.
+    var onTile: (@MainActor @Sendable () -> Void)? {
+        get { told.withLock { $0 } }
+        set { told.withLock { $0 = newValue } }
+    }
+    private let told = Mutex<(@MainActor @Sendable () -> Void)?>(nil)
 
     // The whole world: the renderer works out the tiles a rect needs.
     let coordinate = CLLocationCoordinate2D(latitude: 0, longitude: 0)
@@ -53,7 +62,7 @@ final class ChartTileOverlay: NSObject, MKOverlay, @unchecked Sendable {
 
 /// A tile of the pyramid: its level, column and row, as the web map and
 /// the planner address them ({z}/{x}/{y}, KeepRoute.tile).
-struct ChartTile: Hashable, Sendable {
+nonisolated struct ChartTile: Hashable, Sendable {
     let z: Int
     let x: Int
     let y: Int
@@ -64,7 +73,7 @@ struct ChartTile: Hashable, Sendable {
 /// the pyramid's level z cuts the same square into 2^z tiles a side, so a
 /// tile's map rect is exact and the chart lies where the position dot
 /// and the airspace (both MKMapPoints) say.
-enum ChartTileMath {
+nonisolated enum ChartTileMath {
     /// The most a tile's pixel is stretched over the screen's pixels
     /// before a level finer is drawn: 1.5, so a 3x screen draws the
     /// 512-pixel tile from the moment it covers 768 of its pixels, never
@@ -136,57 +145,12 @@ enum ChartTileMath {
     }
 }
 
-/// The decoded tiles drawn, in memory, so a tile scrolled back into view
-/// is drawn at once rather than read from disk and decoded again: the
-/// first level of the three (memory, the disk store, the network). An
-/// NSCache: safe from MapKit's drawing threads, and iOS trims it under
-/// memory pressure. It holds decoded bitmaps, the cost of each its bytes
-/// (a 512-pixel tile is 1 MB): 96 MB is about three screens of a 3x
-/// phone at the levels ChartTileMath picks, enough for a pan back and a
-/// zoom out and in again.
-final class TileCache: @unchecked Sendable {
-    static let shared = TileCache()
-
-    private final class Box {
-        let image: CGImage
-        init(_ image: CGImage) { self.image = image }
-    }
-
-    private let cache = NSCache<NSString, Box>()
-
-    init(bytes: Int = 96 * 1024 * 1024) {
-        cache.totalCostLimit = bytes
-    }
-
-    /// A tile's key: the edition, the kind (and whether the day's lift is
-    /// on it), the tile and its density, so none stands in for another.
-    static func key(cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int = 1) -> String {
-        "\(cycle)/\(kind)/\(z)/\(x)/\(y)@\(scale)x"
-    }
-
-    static func cost(of image: CGImage) -> Int {
-        image.bytesPerRow * image.height
-    }
-
-    func image(_ key: String) -> CGImage? {
-        cache.object(forKey: key as NSString)?.image
-    }
-
-    func keep(_ image: CGImage, for key: String) {
-        cache.setObject(Box(image), forKey: key as NSString, cost: Self.cost(of: image))
-    }
-
-    func removeAll() {
-        cache.removeAllObjects()
-    }
-}
-
-/// A tile's PNG made ready to draw: decoded once into a plain 32-bit
-/// bitmap (the pyramid's tiles are 256-colour palette PNGs, #547, which
-/// Core Graphics would otherwise expand at every draw), with the day's
-/// lift (ChartLift) on it where asked.
-enum ChartTileImage {
-    nonisolated static func decode(_ data: Data, lift: Bool) -> CGImage? {
+/// A tile made ready to draw, palette PNG or lossless WebP (ImageIO
+/// reads either, whatever the `.png` address says): decoded once into a
+/// plain 32-bit bitmap (#547's 256 colours Core Graphics would otherwise
+/// expand at every draw), with the day's lift (ChartLift) where asked.
+nonisolated enum ChartTileImage {
+    static func decode(_ data: Data, lift: Bool) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let decoded = CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
         else { return nil }
@@ -215,14 +179,17 @@ enum ChartTileImage {
 /// shade, so the marks, the course and the sheets over it are untouched;
 /// its alpha is the chart's fade close in (ChartFade), set as the view
 /// moves.
-final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
+///
+/// Unchecked: MKOverlayRenderer is not Sendable, and MapKit draws it on
+/// its own threads; everything it changes is behind its two locks.
+final nonisolated class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
     private let chart: ChartTileOverlay
     private let session: URLSession
     private let signposter = OSSignposter(subsystem: "app.wingtipmaps.ios", category: "tiles")
 
     /// The loads under way, by tile, and the tiles drawn with a stand-in
     /// that are not loading: asked again when they are back in view.
-    private struct Loads {
+    private nonisolated struct Loads {
         var running: [ChartTile: Task<Void, Never>] = [:]
         var standIn: Set<ChartTile> = []
     }
@@ -240,18 +207,22 @@ final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
         }
     }
 
+    /// This chart's part of every tile's key, made once.
+    private let prefix: String
+
     init(chart: ChartTileOverlay, session: URLSession = .shared) {
         self.chart = chart
         self.session = session
+        let t = chart.template
+        prefix = TileCache.prefix(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : ""), scale: t.scale)
         super.init(overlay: chart)
     }
 
     /// How many levels up a stand-in is looked for while a tile loads.
     static let standInLevels = 4
 
-    private func key(_ tile: ChartTile) -> String {
-        let t = chart.template
-        return TileCache.key(cycle: t.cycle, kind: t.kind + (chart.lift ? "+lift" : ""), z: tile.z, x: tile.x, y: tile.y, scale: t.scale)
+    private func key(_ tile: ChartTile) -> TileCache.Key {
+        TileCache.Key(prefix: prefix, tile: tile)
     }
 
     private func level(zoomScale: MKZoomScale) -> Int? {
@@ -385,14 +356,14 @@ final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
 /// s moves each away from the pixel's grey by 1 / (1 - s); Core Image's
 /// colour controls do both, the grey by luminance rather than the plain
 /// mean, a difference under a step of the eye on the chart's inks.
-enum ChartLift {
+nonisolated enum ChartLift {
     static let contrast = 1 / (1 - 0.1)
     static let saturation = 1 / (1 - 0.1)
     /// One context for every tile, as Core Image asks: making one is the
     /// costly part.
     private static let context = CIContext(options: [.cacheIntermediates: false])
 
-    nonisolated static func apply(_ image: CGImage) -> CGImage? {
+    static func apply(_ image: CGImage) -> CGImage? {
         let input = CIImage(cgImage: image)
         guard let filter = CIFilter(name: "CIColorControls") else { return nil }
         filter.setValue(input, forKey: kCIInputImageKey)

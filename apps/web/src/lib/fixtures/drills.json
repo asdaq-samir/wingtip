@@ -10,7 +10,7 @@
   "decks": [
     {
       "key": "light-gun",
-      "title": "Light gun signals",
+      "title": "Light Gun Signals",
       "source": "14 CFR 91.125",
       "url": "https://www.ecfr.gov/current/title-14/part-91/section-91.125",
       "cards": [
@@ -140,7 +140,7 @@
     },
     {
       "key": "vfr-minimums",
-      "title": "VFR weather minimums",
+      "title": "VFR Weather Minimums",
       "source": "14 CFR 91.155",
       "url": "https://www.ecfr.gov/current/title-14/part-91/section-91.155",
       "cards": [

@@ -45,7 +45,7 @@ struct AirportPlaceHead: View {
             }
             titles
             let distance = Result { try AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
-                                                           fix: ownShip.fix?.coordinate, departure: plan.course?.departure) }
+                                                           fix: ownShip.coarseCoordinate, departure: plan.course?.departure) }
             actions(distance: try? distance.get())
             // A failure is said under the facts, so a missing distance is not read as none.
             AirportFacts(place: place, distance: try? distance.get(), fuel: fuel)
@@ -194,7 +194,7 @@ struct AirportPlaceHead: View {
             .accessibilityHint("Hold for Depart From")
             .accessibilityIdentifier("fly-here")
             Button { plan.addStop(place.ident); done() } label: {
-                ActionFace(systemImage: CardAction.addStop.systemImage, title: "Add Stop")
+                ActionFace(systemImage: CardAction.addStop.systemImage, title: Wording.addStop)
             }
             .glassButton()
             .disabled(place.closed != nil || !plan.canAddStop(place.ident))
@@ -213,7 +213,7 @@ struct AirportPlaceHead: View {
             }
             .toggleStyle(.button)
             .glassButton()
-            .accessibilityLabel(kept ? "Remove from Favorites" : "Add to Favorites")
+            .accessibilityLabel(kept ? Wording.removeFromFavorites : Wording.addToFavorites)
             .accessibilityIdentifier("place-favorite")
         }
         .glassGroup(spacing: WingtipSpace.sm)

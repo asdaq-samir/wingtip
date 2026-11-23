@@ -1,7 +1,7 @@
 import Foundation
 
 /// The profile's questions of the engine, by name (engine/facade/src/call.rs):
-/// how close the ground along the route comes to an altitude
+/// how close the ground and the obstacles along the route come to an altitude
 /// (`profile_clearance`, coloured red under 500 ft, 14 CFR 91.119(c)'s
 /// least height, and yellow within 1,000 ft, 91.119(b)'s; the legal
 /// minimums, 14 CFR 91.119 and 91.177, are kept by the legal altitudes
@@ -29,15 +29,25 @@ enum ProfileRules {
     }
 
     /// The clearance at `altitudeFt` over the planner's ground along the
-    /// route. The planner's side view carries no obstacles yet, so the
-    /// engine is given the ground alone.
+    /// route and the DOF's obstacles on it (the side view's, their tops MSL).
     static func clearance(altitudeFt: Double, profile: RouteProfile, legs: [Leg]) throws -> Clearance {
         try Engine.profileClearance(
             altitudeFt: altitudeFt,
             alongNm: profile.terrain.map(\.alongNm),
             groundFt: profile.terrain.map(\.groundFt),
-            obstacles: [],
+            obstacles: (profile.obstacles ?? []).map { .init(alongNm: $0.alongNm, amslFt: $0.amslFt) },
             points: waypoints(legs: legs).map { .init(ident: $0.ident, alongNm: $0.alongNm) })
+    }
+
+    typealias Obstacle = EngineContract.ProfileObstaclesAnswerItem
+
+    /// The side view's obstacles against the altitude shown, coloured as
+    /// its ground is (`profile_obstacles`: warning under 500 ft, caution
+    /// within 1,000, 14 CFR 91.119(c) and (b)), the tallest three at least
+    /// an eighth of the route apart `named`.
+    static func obstacles(altitudeFt: Double?, profile: RouteProfile) throws -> [Obstacle] {
+        try Engine.profileObstacles(altitudeFt: altitudeFt, lengthNm: profile.lengthNm,
+                                    obstacles: (profile.obstacles ?? []).map { .init(alongNm: $0.alongNm, amslFt: $0.amslFt, aglFt: $0.aglFt) })
     }
 
     /// The advisor's rows, highest first, from the planner's altitude line.

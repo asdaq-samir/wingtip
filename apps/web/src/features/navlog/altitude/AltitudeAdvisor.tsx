@@ -75,10 +75,16 @@ export default function AltitudeAdvisor({
                   <ItemTitle className={cn("tabular-nums", TEXT.row, r.flown && "text-tint")}>
                     {flightLevel(r.altitude_ft)}
                     {r.fastest && <Badge variant="secondary">Fastest</Badge>}
-                    {r.economical && <Badge variant="secondary">Most economical</Badge>}
+                    {r.economical && <Badge variant="secondary">Most Economical</Badge>}
                   </ItemTitle>
                   {r.warning && (
-                    <ItemDescription className={cn("flex gap-1 text-caution-ink", TEXT.note)}>
+                    // The note's size on its own leading: the stock xs item's
+                    // description is 12 (text-xs), which took the size and
+                    // left the note's 18 line under it (the iOS audit's P3,
+                    // "Over the legal altitudes" 12 on 18).
+                    <ItemDescription
+                      className={cn("flex gap-1 text-caution-ink", TEXT.note, "group-data-[size=xs]/item:text-(length:--type-note)")}
+                    >
                       <TriangleAlert className="mt-0.5 size-3 shrink-0" aria-hidden />
                       <span className="line-clamp-2">{r.warning}</span>
                     </ItemDescription>

@@ -22,7 +22,7 @@ export const SETTLE_MS = DRAWER_MS + 50;
  * each where it belongs, and a render never hands it a new number.
  *
  * - The pill: the one search's band with the grabber over it, 4.25 rem on
- *   a bottom sheet (SheetParts' barRowPad: the grabber's 16-point room, the
+ *   a bottom sheet (SheetHead's barRowPad: the grabber's 16-point room, the
  *   least iOS keeps, the 46-point field, six under: the owner, 2026-11-13,
  *   "taking minimal space"); on a top sheet the band's 4.25 rem and the
  *   grabber's own 1 rem row under it, 5.25 rem. Standing on the screen's
@@ -70,8 +70,11 @@ const SIZES: PanelState[] = ["peek", "half", "full"];
  * down and came back up (the owner's screen recording, 2026-11-16).
  */
 export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*:not([data-pin-foot])]:transition-none";
-/** And a body that is the pill's one surface: its title row kept in sight. */
-export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
+/** And a body that is the pill's one surface: its title row kept in sight,
+ *  and only the row: what a head shows under its name (CardHead's `below`,
+ *  the Brief's verdict) is not laid out there, as it made the head taller
+ *  than the pill's room and pushed the row's ✕ off the screen's foot. */
+export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible [&_[data-head-below]]:hidden`;
 
 const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none";
 /** What a sheet shows risen where its pill is not simply its top (FPL's
@@ -96,6 +99,12 @@ export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/s
  *  nothing. SheetParts' spacer at the foot; a floating bar in the foot
  *  takes some of it back (FplTabBar). */
 export const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
+
+/** The room under a card's content (SheetCard), 16 points or the home
+ *  indicator's inset: its last row clear of the screen's foot. A card's
+ *  floating tab bar (CardTabBar) takes it back, so the bar rests in the
+ *  same place scrolled to the end as it does pinned. */
+export const CARD_FOOT_ROOM = "max(1rem, env(safe-area-inset-bottom))";
 
 /** Held at a sheet's free edge however far the sheet is slid: moved back by
  *  the Drawer's snap offset and the finger's movement, on its curve, held
@@ -171,9 +180,8 @@ function rootRem() {
 }
 
 /** The side panel's width from `md` up (design/tokens.json size.panel),
- *  and a desktop's from 1024 wide (panel-wide). */
+ *  before it is measured: the room the map is fitted beside until then. */
 export const CARD = SIZE.panel;
-export const CARD_WIDE = SIZE.panelWide;
 
 /** From `md` up the side panel floats this far inside the window's top
  *  and left, its four corners round, as Maps' card does on an iPad and a
@@ -187,8 +195,15 @@ export const FLOAT_PX = 16;
  * phone the strip the sheet in sight covers (`cover`, read from the
  * Drawer: the pill's at rest, half's from half and all the way up, where
  * what counts is what shows once it comes down); from `md` up the side
- * panel's column while it is out, or the corner its head (`cover`, its
- * height at rest) rests in.
+ * panel's column while it is out, its measured width (`side`), or the
+ * corner its head (`cover`, its height at rest) rests in. The width was
+ * the token's by the pointer, 384 for a touch screen, while the CSS drew
+ * the wide 448 from 1024 on every screen: on a 13-inch iPad the map was
+ * fitted 64 px under the panel (the iPad audit, 2026-11-21). And `right`,
+ * the inspector's column at the map's right while a card is in it
+ * (MapPanel) and its float at the window's edge: the room ends at its
+ * edge as it begins at the side panel's (ipad-layout.spec measures both),
+ * where a second float left 16 px of map unused beside it.
  *
  * The screen's top under a sheet from the bottom is the status bar's and
  * the Dynamic Island's (`safeTop`, env(safe-area-inset-top)): kept out of
@@ -196,11 +211,17 @@ export const FLOAT_PX = 16;
  * where a fit put KOSH at y = 38 under it (the FPL audit's A11). A sheet
  * from the top covers it.
  */
-export function insetsOf(s: PanelState, cover: number, onPhone: boolean, fromBottom: boolean, safeTop = 0, wide = false): MapInsets {
+/** What the inspector's column, `column` wide, covers at the map's right:
+ *  the column and its float at the window's edge, the map's room ending at
+ *  the column's edge as it begins at the side panel's (ipad-layout.spec). */
+export const inspectorRoom = (column: number) => column + FLOAT_PX;
+
+export function insetsOf(s: PanelState, cover: number, onPhone: boolean, fromBottom: boolean, safeTop = 0, side = 0, right = 0): MapInsets {
   const up = s === "full";
   if (!onPhone) {
-    if (s !== "peek") return { top: safeTop, bottom: 0, left: FLOAT_PX + (wide ? CARD_WIDE : CARD), out: true, up };
-    return { top: cover + SHEET_MARGIN + FLOAT_PX, bottom: 0, left: 0, out: false, up };
+    const inspector = right ? { right: inspectorRoom(right) } : {};
+    if (s !== "peek") return { top: safeTop, bottom: 0, left: FLOAT_PX + (side || CARD), out: true, up, ...inspector };
+    return { top: cover + SHEET_MARGIN + FLOAT_PX, bottom: 0, left: 0, out: false, up, ...inspector };
   }
   return fromBottom
     ? { top: safeTop, bottom: cover, left: 0, out: s !== "peek", up }

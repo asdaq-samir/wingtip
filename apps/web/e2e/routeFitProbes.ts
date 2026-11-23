@@ -24,7 +24,7 @@ export async function fittedClearOf(page: Page, panel: Locator) {
     // What the panel leaves: above a phone's sheet; beside a desktop's card out, under it at rest.
     const out = (await panel.getAttribute("data-panel")) !== "peek";
     const free =
-      viewport.width < 768
+      viewport.width < 660
         ? { w: viewport.width, h: viewport.height - sheet.height }
         : out
           ? { w: viewport.width - sheet.x - sheet.width, h: viewport.height }
@@ -61,7 +61,7 @@ export const paneAndSheet = (page: Page) =>
 export async function slidWithSheet(page: Page, before: { pane: number; top: number }) {
   await mapStill(page);
   const after = await paneAndSheet(page);
-  if (page.viewportSize()!.width >= 768) expect(after.pane).toBeCloseTo(before.pane, 0);
+  if (page.viewportSize()!.width >= 660) expect(after.pane).toBeCloseTo(before.pane, 0);
   else expect(Math.abs(after.pane - before.pane - (after.top - before.top) / 2)).toBeLessThan(20);
 }
 
@@ -74,7 +74,7 @@ export const mapZoom = async (page: Page) => (await mapStill(page), page.getByTe
  *  buttons, by `dx`, `dy`. */
 export async function drag(page: Page, dx: number, dy: number) {
   const viewport = page.viewportSize()!;
-  const from = { x: viewport.width / 2, y: viewport.width < 768 ? 150 : viewport.height / 2 };
+  const from = { x: viewport.width / 2, y: viewport.width < 660 ? 150 : viewport.height / 2 };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x + dx, from.y + dy, { steps: 10 });

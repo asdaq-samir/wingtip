@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
+import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { procedureRuns as runs } from "./marks";
 import { pickAirplane } from "./startState";
 import { circuitsOf, openRunways, LIST, DRAWN, ARRIVAL_DRAWN } from "./procedureStubs";
@@ -55,7 +55,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // The close goes back, to the field's approaches: no Back (the owner's
   // "close button should behave as the back button").
   // (Its name on the bar's close, on a phone, is the bar's own.)
-  const wide = page.viewportSize()!.width >= 768;
+  const wide = page.viewportSize()!.width >= 660;
   if (wide) await expect(page.getByTestId("procedures-close")).toHaveAccessibleName("Back");
   await cardClose(page, "procedures-close").click();
   await expect(page.getByRole("heading", { name: "KDLH approaches" })).toBeVisible();
@@ -65,9 +65,10 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await page.getByTestId("procedure-transition").filter({ hasText: "DLH" }).click();
   await expect.poll(() => asked, { timeout: slow(10000) }).toContain("/api/planner/airport/KDLH/procedures/I09?transition=DLH");
   await expect(page).not.toHaveURL(/[?&]procs=/);
-  // Add to Route: in the address, and the sheet put away.
+  // Add to Route: loaded in the address ("L", the owner's load-then-activate,
+  // 2026-11-22), and the sheet put away.
   await page.getByTestId("procedure-add").click();
-  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   await expect(page.getByRole("heading", { name: "KDLH ILS RWY 09" })).toBeHidden();
 
   // On the map: the transition and the final, the missed approach dashed,
@@ -77,7 +78,9 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await expect.poll(() => runs(page, "hold")).toBe(1);
   await expect.poll(async () => (await drawn(page, "procedure-fixes")).length).toBe(3);
   // Said in the route's box after the destination's pill, and a tap there
-  // opens the Procedures.
+  // opens the Procedures. The box's pills are its field's (typeRoute), not
+  // the timeline's.
+  await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-procedure");
   await expect(chip).toHaveText("ILS 09 · DLH");
   // Before the destination's pill, as it is flown into the field.
@@ -96,8 +99,9 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // the address, and off the map once the sheet is put away.
   await openTab(page, "Nav Log");
   await openRoute(page);
-  await expect(kdlh.locator("[data-testid=procedure-kind][data-kind=approach]")).toContainText("ILS 09 · DLH");
-  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
+  // Loaded: its box off the route's line, its head row the button to pick another.
+  await expect(kdlh.getByTestId("approach-loaded")).toContainText("ILS · RWY 09");
+  await kdlh.locator("[data-testid=approach-loaded] [data-testid=procedure-kind]").click();
   await page.getByTestId("procedure-menu-all").click();
   const ils = page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" });
   await expect(ils).toContainText("In the route, from DLH");
@@ -155,17 +159,20 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
   // Its transitions in the menu's own place, on the screen: side by side,
   // a phone's ran off its edge (the owner's screenshot).
-  if (page.viewportSize()!.width >= 768) await expect(menu.getByTestId("procedure-menu-close")).toHaveAccessibleName("Back");
+  if (page.viewportSize()!.width >= 660) await expect(menu.getByTestId("procedure-menu-close")).toHaveAccessibleName("Back");
   const placed = (await menu.boundingBox())!;
   expect(placed.x + placed.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.getByTestId("procedure-menu-transition").filter({ hasText: "From DLH" }).click();
-  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   await expect(page).toHaveURL(/[?&]pattern=[^&]*KDLH(%3A|:)9(%2C|,|&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
   await openRoute(page);
+  // Loaded, then activated onto the route's line, landed by it.
+  await kdlh.getByTestId("approach-activate").click();
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
   await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");
-  await expect(kdlh.locator("[data-testid=procedure-kind][data-kind=approach]")).toContainText("ILS 09 · DLH");
+  await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toContainText("ILS · RWY 09");
   // The field's arrival, a pull-down beside it once the list is in.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=arrival]").click();
   await page.getByTestId("procedure-menu").getByTestId("procedure-menu-item").filter({ hasText: "SKETC1" }).click();
@@ -173,8 +180,9 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
   await openRoute(page);
-  // The plate switched off from the approach's pull-down, and on again.
-  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
+  // The plate switched off from the approach's pull-down, and on again:
+  // the procedure's head row, the button to pick another.
+  await kdlh.locator("[data-testid=procedure-rows][data-kind=approach] [data-testid=procedure-kind]").click();
   // The one picked is the stock listbox's selected option, as a reader
   // hears it; the arrow keys move between the choices without picking.
   const ils = page.getByTestId("procedure-menu").getByRole("option", { name: /^ILS/ }).first();

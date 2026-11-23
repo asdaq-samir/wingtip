@@ -14,10 +14,12 @@ Each fact lives in one doc; the others link to it.
 | [CI.md](CI.md) | What CI runs and when, every job and test suite, what gates a merge, flaky tests |
 | [README-AWS.md](README-AWS.md) | The AWS design (not deployed yet), its cost, the first deploy and running it |
 | [OPERATIONS.md](OPERATIONS.md) | What is monitored (services, live feeds, faults and speed from devices), the thresholds, and where alerts go |
-| [STUDIO-PIPELINE.md](STUDIO-PIPELINE.md) | The Studio's crash films: the stages from an FAA report to a film, what is automatic and what a person does, and the rules (identity by three sources, "preliminary", no cause, no names, the hold, publishing a person's) |
+| [RUNBOOKS.md](RUNBOOKS.md) | What to do for each production alert: a service down, a feed outage, a bad or late FAA cycle, the disk filling, a rollback, a Spot interruption, certificate renewal, restoring a backup (and its drill), reading the logs, the load test |
+| [TESTING-AFTER-MERGE.md](TESTING-AFTER-MERGE.md) | The campaign run once a wave is merged: the restore drill, stress, soak, spike, chaos, the cycle changeover rehearsal and the security scans, each with its limit and time, the one command, and how to read its report |
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
 | [SECURITY.md](SECURITY.md) | The security audit's findings and what changed, the standing security decisions (public API documents, open Dependabot alerts), and the owner's console steps |
+| [security/pentest-scope.md](security/pentest-scope.md) | The outside penetration test's brief: targets, test accounts, what is out of scope, the rules, and the items already known and accepted |
 | [privacy-inventory.md](privacy-inventory.md) | What the app collects, what leaves the device, and the stores' privacy forms |
 | [versions.md](versions.md) | What each part pins today, the version rules, the upgrades coming and what blocks each, and how an upgrade lands |
 
@@ -38,6 +40,7 @@ Each fact lives in one doc; the others link to it.
 | [NATIVE-ANDROID.md](NATIVE-ANDROID.md) | The Android app: Compose and MapLibre over the engine, its build and tests |
 | [ios-27.md](ios-27.md), [ios-27-ai.md](ios-27-ai.md) | What iOS 27 offers the iPhone app, and its on-device AI |
 | [android-ai.md](android-ai.md) | What Android offers for on-device AI, and what the app uses |
+| [receivers.md](receivers.md) | The cockpit ADS-B receivers the phones read, the switch they are parked behind, and their samples |
 
 ## The product
 
@@ -49,8 +52,11 @@ Each fact lives in one doc; the others link to it.
 | [design/icons.md](design/icons.md) | The icon concepts and each platform's symbol for them |
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
-| [SIM-EXPORT.md](SIM-EXPORT.md) | The Studio's "Export for simulator": each file, what is estimated, and how to replay it in MSFS (FlightControlReplay, Sky Dolly), X-Plane 12 and Google Earth |
+| [store/connector-listing.md](store/connector-listing.md) | The connector in Claude and ChatGPT: the pilot's help page and the directory submission, with its screenshots |
+| [store/beta.md](store/beta.md) | The pilot beta on TestFlight and Play internal testing: what the builds do, the owner's steps, the notes and the invitation ([store/beta/invitation.md](store/beta/invitation.md)) |
+| [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, taken by the owner on 2026-11-21 (decision 0060), and where each park's switch is |
 | [XPLANE-TRIAL.md](XPLANE-TRIAL.md) | The X-Plane 12 trial on the Mac: the demo, the replay plugin (tools/xplane-driver), the steps with times, what to judge, AutoOrtho |
+| [SIM-FLIGHT.md](SIM-FLIGHT.md) | The scripted test flight: X-Plane (or MSFS) flies KMSN to KOSH's RNAV 36 while the web app follows it as its GPS and the phones hear it as GDL 90; what it checks, how and when to run it (weekly, before a release), the report |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |
 | [TV.md](TV.md) | The TV apps (parked): the deleted remote-control mode, TV sign-in and Tizen and webOS shells |
 | [brand/](brand) | The mark and the brand's files |

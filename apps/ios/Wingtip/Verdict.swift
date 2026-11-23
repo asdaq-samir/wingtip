@@ -101,7 +101,7 @@ final class Verdict {
             var missing: [String] = []
             do { currency = try await Gateway.currency() } catch { missing.append("your currency"); currencyAsked = false }
             do { records = try await Gateway.aircraftRecords() } catch { missing.append("your airplanes' records"); currencyAsked = false }
-            pilotProblem = missing.isEmpty ? nil : "The verdict goes without \(missing.joined(separator: " and ")): they couldn't be fetched."
+            pilotProblem = missing.isEmpty ? nil : "The verdict goes without \(missing.joined(separator: " and ")): they could not be fetched."
         }
         asking = true
         defer { asking = false }
@@ -115,7 +115,7 @@ final class Verdict {
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }
-            problem = error.localizedDescription
+            problem = Problems.say("The Go / No-Go could not be worked out", error)
         }
     }
 

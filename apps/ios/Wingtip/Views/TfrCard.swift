@@ -65,7 +65,7 @@ struct TfrCard: View {
                 tfr = try await Planner.tfrs().first { $0.notamId == notamId }
                 gone = tfr == nil
             } catch {
-                problem = "The TFRs didn't load. Check tfr.faa.gov before flight."
+                problem = Wording.tfrsNotLoaded
             }
         }
     }
@@ -81,16 +81,22 @@ struct TfrCard: View {
         return (from.map { $0 <= now } ?? true) && (to.map { now < $0 } ?? true)
     }
 
-    /// When it is in force, in the device's own time with UTC beside it, as
-    /// the web's tfrTimes: "Tue 6 Oct, 18:00 (2300Z) – 20:00 (0100Z)",
-    /// "From Thu 1 Oct, 11:00 (1600Z) until further notice".
-    static func times(_ tfr: APITfr) -> String? {
+    /// When it is in force, in the device's own time and zone with UTC
+    /// beside it, as the web's tfrTimes: "Tue 6 Oct, 18:00 CDT (2300Z) –
+    /// 20:00 CDT (0100Z)", "From Thu 1 Oct, 11:00 CDT (1600Z) until further
+    /// notice"; "6:00 PM" on a phone set to a 12-hour clock. The hour was
+    /// two figures with the AM or PM left off, so on a 12-hour phone a TFR
+    /// from 18:00 read "06:00".
+    static func times(_ tfr: APITfr, locale: Locale = .current, zone: TimeZone = .current) -> String? {
         let from = FieldNotamWords.date(tfr.effective), to = FieldNotamWords.date(tfr.expires)
-        let day = Date.FormatStyle().weekday(.abbreviated).day().month(.abbreviated)
-        let clock = { (d: Date) in "\(d.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute())) (\(Format.zulu(d)))" }
+        let day = Date.FormatStyle(locale: locale, timeZone: zone).weekday(.abbreviated).day().month(.abbreviated)
+        let time = Date.FormatStyle(date: .omitted, time: .shortened, locale: locale, timeZone: zone)
+        let clock = { (d: Date) in "\(d.formatted(time)) \(zone.abbreviation(for: d) ?? "") (\(Format.zulu(d)))" }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
         switch (from, to) {
         case let (from?, to?):
-            let sameDay = Calendar.current.isDate(from, inSameDayAs: to)
+            let sameDay = calendar.isDate(from, inSameDayAs: to)
             return "\(from.formatted(day)), \(clock(from)) – \(sameDay ? "" : "\(to.formatted(day)), ")\(clock(to))"
         case let (from?, nil): return "From \(from.formatted(day)), \(clock(from)) until further notice"
         case let (nil, to?): return "Until \(to.formatted(day)), \(clock(to))"

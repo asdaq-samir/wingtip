@@ -3,6 +3,13 @@
 What App Store Connect and the Google Play Console ask for, ready to
 paste. Every claim here is one the app makes good today on that
 platform, checked against the code on 2026-11-09; keep it so. The
+features the feature review parked (the owner, 2026-11-21:
+[feature-review.md](feature-review.md)) are out of it: the ATC copilot
+and clearance listener, the cockpit ADS-B receiver, another airplane's
+Follow and history, model weather, the web's 3D, the Apple Watch app,
+Ask on Android, the MCP connector and the training tools. They stay in
+the build, off to start behind Settings' Extras, so a listing line or a
+review note never names one. The
 privacy answers are in [privacy-labels.md](privacy-labels.md), the App
 Preview's plan in [preview-video.md](preview-video.md), and how the app
 gets to the stores in [../NATIVE.md](../NATIVE.md) and
@@ -52,7 +59,7 @@ Until the site is served, the web app's own pages say the same:
 (`apps/web/public`). The domain itself is the owner's to register
 (see "The owner's steps" below).
 
-## App Store (iPhone, iPad; the Apple Watch app comes with it)
+## App Store (iPhone, iPad)
 
 | Field | Text | Count / limit |
 |---|---|---|
@@ -80,7 +87,7 @@ sectional,flight planner,pilot,METAR,TAF,airspace,TFR,ADS-B,logbook,EFB,student 
 Stores count keywords without the spaces after commas; there are none
 here, and the spaces inside a phrase ("flight planner") count.
 
-**Description** (2,481 / 4,000):
+**Description** (2,121 / 4,000):
 
 > Wingtip Maps is the FAA chart on a map that works like Maps on your
 > iPhone, and everything a VFR or IFR flight needs on top of it.
@@ -94,8 +101,8 @@ here, and the spaces inside a phrase ("flight planner") count.
 > - A nav log with headings, groundspeeds, times and fuel from the
 >   winds aloft, and a cruising altitude picked for terrain, airspace
 >   and the clouds.
-> - The Brief: a verdict first, then the weather, NOTAMs, TFRs, icing
->   and the hazards on each leg, and the best hours to leave.
+> - The Brief: a verdict first, then the weather, recent NOTAMs, TFRs,
+>   icing and the hazards on each leg, and the best hours to leave.
 >
 > AT THE AIRPORT
 > - Every airport's card: runways, frequencies, lighting, the airspace,
@@ -107,11 +114,6 @@ here, and the spaces inside a phrase ("flight planner") count.
 > IN THE AIR
 > - Your airplane on the chart, the next checkpoint, the time and fuel
 >   to go, on the Lock Screen and in the Dynamic Island.
-> - Traffic and FIS-B weather from a cockpit ADS-B receiver on the
->   same Wi-Fi (Stratux, SkyEcho, Sentry).
-> - An ATC copilot, when you turn it on: it listens to the radio,
->   shows a call to you as a card, and checks your readback. The words
->   are heard on your iPhone where it can.
 > - Charts, airports and terrain downloaded by sectional, state or a
 >   box you draw, for flying with no signal.
 > - Nearest fields: the airports within reach of where you are, as a
@@ -124,9 +126,6 @@ here, and the spaces inside a phrase ("flight planner") count.
 > - Your airplanes, flights, logbook and currency, kept with Sign in
 >   with Apple or an emailed link, and your favourites on all your
 >   devices through iCloud.
->
-> On Apple Watch: timers, your airplane's checklists and the nearest
-> airports, on your wrist.
 >
 > Wingtip Maps is a planning aid for VFR and IFR flight. It does not
 > replace an official weather briefing (1800wxbrief.com or
@@ -148,13 +147,10 @@ Where each line comes from, for the next check:
 | D-ATIS, RVR | `Live/AirportLive.swift`, `Views/AirportLiveSections.swift`, `API/Atis.swift` |
 | Procedures, diagram | `Views/ProceduresRow.swift`, `Views/DiagramOwnShip.swift` |
 | Lock Screen, Dynamic Island | `WingtipWidgets/FlightActivityWidget.swift` |
-| ADS-B receiver | `Receiver/Receiver.swift` |
-| ATC copilot | `Atc/AtcCopilot.swift`, `ClearanceListener.swift` (on-device recognition where supported) |
 | Downloads | `Offline/DownloadsView.swift` |
 | Nearest fields (the emergency sheet) | `Emergency/`, `Views/EmergencySheet.swift` |
 | Logbook auto-draft | `Logbook/AutoLogbook.swift`, `Views/FlightLoggedSheet.swift` |
 | Sign-in, iCloud | `Session.swift`, `Records/Records.swift` |
-| Watch | `apps/ios/WingtipWatch` |
 
 **What's new** (first version): "The first version of Wingtip Maps on
 the App Store."
@@ -192,20 +188,20 @@ and its code in the password field, and the notes say how to use them.
 > the same way): https://wingtipmaps.app/api/auth/magic-link/verify?token=[the code in the password field].
 > The app opens signed in as the review account.
 >
-> Location is asked for the first time you use something that needs it
-> (the location button on the map, Nearest, the emergency assistant or
-> Ready to Fly), never at launch; declined, the map works without your
-> airplane on it. The microphone and speech recognition are asked for
-> when you turn on the ATC copilot (Setup, Alerts) or tap a microphone
+> Location is asked for only when you tap something that needs it: the
+> welcome's Turn On Location (with Later beside it, which asks nothing),
+> the location button on the map, Nearest, the emergency assistant or
+> Ready to Fly; iOS's own question is never shown at launch by itself.
+> Declined, the map works without your airplane on it. The microphone
+> and speech recognition are asked for only when you tap a microphone
 > in search or Ask; speech is recognised on the iPhone only
 > (requiresOnDeviceRecognition) and never sent to a server, and the
-> phone shows the orange microphone indicator while it listens. Local
-> network is asked for only when Traffic looks for a cockpit ADS-B
-> receiver.
+> phone shows the orange microphone indicator while it listens.
 >
-> Background modes: audio keeps the ATC copilot listening to the radio
-> while the phone is locked in flight (the orange indicator and the
-> flight's Live Activity show it); location keeps the airplane's
+> Background modes: audio lets the alerts ahead (airspace, TFRs,
+> terrain) be said aloud while the phone is locked in flight, once the
+> pilot turns on Speak Alerts Ahead (Settings, In Flight, Alerts);
+> location keeps the airplane's
 > position, the alerts ahead and the path flown while flying, with the
 > blue location indicator; remote-notification takes iCloud's silent
 > pushes so another device's saved airplanes and routes sync; fetch is
@@ -214,24 +210,37 @@ and its code in the password field, and the notes say how to use them.
 >
 > Widgets: Next Flight, Airport Weather and Currency Status (Currency
 > needs the account); the flight's Live Activity on the Lock Screen and
-> in the Dynamic Island. Apple Watch: timers, the airplane's checklists
-> and the nearest airports.
+> in the Dynamic Island.
 >
 > The first open needs a connection; after that, the charts already
 > looked at and any downloaded in Setup under Downloads work offline.
+>
+> Airplane cards (a traffic target, or an N-number searched) show the
+> FAA registry's record. The registered owner's and co-owners' names are
+> shown only for the pilot's own airplanes and for organisations
+> (corporation, LLC, government). Anyone else's card says only the
+> owner's kind and state, for example "Individual, WI" (guideline
+> 5.1.1(viii)).
 
 The four background modes App Review will ask about are in
 `apps/ios/project.yml` (`UIBackgroundModes: [audio, location,
 remote-notification, fetch]`, with `BGTaskSchedulerPermittedIdentifiers:
 [app.wingtipmaps.weather-watch]` for `fetch`), each with its reason
-there. Attach a short screen recording of the copilot listening with the
-phone locked (the orange indicator and the Live Activity) for the
-`audio` mode (2.5.4).
+there. Attach a short screen recording of an alert ahead said aloud
+with the phone locked in flight (Speak Alerts Ahead on, the Live
+Activity showing) for the `audio` mode (2.5.4): the review's reason for
+`audio` is the spoken alerts (`Spoken.swift` `SpokenAlerts`,
+`Copilot/CopilotVoice.swift`), not the radio, which is parked. No Apple
+Watch app is embedded in this build (`project.yml`), so the notes say
+nothing of a Watch and 2.5.16 does not arise.
 
-Where each note comes from: the location ask, `OwnShip.swift`
-(`askLocation`, "No question at launch"); the microphone, `VoiceInput`
-and `ClearanceListener.swift`; the widgets, `apps/ios/WingtipWidgets`;
-the Watch, `apps/ios/WingtipWatch`; the review link,
+Where each note comes from: the airplane cards' names,
+`Airplane/RegistryNames.swift` (decision 0055; Android's
+`airplane/RegistryNames.kt`, the same rule for Play); the location ask, `OwnShip.swift`
+(`askLocation`, "No question at launch") and the welcome's
+`FirstFlight/WelcomeSheet.swift` (Turn On Location, Later); the microphone, `VoiceInput`; the spoken alerts, `Spoken.swift` and
+`Views/SpokenAlertsToggle.swift`; the widgets, `apps/ios/WingtipWidgets`;
+the review link,
 `MagicLinkController.verify` and `Session.open`.
 
 ### Review access
@@ -278,10 +287,10 @@ after:
 | Website | `https://wingtipmaps.app/` | |
 | Privacy policy | `https://wingtipmaps.app/privacy` | |
 
-**Full description** (2,129 / 4,000). The App Store's text with what the
+**Full description** (1,911 / 4,000). The App Store's text with what the
 Android app does not have taken out (Sign in with Apple, iCloud, the
-Lock Screen activity, the watch) and the emailed link as the one way
-in (`Session.kt`):
+Lock Screen activity) and the emailed link as the one way in
+(`Session.kt`):
 
 > Wingtip Maps is the FAA chart on a map, and everything a VFR or IFR
 > flight needs on top of it.
@@ -295,8 +304,8 @@ in (`Session.kt`):
 > - A nav log with headings, groundspeeds, times and fuel from the
 >   winds aloft, and a cruising altitude picked for terrain, airspace
 >   and the clouds.
-> - The Brief: a verdict first, then the weather, NOTAMs, TFRs, icing
->   and the hazards on each leg, and the best hours to leave.
+> - The Brief: a verdict first, then the weather, recent NOTAMs, TFRs,
+>   icing and the hazards on each leg, and the best hours to leave.
 >
 > AT THE AIRPORT
 > - Every airport's card: runways, frequencies, lighting, the airspace,
@@ -306,10 +315,6 @@ in (`Session.kt`):
 > IN THE AIR
 > - Your airplane on the chart, with the next checkpoint and the time
 >   and fuel to go.
-> - Traffic and FIS-B weather from a cockpit ADS-B receiver on the
->   same Wi-Fi (Stratux, SkyEcho, Sentry).
-> - An ATC copilot, when you turn it on: it listens to the radio,
->   shows a call to you as a card, and checks your readback.
 > - Charts, airports and terrain downloaded by sectional, state or a
 >   box you draw, for flying with no signal.
 > - Nearest fields: the airports within reach of where you are, as a
@@ -332,16 +337,17 @@ in (`Session.kt`):
 > instruments and approved navigation equipment.
 
 Android sources for the lines that differ: `ui/AirportScreen.kt` and
-`live/LiveAirportModel.kt` (D-ATIS, RVR), `atc/` (copilot,
-`RadioListener.kt` on the system's recognizer), `offline/DownloadsScreen.kt`,
-`logbook/FlightLoggedSheet.kt`, `receiver/Receiver.kt`, `emergency/`.
+`live/LiveAirportModel.kt` (D-ATIS, RVR), `offline/DownloadsScreen.kt`,
+`logbook/FlightLoggedSheet.kt`, `emergency/`.
 
 ### Foreground services
 
-The declarations for the three foreground-service types (location,
-microphone, connected device), what starts each and what to paste in
-the Play Console: [foreground-services.md](foreground-services.md). The
-location service starts only on the pilot's Start Flight tap.
+The declaration for the one foreground-service type the manifest
+declares (location), what starts it and what to paste in the Play
+Console: [foreground-services.md](foreground-services.md). The location
+service starts only on the pilot's Start Flight tap. The microphone and
+connected-device services went with the parked ATC copilot and
+receiver, so Play asks no declaration or video for them.
 
 ### Content rating (IARC questionnaire)
 
@@ -394,13 +400,14 @@ signing certificate (launch-checklist.md).
 | Sign-in | Apple, emailed link | emailed link | Apple, Google, emailed link |
 | Delete account in the app | yes | yes | yes |
 | Delete account without the app | `/delete-account` | `/delete-account` | `/delete-account` |
-| Lock Screen / widgets | Live Activity, widgets | none | n/a |
-| Watch | yes | no | n/a |
-| Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | yes (`features/plan-map/terrain`) |
+| Lock Screen / widgets | Live Activity, widgets | Live Update (Android 16), Next Flight widget | n/a |
+| Watch | parked (not in the build) | no | n/a |
+| Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | parked (Settings' Extras, 3D; `features/plan-map/terrain`) |
 | Records across devices | iCloud (SwiftData) | the account only | the account only |
+| Registry owner names on airplane cards | own airplanes and organisations only (decision 0055) | own airplanes and organisations only | every name (the owner, 2026-11-14) |
 
-So the listings never mention a 3D or pilot's view; the web's is the
-only one, and the site may show it as the web's.
+So the listings never mention a 3D or pilot's view: the web's is the
+only one, and it is parked.
 
 ## The owner's steps
 

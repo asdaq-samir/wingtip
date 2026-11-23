@@ -78,3 +78,9 @@ a route, for Show Route As.
   the engine's `traffic_fresh`. FL is not explained: it is written only
   inside the cruise field, where a tap types, and on the Altitude
   Advisor's rows, which are buttons.
+
+## Amended 2026-11-21
+
+Item 6's Undo and Redo are no longer the ••• menu's items: every edit
+offers its own toast Undo, and More holds three items (0049). The head is
+as 0050 has it.

@@ -5,6 +5,7 @@ import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.search.DoAction
+import app.wingtipmaps.android.search.PickRefusal
 import app.wingtipmaps.android.search.SearchPick
 
 /**
@@ -36,6 +37,9 @@ class SearchPicks(
     fun pick(picked: SearchPick) {
         when (picked) {
             is SearchPick.Airport -> when {
+                // One a pick cannot take, greyed in its list, does nothing
+                // (PickRefusal): closed, or already on the route.
+                refused(picked) -> {}
                 pickAirport != null -> pickAirport(picked.ident)
                 addingStop -> addStop(picked.ident)
                 else -> onAirport(picked.ident)
@@ -56,6 +60,11 @@ class SearchPicks(
             }
             SearchPick.Flight -> onPlan()
         }
+    }
+
+    private fun refused(picked: SearchPick.Airport): Boolean {
+        val s = plan.state.value
+        return PickRefusal.of(pickAirport != null, addingStop, picked.ident, picked.closed, listOf(s.dep) + s.stops + s.dest) != null
     }
 
     private fun directTo(ident: String, at: OwnShip.Fix) {

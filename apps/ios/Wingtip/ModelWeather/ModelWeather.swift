@@ -5,7 +5,7 @@ import Observation
 import UIKit
 
 /// A field's picture painted for the map (FlowPaint), with the box it covers.
-final class PaintedField: @unchecked Sendable {
+final nonisolated class PaintedField: Sendable {
     let key: String
     let image: CGImage
     /// [west, south, east, north], degrees.
@@ -64,6 +64,9 @@ final class ModelWeather {
 
     private(set) var layer: APIFlowLayer?
     private(set) var failed = false
+    /// The last ask failed for want of a network (ErrorWords.offline):
+    /// said as "no connection", not as the model weather missing.
+    private(set) var offline = false
     private(set) var playing = false
     /// The hour shown; nil follows now.
     private(set) var index: Int?
@@ -88,10 +91,14 @@ final class ModelWeather {
     @ObservationIgnored private var painting: Task<Void, Never>?
     @ObservationIgnored private var clock: Task<Void, Never>?
     @ObservationIgnored private var airmetsAt: Double?
-    @ObservationIgnored private var resume = false
+    @ObservationIgnored private var sight = LoopSight()
 
     private init() {
-        field = FlowFieldKind(rawValue: UserDefaults.standard.string(forKey: Self.fieldKey) ?? "") ?? .off
+        // A field saved before acts as Off while Model Weather is parked in
+        // Settings' Extras (Extra): nothing of it fetched or drawn. Kept, not
+        // written over, for when the switch is on again.
+        let saved = FlowFieldKind(rawValue: UserDefaults.standard.string(forKey: Self.fieldKey) ?? "") ?? .off
+        field = Extra.modelWeather.on() ? saved : .off
         levelPick = UserDefaults.standard.string(forKey: Self.levelKey) ?? "sfc"
         picked()
     }
@@ -143,6 +150,7 @@ final class ModelWeather {
     }
 
     func toggle() {
+        sight.picked()
         if playing { pause(); return }
         guard steps.count > 1, !UIAccessibility.isReduceMotionEnabled else { return }
         if let first = steps.first, let last = steps.last, shown >= last || shown < first { index = first }
@@ -168,14 +176,26 @@ final class ModelWeather {
         }
     }
 
-    /// The app gone to the background or back: paused while away.
+    /// The app gone to the background or back: paused and not fetched
+    /// while away (LoopSight), the layer asked again on return.
     func away(_ away: Bool) {
+        see(.away, hidden: away)
         if away {
-            resume = playing
-            pause()
-        } else if resume {
-            resume = false
-            toggle()
+            fetching?.cancel()
+            fetching = nil
+        } else if fetching == nil, field != .off {
+            fetching = Task { await self.fetchForever() }
+        }
+    }
+
+    /// The iPhone's sheet at full height over the map, or down again.
+    func covered(_ covered: Bool) { see(.covered, hidden: covered) }
+
+    private func see(_ reason: LoopSight.Reason, hidden: Bool) {
+        switch sight.set(reason, hidden: hidden, playing: playing) {
+        case .pause: pause()
+        case .play: if !playing { toggle() }
+        case nil: break
         }
     }
 
@@ -186,7 +206,7 @@ final class ModelWeather {
         pause()
         (point, reading, readingProblem, painted, airmets, airmetsAt, index) = (nil, nil, nil, nil, [], nil, nil)
         airmetsProblem = nil
-        guard field != .off else { return }
+        guard field != .off, !sight.away else { return }
         fetching = Task { await self.fetchForever() }
     }
 
@@ -196,14 +216,28 @@ final class ModelWeather {
                 let answer = try await Planner.call { try await $0.flowLayer().ok.body.json }
                 layer = answer
                 failed = false
+                offline = false
                 paint()
             } catch is CancellationError {
                 return
             } catch {
                 if layer == nil { failed = true }
+                offline = (error as? URLError).map(ErrorWords.offline) ?? false
             }
             try? await Task.sleep(for: Self.refresh)
         }
+    }
+
+    /// A field's picture read into values, off the main actor.
+    @concurrent
+    private nonisolated static func decode(_ data: Data, field spec: APIFlowField, bounds: [Double], name: String) async -> FlowGrid? {
+        FlowGrid.decode(png: data, field: spec, bounds: bounds, name: name)
+    }
+
+    /// An hour's values painted for the map, off the main actor.
+    @concurrent
+    private nonisolated static func paint(_ grid: FlowGrid, ramp: FlowRamp, key: String, opacity: CGFloat) async -> PaintedField? {
+        FlowPaint.image(grid, ramp: ramp).map { PaintedField(key: key, image: $0, box: FlowPaint.box(of: grid), opacity: opacity) }
     }
 
     /// A frame's picture of a file as values, fetched once at its version.
@@ -217,7 +251,7 @@ final class ModelWeather {
             try await Data(collecting: $0.flowPicture(path: .init(frame: frame.id, field: String(file)), query: .init(v: version)).ok.body.png, upTo: 32 << 20)
         }) else { return nil }
         let bounds = file == "world" ? (layer.worldBounds ?? layer.bounds) : layer.bounds
-        let grid = await Task.detached { FlowGrid.decode(png: data, field: spec, bounds: bounds, name: name) }.value
+        let grid = await Self.decode(data, field: spec, bounds: bounds, name: name)
         if let grid {
             // The hours of one field at one level are kept; another's let go.
             if grids.count > 24 { grids.removeAll() }
@@ -238,9 +272,7 @@ final class ModelWeather {
         painting = Task {
             guard let grid = await grid(frame, file), !Task.isCancelled else { return }
             let ramp = look.ramp, opacity = look.opacity
-            let made = await Task.detached {
-                FlowPaint.image(grid, ramp: ramp).map { PaintedField(key: key, image: $0, box: FlowPaint.box(of: grid), opacity: opacity) }
-            }.value
+            let made = await Self.paint(grid, ramp: ramp, key: key, opacity: opacity)
             guard !Task.isCancelled, let made else { return }
             painted = made
             read()
@@ -292,7 +324,7 @@ final class ModelWeather {
                                              noCeiling: at.noCeiling, tempC: temp)
                 readingProblem = nil
             } catch {
-                (reading, readingProblem) = (nil, "The \(field.label.lowercased()) there couldn't be worked out: \(error.localizedDescription)")
+                (reading, readingProblem) = (nil, Problems.say("The \(field.label.lowercased()) there could not be worked out", error))
             }
         }
     }

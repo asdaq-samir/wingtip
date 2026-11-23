@@ -1,11 +1,10 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { CircleMinus, House, ListFilter } from "lucide-react";
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { airportMarkSvg } from "../lib/map/marks/airportMark";
-import { colourOf } from "../lib/map/marks/flightCategory";
-import type { AirspaceClass, RecentAirport } from "../lib/preferences";
+import type { RecentAirport } from "../lib/preferences";
+import { KeptChartMark } from "./ChartMark";
+import { useKeptCategory } from "./keptCategory";
 import { useAirspace } from "../lib/useAirspace";
 import { useRowRemove } from "./rowRemove";
 import { useAway } from "../lib/useAway";
@@ -13,7 +12,6 @@ import { TEXT } from "../lib/text";
 import { Button } from "./ui/button";
 import PullDown from "./PullDown";
 import IconButton from "./IconButton";
-import { airportQuery } from "../lib/queryClient";
 import { PillSection } from "./PillSection";
 export { ListPageHead } from "./ListPageHead";
 export { PillSection };
@@ -28,9 +26,9 @@ export function Mark({ icon, className, style }: { icon: ReactNode; className?: 
 }
 
 /** A kept airport's mark in a list's row: its chart symbol, as Favorites'
- *  and Nearest's rows draw it. */
+ *  and Nearest's rows draw it, at a row's size (ChartMark's "row"). */
 export function KeptMark({ airport }: { airport: RecentAirport }) {
-  return <KeptChartMark airport={airport} size={26} />;
+  return <KeptChartMark airport={airport} size="row" />;
 }
 
 /** A field's chart symbol in a strip's tile: 44 in the tile's 56, as wide
@@ -83,6 +81,7 @@ export function SmallTile({
   testId,
   wide = false,
   tone = "strip",
+  refused = null,
   ...rest
 }: Omit<ComponentProps<"button">, "title" | "children" | "className" | "type"> & {
   mark: ReactNode;
@@ -97,13 +96,21 @@ export function SmallTile({
    *  "tint": the search's round tiles (FavoriteTiles) on the sheet, no hover fill, the
    *  line grey, or the tint for an action ("Add"). */
   tone?: "strip" | "muted" | "tint";
+  /** Why a pick cannot take this field ("Closed", "On the route already"):
+   *  the tile greyed, its reason where the detail is, a tap doing nothing
+   *  (the owner, 2026-11-21). */
+  refused?: string | null;
 }) {
+  const shown = refused ?? detail;
   return (
     <BaseButton
       {...rest}
-      onClick={onClick}
+      onClick={refused ? undefined : onClick}
+      disabled={!!refused}
+      focusableWhenDisabled={!!refused}
       data-testid={testId}
       className={cn(
+        refused && "opacity-50",
         wide ? "w-24" : "w-[4.5rem]",
         "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring",
         tone === "strip" && "hover:bg-foreground/5",
@@ -112,7 +119,7 @@ export function SmallTile({
       {mark}
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
       {/* 4.5:1 on the pill's glass, as the tab bar's words are. */}
-      {detail && (
+      {shown && (
         <span
           className={cn(
             "-mt-1.5 w-full truncate text-center",
@@ -120,7 +127,7 @@ export function SmallTile({
             tone === "strip" ? "text-foreground/65 tabular-nums" : tone === "tint" ? "text-tint" : "text-muted-foreground",
           )}
         >
-          {detail}
+          {shown}
         </span>
       )}
       {label && <span className="sr-only">, {label}</span>}
@@ -251,10 +258,14 @@ export function StripNote({ children, status = false }: { children: ReactNode; s
 }
 
 const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1";
-/** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it). */
+/** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it).
+ *  Marked as made to slide (data-slides), as the hours' and runways'
+ *  strips are, Apple Maps' Favorites row: its tiles past the edge are the
+ *  design, not a panel spilling sideways (the iOS audit's P18 read
+ *  Nearest's eight as "668 in 351"). */
 export function PillStrip({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
   return (
-    <div className={cn(STRIP, className)} data-testid={testId}>
+    <div className={cn(STRIP, className)} data-testid={testId} data-slides="">
       {children}
     </div>
   );
@@ -265,49 +276,6 @@ export function SmallMark({ className, ...mark }: { icon: ReactNode; className?:
   return <Mark {...mark} className={cn("size-14 [&_svg]:size-6", className)} />;
 }
 
-/** An airport's own chart symbol, small, as the map draws it
- *  (lib/map/marks/airportMark): its airspace's ring and colour, its METAR's
- *  dot, a military or private field's letter -- one mark for the pills'
- *  airports, Favorites' as Nearest's, at the owner's ask ("Airports should
- *  have the same symbols as nearest"). */
-export function ChartMark({
-  space,
-  category,
-  use,
-  size = 22,
-}: {
-  space: AirspaceClass | null;
-  category: string | null | undefined;
-  use: "military" | "private" | null;
-  /** Its width in points: the pills' 22, a list row's 26 (Nearest's). */
-  size?: number;
-}) {
-  return (
-    <span aria-hidden="true" className="grid shrink-0 place-items-center" style={{ width: Math.max(28, size), height: Math.max(28, size) }}>
-      <span
-        className="block"
-        style={{ width: size, height: size }}
-        dangerouslySetInnerHTML={{ __html: airportMarkSvg(space, colourOf(category), use, "block size-full overflow-visible") }}
-      />
-    </span>
-  );
-}
-
-/** A kept airport's chart symbol (ChartMark), from the field as the
- *  planner has it -- the query useAirspace asks, so none more -- its
- *  weather and whose it is with its airspace. */
-export function KeptChartMark({ airport, size }: { airport: RecentAirport; size?: number }) {
-  const { data } = useQuery(airportQuery(airport.ident));
-  const use = data?.military === "military" ? "military" : data?.private ? "private" : null;
-  // With no report of its own, the weather modelled at it, else a station's
-  // within ten miles, as its card's chip and FPL's symbols have it.
-  const category =
-    data?.metar?.flight_category ??
-    data?.modelled_weather?.flight_category ??
-    (data?.nearby_metar?.near ? data.nearby_metar.metar.flight_category : null);
-  return <ChartMark space={data?.airspace_class ?? airport.airspace ?? null} category={category} use={use} size={size} />;
-}
-
 /** A kept airport -- a Favorite, a Recent -- as a pill's small tile: its
  *  chart symbol, its ident and `detail`, opening its card. */
 function SmallAirportTile({
@@ -315,13 +283,16 @@ function SmallAirportTile({
   detail,
   onClick,
   testId = "pill-favorite",
+  refused,
 }: {
   airport: RecentAirport;
   detail: string;
   onClick: () => void;
   testId?: string;
+  refused?: string | null;
 }) {
   const space = useAirspace(airport);
+  const category = useKeptCategory(airport);
   return (
     <SmallTile
       // The chart's mark on its own, no grey round it, at the owner's ask
@@ -332,8 +303,11 @@ function SmallAirportTile({
       mark={<SmallMark icon={<KeptChartMark airport={airport} size={44} />} className="[&_svg]:size-11" />}
       title={airport.ident}
       detail={detail}
-      label={`${airport.ident}, ${space.name}`}
+      // The mark's colour said in words too: its category is otherwise a
+      // colour alone, and hidden from a reader (WCAG 1.1.1, 1.4.1).
+      label={[category, space.name].filter(Boolean).join(", ")}
       onClick={onClick}
+      refused={refused}
       testId={testId}
     />
   );
@@ -346,6 +320,7 @@ export function FavoriteStrip({
   favorites,
   onOpen,
   onAddHome,
+  refusal,
 }: {
   home: RecentAirport | null;
   favorites: RecentAirport[];
@@ -353,6 +328,8 @@ export function FavoriteStrip({
   /** Home's Add, where none is kept yet: listed all the same, as the
    *  search's Favorites list it (FavoriteTiles). */
   onAddHome: () => void;
+  /** While the search picks a point: why a field cannot be picked (pickRefusal). */
+  refusal?: (ident: string) => string | null;
 }) {
   const away = useAway();
   return (
@@ -363,10 +340,11 @@ export function FavoriteStrip({
         detail={home ? away(home) : "Add"}
         label={home ? `Home, ${home.ident}` : "Add Home"}
         onClick={home ? () => onOpen(home) : onAddHome}
+        refused={home ? refusal?.(home.ident) : null}
         testId="pill-home"
       />
       {favorites.map((a) => (
-        <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />
+        <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} refused={refusal?.(a.ident)} />
       ))}
     </PillStrip>
   );

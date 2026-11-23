@@ -66,10 +66,10 @@ struct AirportCard: View {
                 // nothing to ask again.
                 Section {
                     ProblemLine(notFound ? "No field \(ident). \(problem)" : problem)
-                    if !notFound { Button("Try Again") { Task { await load() } } }
+                    if !notFound { Button(Wording.tryAgain) { Task { await load() } } }
                 }
             } else {
-                Section { ForEach(["Elevation", "Longest runway", "Tower", "Fuel"], id: \.self) { LabeledContent($0, value: "Figure").loading("Fetching \(ident)") } }
+                Section { ForEach(["Elevation", "Longest Runway", "Tower", "Fuel"], id: \.self) { LabeledContent($0, value: "Figure").loading("Fetching \(ident)") } }
             }
         }
         // Inset-grouped rows under a large title, as iOS's own cards are
@@ -168,7 +168,7 @@ struct AirportCard: View {
             notFound = true
             problem = "The planner knows no field by that identifier."
         } catch {
-            if place == nil { problem = error.localizedDescription }
+            if place == nil { problem = Problems.say("The airport could not be fetched", error) }
         }
     }
 

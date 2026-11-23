@@ -16,15 +16,15 @@ import { TEXT } from "../../lib/text";
 import { keepTrack, keptTrack, readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
 import { useFlownTrack } from "../../lib/map/position/flownTrack";
 import { routeName } from "../../lib/identSchema";
-import { mayUse, useEntitlement } from "../../lib/subscription";
-import PaidPrompt from "../../components/PaidPrompt";
 import { dayMonthTime, dayMonthYear, feet, gal, grouped, hm, localDay, nm } from "../../lib/format";
 import { reviewState, said } from "../../lib/endorsements";
 import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
-import { airportQuery, trainingQuery } from "../../lib/queryClient";
+import { airportQuery } from "../../lib/queryClient";
+import { trainingQuery } from "../../lib/queryClientRecords";
 import { proceduresOf, sameField } from "../../lib/procedures";
 import { FieldError } from "../../components/ui/field";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 // Its own chunk: the approach's debrief is drawn only where a track came
 // down a final, and asks for the field's procedures as it is.
@@ -129,23 +129,23 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
           </Pressable>
         </FileTrigger>
         {track && !onAccount && (
-          <ListRow title="Save to your account" onClick={() => save.mutate(track)} disabled={save.isPending} data-testid="debrief-save" />
+          <ListRow title={WORDING.saveToAccount} onClick={() => save.mutate(track)} disabled={save.isPending} data-testid="debrief-save" />
         )}
         {onAccount && (
           <ListRow
-            title="Remove from your account"
+            title={WORDING.removeFromAccount}
             onClick={() => unsave.mutate()}
             disabled={unsave.isPending}
             data-testid="debrief-unsave"
           />
         )}
-        {local && <ListRow title="Forget it on this device" onClick={forget} data-testid="debrief-forget" />}
+        {local && <ListRow title="Forget on This Device" onClick={forget} data-testid="debrief-forget" />}
         {result && (
           // Onto the chart over its own route, red where it was outside a
           // tolerance; the map's buttons have its key and Hide.
           <ConsoleClose>
             <ListRow
-              title="Show on the map"
+              title={WORDING.showOnMap}
               to={planHref}
               data-testid="debrief-show"
               onClick={() =>
@@ -205,7 +205,7 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
     <>
       {/* Before each solo cross-country the instructor reviews its planning
           and the weather and endorses it (14 CFR 61.93(c)(3), (d)). */}
-      <ListGroup title="Solo cross-country">
+      <ListGroup title="Solo Cross-Country">
         {asked.map((r) => (
           <ListRow
             key={r.id}
@@ -237,8 +237,6 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
 export default function FlightPage({ summary, planHref }: { summary: FlightSummary; planHref: string }) {
   const asked = { queryKey: ["savedFlight", summary.id], queryFn: () => api.flights.get(summary.id) }; // not "flight", the traffic card's (WEB-30)
   const { data: flight, isPending, error } = useQuery(asked);
-  // The debrief comes with the subscription: without it, its place says so.
-  const entitlement = useEntitlement();
   return (
     <div className="space-y-4">
       <ListGroup>
@@ -248,7 +246,7 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
         {summary.totalDistanceNm != null && <Row title="Distance" value={nm(summary.totalDistanceNm)} />}
         {summary.totalEteMin != null && <Row title="Time" value={hm(summary.totalEteMin)} />}
         {summary.totalFuelGal != null && <Row title="Fuel" value={gal(summary.totalFuelGal)} />}
-        {summary.plannedFor && <Row title="Planned for" value={dayMonthTime(new Date(summary.plannedFor))} />}
+        {summary.plannedFor && <Row title="Planned For" value={dayMonthTime(new Date(summary.plannedFor))} />}
         {summary.risk && (
           <ListRow
             title="Risk"
@@ -257,7 +255,7 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
           />
         )}
         <ConsoleClose>
-          <ListRow title="Open on the map" to={planHref} data-testid="flight-open" />
+          <ListRow title={WORDING.showOnMap} to={planHref} data-testid="flight-open" />
         </ConsoleClose>
       </ListGroup>
       <InstructorReview summary={summary} />
@@ -267,12 +265,8 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
         </p>
       ) : error || !flight ? (
         <p className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Its nav log could not be fetched ({error?.message ?? "not found"}).</p>
-      ) : mayUse(entitlement) ? (
-        <DebriefSection flight={flight} planHref={planHref} />
       ) : (
-        <PaidPrompt>
-          Your track from ForeFlight, Garmin Pilot or a GPS, measured against this flight's nav log as an examiner would.
-        </PaidPrompt>
+        <DebriefSection flight={flight} planHref={planHref} />
       )}
     </div>
   );

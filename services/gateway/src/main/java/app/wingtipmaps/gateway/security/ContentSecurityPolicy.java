@@ -29,13 +29,6 @@ final class ContentSecurityPolicy {
 
     private static final String PHOTO_CONNECT = "https://api.planespotters.net";
 
-    /**
-     * Where the browser may fetch Studio's on-device speech model from: transformers.js downloads the
-     * Whisper weights (onnx-community/whisper-base, Apache-2.0) from Hugging Face, which redirects each
-     * file to its AWS CDN in the US or the EU.
-     */
-    static final String MODEL_HOSTS = "https://huggingface.co https://us.aws.cdn.hf.co https://eu.aws.cdn.hf.co";
-
     private ContentSecurityPolicy() {}
 
     /**
@@ -52,9 +45,16 @@ final class ContentSecurityPolicy {
                 // files, the page reader's engine (web features/airplane/lib/readPage);
                 // no script eval.
                 + "script-src 'self' 'wasm-unsafe-eval'; "
-                + "connect-src 'self' " + OVERLAY_TILES + " " + PHOTO_CONNECT + " " + MODEL_HOSTS + "; "
+                + "connect-src 'self' " + OVERLAY_TILES + " " + PHOTO_CONNECT + "; "
                 + "object-src 'none'; "
                 + "base-uri 'self'; "
+                // The app's forms are React's, sent by script, and none
+                // posts off this site; an injected <form action=...> would,
+                // and default-src does not cover form-action (the deep
+                // security review of 2026-11-21). The connector's consent
+                // page has a policy of its own (ConnectorSecurityConfig),
+                // since its form's redirect goes on to the AI app.
+                + "form-action 'self'; "
                 + "frame-ancestors 'none'";
     }
 }

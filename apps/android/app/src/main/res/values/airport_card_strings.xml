@@ -18,14 +18,17 @@
     <string name="notams_shown">%1$d of %2$d</string>
     <string name="notams_none_heard">None heard</string>
     <string name="notams_none_since">None heard since %1$s</string>
-    <string name="notams_tfrs_unread">The TFR list could not be read: check the FAA\'s TFRs before flying.</string>
+    <string name="notams_none_in_force">None in force</string>
+    <!-- Under the list until the planner holds every NOTAM in force (decision 0059). -->
+    <string name="notams_not_full_since">NOTAMs heard since %1$s, not a full set</string>
+    <string name="notams_not_full">Recent NOTAMs only, not a full set</string>
     <string name="notams_show_all">Show all NOTAMs</string>
     <string name="notams_show_fewer">Show fewer NOTAMs</string>
     <string name="notam_as_sent">As Sent</string>
     <string name="tfr_as_sent">TFR as Sent</string>
     <string name="tfr_instructions">Instructions</string>
-    <string name="tfr_facility">Coordination facility</string>
-    <string name="tfr_contact">Point of contact</string>
+    <string name="tfr_facility">Coordination Facility</string>
+    <string name="tfr_contact">Point of Contact</string>
     <string name="tfr_call">Call %1$s</string>
     <string name="notam_badge_said">%1$s: %2$s</string>
 
@@ -49,7 +52,7 @@
     <!-- The field's fuel, from its Chart Supplement entry. -->
     <string name="fuel">Fuel</string>
     <string name="fuel_none_listed">None listed</string>
-    <string name="fuel_remarks">Fuel remarks</string>
+    <string name="fuel_remarks">Fuel Remarks</string>
 
     <!-- The card's actions. -->
     <string name="action_favorite">Favorite</string>

@@ -75,7 +75,7 @@ final class LogbookPhotoModel {
                 try await add(request)
                 logged.insert(i)
             } catch {
-                problem = "Flight \(i + 1) couldn't be logged: \(error.localizedDescription)"
+                problem = Problems.say("Flight \(i + 1) could not be logged", error)
                 return false
             }
         }

@@ -70,7 +70,9 @@ def test_the_fields_in_view_carry_their_metar_for_the_maps_marks(monkeypatch):
     monkeypatch.setattr(
         map_weather, "end_headings", lambda ident: asked.append(ident) or [[["18", 180.0], ["36", 360.0]], [["27", 270.0], ["09", 90.0]]]
     )
-    monkeypatch.setattr(map_weather, "magnetic_variation_deg", lambda lat, lon: 0.0)
+    monkeypatch.setattr(map_weather, "magnetic_variation_deg", lambda lat, lon, on: 0.0)
+    # Asked fresh of the stand-in, not from an earlier test's kept answer.
+    map_weather._variation.cache_clear()
     body = client.get("/api/airports/in-view", params={"south": 46, "west": -93, "north": 47, "east": -92}).json()
     dlh, small = body["airports"]
     # 40 degrees off runway 18, the gust's 26 sin 40 = 16.71 kt, unrounded

@@ -16,7 +16,7 @@ from .atomic import atomic_path
 from .single_flight import once, one_at_a_time
 from . import publications
 from .publication_drawing import DIAGRAM_SCALE, _PDFIUM, _drawn
-from .publications import _PDF_NAME, _faa_idents, _source_of, _supplement_pages, dcs_edition, dtpp_cycle
+from .publications import _PDF_NAME, _faa_idents, _source_of, _supplement_pages, dcs_edition, dtpp_cycle, serves
 
 log = logging.getLogger(__name__)
 
@@ -30,40 +30,49 @@ def _is_booklet(source: str, name: str) -> bool:
     return source == "dtpp" and not re.match(r"\d{5}", name)
 
 
-@once(maxsize=512)
-def _pages_of(source: str, edition: str, pdf: str, ident: str | None) -> tuple | None:
-    """The pages of one PDF to show, as their sizes -- a booklet's pages
-    naming the field (none where it has no entry: the FAA lists takeoff
-    minimums, alternates and hot spots only for fields that need them),
-    any other PDF's every page. Kept per (edition, PDF, field), since
-    reading the text of a booklet's sixty-nine pages is long and holds
-    the drawing lock. None where the FAA has no such file."""
+@once(maxsize=64)
+def _read(source: str, edition: str, pdf: str) -> tuple | None:
+    """Each page of one PDF as (width, height, text) -- its size in pixels,
+    drawn DIAGRAM_SCALE times its points, and a booklet's page text (None
+    for any other PDF's) -- read once per (edition, PDF), since reading
+    the text of a booklet's sixty-nine pages is long and holds the drawing
+    lock. Once per PDF, not per field: kept per field asked, a caller
+    naming a new made-up field each time read the whole booklet again
+    under the lock every time, holding up every diagram and chart page
+    anyone else asked for meanwhile (the security review of 2026-11-21).
+    None where the FAA has no such file."""
     data = publications._pdf_of(source, edition, pdf)
     if data is None:
         return None
     booklet = _is_booklet(source, pdf)
-    needle = f"({_faa_idents(ident)[-1]})" if booklet and ident else None
-    pages = []
     with _PDFIUM:
         document = pypdfium2.PdfDocument(data)
         try:
+            pages = []
             for i in range(len(document)):
                 page = document[i]
-                if booklet and (needle is None or needle not in page.get_textpage().get_text_bounded()):
-                    continue
-                pages.append(
-                    {
-                        "source": source,
-                        "edition": edition,
-                        "pdf": pdf,
-                        "page": i + 1,
-                        "width": round(page.get_width() * DIAGRAM_SCALE),
-                        "height": round(page.get_height() * DIAGRAM_SCALE),
-                    }
-                )
+                text = page.get_textpage().get_text_bounded() if booklet else None
+                pages.append((round(page.get_width() * DIAGRAM_SCALE), round(page.get_height() * DIAGRAM_SCALE), text))
+            return tuple(pages)
         finally:
             document.close()
-    return tuple(pages)
+
+
+def _pages_of(source: str, edition: str, pdf: str, ident: str | None) -> tuple | None:
+    """The pages of one PDF to show, as their sizes -- a booklet's pages
+    naming the field (none where it has no entry: the FAA lists takeoff
+    minimums, alternates and hot spots only for fields that need them),
+    any other PDF's every page. None where the FAA has no such file."""
+    read = _read(source, edition, pdf)
+    if read is None:
+        return None
+    booklet = _is_booklet(source, pdf)
+    needle = f"({_faa_idents(ident)[-1]})" if booklet and ident else None
+    return tuple(
+        {"source": source, "edition": edition, "pdf": pdf, "page": i + 1, "width": width, "height": height}
+        for i, (width, height, text) in enumerate(read)
+        if not booklet or (needle is not None and needle in text)
+    )
 
 
 def chart_pages(url: str, ident: str | None = None, on: date | None = None) -> list | None:
@@ -106,14 +115,26 @@ def _page_count(source: str, edition: str, name: str) -> int:
             document.close()
 
 
+def chart_pdf(source: str, edition: str, name: str, on: date | None = None) -> bytes | None:
+    """One of the FAA's charts in force as the FAA's own PDF, for an app
+    that reads the page's text itself (the web's own-ship airport diagram:
+    its latitude and longitude labels and hot spots, as the phones read
+    them with PDFKit and PdfRenderer); the browser cannot fetch it from
+    aeronav.faa.gov, which sends no CORS headers. None for a chart not in
+    force or not the FAA's; FaaUnreachable while the FAA cannot be reached."""
+    current = {"dtpp": dtpp_cycle(on), "dcs": dcs_edition(on)}
+    if current.get(source) != edition or not _PDF_NAME.match(name):
+        return None
+    return publications._pdf_of(source, edition, name)
+
+
 def chart_page_png(source: str, edition: str, name: str, page: int, on: date | None = None) -> Path | None:
     """One page of one of the FAA's charts in force as a picture on disk,
     drawn the first time it is asked for and kept for its edition, as the
     airport diagram is (`airport_diagram_png`); None for a chart not in
     force or not the FAA's, or a page it does not have; FaaUnreachable
     while the FAA cannot be reached."""
-    current = {"dtpp": dtpp_cycle(on), "dcs": dcs_edition(on)}
-    if current.get(source) != edition or not _PDF_NAME.match(name) or page < 1:
+    if not serves(source, edition, on) or not _PDF_NAME.match(name) or page < 1:
         return None
     path = publications.CACHE_DIR / "pages" / source / edition / f"{Path(name).stem}-{page}.png"
     if path.exists():

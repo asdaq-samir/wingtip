@@ -115,13 +115,19 @@ impl Track {
     }
 
     /// [west, south, east, north] round the track, `pad_nm` wider: core's
-    /// corridor_bbox over its corners.
+    /// box_over its points, read the short way round 180, so its west may
+    /// be under -180 or its east over 180 (the edge-places audit's S10).
     fn bbox(&self, pad_nm: f64) -> [f64; 4] {
-        let fold = |v: &[f64], f: fn(f64, f64) -> f64, s: f64| v.iter().copied().fold(s, f);
-        let low = (fold(&self.lats, f64::min, f64::INFINITY), fold(&self.lons, f64::min, f64::INFINITY));
-        let high = (fold(&self.lats, f64::max, f64::NEG_INFINITY), fold(&self.lons, f64::max, f64::NEG_INFINITY));
-        let (s, w, n, e) = geo::corridor_bbox(low, high, pad_nm);
+        let points: Vec<(f64, f64)> = self.lats.iter().copied().zip(self.lons.iter().copied()).collect();
+        let (s, w, n, e) = geo::box_over(&points, pad_nm).unwrap_or((self.lats[0], self.lons[0], self.lats[0], self.lons[0]));
         [w, s, e, n]
+    }
+
+    /// bbox as the one or two [west, south, east, north] boxes it is
+    /// between -180 and 180 (core's split_box), for the packs' shapes.
+    fn boxes(&self, pad_nm: f64) -> Vec<[f64; 4]> {
+        let [w, s, e, n] = self.bbox(pad_nm);
+        geo::split_box((s, w, n, e)).into_iter().map(|(s, w, n, e)| [w, s, e, n]).collect()
     }
 
     /// (inside now, the first sample in it or within the buffer of it).
@@ -181,8 +187,8 @@ fn text<'a>(run: &'a [u8], r: &[u8], o: usize) -> Option<&'a str> {
     std::str::from_utf8(run.get(s..s + l)?).ok()
 }
 
-fn meets(b: [f64; 4], box_: [f64; 4]) -> bool {
-    !(b[2] < box_[0] || b[0] > box_[2] || b[3] < box_[1] || b[1] > box_[3])
+fn meets(b: [f64; 4], boxes: &[[f64; 4]]) -> bool {
+    boxes.iter().any(|box_| !(b[2] < box_[0] || b[0] > box_[2] || b[3] < box_[1] || b[1] > box_[3]))
 }
 
 /// The highest ground at a point from the packs' grids, feet, the grid's
@@ -230,5 +236,21 @@ mod tests {
         // No packs: no ground to read.
         assert!(flying.contains("\"terrain\""), "{flying}");
         assert!(flying.ends_with(",\"ground_ft\":null}"), "{flying}");
+    }
+
+    #[test]
+    fn a_tfr_far_from_the_look_ahead_is_passed_over_by_its_box() {
+        let near = "-93.0 45.05,-92.9 45.05,-92.9 45.15,-93.0 45.15,-93.0 45.05";
+        let far = "-80.0 30.0,-79.9 30.0,-79.9 30.1,-80.0 30.1,-80.0 30.0";
+        let lines = format!(
+            "6/1	Near				3000	AGL			{near}
+6/2	Far				3000	AGL			{far}"
+        );
+        let none: [Pack; 0] = [];
+        let flying = ahead(&none, 45.0, -92.95, 0.0, 120.0, Some(2000.0), 0.0, 0, Some(&lines), Some(0));
+        assert!(flying.contains("\"id\":\"tfr:6/1\"") && !flying.contains("tfr:6/2"), "{flying}");
+        let track = Track::new(45.0, -92.95, 0.0, 120.0, Some(2000.0), 0.0, 300.0, 5.0);
+        let far_box = shape_box(&tfrs_of(&lines)[1].shape).unwrap();
+        assert!(!meets(far_box, &track.boxes(1.0)));
     }
 }

@@ -1,13 +1,16 @@
 import type { DiagnosticsReport } from "../diagnostics";
 import type { paths as GatewayPaths } from "./gateway-schema";
+import { helpImproveOn } from "../helpImprove";
 
 /** The gateway's diagnostics door (DiagnosticsController), its path typed
  *  by the gateway's document so a change to it fails the build. */
 const DOOR = "/api/diagnostics" satisfies keyof GatewayPaths;
 
-/** Sends a report to the diagnostics door; false where the browser cannot
- *  or would not. Sent with sendBeacon, which outlives the page and carries
- *  no credentials, so no session rides with a report. */
-export function sendDiagnostics(report: DiagnosticsReport, nav: Navigator = navigator): boolean {
+/** Sends a report to the diagnostics door; false where the pilot has
+ *  turned Help Improve Wingtip Maps off (lib/helpImprove), or the browser
+ *  cannot or would not. Sent with sendBeacon, which outlives the page and
+ *  carries no credentials, so no session rides with a report. */
+export function sendDiagnostics(report: DiagnosticsReport, nav: Navigator = navigator, allowed: () => boolean = helpImproveOn): boolean {
+  if (!allowed()) return false;
   return typeof nav.sendBeacon === "function" && nav.sendBeacon(DOOR, new Blob([JSON.stringify(report)], { type: "application/json" }));
 }

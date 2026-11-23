@@ -6,18 +6,26 @@ import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import type { Leg } from "../../lib/api/types";
-import { feet, nm, zoneName } from "../../lib/format";
-import { placeName, altFt, bearing, etaAt, one, windText, flownNmOf, isLegPoint, legOf, procedureOf, rowPoint } from "../plan";
+import { nm, zoneName } from "../../lib/format";
+import { placeName, bearing, etaAt, one, flownNmOf, isLegPoint, legOf, procedureOf, rowCautions, rowPoint } from "../plan";
 import type { NavLogRow } from "../plan";
 import { wantPlace } from "../../lib/navigation/wanted";
 import { TEXT } from "../../lib/text";
 import { PointMark } from "./PointMark";
+import { useCardUp } from "../../components/sheet/useCardUp";
+import { railOf } from "./navLogRail";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The rail's middle, across the row: the row's own 6 and half the
  *  mark's column (2.125 rem). */
 const RAIL = "left-[calc(0.375rem+1.0625rem)]";
 /** A mark's middle, down the row: the row's 8 and half a mark's 24. */
 const MARK_MIDDLE = "1.25rem";
+/** The rows drawn as a card comes up, more than a phone's first screen
+ *  holds (NavLogList): the rest once it is up. */
+const FIRST_ROWS = 12;
+/** The selection's wash by night, the row's and its note's alike. */
+const SELECTED_NIGHT = "dark:bg-foreground/5 dark:hover:bg-foreground/5 dark:focus-visible:bg-foreground/5";
 
 /** The way a leg is flown, magnetic and named so, as a paper nav log's
  *  MC and MH columns are: its heading with an airplane picked ("MH 252°"),
@@ -37,57 +45,6 @@ function courseWords(leg: Leg, airplane: boolean): ReactNode {
       <Explain term="MC" /> {bearing(leg.magnetic_course_deg)}
     </>
   );
-}
-
-/** The wind a leg was worked out in, as the nav log says it (true, as the
- *  forecast's winds aloft are). */
-function windOf(row: NavLogRow): string | null {
-  const leg = legOf(row);
-  if (!leg) return null;
-  return leg.wind ? windText(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt, null, "T") : "no data";
-}
-
-/** The airway a leg flies and its published altitudes, as a paper IFR
- *  nav log's route column has them: "V191 · MEA 4,000 · MOCA 2,600", the
- *  GNSS MEA where the segment publishes no other (a T route's). The MEA
- *  is the floor under IFR (14 CFR 91.177(a)(1)); the MOCA is legal below
- *  it within 22 nm of the VOR, said, not flown (wingtip.airways). */
-function airwayOf(row: NavLogRow): string | null {
-  const airway = legOf(row)?.airway;
-  if (!airway) return null;
-  const mea =
-    airway.mea_ft != null ? `MEA ${altFt(airway.mea_ft)}` : airway.gnss_mea_ft != null ? `GNSS MEA ${altFt(airway.gnss_mea_ft)}` : null;
-  return [airway.id, mea, airway.moca_ft != null ? `MOCA ${altFt(airway.moca_ft)}` : null].filter(Boolean).join(" · ");
-}
-
-/** What each row says beside its leg's own figures, worked out in order:
- *  the wind where it is not the leg's before (and over the first), the
- *  airway and its altitudes where they are not, and the altitude where it
- *  is not -- a field's elevation, a top of climb's or descent's level, a
- *  step. */
-function railOf(rows: NavLogRow[]): { wind: string | null; airway: string | null; altitude: string }[] {
-  let windBefore: string | null = null;
-  let airwayBefore: string | null = null;
-  let altitudeBefore: number | null = null;
-  return rows.map((row) => {
-    const wind = windOf(row);
-    const changed = wind !== null && wind !== windBefore ? wind : null;
-    if (wind !== null) windBefore = wind;
-    const route = airwayOf(row);
-    const joined = route !== null && route !== airwayBefore ? route : null;
-    airwayBefore = route;
-    // A field's elevation only at an airport: a present position (POS0)
-    // is a "fix" there too, its "field — ft" said of no field.
-    const field = (row.kind === "departure" || row.kind === "destination" || row.kind === "stop") && row.airport.kind !== "fix";
-    const legAltitude = isLegPoint(row) ? row.point.altitude_ft : (legOf(row)?.altitude_ft ?? null);
-    const altitude = field
-      ? `field ${altFt("airport" in row ? row.airport.elevation_ft : null)} ft`
-      : legAltitude !== null && (isLegPoint(row) || legAltitude !== altitudeBefore)
-        ? feet(legAltitude)
-        : "";
-    if (legAltitude !== null) altitudeBefore = legAltitude;
-    return { wind: changed, airway: joined, altitude };
-  });
 }
 
 /**
@@ -151,6 +108,14 @@ export function NavLogList({
   const airplane = useAirplaneChosen();
   const rows = airplane ? allRows : allRows.filter((r) => !isLegPoint(r));
   const rail = railOf(rows);
+  // Outside the United States the figures are still the FAA's (0053).
+  const cautions = rowCautions(rows);
+  // The first screen's rows as the card comes up, the rest once it is up
+  // (useCardUp), so the list is not one long task in its ease; past them a
+  // row picked or flown to, which is scrolled to, at once.
+  const up = useCardUp();
+  const wanted = up ? -1 : Math.max(flying ?? -1, rows.map((r) => isSelected(r)).lastIndexOf(true));
+  const upTo = up ? rows.length : Math.max(FIRST_ROWS, wanted + 1);
   return (
     <>
       {/* Its age where it is the one kept on this device (lib/kept). */}
@@ -187,11 +152,12 @@ export function NavLogList({
           data-testid="navlog-list-heads"
         >
           {/* The clock's zone, once over the column (the FPL audit's A19). */}
-          {airplane && <span className="col-start-3">ETA {zoneName()}</span>}
+          {airplane && <span className="col-start-3">ETA {zoneName(new Date(from))}</span>}
           {airplane && <span className="col-start-3">GS kt</span>}
         </div>
         <div role="rowgroup">
           {rows.map((row, at) => {
+            if (at >= upTo) return null;
             const leg = legOf(row);
             const selected = isSelected(row);
             const first = at === 0,
@@ -199,9 +165,9 @@ export function NavLogList({
             const { wind, airway, altitude } = rail[at]!;
             const name =
               row.kind === "toc"
-                ? "Top of climb"
+                ? WORDING.topOfClimb
                 : row.kind === "tod"
-                  ? "Top of descent"
+                  ? WORDING.topOfDescent
                   : "airport" in row && row.airport.kind !== "fix"
                     ? `${row.airport.ident} · ${placeName(row.airport.name, row.airport.ident)}`
                     : rowPoint(row).name;
@@ -226,6 +192,16 @@ export function NavLogList({
                         2026-11-17). */}
                     <span className={cn("font-semibold text-muted-foreground", TEXT.note)} data-testid="navlog-wind-change">
                       Wind {wind}
+                    </span>
+                  </div>
+                )}
+                {/* Where the route leaves the United States, before the first
+                    row there: its figures are by US rules (warn, never limit). */}
+                {cautions[at] && cautions[at] !== cautions[at - 1] && (
+                  <div role="row" className="relative flex min-h-7 items-center py-1 pl-12.5" data-testid="navlog-jurisdiction">
+                    <span aria-hidden="true" className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
+                    <span role="cell" aria-colspan={7} className={cn("font-semibold text-caution-ink", TEXT.note)}>
+                      {cautions[at]}
                     </span>
                   </div>
                 )}
@@ -265,6 +241,11 @@ export function NavLogList({
                       "hover:bg-foreground/5 focus-visible:bg-foreground/5 active:bg-foreground/8",
                       isFlying && "bg-tint/12 hover:bg-tint/12",
                       selected && "rounded-b-none bg-foreground/8 hover:bg-foreground/8 focus-visible:bg-foreground/8",
+                      // By night 5%, as a card's glass actions are (CardAction):
+                      // the light foreground's 8% put the tint's words in it
+                      // (MH, Show the Work) at 4.43 to 1 on a side panel (the
+                      // iOS audit's P15, a sideways iPhone's nav log).
+                      selected && SELECTED_NIGHT,
                     )}
                   >
                     <span className="relative row-span-2 flex justify-center pt-0.5">
@@ -284,7 +265,7 @@ export function NavLogList({
                             event.stopPropagation();
                             wantPlace(field);
                           }}
-                          className="relative justify-start text-left after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+                          className="relative justify-start text-left hit-y-[11px]"
                         >
                           {name}
                         </Button>
@@ -370,7 +351,7 @@ export function NavLogList({
                     // put the row away, in the selection's tint with it.
                     // Twelve under it: the note's field reaches nine past its
                     // box for a finger (DescriptionCell's label).
-                    <div role="row" className="rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-12.5">
+                    <div role="row" className={cn("rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-12.5", SELECTED_NIGHT)}>
                       <div role="cell" aria-colspan={7} className={cn("text-foreground/70", TEXT.detail)}>
                         {note(row, selected)}
                       </div>

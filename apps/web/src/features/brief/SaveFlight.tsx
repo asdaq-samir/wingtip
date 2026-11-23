@@ -1,15 +1,17 @@
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useIsMutating, useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Check, GraduationCap, Save } from "lucide-react";
 import { done } from "../../lib/doneNote";
 import { DropdownMenuItem } from "../../components/ui/dropdown-menu";
 import { ResponsivePopoverContent } from "../../components/ResponsivePopover";
-import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
+import type { ReviewAsk } from "../../components/ReviewAsk";
+import { fromChunk } from "../../lib/fromChunk";
 import { localDay } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 import { api } from "../../lib/api/client";
-import { pilotQuery, trainingQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { trainingQuery } from "../../lib/queryClientRecords";
 import type { SaveFlightRequest } from "../../lib/api/types";
 import { FINDING_TONE } from "../../lib/findings";
 import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
@@ -84,7 +86,7 @@ export function SaveFlightButton(flight: FlightToSave) {
       data-testid="save-flight-button"
     >
       {saving ? <Spinner aria-hidden /> : saved ? <Check /> : <Save />}
-      {saving ? "Saving…" : saved ? "Saved" : "Save this flight"}
+      {saving ? "Saving…" : saved ? "Saved" : "Save This Flight"}
     </DropdownMenuItem>
   );
 }
@@ -103,10 +105,18 @@ export function ReviewAskItem({ flight, onAsk }: { flight: FlightToSave; onAsk: 
   return (
     <DropdownMenuItem disabled={!request} onClick={onAsk} data-testid="ask-review">
       <GraduationCap />
-      Ask for a solo cross-country review
+      Ask for a Solo Cross-Country Review…
     </DropdownMenuItem>
   );
 }
+
+/** The review's form on a chunk of its own, fetched as its sheet opens: in
+ *  the route's panel it was among a route link's first scripts, 8 KB of a
+ *  form drawn only once asked for (route-load.spec, over its budget). */
+const { Part: ReviewAskForm } = fromChunk(
+  () => import("../../components/ReviewAsk"),
+  (m) => m.ReviewAskForm,
+);
 
 /**
  * The review asked from the route itself: the plan on screen saved as a
@@ -141,19 +151,21 @@ export function ReviewAskSheet({ flight, onDone }: { flight: FlightToSave; onDon
   const theirs = training?.instructors.filter((l) => l.accepted) ?? [];
   return (
     <ResponsivePopoverContent
-      title="Solo cross-country review"
+      title="Solo Cross-Country Review"
       align="end"
       className="w-96 max-w-[calc(100vw-2rem)] p-3"
       data-testid="review-sheet"
       description="Your instructor reviews its planning and the weather, and endorses it for the airplane and the day (14 CFR 61.93(c)(3), (d))."
     >
       <div className="space-y-3">
-        <ReviewAskForm
-          instructors={theirs}
-          pending={ask.isPending || !request}
-          onAsk={(a) => ask.mutate(a)}
-          initialDay={localDay(flight.depart ? new Date(flight.depart) : new Date())}
-        />
+        <Suspense fallback={<Spinner className="mx-auto" />}>
+          <ReviewAskForm
+            instructors={theirs}
+            pending={ask.isPending || !request}
+            onAsk={(a) => ask.mutate(a)}
+            initialDay={localDay(flight.depart ? new Date(flight.depart) : new Date())}
+          />
+        </Suspense>
         {ask.error && (
           <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
             {ask.error.message}

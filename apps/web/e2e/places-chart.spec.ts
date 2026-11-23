@@ -24,7 +24,7 @@ import { showPage } from "./oneSearch";
 test("an airport tapped on the chart while Setup is up puts Setup away and opens its card on Airport", async ({ page }) => {
   // The owner's notice: "When selecting airport marker while being on
   // setup tab doesn't open the [airport] tab."
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "Setup leaves the chart in sight on a phone");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "Setup leaves the chart in sight on a phone");
   await withPrivateFields(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -65,7 +65,11 @@ test("a tap on an airport on the chart opens its card, a tap elsewhere puts it a
   await tapTheChart(page);
   await expect(page).not.toHaveURL(/[?&]place=/);
   await expect(card(page)).toHaveCount(0);
-  await expectDrawerClosed(page);
+  // A phone's sheet down to its pill, as Maps'; a desktop's side panel
+  // back out as it was under the card, since it opens out (92e217114) and
+  // a card's close goes back one level.
+  if ((page.viewportSize()?.width ?? 0) >= 660) await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  else await expectDrawerClosed(page);
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
   await expect(arrow).toHaveAttribute("data-face", "route");
   await arrow.click();
@@ -196,22 +200,31 @@ test("closer in, the airports that report wear their weather's colour, and a tap
   await settle(page);
   const chips = { count: async () => (await airportMarks(page)).filter((m) => m.chip).length };
   await expect.poll(markWith(page, "route-marks", "KDLH"), { timeout: slow(30000) }).not.toBeNull();
-  // At the whole route's zoom on a phone, past the sectional's scale, only
-  // the biggest fields that report wear their marks, each with its room
-  // round it (AirportsLayer's OUT_APART_PX, 80 px), where a state's worth
-  // would bury the chart; a computer's view of the route is zoom 7 or in,
-  // where every field that reports wears one (REPORTING_FROM_ZOOM). Measured
-  // once they are in: the count of none this asked for lost the race with
-  // their answer (CI, 2026-10-17, 52 of them as they should be).
-  if (page.viewportSize()!.width < 768) {
+  // At the whole route's zoom on a phone (about 6), a few states out, only
+  // the towered fields wear their marks, each in a Class B, C or D surface
+  // area, where a state's worth would bury the chart; the long hard
+  // runways join them at 7 (docs/design/rules.md, "What is drawn from
+  // which zoom", the owner's 2026-11-21 ask). They stand side by side, no
+  // mark over another, each kept 2 px from the next (glOverlays'
+  // icon-padding), where before 27 px round each kept them some 80 apart
+  // (Midway and Aurora are 39 apart). A mark's box is the picture's
+  // 32 px (airportIcons' BOX) at no less than 0.7 of its size step
+  // there, the farthest scale. Measured once they are in: the count of
+  // none this asked for lost the race with their answer (CI, 2026-10-17).
+  if (page.viewportSize()!.width < 660) {
     await mapStill(page);
     await expect.poll(() => chips.count(), { timeout: slow(20000) }).toBeGreaterThan(0);
     const at = (await airportMarks(page)).filter((m) => m.chip);
-    let nearest = Number.POSITIVE_INFINITY;
+    expect(at.filter((m) => !["B", "C", "D"].includes(m.space)).map((m) => m.ident)).toEqual([]);
+    const step: Record<string, number> = { largest: 1.5, larger: 1.2, small: 0.82 };
+    const side = (m: { size: string }) => 32 * 0.7 * (step[m.size] ?? 1);
     for (let i = 0; i < at.length; i++) {
-      for (let j = i + 1; j < at.length; j++) nearest = Math.min(nearest, Math.hypot(at[i]!.x - at[j]!.x, at[i]!.y - at[j]!.y));
+      for (let j = i + 1; j < at.length; j++) {
+        const [a, b] = [at[i]!, at[j]!];
+        const apart = Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+        expect(apart, `${a.ident} and ${b.ident} apart`).toBeGreaterThanOrEqual((side(a) + side(b)) / 2 + 4);
+      }
     }
-    expect(nearest).toBeGreaterThanOrEqual(78);
   }
 
   // In on the departure, a notch at a time with the map still between

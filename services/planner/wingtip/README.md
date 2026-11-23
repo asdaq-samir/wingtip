@@ -150,26 +150,29 @@ Grouped by what they are for, not alphabetically.
 | `chartvision.py` | FAA VFR sectional raster tiles, read by colour. The largest module here. |
 | `charts.py` | The map of the chart modules below, in its docstring, and the served cycle and tile revision for `app/detection.py`, which may not be edited. The FAA GeoTIFFs rendered as an XYZ tile pyramid -- sectionals, TACs, IFR enroute and IFR area charts -- clipped to each sheet's face so adjacent sheets butt together, one drawing order for the pyramid and for tiles rendered on demand, and the sectional's masked lines taken back out when a sheet is prepared. One module of 2,336 lines until 2026-11-18, split by what changes together. `planner`'s `/api/chart-tile/*` and the charts job's `prepare`/`pyramid`/`refresh`/`unmask` commands are their CLI. |
 | `chart_kinds.py`, `chart_coverage.py` | The catalogue: the chart kinds and the FAA's zips; every sheet's envelope (`COVERAGE`) and the box tests on it. |
-| `chart_cycle.py` | The FAA's 56-day chart cycle (APRA, else the anchor), the cycles on disk, and whether one is in force yet. |
+| `chart_cycle.py` | The FAA's 56-day chart cycle in force (the engine's `data_cycle`, to the minute from 0901Z; APRA only a cross-check), the cycles on disk, and whether one is in force yet. |
 | `chart_grid.py`, `chart_warp.py`, `chart_render.py` | The renderer every way of drawing a tile shares: the tile grid; a sheet warped to web mercator, sharp at every zoom; a tile composited from its sheets, its PNG, cache path, draw order and `RENDERER_VERSION`. |
 | `chart_sheets.py`, `chart_prepare.py` | A prepared sheet on disk (`ready.json`, its locks, overviews); fetching and preparing one, a route's or the country's, and the seam check (`face_gaps`). |
-| `chart_serving.py` | Each cycle's pyramid record, the cycle the map is drawn from (per kind, or the published pointer), and the tile revision. |
+| `chart_serving.py` | Each cycle's pyramid record, the cycle the map is drawn from (per kind, or the published pointer, `next.json`'s from 0901Z on its date), and the tile revision. |
 | `chart_tiles.py`, `chart_archives.py` | A tile as the map asks for it (archive, cache or drawn now); a finished pyramid packed into one PMTiles archive per kind and density. |
 | `chart_workers.py`, `chart_pyramid.py`, `chart_rerender.py` | The whole country drawn ahead of time, with as many workers as the memory holds; tiles drawn again after a sheet changed (`unmask_prepared`). |
-| `chart_publish.py`, `chart_upkeep.py` | A complete cycle's archives to S3 and `serving.json`; keeping up with the cycle (`refresh`, `build_cycle`, `prune_cycles`), its lock, and the Dev console's `status`. |
+| `chart_publish.py`, `chart_upkeep.py` | A complete cycle's archives to S3 and `serving.json`, or ahead of its date under `next.json` (`promote` moves `serving.json` on, keeping `serving-previous.json`); keeping up with the cycle (`refresh`, `build_cycle`, `prune_cycles`, and on AWS `prune_behind_served`), its lock, and the Dev console's `status`. |
 | `chart_faces.py` | Finding a chart's face on its raster -- the neatline, or where the chart runs out -- and cleaning the raster: the lines the FAA's own masking left, found and given their tint back. Split out of `charts.py` first, because it changed on its own. |
+| `chart_panels.py`, `chart_insets.py` | What a sheet prints over its own face, cut out by a mask raster beside it: a TAC's paper panels with their titles (Puerto Rico's route panels), a sectional's framed insets (Los Angeles's basin, Dutch Harbor's two). |
 | `chart_raster.py` | A chart raster's palette and RGB read, and the paper rim of a scan; shared by the face finding and the masked-line cleaning. |
 | `chart_bands.py` | Searching a sectional's raster for the masked-line bands (paper strips along another chart's boundary), measured before anything is touched. |
 | `chart_masked_lines.py` | Carrying a found band on, giving it the tint of the chart around it, and writing the sheet back (`remove_masked_lines`); reached through `chart_faces`. |
 | `osm.py` | Overpass API, for candidate landmarks. |
 | `faa_data.py` | NASR airports/navaids and the Digital Obstacle File. |
+| `library.py`, `library_catalog.py`, `ecfr.py` | The documents library: the shelf of the FAA's books, the AIM, the circulars and the CFR parts a pilot reads (named as the engine's `citations` names them), each source's current edition found (an FAA page's link, the eCFR's issue date) and fetched once a day into `data/raw/library`, a CFR part read as its sections. |
 | `weather.py` | Winds aloft (one small request), and METARs/TAFs/SIGMETs from aviationweather.gov's cache files -- the whole national dataset every five minutes, not a query per route. |
 | `airspace.py` | FAA Class B/C/D shapefiles, parsed once per 28-day cycle into a WKB cache beside them. |
 | `elevation.py` | USGS 3DEP point elevations. |
 | `terrain.py` | Terrain and obstacle floor for a route. |
 | `airports.py` | Identifier → coordinates, and the route form's search. |
 | `retry.py` | The one retry loop the four modules above share for their requests, and `upstream_detail`, the one reader of a service's reason in an error response (the planner's dev-services proxy). |
-| `schedule.py` | The one scheduler (APScheduler) every service's periodic work runs on: the planner's FAA and chart checks, the weather service's fetches, ingest's beat and history, the crash-leads job. One run of a job at a time, missed turns run once. |
+| `log_lines.py` | How the planner, weather and ingest write their log: one line a record, JSON in production (`LOG_FORMAT`), with the request's id (`request_id`, which the planner's `app.request_ids` holds), bounded. |
+| `schedule.py` | The one scheduler (APScheduler) every service's periodic work runs on: the planner's FAA and chart checks, the weather service's fetches, ingest's beat and history. One run of a job at a time, missed turns run once. |
 
 **Deciding things** — rules still written here, each to move into the
 engine (#482).

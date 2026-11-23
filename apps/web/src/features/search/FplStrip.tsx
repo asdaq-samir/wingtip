@@ -6,7 +6,8 @@ import { PillStrip, SmallMark, SmallTile, StripNote, StripSection } from "../../
 import { planHrefOf } from "../../lib/flightLink";
 import { placeOfPoint } from "../../lib/identSchema";
 import { dayMonth } from "../../lib/format";
-import { flightsQuery, pilotQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { flightsQuery } from "../../lib/queryClientRecords";
 import QueryState from "../../components/QueryState";
 import { useStripShows } from "./useStripShows";
 import { RecentRouteTiles } from "./RecentRoutes";
@@ -82,7 +83,7 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
   // (QueryState), where the strip was left blank.
   if (flightsAsked.isError)
     return <QueryState query={flightsAsked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />;
-  if (flights && !shown.length) return <StripNote>Plan a route and Save it from Share; it is kept here.</StripNote>;
+  if (flights && !shown.length) return <StripNote>Plan a route, then save it from the Brief&apos;s ••• menu; it is kept here.</StripNote>;
   return (
     <PillStrip testId="saved-strip">
       {shown.map((f) => {

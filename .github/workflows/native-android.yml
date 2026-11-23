@@ -1,10 +1,9 @@
 name: Native Android
 
-# The native Android app (apps/android/, docs/NATIVE-ANDROID.md): the
-# engine for three ABIs, then the unit tests and lint. ci.yml calls this on
-# a pull request that touches the app, so "CI passed" waits for it (#499).
-# Its own runs keep a debug APK; main's pushes and the night the release
-# app bundle and its R8 mapping too; the night adds the emulator's tests.
+# The native Android app (apps/android/, docs/NATIVE-ANDROID.md): the engine for three ABIs,
+# then the unit tests and lint. ci.yml calls this on a pull request that touches the app, so
+# "CI passed" waits for it (#499). Its own runs keep a debug APK; main's pushes and the night
+# the release bundle and its R8 mapping, main's to Play's internal testing (docs/store/beta.md).
 #
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
@@ -39,8 +38,9 @@ env:
   # The site the app talks to and whose links open it (App Links); its
   # host is the build's WINGTIP_HOST (apps/android/app/build.gradle.kts).
   WINGTIP_URL: ${{ vars.WINGTIP_URL || 'https://wingtipmaps.app/app/plan' }}
-  # This workflow's own runs build the APK as well (scripts/ci/android_build.sh).
-  OWN_RUN: ${{ github.workflow == 'Native Android' }}
+  # This workflow's own runs and a wave's validation build the APK as well
+  # (scripts/ci/android_build.sh); a pull request's call does not.
+  OWN_RUN: ${{ github.workflow != 'CI' }}
   RELEASE: ${{ github.workflow == 'Native Android' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
 
 jobs:
@@ -71,23 +71,25 @@ jobs:
       # the image has (AGP's default download failed run 42876898472).
       - name: The SDK's licences
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-      # 90 s for three ABIs (run 42110144706), so cached by the engine's own
-      # files and saved at once, for the device job whatever the tests say.
+      # Cached by the engine's own files, saved at once for the device job;
+      # a pull request's (no APK) is arm64-v8a alone, for the bindings.
       - name: The engine, as last built
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/android/app/engine
-          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-android-${{ env.OWN_RUN != 'true' && 'arm64-' || '' }}${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
+        env:
+          WINGTIP_ENGINE_ABIS: ${{ env.OWN_RUN != 'true' && 'arm64-v8a' || '' }}
         run: echo "::notice title=Cache miss::engine-android" && engine/bindings/ffi/build-android.sh
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/android/app/engine
-          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-android-${{ env.OWN_RUN != 'true' && 'arm64-' || '' }}${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The site's host
         id: site
         run: echo "host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")" >> "$GITHUB_OUTPUT"
@@ -96,6 +98,7 @@ jobs:
           WINGTIP_HOST: ${{ steps.site.outputs.host }}
           ANDROID_UPLOAD_KEYSTORE: ${{ env.RELEASE == 'true' && secrets.ANDROID_UPLOAD_KEYSTORE || '' }}
           ANDROID_UPLOAD_PASSWORD: ${{ env.RELEASE == 'true' && secrets.ANDROID_UPLOAD_PASSWORD || '' }}
+          PLAY_SERVICE_ACCOUNT: ${{ env.RELEASE == 'true' && github.event_name == 'push' && secrets.PLAY_SERVICE_ACCOUNT || '' }}
         run: scripts/ci/android_build.sh
       - if: env.OWN_RUN == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -122,8 +125,14 @@ jobs:
 
   device:
     needs: build
-    # scripts/ci/android_device_tests.sh: ten minutes and more, so the night's (the owner, 2026-11-06) and by hand.
-    if: github.workflow == 'Native Android' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    # scripts/ci/android_device_tests.sh: ten minutes and more, so the night's (the owner, 2026-11-06), a wave's (validate-wave.yml,
+    # whose name a called workflow sees) and by hand, never a pull request's; on the phone and on a Pixel Tablet, each its own runner.
+    if: (github.workflow == 'Native Android' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || github.workflow == 'Validate wave'
+    name: device (${{ matrix.device }})
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [phone, tablet]
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     steps:
@@ -149,21 +158,15 @@ jobs:
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
         run: engine/bindings/ffi/build-android.sh
-      - name: The site's host
-        id: site
-        run: echo "host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")" >> "$GITHUB_OUTPUT"
-      # The emulator needs the runner's KVM opened (the emulator action's README).
       - name: KVM, for the emulator
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
+        run: scripts/ci/kvm.sh
       - name: The instrumented tests, on an emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d  # v2.38.0
         env:
-          WINGTIP_HOST: ${{ steps.site.outputs.host }}
+          DEVICE: ${{ matrix.device }}
         with:
           api-level: 35
+          profile: ${{ matrix.device == 'tablet' && 'pixel_tablet' || '' }}
           arch: x86_64
           working-directory: apps/android
           script: ../../scripts/ci/android_device_tests.sh
@@ -171,7 +174,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
-          name: wingtip-native-device-tests
+          name: wingtip-native-device-tests-${{ matrix.device }}
           path: |
             apps/android/app/build/reports/androidTests
             apps/android/baselineprofile/build/reports/androidTests

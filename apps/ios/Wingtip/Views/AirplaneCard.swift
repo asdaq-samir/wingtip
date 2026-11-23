@@ -16,6 +16,11 @@ import SwiftUI
 /// avoiding it.
 struct AirplaneCard: View {
     @Environment(Tracking.self) private var tracking
+    @Environment(Airplanes.self) private var airplanes
+    @Environment(Receiver.self) private var receiver
+    @Environment(Plan.self) private var plan
+    /// Other Airplanes' switch in Settings' Extras (Extra).
+    @AppStorage(Extra.otherAirplanes.key) private var others = false
     let hex: String
     @Environment(\.undoManager) private var undoManager
     @Environment(\.cardAtPill) private var atPill
@@ -48,6 +53,18 @@ struct AirplaneCard: View {
         return KeptAirplane(hex: hex.lowercased(), name: name, type: detail?.type ?? plane?.type)
     }
     private var link: URL { Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "flight", value: hex)]) }
+    /// One of the pilot's airplanes: its registrant is named (RegistryNames).
+    private var own: Bool {
+        RegistryNames.own(detail?.faa?.nNumber ?? detail?.registration ?? plane?.registration, among: airplanes.records.map(\.tailNumber))
+    }
+    /// Whether its Alert, Debrief, flights and base are offered: the
+    /// pilot's own always, another's while Other Airplanes is on
+    /// (Extra.airplaneHistory); else neither shown nor fetched.
+    private func offers(_ detail: FlightDetail?) -> Bool {
+        Extra.airplaneHistory(detail?.faa?.nNumber ?? detail?.registration ?? plane?.registration,
+                              own: airplanes.records.map(\.tailNumber) + [plan.tail].compactMap { $0 }, others: others)
+    }
+    private var offersHistory: Bool { offers(detail) }
     /// Its flight now, else its last: what Debrief replays.
     private var debriefed: PastFlightSummary? { flights.first }
 
@@ -68,7 +85,7 @@ struct AirplaneCard: View {
                 }
             }
             Section {
-                AirplaneFacts(record: detail?.faa, type: detail?.type ?? plane?.type, year: detail?.year)
+                AirplaneFacts(record: detail?.faa, own: own, type: detail?.type ?? plane?.type, year: detail?.year)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
             }
@@ -78,7 +95,8 @@ struct AirplaneCard: View {
                     FlownSketchTile(points: sketchPoints, name: name)
                 }
             }
-            switch tab {
+            // Info alone where its flights are not offered.
+            switch offersHistory ? tab : .info {
             case .info: info
             case .flights: earlier
             }
@@ -90,13 +108,15 @@ struct AirplaneCard: View {
             ToolbarItem(placement: .topBarLeading) {
                 ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: WingtipIcon.share) }
             }
-            CardTabBar(tab: $tab, items: Tab.allCases.map { .init(tab: $0, title: $0.rawValue) }, atPill: atPill, accent: accent)
+            if offersHistory {
+                CardTabBar(tab: $tab, items: Tab.allCases.map { .init(tab: $0, title: $0.rawValue) }, atPill: atPill, accent: accent)
+            }
         }
         // A flown flight's card, pushed in this one: from its row, or Debrief's.
         .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight) }
         .navigationDestination(item: $debrief) { flight in PastFlightCard(hex: hex, flight: flight) }
         .task(id: hex) {
-            await model.load(hex)
+            await model.load(hex, offered: offers)
             if let trail = detail?.trail { tracking.seed(trail, for: hex) }
             if let kept { tracking.remember(kept) }
         }
@@ -130,6 +150,11 @@ struct AirplaneCard: View {
                 let what = [detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type,
                             detail?.operatorName.map(FlightWords.nameCase)].compactMap { $0 }.joined(separator: " · ")
                 if !what.isEmpty { Text(what).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center) }
+                // Heard by the cockpit's own receiver, not the internet's,
+                // and how long ago.
+                if let heard = ReceiverWords.heard(hex, picture: receiver.picture) {
+                    Text(heard).font(.subheadline).foregroundStyle(.secondary)
+                }
             }
             HStack(spacing: WingtipSpace.sm) {
                 // Follow filled, the card's first thing to do; nothing to
@@ -142,25 +167,23 @@ struct AirplaneCard: View {
                 .glassProminentButton()
                 .disabled(plane == nil)
                 .accessibilityLabel(following ? "Stop following \(name)" : "Follow \(name) on the map")
-                Menu {
-                    Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
-                    Toggle("Tell me when it lands", isOn: watchBinding(.land))
-                } label: {
-                    ActionFace(systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell", title: "Alert")
-                }
-                .glassButton()
-                Button { debrief = debriefed } label: { ActionFace(systemImage: "chart.xyaxis.line", title: "Debrief") }
+                // Its alerts and Debrief, another's only while Other
+                // Airplanes is on (offersHistory).
+                if offersHistory {
+                    Menu {
+                        Toggle("Tell Me When It Takes Off", isOn: watchBinding(.takeoff))
+                        Toggle("Tell Me When It Lands", isOn: watchBinding(.land))
+                    } label: {
+                        ActionFace(systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell", title: "Alert")
+                    }
                     .glassButton()
-                    .disabled(debriefed == nil)
-                let starred = tracking.isFavorite(hex)
-                Toggle(isOn: Binding(get: { starred }, set: { _ in if let kept { tracking.toggleFavorite(kept, undo: undoManager) } })) {
-                    ActionFace(systemImage: starred ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: "Favorite",
-                               symbolColour: starred ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
+                    Button { debrief = debriefed } label: { ActionFace(systemImage: "chart.xyaxis.line", title: "Debrief") }
+                        .glassButton()
+                        .disabled(debriefed == nil)
                 }
-                .toggleStyle(.button)
-                .glassButton()
-                .disabled(kept == nil)
-                .accessibilityLabel(starred ? "Remove from Favorites" : "Add to Favorites")
+                let starred = tracking.isFavorite(hex)
+                FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
+                    .disabled(kept == nil)
             }
             .glassGroup(spacing: WingtipSpace.sm)
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
@@ -176,9 +199,9 @@ struct AirplaneCard: View {
             if let op = detail?.operatorName { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
             LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
             LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
-            LabeledContent("ICAO address", value: hex.uppercased())
+            LabeledContent("ICAO Address", value: hex.uppercased())
             LabeledContent("Callsign", value: plane?.callsign ?? "—")
-            if let based { LabeledContent("Based at", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
+            if let based { LabeledContent("Based At", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
             ProblemLine(model.detailProblem)
         }
         if let route {
@@ -193,7 +216,7 @@ struct AirplaneCard: View {
                 }
             }
         }
-        if let faa = detail?.faa { FAARecordSection(faa: faa) }
+        if let faa = detail?.faa { FAARecordSection(faa: faa, own: own) }
     }
 
     /// Flights: the ones before the flight it is on, each replayed.
@@ -209,12 +232,12 @@ struct AirplaneCard: View {
                 Text("No flights heard in the last six weeks").foregroundStyle(.secondary)
             }
             if let unread = history?.unreadDays, unread > 0 {
-                Text(unread >= 7 ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
+                Text(unread >= 7 ? "adsb.lol's flight history could not be read just now, so only flights followed in this app are listed."
                     : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             if history?.nextUntil != nil {
-                Button(model.fetchingMore ? "Fetching earlier flights…" : "Show earlier flights") { Task { await model.more(hex) } }
+                Button(model.fetchingMore ? "Fetching earlier flights…" : "Show Earlier Flights") { Task { await model.more(hex) } }
                     .disabled(model.fetchingMore)
             }
             ProblemLine(model.problem)
@@ -290,7 +313,7 @@ struct NowFlightRow: View {
     /// Its height to the 100 ft (Format.trafficAltitude), its climb, ground speed and track, as sent.
     private var flying: String {
         let rate = plane.verticalFpm ?? 0
-        let climb = abs(rate) >= 100 ? "\(rate > 0 ? "↑" : "↓") \((Int((abs(rate) / 100).rounded()) * 100).formatted()) fpm" : "level"
+        let climb = abs(rate) >= 100 ? "\(rate > 0 ? "↑" : "↓") \((Int((abs(rate) / 100).rounded()) * 100).formatted(.number.locale(Format.locale))) fpm" : "level"
         let height = Format.trafficAltitude(plane.altitudeFt)
         let speed = Format.speed(plane.speedKt)
         let track = plane.trackDeg.map { " · \(Format.heading($0)) true" } ?? ""

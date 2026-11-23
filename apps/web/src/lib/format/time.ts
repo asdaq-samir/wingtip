@@ -11,6 +11,8 @@
  * planner opened (2026-10-10), the browser reading its date data. It
  * also wrote midnight "24:05" where hour12 was off in some browsers.
  */
+import { callEngine } from "../engine/engine";
+
 /** A count in two figures, "05": a clock's hours and minutes, a day of the month. */
 export const twoFigures = (n: number) => String(n).padStart(2, "0");
 
@@ -43,6 +45,53 @@ export function zoneName(at: Date = new Date()): string {
   return name;
 }
 
+const fieldZones = new Map<string, Intl.DateTimeFormat | null>();
+/** A zone's wall clock and short name at an instant, or null where the
+ *  browser does not know the zone. One formatter a zone, made the first
+ *  time. */
+function wallIn(at: Date, timeZone: string): { time: string; zone: string } | null {
+  if (!fieldZones.has(timeZone)) {
+    try {
+      fieldZones.set(
+        timeZone,
+        new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", hour: "2-digit", minute: "2-digit", timeZoneName: "short" }),
+      );
+    } catch {
+      fieldZones.set(timeZone, null);
+    }
+  }
+  const format = fieldZones.get(timeZone);
+  if (!format) return null;
+  const parts = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
+  return { time: `${parts.hour}:${parts.minute}`, zone: parts.timeZoneName ?? timeZone };
+}
+
+/** A clock time in a field's own zone (an IANA name, the planner's
+ *  `time_zone`) and that zone's short name, "18:24" and "MST" -- or null
+ *  where it keeps the departure's time at that instant (`from`, the
+ *  departure's zone; this device's where it has none, as My Location), or
+ *  the browser does not know the zone: FPL says a stop's zone only where
+ *  it is not the departure's (the owner, 2026-11-20: "No not even from
+ *  phones, just if any stop differs from the departure"). */
+export function clockElsewhere(
+  at: Date,
+  timeZone: string | null | undefined,
+  from: string | null | undefined,
+): { time: string; zone: string } | null {
+  const there = timeZone ? wallIn(at, timeZone) : null;
+  if (!there) return null;
+  const departure = from ? wallIn(at, from)?.time : clockTime(at);
+  return there.time === departure ? null : there;
+}
+
+/** A clock time and its zone's short name in a field's zone (an IANA
+ *  name), else this device's: every point's time once one of the route's
+ *  keeps another zone than the departure's (the owner, 2026-11-20: "When
+ *  the time zone changes then show it on all the stops"). */
+export function clockIn(at: Date, timeZone: string | null | undefined): { time: string; zone: string } | null {
+  return wallIn(at, timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+}
+
 /** UTC hours and minutes in four figures, as a flight plan's item 13
  *  takes them: "1505". */
 export function utcFigures(at: Date): string {
@@ -52,6 +101,24 @@ export function utcFigures(at: Date): string {
 /** UTC as reports give it: "1255Z". */
 export function zuluTime(at: Date): string {
   return `${utcFigures(at)}Z`;
+}
+
+/** A feed's ISO time as an instant, ms: one with no zone read as UTC, as
+ *  every FAA and AWC time is (Date.parse reads "2026-11-21T14:00" as this
+ *  device's local time, hours out); null where there is none or it does
+ *  not read, which the caller takes as no bound. */
+export function instantOf(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const at = Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
+  return Number.isNaN(at) ? null : at;
+}
+
+/** A product's or a report's time on this device's clock with its zone,
+ *  and UTC beside it as the product gives it: "15:00 CST (2100Z)". A
+ *  SIGMET valid until 2100Z read "valid till 15:00" beside raw text
+ *  saying 2100Z, with nothing to say whose 15:00. */
+export function clockAndZulu(at: Date): string {
+  return `${clockTime(at)} ${zoneName(at)} (${zuluTime(at)})`;
 }
 
 /** This device's calendar day, yyyy-MM-dd: the day a pilot means by
@@ -106,10 +173,10 @@ export function duration(minutes: number): string {
 }
 
 /** How long ago something was, from the milliseconds since: "just now"
- *  under a minute, "23m ago", "2h 5m ago". */
+ *  under a minute, "23m ago", "2h 5m ago", "3d ago" -- the engine's
+ *  `time_ago`, the one rule all three apps write it by. */
 export function ago(sinceMs: number): string {
-  const minutes = Math.floor(Math.max(0, sinceMs) / 60_000);
-  return minutes < 1 ? "just now" : `${duration(minutes)} ago`;
+  return callEngine("time_ago", { seconds: sinceMs / 1000 });
 }
 
 /** Minutes and seconds, as a stopwatch shows them, from seconds: "2:07".

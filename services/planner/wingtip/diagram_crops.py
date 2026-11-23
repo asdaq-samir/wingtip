@@ -23,4 +23,5 @@ def runways_missing(ident: str, ends: bool, on: date | None = None) -> bool:
     from . import publications
 
     url = publications.airport_diagram_url(ident, on)
-    return bool(url) and runways_path(publications.CACHE_DIR, url, publications.dtpp_cycle(on), ends).with_suffix(".none").exists()
+    cycle = publications.airport_diagram_cycle(ident, on)
+    return bool(url and cycle) and runways_path(publications.CACHE_DIR, url, cycle, ends).with_suffix(".none").exists()

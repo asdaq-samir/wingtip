@@ -45,8 +45,11 @@ export default function PilotCamera() {
     let frame = 0,
       shownAt: number | null = null,
       tintFt: number | null = null;
+    // Moved in the frame after the run's clock moves, not in a loop of
+    // every frame that found nothing new while the run was paused (the
+    // waste audit of 2026-11-21, item 15).
     const step = () => {
-      frame = requestAnimationFrame(step);
+      frame = 0;
       const { at, points } = usePastFlight.getState();
       if (at === null || at === shownAt) return;
       const here = positionAt(points, at);
@@ -66,9 +69,14 @@ export default function PilotCamera() {
         el.dataset.pilotAltFt = String(rounded);
       }
     };
-    frame = requestAnimationFrame(step);
+    const ask = () => {
+      if (!frame) frame = requestAnimationFrame(step);
+    };
+    const unsubscribe = usePastFlight.subscribe(ask);
+    ask();
     return () => {
       cancelAnimationFrame(frame);
+      unsubscribe();
       delete el.dataset.pilotView;
       delete el.dataset.pilotAltFt;
       if (!map.style) return;

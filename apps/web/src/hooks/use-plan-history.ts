@@ -45,9 +45,9 @@ function keep(h: PlanHistory) {
 /**
  * The plan's Undo and Redo (hooks/planHistory), from the address the page
  * keeps it in and the airplane flown: each change taken in as it lands,
- * whichever button made it. Their one place is the route's ••• menu
- * (lib/planUndo; the FPL redesign, the owner 2026-11-17), named by what
- * they put back. One that took something away -- the route cleared, a
+ * whichever button made it. Their one place is the toast's Undo and a
+ * keyboard's Cmd-Z (lib/planUndo; the ••• menu's items went, the owner
+ * 2026-11-21), named by what they put back. One that took something away -- the route cleared, a
  * stop removed, the route replaced by Fly Here or a Direct to, a
  * procedure taken off -- also puts up "Route Cleared · Undo" as a toast
  * with its Undo, the web's stock confirmation (the owner, 2026-11-10). A
@@ -126,8 +126,14 @@ export function usePlanHistory(address: Address, setAddress: SetAddress) {
       const wanted = key === "z" ? (event.shiftKey ? redo : undo) : key === "y" && event.ctrlKey ? redo : null;
       if (wanted?.()) event.preventDefault();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Heard on the way down, before the page's own handlers: React Aria's
+    // keyboard handlers stop every key's propagation by default, so with the
+    // focus on a control inside FPL's route list (a GridList), as it is
+    // once a field's fuel gauge has been set and its popover gives the focus
+    // back, Cmd-Z never reached a listener on the way up and undid nothing
+    // (fuel-gauge.spec on CI's slower runner).
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [undo, redo]);
 }
 

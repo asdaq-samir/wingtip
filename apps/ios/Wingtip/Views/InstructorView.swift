@@ -98,7 +98,7 @@ struct InstructorView: View {
     }
 
     private func act(_ change: () async throws -> Instructor?) async {
-        do { if let next = try await change() { instructor = next }; problem = nil } catch { problem = error.localizedDescription }
+        do { if let next = try await change() { instructor = next }; problem = nil } catch { problem = Problems.say("Your instructor could not be changed", error) }
     }
 }
 
@@ -130,12 +130,12 @@ struct CertificateSection: View {
                 TextField("987654321CFI", text: $certificate).multilineTextAlignment(.trailing).font(.body.monospaced())
                     .textInputAutocapitalization(.characters).autocorrectionDisabled()
             }
-            Picker("Its date", selection: $untilKind) {
-                Text("Recent experience").tag("RE")
+            Picker("Its Date", selection: $untilKind) {
+                Text("Recent Experience").tag("RE")
                 Text("Expires").tag("EXP")
             }
             .pickerStyle(.segmented)
-            DatePicker(untilKind == "RE" ? "Recent experience through" : "Certificate expires", selection: $until, displayedComponents: .date)
+            DatePicker(untilKind == "RE" ? "Recent Experience Through" : "Certificate Expires", selection: $until, displayedComponents: .date)
             Button(saving ? "Saving…" : "Save") {
                 saving = true
                 let request = InstructorRequest(certificate: certificate.trimmingCharacters(in: .whitespaces), fullName: fullName.trimmingCharacters(in: .whitespaces),
@@ -233,7 +233,7 @@ struct StudentView: View {
     }
 
     private func load() async {
-        do { training = try await Gateway.studentTraining(row.studentId); problem = nil } catch { problem = "Their record could not be fetched (\(error.localizedDescription))." }
+        do { training = try await Gateway.studentTraining(row.studentId); problem = nil } catch { problem = Problems.say("Their record could not be fetched", error) }
     }
 }
 
@@ -281,7 +281,7 @@ struct ReviewSection: View {
                 Button("Send") {
                     Task {
                         do { _ = try await Gateway.declineReview(review.id, note: note.trimmingCharacters(in: .whitespacesAndNewlines)); declining = false; await onDone(nil) }
-                        catch { problem = error.localizedDescription }
+                        catch { problem = Problems.say("The review could not be sent back", error) }
                     }
                 }
                 .disabled(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -360,7 +360,7 @@ struct SignView: View {
                     let request = SignRequest(code: kind.code, fields: .init(additionalProperties: fields), reviewId: reviewId, signedOn: signedOn, text: text)
                     Task {
                         do { let next = try await Gateway.sign(studentId, request); await onSigned(next); dismiss() }
-                        catch { problem = error.localizedDescription }
+                        catch { problem = Problems.say("The endorsement could not be signed", error) }
                         signing = false
                     }
                 }
@@ -382,8 +382,8 @@ struct SignView: View {
 
 private enum PreviewData {
     static let instructor = Instructor(asking: [], certificate: "987654321CFI", fullName: "J. J. Jones", kinds: [], reviews: [], signed: [], students: [], until: "2027-12-31", untilKind: "RE")
-    static let kind = EndorsementKind(code: "solo-xc-flight", fields: [EndorsementField(example: "PA-28-181", key: "mm", label: "Make and model", required: true)], label: "Solo cross-country flight", paragraph: "A.10", rule: "61.93(c)(2)(i)", template: "I certify that {student} has received the required solo cross-country training. I find that {student} has met the applicable requirements of § 61.93, and is proficient to make solo cross-country flights in a {mm} aircraft.")
-    static let review = CrossCountryReview(askedAt: "2026-10-27", checks: [ReviewCheck(detail: "Logged 2026-10-20", label: "Solo cross-country training", met: true, rule: "61.93(d)(4)"),
+    static let kind = EndorsementKind(code: "solo-xc-flight", fields: [EndorsementField(example: "PA-28-181", key: "mm", label: "Make and Model", required: true)], label: "Solo cross-country flight", paragraph: "A.10", rule: "61.93(c)(2)(i)", template: "I certify that {student} has received the required solo cross-country training. I find that {student} has met the applicable requirements of § 61.93, and is proficient to make solo cross-country flights in a {mm} aircraft.")
+    static let review = CrossCountryReview(askedAt: "2026-10-27", checks: [ReviewCheck(detail: "Logged 2026-10-20", label: "Solo Cross-Country Training", met: true, rule: "61.93(d)(4)"),
                                                                            ReviewCheck(detail: "Signed 2026-09-30, 90 days", label: "Solo flight endorsement in force", met: true, rule: "61.93(d)(5)")], flight: SavedFlight(aircraftTailNumber: "N3429J", createdAt: "2026-10-26", cruiseAltitudeFt: 4500, departureIdent: "KDLH", destinationIdent: "KHIB", id: 31, stops: [], totalDistanceNm: 62.4, totalEteMin: 36, totalFuelGal: 5.1), flightOn: "2026-10-28", id: 7, makeModel: "PA-28-181", note: "Could you look at this one for Saturday?", studentName: "Avery B. Student")
 }
 

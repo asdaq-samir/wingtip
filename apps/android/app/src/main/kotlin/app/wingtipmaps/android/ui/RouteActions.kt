@@ -17,6 +17,8 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.route.RouteHome
 import app.wingtipmaps.android.route.departFrom
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * What a card's actions do with the route (Plan's route edits) and the
@@ -28,14 +30,18 @@ import app.wingtipmaps.android.route.departFrom
  */
 class RouteActions(
     private val plan: Plan,
-    private val fix: OwnShip.Fix?,
+    /** Own ship's fix, read at the tap: a card holding the value was
+     *  built and drawn again at every fix. */
+    private val fixNow: () -> OwnShip.Fix?,
+    /** Whether there is a fix, for Direct To's button; told only as it changes. */
+    private val hasFix: Boolean,
     private val routed: Boolean,
     private val context: Context,
     private val haptics: Haptics? = null,
 ) {
     /** Where Fly Here starts: the airplane, else the route's departure;
      *  none, and the plan asks where from. */
-    private val from: String? get() = fix?.let(Plan::positionIdent) ?: plan.state.value.dep.ifEmpty { null }
+    private val from: String? get() = fixNow()?.let(Plan::positionIdent) ?: plan.state.value.dep.ifEmpty { null }
 
     fun canAirport(action: CardAction, place: AirportPlace?): Boolean = when (action) {
         // A field NASR lists as closed is never offered to fly to, depart
@@ -63,7 +69,7 @@ class RouteActions(
     }
 
     fun canPoint(action: CardAction, copyable: Boolean): Boolean = when (action) {
-        CardAction.DIRECT_TO -> fix != null
+        CardAction.DIRECT_TO -> hasFix
         CardAction.ADD_TO_ROUTE, CardAction.HOLD_HERE -> routed
         CardAction.COPY -> copyable
         else -> false
@@ -73,7 +79,7 @@ class RouteActions(
      *  VOR's frequency, a fix's name). */
     fun point(action: CardAction, point: Plan.ChartPoint, copy: Pair<String, String>?) {
         when (action) {
-            CardAction.DIRECT_TO -> fix?.let {
+            CardAction.DIRECT_TO -> fixNow()?.let {
                 plan.directTo(point, it)
                 haptics?.tap(WingtipHaptic.DIRECT_TO)
             }
@@ -108,8 +114,11 @@ class RouteActions(
 @Composable
 fun rememberRouteActions(plan: Plan, flight: FlightModel = hiltViewModel()): RouteActions {
     val context = LocalContext.current
-    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
+    val ship = flight.ownShip
+    // Whether there was a fix read once, as the flow is made, not at each drawing.
+    val fixedFirst = remember(ship) { ship.fix.value != null }
+    val hasFix by remember(ship) { ship.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(fixedFirst)
     val state by plan.state.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
-    return remember(plan, fix, state.routed, state.course) { RouteActions(plan, fix, state.routed && state.course != null, context, haptics) }
+    return remember(plan, ship, hasFix, state.routed, state.course) { RouteActions(plan, { ship.fix.value }, hasFix, state.routed && state.course != null, context, haptics) }
 }

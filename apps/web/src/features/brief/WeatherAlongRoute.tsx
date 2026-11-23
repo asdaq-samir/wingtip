@@ -16,6 +16,7 @@ import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Stat
 import { FINDING_TONE } from "../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
 import { useGeo } from "../../lib/geo";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 type Pirep = Briefing["pireps"][number];
 
@@ -41,7 +42,7 @@ function metarFigures(metar: NonNullable<Briefing["metars"][string]>): string {
   const degrees = (c: number) => `${Math.round(c) < 0 ? "−" : ""}${Math.abs(Math.round(c))}`;
   return [
     capitalised(ceilingAndVisibility(metar.ceiling_ft, metar.visibility_sm, metar.visibility_plus)),
-    metar.temp_c != null && `${degrees(metar.temp_c)} °C${metar.dewpoint_c != null ? `, dew point ${degrees(metar.dewpoint_c)}` : ""}`,
+    metar.temp_c != null && `${degrees(metar.temp_c)} °C${metar.dewpoint_c != null ? `, dew point ${degrees(metar.dewpoint_c)} °C` : ""}`,
     metar.altimeter_in_hg != null && `${metar.altimeter_in_hg.toFixed(2)} inHg`,
   ]
     .filter(Boolean)
@@ -148,7 +149,7 @@ export default function WeatherAlongRoute({
   return (
     // A field's weather under its own tab's title, Weather; the way between
     // Along the Route.
-    <AccordionSection title={phase === "depart" || phase === "arrive" ? "Weather" : "Along the Route"}>
+    <AccordionSection title={phase === "depart" || phase === "arrive" ? "Weather" : WORDING.alongTheRoute}>
       <div className="space-y-4" data-testid="weather-places">
         {places.map((place, i) => {
           const metar = briefing.metars[place.ident];
@@ -260,7 +261,7 @@ export default function WeatherAlongRoute({
                 </ListGroup>
               )}
               {next && stretchShown && (
-                <ListGroup title={places.length > 2 ? `${place.ident} to ${next.ident}` : "En route"}>
+                <ListGroup title={places.length > 2 ? `${place.ident} to ${next.ident}` : "En Route"}>
                   {stretch.length === 0 ? (
                     <ListRow muted title="No TAFs or pilot reports near this stretch" />
                   ) : (

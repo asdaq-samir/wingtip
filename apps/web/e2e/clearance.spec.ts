@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, inSheet, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
+import { grabberTo, inSheet, openPanel, typeRoute, settle, sideDrawer, slow } from "./helpers";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * A clearance into the route, from the map's microphone: the
@@ -23,7 +26,7 @@ test("a clearance read is shown in its items and entered as the route", async ({
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const box = sideDrawer(page).getByTestId("route-box");
   // The route's field opened all the way up, over the map's buttons: half
   // way, the comms button in sight over the sheet.
@@ -137,9 +140,12 @@ test("the microphone listens once into a pill, and its chip flies the altitude s
   const pill = page.getByTestId("radio-pill");
   // The page's first tap can land before its handlers are in on a slow
   // load: tapped again until it listens.
+  const button = page.getByTestId("radio-button");
   await expect(async () => {
-    if (!(await pill.count())) await page.getByTestId("radio-button").click();
-    await expect(pill).toBeVisible({ timeout: 2000 });
+    // Not while it listens: a second tap would stop it (flakes audit).
+    if (!(await pill.count()) && (await button.getAttribute("aria-pressed", { timeout: 1000 })) !== "true")
+      await button.click({ timeout: 1000 });
+    await expect(pill).toBeVisible({ timeout: slow(5000) });
   }).toPass({ timeout: slow(20_000) });
   await expect(pill).toContainText("climb and maintain five thousand", { timeout: slow(10_000) });
   // No card: the pill is the microphone's.
@@ -229,9 +235,12 @@ test("with nothing heard the pill stays and says so until put away", async ({ pa
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const pill = page.getByTestId("radio-pill");
+  const button = page.getByTestId("radio-button");
   await expect(async () => {
-    if (!(await pill.count())) await page.getByTestId("radio-button").click();
-    await expect(pill).toBeVisible({ timeout: 2000 });
+    // Not while it listens: a second tap would stop it (flakes audit).
+    if (!(await pill.count()) && (await button.getAttribute("aria-pressed", { timeout: 1000 })) !== "true")
+      await button.click({ timeout: 1000 });
+    await expect(pill).toBeVisible({ timeout: slow(5000) });
   }).toPass({ timeout: slow(20_000) });
   await expect(pill).toContainText("No microphone could be used", { timeout: slow(10_000) });
   // Still there a while on.

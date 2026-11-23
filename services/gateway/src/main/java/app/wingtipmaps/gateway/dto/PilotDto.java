@@ -40,4 +40,12 @@ public record PilotDto(
         String phone,
 
         @Schema(description = "Their airplane's home base, an airport identifier", example = "KMSN") @Nullable
-        String homeBase) {}
+        String homeBase,
+
+        @Schema(
+                description = "Where their avatar's photo is read, its version in the address so a new photo "
+                        + "is never a cached one (GET /api/me/avatar); null when they have set none and their "
+                        + "initials show",
+                example = "/api/me/avatar?v=1763650000000")
+        @Nullable
+        String avatarUrl) {}

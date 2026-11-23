@@ -8,19 +8,12 @@ import type { RouteCard } from "../../lib/openCards";
 const SHARE_LABEL: Record<"route" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
   // share, call it more with the … as the text"): it holds the route's
-  // other actions (save, file, plan again, clear), not sharing alone.
+  // other actions (Route Options, the link, ForeFlight), not sharing alone.
   route: "More",
   brief: "Share the briefing",
   navlog: "Share the nav log",
   profile: "Share the profile",
 };
-
-/** Plan again due: a dot on the glyph, said in the button's name. */
-function StaleMark({ stale }: { stale: string[] }) {
-  return stale.length ? (
-    <span aria-hidden="true" data-testid="plan-again-mark" className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution" />
-  ) : null;
-}
 
 /** ShareMenu's trigger: the route's ••• as a button of FPL's floating bar
  *  ("bar", FplTabBar) or of the flying drawer's tiles ("tile", FplActions),
@@ -30,36 +23,27 @@ function StaleMark({ stale }: { stale: string[] }) {
 export function TriggerButton({
   look,
   card,
-  stale,
   testId,
   ...trigger
-}: { look?: "bar" | "tile"; card: "route" | RouteCard; stale: string[]; testId: string } & Omit<
+}: { look?: "bar" | "tile" | "head"; card: "route" | RouteCard; testId: string } & Omit<
   ComponentProps<"button">,
   "children" | "onClick" | "disabled"
 >) {
   // In FPL's floating bar, one of its items (FloatingBar).
-  if (look === "bar")
-    return (
-      <FloatingBarButton
-        icon={<Ellipsis />}
-        badge={<StaleMark stale={stale} />}
-        label={SHARE_LABEL.route}
-        spoken={stale.length ? `More: ${stale.join(", ")}` : undefined}
-        testId={testId}
-        {...trigger}
-      />
-    );
+  if (look === "bar") return <FloatingBarButton icon={<Ellipsis />} label={SHARE_LABEL.route} testId={testId} {...trigger} />;
+  // At the start of FPL's first row, Share's own disc, as a card's Share and
+  // Apple Maps' Directions' (the owner, 2026-11-19: "similar buttons x and
+  // share"): the same menu as the floating bar's More.
+  if (look === "head") return <IconButton round label="Share" data-testid={testId} {...trigger} />;
   if (look)
     return (
       <CardAction
         icon={
           <span className="relative flex">
             <Ellipsis />
-            <StaleMark stale={stale} />
           </span>
         }
         label={SHARE_LABEL.route}
-        spoken={stale.length ? `More: ${stale.join(", ")}` : undefined}
         testId={testId}
         {...trigger}
       />
@@ -71,21 +55,24 @@ export function TriggerButton({
   return (
     <IconButton
       round
-      label={stale.length ? `${SHARE_LABEL[card]}: ${stale.join(", ")}` : SHARE_LABEL[card]}
-      {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
+      label={SHARE_LABEL[card]}
+      // The route's ••• the stock small icon button (32, in rem), not a 32
+      // px one among rem neighbours, so it grows with the text as they do
+      // (the scale audit, the owner, 2026-11-21).
+      {...(card === "route" ? { variant: "ghost" as const, size: "icon-sm" as const } : {})}
       data-testid={testId}
       {...trigger}
     />
   );
 }
 
-/** The round button's glyph: the route's ••• a size down, as the first
- *  row's other buttons are; a card's Share. */
-export function TriggerFace({ card, stale }: { card: "route" | RouteCard; stale: string[] }) {
+/** The round button's glyph: the route's ••• a size down (18, in rem so
+ *  it grows with its button), as the first row's other buttons are; a
+ *  card's Share. */
+export function TriggerFace({ card, share = false }: { card: "route" | RouteCard; share?: boolean }) {
   return (
     <span className="relative">
-      {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
-      <StaleMark stale={stale} />
+      {card === "route" && !share ? <Ellipsis className="size-4.5" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
     </span>
   );
 }

@@ -1,5 +1,5 @@
-"""The NOTAMs and TFRs as they were on a day, for the Studio's replay
-(app.routers.studio_history). No public archive of past NOTAMs exists
+"""The NOTAMs and TFRs as they were on a day, kept for a replay of a
+real flight. No public archive of past NOTAMs exists
 (the FAA's NOTAM Search gives those in force now), so from now on ingest
 keeps one of its own: each hour (ingest.history) the NOTAM store
 (wingtip.notams, SWIM's FNS) and the TFR list (wingtip.tfr, tfr.faa.gov's)
@@ -22,7 +22,7 @@ import gzip
 import json
 from pathlib import Path
 
-from .. import airports, notams, weather_store
+from .. import airports, geo_boxes, notams, weather_store
 from .. import tfr as tfrs_now
 from ..atomic import atomic_path
 from ..config import get_settings
@@ -126,8 +126,14 @@ def snapshot(now: dt.datetime | None = None) -> dict[str, int]:
     counts = {}
     for kind, items in (("notams", _notam_items()), ("tfrs", _tfr_items())):
         path = _file(kind, day)
-        merged = {**_read(path), **items}
-        _write(path, merged)
+        held = _read(path)
+        merged = {**held, **items}
+        # Written only where the hour brought something new (or the day has
+        # no file yet, an empty day being archived too): the day's whole
+        # file re-dumped and gzipped each hour, the same bytes most of the
+        # day, was work and a new mtime for nothing.
+        if merged != held or not path.exists():
+            _write(path, merged)
         counts[kind] = len(merged)
     forget_before(day - dt.timedelta(days=KEEP_DAYS))
     return counts
@@ -182,9 +188,11 @@ def as_it_was(at: float, lat_min: float, lat_max: float, lon_min: float, lon_max
     day = when.date()
     kept_notams, kept_tfrs = _items("notams", day), _items("tfrs", day)
     answer = {"archived": kept_notams is not None or kept_tfrs is not None, "day": day.isoformat(), "notams": [], "tfrs": []}
+    # The box read as its one or two halves either side of 180 (geo_boxes).
+    asked = (lat_min, lon_min, lat_max, lon_max)
     for n in kept_notams or []:
         where = _position(n["location"]) if n.get("location") else None
-        if where is None or not (lat_min <= where[0] <= lat_max and lon_min <= where[1] <= lon_max):
+        if where is None or not geo_boxes.in_box(asked, where[0], where[1]):
             continue
         if _in_force(n.get("start"), n.get("end"), when):
             answer["notams"].append(
@@ -192,7 +200,7 @@ def as_it_was(at: float, lat_min: float, lat_max: float, lon_min: float, lon_max
             )
     for t in kept_tfrs or []:
         box = t.get("box")
-        if box is None or box[0] > lon_max or box[2] < lon_min or box[1] > lat_max or box[3] < lat_min:
+        if box is None or not geo_boxes.meets(asked, box[1], box[0], box[3], box[2]):
             continue
         if _in_force(t.get("start"), t.get("end"), when):
             answer["tfrs"].append({k: t.get(k) for k in ("id", "name", "start", "end", "text", "geometry")})

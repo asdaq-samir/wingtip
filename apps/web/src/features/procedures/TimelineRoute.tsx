@@ -6,14 +6,16 @@ import { sameField } from "../../lib/procedures";
 import { pointEnd } from "./pointEnd";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
 import { RouteSheets } from "./RouteSheets";
-import { TimelineLine, TimelineMark, type TimelinePoint } from "./TimelineLine";
+import { TimelineLine } from "./TimelineLine";
+import { TimelineMark } from "./TimelineMark";
+import type { TimelinePoint } from "./lineModel";
 import { listedPoints } from "./stopsRow";
 import { AddStopRow, StopsRow, TIMELINE_CARD } from "./TimelineRows";
 import { visitRow } from "./visits";
 import type { ProceduresRouteProps } from "./routeProps";
 import { toggleField, useProceduresRoute } from "./useProceduresRoute";
 
-export type { TimelinePoint } from "./TimelineLine";
+export type { TimelinePoint } from "./lineModel";
 
 /** The one line open to its runways and procedures, by its key, kept
  *  while the page is: the timeline is drawn again as the sheet moves. The
@@ -33,7 +35,7 @@ const focusStops = { asked: false };
  * carries the list (RouteGrid): a hold or the grip moves a point, the
  * keyboard's and VoiceOver's moves its drag button's; a stop is taken out
  * by its menu's Remove (the plan's toast Undo puts it back);
- * the mark is the point's menu (PointMenu: Change by the one search,
+ * the mark, an airport's "•••", is the point's menu (PointMenu: Change by the one search,
  * Direct To, Set Altitude, Hold, Add a Stop After, Move, Remove). A tap on
  * a field's line opens it, Base UI's Collapsible: its wind and elevation,
  * then its runway and procedure chips -- Base UI's menus (RunwayTray,
@@ -45,7 +47,8 @@ const focusStops = { asked: false };
  * owner, 2026-11-18: "let's just show the stops as another row in between.
  * And when the card is full, no need to show that because it expands to
  * show all the stops"); one stop is its own row (listedPoints). A stop
- * whose line is open, or that cannot be flown to, keeps them listed, and a
+ * whose line is open, that cannot be flown to, or that lies outside the
+ * United States (its warning, decision 0053) keeps them listed, and a
  * point moved in among them takes the sheet up, so it is never moved out
  * of sight. Add a Stop is the last row, asking the one search;
  * before the route is whole, half a route's other end to pick and the
@@ -58,6 +61,7 @@ export default function TimelineRoute({
   head,
   tail,
   foot,
+  addTrailing,
   allStops,
   onAllStops,
   ...props
@@ -70,6 +74,8 @@ export default function TimelineRoute({
   /** The card's last row where it is not Add a Stop: before the route is
    *  whole, the route typed or pasted (TypeRouteRow). */
   foot?: ReactNode;
+  /** A control at Add a Stop's end (RouteTimeline's fuel stops' pill). */
+  addTrailing?: ReactNode;
   /** Every stop its own row: the sheet at full, or the route read. */
   allStops: boolean;
   /** The sheet taken all the way up, where every stop is listed. */
@@ -87,7 +93,7 @@ export default function TimelineRoute({
   // A pilot's one open stop keeps them listed; the specs' fields, each
   // open at first (openAtFirst), list them all as they work on them; a
   // stop that cannot be flown to keeps its why in sight (decision 0043).
-  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || openKey === keyOf(p));
+  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || p.caution || openKey === keyOf(p));
   const shown = listedPoints(points, all);
   const folded = shown.includes(null);
   // A point moved, from its menu or by a drop beside an end, in among
@@ -154,7 +160,7 @@ export default function TimelineRoute({
       index: point.index,
       visit: point.visit,
     });
-    const mark = <TimelineMark point={point} position={isPosition(point.ident)} more={!!edit} />;
+    const mark = <TimelineMark point={point} position={isPosition(point.ident)} />;
     const key = keyOf(point);
     return {
       id: key,
@@ -186,7 +192,10 @@ export default function TimelineRoute({
       {head}
       <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canDrop} />
       {tail}
-      {foot ?? (edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />)}
+      {foot ??
+        (edit && routePoints.length > 1 && (
+          <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} trailing={addTrailing} />
+        ))}
     </div>
   );
   // Read in a dry run, the list read under it has the sheets.

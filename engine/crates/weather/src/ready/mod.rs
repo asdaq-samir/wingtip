@@ -24,8 +24,9 @@
 //! - A field's METAR: in force for the hour after it was observed
 //!   (`validity`, AIM 7-1-28); its TAF present where one is issued.
 //! - NOTAMs: fetched for the route (91.103's "all available information";
-//!   AIM 5-1-3 says NOTAMs are part of a preflight briefing) and fresh for
-//!   an hour, the app's choice: a NOTAM may be issued at any time.
+//!   AIM 5-1-3 says NOTAMs are part of a preflight briefing), fresh for
+//!   an hour, the app's choice: a NOTAM may be issued at any time, and
+//!   the full set: a list of only those heard since a day is a caution.
 //! - What Keep for the Air holds for the route (`kept`): the briefing,
 //!   METARs and TAFs, NOTAMs, airport cards, plates, the plan and its nav
 //!   log, the Go / No-Go and the weather loop, on board or not; their ages
@@ -155,7 +156,7 @@ fn chart_item(charts: Option<&Value>, today: i64) -> R<Option<Item>> {
     let Some(charts) = charts else { return Ok(None) };
     let size = num(Some(charts), "download_mb").map(|mb| format!(", {} MB", mb.round().max(1.0) as i64)).unwrap_or_default();
     if flag(Some(charts), "can_keep") == Some(false) {
-        let line = "Charts can't be kept offline here".to_owned();
+        let line = "Charts cannot be kept offline here".to_owned();
         return Ok(Some(item("charts", false, line, "They need a connection in the air".into(), CYCLE_SOURCE, None)));
     }
     if !flag(Some(charts), "kept").unwrap_or(false) {
@@ -215,7 +216,9 @@ fn pack_item(packs: Option<&Value>, today: i64) -> R<Option<Item>> {
 /// (the rest are for its route), then what needs the signal most.
 pub fn items(v: &Value) -> R<(Vec<Item>, Option<i64>, i64)> {
     let now = v.get("now").and_then(Value::as_f64).ok_or("ready_to_fly: \"now\" (Unix seconds) is missing")? as i64;
-    let today = now.div_euclid(86_400);
+    // The day whose editions are in force now: the day before until 0901Z,
+    // when an AIRAC or charting edition takes over (cycles.rs).
+    let today = cycles::in_force_day(Kind::Airac, now);
     let mut out = Vec::new();
     let routed = plan_items(get(v, "plan"), &mut out);
     let mut age = None;

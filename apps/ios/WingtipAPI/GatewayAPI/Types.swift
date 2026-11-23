@@ -56,7 +56,7 @@ public protocol APIProtocol: Sendable {
     func vorCheck(_ input: Operations.VorCheck.Input) async throws -> Operations.VorCheck.Output
     /// Sign in with Apple from the iOS app
     ///
-    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
     ///
     /// - Remark: HTTP `POST /api/auth/apple/native`.
     /// - Remark: Generated from `#/paths//api/auth/apple/native/post(signIn)`.
@@ -115,6 +115,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/diagnostics`.
     /// - Remark: Generated from `#/paths//api/diagnostics/post(report)`.
     func report(_ input: Operations.Report.Input) async throws -> Operations.Report.Output
+    /// The apps' faults and speed figures by build
+    ///
+    /// Counted over the last few days (at most the 30 a fault is kept); the developer's.
+    ///
+    /// - Remark: HTTP `GET /api/diagnostics/versions`.
+    /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)`.
+    func byVersion(_ input: Operations.ByVersion.Input) async throws -> Operations.ByVersion.Output
     /// - Remark: HTTP `GET /api/flight-service`.
     /// - Remark: Generated from `#/paths//api/flight-service/get(status)`.
     func status(_ input: Operations.Status.Input) async throws -> Operations.Status.Output
@@ -240,6 +247,27 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /api/me`.
     /// - Remark: Generated from `#/paths//api/me/delete(delete_me)`.
     func deleteMe(_ input: Operations.DeleteMe.Input) async throws -> Operations.DeleteMe.Output
+    /// The signed-in pilot's photo
+    ///
+    /// Their avatar's image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).
+    ///
+    /// - Remark: HTTP `GET /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/get(avatar)`.
+    func avatar(_ input: Operations.Avatar.Input) async throws -> Operations.Avatar.Output
+    /// Set the signed-in pilot's photo
+    ///
+    /// One image, as the form's photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.
+    ///
+    /// - Remark: HTTP `PUT /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/put(setAvatar)`.
+    func setAvatar(_ input: Operations.SetAvatar.Input) async throws -> Operations.SetAvatar.Output
+    /// Take out the signed-in pilot's photo
+    ///
+    /// Their initials show again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/delete(removeAvatar)`.
+    func removeAvatar(_ input: Operations.RemoveAvatar.Input) async throws -> Operations.RemoveAvatar.Output
     /// Forget the signed-in pilot's own checkpoint notes
     ///
     /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
@@ -247,6 +275,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /api/me/checkpoint-notes`.
     /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
     func forgetNotes(_ input: Operations.ForgetNotes.Input) async throws -> Operations.ForgetNotes.Output
+    /// The signed-in pilot's connected AI apps
+    ///
+    /// Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.
+    ///
+    /// - Remark: HTTP `GET /api/me/connections`.
+    /// - Remark: Generated from `#/paths//api/me/connections/get(connections)`.
+    func connections(_ input: Operations.Connections.Input) async throws -> Operations.Connections.Output
+    /// Disconnect one connected AI app
+    ///
+    /// Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/connections/{id}`.
+    /// - Remark: Generated from `#/paths//api/me/connections/{id}/delete(disconnect)`.
+    func disconnect(_ input: Operations.Disconnect.Input) async throws -> Operations.Disconnect.Output
     /// The signed-in pilot's telephone number and home base
     ///
     /// What a flight plan's item 19 C/ asks with the pilot in command's name (AIM Appendix 4), both at once; blank is none. Their name is set with PUT /api/training/name.
@@ -256,7 +298,7 @@ public protocol APIProtocol: Sendable {
     func setContact(_ input: Operations.SetContact.Input) async throws -> Operations.SetContact.Output
     /// Everything kept for the signed-in pilot, as one JSON file
     ///
-    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders and connected AI apps (never a token); sent as a download.
     ///
     /// - Remark: HTTP `GET /api/me/export`.
     /// - Remark: Generated from `#/paths//api/me/export/get(export)`.
@@ -309,18 +351,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/speed/lab`.
     /// - Remark: Generated from `#/paths//api/speed/lab/post(lab)`.
     func lab(_ input: Operations.Lab.Input) async throws -> Operations.Lab.Output
-    /// The pilot's subscription, with this month's uses against each cap
-    ///
-    /// - Remark: HTTP `GET /api/subscription`.
-    /// - Remark: Generated from `#/paths//api/subscription/get(get_subscription)`.
-    func getSubscription(_ input: Operations.GetSubscription.Input) async throws -> Operations.GetSubscription.Output
-    /// Start the free month
-    ///
-    /// Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store's introductory offer.
-    ///
-    /// - Remark: HTTP `POST /api/subscription/trial`.
-    /// - Remark: Generated from `#/paths//api/subscription/trial/post(startTrial)`.
-    func startTrial(_ input: Operations.StartTrial.Input) async throws -> Operations.StartTrial.Output
     /// - Remark: HTTP `GET /api/training`.
     /// - Remark: Generated from `#/paths//api/training/get(get_training)`.
     func getTraining(_ input: Operations.GetTraining.Input) async throws -> Operations.GetTraining.Output
@@ -516,7 +546,7 @@ extension APIProtocol {
     }
     /// Sign in with Apple from the iOS app
     ///
-    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
     ///
     /// - Remark: HTTP `POST /api/auth/apple/native`.
     /// - Remark: Generated from `#/paths//api/auth/apple/native/post(signIn)`.
@@ -616,6 +646,21 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/diagnostics/post(report)`.
     public func report(body: Operations.Report.Input.Body) async throws -> Operations.Report.Output {
         try await report(Operations.Report.Input(body: body))
+    }
+    /// The apps' faults and speed figures by build
+    ///
+    /// Counted over the last few days (at most the 30 a fault is kept); the developer's.
+    ///
+    /// - Remark: HTTP `GET /api/diagnostics/versions`.
+    /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)`.
+    public func byVersion(
+        query: Operations.ByVersion.Input.Query = .init(),
+        headers: Operations.ByVersion.Input.Headers = .init()
+    ) async throws -> Operations.ByVersion.Output {
+        try await byVersion(Operations.ByVersion.Input(
+            query: query,
+            headers: headers
+        ))
     }
     /// - Remark: HTTP `GET /api/flight-service`.
     /// - Remark: Generated from `#/paths//api/flight-service/get(status)`.
@@ -984,6 +1029,39 @@ extension APIProtocol {
     public func deleteMe(headers: Operations.DeleteMe.Input.Headers = .init()) async throws -> Operations.DeleteMe.Output {
         try await deleteMe(Operations.DeleteMe.Input(headers: headers))
     }
+    /// The signed-in pilot's photo
+    ///
+    /// Their avatar's image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).
+    ///
+    /// - Remark: HTTP `GET /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/get(avatar)`.
+    public func avatar(
+        query: Operations.Avatar.Input.Query = .init(),
+        headers: Operations.Avatar.Input.Headers = .init()
+    ) async throws -> Operations.Avatar.Output {
+        try await avatar(Operations.Avatar.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Set the signed-in pilot's photo
+    ///
+    /// One image, as the form's photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.
+    ///
+    /// - Remark: HTTP `PUT /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/put(setAvatar)`.
+    public func setAvatar(headers: Operations.SetAvatar.Input.Headers = .init()) async throws -> Operations.SetAvatar.Output {
+        try await setAvatar(Operations.SetAvatar.Input(headers: headers))
+    }
+    /// Take out the signed-in pilot's photo
+    ///
+    /// Their initials show again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/delete(removeAvatar)`.
+    public func removeAvatar() async throws -> Operations.RemoveAvatar.Output {
+        try await removeAvatar(Operations.RemoveAvatar.Input())
+    }
     /// Forget the signed-in pilot's own checkpoint notes
     ///
     /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
@@ -992,6 +1070,24 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
     public func forgetNotes(headers: Operations.ForgetNotes.Input.Headers = .init()) async throws -> Operations.ForgetNotes.Output {
         try await forgetNotes(Operations.ForgetNotes.Input(headers: headers))
+    }
+    /// The signed-in pilot's connected AI apps
+    ///
+    /// Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.
+    ///
+    /// - Remark: HTTP `GET /api/me/connections`.
+    /// - Remark: Generated from `#/paths//api/me/connections/get(connections)`.
+    public func connections(headers: Operations.Connections.Input.Headers = .init()) async throws -> Operations.Connections.Output {
+        try await connections(Operations.Connections.Input(headers: headers))
+    }
+    /// Disconnect one connected AI app
+    ///
+    /// Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/connections/{id}`.
+    /// - Remark: Generated from `#/paths//api/me/connections/{id}/delete(disconnect)`.
+    public func disconnect(path: Operations.Disconnect.Input.Path) async throws -> Operations.Disconnect.Output {
+        try await disconnect(Operations.Disconnect.Input(path: path))
     }
     /// The signed-in pilot's telephone number and home base
     ///
@@ -1010,7 +1106,7 @@ extension APIProtocol {
     }
     /// Everything kept for the signed-in pilot, as one JSON file
     ///
-    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders and connected AI apps (never a token); sent as a download.
     ///
     /// - Remark: HTTP `GET /api/me/export`.
     /// - Remark: Generated from `#/paths//api/me/export/get(export)`.
@@ -1104,22 +1200,6 @@ extension APIProtocol {
             headers: headers,
             body: body
         ))
-    }
-    /// The pilot's subscription, with this month's uses against each cap
-    ///
-    /// - Remark: HTTP `GET /api/subscription`.
-    /// - Remark: Generated from `#/paths//api/subscription/get(get_subscription)`.
-    public func getSubscription(headers: Operations.GetSubscription.Input.Headers = .init()) async throws -> Operations.GetSubscription.Output {
-        try await getSubscription(Operations.GetSubscription.Input(headers: headers))
-    }
-    /// Start the free month
-    ///
-    /// Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store's introductory offer.
-    ///
-    /// - Remark: HTTP `POST /api/subscription/trial`.
-    /// - Remark: Generated from `#/paths//api/subscription/trial/post(startTrial)`.
-    public func startTrial(headers: Operations.StartTrial.Input.Headers = .init()) async throws -> Operations.StartTrial.Output {
-        try await startTrial(Operations.StartTrial.Input(headers: headers))
     }
     /// - Remark: HTTP `GET /api/training`.
     /// - Remark: Generated from `#/paths//api/training/get(get_training)`.

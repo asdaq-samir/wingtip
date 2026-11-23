@@ -46,6 +46,13 @@
       ],
       "description": "Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it."
     },
+    "lights": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it."
+    },
     "fuel_margin_gal": {
       "type": [
         "number",

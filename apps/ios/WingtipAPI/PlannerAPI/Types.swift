@@ -36,6 +36,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/aircraft/inspections`.
     /// - Remark: Generated from `#/paths//api/aircraft/inspections/post(inspections)`.
     func inspections(_ input: Operations.Inspections.Input) async throws -> Operations.Inspections.Output
+    /// Inspections Batch
+    ///
+    /// Many airplanes' inspections in one call, each as
+    /// /api/aircraft/inspections answers it, in the order asked: a pilot's
+    /// aircraft list and the daily reminders ask every airplane at once, at
+    /// most MAX_BATCH.
+    ///
+    /// - Remark: HTTP `POST /api/aircraft/inspections-batch`.
+    /// - Remark: Generated from `#/paths//api/aircraft/inspections-batch/post(inspections_batch)`.
+    func inspectionsBatch(_ input: Operations.InspectionsBatch.Input) async throws -> Operations.InspectionsBatch.Output
     /// Check Airplane
     ///
     /// `{field: words}` for each field of the request that may not be
@@ -663,6 +673,17 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png`.
     /// - Remark: Generated from `#/paths//api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png/get(faa_chart_page)`.
     func faaChartPage(_ input: Operations.FaaChartPage.Input) async throws -> Operations.FaaChartPage.Output
+    /// Faa Chart Pdf
+    ///
+    /// One of the FAA's charts in force as its PDF, kept for its edition,
+    /// for the web's own-ship airport diagram, which reads the page's own
+    /// latitude and longitude labels and hot spots (the engine's
+    /// diagram_labels, diagram_hot_spot_labels) where the phones read the
+    /// same PDF themselves.
+    ///
+    /// - Remark: HTTP `GET /api/faa-chart/pdf/{source}/{edition}/{pdf}`.
+    /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)`.
+    func faaChartPdf(_ input: Operations.FaaChartPdf.Input) async throws -> Operations.FaaChartPdf.Output
     /// Forecast Dry Run
     ///
     /// The dry run against the forecast for the hours it flies: a product
@@ -728,6 +749,30 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/icing/route`.
     /// - Remark: Generated from `#/paths//api/icing/route/get(icing_on_the_route)`.
     func icingOnTheRoute(_ input: Operations.IcingOnTheRoute.Input) async throws -> Operations.IcingOnTheRoute.Output
+    /// Library Shelf
+    ///
+    /// Every document on the shelf, in its order: the FAA's books, the AIM,
+    /// the circulars and the CFR parts, each with the edition kept and its
+    /// date, or none yet where it has never been had.
+    ///
+    /// - Remark: HTTP `GET /api/library`.
+    /// - Remark: Generated from `#/paths//api/library/get(library_shelf)`.
+    func libraryShelf(_ input: Operations.LibraryShelf.Input) async throws -> Operations.LibraryShelf.Output
+    /// Library Pdf
+    ///
+    /// A document's PDF in the edition kept.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}.pdf`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}.pdf/get(library_pdf)`.
+    func libraryPdf(_ input: Operations.LibraryPdf.Input) async throws -> Operations.LibraryPdf.Output
+    /// Library Text
+    ///
+    /// A CFR part's text in the edition kept (the eCFR's issue date): its
+    /// subparts and sections, each section's paragraphs.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}/text`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}/text/get(library_text)`.
+    func libraryText(_ input: Operations.LibraryText.Input) async throws -> Operations.LibraryText.Output
     /// Digital Atis
     ///
     /// An airport's D-ATIS as the tower's data link sends it, with the
@@ -889,7 +934,8 @@ public protocol APIProtocol: Sendable {
     /// closing a field, its altitudes taking in the cruise altitude, on an
     /// airspace the route passes (14 CFR 91.103). `top` are said first; the
     /// rest are folded, never dropped. `coverage_since`, the day the feed
-    /// was first heard (UTC).
+    /// was first heard (UTC); `full_set`, whether every NOTAM in force is
+    /// held (NMS's load, decision 0059) or only those heard since.
     ///
     /// - Remark: HTTP `POST /api/notams/ranked`.
     /// - Remark: Generated from `#/paths//api/notams/ranked/post(notams_ranked)`.
@@ -1024,6 +1070,36 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
     /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
     func instructorRecordsSince(_ input: Operations.InstructorRecordsSince.Input) async throws -> Operations.InstructorRecordsSince.Output
+    /// Instructor Verification
+    ///
+    /// Whether the instructor about to sign is a flight instructor the FAA
+    /// airmen registry bears out (the engine's instructor_verification, over
+    /// the flight instructors of that last name ingest keeps, wingtip.airmen):
+    /// an endorsement counts as signed only where it is (14 CFR 61.189(a)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/instructor-verification`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-verification/post(instructor_verification)`.
+    func instructorVerification(_ input: Operations.InstructorVerification.Input) async throws -> Operations.InstructorVerification.Output
+    /// Records Batch
+    ///
+    /// Many students' experience and endorsements in one call, each as
+    /// /api/pilot/experience and /api/pilot/endorsements answer it, in the
+    /// order asked: an instructor's page asks its students and the reviews
+    /// waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/records-batch`.
+    /// - Remark: Generated from `#/paths//api/pilot/records-batch/post(records_batch)`.
+    func recordsBatch(_ input: Operations.RecordsBatch.Input) async throws -> Operations.RecordsBatch.Output
+    /// Same Field
+    ///
+    /// Which of the idents name the field, in the order asked: the
+    /// gateway's lessons put to an instructor a student's flights that
+    /// landed at the lesson's field, by whichever of its names each was
+    /// planned with (BUR, KBUR; ANC, PANC).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/same-field`.
+    /// - Remark: Generated from `#/paths//api/pilot/same-field/post(same_field)`.
+    func sameField(_ input: Operations.SameField.Input) async throws -> Operations.SameField.Output
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -1068,6 +1144,38 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/plan`.
     /// - Remark: Generated from `#/paths//api/plan/get(plan)`.
     func plan(_ input: Operations.Plan.Input) async throws -> Operations.Plan.Output
+    /// Flight Plates
+    ///
+    /// The plates Keep for the Air keeps for a flight, and their size,
+    /// about, said before they are fetched: the departure's, the
+    /// destination's, each stop's and the alternate's -- `alternate` filed,
+    /// or the engine's pick of those that will do at `eta` (UTC; now where
+    /// not given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --
+    /// and those of the fields within diversion range of the route (the
+    /// engine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and
+    /// `burn_gph`, the picked airplane's own; none with no airplane).
+    ///
+    /// - Remark: HTTP `GET /api/plates/flight`.
+    /// - Remark: Generated from `#/paths//api/plates/flight/get(flight_plates)`.
+    func flightPlates(_ input: Operations.FlightPlates.Input) async throws -> Operations.FlightPlates.Output
+    /// Plate States
+    ///
+    /// The states whose plates Downloads offers, each with its size,
+    /// about, of the d-TPP cycle in force, and when the next takes over
+    /// (0901Z on its AIRAC date), when a kept state is fetched again.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states`.
+    /// - Remark: Generated from `#/paths//api/plates/states/get(plate_states)`.
+    func plateStates(_ input: Operations.PlateStates.Input) async throws -> Operations.PlateStates.Output
+    /// Plate State
+    ///
+    /// A state's plates of `cycle`: each open field and its charts, which
+    /// the device fetches as the card's Charts tab does (/api/faa-chart).
+    /// 404 for a cycle not served or a state with no plates.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states/{cycle}/{state}`.
+    /// - Remark: Generated from `#/paths//api/plates/states/{cycle}/{state}/get(plate_state)`.
+    func plateState(_ input: Operations.PlateState.Input) async throws -> Operations.PlateState.Output
     /// Retrain
     ///
     /// Starts one training run (`python -m wingtip.pipeline run`): the
@@ -1110,6 +1218,17 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/route-profile`.
     /// - Remark: Generated from `#/paths//api/route-profile/get(route_profile)`.
     func routeProfile(_ input: Operations.RouteProfile.Input) async throws -> Operations.RouteProfile.Output
+    /// Route Profile Weather
+    ///
+    /// The weather on the route's side view, along the same hops as
+    /// /api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing
+    /// level and the G-AIRMETs' icing for a flight departing `depart` (now
+    /// where not given; a naive time is UTC) and taking `ete_min`, each with
+    /// its source and time (wingtip.profile_weather), from the weather store.
+    ///
+    /// - Remark: HTTP `GET /api/route-profile/weather`.
+    /// - Remark: Generated from `#/paths//api/route-profile/weather/get(route_profile_weather)`.
+    func routeProfileWeather(_ input: Operations.RouteProfileWeather.Input) async throws -> Operations.RouteProfileWeather.Output
     /// Status
     ///
     /// One snapshot of the whole stack, for Settings' Dev tab. The
@@ -1155,121 +1274,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/stops/near`.
     /// - Remark: Generated from `#/paths//api/stops/near/get(stops_near)`.
     func stopsNear(_ input: Operations.StopsNear.Input) async throws -> Operations.StopsNear.Output
-    /// Studio Drafts
-    ///
-    /// Every crash draft, the newest event first.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/get(studio_drafts)`.
-    func studioDrafts(_ input: Operations.StudioDrafts.Input) async throws -> Operations.StudioDrafts.Output
-    /// Studio Drafts To Notice
-    ///
-    /// The ready drafts with a kit the developer has not been mailed about.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts-to-notice`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts-to-notice/get(studio_drafts_to_notice)`.
-    func studioDraftsToNotice(_ input: Operations.StudioDraftsToNotice.Input) async throws -> Operations.StudioDraftsToNotice.Output
-    /// Studio Draft
-    ///
-    /// One draft, with its kit's captions where the kit is made.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts/{draft_id}`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/get(studio_draft)`.
-    func studioDraft(_ input: Operations.StudioDraft.Input) async throws -> Operations.StudioDraft.Output
-    /// Studio Draft Dismiss
-    ///
-    /// Set the draft aside: no film, no mail.
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/dismiss`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/dismiss/post(studio_draft_dismiss)`.
-    func studioDraftDismiss(_ input: Operations.StudioDraftDismiss.Input) async throws -> Operations.StudioDraftDismiss.Output
-    /// Studio Draft Identity
-    ///
-    /// The developer's word: the identity is right (ready; with a new
-    /// N-number, checked again by the job first), or it is not (the match
-    /// forgotten, waiting for a person).
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/identity`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/identity/post(studio_draft_identity)`.
-    func studioDraftIdentity(_ input: Operations.StudioDraftIdentity.Input) async throws -> Operations.StudioDraftIdentity.Output
-    /// Studio Draft Noticed
-    ///
-    /// The developer mailed about the draft: not again.
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/noticed`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/noticed/post(studio_draft_noticed)`.
-    func studioDraftNoticed(_ input: Operations.StudioDraftNoticed.Input) async throws -> Operations.StudioDraftNoticed.Output
-    /// Studio Draft Rendered
-    ///
-    /// The Studio's film of a ready draft made (scripts/dev/studio-render.mjs,
-    /// through the page). Publishing stays a person's.
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/rendered`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/rendered/post(studio_draft_rendered)`.
-    func studioDraftRendered(_ input: Operations.StudioDraftRendered.Input) async throws -> Operations.StudioDraftRendered.Output
-    /// Studio Draft Track
-    ///
-    /// The ADS-B track the draft's identity was confirmed on, as its kit
-    /// keeps it: a same-day trace, kept before it rolled off. A 404 for a
-    /// draft with none ("No ADS-B track"): never a guessed path.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts/{draft_id}/track`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/track/get(studio_draft_track)`.
-    func studioDraftTrack(_ input: Operations.StudioDraftTrack.Input) async throws -> Operations.StudioDraftTrack.Output
-    /// Studio Ground
-    ///
-    /// The ground under a replayed track's points, ft MSL, for its profile
-    /// strip (wingtip.elevation: the elevation tiles, then USGS's EPQS).
-    ///
-    /// - Remark: HTTP `POST /api/studio/ground`.
-    /// - Remark: Generated from `#/paths//api/studio/ground/post(studio_ground)`.
-    func studioGround(_ input: Operations.StudioGround.Input) async throws -> Operations.StudioGround.Output
-    /// Studio Notams
-    ///
-    /// The NOTAMs and TFRs in force at `at` inside the box, from that UTC
-    /// day's archive (wingtip.history.notam_archive); `archived` false where
-    /// none was kept that day.
-    ///
-    /// - Remark: HTTP `GET /api/studio/notams`.
-    /// - Remark: Generated from `#/paths//api/studio/notams/get(studio_notams)`.
-    func studioNotams(_ input: Operations.StudioNotams.Input) async throws -> Operations.StudioNotams.Output
-    /// Studio Ntsb
-    ///
-    /// The NTSB's cases of the airplane dated within a day either side
-    /// (wingtip.history.ntsb); none where there are none, or the store is not
-    /// built yet.
-    ///
-    /// - Remark: HTTP `GET /api/studio/ntsb`.
-    /// - Remark: Generated from `#/paths//api/studio/ntsb/get(studio_ntsb)`.
-    func studioNtsb(_ input: Operations.StudioNtsb.Input) async throws -> Operations.StudioNtsb.Output
-    /// Studio Track
-    ///
-    /// The airplane's reports on a UTC day (wingtip.traffic.day_tracks): a
-    /// past day from the store, fetched from adsb.lol's history once where it
-    /// is not there yet; today's from its recent trace. A 404 for a name the
-    /// registry does not know, a 422 for a day to come, a 503 where adsb.lol
-    /// cannot be read now.
-    ///
-    /// - Remark: HTTP `GET /api/studio/track`.
-    /// - Remark: Generated from `#/paths//api/studio/track/get(studio_track)`.
-    func studioTrack(_ input: Operations.StudioTrack.Input) async throws -> Operations.StudioTrack.Output
-    /// Studio Watched
-    ///
-    /// The airplanes followed here, with the UTC days their recorded
-    /// reports fall on, newest first (wingtip.traffic.day_tracks.watched_days).
-    ///
-    /// - Remark: HTTP `GET /api/studio/watched`.
-    /// - Remark: Generated from `#/paths//api/studio/watched/get(studio_watched)`.
-    func studioWatched(_ input: Operations.StudioWatched.Input) async throws -> Operations.StudioWatched.Output
-    /// Studio Weather
-    ///
-    /// The METARs, TAFs and radar frames over a replayed flight
-    /// (wingtip.history.weather_then): a 422 for a span that ends before it
-    /// starts or is longer than two days, a 503 where IEM cannot be read now.
-    ///
-    /// - Remark: HTTP `POST /api/studio/weather`.
-    /// - Remark: Generated from `#/paths//api/studio/weather/post(studio_weather)`.
-    func studioWeather(_ input: Operations.StudioWeather.Input) async throws -> Operations.StudioWeather.Output
     /// Terrain Tile
     ///
     /// The ground's heights for one {z}/{x}/{y} tile as a terrarium PNG:
@@ -1501,6 +1505,24 @@ extension APIProtocol {
         body: Operations.Inspections.Input.Body
     ) async throws -> Operations.Inspections.Output {
         try await inspections(Operations.Inspections.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Inspections Batch
+    ///
+    /// Many airplanes' inspections in one call, each as
+    /// /api/aircraft/inspections answers it, in the order asked: a pilot's
+    /// aircraft list and the daily reminders ask every airplane at once, at
+    /// most MAX_BATCH.
+    ///
+    /// - Remark: HTTP `POST /api/aircraft/inspections-batch`.
+    /// - Remark: Generated from `#/paths//api/aircraft/inspections-batch/post(inspections_batch)`.
+    public func inspectionsBatch(
+        headers: Operations.InspectionsBatch.Input.Headers = .init(),
+        body: Operations.InspectionsBatch.Input.Body
+    ) async throws -> Operations.InspectionsBatch.Output {
+        try await inspectionsBatch(Operations.InspectionsBatch.Input(
             headers: headers,
             body: body
         ))
@@ -2510,6 +2532,25 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// Faa Chart Pdf
+    ///
+    /// One of the FAA's charts in force as its PDF, kept for its edition,
+    /// for the web's own-ship airport diagram, which reads the page's own
+    /// latitude and longitude labels and hot spots (the engine's
+    /// diagram_labels, diagram_hot_spot_labels) where the phones read the
+    /// same PDF themselves.
+    ///
+    /// - Remark: HTTP `GET /api/faa-chart/pdf/{source}/{edition}/{pdf}`.
+    /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)`.
+    public func faaChartPdf(
+        path: Operations.FaaChartPdf.Input.Path,
+        headers: Operations.FaaChartPdf.Input.Headers = .init()
+    ) async throws -> Operations.FaaChartPdf.Output {
+        try await faaChartPdf(Operations.FaaChartPdf.Input(
+            path: path,
+            headers: headers
+        ))
+    }
     /// Forecast Dry Run
     ///
     /// The dry run against the forecast for the hours it flies: a product
@@ -2612,6 +2653,48 @@ extension APIProtocol {
     ) async throws -> Operations.IcingOnTheRoute.Output {
         try await icingOnTheRoute(Operations.IcingOnTheRoute.Input(
             query: query,
+            headers: headers
+        ))
+    }
+    /// Library Shelf
+    ///
+    /// Every document on the shelf, in its order: the FAA's books, the AIM,
+    /// the circulars and the CFR parts, each with the edition kept and its
+    /// date, or none yet where it has never been had.
+    ///
+    /// - Remark: HTTP `GET /api/library`.
+    /// - Remark: Generated from `#/paths//api/library/get(library_shelf)`.
+    public func libraryShelf(headers: Operations.LibraryShelf.Input.Headers = .init()) async throws -> Operations.LibraryShelf.Output {
+        try await libraryShelf(Operations.LibraryShelf.Input(headers: headers))
+    }
+    /// Library Pdf
+    ///
+    /// A document's PDF in the edition kept.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}.pdf`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}.pdf/get(library_pdf)`.
+    public func libraryPdf(
+        path: Operations.LibraryPdf.Input.Path,
+        headers: Operations.LibraryPdf.Input.Headers = .init()
+    ) async throws -> Operations.LibraryPdf.Output {
+        try await libraryPdf(Operations.LibraryPdf.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Library Text
+    ///
+    /// A CFR part's text in the edition kept (the eCFR's issue date): its
+    /// subparts and sections, each section's paragraphs.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}/text`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}/text/get(library_text)`.
+    public func libraryText(
+        path: Operations.LibraryText.Input.Path,
+        headers: Operations.LibraryText.Input.Headers = .init()
+    ) async throws -> Operations.LibraryText.Output {
+        try await libraryText(Operations.LibraryText.Input(
+            path: path,
             headers: headers
         ))
     }
@@ -2862,7 +2945,8 @@ extension APIProtocol {
     /// closing a field, its altitudes taking in the cruise altitude, on an
     /// airspace the route passes (14 CFR 91.103). `top` are said first; the
     /// rest are folded, never dropped. `coverage_since`, the day the feed
-    /// was first heard (UTC).
+    /// was first heard (UTC); `full_set`, whether every NOTAM in force is
+    /// held (NMS's load, decision 0059) or only those heard since.
     ///
     /// - Remark: HTTP `POST /api/notams/ranked`.
     /// - Remark: Generated from `#/paths//api/notams/ranked/post(notams_ranked)`.
@@ -3107,6 +3191,60 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// Instructor Verification
+    ///
+    /// Whether the instructor about to sign is a flight instructor the FAA
+    /// airmen registry bears out (the engine's instructor_verification, over
+    /// the flight instructors of that last name ingest keeps, wingtip.airmen):
+    /// an endorsement counts as signed only where it is (14 CFR 61.189(a)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/instructor-verification`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-verification/post(instructor_verification)`.
+    public func instructorVerification(
+        headers: Operations.InstructorVerification.Input.Headers = .init(),
+        body: Operations.InstructorVerification.Input.Body
+    ) async throws -> Operations.InstructorVerification.Output {
+        try await instructorVerification(Operations.InstructorVerification.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Records Batch
+    ///
+    /// Many students' experience and endorsements in one call, each as
+    /// /api/pilot/experience and /api/pilot/endorsements answer it, in the
+    /// order asked: an instructor's page asks its students and the reviews
+    /// waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/records-batch`.
+    /// - Remark: Generated from `#/paths//api/pilot/records-batch/post(records_batch)`.
+    public func recordsBatch(
+        headers: Operations.RecordsBatch.Input.Headers = .init(),
+        body: Operations.RecordsBatch.Input.Body
+    ) async throws -> Operations.RecordsBatch.Output {
+        try await recordsBatch(Operations.RecordsBatch.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Same Field
+    ///
+    /// Which of the idents name the field, in the order asked: the
+    /// gateway's lessons put to an instructor a student's flights that
+    /// landed at the lesson's field, by whichever of its names each was
+    /// planned with (BUR, KBUR; ANC, PANC).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/same-field`.
+    /// - Remark: Generated from `#/paths//api/pilot/same-field/post(same_field)`.
+    public func sameField(
+        headers: Operations.SameField.Input.Headers = .init(),
+        body: Operations.SameField.Input.Body
+    ) async throws -> Operations.SameField.Output {
+        try await sameField(Operations.SameField.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -3167,6 +3305,56 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// Flight Plates
+    ///
+    /// The plates Keep for the Air keeps for a flight, and their size,
+    /// about, said before they are fetched: the departure's, the
+    /// destination's, each stop's and the alternate's -- `alternate` filed,
+    /// or the engine's pick of those that will do at `eta` (UTC; now where
+    /// not given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --
+    /// and those of the fields within diversion range of the route (the
+    /// engine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and
+    /// `burn_gph`, the picked airplane's own; none with no airplane).
+    ///
+    /// - Remark: HTTP `GET /api/plates/flight`.
+    /// - Remark: Generated from `#/paths//api/plates/flight/get(flight_plates)`.
+    public func flightPlates(
+        query: Operations.FlightPlates.Input.Query,
+        headers: Operations.FlightPlates.Input.Headers = .init()
+    ) async throws -> Operations.FlightPlates.Output {
+        try await flightPlates(Operations.FlightPlates.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Plate States
+    ///
+    /// The states whose plates Downloads offers, each with its size,
+    /// about, of the d-TPP cycle in force, and when the next takes over
+    /// (0901Z on its AIRAC date), when a kept state is fetched again.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states`.
+    /// - Remark: Generated from `#/paths//api/plates/states/get(plate_states)`.
+    public func plateStates(headers: Operations.PlateStates.Input.Headers = .init()) async throws -> Operations.PlateStates.Output {
+        try await plateStates(Operations.PlateStates.Input(headers: headers))
+    }
+    /// Plate State
+    ///
+    /// A state's plates of `cycle`: each open field and its charts, which
+    /// the device fetches as the card's Charts tab does (/api/faa-chart).
+    /// 404 for a cycle not served or a state with no plates.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states/{cycle}/{state}`.
+    /// - Remark: Generated from `#/paths//api/plates/states/{cycle}/{state}/get(plate_state)`.
+    public func plateState(
+        path: Operations.PlateState.Input.Path,
+        headers: Operations.PlateState.Input.Headers = .init()
+    ) async throws -> Operations.PlateState.Output {
+        try await plateState(Operations.PlateState.Input(
+            path: path,
+            headers: headers
+        ))
+    }
     /// Retrain
     ///
     /// Starts one training run (`python -m wingtip.pipeline run`): the
@@ -3223,6 +3411,25 @@ extension APIProtocol {
         headers: Operations.RouteProfile.Input.Headers = .init()
     ) async throws -> Operations.RouteProfile.Output {
         try await routeProfile(Operations.RouteProfile.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Route Profile Weather
+    ///
+    /// The weather on the route's side view, along the same hops as
+    /// /api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing
+    /// level and the G-AIRMETs' icing for a flight departing `depart` (now
+    /// where not given; a naive time is UTC) and taking `ete_min`, each with
+    /// its source and time (wingtip.profile_weather), from the weather store.
+    ///
+    /// - Remark: HTTP `GET /api/route-profile/weather`.
+    /// - Remark: Generated from `#/paths//api/route-profile/weather/get(route_profile_weather)`.
+    public func routeProfileWeather(
+        query: Operations.RouteProfileWeather.Input.Query,
+        headers: Operations.RouteProfileWeather.Input.Headers = .init()
+    ) async throws -> Operations.RouteProfileWeather.Output {
+        try await routeProfileWeather(Operations.RouteProfileWeather.Input(
             query: query,
             headers: headers
         ))
@@ -3290,217 +3497,6 @@ extension APIProtocol {
         try await stopsNear(Operations.StopsNear.Input(
             query: query,
             headers: headers
-        ))
-    }
-    /// Studio Drafts
-    ///
-    /// Every crash draft, the newest event first.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/get(studio_drafts)`.
-    public func studioDrafts(headers: Operations.StudioDrafts.Input.Headers = .init()) async throws -> Operations.StudioDrafts.Output {
-        try await studioDrafts(Operations.StudioDrafts.Input(headers: headers))
-    }
-    /// Studio Drafts To Notice
-    ///
-    /// The ready drafts with a kit the developer has not been mailed about.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts-to-notice`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts-to-notice/get(studio_drafts_to_notice)`.
-    public func studioDraftsToNotice(headers: Operations.StudioDraftsToNotice.Input.Headers = .init()) async throws -> Operations.StudioDraftsToNotice.Output {
-        try await studioDraftsToNotice(Operations.StudioDraftsToNotice.Input(headers: headers))
-    }
-    /// Studio Draft
-    ///
-    /// One draft, with its kit's captions where the kit is made.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts/{draft_id}`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/get(studio_draft)`.
-    public func studioDraft(
-        path: Operations.StudioDraft.Input.Path,
-        headers: Operations.StudioDraft.Input.Headers = .init()
-    ) async throws -> Operations.StudioDraft.Output {
-        try await studioDraft(Operations.StudioDraft.Input(
-            path: path,
-            headers: headers
-        ))
-    }
-    /// Studio Draft Dismiss
-    ///
-    /// Set the draft aside: no film, no mail.
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/dismiss`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/dismiss/post(studio_draft_dismiss)`.
-    public func studioDraftDismiss(
-        path: Operations.StudioDraftDismiss.Input.Path,
-        headers: Operations.StudioDraftDismiss.Input.Headers = .init()
-    ) async throws -> Operations.StudioDraftDismiss.Output {
-        try await studioDraftDismiss(Operations.StudioDraftDismiss.Input(
-            path: path,
-            headers: headers
-        ))
-    }
-    /// Studio Draft Identity
-    ///
-    /// The developer's word: the identity is right (ready; with a new
-    /// N-number, checked again by the job first), or it is not (the match
-    /// forgotten, waiting for a person).
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/identity`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/identity/post(studio_draft_identity)`.
-    public func studioDraftIdentity(
-        path: Operations.StudioDraftIdentity.Input.Path,
-        headers: Operations.StudioDraftIdentity.Input.Headers = .init(),
-        body: Operations.StudioDraftIdentity.Input.Body
-    ) async throws -> Operations.StudioDraftIdentity.Output {
-        try await studioDraftIdentity(Operations.StudioDraftIdentity.Input(
-            path: path,
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Studio Draft Noticed
-    ///
-    /// The developer mailed about the draft: not again.
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/noticed`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/noticed/post(studio_draft_noticed)`.
-    public func studioDraftNoticed(
-        path: Operations.StudioDraftNoticed.Input.Path,
-        headers: Operations.StudioDraftNoticed.Input.Headers = .init()
-    ) async throws -> Operations.StudioDraftNoticed.Output {
-        try await studioDraftNoticed(Operations.StudioDraftNoticed.Input(
-            path: path,
-            headers: headers
-        ))
-    }
-    /// Studio Draft Rendered
-    ///
-    /// The Studio's film of a ready draft made (scripts/dev/studio-render.mjs,
-    /// through the page). Publishing stays a person's.
-    ///
-    /// - Remark: HTTP `POST /api/studio/drafts/{draft_id}/rendered`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/rendered/post(studio_draft_rendered)`.
-    public func studioDraftRendered(
-        path: Operations.StudioDraftRendered.Input.Path,
-        headers: Operations.StudioDraftRendered.Input.Headers = .init()
-    ) async throws -> Operations.StudioDraftRendered.Output {
-        try await studioDraftRendered(Operations.StudioDraftRendered.Input(
-            path: path,
-            headers: headers
-        ))
-    }
-    /// Studio Draft Track
-    ///
-    /// The ADS-B track the draft's identity was confirmed on, as its kit
-    /// keeps it: a same-day trace, kept before it rolled off. A 404 for a
-    /// draft with none ("No ADS-B track"): never a guessed path.
-    ///
-    /// - Remark: HTTP `GET /api/studio/drafts/{draft_id}/track`.
-    /// - Remark: Generated from `#/paths//api/studio/drafts/{draft_id}/track/get(studio_draft_track)`.
-    public func studioDraftTrack(
-        path: Operations.StudioDraftTrack.Input.Path,
-        headers: Operations.StudioDraftTrack.Input.Headers = .init()
-    ) async throws -> Operations.StudioDraftTrack.Output {
-        try await studioDraftTrack(Operations.StudioDraftTrack.Input(
-            path: path,
-            headers: headers
-        ))
-    }
-    /// Studio Ground
-    ///
-    /// The ground under a replayed track's points, ft MSL, for its profile
-    /// strip (wingtip.elevation: the elevation tiles, then USGS's EPQS).
-    ///
-    /// - Remark: HTTP `POST /api/studio/ground`.
-    /// - Remark: Generated from `#/paths//api/studio/ground/post(studio_ground)`.
-    public func studioGround(
-        headers: Operations.StudioGround.Input.Headers = .init(),
-        body: Operations.StudioGround.Input.Body
-    ) async throws -> Operations.StudioGround.Output {
-        try await studioGround(Operations.StudioGround.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Studio Notams
-    ///
-    /// The NOTAMs and TFRs in force at `at` inside the box, from that UTC
-    /// day's archive (wingtip.history.notam_archive); `archived` false where
-    /// none was kept that day.
-    ///
-    /// - Remark: HTTP `GET /api/studio/notams`.
-    /// - Remark: Generated from `#/paths//api/studio/notams/get(studio_notams)`.
-    public func studioNotams(
-        query: Operations.StudioNotams.Input.Query,
-        headers: Operations.StudioNotams.Input.Headers = .init()
-    ) async throws -> Operations.StudioNotams.Output {
-        try await studioNotams(Operations.StudioNotams.Input(
-            query: query,
-            headers: headers
-        ))
-    }
-    /// Studio Ntsb
-    ///
-    /// The NTSB's cases of the airplane dated within a day either side
-    /// (wingtip.history.ntsb); none where there are none, or the store is not
-    /// built yet.
-    ///
-    /// - Remark: HTTP `GET /api/studio/ntsb`.
-    /// - Remark: Generated from `#/paths//api/studio/ntsb/get(studio_ntsb)`.
-    public func studioNtsb(
-        query: Operations.StudioNtsb.Input.Query,
-        headers: Operations.StudioNtsb.Input.Headers = .init()
-    ) async throws -> Operations.StudioNtsb.Output {
-        try await studioNtsb(Operations.StudioNtsb.Input(
-            query: query,
-            headers: headers
-        ))
-    }
-    /// Studio Track
-    ///
-    /// The airplane's reports on a UTC day (wingtip.traffic.day_tracks): a
-    /// past day from the store, fetched from adsb.lol's history once where it
-    /// is not there yet; today's from its recent trace. A 404 for a name the
-    /// registry does not know, a 422 for a day to come, a 503 where adsb.lol
-    /// cannot be read now.
-    ///
-    /// - Remark: HTTP `GET /api/studio/track`.
-    /// - Remark: Generated from `#/paths//api/studio/track/get(studio_track)`.
-    public func studioTrack(
-        query: Operations.StudioTrack.Input.Query,
-        headers: Operations.StudioTrack.Input.Headers = .init()
-    ) async throws -> Operations.StudioTrack.Output {
-        try await studioTrack(Operations.StudioTrack.Input(
-            query: query,
-            headers: headers
-        ))
-    }
-    /// Studio Watched
-    ///
-    /// The airplanes followed here, with the UTC days their recorded
-    /// reports fall on, newest first (wingtip.traffic.day_tracks.watched_days).
-    ///
-    /// - Remark: HTTP `GET /api/studio/watched`.
-    /// - Remark: Generated from `#/paths//api/studio/watched/get(studio_watched)`.
-    public func studioWatched(headers: Operations.StudioWatched.Input.Headers = .init()) async throws -> Operations.StudioWatched.Output {
-        try await studioWatched(Operations.StudioWatched.Input(headers: headers))
-    }
-    /// Studio Weather
-    ///
-    /// The METARs, TAFs and radar frames over a replayed flight
-    /// (wingtip.history.weather_then): a 422 for a span that ends before it
-    /// starts or is longer than two days, a 503 where IEM cannot be read now.
-    ///
-    /// - Remark: HTTP `POST /api/studio/weather`.
-    /// - Remark: Generated from `#/paths//api/studio/weather/post(studio_weather)`.
-    public func studioWeather(
-        headers: Operations.StudioWeather.Input.Headers = .init(),
-        body: Operations.StudioWeather.Input.Body
-    ) async throws -> Operations.StudioWeather.Output {
-        try await studioWeather(Operations.StudioWeather.Input(
-            headers: headers,
-            body: body
         ))
     }
     /// Terrain Tile

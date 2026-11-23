@@ -38,11 +38,37 @@ extension EnvironmentValues {
     @Entry var splitLayout = false
 }
 
+/// Whether an iPad's window has the width for the sidebar, a card in the
+/// inspector and the map side by side, by the columns' ideal widths
+/// (SplitLayout's navigationSplitViewColumnWidth and inspectorColumnWidth)
+/// and the least map worth the name, an iPhone's width. Wide enough on an
+/// 11-inch, 13-inch and iPad mini held sideways at full screen (1,194,
+/// 1,376 and 1,133 points); not upright (834, 1,032 and 744), nor in Split
+/// View at a half or two thirds of a 13-inch (683 and 910).
+enum SplitRoom {
+    static let sidebar: CGFloat = 375
+    static let inspector: CGFloat = 375
+    static let leastMap: CGFloat = 375
+
+    /// What the sidebar's room is worked out from: the window's width
+    /// and whether a card is up.
+    struct Need: Equatable {
+        let width: CGFloat
+        let cardUp: Bool
+    }
+
+    static func cardFitsBesideSidebar(width: CGFloat) -> Bool {
+        width >= sidebar + inspector + leastMap
+    }
+}
+
 /// The iPad's layout: stock SwiftUI throughout. The plan under the one
 /// search in the NavigationSplitView's sidebar (on iPadOS 26 and later a
-/// floating glass card over the map), the map as its detail across the
-/// screen, the second-level card in the system inspector, and the
-/// flight's figures along the foot of the map.
+/// floating card over the map, its rows on the sheet's solid ground), the
+/// map as its detail across the screen, the second-level card in the
+/// system inspector beside the split view, the flight's figures on a
+/// solid card along the foot of the map, and a chart the pilot stood
+/// beside the map in a column of its own (BesidePane).
 struct SplitLayout<Map: View>: View {
     @Environment(Navigator.self) private var nav
     let map: Map
@@ -50,34 +76,87 @@ struct SplitLayout<Map: View>: View {
     let openScreen: (Screen) -> Void
     let ask: (String?) -> Void
     @State private var columns: NavigationSplitViewVisibility = .all
+    /// The window's width, for whether the sidebar, a card and the map fit
+    /// side by side (SplitRoom).
+    @State private var width: CGFloat = 0
+    /// The sidebar put away by a card opened in a narrow window, to come
+    /// back when the card goes (fit).
+    @State private var hidForCard = false
+    /// The detail's width, the map's and the chart's beside it together.
+    @State private var detailWidth: CGFloat = 0
+    @AppStorage(BesideShare.key) private var share = BesideShare.half
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
             PlanSheet(search: search, openScreen: openScreen, ask: ask)
-                .navigationSplitViewColumnWidth(min: 320, ideal: 375, max: 420)
+                // The plan's rows on the look's own sheet ground, as the
+                // iPhone's sheet is (PlanSheetPresentation), not the chart
+                // through the sidebar's glass: main's nightly run
+                // 44927130075 found the Search page's rows under 4.5:1 on
+                // the iPad Pro (Find Nearby, Nearest's "Waiting for the
+                // position"; WCAG 2.2 1.4.3).
+                .background(WingtipInk.sheet)
+                .navigationSplitViewColumnWidth(min: 320, ideal: SplitRoom.sidebar, max: 420)
         } detail: {
-            map
-                .overlay(alignment: .bottom) {
-                    FiguresStrip()
-                        .environment(\.figuresOnGlass, true)
-                        .padding(.vertical, WingtipSpace.md)
-                        .frame(maxWidth: 520)
-                        .floatingGlass(in: floatingCard)
-                        .padding(.bottom, WingtipSpace.lg)
-                        .padding(.horizontal, WingtipSpace.lg)
+            HStack(spacing: 0) {
+                mapWithFigures
+                // A chart standing beside the map (Beside the Map), its
+                // share of the detail's room the pilot's (BesideShare).
+                if let request = nav.beside {
+                    Divider().ignoresSafeArea()
+                    BesidePane(request: request)
+                        .frame(width: besideWidth)
+                        .transition(.move(edge: .trailing))
                 }
-                .toolbar(.hidden, for: .navigationBar)
-                .inspector(isPresented: inspectorShown) {
-                    inspector
-                        // The cards' rows on a solid ground, not the map
-                        // through glass: glass is for controls (HIG
-                        // Materials; docs/design/ios.md §0), and the audit
-                        // found the Brief's words faint over the chart.
-                        .background(Color(.systemGroupedBackground))
-                        .inspectorColumnWidth(min: 320, ideal: 375, max: 440)
-                }
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { detailWidth = $0 }
+            // The map's least room, an iPhone's width. Without it UIKit
+            // took the detail to need more than an upright iPad's window
+            // has while the app is still opening (752 points then, 1,032
+            // a moment later), laid the sidebar over the map, and kept it
+            // so: the map under a dimmed scrim, whose first tap, on the
+            // page toggle or any map button, only put the sidebar away
+            // (UISplitViewController's displayMode oneOverSecondary and
+            // splitBehavior overlay though tile was asked, in the app's
+            // log, on 3 of 8 launches of SheetPageToggleTests).
+            .navigationSplitViewColumnWidth(min: SplitRoom.leastMap, ideal: SplitRoom.leastMap * 2)
+            .animation(MapMotion.animated ? .default : nil, value: nav.beside)
         }
         .navigationSplitViewStyle(.balanced)
+        // The one search asked for (⌘F, a link, the microphone) with the
+        // sidebar put away: the sidebar, where the search is, comes back.
+        .onChange(of: search.presented) { _, up in if up, columns == .detailOnly { columns = .all } }
+        // On the split view, not on the map in its detail: an inspector in
+        // a column puts its toolbar in that column's bar, and the map's is
+        // hidden, so the card had no title, no close and no gear (main's
+        // nightly run 44927130075: CardRuleTests, CardScrollTests and
+        // CardSmokeTests on the iPad Pro). Here it is a column of its own,
+        // full height, its card's bar its own.
+        .inspector(isPresented: inspectorShown) {
+            inspector
+                // The cards' rows on a solid ground, not the map
+                // through glass: glass is for controls (HIG
+                // Materials; docs/design/ios.md §0), and the audit
+                // found the Brief's words faint over the chart.
+                .background(Color(.systemGroupedBackground))
+                .inspectorColumnWidth(min: 320, ideal: SplitRoom.inspector, max: 440)
+        }
+        // The window's width, measured round the inspector too: inside it,
+        // the split view's own width lost the card's 375 points, so an
+        // iPad Pro 13-inch held sideways (1,376) read 1,001 with a card up
+        // and put the sidebar away though all three fit, and one upright
+        // with a card up at launch (657) had the system lay the sidebar
+        // over the map rather than beside it.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        // The sidebar's room worked out from the window's width and the
+        // card at every change of either, the first layout included: a
+        // card already up when the layout first measured (a link, a kept
+        // scene) left the sidebar beside it with no room for the map.
+        .onChange(of: SplitRoom.Need(width: width, cardUp: nav.card != nil), initial: true) { _, need in fit(need) }
+        // The documents reader over the window, which the iPhone hangs on
+        // its card host (CardHost) and the iPad had nowhere: a library
+        // row, a cite or a link's doc= opened nothing (DocumentsIPadTests:23).
+        .modifier(ReaderCover(active: true))
         .environment(\.splitLayout, true)
         // A card's action done in the inspector (Fly Here, Fly This
         // Airplane): the card put away and the plan in the sidebar shown.
@@ -85,6 +164,61 @@ struct SplitLayout<Map: View>: View {
             search.close()
             nav.showPlan()
         })
+    }
+
+    /// The chart's width beside the map: its share of the detail's room.
+    private var besideWidth: CGFloat { (detailWidth * share.fraction).rounded() }
+
+    /// The map with the flight's figures along its foot.
+    private var mapWithFigures: some View {
+        map
+            .overlay(alignment: .bottom) {
+                // Figures on a solid ground, as rows and cards are
+                // (docs/design/ios.md §0): on glass over the chart the
+                // same run found the names DIST and TO under 4.5:1,
+                // semibold and in the tokens' black.
+                FiguresStrip()
+                    .environment(\.glanceFigures, true)
+                    .padding(.vertical, WingtipSpace.md)
+                    // Room for the figures a size up (glanceFigures).
+                    .frame(maxWidth: 640)
+                    .background(WingtipInk.sheet, in: floatingCard)
+                    .padding(.bottom, WingtipSpace.lg)
+                    .padding(.horizontal, WingtipSpace.lg)
+                    // After the chart in the accessibility order, as the
+                    // map's buttons are (RootMap's MapButtonsDock).
+                    .accessibilitySortPriority(-1)
+            }
+            // No bar over the map while the sidebar is up, its own bar
+            // holding Hide Sidebar; with the sidebar put away, the
+            // map's bar is up, clear over the chart, for the system's
+            // Show Sidebar: hidden for good, it left a pilot who hid
+            // the sidebar no way back to the plan and the search but
+            // the menu bar (the iPad audit, 2026-11-21).
+            .toolbar(columns == .detailOnly ? .visible : .hidden, for: .navigationBar)
+            .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+    }
+
+    /// A card up in a window too narrow for the sidebar, the card and the
+    /// map side by side (an iPad mini or an 11-inch held upright, Split
+    /// View at a half or two thirds): the sidebar put away while it is up,
+    /// so the map keeps a phone's width between them, and brought back
+    /// once it goes; the pilot's own Show Sidebar still brings it at any
+    /// time. Without it the 744-point iPad mini upright had 375 points of
+    /// sidebar and 375 of card, and no map between (the iPad audit,
+    /// 2026-11-21).
+    private func fit(_ need: SplitRoom.Need) {
+        // Not yet measured: nothing to work out from.
+        guard need.width > 0 else { return }
+        if need.cardUp, !SplitRoom.cardFitsBesideSidebar(width: need.width) {
+            if columns != .detailOnly {
+                columns = .detailOnly
+                hidForCard = true
+            }
+        } else if hidForCard {
+            columns = .all
+            hidForCard = false
+        }
     }
 
     private var inspectorShown: Binding<Bool> {
@@ -108,6 +242,6 @@ struct SplitLayout<Map: View>: View {
         .environment(Plan())
         .environment(OwnShip())
         .environment(DryRun())
-        .environment(Traffic())
+        .environment(Traffic(receiver: Receiver()))
         .environment(Verdict())
 }

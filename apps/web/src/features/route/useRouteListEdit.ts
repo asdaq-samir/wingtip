@@ -4,6 +4,7 @@ import type { RouteParts } from "./RouteBox";
 import { placeAllowed, placeRefusal } from "./routeEdit";
 import type { PlanCourse } from "../plan";
 import { askSearchPick } from "../../lib/oneSearch";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The route's points with one moved from `from` to `to`, as FPL's list
  *  drags them: the ends kept airports or a position (`isEnd`), as the box
@@ -121,9 +122,10 @@ export function useRouteListEdit({
   const typeStopAt = useCallback(
     (index: number) => {
       askSearchPick({
-        label: "Add a Stop",
+        label: WORDING.addStop,
         fixes: true,
         stop: true,
+        taken: routePoints,
         onPick: (picked) => {
           const added = addedRoute(routePoints, index, picked);
           if (added) setRoute(added);
@@ -134,17 +136,20 @@ export function useRouteListEdit({
   );
   // An end the route lacks (a new plan, half a route), from its row on
   // FPL's timeline: by the one search, as a point is changed, My Location
-  // offered first, as Maps' From offers it.
+  // offered first, as Maps' From offers it -- but not where the route is
+  // at My Location already, its other end (the owner, 2026-11-20: "Why
+  // show my location for destination when it's already picked for
+  // departure").
   const pickEnd = useCallback(
     (role: "Departure" | "Destination") => {
       askSearchPick({
         label: role,
         fixes: false,
-        position: true,
+        position: !routePoints.some(isPosition),
         onPick: (picked) => setRoute(endedRoute({ dep, stops, dest }, role, picked)),
       });
     },
-    [dep, stops, dest, setRoute],
+    [dep, stops, dest, routePoints, setRoute],
   );
   // A point dragged by its grip (or held) in FPL's list onto another's
   // place, as the field's pills are moved (movedRoute), and the route

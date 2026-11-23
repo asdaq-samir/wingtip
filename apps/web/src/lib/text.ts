@@ -49,16 +49,13 @@ export const TEXT = {
   /** A chip's category inside a column the width of the star, with
    *  font-bold: iOS's Caption 2, 11 on 13, the same with a mouse. */
   caption: TYPE_CLASS.caption,
-  /** The tab bar's words: iOS's Footnote, 13 on 17, two sizes up from its
-   *  tab bar's Caption 2, at the owner's asks ("make the label font and icon
-   *  size a bit bigger so it fits nicely"; the tabs to "pop out more",
-   *  2026-10-22). */
-  tab: TYPE_CLASS.tab,
-  /** The tab bar's words: 12, a size under the 13 they were, for a
-   *  slimmer bar with room round its tabs (the owner, 2026-11-04: 49
-   *  points "seems too congested and small"), on iOS's own 16 for 12
-   *  (Caption 1, 12/16; the iOS audit's P3). 14 failed the audit on every
-   *  screen with the tabs; the tab is 50 tall, so the bar keeps its height. */
+  /** The floating tab bar's words under their glyphs (FloatingBar, FPL's
+   *  and the airport card's bars): iOS's Footnote, 13 on 18, two sizes up
+   *  from its tab bar's Caption 2, at the owner's asks ("make the label font
+   *  and icon size a bit bigger so it fits nicely"; the tabs to "pop out
+   *  more", 2026-10-22). The bars drew a note's 13 while this role said 12,
+   *  and the 13-on-17 `tab` role had no caller; one role now, and `tab` is
+   *  gone (the scale audit's Q3, the owner, 2026-11-21). */
   tabBar: TYPE_CLASS.tabBar,
   /** A figure's name, an ident, a chip's word in the display face
    *  (index.css --display: Barlow Condensed in the Chart ink look, the
@@ -88,9 +85,9 @@ export const SECTION_TITLE = `font-medium text-foreground ${TEXT.heading}`;
  *  where the nav log's were a row's size in black, at the pilot's ask. */
 export const GROUP_HEADING = `font-semibold uppercase tracking-wide text-muted-foreground ${TEXT.note}`;
 
-/** The sizes of text drawn in points rather than by class (the runway
- *  sketch's numbers in an SVG): TEXT.caption's 11 and TEXT.row's 17 as
- *  a touch screen sets them. */
+/** The sizes of text in an SVG, in points, as a touch screen sets them:
+ *  TEXT.caption's 11 and TEXT.row's 17, for the room a drawing leaves its
+ *  words (the runway sketch's numbers, set by those classes). */
 export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row } as const;
 
 /** A figure pinned at the map panel's foot (FigureStrip), its
@@ -98,15 +95,17 @@ export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row 
  *  all the way up (MapPanel's --sheet-progress, 0 at half, 1 at the other
  *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
  *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
- *  is. The value's size is `--fig`, which FigureStrip sets smaller to fit
- *  its column (`FIT`); the unit is a share of it, so the two shrink
- *  together, 11 of 15 at half to 13 of 20 at the pill. */
-const GROW_SMALL =
-  "text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]";
+ *  is. The value's size is `--fig`; the unit is a share of it, so the two grow
+ *  together, 11 of 15 at half to 13 of 20 at the pill. On a kneeboard
+ *  (index.css: an iPad, read at arm's length, where the side panel has no
+ *  half) the flying figures' size, 26 on 31 with 15-point names and units,
+ *  where the phone's 20 read as 10 at twice the distance. */
+const KNEEBOARD_SMALL = "kneeboard:text-(length:--type-detail) kneeboard:leading-5";
+const GROW_SMALL = `text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))] ${KNEEBOARD_SMALL}`;
 export const GROW_FIGURE = {
   value:
-    "[--fig:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:[--fig:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))]",
-  unit: "text-[length:calc(1em*(0.6875+0.0625*var(--sheet-progress,1))/(0.75+0.375*var(--sheet-progress,1)))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(1em*(0.6875+0.125*var(--sheet-progress,1))/(0.9375+0.3125*var(--sheet-progress,1)))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]",
+    "[--fig:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:[--fig:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))] kneeboard:[--fig:var(--type-figure)] kneeboard:leading-[1.9375rem]",
+  unit: `text-[length:calc(1em*(0.6875+0.0625*var(--sheet-progress,1))/(0.75+0.375*var(--sheet-progress,1)))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(1em*(0.6875+0.125*var(--sheet-progress,1))/(0.9375+0.3125*var(--sheet-progress,1)))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))] ${KNEEBOARD_SMALL}`,
   name: GROW_SMALL,
   /** The unit's share of the value at the pill, for the room it takes. */
   unitScale: 0.65,
@@ -130,11 +129,29 @@ export const FIXED_FIGURE = {
   unitScale: 0.65,
 };
 
-/** The strip's one size, as iOS shrinks a label to fit its width
- *  (UILabel's adjustsFontSizeToFitWidth, minimumScaleFactor 0.7, the owner's pick, 2026-11-17): the
- *  value's own size (`--fig`) while the strip's widest figure fits its
- *  column, else the column's width (100cqi, each column a container)
- *  over the room that figure takes (`--fit-room` digits, figureRoom, of
- *  the face's `--figure-digit` ems, index.css), never under 0.7 of its
- *  size; past that cut short. */
-export const FIT = "text-[length:clamp(calc(var(--fig)*0.7),calc(100cqi/(var(--fit-room,7)*var(--figure-digit,0.6))),var(--fig))]";
+/** FPL's figures, pinned at the sheet's foot: thin at half and all the
+ *  way up, each value iOS's Footnote's 13, tight on 16, under its
+ *  name in a Caption 2's 11 on 12, in under 32 points (the owner, 2026-11-22: "Show the
+ *  labels even for thin strip"), growing to the pill's own, a heading's
+ *  20 on 25 under a note's 13 on 18, as the sheet goes to the pill (--pin-p, 0 to 1, usePinAtFoot's
+ *  growAt, a frame at a time under the finger; the owner, 2026-11-22:
+ *  "make the figures strip very thin when fpl is half or full"; "It should
+ *  follow finger to look natural"). One strip that changes size. On a
+ *  kneeboard (an iPad) the pill's own is the flying size GROW_FIGURE gives
+ *  there, 26 on 31 under 15-point names (the owner, 2026-11-21: "Yes do it
+ *  all for iPad"), from the same thin line. */
+const KNEEBOARD_PIN =
+  "kneeboard:[--fig:calc(0.8125rem+(var(--type-figure)-0.8125rem)*var(--pin-p,1))] kneeboard:leading-[calc(1rem+0.9375rem*var(--pin-p,1))]";
+const KNEEBOARD_PIN_NAME =
+  "kneeboard:text-[length:calc(0.6875rem+(var(--type-detail)-0.6875rem)*var(--pin-p,1))] kneeboard:leading-[calc(0.75rem+0.5rem*var(--pin-p,1))]";
+export const PIN_FIGURE = {
+  value: `[--fig:calc(0.8125rem+0.4375rem*var(--pin-p,1))] leading-[calc(1rem+0.5625rem*var(--pin-p,1))] ${KNEEBOARD_PIN}`,
+  unit: "text-[length:0.65em] leading-(--lead-note)",
+  name: `text-[length:calc(0.6875rem+0.125rem*var(--pin-p,1))] leading-[calc(0.75rem+0.375rem*var(--pin-p,1))] ${KNEEBOARD_PIN_NAME}`,
+  unitScale: 0.65,
+};
+
+/** The strip's value at its own size (`--fig`), never shrunk to fit a
+ *  column: the columns are as wide as their content (FigureStrip; the owner,
+ *  2026-11-21: "make the text size ... match"). */
+export const FIGURE_SIZE = "text-[length:var(--fig)]";

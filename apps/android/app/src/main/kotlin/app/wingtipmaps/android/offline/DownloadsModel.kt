@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.Gateway
@@ -15,9 +16,13 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.OfflineCatalog
 import app.wingtipmaps.android.api.generated.OfflineRegion
+import app.wingtipmaps.android.api.generated.PlateStateSet
+import app.wingtipmaps.android.api.generated.PlateStates
 import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.CyclePacks
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +37,9 @@ import javax.inject.Inject
  * The Downloads screen's state (Setup → Downloads), as the iOS app's
  * DownloadsModel: what the planner can cut (/api/offline-charts), the
  * chart kinds and density picked, the regions kept and how far each has
- * come, and the calls that keep, update and delete them.
+ * come, and the calls that keep, update and delete them; and the FAA's
+ * plates by state (/api/plates/states, StatePlates), fetched in the
+ * background by StatePlatesWorker.
  */
 @HiltViewModel
 class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(app) {
@@ -61,6 +68,67 @@ class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(ap
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
+    private val plateStore = StatePlatesStore.of(app)
+    private val keptAir = KeptForAir.of(app)
+    private val _plateStates = MutableStateFlow<PlateStates?>(null)
+    /** The states whose plates can be kept, of the cycle in force. */
+    val plateStates: StateFlow<PlateStates?> = _plateStates.asStateFlow()
+    private val _platesFailed = MutableStateFlow(false)
+    /** The planner, or the FAA's index, could not list them. */
+    val platesFailed: StateFlow<Boolean> = _platesFailed.asStateFlow()
+    val keptStates: StateFlow<List<KeptState>> = plateStore.kept
+
+    /** The charts done so far of each state being fetched, by its id. */
+    val platesRunning: StateFlow<Map<String, Int>> = WorkManager.getInstance(app).getWorkInfosByTagFlow(StatePlatesWorker.TAG)
+        .map { infos ->
+            infos.filter { it.state == WorkInfo.State.RUNNING }.associate { info ->
+                val id = info.tags.firstOrNull { it.startsWith("${StatePlatesWorker.TAG}:") }?.removePrefix("${StatePlatesWorker.TAG}:") ?: ""
+                id to info.progress.getInt(StatePlatesWorker.DONE, 0)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    private fun loadPlates() = viewModelScope.launch {
+        try {
+            val states = PlatesPlanner.Live.states()
+            _plateStates.value = states
+            _platesFailed.value = states.cycle == null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            _platesFailed.value = true
+        }
+        // A kept state stopped short, or whose cycle is replaced, gone on
+        // with now as well as at the hourly check.
+        val due = runCatching { StatePlates.due(plateStore, PlatesPlanner.Live, AppClock.javaNow(), platesRunning.value.keys) }.getOrDefault(emptyList())
+        for ((id, cycle) in due) StatePlatesWorker.enqueue(getApplication(), id, cycle)
+    }
+
+    /** A state's plates of the cycle in force kept: listed on the phone at
+     *  once with the planner's size, fetched in the background. */
+    fun keepState(set: PlateStateSet) {
+        val states = _plateStates.value ?: return
+        val cycle = states.cycle ?: return
+        plateStore.update(set.id) { it ?: KeptState(set.id, set.name, cycle, states.nextAt, set.charts, set.fields, bytes = set.bytes) }
+        StatePlatesWorker.enqueue(getApplication(), set.id, cycle)
+    }
+
+    /** A stopped or failed state fetched again, its kept charts kept. */
+    fun retryState(kept: KeptState) {
+        plateStore.update(kept.id) { it?.copy(unlisted = false) }
+        StatePlatesWorker.enqueue(getApplication(), kept.id, kept.cycle)
+    }
+
+    /** A kept state deleted, its fetch stopped; a chart another kept set
+     *  holds (a region's takeoff-minimums booklet) stays. */
+    fun deleteState(kept: KeptState) {
+        StatePlatesWorker.cancel(getApplication(), kept.id)
+        viewModelScope.launch(Dispatchers.IO) {
+            StatePlates.delete(plateStore, ChartKeeper(keptAir), kept.id, StatePlates.held(plateStore, keptAir, except = kept.id))
+            if (plateStore.kept.value.isEmpty()) StatePlatesWorker.unwatch(getApplication())
+        }
+    }
+
     fun setPicked(kind: String, on: Boolean) {
         _picked.value = if (on) _picked.value + kind else _picked.value - kind
         prefs.edit { it[KINDS] = _picked.value }
@@ -76,6 +144,7 @@ class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(ap
         KINDS_IN_ORDER.filter { it in picked }.map { OfflineStore.archive(it, scale) }
 
     fun load() = viewModelScope.launch {
+        loadPlates()
         store.sweep()
         runCatching { Planner.api.offlineCatalog().planned() }
             .onSuccess { _catalog.value = it; _problem.value = null }

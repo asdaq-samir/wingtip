@@ -3,6 +3,9 @@ import { controlsInSight, grabberTo, settle, sideDrawer, slow } from "./helpers"
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 import { showSearch } from "./oneSearch";
 import { FAA } from "./faaRecord";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "otherAirplanes"));
 
 /**
  * An airplane looked up by its N-number in the one search (the owner,
@@ -288,7 +291,7 @@ test("the FPL's airplane field suggests as it is typed: the pilot's own, the typ
   });
   await list.getByTestId("aircraft-suggestions-faa").getByTestId("aircraft-suggestion").click();
   // Picked: the FPL flies it, the list gone.
-  await expect(field).toHaveValue("N-654FL");
+  await expect(field).toHaveValue("654FL");
   await expect(list).toHaveCount(0);
   // Escape closes the list, what is typed kept.
   await field.click();

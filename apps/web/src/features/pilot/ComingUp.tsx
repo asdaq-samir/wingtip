@@ -5,7 +5,8 @@ import QueryState from "../../components/QueryState";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
 import { dueTitle, dueFinding, whenWords } from "./paperwork";
-import { paperworkQuery } from "../../lib/queryClient";
+import { paperworkQuery } from "../../lib/queryClientRecords";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * What falls due for the pilot and their airplanes, soonest first, the
@@ -21,9 +22,9 @@ export default function ComingUp() {
   const asked = useQuery({ ...paperworkQuery, meta: { silent: true } });
   const items = asked.data?.items;
   return (
-    <ListGroup title="Coming up">
+    <ListGroup title="Coming Up">
       {!items ? (
-        <QueryState row query={asked} fetching="Fetching what falls due…" failed="What falls due could not be fetched." />
+        <QueryState row query={asked} fetching="Fetching what falls due…" failed={WORDING.comingUpNotFetched} />
       ) : !items.length ? (
         <ListRow muted title="Nothing dated yet: your flight review, medical and airplanes' inspections show here once given." />
       ) : (

@@ -7,15 +7,15 @@ import pytest
 import rasterio
 from rasterio.transform import from_bounds
 from rasterio.warp import transform_bounds
-from wingtip import chart_faces, chart_grid, chart_kinds, chart_render, chart_sheets, chart_warp
+from wingtip import chart_edges, chart_faces, chart_grid, chart_kinds, chart_render, chart_sheets, chart_warp
 
 from .helpers import PALETTE, _palette_raster, _rgb_raster
 
 
 def test_snap_pulls_a_sectional_edge_onto_the_quarter_degree():
-    assert chart_faces._snap(43.9994) == 44.0
-    assert chart_faces._snap(-92.9971) == -93.0
-    assert chart_faces._snap(41.4416) == 41.4416  # a TAC-like edge stays measured
+    assert chart_edges.snap(43.9994) == 44.0
+    assert chart_edges.snap(-92.9971) == -93.0
+    assert chart_edges.snap(41.4416) == 41.4416  # a TAC-like edge stays measured
 
 
 def test_a_tile_coarser_than_the_sheet_keeps_a_thin_line_as_a_fainter_one(tmp_path):
@@ -230,3 +230,26 @@ def test_two_straight_bordered_sheets_meet_without_daylight(tmp_path):
             assert np.abs(tile[above[-1], col, :3].astype(int) - (216, 232, 206)).max() <= 2
         if len(below):
             assert np.abs(tile[below[0], col, :3].astype(int) - (255, 0, 0)).max() <= 2
+
+
+def test_a_tac_face_is_found_past_a_notes_panel_a_third_of_the_sheet_wide(tmp_path):
+    """Minneapolis-St Paul's TAC prints its Class B notes down its east
+    side, a third of the sheet across: searched a quarter of the way in,
+    its neatline was never reached, the collar was guessed, and the notes
+    were drawn over Wisconsin as chart (2026-11-20). The TAC's deeper
+    search (edge_search) finds it."""
+    box = (-94.5, 44.3, -91.5, 45.5)
+    data = np.zeros((1000, 1000), np.uint8)  # paper
+    data[50:950, 100:650] = 8  # the face, tinted
+    data[50:950, 99:102] = 7  # west neatline
+    data[50:950, 649:652] = 7  # east neatline
+    data[49:52, 100:650] = 7  # north
+    data[948:951, 100:650] = 7  # south
+    data[300:700:20, 700:960] = 7  # the notes' lines of print
+    _palette_raster(tmp_path / "tac.tif", box, data)
+    _, face, _ = chart_faces.detect_face(tmp_path / "tac.tif", chart_kinds.TAC)
+    assert face[2] == pytest.approx(-94.5 + 0.65 * 3.0, abs=0.03)
+    # A quarter of the way in, the sectional's search, stops short of
+    # it and guesses the collar, the notes inside the face.
+    _, face, _ = chart_faces.detect_face(tmp_path / "tac.tif", chart_kinds.SECTIONAL)
+    assert face[2] > -92.2

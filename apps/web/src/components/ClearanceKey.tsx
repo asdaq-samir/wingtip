@@ -2,7 +2,7 @@ import { useState } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
 import { loadPopups, usePopups } from "./popupsChunk";
-import { usePreferences } from "../lib/preferences";
+import { useThreeD } from "../lib/extras";
 import { clearanceFigures, clearanceWords, useClearanceDrawn } from "../lib/map/terrainClearanceWords";
 import { feet } from "../lib/format";
 import { CHART } from "../lib/tokens";
@@ -21,7 +21,7 @@ import { TEXT } from "../lib/text";
  * clearance (no TAWS, nothing of 14 CFR 91.119 or 91.177).
  */
 export default function ClearanceKey() {
-  const threeD = usePreferences((s) => s.threeD);
+  const threeD = useThreeD();
   const drawn = useClearanceDrawn((s) => s.drawn);
   const popups = usePopups();
   const [asked, setAsked] = useState(false);

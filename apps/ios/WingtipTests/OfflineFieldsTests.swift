@@ -53,22 +53,22 @@ struct OfflineFieldsTests {
         #expect(try Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: 9, pins: pins)?.airplane == nil)
     }
 
-    @Test func theSearchFindsTheKeptAirportsByIdentAndName() {
+    @Test func theSearchFindsTheKeptAirportsByIdentAndName() throws {
         let kept = [AirportPin(ident: "KOSH", kind: "medium", lat: 43.98, lon: -88.56, name: "Wittman Rgnl"),
                     AirportPin(ident: "KOSU", kind: "small", lat: 40.08, lon: -83.07, name: "Ohio State University"),
                     AirportPin(ident: "C81", kind: "small", lat: 42.32, lon: -88.07, name: "Campbell")]
         // OSH is KOSH, before KOSU, which only starts the same.
-        #expect(PackSearch.search("osh", in: kept).map(\.ident) == ["KOSH"])
-        #expect(PackSearch.search("KOS", in: kept).map(\.ident) == ["KOSH", "KOSU"])
-        #expect(PackSearch.search("camp", in: kept).map(\.ident) == ["C81"])
-        #expect(PackSearch.search("state", in: kept).map(\.ident) == ["KOSU"])
-        #expect(PackSearch.search("k", in: kept).isEmpty)
+        #expect(try PackSearch.search("osh", in: kept).map(\.ident) == ["KOSH"])
+        #expect(try PackSearch.search("KOS", in: kept).map(\.ident) == ["KOSH", "KOSU"])
+        #expect(try PackSearch.search("camp", in: kept).map(\.ident) == ["C81"])
+        #expect(try PackSearch.search("state", in: kept).map(\.ident) == ["KOSU"])
+        #expect(try PackSearch.search("k", in: kept).isEmpty)
         // Each marked with its use, the engine's, as the planner's search is.
         let il11 = AirportPin(ident: "IL11", kind: "small", lat: 42.2, lon: -88.3, name: "Il11", isPrivate: true)
         let kfhu = AirportPin(ident: "KFHU", kind: "medium", lat: 31.59, lon: -110.34, military: "joint", name: "Sierra Vista Muni-Libby AAF")
-        #expect(PackSearch.search("IL11", in: [il11]).first?.use == "private")
-        #expect(PackSearch.search("KFHU", in: [kfhu]).first?.use == "joint")
-        #expect(PackSearch.search("KOSH", in: kept).first?.use == nil)
+        #expect(try PackSearch.search("IL11", in: [il11]).first?.use == "private")
+        #expect(try PackSearch.search("KFHU", in: [kfhu]).first?.use == "joint")
+        #expect(try PackSearch.search("KOSH", in: kept).first?.use == nil)
         // No connection is said as such.
         #expect(OneSearchModel.failedWords(URLError(.notConnectedToInternet), kept: true).hasPrefix("No connection"))
     }

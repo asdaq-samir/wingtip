@@ -14,7 +14,7 @@ from datetime import datetime
 
 import requests
 
-from wingtip import chart_archives, chart_coverage, chart_kinds, chart_serving, chart_upkeep, outside
+from wingtip import chart_archives, chart_coverage, chart_kinds, chart_publish, chart_serving, chart_upkeep, outside
 from wingtip.chart_next import (
     FAILED,
     NO_TURN,
@@ -94,4 +94,35 @@ def run(workers: int | None = None, now: datetime | None = None, lead_days: int 
         write_status(name, FAILED, f"sheets missing, tried again later ({said or 'a kind incomplete'})")
         return FAILED
     write_status(name, STAGED, f"complete; the map takes it at 0901Z on {p.next.isoformat()}")
+    return STAGED
+
+
+def stage_to_bucket(
+    bucket: str, workers: int | None = 2, now: datetime | None = None, lead_days: int = 7, is_published=published, client=None
+) -> str:
+    """The AWS refresh task's next cycle, after the cycle in force is
+    published: from `lead_days` before its date, its sheets fetched, its
+    pyramid drawn and its archives published ahead under next.json
+    (wingtip.chart_publish), which every planner takes at 0901Z on its
+    date. Without it the task drew a new cycle only from that date, and
+    the map served the expired one for the hours the drawing took (the
+    ops audit, 2026-11-21). Each day of the lead tries again until it is
+    staged; once next.json names it, a run costs one read. Returns the
+    state: WAITING, NOT_PUBLISHED, STAGED or FAILED (some sheets missing,
+    nothing published)."""
+    p = plan(now, lead_days)
+    name = p.next_name
+    if not p.staging:
+        log.info("cycle %s: staged from %s", name, p.stage_from.isoformat())
+        return WAITING
+    if chart_publish.bucket_cycle(bucket, client=client, pointer=chart_publish.NEXT_POINTER) == name:
+        log.info("cycle %s is staged ahead in %s", name, bucket)
+        return STAGED
+    if not is_published(name):
+        log.info("cycle %s is not on aeronav.faa.gov yet", name)
+        return NOT_PUBLISHED
+    if not chart_upkeep.build_cycle(name, workers=workers):
+        log.warning("cycle %s: sheets missing; not staged, tried again tomorrow", name)
+        return FAILED
+    chart_publish.publish(name, bucket, client=client, ahead=True)
     return STAGED

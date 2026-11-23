@@ -22,7 +22,8 @@ final class ModelWeatherOverlay: NSObject, MKOverlay {
 
 /// Draws the hour's painted picture into the box. MapKit calls draw on its
 /// own queues, so the picture is held under a lock.
-final class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
+/// Unchecked: MKOverlayRenderer is not Sendable; the picture is in a lock.
+final nonisolated class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
     private let held = OSAllocatedUnfairLock<PaintedField?>(initialState: nil)
 
     func show(_ painted: PaintedField?) {
@@ -44,7 +45,7 @@ final class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
 }
 
 /// A G-AIRMET's outline, in its hazard's colour.
-final class AirmetLine: MKPolyline {
+final nonisolated class AirmetLine: MKPolyline {
     var colour = WingtipColor.Weather.other
 }
 
@@ -74,6 +75,9 @@ final class FlowPointAnnotation: NSObject, MKAnnotation {
 /// the map, a tap that found no mark.
 @MainActor
 final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
+    /// The map's model weather, the one the app shows.
+    private static var models: ModelWeather { .shared }
+
     private weak var map: MKMapView?
     private var overlay: ModelWeatherOverlay?
     private var renderer: ModelWeatherRenderer?
@@ -83,6 +87,24 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     private var airmetsDrawn: [APIWeatherArea] = []
     private var labelsDrawn: [String: String] = [:]
     private var badge: FlowPointAnnotation?
+    /// One task the layer owns, iterating Observations: every change is
+    /// drawn, none lost between a change and a re-arm, and it ends with the
+    /// layer.
+    private var following: Task<Void, Never>?
+
+    /// What the layer draws of the model weather, read as one value.
+    private struct Shown: Sendable {
+        let painted: PaintedField?, radar: String?
+        let airmets: [APIWeatherArea], labels: [String: String]
+        let point: CLLocationCoordinate2D?, reading: FlowReading?
+
+        @MainActor init(_ model: ModelWeather) {
+            let on = model.field != .off
+            (painted, radar) = (on ? model.painted : nil, on ? model.radarTiles : nil)
+            (airmets, labels) = (on ? model.airmets : [], model.airmetLabels)
+            (point, reading) = (on ? model.point : nil, model.reading)
+        }
+    }
 
     func attach(_ map: MKMapView) {
         self.map = map
@@ -96,13 +118,15 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     }
 
     private func follow() {
-        withObservationTracking {
-            let model = ModelWeather.shared
-            draw(model.field == .off ? nil : model.painted, radar: model.field == .off ? nil : model.radarTiles)
-            drawAirmets(model.field == .off ? [] : model.airmets, labels: model.airmetLabels)
-            drawBadge(model.field == .off ? nil : model.point, reading: model.reading)
-        } onChange: { [weak self] in
-            Task { @MainActor in self?.follow() }
+        following?.cancel()
+        following = Task { [weak self] in
+            let model = Self.models
+            for await shown in Observations({ @MainActor in Shown(model) }) {
+                guard let self else { return }
+                draw(shown.painted, radar: shown.radar)
+                drawAirmets(shown.airmets, labels: shown.labels)
+                drawBadge(shown.point, reading: shown.reading)
+            }
         }
     }
 
@@ -166,7 +190,7 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
         if let point {
             let mark = badge ?? { let made = FlowPointAnnotation(point); badge = made; map.addAnnotation(made); return made }()
             mark.coordinate = point
-            (map.view(for: mark) as? FlowBadgeView)?.show(reading, dark: ModelWeather.shared.field == .precip)
+            (map.view(for: mark) as? FlowBadgeView)?.show(reading, dark: Self.models.field == .precip)
         } else if let badge {
             map.removeAnnotation(badge)
             self.badge = nil
@@ -192,7 +216,7 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     }
 
     @objc private func tapped(_ tap: UITapGestureRecognizer) {
-        guard let map, ModelWeather.shared.field != .off, tap.state == .ended else { return }
+        guard let map, Self.models.field != .off, tap.state == .ended else { return }
         let at = tap.location(in: map)
         // A tap on a mark is the mark's.
         var hit = map.hitTest(at, with: nil)
@@ -200,7 +224,7 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
             if view is MKAnnotationView { return }
             hit = view.superview
         }
-        ModelWeather.shared.tapped(map.convert(at, toCoordinateFrom: map))
+        Self.models.tapped(map.convert(at, toCoordinateFrom: map))
     }
 
     func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
@@ -208,7 +232,7 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
         if let field = overlay as? ModelWeatherOverlay {
             let made = ModelWeatherRenderer(overlay: field)
-            made.show(ModelWeather.shared.painted)
+            made.show(Self.models.painted)
             renderer = made
             return made
         }
@@ -237,7 +261,8 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
         }
         if let point = annotation as? FlowPointAnnotation {
             let view = map.dequeueReusableAnnotationView(withIdentifier: FlowBadgeView.reuse, for: point) as? FlowBadgeView
-            view?.show(ModelWeather.shared.reading, dark: ModelWeather.shared.field == .precip)
+            let weather = Self.models
+            view?.show(weather.reading, dark: weather.field == .precip)
             return view
         }
         return nil

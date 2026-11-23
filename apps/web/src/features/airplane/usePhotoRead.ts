@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FIGURE_FIELDS, type FigureKey } from "../../lib/airplane/figures";
 import { figuresOfPage } from "./lib/handbookText";
 import { readPhoto } from "./lib/readPage";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The engine's names of the figures a specifications page carries, by
  *  the page reader's (handbook_figures', camel case). */
@@ -31,7 +32,7 @@ export function usePhotoRead(fill: (typed: Partial<Record<FigureKey, number>>) =
       setState({
         busy: false,
         words: [],
-        problem: err instanceof Error ? `The page could not be read: ${err.message}` : "The page could not be read",
+        problem: err instanceof Error ? `The page could not be read: ${err.message}` : WORDING.pageNotRead,
       });
     }
   };

@@ -5,7 +5,7 @@ import Foundation
 /// fields from the cycle packs kept on the phone. Each is the planner's
 /// or the engine's (Engine/Generated/EngineCalls), with where it comes
 /// from; nothing is worked out here.
-enum FlightFigures {
+nonisolated enum FlightFigures {
     /// The route and its nav log's totals, as the planner last sent them.
     static func route(facts: OnDeviceFacts) throws -> [AskFigure] {
         guard !facts.dep.isEmpty, !facts.dest.isEmpty else { throw AskRefused(why: "No route is planned on this iPhone.") }

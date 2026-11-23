@@ -24,6 +24,10 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
  *
  * <p>Kept as SHA-256 hashes (V42), as the magic links are: nothing here
  * can be presented.
+ *
+ * <p>Every connection saved (issued, rotated, or revoked: /oauth2/revoke
+ * saves it with the token invalidated) or removed forgets the pilot's kept
+ * answers in LiveConnections, so the MCP check sees the change at once.
  */
 final class RotatedRefreshTokens implements OAuth2AuthorizationService {
 
@@ -31,10 +35,12 @@ final class RotatedRefreshTokens implements OAuth2AuthorizationService {
 
     private final OAuth2AuthorizationService store;
     private final JdbcOperations jdbc;
+    private final LiveConnections kept;
 
-    RotatedRefreshTokens(OAuth2AuthorizationService store, JdbcOperations jdbc) {
+    RotatedRefreshTokens(OAuth2AuthorizationService store, JdbcOperations jdbc, LiveConnections kept) {
         this.store = store;
         this.jdbc = jdbc;
+        this.kept = kept;
     }
 
     @Override
@@ -48,13 +54,17 @@ final class RotatedRefreshTokens implements OAuth2AuthorizationService {
                     hash(spent),
                     authorization.getId());
         }
+        kept.forget(authorization.getPrincipalName());
         store.save(authorization);
+        kept.forget(authorization.getPrincipalName());
     }
 
     @Override
     public void remove(OAuth2Authorization authorization) {
+        kept.forget(authorization.getPrincipalName());
         store.remove(authorization);
         jdbc.update("DELETE FROM oauth2_spent_refresh_token WHERE authorization_id = ?", authorization.getId());
+        kept.forget(authorization.getPrincipalName());
     }
 
     @Override

@@ -73,6 +73,30 @@ export const M_PER_DEG = KM_PER_DEG * 1000;
  *  latitude: the parallel's cosine, on a sphere. */
 export const lonScale = (latDeg: number) => Math.cos(rad(latDeg));
 
+/** A longitude written within 180° of `reference` (179 near -179 is -181),
+ *  as the engine's geo::lon_near: so a line or a box between two points
+ *  across the antimeridian is the short way round, as the geodesic is. */
+export const lonNear = (lon: number, reference: number) => reference + ((((lon - reference + 180) % 360) + 360) % 360) - 180;
+
+/** A line of [lat, lon] points with each longitude within 180° of the one
+ *  before (lonNear): MapLibre draws a longitude past 180 on the world's
+ *  next copy, so a course across the antimeridian (Adak to Shemya) is
+ *  drawn the short way, not as one segment the long way round the map, and
+ *  its box (lonBounds) is the leg's, not the world's. */
+export function unwrapLine(line: readonly (readonly [number, number])[]): [number, number][] {
+  const out: [number, number][] = [];
+  for (const [lat, lon] of line) out.push([lat, out.length ? lonNear(lon, out[out.length - 1]![1]) : lon]);
+  return out;
+}
+
+/** The west and east longitudes of points taken in order (unwrapLine), so
+ *  the box round a route across the antimeridian spans the route alone;
+ *  east may be past 180, as MapLibre's own bounds are. */
+export function lonBounds(lons: readonly number[]): [number, number] {
+  const line = unwrapLine(lons.map((lon) => [0, lon] as const)).map(([, lon]) => lon);
+  return [Math.min(...line), Math.max(...line)];
+}
+
 /**
  * The flat sums: a small patch of the earth taken as a plane, the
  * longitude shrunk by `atLat`'s cosine (lonScale). For an order -- which

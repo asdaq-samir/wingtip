@@ -32,10 +32,10 @@ async function briefingAs(page: Page, change: (json: Record<string, unknown>) =>
 async function planned(page: Page) {
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
 }
 
-test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on En route, and its row opens En route's adverse conditions", async ({
+test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on En Route, and its row opens En Route's adverse conditions", async ({
   page,
 }) => {
   await briefingAs(page, (json) => {
@@ -50,12 +50,23 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   const weather = drawer.getByTestId("verdict-weather");
   await expect(weather).toHaveAttribute("data-finding", "stop");
   await expect(weather).toContainText("VFR not recommended: KDLH currently reporting IFR");
-  await expect(drawer.getByTestId("verdict-line")).toContainText(/^No-go as planned: Weather/);
-  // Every tab's finding, in the order a pilot goes through them.
-  await expect(drawer.locator("[data-testid^='verdict-'][data-finding]")).toHaveCount(8);
+  // What they come to, in the pill under the Brief's name, over every page.
+  await expect(drawer.getByTestId("brief-card").getByTestId("brief-verdict")).toContainText(/^No-go as planned: weather/);
+  // Every tab's finding, a row each in the order a pilot goes through them.
+  await expect(drawer.locator("[data-testid^='verdict-'][data-finding]")).toHaveCount(7);
+  await expect(drawer.getByTestId("verdict").getByRole("button")).toHaveText([
+    /^Weather/,
+    /^TFRs & Special Use/,
+    /^Altitude/,
+    /^Fuel/,
+    /^Runways/,
+    /^Weight & Balance/,
+    /^Risk/,
+    /^Alternates/,
+  ]);
 
   await weather.click();
-  await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(panelTabs(page).getByRole("tab", { name: "En Route", exact: true })).toHaveAttribute("aria-selected", "true");
   // Scrolled to its section, flagged.
   await expect(drawer.locator('[data-tab="enroute"] [data-title="Adverse Conditions"]')).toBeInViewport();
   await expect(drawer.getByTestId("vnr-flag")).toBeVisible();
@@ -68,8 +79,8 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a tile each, counted as they are looked at", async ({ page }) => {
-  // The owner's pick of the redesign: the answer first, every check a tile
+test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a row each, counted as they are looked at", async ({ page }) => {
+  // The owner's pick of option A: every check a row of one grouped list,
   // opening where it is said in full, the paperwork folded under them.
   await planned(page);
   const drawer = sideDrawer(page);
@@ -78,9 +89,9 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a tile each, 
   // The two the planner does not fetch, where a pilot reads them.
   await expect(drawer.getByTestId("check-notams")).toHaveAttribute("href", "https://www.1800wxbrief.com");
   await expect(drawer.getByTestId("check-delays")).toHaveAttribute("href", "https://www.fly.faa.gov");
-  // A tile opened is a check looked at: the weather's opens En route.
+  // A row opened is a check looked at: the weather's opens En route.
   await drawer.getByTestId("verdict-weather").click();
-  await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(panelTabs(page).getByRole("tab", { name: "En Route", exact: true })).toHaveAttribute("aria-selected", "true");
   await openTab(page, "Preflight");
   await expect(drawer.getByTestId("verdict-weather")).toHaveAttribute("data-looked", "true");
   // The loading's opens its own section here, folded until then.
@@ -139,7 +150,7 @@ test("the weather goes place by place, each TAF read for when the flight is ther
   await planned(page);
   // The Brief's En route, its sections one under another: the legs are
   // FPL's own, and the side view the one pinned at its foot.
-  await openTab(page, "En route");
+  await openTab(page, "En Route");
   await expect
     .poll(() =>
       sideDrawer(page)
@@ -150,7 +161,7 @@ test("the weather goes place by place, each TAF read for when the flight is ther
   await openSection(page, "Along the Route");
   const enRoute = sideDrawer(page).locator('[data-tab="enroute"]').getByTestId("weather-places");
   await expect(enRoute).toBeVisible();
-  await expect(enRoute.locator("h3")).toHaveText(["En route"]);
+  await expect(enRoute.locator("h3")).toHaveText(["En Route"]);
   // The pilot report 120 nm along before the TAF 210 nm along.
   await expect(enRoute.locator("[data-testid='pirep'], [data-testid='enroute-taf']")).toHaveText([/PIREP · 5,500 ft/, /KHYR/]);
   // Each field's own on its phase's tab: the destination's on Arrive.
@@ -185,7 +196,7 @@ test("Depart has the takeoff's runway check: a runway too short is red, on the t
   await expect(drawer.getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
   await openTab(page, "Depart");
   await expect(page.getByTestId("panel-tab-mark-depart")).toHaveAttribute("data-finding", "stop");
-  await expect(drawer.getByTestId("tl-flag")).toContainText("Runway too short");
+  await expect(drawer.getByTestId("tl-flag")).toContainText("Runway Too Short");
   const takeoff = drawer.getByTestId("runway-takeoff");
   await expect(takeoff).toContainText(/ft past the end/);
   await expect(drawer.getByTestId("density-altitude").first()).toContainText(/Pressure altitude [\d,]+ ft/);
@@ -227,7 +238,7 @@ test(
 test("a route from the pilot's position has a section for its airports alone, none for the position", async ({ page }) => {
   await page.goto("/app/plan?dep=%4042.2340%2C-87.9877%2C700&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   const drawer = sideDrawer(page);
   await openTab(page, "Arrive");
   await openSection(page, "KDLH · Destination");
@@ -236,12 +247,14 @@ test("a route from the pilot's position has a section for its airports alone, no
   await expect(drawer.locator('[data-tab="depart"]').getByTestId("airport-section")).toHaveCount(0);
 });
 
-test("the Brief opens on whether to go and a card for each part of the flight, a card opens its page, and the close goes back to them", async ({
+test("the Brief opens on whether to go and one grouped list, a row for each part of the flight opening its page, and the close goes back to it", async ({
   page,
 }) => {
-  // The owner's pick of the redesign (D′): the cards stacked, all four in
-  // one scroll, a tap on one its page; the close goes back (the owner's
-  // "close button should behave as the back button").
+  // The owner's pick of option A (2026-11-19): the verdict a pill under the
+  // Brief's name, then one grouped list -- the findings first, then Before
+  // You Go, Depart, En Route, Arrive and the NOTAMs -- a tap on a row its
+  // page; the close goes back (the owner's "close button should behave as
+  // the back button").
   await briefingAs(page, (json) => {
     Object.assign(json, { vfr_not_recommended: ["KDLH currently reporting IFR"], tfrs: [] });
   });
@@ -249,34 +262,85 @@ test("the Brief opens on whether to go and a card for each part of the flight, a
   const drawer = sideDrawer(page);
   await openBrief(page);
   const glance = drawer.getByTestId("brief-glance");
-  await expect(glance.getByTestId("brief-verdict")).toContainText(/^No-go as planned: Weather/, { timeout: slow(30_000) });
+  const card = drawer.getByTestId("brief-card");
+  await expect(card.getByTestId("brief-verdict")).toContainText(/^No-go as planned: weather/, { timeout: slow(30_000) });
   await expect(glance.getByTestId("brief-glance-enroute")).toHaveAttribute("data-finding", "stop");
-  // Said once, in the weather's own line over the cards, the En route card
+  // In this order: the findings, then the Adverse Conditions on the route
+  // where there are any (the owner's option 2, 2026-11-21), then the parts
+  // of the flight, then the NOTAMs; When to go after the list.
+  const list = glance.getByTestId("brief-list");
+  const rows = list.locator(
+    "[data-testid^='brief-line-'][data-finding], [data-testid^='brief-adverse-'], [data-testid^='brief-glance-'], [data-testid=brief-notams-row]",
+  );
+  const order = await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")));
+  expect(order.slice(order.indexOf("brief-glance-preflight"))).toEqual([
+    "brief-glance-preflight",
+    "brief-glance-depart",
+    "brief-glance-enroute",
+    "brief-glance-arrive",
+    "brief-notams-row",
+  ]);
+  const above = order.slice(0, order.indexOf("brief-glance-preflight"));
+  const adverseAt = above.findIndex((id) => id!.startsWith("brief-adverse-"));
+  const findings = adverseAt < 0 ? above : above.slice(0, adverseAt);
+  expect(findings).toContain("brief-line-weather");
+  for (const id of findings) expect(id).toMatch(/^brief-line-/);
+  if (adverseAt >= 0) for (const id of above.slice(adverseAt)) expect(id).toMatch(/^brief-adverse-/);
+  // When to go, where it is drawn (signed in), at the foot.
+  const top = async (id: string) => (await glance.getByTestId(id).boundingBox())!.y;
+  if (await glance.getByTestId("departure-window").count())
+    expect(await top("departure-window")).toBeGreaterThan(await top("brief-notams-row"));
+  // Said once, in the weather's own line over the rows, the En Route row
   // not repeating it (the owner, 2026-11-16: "How do we make brief less
   // cluttered?", 5c55321c4).
   await expect(glance.getByTestId("brief-line-weather")).toHaveAttribute("data-finding", "stop");
   await expect(glance.getByTestId("brief-line-weather").getByTestId("brief-line-words")).toContainText(
     "VFR not recommended: KDLH currently reporting IFR",
   );
-  await expect(glance.getByTestId("brief-glance-enroute")).not.toContainText("VFR not recommended");
-  // The verdict the one red wash: a no-go card as plain as the others, its
+  await expect(glance.getByTestId("brief-glance-enroute")).not.toContainText("VFR Not Recommended");
+  // The verdict the one red wash: a no-go row as plain as the others, its
   // red in its icon and figures alone (the design review, 2026-10-28).
-  const fill = (id: string) => glance.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(await fill("brief-glance-enroute")).toBe(await fill("brief-glance-depart"));
+  // Read with the pointer off the rows, as a finger lifts: the Brief opens
+  // at half over where its button in FPL's bar was tapped, and a mouse left
+  // over a row is its hover's fill (bg-muted/50), not its own.
+  // The hover's fill fades out over the row's transition (100 ms): each
+  // row read once it has, or the row under the mouse reads its fill.
+  await page.mouse.move(0, 0);
+  await card.evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations({ subtree: true })
+        .filter((a) => a instanceof CSSTransition)
+        .map((a) => a.finished.catch(() => null)),
+    ),
+  );
+  const fill = (id: string) => card.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
+  await expect(card.getByTestId("brief-glance-enroute")).toHaveCSS("background-color", await fill("brief-glance-depart"));
   expect(await fill("brief-verdict")).not.toBe(await fill("brief-glance-depart"));
   await expect(glance.getByTestId("brief-glance-depart")).toContainText("C81");
   await expect(glance.getByTestId("brief-glance-arrive")).toContainText("KDLH");
   await expect(glance.getByTestId("brief-glance-arrive")).toContainText(/Runway/);
   await expect(panelTabs(page)).toHaveCount(0);
 
-  // Under the Brief's edge as it opens half way, its lines over the cards:
+  // Under the Brief's edge as it opens half way, its lines over the rows:
   // pulled up to, as a finger would (inSheet).
   await inSheet(page, glance.getByTestId("brief-glance-enroute"));
   await glance.getByTestId("brief-glance-enroute").click();
-  await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(panelTabs(page).getByRole("tab", { name: "En Route", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(glance).toHaveCount(0);
-  // Back to the cards, the Brief still open.
+  // Back to the list, the Brief still open, the verdict still under its name.
   await closeCard(page, "brief-close");
   await expect(drawer.getByTestId("brief-glance")).toBeVisible();
-  await expect(drawer.getByTestId("brief-card")).toBeVisible();
+  await expect(card).toBeVisible();
+  // The NOTAMs' row says how many matter and opens them on Preflight, at
+  // their section. Its name and its count are two spans side by side, so
+  // the row's text runs them together: "NOTAMs3 that matter", "NOTAMsNone
+  // heard" where the planner has none (CI's), "NOTAMsRanking…" (useArrangedNotams).
+  const notams = drawer.getByTestId("brief-notams-row");
+  await expect(notams).toContainText(/^NOTAMs(\d+ that matter|None heard|Ranking…)/);
+  await inSheet(page, notams);
+  await notams.click();
+  await expect(panelTabs(page).getByRole("tab", { name: "Preflight", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(drawer.locator('[data-tab="preflight"] [data-title="NOTAMs"]')).toBeInViewport();
+  await expect(card.getByTestId("brief-verdict")).toBeVisible();
 });

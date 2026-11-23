@@ -14,6 +14,9 @@ const AREA_COLOURS: Record<string, string> = {
   IFR: WEATHER.ifr,
   "Mountains obscured": WEATHER.mountains,
   "MTN OBSCN": WEATHER.mountains,
+  // Alaska's AIRMETs (the planner's "airmets"), in the SIGMET file's codes.
+  "SFC WND": WEATHER.wind,
+  LLWS: WEATHER.shear,
   "Low-level wind shear": WEATHER.shear,
   "Strong surface winds": WEATHER.wind,
   ASH: WEATHER.ash,

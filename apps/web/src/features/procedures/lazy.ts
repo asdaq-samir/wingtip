@@ -8,5 +8,9 @@
 
 export { default as ProceduresRoute, RouteLine } from "./ProceduresRoute";
 export { default as TimelineRoute, type TimelinePoint } from "./TimelineRoute";
+export { FuelStopsChip, NoFuelStopNote, TypeRouteButton } from "./TimelineRows";
 export type { ProceduresRouteProps } from "./routeProps";
 export { visitAt, visitRow } from "./visits";
+// A point's mark as the timeline draws it, for the connector's live view
+// (its own page, claude-view.html).
+export { TimelineMark } from "./TimelineMark";

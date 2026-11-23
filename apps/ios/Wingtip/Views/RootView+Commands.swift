@@ -54,7 +54,9 @@ extension RootView {
         case .weather(let ident):
             open(ident)
         case .planRoute(let dep, let stops, let dest):
-            // A route shared from the site, planned here as it was there.
+            // A shared flight's Use This Plan, a saved route from Siri or the
+            // demo flight: planned as asked. A link never lands here
+            // directly; it is previewed first (Links, .sharedFlight).
             plan.dep = dep; plan.stops = stops; plan.dest = dest
             showPlan()
             plan.plan()
@@ -74,6 +76,12 @@ extension RootView {
             keepForAir()
         case .card(let page):
             nav.open(page)
+        case .document(let place):
+            nav.reading = place
+        case .addDocument(let url):
+            // Copied in as the pilot's own, then read; a file that is not
+            // a PDF is said on the library's page.
+            if let doc = screens.library.add([url]).first { nav.reading = .own(doc.id) }
         case .sharedFlight(let link):
             // Shown, not planned: the pilot's own plan stays until they
             // tap Use This Plan.

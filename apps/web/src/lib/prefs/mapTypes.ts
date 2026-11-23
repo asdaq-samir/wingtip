@@ -30,6 +30,11 @@ export type ChartLight = "auto" | "on" | "off";
  *  2026-11-14). The words on the map keep the true altitudes. */
 export type HeightStretch = 1 | 3 | 5;
 
+/** Hazard colouring (the Map card's): the ground and the obstacles
+ *  coloured against the altitude flown, never, always, or by itself in
+ *  flight; the engine's hazard_view says when and against what. */
+export type HazardSetting = "off" | "on" | "flight";
+
 /** What the map draws and how: the Map card's and Settings' Map group. */
 export interface MapSlice {
   base: BaseChart;
@@ -53,7 +58,7 @@ export interface MapSlice {
    *  planner's checkpoints and the landmarks they were chosen from, the
    *  training map's detections and added points. Off unless turned on, at
    *  the owner's ask ("Let's not enable waypoints for a pilot"); the
-   *  route's ••• menu's Checkpoints (RouteMapChoices). */
+   *  Map card's Route Checkpoints switch (MapLayers). */
   waypoints: boolean;
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
    *  (TrafficGl). Off by default: it asks a third party every five seconds. */
@@ -87,9 +92,19 @@ export interface MapSlice {
   chartLight: ChartLight;
   /** The map stood up in 3D, the map's 3D button (ThreeDButton). */
   threeD: boolean;
+  /** The map's words grown with the pilot's text size, at most 1.2x (the
+   *  Map card's Larger Map Labels; the owner, 2026-11-21): off, they are
+   *  their own px, as Apple Maps keeps them. */
+  largerMapLabels: boolean;
   /** How many times 3D stands its heights up (HeightStretch): three
    *  unless picked, the Map card's Heights while 3D is on. */
   heightStretch: HeightStretch;
+  /** Hazard colouring: off unless picked (HazardSetting). */
+  hazard: HazardSetting;
+  /** The pilot's clearance for its red, ft: one of the engine's
+   *  clearances_ft (500, 1,000, 2,000); null, none picked, the engine's
+   *  default. */
+  hazardClearanceFt: number | null;
   /** How far round the pilot the map's Stops look, nm: 25 unless picked
    *  (the owner, 2026-10-27; StopsCard's menu). */
   stopsRadiusNm: number;
@@ -110,7 +125,10 @@ export interface MapSlice {
   setChartContrast: (chartContrast: number) => void;
   setChartLight: (chartLight: ChartLight) => void;
   setThreeD: (threeD: boolean) => void;
+  setLargerMapLabels: (largerMapLabels: boolean) => void;
   setHeightStretch: (heightStretch: HeightStretch) => void;
+  setHazard: (hazard: HazardSetting) => void;
+  setHazardClearanceFt: (ft: number | null) => void;
   setStopsRadiusNm: (nm: number) => void;
   setStopKind: (kind: StopPick) => void;
 }

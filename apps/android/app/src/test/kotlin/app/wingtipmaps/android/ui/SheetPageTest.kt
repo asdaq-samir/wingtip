@@ -42,7 +42,12 @@ class SheetPageTest {
         SheetPage.Profile,
         SheetPage.NavLog,
         SheetPage.Emergency,
+        SheetPage.RouteOptions,
+        SheetPage.Filing,
         SheetPage.YourAirplanes,
+        SheetPage.Documents,
+        SheetPage.ConnectedApps,
+        SheetPage.Reader("cfr-14-91@91.155"),
         SheetPage.Checklist("C172", "NORMAL"),
     )
 
@@ -62,6 +67,13 @@ class SheetPageTest {
         assertFalse(SheetPage.Plan.covers)
         every.drop(2).forEach { assertTrue("$it covers", it.covers) }
         assertTrue(SheetPage.of(ProfileOpen.At("N1", null, null)).covers)
+    }
+
+    @Test
+    fun onAWideWindowTheLibraryTakesTheListPaneAndItsReaderTheDetail() {
+        assertTrue(SheetPage.Documents.listsBeside)
+        assertFalse(SheetPage.Reader("aim@7-1-5").listsBeside)
+        assertFalse(SheetPage.You.listsBeside)
     }
 
     @Test

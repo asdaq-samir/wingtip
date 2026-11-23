@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LessonProgressRequest, Training } from "../../lib/api/types";
 import { api } from "../../lib/api/client";
 import { lessonPicked } from "../../lib/assignedLessons";
-import { trainingQuery } from "../../lib/queryClient";
+import { trainingQuery } from "../../lib/queryClientRecords";
 import ApproachLesson from "./ApproachLesson";
 import type { FromInstructor } from "./LessonParts";
 

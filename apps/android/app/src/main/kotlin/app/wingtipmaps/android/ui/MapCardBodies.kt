@@ -26,6 +26,7 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.engine.MapRules
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.library.Cited
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
 
@@ -87,13 +88,20 @@ internal fun AirspaceCard(volume: MapPick.Airspace) {
         SectionTitle(stringResource(R.string.to_enter))
         for (r in rules.rules) {
             ListItem(
-                supportingContent = { Text(r.cite) },
+                // The rule's cite a tap to its section in the library.
+                supportingContent = { Cited(r.cite) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 content = { Text(r.rule, style = MaterialTheme.typography.bodyMedium) },
             )
         }
     }
+    // Special VFR in the surface area, the part of a volume from the
+    // surface (14 CFR 91.157(a)), as the web's card says it under To Enter.
+    if (volume.floorSfc && volume.airspaceClass in SURFACE_CLASSES) SpecialVfrGroup(volume.airspaceClass, volume.ident)
 }
+
+/** The classes whose volumes from the surface are an airport's surface area on the card. */
+private val SURFACE_CLASSES = setOf("B", "C", "D")
 
 private fun MapPick.Vor.station() = app.wingtipmaps.android.engine.Station(ident, lat, lon, magVar)
 

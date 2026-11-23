@@ -5,7 +5,7 @@ import { cn } from "cn";
 import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
-import { trainingQuery } from "../../lib/queryClient";
+import { trainingQuery } from "../../lib/queryClientRecords";
 import { Button } from "../../components/ui/button";
 import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
@@ -37,7 +37,7 @@ export function KnowledgeCodes({ codes }: { codes: string[] }) {
   return (
     // The codes on the Airman Knowledge Test Report: the examiner goes over
     // each one again, and the instructor endorses their review (61.39(a)(6)(iii)).
-    <ListGroup title="Knowledge test">
+    <ListGroup title="Knowledge Test">
       {codes.length === 0 ? (
         <ListRow muted title="No codes yet" />
       ) : (
@@ -91,7 +91,8 @@ function KnowledgeTest({ codes, onSave, saving }: { codes: string[]; onSave: (co
           data-testid="acs-codes-input"
         />
         <div className="flex items-center justify-between gap-2">
-          <span className={cn("text-muted-foreground", TEXT.note)}>
+          {/* Counted again as the codes are typed, and said so (WCAG 4.1.3). */}
+          <span role="status" className={cn("text-muted-foreground", TEXT.note)}>
             {typed.length ? `${typed.length} code${typed.length === 1 ? "" : "s"} found` : ""}
           </span>
           <span className="flex gap-2">
@@ -117,7 +118,7 @@ export function ExperienceGroup({ training }: { training: Training }) {
     // 14 CFR 61.109(a), for an airplane single-engine rating, from the
     // logbook's columns: dual and cross-country counted as the smaller of
     // the two on each flight.
-    <ListGroup title="Private pilot experience">
+    <ListGroup title="Private Pilot Experience">
       {training.experience.map((item) => (
         <ListRow
           key={item.key}
@@ -169,10 +170,10 @@ function Instructors({ training }: { training: Training }) {
       {/* An instructor asked in sees the experience, endorsements and
           knowledge test codes here, reviews the solo cross-countries (14 CFR
           61.93(c)(3)) and signs the endorsements; either can end it. */}
-      <ListGroup title="Your instructor">
+      <ListGroup title="Your Instructor">
         <NameFieldRow
           id={nameId}
-          title="Your name"
+          title="Your Name"
           description="As on your student pilot certificate"
           placeholder="Avery B. Student"
           value={name}
@@ -197,11 +198,12 @@ function Instructors({ training }: { training: Training }) {
               disabled={drop.isPending}
               onClick={() => drop.mutate(l.id)}
             >
-              Remove
+              {/* Whose, for a reader's list of buttons (WCAG 2.4.6), after the word seen (2.5.3). */}
+              Remove<span className="sr-only"> {l.name ?? l.email}</span>
             </Button>
           </ListRow>
         ))}
-        <ListRow id={emailId} title="Ask an instructor">
+        <ListRow id={emailId} title="Ask an Instructor">
           <FieldHit htmlFor={emailId}>
             <Input
               id={emailId}
@@ -224,7 +226,7 @@ function Instructors({ training }: { training: Training }) {
         />
       </ListGroup>
       {training.reviews.length > 0 && (
-        <ListGroup title="Solo cross-countries">
+        <ListGroup title="Solo Cross-Countries">
           {training.reviews.map((r) => (
             <ListRow
               key={r.id}
@@ -233,7 +235,7 @@ function Instructors({ training }: { training: Training }) {
             >
               {!r.answeredAt && (
                 <Button type="button" variant="ghost" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate(r.id)}>
-                  Take back
+                  Take back<span className="sr-only"> {reviewRoute(r)}</span>
                 </Button>
               )}
             </ListRow>
@@ -252,7 +254,7 @@ function Lessons({ training }: { training: Training }) {
   if (training.lessons.length === 0) return null;
   const today = localDay();
   return (
-    <ListGroup title="Approach lessons">
+    <ListGroup title="Approach Lessons">
       {training.lessons.map((l) => (
         <ConsoleClose key={l.id}>
           <ListRow
@@ -294,6 +296,9 @@ export default function CheckridePage() {
   const recorded = new Map(training.endorsements.map((e) => [e.code, e]));
   const signed = inForce(training.signed);
   const voided = training.signed.filter((e) => e.voided);
+  // Signed by an instructor the FAA airmen registry did not bear out: kept
+  // and shown, but not signed, so not among the endorsements above.
+  const unverified = training.signed.filter((e) => !e.voided && !e.instructorVerified);
   return (
     <div className="space-y-5">
       <ExperienceGroup training={training} />
@@ -332,6 +337,13 @@ export default function CheckridePage() {
           );
         })}
       </ListGroup>
+      {unverified.length > 0 && (
+        <ListGroup title="Not Verified">
+          {unverified.map((e) => (
+            <SignedRow key={e.id} kind={training.kinds.find((k) => k.code === e.code)} e={e} />
+          ))}
+        </ListGroup>
+      )}
       {voided.length > 0 && (
         <ListGroup title="Voided">
           {voided.map((e) => (

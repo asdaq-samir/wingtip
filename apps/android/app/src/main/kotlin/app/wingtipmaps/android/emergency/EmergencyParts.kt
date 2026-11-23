@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -35,6 +36,8 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.FrequencyRow
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.keptAs
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * The airplane's own emergency checklist (the pilot's copy of its
@@ -123,11 +126,13 @@ internal fun ActionsList(state: EmergencyModel.State, onSouls: (String) -> Unit,
     }
     Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         OutlinedTextField(
-            value = state.souls, onValueChange = onSouls, modifier = Modifier.weight(1f), singleLine = true,
+            state = rememberFieldText(state.souls, onSouls), modifier = Modifier.weight(1f), lineLimits = TextFieldLineLimits.SingleLine,
+            inputTransformation = SOULS,
             label = { Text(stringResource(R.string.emergency_souls)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
         OutlinedTextField(
-            value = state.fuelMin, onValueChange = onFuel, modifier = Modifier.weight(1f), singleLine = true,
+            state = rememberFieldText(state.fuelMin, onFuel), modifier = Modifier.weight(1f), lineLimits = TextFieldLineLimits.SingleLine,
+            inputTransformation = FUEL_MIN,
             label = { Text(stringResource(R.string.emergency_fuel)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
     }
@@ -159,3 +164,8 @@ private fun Plain(title: String, line: String?, bold: Boolean = false, tint: Boo
         ListItem(supportingContent = supporting, colors = colors, modifier = Modifier.fillMaxWidth(), content = headline)
     }
 }
+
+/** The fields keep their text as the model keeps the figure, so a letter
+ *  typed never shows. */
+private val SOULS = keptAs(EmergencyModel::soulsTyped)
+private val FUEL_MIN = keptAs(EmergencyModel::fuelTyped)

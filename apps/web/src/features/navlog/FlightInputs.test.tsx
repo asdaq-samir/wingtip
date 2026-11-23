@@ -5,13 +5,16 @@
  * for an airplane picked before never puts it back. The suggestions and the
  * registry are stood in for; the N-number test is the engine's
  * (lib/engine/vitestSetup.ts loads it). And "Pick the airplane" asked from
- * a card over FPL lands in the field once the card has gone.
+ * a card over FPL lands in the field once the card has gone. Its ⓘ opens
+ * the airplane's card, or with none picked asks for one in the field.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import FlightInputs from "./FlightInputs";
+import FlightInputs, { FIRST_AIRPLANE_ASK } from "./FlightInputs";
+import { FPL_TIP, useTips } from "../../lib/firstRunTips";
 import { requestAirplanePick, useAirplanePick } from "../../lib/pickAirplane";
+import { useProfileOpen } from "../../lib/airplane/profileStore";
 
 // Each tail's registry answer, settled by the test.
 const answers = new Map<string, (record: { profile: string }) => void>();
@@ -58,13 +61,13 @@ function pills(aircraftValue = "", aircraftOptions: { value: string; label: stri
 describe("FlightInputs' airplane", () => {
   test("left half typed, nothing is taken and the airplane stays", () => {
     const { input, type, onAircraftChange, onTailPick } = pills("mine", [{ value: "mine", label: "N12345" }]);
-    expect(input.value).toBe("N-12345");
+    expect(input.value).toBe("12345");
     type("N4");
-    expect(input.value).toBe("N-4");
+    expect(input.value).toBe("4");
     act(() => input.blur());
     expect(onTailPick).not.toHaveBeenCalled();
     expect(onAircraftChange).not.toHaveBeenCalled();
-    expect(input.value).toBe("N-12345");
+    expect(input.value).toBe("12345");
   });
 
   test("Enter takes what is typed once", () => {
@@ -119,5 +122,33 @@ describe("FlightInputs' airplane", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  test("its ⓘ opens the airplane's card, and with none picked puts the focus in the field", () => {
+    useProfileOpen.setState({ open: null });
+    const { input } = pills("mine", [{ value: "mine", label: "N12345" }]);
+    fireEvent.click(screen.getByRole("button", { name: "Airplane info" }));
+    expect(useProfileOpen.getState().open).toEqual({ tail: "N12345", focus: null });
+    cleanup();
+    useProfileOpen.setState({ open: null });
+    const none = pills();
+    fireEvent.click(screen.getByRole("button", { name: "Airplane info" }));
+    expect(useProfileOpen.getState().open).toBeNull();
+    expect(document.activeElement).toBe(none.input);
+    expect(input.isConnected).toBe(false);
+  });
+
+  test("asks for an airplane in words on the first flight, in its name, its five blanks kept", () => {
+    act(() => useTips.setState({ seen: [] }));
+    const first = pills();
+    expect(first.input.placeholder).toBe("_____");
+    expect(first.input.getAttribute("aria-label")).toContain(FIRST_AIRPLANE_ASK);
+    expect(first.input.className).toContain("w-[calc(5ch+0.5rem)]");
+    cleanup();
+    act(() => useTips.setState({ seen: [FPL_TIP] }));
+    expect(pills().input.placeholder).toBe("_____");
+    cleanup();
+    act(() => useTips.setState({ seen: [] }));
+    expect(pills("c172", [{ value: "c172", label: "C172" }]).input.placeholder).toBe("_____");
   });
 });

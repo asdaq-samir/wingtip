@@ -57,7 +57,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   expect(box).not.toBeNull();
   expect(Math.abs(box!.width - devBox!.width)).toBeLessThan(2);
   expect(Math.abs(box!.x - devBox!.x)).toBeLessThan(2);
-  if (viewport.width >= 768) expect(box!.width).toBeLessThan(viewport.width);
+  if (viewport.width >= 660) expect(box!.width).toBeLessThan(viewport.width);
   else expect(Math.round(box!.width)).toBe(viewport.width);
 
   // The panel's controls are the two inputs the log is computed from
@@ -76,11 +76,11 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // The route's pages, the Brief's, all the way up.
   await openBrief(page);
   await grabberTo(page, "full");
-  // Opened on its cards, one a part of the flight (the owner's D′), each
-  // opening its page; the pages' tabs over a page.
+  // Opened on its grouped list, a row a part of the flight (the owner's
+  // option A), each opening its page; the pages' tabs over a page.
   await expect(drawer.getByTestId("brief-glance").locator("button[data-testid^='brief-glance-']")).toHaveCount(4);
   await briefPage(page, "Preflight");
-  await expect(panelTabs(page).getByRole("tab")).toHaveText(["Preflight", "Depart", "En route", "Arrive"]);
+  await expect(panelTabs(page).getByRole("tab")).toHaveText(["Preflight", "Depart", "En Route", "Arrive"]);
   // All four on the panel's line, none past its edge.
   const tabsBox = (await panelTabs(page).boundingBox())!;
   for (const tab of await panelTabs(page).getByRole("tab").all()) {
@@ -113,18 +113,22 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // account button beside the search, not a gear in the head.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
-  await expect(drawer.getByTestId("route-summary").or(drawer.getByTestId("route-head")).first()).toBeVisible();
+  await expect(drawer.getByTestId("route-summary").or(drawer.getByTestId("route-editor")).first()).toBeVisible();
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
-  // The Brief, the Nav Log, the Profile and the route's ••• one floating
-  // bar at the sheet's foot (FplTabBar; the owner, 2026-11-17: "move
-  // everything to the tab bar with a ... instead of share"), none of them
-  // in the airplane's and the altitude's line over the route.
+  // The Brief, the Nav Log and the route's ••• one floating bar at the
+  // sheet's foot (FplTabBar; the owner, 2026-11-17: "move everything to the
+  // tab bar with a ... instead of share"), none of them in the airplane's
+  // and the altitude's line over the route; the Profile is the altitude
+  // pill's own button there (the owner, 2026-11-20: "can FL show profile
+  // button rather than in the tab bar?").
   const tiles = await Promise.all(
-    ["route-brief", "route-navlog", "route-profile", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+    ["route-brief", "route-navlog", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
   );
   for (const tile of tiles) expect(Math.abs(tile.y - tiles[0]!.y)).toBeLessThan(2);
   await expect(drawer.getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+  await expect(drawer.getByTestId("fpl-actions").getByTestId("route-profile")).toHaveCount(0);
+  await expect(drawer.getByTestId("altitude-group").getByTestId("route-profile")).toBeVisible();
   const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;
   expect(tiles[0]!.y).toBeGreaterThan(airplane.y + airplane.height);
   // The departure's time on its step in the route's list, not in this
@@ -132,10 +136,11 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await openRoute(page);
   await expect(drawer.getByTestId("procedures").getByTestId("depart-date")).toBeVisible();
   await drawer.getByTestId("share-route").click();
-  // And, signed in, Save this flight among them.
-  for (const id of ["save-flight-button", "file-flight-plan"]) {
-    await expect(page.getByRole("menu").getByTestId(id)).toBeVisible();
-  }
+  // More keeps the link; Save is the Brief's and File the button beside
+  // the tab bar (the owner, 2026-11-21).
+  await expect(page.getByRole("menu").getByTestId("share-link")).toBeVisible();
+  await expect(page.getByRole("menu").getByTestId("save-flight-button")).toHaveCount(0);
+  await expect(page.getByRole("menu").getByTestId("file-flight-plan")).toHaveCount(0);
   await expect(page.getByRole("menu").getByTestId("print-briefing")).toHaveCount(0);
   await page.keyboard.press("Escape");
 });
@@ -166,7 +171,7 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   await expect(drawer.getByTestId("brief-card")).toHaveCount(0);
   await openNavLog(page);
   await page.getByTestId("card-share").click();
-  await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print the nav log");
+  await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print Nav Log");
   await expect(menu.getByTestId("print-briefing")).toHaveCount(0);
   await expect(menu.getByTestId("brief-refresh")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);
@@ -258,7 +263,7 @@ test("plan page: a pasted briefing link opens the panel, and its grabber closes 
   // route's line and its chips' Share in sight; then the pill, its one
   // line; back all the way up. The side panel is in or out, half and all
   // the way up one box there: a tap puts it away (sheet/grabberSizes).
-  const side = page.viewportSize()!.width >= 768;
+  const side = page.viewportSize()!.width >= 660;
   if (!side) {
     await grabber.click();
     await expect(drawer).toHaveAttribute("data-panel", "half");
@@ -291,7 +296,7 @@ test("plan page: the panel's grabber cycles it up and back down, a tap on the ma
   // The side panel in and out at each tap, never all the way up, the same
   // box as half there, where a tap moved nothing (the owner's Mac,
   // 2026-11-18; sheet/grabberSizes).
-  const side = viewport.width >= 768;
+  const side = viewport.width >= 660;
   if (side)
     for (let tap = 0; tap < 3; tap++) {
       const was = await size();
@@ -314,7 +319,7 @@ test("plan page: the panel's grabber cycles it up and back down, a tap on the ma
   // Somewhere on the chart with nothing on it (tapTheChart): a fixed
   // point beside the card could land on a field's mark, whose card opening
   // lowered the panel (CI, 2026-10-28, three tries of three).
-  if (viewport.width >= 768) {
+  if (viewport.width >= 660) {
     await tapTheChart(page);
     await expectDrawerOpen(page);
   }

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, navLogScroller, closeNavLog } from "./helpers";
+import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, navLogScroller, closeNavLog, grabberTo } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -32,7 +32,7 @@ const LONG = [
 ];
 
 test("the nav log fits a phone's panel with long names, five-figure altitudes and an ETA column", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's panel");
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/checkpoints"),
     async (route) => {
@@ -61,7 +61,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   const depart = new Date(Date.now() + 26 * 3600_000).toISOString().slice(0, 16);
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${encodeURIComponent(depart)}&view=full`);
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openNavLog(page);
   const scroller = navLogScroller(page);
   const log = navLogSheet(page).getByTestId("navlog-list");
@@ -88,8 +88,8 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   await controlsInSight(page);
 });
 
-test("a long trip's figures are set smaller together to fit the strip, exact, never under 0.7 of their size", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
+test("a long trip's figures keep their full size on one line in the strip, exact, nothing cut or over the screen", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's panel");
   // The pilot's iPhone, 393 points wide.
   await page.setViewportSize({ width: 393, height: 852 });
   // Chicago to Las Vegas, over 1,300 nm, with no legal altitude: the
@@ -125,14 +125,18 @@ test("a long trip's figures are set smaller together to fit the strip, exact, ne
   // (TripFigures): whole miles with their thousands' comma, as every
   // summary writes them (the owner's list, 2026-11-17).
   await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1,\d{3}\snm$/);
+  // At the pill, where the pinned strip is its full size: above it, at half
+  // and all the way up, FPL's strip is thin, its figures smaller by design
+  // (owner-bugs' thin strip, the owner, 2026-11-22: "thin figures strip at
+  // half and full", growing to the pill's as the sheet comes down).
+  await grabberTo(page, "peek");
   // At the default text size and the two above it, as an iPhone sets the
   // root from Settings' text size (features/shell/dynamicType, which a test browser
   // does not run): a 19-point Body, 17.88 px; a 21-point one, held to the
-  // 393-point screen's 19.65. As iOS fits a label to its width
-  // (adjustsFontSizeToFitWidth, minimumScaleFactor 0.7): every figure the
-  // same size, none set under 0.7 of the default's, the figures exact
-  // (no rounded "16.0h"), and nothing past the screen's side; past 0.7 a
-  // figure may be cut with "…" (the trial of 2026-11-17, FigureStrip).
+  // 393-point screen's 19.65. Every figure the same size and that size the
+  // root's own (a long one never set smaller than a short one, the owner,
+  // 2026-11-21), the figures exact (no rounded "16.0h"), none cut short
+  // and nothing past the screen's side (FigureStrip).
   for (const root of ["", "17.88px", "19.65px"]) {
     await page.evaluate((size) => {
       document.documentElement.style.fontSize = size;
@@ -142,11 +146,17 @@ test("a long trip's figures are set smaller together to fit the strip, exact, ne
     // no eye tells apart ("18.2684px" and "18.2719px" at 17.88).
     const sizes = () =>
       figures.evaluateAll((dds) =>
-        dds.map((dd) => Math.round(parseFloat(getComputedStyle(dd.querySelector(".figure-roll") ?? dd).fontSize) * 10) / 10),
+        dds.map((dd) => Math.round(parseFloat(getComputedStyle(dd.querySelector("[data-figure]") ?? dd).fontSize) * 10) / 10),
       );
     await expect.poll(async () => new Set(await sizes()).size, { message: `one size at a root of ${root || "16px"}` }).toBe(1);
     const [size] = await sizes();
-    expect(size, `at a root of ${root || "16px"}`).toBeGreaterThanOrEqual(0.7 * 20 * (parseFloat(root || "16px") / 16) - 0.1);
+    expect(size, `at a root of ${root || "16px"}`).toBeGreaterThanOrEqual(20 * (parseFloat(root || "16px") / 16) - 0.1);
+    const cut = await figures.evaluateAll(
+      // A button's dd does not clip (its 44-point area reaches past it): its run is what is cut.
+      (dds) =>
+        dds.map((dd) => dd.querySelector<HTMLElement>("span.truncate") ?? dd).filter((el) => el.scrollWidth > el.clientWidth + 1).length,
+    );
+    expect(cut, `figures cut short at a root of ${root || "16px"}`).toBe(0);
     await expect(sideDrawer(page).getByTestId("navlog-ete")).not.toHaveText(/\d\.\dh$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
@@ -162,10 +172,14 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   test.skip((page.viewportSize()?.width ?? 0) >= 1024, "the phone's list");
   await page.goto("/app/plan?dep=KUGN&dest=KOSH&pattern=KUGN%3A23%2CKOSH%3A27");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openNavLog(page);
   const log = navLogSheet(page).getByTestId("navlog-list");
   await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible();
+  // Each row's figures in, as a pilot reads them: the rows are drawn as the
+  // plan's legs stream in, each "Working out" till its own comes (FigureWait),
+  // and read before then a row said no miles at all (CI's desktop project).
+  await expect(log.getByTestId("figure-wait")).toHaveCount(0, { timeout: slow(60_000) });
   const rows = await log
     .locator('[role="row"][data-kind]:not([data-kind="departure"])')
     .evaluateAll((els) =>
@@ -190,7 +204,7 @@ test("the airplane and the altitude stay on the first row's line, the page toggl
 }) => {
   // The FPL audit's A3 (2026-11-08): at 19.65 px the three round buttons
   // wrapped onto a line of their own under N-_____ and FL-0xx.
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's panel");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

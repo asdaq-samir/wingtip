@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openProfile, openPanel, openTab, controlsInSight, settle, slow, closeCard } from "./helpers";
+import { openProfile, openPanel, openTab, controlsInSight, settle, closeCard, openBriefMenu } from "./helpers";
 
 /**
  * A nav log the winds could not be read for. The planner's own stream is
@@ -71,15 +71,12 @@ test("a plan whose winds are past their forecast's period marks the route box's 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  // Plan again in the route's Share menu, at the owner's pick ("A"),
-  // Share marked with the dot and its name saying why.
-  const share = page.getByTestId("share-route");
-  await expect(page.getByTestId("plan-again-mark")).toBeVisible({ timeout: slow(60_000) });
-  await expect(share).toHaveAccessibleName(/winds are out of date/);
+  // Plan again with the Brief's Refresh (the owner, 2026-11-21: More keeps
+  // three items, and the stale dot went with Refresh).
   await expect(page.getByTestId("navlog-winds-old")).toHaveCount(0);
   const before = asked;
-  await share.click();
-  await page.getByRole("menu").getByTestId("plan-again").click();
+  await openBriefMenu(page);
+  await page.getByRole("menu").getByTestId("brief-refresh").click();
   await expect.poll(() => asked).toBeGreaterThan(before);
   // The plan asked again is still streaming as the test ends.
   await page.unrouteAll({ behavior: "ignoreErrors" });

@@ -2,29 +2,18 @@ import { describe, expect, test } from "vitest";
 import type { EmergencyFields, Leg } from "./api/types";
 import { callEngine } from "./engine/engine";
 import { ALLOWANCES, divert, diversionFields, reasonable } from "./diversion";
-
-/** The engine's wind triangle, as the nav log and the diversion ask it. */
-const windTriangle = (tc: number, tas: number, windFromDeg: number, windKt: number) =>
-  callEngine("wind_triangle", { tc, tas, wind_from_deg: windFromDeg, wind_kt: windKt });
 import { stopwatch } from "./format";
 
 const leg = { tas_kt: 110, fuel_burn_gph: 8.5, magnetic_variation_deg: -3, wind: { wind_dir_true_deg: 270, wind_speed_kt: 20 } } as Leg;
 
+// The wind triangle, the heading and the allowances' boundaries are the
+// engine's, tested there (engine/facade/tests/figures/drill_cases.rs, and
+// flight_rules.rs's wind triangle): here, that the leg's air reaches
+// "diversion" and "diversion_reasonable" and is read back as the drill's.
 describe("a diversion worked out", () => {
-  test("the wind triangle", () => {
-    // A direct headwind: no correction, the ground speed the difference.
-    expect(windTriangle(270, 110, 270, 20)).toMatchObject({ wca: 0, th: 270, gs: 90 });
-    // From the left on a northerly course: correct left, a little slower.
-    const north = windTriangle(360, 110, 270, 20)!;
-    expect(north.wca).toBeCloseTo(-10.48, 1);
-    expect(north.th).toBeCloseTo(349.52, 1);
-    expect(north.gs).toBeCloseTo(108.2, 1);
-    // A wind faster than the airplane across the course holds no heading.
-    expect(windTriangle(360, 50, 270, 60)).toBeNull();
-  });
-
   test("to the field: heading magnetic, time and fuel at the leg's burn", () => {
     const d = divert(leg, 360, 18)!;
+    expect(d.distanceNm).toBe(18);
     // 3° west: west is best, so it is added.
     expect(d.mh).toBeCloseTo(352.52, 1);
     expect(d.ete).toBeCloseTo((18 / d.gs) * 60, 6);
@@ -33,10 +22,8 @@ describe("a diversion worked out", () => {
     expect(divert({ ...leg, wind: null } as Leg, 90, 22)).toMatchObject({ wca: 0, gs: 110, ete: 12 });
   });
 
-  test("a reasonable estimate, headings round the compass", () => {
+  test("a reasonable estimate, by its key, and the stopwatch's time", () => {
     expect(reasonable("mh", 2, 355)).toBe(true);
-    expect(reasonable("mh", 10, 355)).toBe(false);
-    expect(reasonable("ete", 13, 10)).toBe(true);
     expect(reasonable("fuel", 3.6, 2.5)).toBe(false);
     expect(stopwatch(Math.floor(127_400 / 1000))).toBe("2:07");
   });

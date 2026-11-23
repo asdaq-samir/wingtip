@@ -74,7 +74,8 @@ def _number(text) -> float | None:
 @once(maxsize=2)
 def _base_of(path: str, _mtime: float) -> dict[str, dict]:
     """Every field NASR lists, by its FAA identifier and then its ICAO one:
-    its FAA identifier, ARP, elevation (feet MSL), town and state."""
+    its FAA identifier and ICAO one (None where NASR gives none), ARP,
+    elevation (feet MSL), town and state."""
     df = faa_data._read_apt_base_cached(path, _mtime)
     table = df.reindex(columns=["ARPT_ID", "ICAO_ID", "LAT_DECIMAL", "LONG_DECIMAL", "ELEV", "CITY", "STATE_CODE"]).astype(object)
     by_faa: dict[str, dict] = {}
@@ -84,6 +85,7 @@ def _base_of(path: str, _mtime: float) -> dict[str, dict]:
             continue
         record = {
             "faa_id": faa_id.strip().upper(),
+            "icao_id": icao.strip().upper() if isinstance(icao, str) and icao.strip() else None,
             "lat": _number(lat),
             "lon": _number(lon),
             "elevation_ft": _number(elev),

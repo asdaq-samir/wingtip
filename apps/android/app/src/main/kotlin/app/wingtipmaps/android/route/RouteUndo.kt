@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.route
 
+import app.wingtipmaps.android.plan.PlanProcedures
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -7,17 +8,25 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * The route as it was before the last edit that took something from it
  * or changed it -- a stop removed, moved or added, a Direct To, the route
- * replaced by Fly Here or cleared -- for the Undo of the edit's Snackbar
- * (RouteUndoSnackbar; the iPhone's PlanHistory): one step back, kept
+ * replaced by Fly Here or cleared, a field's fuel set, a procedure taken
+ * off a field -- with the fuel the
+ * pilot set at its fields (PlanTanks), for the Undo of the edit's Snackbar
+ * (RouteUndoSnackbar; the iPhone's PlanHistory) and the wide window's
+ * toolbar. Only an edit that took something away -- a removal, Clear
+ * Route, the route replaced whole, a Direct To -- puts up a Snackbar
+ * (`Kind.loud`, the web's planHistory since the owner's ask of
+ * 2026-11-21); the rest are steps all the same. One step back, kept
  * until the next edit or until the Snackbar is let go; and the edit undone, for Redo,
  * kept until the next edit. Plan writes them and applies them; the words
  * are the screen's.
  */
 class RouteUndo {
-    enum class Kind { REMOVED, MOVED, ADDED, DIRECT, FLY_HERE, DEPART_FROM, CLEARED }
+    enum class Kind(val loud: Boolean) {
+        REMOVED(true), MOVED(false), ADDED(false), DIRECT(true), FLY_HERE(true), DEPART_FROM(true), CLEARED(true), REPLACED(true), FUEL(false),
+    }
 
     /** One edit: what it was and to which point, and all it changed --
-     *  the route, its holds and its Direct. */
+     *  the route, its holds, its Direct and the fuel set at its fields. */
     data class Note(
         val id: Long,
         val kind: Kind,
@@ -26,6 +35,10 @@ class RouteUndo {
         val holds: List<String>,
         val direct: String?,
         val was: RouteEdits.Route?,
+        val tanks: Map<String, Int> = emptyMap(),
+        /** The procedures, runways and crossings picked on the line; null
+         *  in a note from before they were kept, which leaves them be. */
+        val procedures: PlanProcedures.State? = null,
     )
 
     private var count = 0L
@@ -36,9 +49,18 @@ class RouteUndo {
 
     /** A new edit: what it changed kept for Undo, and a Redo forgotten,
      *  since it would put back a route this edit has moved on from. */
-    fun took(kind: Kind, ident: String, route: RouteEdits.Route, holds: List<String>, direct: String?, was: RouteEdits.Route?) {
+    fun took(
+        kind: Kind,
+        ident: String,
+        route: RouteEdits.Route,
+        holds: List<String>,
+        direct: String?,
+        was: RouteEdits.Route?,
+        tanks: Map<String, Int> = emptyMap(),
+        procedures: PlanProcedures.State? = null,
+    ) {
         count += 1
-        _note.value = Note(count, kind, ident, route, holds, direct, was)
+        _note.value = Note(count, kind, ident, route, holds, direct, was, tanks, procedures)
         _redo.value = null
     }
 

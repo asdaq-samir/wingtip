@@ -27,7 +27,9 @@ import FlightFoot from "./workspace/FlightFoot";
 import { FplRoute } from "./workspace/FplActions";
 import RouteControls from "./workspace/RouteControls";
 import FplBar from "./workspace/FplBar";
-import { RoutesToggle } from "./workspace/RoutesToggle";
+import ClearRouteButton from "./workspace/ClearRouteButton";
+import { Search } from "lucide-react";
+import IconButton from "../../components/IconButton";
 import { routesOffered } from "./workspace/routeEditing";
 import OneSearchField from "./search/OneSearchField";
 import { useOneSearch } from "./search/useOneSearch";
@@ -61,10 +63,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   const { aircraft, aircraftChoices, aircraftValue, changeAircraft, changeDepart, course, pickTail, s, selected } = vm.plan;
   const { cardOpen, flight, heldPoint, place } = vm.cards;
   const { filedProcedures } = vm.picks;
-  const { fuelHidden, showFuelStops } = vm.stops;
-  const { briefShown, profileShown } = vm.fpl;
+  const { briefShown, openProfile, profileReady, profileShown } = vm.fpl;
   const { flying } = vm.flight;
-  const { fileFlightPlan, fileable, flightToSave, landedStops, landings, stale, tightLeg, unflyable, unflyableBrief } = vm.brief;
+  const { altitudeMark, fileFlightPlan, fileable, flightToSave, landedStops, landings, tightLeg, unflyable, unflyableBrief } = vm.brief;
   // Each tab's part of the briefing. Made once for the same plan
   // (useCallback), and each
   // part drawn again only when its plan changes (FlightBriefingView's
@@ -140,7 +141,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       preflight: tabContent("preflight"),
       depart: tabContent("depart"),
       enroute: (
-        <section aria-label="En route" className={TEXT.prose}>
+        <section aria-label="En Route" className={TEXT.prose}>
           {!s.local && tabContent("profile")}
           {tabContent("enroute")}
         </section>
@@ -175,6 +176,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
               tight={unflyable ? null : tightLeg}
               disabled={!routed}
               rules={flightRules}
+              // The Profile's button, the tab bar's until the owner's ask
+              // (2026-11-20: "can FL show profile button").
+              profile={{ openProfile, profileReady, altitudeMark }}
             />
           )
         }
@@ -206,23 +210,19 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       s.replanning,
       altitudeFt,
       altitudeNearest,
+      openProfile,
+      profileReady,
+      altitudeMark,
     ],
   );
 
-  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard, look?: "bar" | "tile") => (
+  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard, look?: "bar" | "tile" | "head") => (
     <ShareMenu
       look={look}
       align={align}
       testId={testId}
       card={card}
-      planned={planned}
-      course={course}
-      selected={selected}
-      altitudeFt={s.nav?.altitude_ft ?? undefined}
-      routed={routed}
-      local={!!s.local}
-      fileable={fileable}
-      onFile={fileFlightPlan}
+      route={{ planned, course, selected, altitudeFt: s.nav?.altitude_ft ?? undefined, routed, local: !!s.local }}
       saving={(askReview) => (
         <Suspense fallback={null}>
           <SaveFlightButton {...flightToSave} />
@@ -234,19 +234,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           <ReviewAskSheet flight={flightToSave} onDone={done} />
         </Suspense>
       )}
-      // Plan again in the route's own menu, at the owner's pick ("A") to
-      // keep the route box's row on one line; Share marked where it is due.
-      planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
-      onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
-      // The route's field over its timeline, to type or paste it in whole.
-      onTypeRoute={
-        card === undefined && vm.route.wholeRoute && vm.routeList.routeFolded && !vm.flight.flying
-          ? () => vm.routeList.setRouteOpen(true)
-          : undefined
-      }
-      // The route's Clear, last in More; half a route's is the route box's ✕
-      // (RouteEditor), and the empty page has nothing to clear.
-      onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
+      // Plan again with the Brief's Refresh (the owner, 2026-11-21: More
+      // keeps only Route Options, Share link and Open in ForeFlight).
+      planAgain={card === "brief" && routed && !s.local ? { onPlan: () => setLoad((n) => n + 1) } : undefined}
     />
   );
 
@@ -268,19 +258,27 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           floats: !flying && !vm.flight.dryRunning,
-          // The first row is the airplane's strip alone: the route's •••
-          // is the floating bar's More once there is a route (FlightFoot;
-          // the owner, 2026-11-17: "move everything to the tab bar with a
-          // ... instead of share"), and before one nothing of it is wanted
-          // there (the owner, 2026-11-18): a cleared route's Undo and a
-          // half route's ✕ are the route box's own (RouteEditor), and the
-          // checkpoints come after the route is drawn.
-          // The suggested routes' button beside the search's, where there are some (RoutesToggle).
+          // The first row is FPL's title between Share and the ✕, as Apple
+          // Maps' Directions (the owner, 2026-11-19: "Maybe we can have
+          // similar buttons x and share"); Share only once there is a route.
+          // Under the title, between the buttons, the airplane's pills (the
+          // owner: "Make two rows between the close and share button").
           bar: (
-            <FplBar
-              strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
-              routes={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
-            />
+            <>
+              <FplBar
+                // Search at the head's start, where Share was (the owner,
+                // 2026-11-20: "replace the share button with search button");
+                // the sharing is More's (FplTabBar). It turns to Search's resting page,
+                // the route kept, as the ✕ did (the owner, 2026-11-21): typing starts at the field.
+                share={
+                  <IconButton round label="Search" onClick={() => pickPage(0)} data-testid="fpl-search">
+                    <Search className="size-5" aria-hidden="true" />
+                  </IconButton>
+                }
+                strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
+                clear={<ClearRouteButton hasRoute={vm.route.hasPoints} onClear={vm.routeList.clearRoute} />}
+              />
+            </>
           ),
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
@@ -300,7 +298,16 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
         foot:
           !place && !heldPoint && !flight && !briefShown && !profileShown
-            ? routed && <FlightFoot vm={vm} more={shareMenu("end", undefined, undefined, "bar")} />
+            ? routed && (
+                <FlightFoot
+                  vm={vm}
+                  fileable={fileable}
+                  onFile={fileFlightPlan}
+                  // The suggested routes, the tab bar's Routes, greyed while there are none.
+                  routes={{ offered: routesOffered(vm), shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown }}
+                  more={shareMenu("end", undefined, undefined, "bar")}
+                />
+              )
             : undefined,
         // The route under FPL's bar (MapPanel keeps it under the others'
         // heads), in its one layout (the owner, 2026-11-17, decision 0047):

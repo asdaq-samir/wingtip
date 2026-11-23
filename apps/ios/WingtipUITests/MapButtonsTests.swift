@@ -6,7 +6,8 @@ import XCTest
 /// tap target, and out of reach with the sheet at full height, as Maps'
 /// give way. Offline, at the default text size and accessibility XXL
 /// (CardTests.sizes); the sheet's height read off its grabber's value,
-/// and dragged by it (CardTests.drag).
+/// and dragged by it (CardTests.drag). On the iPad (CardTests.split) there
+/// is no sheet: they stand at the map's top right beside the sidebar.
 final class MapButtonsTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = true
@@ -20,6 +21,11 @@ final class MapButtonsTests: XCTestCase {
             let search = app.searchFields[CardTests.searchPrompt]
             XCTAssertTrue(map.waitForExistence(timeout: 20), "no map button at \(size.name)")
             XCTAssertTrue(search.waitForExistence(timeout: 20), "no search at \(size.name)")
+            if CardTests.split {
+                assertBesideTheSidebar(map, in: app, at: size.name)
+                app.terminate()
+                continue
+            }
             let grabber = CardTests.grabber(app)
             CardTests.settled(map)
             assertOverTheSheet(map, search: search, in: app, at: "half, \(size.name)")
@@ -38,6 +44,18 @@ final class MapButtonsTests: XCTestCase {
             XCTAssertFalse(map.exists && map.isHittable, "the map's buttons are still in reach over a full sheet at \(size.name)")
             app.terminate()
         }
+    }
+
+    /// The iPad's: no sheet to ride (docs/design/ios.md §16), so the
+    /// buttons stay at the map's top right beside the sidebar (rules.md §7,
+    /// MapButtonsDock), each a full tap and tappable.
+    @MainActor
+    private func assertBesideTheSidebar(_ map: XCUIElement, in app: XCUIApplication, at context: String) {
+        CardTests.settled(map)
+        XCTAssertTrue(map.isHittable, "the map button is out of reach at \(context)")
+        XCTAssertLessThan(map.frame.minY, app.frame.height / 4, "the map button is not at the map's top at \(context)")
+        XCTAssertEqual(map.frame.maxX, app.frame.maxX, accuracy: 24, "the map button is not at the right edge at \(context)")
+        XCTAssertGreaterThanOrEqual(map.frame.height, 44, "the map button's tap is under 44 points at \(context)")
     }
 
     /// The map button just above the search row, at the screen's right,

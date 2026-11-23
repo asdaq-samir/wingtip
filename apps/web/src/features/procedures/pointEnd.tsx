@@ -21,7 +21,7 @@ function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boolean, ind
  * A point of the route changed, the owner's "Changeable by tapping"
  * (2026-11-17, Apple Maps' Directions as the model): the one search asked
  * for the point to put in its place, My Location first where the point is
- * an end and not it already, and the pick put there (a Direct To's start
+ * an end and the route is not at it already, and the pick put there (a Direct To's start
  * changed is a route from there; the plan's Undo takes it back). A stop
  * may be a fix, never My Location (placeAllowed); an end is an airport or
  * My Location.
@@ -31,8 +31,13 @@ function askChange(vm: ProceduresRouteModel, ident: string, index: number, stop:
   if (!edit) return;
   askSearchPick({
     label: `In place of ${pointName(ident)}`,
+    title: "Change Stop",
+    query: isPosition(ident) ? undefined : ident,
     fixes,
-    position: !isPosition(ident) && !stop,
+    // Not where the route is at My Location already, at its other end
+    // (the owner, 2026-11-20: "Why show my location for destination when
+    // it's already picked for departure").
+    position: !isPosition(ident) && !stop && !vm.routePoints.some(isPosition),
     onPick: (picked) => {
       if (!sameField(picked, ident)) edit.onReplace(index, isPosition(picked) ? picked : picked.toUpperCase());
     },
@@ -99,8 +104,8 @@ export function pointEnd(
     // line, the elevation on its wind's.
     time: <PointFigures time={at.time} altitude={null} kind={kind} />,
     elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
-    // Behind the point's mark (`face`), at the owner's ask ("Use the
-    // airport icon as the more button instead of having one to the right").
+    // Behind a face of its own (`face`; `bare`, FPL's timeline's filled
+    // mark), else the "⋯" (PointMenu).
     menu: (face: ReactNode, bare = false) => (
       <PointMenu
         face={face}
@@ -142,6 +147,12 @@ export function pointEnd(
         onRemove={stopRemoval(vm, ident, at.stop, at.index)}
       />
     ),
+    // A tap on its name, where the list changes the route: the one search
+    // asked for what goes in its place, its suggestions under the field and
+    // My Location first at an end (the owner, 2026-11-19: "when the stop is
+    // tapped it should be editable with suggestions. The first one can also
+    // suggest my location"); its card is its menu's More Info.
+    change: edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop, at.stop || at.waypoint) : undefined,
     // Its grip, where the list changes the route: by its place among the
     // typed points.
     grip: edit && at.index !== undefined ? <PointGrip ident={ident} /> : null,

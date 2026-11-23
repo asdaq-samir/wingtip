@@ -8,7 +8,7 @@ import SwiftUI
 /// through the engine's field_status ("Closed indefinitely", "Closed
 /// permanently"), and a closed field is never offered as a landing field
 /// (decision 0043). Only how a row writes the engine's use is the app's.
-enum FieldUse {
+nonisolated enum FieldUse {
     /// The engine's use for a field's flags, "private", "military" or
     /// "joint"; nil for a public field, or where the engine cannot say,
     /// which a row then leaves unmarked rather than guessed.

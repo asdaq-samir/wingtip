@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -33,6 +34,7 @@ import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.rememberFieldText
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -71,7 +73,7 @@ fun FlightLoggedSheet(state: LogbookDraftModel.State, model: LogbookDraftModel) 
             }
             state.draftProblem?.let {
                 ProblemLine(it)
-                TextButton(onClick = model::retry) { Text(stringResource(R.string.try_again)) }
+                TextButton(onClick = model::retry) { Text(stringResource(R.string.wording_try_again)) }
             }
             state.draft?.let { DraftRows(it, state, model) }
             ProblemLine(state.logProblem)
@@ -89,7 +91,7 @@ fun FlightLoggedSheet(state: LogbookDraftModel.State, model: LogbookDraftModel) 
 private fun DraftRows(draft: LogbookDraft, state: LogbookDraftModel.State, model: LogbookDraftModel) {
     fun shown(f: DraftField) = DraftEntry.shown(draft, state.edits, f)
     SectionTitle(stringResource(R.string.flight_logged_flight))
-    Figure(stringResource(R.string.flight_logged_date), shown(DraftField.DATE), DraftEntry.why(draft, "flownOn"), text = true) { model.edit(DraftField.DATE, it) }
+    DateField(stringResource(R.string.flight_logged_date), shown(DraftField.DATE), { model.edit(DraftField.DATE, it) }, Modifier.fillMaxWidth(), DraftEntry.why(draft, "flownOn"))
     Figure(stringResource(R.string.airplane), shown(DraftField.AIRPLANE), null, text = true) { model.edit(DraftField.AIRPLANE, it) }
     Figure(stringResource(R.string.flight_logged_route), shown(DraftField.ROUTE), DraftEntry.why(draft, "distanceNm"), text = true) { model.edit(DraftField.ROUTE, it) }
     SectionTitle(stringResource(R.string.flight_logged_time))
@@ -126,8 +128,9 @@ private fun DraftRows(draft: LogbookDraft, state: LogbookDraftModel.State, model
 @Composable
 private fun Figure(title: String, value: String, why: String?, text: Boolean = false, onChange: (String) -> Unit) {
     OutlinedTextField(
-        value = value, onValueChange = onChange, modifier = Modifier.fillMaxWidth(),
-        label = { Text(title) }, singleLine = true,
+        // The model's figure: the engine's draft fills it once it is in.
+        state = rememberFieldText(value, onChange), modifier = Modifier.fillMaxWidth(),
+        label = { Text(title) }, lineLimits = TextFieldLineLimits.SingleLine,
         supportingText = why?.let { { Text(it) } },
         keyboardOptions = KeyboardOptions(keyboardType = if (text) KeyboardType.Text else KeyboardType.Decimal),
     )

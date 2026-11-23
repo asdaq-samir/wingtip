@@ -1,58 +1,31 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { inSheet, openPanel, openRoute, settle, sideDrawer } from "./helpers";
+import { inSheet, openPanel, openRoute, settle, sideDrawer, timelineLine } from "./helpers";
 import { stopsAre } from "./stopsParam";
+
+/** FPL's list once its drag and drop is in: the rows are drawn at once and
+ *  turned into React Aria's GridList when its chunk has come, two seconds
+ *  after the route has drawn or at the list's first touch (RouteGrid), as
+ *  a pilot's list is by the time a finger or the keyboard picks a point
+ *  up. A drag begun on the plain rows is no drag. */
+const draggable = (page: Page) =>
+  expect(sideDrawer(page).locator("[data-drag-ready] [data-testid=procedures]")).toBeVisible({ timeout: 30_000 });
+
+/** The keyboard on a point's grip, once the list has settled to it: a
+ *  focus given as the list was drawn anew went to its last row instead
+ *  (CI's desktop project), and Enter there picked nothing up. */
+async function onGrip(grip: Locator) {
+  await expect(async () => {
+    await grip.focus();
+    await expect(grip).toBeFocused({ timeout: 500 });
+  }).toPass();
+}
 
 /**
  * The route's points moved, by a mouse or the keyboard in FPL's list
- * (React Aria's GridList drag and drop), or a pill's menu (Move Up and
+ * (React Aria's GridList drag and drop), or a stop's menu (Move Up and
  * Move Down, for a pilot who cannot drag, WCAG 2.5.7): split from
  * stops.spec at its size budget.
  */
-
-// A finger, as Chromium takes one from a touch screen: put down on one
-// pill and held, then moved in steps onto another, held over it a moment
-// and let go. Both measured first, once the box has settled from the last
-// change: a menu out hides the page from the role queries.
-async function touchHold(page: Page, from: Locator, to: Locator) {
-  const middle = async (pill: Locator) => {
-    // The box the poll found, not a second measure after it: the pill
-    // drawn again between the two (the address just changed) measured
-    // null the second time, now and then. And the same twice a tenth of
-    // a second apart: the course coming in restyles the pills -- their
-    // airspace's colour and width -- and a drag measured before it was
-    // let go beside its target (CI, 2026-10-07).
-    type Box = { x: number; y: number; width: number; height: number };
-    let box: Box | null = null;
-    let last: Box | null = null;
-    await expect
-      .poll(
-        async () => {
-          box = await pill.boundingBox();
-          const still = !!box && !!last && box.x === last.x && box.y === last.y && box.width === last.width;
-          last = box;
-          return still;
-        },
-        { intervals: [100] },
-      )
-      .toBe(true);
-    const { x, y, width, height } = box!;
-    return { x: x + width / 2, y: y + height / 2 };
-  };
-  const [start, end] = [await middle(from), await middle(to)];
-  const cdp = await page.context().newCDPSession(page);
-  const touch = (type: string, p?: { x: number; y: number }) =>
-    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [] });
-  await touch("touchStart", start);
-  return async function moveOn() {
-    // A frame apart, as a finger's moves come.
-    for (let i = 1; i <= 20; i++) {
-      await touch("touchMove", { x: start.x + ((end.x - start.x) * i) / 20, y: start.y + ((end.y - start.y) * i) / 20 });
-      await page.waitForTimeout(16);
-    }
-    await page.waitForTimeout(300);
-    await touch("touchEnd");
-  };
-}
 
 // FPL's list is React Aria's GridList with its drag and drop (RouteGrid,
 // the stock audit's W3): a point's grip dragged by a mouse, the browser's
@@ -80,27 +53,44 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
       .filter({ has: page.locator(`[data-ident="${ident}"]`) })
       .first();
   const grip = (ident: string) => list.locator(`[data-testid=route-grip][data-ident="${ident}"]`);
+  await draggable(page);
 
   // KDLH's grip let go at the top of C81's row: before it, the departure.
   // Its row under half's edge, reached by pulling the sheet up, as a
   // pilot's finger would: half way the sheet's body does not scroll there.
-  await inSheet(page, grip("KDLH"));
-  const target = (await row("C81").boundingBox())!;
-  // By the row, where the grip is: React Aria's GridList leaves the grip
-  // itself to the keyboard (its drag slot takes no pointer) and lets the
-  // row be dragged.
-  const [from, on] = [(await row("KDLH").boundingBox())!, (await grip("KDLH").boundingBox())!];
-  await row("KDLH").dragTo(row("C81"), {
-    sourcePosition: { x: on.x - from.x + on.width / 2, y: on.y - from.y + on.height / 2 },
-    targetPosition: { x: target.width / 2, y: 4 },
+  await inSheet(page, row("KDLH"));
+  // And C81's row's top brought out from under FPL's head row, which sticks
+  // at the sheet's top over a route taller than the sheet (each field open
+  // to its runways and procedures, since "option D" rows on the line of
+  // their own), as a finger scrolls before it drags: the drop's point
+  // under that row made Playwright scroll the list to reach it after the
+  // press, and KMSN, under the pressed point by then, went first.
+  await row("C81").evaluate((el) => {
+    el.scrollIntoView({ block: "start" });
+    let scroller = el.parentElement;
+    while (scroller && !/auto|scroll/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement;
+    if (!scroller) return;
+    const heads = [...scroller.querySelectorAll<HTMLElement>("*")].filter(
+      (e) => !e.contains(el) && getComputedStyle(e).position === "sticky",
+    );
+    const under = Math.max(scroller.getBoundingClientRect().top, ...heads.map((e) => e.getBoundingClientRect().bottom));
+    scroller.scrollTop -= under + 8 - el.getBoundingClientRect().top;
   });
+  await expect(row("C81")).toBeInViewport();
+  await expect(row("KDLH")).toBeInViewport();
+  const target = (await row("C81").boundingBox())!;
+  // By the row, sixteen in from its end: React Aria's GridList leaves the
+  // drag button to the keyboard (out of sight since the owner's "replace
+  // three lines with the arrow", 2026-11-19) and lets the row be dragged.
+  const from = (await row("KDLH").boundingBox())!;
+  await row("KDLH").dragTo(row("C81"), { sourcePosition: { x: from.width - 16, y: 22 }, targetPosition: { x: target.width / 2, y: 4 } });
   await expect(page).toHaveURL(/[?&]dep=KDLH(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KMSN(&|$)/);
   await expect(page).toHaveURL(stopsAre("C81,KRYV"));
 
   // KDLH, the departure now, picked up by the keyboard and put down after
   // the destination, KMSN.
-  await grip("KDLH").focus();
+  await onGrip(grip("KDLH"));
   await page.keyboard.press("Enter");
   const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
   for (let i = 0; i < 12 && !/after .*KMSN/i.test(await at()); i++) await page.keyboard.press("ArrowDown");
@@ -126,8 +116,9 @@ test("My Location put down in the middle of the route stays where it was, and it
   await openRoute(page);
   const list = sideDrawer(page).getByTestId("procedures");
   const grip = list.getByTestId("route-grip").first();
+  await draggable(page);
   await expect(list.getByTestId("timeline-ident").first()).toHaveText("My Location");
-  await grip.focus();
+  await onGrip(grip);
   await page.keyboard.press("Enter");
   const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
   for (let i = 0; i < 12 && !/between .*KMSN.* and .*KDLH/i.test(await at()); i++) await page.keyboard.press("ArrowDown");
@@ -142,7 +133,12 @@ test("My Location put down in the middle of the route stays where it was, and it
 test.describe("on a touch screen", () => {
   test.use({ hasTouch: true });
 
-  test("a pill held opens its menu, whose Move Down moves the stop a place without a drag", async ({ page }) => {
+  // A finger moves a stop without a drag (WCAG 2.5.7): FPL's timeline
+  // keeps a row's hold for its drag (React Aria's GridList), so the stop's
+  // menu is a tap on its mark, the airport symbol (PointMenu), and its
+  // Move Down puts it a place later. The route box's pills, held for the
+  // same menu before, show only while a route is typed (decision 0046).
+  test("a stop's mark tapped opens its menu, whose Move Down moves the stop a place without a drag", async ({ page }) => {
     await page.route(
       (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
       (route) => route.abort(),
@@ -151,13 +147,12 @@ test.describe("on a touch screen", () => {
     await settle(page);
     await openPanel(page);
     await openRoute(page);
-    const lines = sideDrawer(page).getByTestId("route-slide");
-    const stop = lines.getByRole("group", { name: "Stop 1 KRYV" });
-    // Held past the menu's half second and let go where it was put down.
-    const letGo = await touchHold(page, stop, stop);
+    const mark = timelineLine(page, "KRYV").getByRole("button", { name: "KRYV: more", exact: true });
+    await mark.scrollIntoViewIfNeeded();
+    await mark.tap();
     await expect(page.getByRole("menuitem", { name: "Remove", exact: true })).toBeVisible();
-    await letGo();
-    await page.getByRole("menuitem", { name: "Move Down", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Move Down", exact: true }).tap();
     await expect(page).toHaveURL(stopsAre("KMSN,KRYV"));
+    await expect(sideDrawer(page).getByTestId("timeline-ident")).toHaveText(["C81", "KMSN", "KRYV", "KDLH"]);
   });
 });

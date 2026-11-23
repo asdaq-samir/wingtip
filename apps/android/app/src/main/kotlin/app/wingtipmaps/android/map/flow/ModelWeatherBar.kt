@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -35,7 +36,6 @@ import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,8 +53,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
@@ -63,6 +62,7 @@ import app.wingtipmaps.android.design.lookShape
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.ui.rememberShownText
 import kotlin.math.roundToInt
 
 /**
@@ -81,14 +81,10 @@ fun ModelWeatherBar(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val model = remember(context) { ModelWeather.of(context) }
     val state by model.state.collectAsStateWithLifecycle()
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, model) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) model.away(true) else if (event == Lifecycle.Event.ON_START) model.away(false)
-        }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
-    }
+    // Lifecycle's own effects: paused at the app's stop, played again at
+    // its start where it was playing.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { model.away(true) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { model.away(false) }
     val field = state.field ?: return
     Column(
         modifier.widthIn(max = 360.dp).fillMaxWidth().padding(horizontal = WingtipSpace.Md),
@@ -117,8 +113,10 @@ private fun Timeline(state: FlowState, model: ModelWeather) {
         }
         Column(Modifier.weight(1f).padding(vertical = WingtipSpace.Xs)) {
             when {
-                state.failed -> Text(stringResource(R.string.flow_unavailable), color = LocalWingtipPalette.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
-                state.frames.isEmpty() || steps.isEmpty() -> Text(stringResource(R.string.flow_fetching), style = MaterialTheme.typography.bodyMedium)
+                // "No connection" is a value in the shared words; a line on its
+                // own ends with a full stop, as the web's and the iPhone's do.
+                state.failed -> Text(if (state.offline) stringResource(R.string.wording_no_connection) + "." else stringResource(R.string.flow_unavailable), color = LocalWingtipPalette.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
+                state.frames.isEmpty() || steps.isEmpty() -> Text(stringResource(R.string.wording_fetching_model_weather), style = MaterialTheme.typography.bodyMedium)
                 else -> {
                     val first = steps.first()
                     val last = steps.last()
@@ -237,10 +235,9 @@ private fun LevelMenu(state: FlowState, field: FlowKind, model: ModelWeather) {
     var open by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = open, onExpandedChange = { open = it }) {
         TextField(
-            value = levelName(shown),
-            onValueChange = {},
+            state = rememberShownText(levelName(shown)),
             readOnly = true,
-            singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             label = { Text(stringResource(R.string.flow_level)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
             modifier = Modifier.width(150.dp).menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),

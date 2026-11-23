@@ -16,13 +16,21 @@ entry point):
   work first (charts.turn). The planner starts it (app.chart_refresh,
   CHARTS_CYCLE_AUTO) through the dev-services sidecar.
 - `refresh`: the chart cycle alone (wingtip.chart_upkeep.refresh), published to
-  CHART_TILES_BUCKET where one is set: the AWS scheduled task.
+  CHART_TILES_BUCKET where one is set: the AWS scheduled task, which then
+  stages the next cycle ahead of its date in the bucket
+  (next_cycle.stage_to_bucket).
 - `pack`: every finished kind's loose tiles into its archives
   (wingtip.chart_archives.pack_complete), which `refresh` does at the end of its
   passes; on its own, the one-off conversion of a cycle drawn before
   there were archives.
+- `transcode`: every archive of a cycle packed before the tiles were
+  WebP (wingtip.chart_archives.transcode) written again as lossless WebP,
+  the same pixels and no tile drawn again; the one-off conversion of a
+  cycle on disk, then `publish` where it is published.
 - `prepare` fetches every sheet, `pyramid` renders every tile, `check`
-  looks for daylight between adjacent sheets, `publish` uploads a
+  looks for daylight between adjacent sheets and for cuts a new cycle made
+  that the served one did not (it fails on those, with a preview of each;
+  `accept-cuts <cycle>` records the set once looked at), `publish` uploads a
   complete cycle's archives, and `unmask` takes the masked lines out of
   sheets prepared before `prepare` did it itself and renders their tiles
   again.
@@ -44,6 +52,7 @@ from pathlib import Path
 from wingtip import (
     altitude,
     chart_archives,
+    chart_cuts,
     chart_cycle,
     chart_grid,
     chart_kinds,
@@ -93,7 +102,20 @@ def main(argv: list | None = None) -> int:
         prog="python -m charts", description="FAA charts: fetch every sheet, render every tile, build the overlays."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next"):
+    for name in (
+        "run",
+        "overlays",
+        "prepare",
+        "pyramid",
+        "refresh",
+        "check",
+        "publish",
+        "unmask",
+        "pack",
+        "next",
+        "accept-cuts",
+        "transcode",
+    ):
         p = sub.add_parser(name)
         if name in ("prepare", "pyramid"):
             p.add_argument("--kind", nargs="+", choices=list(chart_kinds.KINDS), default=list(chart_kinds.KINDS))
@@ -113,6 +135,10 @@ def main(argv: list | None = None) -> int:
                 default=get_settings().charts_cycle_lead_days,
                 help="how many days before its date the next cycle is staged (CHARTS_CYCLE_LEAD_DAYS)",
             )
+        if name == "accept-cuts":
+            p.add_argument("cycle", help="the cycle whose cuts were looked at (the previews `check` wrote)")
+        if name == "check":
+            p.add_argument("--cycle", help="the cycle to check; the newest prepared one by default")
         if name == "unmask":
             p.add_argument("--cycle", help="the cycle whose sheets and tiles to clean; the served one by default")
             p.add_argument(
@@ -136,8 +162,12 @@ def main(argv: list | None = None) -> int:
             )
         if name == "publish":
             p.add_argument("--cycle", help="the cycle to publish; the served one by default")
-        if name == "pack":
-            p.add_argument("--cycle", nargs="+", help="the cycles whose finished kinds to pack; every one on disk by default")
+        if name in ("pack", "transcode"):
+            p.add_argument("--cycle", nargs="+", help=f"the cycles whose archives to {name}; every one on disk by default")
+        if name == "transcode":
+            p.add_argument(
+                "--workers", type=int, default=None, help="processes encoding the WebP; the cores but one, four at most, by default"
+            )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     if getattr(args, "tiles_dir", None):
@@ -159,6 +189,23 @@ def main(argv: list | None = None) -> int:
     return _locked(args, parser)
 
 
+def _check_cuts(cycle: str | None) -> bool:
+    """Whether the cycle (the newest prepared one by default) cuts what the
+    served cycle did not and nobody has accepted: each finding printed with
+    its preview's path (wingtip.chart_cuts)."""
+    cycle = cycle or next(iter(chart_cycle.cycles_on_disk(config.CHARTS_DIR)), None)
+    if cycle is None:
+        print("no prepared cycle to check the cuts of")
+        return False
+    baseline, findings = chart_cuts.review(cycle)
+    for f in findings:
+        print(f"CUT {f.line()}")
+    print(f"{len(findings)} new or grown cuts and moved edges in {cycle} against {baseline or 'nothing to compare with'}")
+    if findings:
+        print(f"look at the previews, then: python -m charts accept-cuts {cycle}")
+    return bool(findings)
+
+
 def _locked(args, parser) -> int:
     """The runs that write the cycle's tiles, or its publish ledger, hold
     the refresh lock (wingtip.chart_upkeep.refresh_lock) for their whole life. A
@@ -166,8 +213,8 @@ def _locked(args, parser) -> int:
     an unmask waits, then renders its tiles again on what that run left; a
     publish waits rather than write back a ledger an unmask has struck
     tiles off."""
-    if args.command in ("refresh", "pyramid", "unmask", "publish", "pack", "next"):
-        wait = args.command in ("unmask", "publish", "pack")
+    if args.command in ("refresh", "pyramid", "unmask", "publish", "pack", "next", "transcode"):
+        wait = args.command in ("unmask", "publish", "pack", "transcode")
         with chart_upkeep.refresh_lock(wait=wait) as got:
             if not got:
                 log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that", config.CHART_TILE_CACHE_DIR)
@@ -193,7 +240,14 @@ def _run(args, parser) -> int:
     if args.command == "refresh":
         cycle = chart_upkeep.refresh(workers=args.workers, publish_bucket=args.bucket)
         log.info("cycle %s complete; serving %s", cycle, chart_serving.serving_cycle())
-        return 0
+        if not args.bucket:
+            return 0
+        # The AWS task: the next cycle published ahead of its date, so the
+        # map swaps at 0901Z rather than hours later (next_cycle.stage_to_bucket).
+        # A failure exits non-zero, which the stack's ChartRefreshFailedRule mails.
+        state = next_cycle.stage_to_bucket(args.bucket, workers=args.workers, lead_days=get_settings().charts_cycle_lead_days)
+        log.info("next cycle: %s", state)
+        return 1 if state == chart_next.FAILED else 0
     if args.command == "publish":
         if not args.bucket:
             parser.error("publish needs --bucket or CHART_TILES_BUCKET")
@@ -204,12 +258,21 @@ def _run(args, parser) -> int:
         for cycle in args.cycle or chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR):
             log.info("%s: packed %s", cycle, chart_archives.pack_complete(cycle) or "nothing (no finished kind with loose tiles)")
         return 0
+    if args.command == "transcode":
+        for cycle in args.cycle or chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR):
+            done = chart_archives.transcode(cycle, workers=args.workers)
+            log.info("%s: as WebP %s", cycle, done or "nothing (every archive is WebP already)")
+        return 0
     if args.command == "check":
         gaps = chart_prepare.face_gaps()
         for a, b, gap in gaps:
             print(f"GAP {gap:.3f} deg between {a} and {b}")
         print(f"{len(gaps)} gaps between adjacent sheets ({chart_serving.serving_cycle()})")
-        return 1 if gaps else 0
+        return 1 if gaps or _check_cuts(args.cycle) else 0
+    if args.command == "accept-cuts":
+        data = chart_cuts.accept(args.cycle)
+        log.info("cycle %s: %d cuts accepted", args.cycle, sum(len(s["cuts"]) for s in data["sheets"].values()))
+        return 0
     zooms = None
     if args.zooms:
         lo, _, hi = args.zooms.partition("-")

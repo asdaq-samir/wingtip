@@ -15,7 +15,7 @@ struct ClearanceStepsRow: View {
         let readBack = heard && readBack
         return [
             ("Hear", heard ? .done : .now),
-            ("Read back", readBack ? .done : (heard ? .now : .later)),
+            (Wording.readBack, readBack ? .done : (heard ? .now : .later)),
             ("Enter", readBack && ready ? .now : .later),
             ("Compare", ready ? .done : .later),
         ]
@@ -64,7 +64,7 @@ struct ClearanceReadbackSection: View {
                         .accessibilityElement(children: .combine)
                     }
                 } else {
-                    Text("The read back could not be checked.").foregroundStyle(.secondary)
+                    Text(Wording.readBackNotChecked).foregroundStyle(.secondary)
                 }
             }
         }

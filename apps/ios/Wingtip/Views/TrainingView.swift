@@ -19,7 +19,7 @@ struct TrainingView: View {
     var body: some View {
         List {
             if !session.signedIn {
-                ContentUnavailableView("Sign in for your training", systemImage: "graduationcap", description: Text("Your endorsements and reviews are kept with your account."))
+                ContentUnavailableView("Sign In for Your Training", systemImage: "graduationcap", description: Text("Your endorsements and reviews are kept with your account."))
             }
             if let training {
                 ExperienceSection(items: training.experience)
@@ -47,7 +47,7 @@ struct TrainingView: View {
                 if name.isEmpty { name = next.fullName ?? "" }
             }
             problem = nil
-        } catch { problem = error.localizedDescription }
+        } catch { problem = Problems.say("Your training record could not be changed", error) }
     }
 
     // The codes on the Airman Knowledge Test Report: the examiner goes over
@@ -109,6 +109,16 @@ struct TrainingView: View {
                             if let until = recorded[kind.code]?.until { GoodToText(until: until).font(.footnote) }
                         }
                     }
+                }
+            }
+        }
+        // Signed by an instructor the FAA airmen registry did not bear out
+        // (the engine's instructor_verification): kept, but not signed.
+        let unverified = t.signed.filter { !$0.voided && !$0.instructorVerified }
+        if !unverified.isEmpty {
+            Section("Not Verified") {
+                ForEach(unverified) { e in
+                    SignedEndorsementRow(label: t.kinds.first { $0.code == e.code }?.label ?? e.code, rule: nil, e: e)
                 }
             }
         }
@@ -203,9 +213,9 @@ struct ExperienceSection: View {
 
     static func amount(_ item: ExperienceItem) -> String {
         switch item.unit {
-        case "h": return "\(Format.number(item.have, decimals: 1)) of \(item.need.formatted()) h"
+        case "h": return "\(Format.number(item.have, decimals: 1)) of \(item.need.formatted(.number.locale(Format.locale))) h"
         case "flights": return item.met ? "Done" : "Not yet"
-        default: return "\(item.have.formatted()) of \(item.need.formatted())"
+        default: return "\(item.have.formatted(.number.locale(Format.locale))) of \(item.need.formatted(.number.locale(Format.locale)))"
         }
     }
 
@@ -254,6 +264,7 @@ struct SignedEndorsementRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 Text(e.text).textSelection(.enabled)
                 if !e.signature.isEmpty { Text(e.signature).font(.footnote.monospaced()).foregroundStyle(.secondary) }
+                if let words = e.verification { Text(words).font(.footnote).foregroundStyle(.secondary) }
             }
             if let onVoid, !e.voided {
                 Button("Void It", role: .destructive, action: onVoid)
@@ -263,7 +274,11 @@ struct SignedEndorsementRow: View {
                 Text(label)
                 Text([who, rule, e.voided ? "Voided" : "Signed \(Day.said(e.signedOn))"].compactMap { $0 }.joined(separator: " · "))
                     .font(.footnote).foregroundStyle(.secondary)
-                if !e.voided, let until = e.until { GoodToText(until: until).font(.footnote) }
+                if !e.voided, !e.instructorVerified {
+                    Text("Not verified").font(.footnote).foregroundStyle(WingtipInk.caution)
+                } else if !e.voided, let until = e.until {
+                    GoodToText(until: until).font(.footnote)
+                }
             }
         }
     }
@@ -296,7 +311,7 @@ struct ReviewAskView: View {
                 } else if flights.isEmpty {
                     Text("Save the planned flight first, from Flights.").foregroundStyle(.secondary)
                 }
-                Picker("Saved flight", selection: $flightId) {
+                Picker("Saved Flight", selection: $flightId) {
                     Text("Pick one").tag(Int?.none)
                     ForEach(flights) { f in
                         Text(([f.departureIdent] + f.stops + [f.destinationIdent]).joined(separator: " ")).tag(Int?.some(f.id))
@@ -309,8 +324,8 @@ struct ReviewAskView: View {
                         ForEach(instructors) { l in Text(l.name ?? l.email).tag(Int?.some(l.id)) }
                     }
                 }
-                LabeledContent("Make and model") { TextField("Cessna 172", text: $makeModel).multilineTextAlignment(.trailing) }
-                DatePicker("Day of the flight", selection: $day, in: Date()..., displayedComponents: .date)
+                LabeledContent("Make and Model") { TextField("Cessna 172", text: $makeModel).multilineTextAlignment(.trailing) }
+                DatePicker("Day of the Flight", selection: $day, in: Date()..., displayedComponents: .date)
                 TextField("A note for your instructor", text: $note, axis: .vertical).lineLimit(1...4)
             }
             Section {
@@ -328,7 +343,7 @@ struct ReviewAskView: View {
         .navigationTitle("Ask for a Review")
         .task {
             do { flights = try await Gateway.flights(); flightsProblem = nil } catch {
-                flightsProblem = "Your saved flights couldn't be fetched: \(error.localizedDescription)"
+                flightsProblem = Problems.say("Your saved flights could not be fetched", error)
             }
         }
     }
@@ -360,7 +375,7 @@ struct ReviewAskView: View {
 
 #Preview("SignedEndorsementRow") {
     List {
-        SignedEndorsementRow(label: "Solo flight (first 90 days)", rule: "61.87(n)", e: SignedEndorsement(code: "A.4", digest: "", fields: .init(), id: 1, signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31", signedOn: "2026-10-14", studentName: "Avery B. Student", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.", until: "2027-01-12", voided: false))
+        SignedEndorsementRow(label: "Solo Flight (First 90 Days)", rule: "61.87(n)", e: SignedEndorsement(code: "A.4", digest: "", fields: .init(), id: 1, instructorVerified: true, signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31", signedOn: "2026-10-14", studentName: "Avery B. Student", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.", until: "2027-01-12", verification: nil, voided: false))
     }
 }
 

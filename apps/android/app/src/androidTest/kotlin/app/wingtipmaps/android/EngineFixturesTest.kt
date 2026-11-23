@@ -320,6 +320,17 @@ class EngineFixturesTest {
         done()
     }
 
+    @Test
+    fun theOneAgoAndTheTypedProceduresReadThroughTheBridge() {
+        // Format.ago's words, and the SIDs and STARs a typed route names.
+        for ((rule, file) in listOf("time_ago" to "timeAgo.json", "route_procedures" to "routeProcedures.json")) {
+            val all = fixture(file).cases("cases")
+            assertTrue(all.isNotEmpty())
+            for (c in all) check(ask(rule, *c.input()), c.getValue("expected"), "$rule ${c["why"]}")
+        }
+        done()
+    }
+
     /** Each case's input as the rule's members. */
     private fun JsonObject.input() = getValue("input").jsonObject.entries.map { it.key to it.value }.toTypedArray()
 
@@ -339,6 +350,22 @@ class EngineFixturesTest {
         val all = fixture("airspaceVolumeSpan.json").cases("cases")
         assertTrue(all.isNotEmpty())
         for (c in all) check(ask("airspace_volume_span", *c.input()), c["answer"], "airspace_volume_span ${c["about"]}")
+        done()
+    }
+
+    @Test
+    fun theHazardColouringComesThroughTheBridge() {
+        // HazardLayer's and the Profile's obstacles, as the engine's and the web's tests hold them;
+        // the fixture's expected keys only, as its cases list them.
+        val f = fixture("hazardView.json")
+        val views = f.cases("views")
+        assertTrue(views.isNotEmpty())
+        for (c in views) {
+            val got = ask("hazard_view", *c.input()) as? JsonObject
+            for ((key, want) in c.getValue("expected").jsonObject) check(got?.get(key), want, "hazard_view ${c["why"]}: $key")
+        }
+        val o = f.getValue("obstacles").jsonObject
+        check(ask("profile_obstacles", *o.input()), o["expected"], "profile_obstacles")
         done()
     }
 }

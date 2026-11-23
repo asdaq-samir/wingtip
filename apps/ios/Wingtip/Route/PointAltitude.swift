@@ -20,7 +20,9 @@ enum PointAltitude {
     /// `frd_write` writes it. Nil for what is not one; thrown where the
     /// engine refuses.
     static func frd(from: String, course: String, distance: String) throws -> String? {
-        let typed = "\(from)/\(course.filter(\.isNumber))/\(distance.trimmingCharacters(in: .whitespaces))"
+        // "12,5" from a decimal-comma keypad is written "12.5" for the engine.
+        let miles = Typed.number(distance).map(Format.tenths) ?? distance.trimmingCharacters(in: .whitespaces)
+        let typed = "\(from)/\(course.filter(\.isNumber))/\(miles)"
         guard let read = try Engine.frdRead(text: typed) else { return nil }
         return try RouteExtras.frd(read.base, courseDeg: Int(read.course), nm: read.distanceNm)
     }

@@ -1,7 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { closeProfile, grabberTo, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart, frontSheet } from "./helpers";
 import { pickAirplane } from "./startState";
+import { extrasOn } from "./extras";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * Flying mode (useFlyingMode), the canvas's Flying screen: once own ship
@@ -63,8 +66,9 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
 
   // The dry run closed from the Profile: on the ground at once, everything
   // back -- the small buttons, and at half FPL's page with the route's box,
-  // and the page toggle at FPL's bar's end, which goes in flight (docs/design/rules.md:
-  // the search is the other page since 2026-11-13, not over the route).
+  // and FPL's Search at its head's start, which goes in flight (docs/design/rules.md:
+  // the search is the other page since 2026-11-13, not over the route; the
+  // FPL toggle is on Search's page alone since 2026-11-21).
   await grabberTo(page, "half");
   await sideDrawer(page).getByTestId("dry-run-close").click();
   await expect(page.locator("[data-own-ship]")).toHaveCount(0);
@@ -76,7 +80,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await closeProfile(page);
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
-  await expect(page.getByTestId("sheet-page-toggle")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("fpl-search")).toBeVisible();
 });
 
 test("Done flying leaves flying mode with one tap while the airplane flies on", async ({ page }) => {
@@ -158,7 +162,7 @@ test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft",
   const gps = page.getByTestId("strip-gps-alt").first();
   await expect(gps).toContainText("3,000", { timeout: slow(60_000) });
   // No To in flight (the head over the map names the next point): the
-  // distance, time, fuel and GPS altitude, four columns on one row, where
+  // distance, time, track and GPS altitude, four columns on one row, where
   // the altitude, a fifth in four, went onto a row of its own (the owner,
   // 2026-11-17).
   // The strip in sight: FPL's own copy, laid out at no width while the
@@ -172,4 +176,8 @@ test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft",
   const tops = await strip.locator("dd").evaluateAll((dds) => dds.map((dd) => Math.round(dd.getBoundingClientRect().top)));
   expect(tops).toHaveLength(4);
   expect(new Set(tops).size).toBe(1);
+  // The track in the fuel's place, magnetic: the GPS's true 090 less the
+  // variation at Campbell, some 4 degrees west, so about 094, in three figures.
+  await expect(strip.getByTestId("strip-track")).toHaveText(/^09[2-6]°$/);
+  await expect(strip.getByTestId("navlog-fuel")).toHaveCount(0);
 });

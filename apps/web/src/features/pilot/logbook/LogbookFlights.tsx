@@ -13,6 +13,7 @@ import { said } from "../../../lib/endorsements";
 import EntryForm from "./EntryForm";
 import { blankEntry, requestOf } from "./logbookEntry";
 import { useLogbookFlights, type LogbookFlightsModel } from "./useLogbookFlights";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 // A desktop's table on a chunk of its own (TanStack Table's model and the
 // sort): a phone draws the list below and never loads it.
@@ -72,9 +73,9 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
   // closes on it (a press outside, Escape), rather than losing it.
   const [typed, setTyped] = useState(false);
   const [askClose, closeDialog] = useConfirm({
-    title: "Discard This Flight?",
+    title: "Discard this flight?",
     description: "What you typed is not logged.",
-    confirmLabel: "Discard",
+    confirmLabel: WORDING.discard,
     destructive: true,
     onConfirm: () => {
       setTyped(false);
@@ -98,7 +99,7 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
             }}
           >
             <ResponsivePopoverTrigger asChild>
-              <Button size="sm" className="relative after:absolute after:-inset-y-1.5 after:inset-x-0" data-testid="logbook-add">
+              <Button size="sm" className="relative hit-y-1.5 after:inset-x-0" data-testid="logbook-add">
                 <Plus aria-hidden="true" />
                 Add Entry
               </Button>
@@ -121,7 +122,7 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
       }
     >
       {!entries ? (
-        <QueryState row query={vm.asked} fetching="Fetching your logbook…" failed="Your logbook could not be fetched." />
+        <QueryState row query={vm.asked} fetching={WORDING.fetchingLogbook} failed={WORDING.logbookNotFetched} />
       ) : !entries.length ? (
         <ListRow muted title="No flights logged yet: Add Entry logs one." />
       ) : desktop ? (

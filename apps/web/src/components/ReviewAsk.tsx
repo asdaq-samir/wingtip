@@ -54,7 +54,7 @@ export function ReviewAskForm({
           />
         </ListRow>
       )}
-      <ListRow id={ids.mm} title="Make and model">
+      <ListRow id={ids.mm} title="Make and Model">
         <FieldHit htmlFor={ids.mm}>
           <Input
             id={ids.mm}
@@ -67,7 +67,7 @@ export function ReviewAskForm({
           />
         </FieldHit>
       </ListRow>
-      <ListRow id={ids.on} title="Day of the flight">
+      <ListRow id={ids.on} title="Day of the Flight">
         <DateField
           id={ids.on}
           aria-label="Day of the flight"

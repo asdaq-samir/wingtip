@@ -12,7 +12,7 @@ import Foundation
 /// NumberGuard): a remark cannot carry a time or a count the entry does
 /// not have. The draft goes into the Remarks field for the pilot to keep,
 /// change or clear; nothing is saved until they Save or Log.
-enum RemarkDraft {
+nonisolated enum RemarkDraft {
     /// The remark is the Remarks column: at most this many sentences.
     static let most = 2
 
@@ -62,7 +62,7 @@ enum RemarkDraft {
     }
 
     /// The remark, or why there is none in a pilot's words.
-    static func draft(_ figures: [WordsSource], device: any WordsProvider = OnDeviceWords()) async -> Result<String, WordsUnavailable> {
+    static func draft(_ figures: [WordsSource], device: some WordsProvider = OnDeviceWords()) async -> Result<String, WordsUnavailable> {
         guard !figures.isEmpty else { return .failure(WordsUnavailable(why: "The entry has nothing to word yet.")) }
         do {
             let words = try await device.words(WordsAsk(kind: .remark, figures: figures))

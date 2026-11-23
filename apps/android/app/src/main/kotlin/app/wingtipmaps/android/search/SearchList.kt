@@ -40,8 +40,10 @@ import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.ui.DragOut
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.dragOut
 import app.wingtipmaps.android.ui.nearestRows
 
 /** The kinds of result a filter chip narrows the list to, as Google
@@ -82,6 +84,7 @@ fun LazyListScope.searchResults(
     hasFix: Boolean,
     chosen: Set<ResultKind>,
     onPick: (SearchPick) -> Unit,
+    refusal: (ident: String, closed: String?) -> String? = { _, _ -> null },
 ) {
     fun shows(kind: ResultKind) = chosen.isEmpty() || kind in chosen
     if (state.loading && state.airports.isEmpty() && state.airplanes.isEmpty()) item(key = "loading") { Loading(Modifier.padding(WingtipSpace.Lg).size(WingtipSpace.Xl)) }
@@ -91,7 +94,10 @@ fun LazyListScope.searchResults(
             // A closed field labelled first in the error ink (decision 0043),
             // then its use, then where it is.
             val use = FieldMarks.use(a.use)?.let { stringResource(it) }
-            ResultRow(a.ident, a.name, listOfNotNull(use, where(a).ifEmpty { null }).joinToString(" · "), Icons.Filled.LocalAirport, alert = a.closed?.ifBlank { null }) {
+            ResultRow(
+                a.ident, a.name, listOfNotNull(use, where(a).ifEmpty { null }).joinToString(" · "), Icons.Filled.LocalAirport,
+                alert = a.closed?.ifBlank { null }, refused = refusal(a.ident, a.closed), dragsOut = true,
+            ) {
                 onPick(SearchPick.Airport(a.ident, a.name, FieldMarks.closed(a.closed)))
             }
         }
@@ -99,7 +105,7 @@ fun LazyListScope.searchResults(
     if (shows(ResultKind.WAYPOINTS)) {
         group("waypoints", R.string.group_waypoints, state.waypoints) { w ->
             val doing = stringResource(if (routed) R.string.waypoint_add else R.string.waypoint_direct).takeIf { routed || hasFix }
-            ResultRow(w.ident, w.name, listOfNotNull(w.region, doing).joinToString(" · "), Icons.Outlined.ChangeHistory) { onPick(SearchPick.Waypoint(w.ident)) }
+            ResultRow(w.ident, w.name, listOfNotNull(w.region, doing).joinToString(" · "), Icons.Outlined.ChangeHistory, dragsOut = true) { onPick(SearchPick.Waypoint(w.ident)) }
         }
     }
     if (shows(ResultKind.AIRPLANES)) group("airplanes", R.string.group_airplanes, state.airplanes) { hit -> AirplaneRow(hit, onPick) }
@@ -116,6 +122,7 @@ fun LazyListScope.nothingTyped(
     nearestProblem: String?,
     fix: OwnShip.Fix?,
     onPick: (SearchPick) -> Unit,
+    refusal: (ident: String, closed: String?) -> String? = { _, _ -> null },
 ) {
     // Nearest first, as the web's Search page has it (the owner,
     // 2026-11-11), then the pilot's own.
@@ -127,7 +134,7 @@ fun LazyListScope.nothingTyped(
         item(key = "nearest-open") { ResultRow(stringResource(R.string.find_nearest), null, null, Icons.Filled.NearMe) { onPick(SearchPick.Do(DoAction.Open(Screen.NEAREST))) } }
     } else {
         // The Nearest page's own rows (nearestRows), the three nearest.
-        nearestRows(nearest, fix) { n -> onPick(SearchPick.Airport(n.ident, n.name)) }
+        nearestRows(nearest, fix, refusal = { n -> refusal(n.ident, null) }) { n -> onPick(SearchPick.Airport(n.ident, n.name)) }
     }
     val starred = (favorites + own.mapNotNull { r -> r.tail?.let { Remembered(Remembered.Kind.AIRPLANE, it, r.type, r.type) } }).distinctBy { it.kind.name + it.ident.uppercase() }
     if (starred.isNotEmpty()) {
@@ -135,18 +142,27 @@ fun LazyListScope.nothingTyped(
         item(key = "favorites") {
             LazyRow(contentPadding = PaddingValues(horizontal = WingtipSpace.Lg), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 items(starred, key = { it.kind.name + it.ident }) { f ->
-                    // A closed field's label after its name, in the error ink (decision 0043).
+                    // A closed field's label after its name, in the error ink
+                    // (decision 0043); while a pick is asked, a field it cannot
+                    // take greyed, its reason after its name (PickRefusal).
                     val error = MaterialTheme.colorScheme.error
+                    val refused = if (f.kind == Remembered.Kind.AIRPORT) refusal(f.ident, f.closed) else null
                     val label = buildAnnotatedString {
                         append(listOf(f.ident, f.name).filter { it.isNotEmpty() }.joinToString(" "))
-                        f.closed?.let { withStyle(SpanStyle(color = error)) { append(" · $it") } }
+                        when {
+                            refused != null -> append(" · $refused")
+                            f.closed != null -> withStyle(SpanStyle(color = error)) { append(" · ${f.closed}") }
+                        }
                     }
-                    AssistChip(onClick = { onPick(pickOf(f)) }, label = { Text(label) })
+                    AssistChip(onClick = { onPick(pickOf(f)) }, enabled = refused == null, label = { Text(label) })
                 }
             }
         }
     }
-    group("recents", R.string.recents, recents) { r -> ResultRow(r.ident, r.name, null, Icons.Filled.History, alert = r.closed) { onPick(pickOf(r)) } }
+    group("recents", R.string.recents, recents) { r ->
+        val refused = if (r.kind == Remembered.Kind.AIRPORT) refusal(r.ident, r.closed) else null
+        ResultRow(r.ident, r.name, null, Icons.Filled.History, alert = r.closed, refused = refused) { onPick(pickOf(r)) }
+    }
 }
 
 private fun pickOf(r: Remembered): SearchPick = when (r.kind) {
@@ -172,7 +188,11 @@ private fun Heading(title: Int) {
 
 /** A result: Material's list item, the whole row the tap -- its ident at
  *  titleMedium and its name after it at bodyMedium, a glyph at the start
- *  saying what it is, and what it is beside, under them. */
+ *  saying what it is, and what it is beside, under them. One a pick
+ *  cannot take (`refused`) is greyed, disabled, its reason in its
+ *  detail's place, which TalkBack reads with its name. A field's or a
+ *  fix's row (`dragsOut`) drags out to another app as its identifier and
+ *  its card's link (DragOut). */
 @Composable
 private fun ResultRow(
     ident: String,
@@ -181,20 +201,27 @@ private fun ResultRow(
     glyph: ImageVector?,
     tint: Boolean = false,
     alert: String? = null,
+    refused: String? = null,
+    dragsOut: Boolean = false,
     onClick: () -> Unit,
 ) {
     val error = MaterialTheme.colorScheme.error
     val under = buildAnnotatedString {
+        if (refused != null) {
+            append(refused)
+            return@buildAnnotatedString
+        }
         alert?.let { withStyle(SpanStyle(color = error)) { append(it) } }
         if (alert != null && !supporting.isNullOrEmpty()) append(" · ")
         supporting?.let { append(it) }
     }
     ListItem(
         onClick = onClick,
+        enabled = refused == null,
         leadingContent = glyph?.let { { Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) } },
         supportingContent = under.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = if (dragsOut) Modifier.fillMaxWidth().dragOut { DragOut.place(ident) } else Modifier.fillMaxWidth(),
         content = {
             Text(
                 buildAnnotatedString {

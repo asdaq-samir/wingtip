@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../../lib/api/client";
-import { forgetPilotCache } from "../../lib/pilotCache";
+import { api, describeError } from "../../lib/api/client";
 import { showError } from "../../lib/problems";
+import { forgetWhereTheyFlew } from "./useLogout";
 
 /** What this device keeps for a pilot -- their preferences, the tracks
  *  they flew (lib/track), their drills (features/pilot/drills), the charts kept for
@@ -17,6 +17,19 @@ export function forgetThisDevice(storage: Storage = window.localStorage) {
   for (const key of keys) storage.removeItem(key);
 }
 
+/** Everything this device kept for an account that is gone: its
+ *  localStorage and this tab's sessionStorage under the app's prefix (the
+ *  plan's edit history among them), and what signing out forgets too --
+ *  the tracks and trail, the planner's answers asked at the pilot's
+ *  points and the service worker's copy of the account. Deleting kept the
+ *  last three until the deep security review of 2026-11-21, so on a
+ *  shared device the next person offline was shown them. */
+export function forgetAccountOnThisDevice(local: Storage = window.localStorage, session: Storage = window.sessionStorage): void {
+  forgetThisDevice(local);
+  forgetThisDevice(session);
+  forgetWhereTheyFlew();
+}
+
 /** Deleting the signed-in pilot's account (App Review 5.1.1(v)): the
  *  server takes everything that was theirs and the session, this device
  *  its own copies, and the page starts again signed out -- every store
@@ -26,12 +39,9 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: api.deleteAccount,
     onSuccess: () => {
-      forgetThisDevice();
-      // And the service worker's copy of their account, airplanes and
-      // flights, which a start with no signal would show the next person.
-      forgetPilotCache();
+      forgetAccountOnThisDevice();
       window.location.assign("/app/plan");
     },
-    onError: (err) => showError("Your account was not deleted", err instanceof Error ? err.message : null),
+    onError: (err) => showError("Your Account Was Not Deleted", describeError(err)),
   });
 }

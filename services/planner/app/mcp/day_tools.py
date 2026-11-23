@@ -1,0 +1,197 @@
+"""The connector's tools for a field on a day: the sun's times and the
+night the rules read from them, and the pilot's own airplane's weight
+and balance and runway distances there. The figures are the engine's
+(sun_times, gonogo_balance, gonogo_runway_checks), asked as the Brief
+asks them; the field's runways and weather are the planner's briefing.
+No airplane is ever assumed (the owner, 2026-11-09), and a figure the
+pilot never gave is said to be missing, never filled in."""
+
+from __future__ import annotations
+
+from datetime import date, datetime, timezone
+from typing import Annotated, Any
+
+from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
+from pydantic import Field
+from wingtip import utc
+from wingtip.aircraft import UnknownAircraft, aircraft_profile
+from wingtip.engine import ask as engine_ask
+
+from ..generated.planner_calls import airport_place, briefing
+from ..gonogo.runways import runway_checks
+from ..gonogo.weight_balance import balance, default_load
+from . import airplane
+from .airport_tools import Ident
+from .calls import METAR_SOURCE, editions, ident as ident_of, pick, pilot, rounded
+from .tool_meta import READS, read_only
+
+SUN_SOURCE = {"source": "Wingtip engine: NOAA's solar calculation, sunrise and sunset as the Naval Observatory defines them"}
+POH_SOURCE = {"source": "The airplane's POH loading and short-field tables (its Wingtip profile), and its weight and balance record"}
+#: What each period is, as the rules read it.
+PERIODS = {
+    "night": "14 CFR 1.1's night: end of evening civil twilight to beginning of morning civil twilight "
+    "(91.151(a)(2)'s 45-minute VFR reserve, 91.205(c)'s equipment, night flight time)",
+    "passenger_night": "14 CFR 61.57(b): 1 hour after sunset to 1 hour before sunrise; carrying passengers in it "
+    "needs three takeoffs and landings to a full stop made in it in the preceding 90 days",
+    "lights": "14 CFR 91.209(a): position lights on from sunset to sunrise",
+}
+
+
+def _at(s: float | None) -> str | None:
+    return None if s is None else utc.iso(s)
+
+
+def _period(p: dict, what: str) -> dict:
+    return {"from": _at(p["from_s"]), "until": _at(p["until_s"]), "all_day": p["all_day"], "rule": PERIODS[what]}
+
+
+def _profile(a: dict) -> dict:
+    """The airplane as the planner flies it (PlanQuery.profile): its stock
+    type's profile with its own figures over it, or its own figures alone."""
+    fields = airplane.plan_fields(a)
+    try:
+        return aircraft_profile(fields.pop("aircraft"), **fields)
+    except UnknownAircraft as err:
+        raise ToolError(f"{err} Add them to {airplane.label(a)} in Wingtip's Setup, Airplanes.") from err
+
+
+def _load(a: dict, loading: dict, stations_lb, fuel_gal, empty) -> tuple[dict | None, list[str]]:
+    """What is aboard, as the engine's gonogo_balance takes it, or what is
+    missing for it. The empty weight and moment are the pilot's (theirs
+    given, else the airplane's weight and balance record), read to an arm
+    by the engine's own default_load in the sample airplane's place."""
+    figures = a.get("figures") or {}
+    weight = empty[0] if empty[0] is not None else figures.get("emptyWeightLb")
+    moment = empty[1] if empty[1] is not None else figures.get("emptyMomentLbIn")
+    names = [s["name"] for s in loading.get("stations") or []]
+    missing = []
+    if weight is None or moment is None:
+        missing.append("empty_weight_lb and empty_moment_lb_in, from the airplane's weight and balance record")
+    if stations_lb is None:
+        missing.append(f"stations_lb, the pounds at each station in order: {', '.join(names)}")
+    elif len(stations_lb) != len(names):
+        raise ToolError(f"stations_lb takes {len(names)} weights, one a station in order: {', '.join(names)}.")
+    if missing:
+        return None, missing
+    own = {**loading, "sample_empty_weight_lb": weight, "sample_empty_moment_lb_in": moment}
+    return {**default_load(own, fuel_gal), "stations_lb": list(stations_lb)}, []
+
+
+def register(server: MCPServer) -> None:
+    @server.tool(
+        name="sun_times",
+        description="Sunrise, sunset and civil twilight at an airport or a place on a date (UTC times), and when "
+        "night begins and ends from that evening by each rule that reads it: 14 CFR 1.1's night (civil twilight; "
+        "the VFR night reserve), 61.57(b)'s period an hour after sunset to an hour before sunrise (night currency "
+        "and passengers) and 91.209(a)'s position lights from sunset. Where the sun does not set or rise, says so.",
+        title="Sun and night",
+        annotations=read_only("Sun and night"),
+        meta=READS,
+    )
+    async def sun_times(
+        airport: Annotated[str | None, Field(max_length=7, description="The field: KDLH, C81.")] = None,
+        lat: Annotated[float | None, Field(ge=-90, le=90, description="Or a place's latitude, degrees north.")] = None,
+        lon: Annotated[float | None, Field(ge=-180, le=180, description="And longitude, degrees east (west negative).")] = None,
+        on: Annotated[date | None, Field(description="The local date, yyyy-mm-dd; today (UTC) when omitted.")] = None,
+    ) -> dict[str, Any]:
+        pilot()
+        where = None
+        if airport:
+            card = await airport_place(ident=ident_of(airport))
+            lat, lon, where = card["lat"], card["lon"], card["ident"]
+        elif lat is None or lon is None:
+            raise ToolError("Give an airport, or lat and lon.")
+        day = on or datetime.now(timezone.utc).date()
+        sun = engine_ask("sun_times", lat=lat, lon=lon, date=day.isoformat())
+        return {
+            "airport": where,
+            "lat": lat,
+            "lon": lon,
+            "date": day.isoformat(),
+            "sun": sun["sun"],
+            "civil_twilight": sun["civil_twilight"],
+            "solar_noon": _at(sun["solar_noon_s"]),
+            "sunrise": _at(sun["sunrise_s"]),
+            "sunset": _at(sun["sunset_s"]),
+            "civil_dawn": _at(sun["civil_dawn_s"]),
+            "civil_dusk": _at(sun["civil_dusk_s"]),
+            **{what: _period(sun[what], what) for what in PERIODS},
+            "sources": [SUN_SOURCE],
+        }
+
+    @server.tool(
+        name="airplane_performance",
+        description="The pilot's own airplane at a field: its weight and balance at takeoff and landing against "
+        "its POH's limits and envelope (14 CFR 91.9), and its short-field takeoff and landing distances on the "
+        "runway the wind favours, from the field's pressure and density altitude and reported wind, against the "
+        "runway's length (91.103(b)). Needs one of the pilot's airplanes (my_airplanes); says which figures are missing.",
+        title="Airplane performance",
+        annotations=read_only("Airplane performance"),
+        meta=READS,
+    )
+    async def airplane_performance(
+        airport: Ident,
+        airplane_tail: Annotated[str | None, Field(max_length=8, description="The pilot's airplane by tail number.")] = None,
+        stations_lb: Annotated[
+            list[float] | None, Field(max_length=12, description="Pounds at each loading station, in the POH's order.")
+        ] = None,
+        fuel_gal: Annotated[float | None, Field(ge=0, le=2000, description="Fuel at engine start, gal; full usable when omitted.")] = None,
+        trip_fuel_gal: Annotated[float | None, Field(ge=0, le=2000, description="Fuel burnt before landing, gal.")] = None,
+        empty_weight_lb: Annotated[
+            float | None, Field(gt=0, le=20000, description="Basic empty weight; the record's when omitted.")
+        ] = None,
+        empty_moment_lb_in: Annotated[float | None, Field(gt=0, description="Basic empty moment; the record's when omitted.")] = None,
+    ) -> dict[str, Any]:
+        who = pilot()
+        if not airplane_tail:
+            raise ToolError(
+                "Weight and balance and runway distances are the pilot's own airplane's, and Wingtip assumes none: "
+                "give airplane_tail (my_airplanes lists them; pick_airplane flies a flight on one)."
+            )
+        a = await airplane.find(who, airplane_tail)
+        profile = _profile(a)
+        loading, missing = profile.get("loading"), []
+        if not loading:
+            missing.append("the POH's loading (stations, arms, limits and envelope): none in this airplane's Wingtip profile")
+        fuel = fuel_gal if fuel_gal is not None else profile.get("usable_fuel_gal")
+        if loading and fuel is None:
+            missing.append("fuel_gal, the fuel at engine start: the airplane has no usable fuel on record")
+        load, lacking = (None, [])
+        if loading and fuel is not None:
+            load, lacking = _load(a, loading, stations_lb, fuel, (empty_weight_lb, empty_moment_lb_in))
+        missing += lacking
+        loaded = balance(loading, load, trip_fuel_gal) if load else None
+        if not profile.get("takeoff") or not profile.get("landing"):
+            missing.append("the POH's short-field takeoff and landing tables: none in this airplane's Wingtip profile")
+        field = ident_of(airport)
+        brief = await briefing(dep=field, dest=field)
+        ends = [{"ident": i, "elevation_ft": (brief["airports"].get(i) or {}).get("elevation_ft")} for i in brief["airports"]]
+        checks = runway_checks(
+            profile,
+            brief,
+            [ends[0], ends[0]] if ends else [],
+            loaded["takeoff"]["weight_lb"] if loaded else None,
+            loaded["landing"]["weight_lb"] if loaded else None,
+        )
+        runway = ("role", "end", "pressure_alt_ft", "density_alt_ft", "temp_c", "reported", "headwind_kt", "crosswind_kt")
+        distance = ("kind", "end", "ground_roll_ft", "total_ft", "over", "unknown", "beyond", "caveats")
+        return {
+            "airplane": airplane.label(a),
+            "airport": field,
+            "balance": rounded({k: v for k, v in loaded.items() if k != "takeoff_words"}) if loaded else None,
+            "load": load,
+            "fuel_gal": fuel,
+            "runways": [
+                rounded(pick(c, runway))
+                | {"runway": (c["runway"] or {}).get("ends"), "length_ft": (c["runway"] or {}).get("length_ft")}
+                | {"crosswind_over_demonstrated": c["crosswind_over"], "unchecked": c["unchecked"]}
+                | {"distances": [rounded(pick(d, distance)) for d in c["distances"]]}
+                for c in checks
+            ],
+            # The engine reads the table at its heaviest, the longest
+            # distances, where no weight is known.
+            "distance_weight": "the loading's" if loaded else "the POH table's heaviest weight",
+            "missing": missing,
+            "sources": [POH_SOURCE, METAR_SOURCE, *editions("nasr")],
+        }

@@ -37,22 +37,22 @@ describe("AltitudeGroup", () => {
     expect(input.getAttribute("role")).toBeNull();
     expect(group.getAttribute("data-slot")).toBe("input-group");
     expect(group.getAttribute("aria-label")).toBe("Cruise altitude");
-    expect(group.className).toMatch(/\bh-7\b/);
+    expect(group.className).toMatch(/\bh-6\b/);
     expect(group.className).toMatch(/\brounded-full\b/);
-    expect(input.value).toBe("FL-065");
+    expect(input.value).toBe("065");
   });
 
-  test("with no altitude, empty, its placeholder FL-___", () => {
+  test("with no altitude, empty, its placeholder three blanks after the pill's FL-", () => {
     const { input } = pill({ nav: null, legs: [] });
     expect(input.value).toBe("");
-    expect(input.placeholder).toBe("FL-___");
+    expect(input.placeholder).toBe("___");
   });
 
   test("a figure typed is flown on Enter, as before", () => {
     const { input, onFlyAltitude } = pill();
     act(() => input.focus());
     fireEvent.change(input, { target: { value: "075" } });
-    expect(input.value).toBe("FL-075");
+    expect(input.value).toBe("075");
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onFlyAltitude).toHaveBeenCalledWith(7500);
   });
@@ -63,6 +63,24 @@ describe("AltitudeGroup", () => {
     fireEvent.change(input, { target: { value: text } });
     fireEvent.keyDown(input, { key: "Enter" });
   };
+
+  // The owner, 2026-11-22: "FL input is not letting me clear it." Emptied
+  // as it is typed, it stays empty, a figure typed after it taken; left
+  // empty, it goes back to the figure flown, nothing flown.
+  test("can be emptied while typing, and left empty goes back to the figure flown", () => {
+    const { input, onFlyAltitude } = pill();
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: "06" } });
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input.value).toBe("");
+    fireEvent.change(input, { target: { value: "8" } });
+    expect(input.value).toBe("8");
+    fireEvent.change(input, { target: { value: "" } });
+    act(() => input.blur());
+    expect(input.value).toBe("065");
+    expect(onFlyAltitude).not.toHaveBeenCalled();
+    expect(input.getAttribute("aria-invalid")).toBeNull();
+  });
 
   test("Enter flies the figure once, not again as the field is left", () => {
     const { input, onFlyAltitude } = pill();
@@ -86,7 +104,7 @@ describe("AltitudeGroup", () => {
     const { input, onFlyAltitude } = pill();
     type(input, text);
     expect(onFlyAltitude).not.toHaveBeenCalled();
-    expect(input.value).toBe(text.length > 3 ? text : `FL-${text}`);
+    expect(input.value).toBe(text);
     expect(input.getAttribute("aria-invalid")).toBe("true");
     const note = screen.getByTestId("altitude-note");
     expect(note.textContent).not.toBe("");

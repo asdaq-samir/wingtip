@@ -1,6 +1,8 @@
-"""A browser shard's outcome as one annotation (ci.yml, e2e): its tally,
-where the setup's time went and how busy the runner was, its slowest
-tests and the log's tail. SHARD names the shard; reads /tmp/e2e-out.
+"""A browser shard's outcome as one annotation (ci.yml, e2e): the
+Playwright arguments it ran (PROJECTS and SHARD_ARG; the first line, which
+a rerun reads when the shard left no list of its red tests: validation.py),
+its tally, where the setup's time went and how busy the runner was, its
+slowest tests and the log's tail. SHARD names the shard; reads /tmp/e2e-out.
 """
 
 import os
@@ -13,6 +15,7 @@ def say(level, title, text):
 
 
 shard = os.environ["SHARD"]
+ran = "args: " + " ".join(f"{os.environ.get('PROJECTS', '')} {os.environ.get('SHARD_ARG', '')}".split())
 # When each piece of the setup was done, from the background
 # pieces' and the steps' own notes: where the time before the
 # first test went.
@@ -47,7 +50,7 @@ except (OSError, StopIteration, ValueError, ZeroDivisionError) as err:
     setup += f"; the runner's load unknown ({err!r})"
 path = "/tmp/e2e-out/playwright.log"
 if not os.path.exists(path):
-    say("warning", f"shard {shard}: no output", "the tests never wrote their log\n" + setup)
+    say("warning", f"shard {shard}: no output", f"{ran}\nthe tests never wrote their log\n{setup}")
 else:
     lines = open(path, errors="replace").read().splitlines()
     summary = [line for line in lines if re.match(r"\s*\d+ (passed|failed|flaky|skipped)", line)]
@@ -61,4 +64,4 @@ else:
             value = float(m[4]) * {"ms": 0.001, "s": 1, "m": 60}[m[5]]
             timed.append((value, f"{value:5.1f}s {m[2]} [{m[1]}] {m[3][:70]}"))
     slowest = [text for _, text in sorted(timed, reverse=True)[:8]]
-    say("notice" if summary else "warning", f"shard {shard}", "\n".join(summary + [setup, "slowest:"] + slowest + ["--"] + lines[-25:]))
+    say("notice" if summary else "warning", f"shard {shard}", "\n".join([ran, *summary, setup, "slowest:", *slowest, "--", *lines[-25:]]))

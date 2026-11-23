@@ -1,8 +1,8 @@
 import type { SymbolLayerSpecification } from "maplibre-gl";
 import { CHART } from "../../tokens";
 import type { Stretch } from "./drawSvg";
-import { AIRSPACE_LABELS_FROM, OVERLAY_SOURCE, SUA_INK, glZoom } from "./glStyle";
-import { LABEL_SIZE, labelByZoom } from "./layers/common";
+import { AIRSPACE_LABELS_FROM, OVERLAY_SOURCE, SUA_INK, TAB_BOX, glZoom } from "./glStyle";
+import { labelText } from "./layers/common";
 
 /**
  * The special-use areas' tabs, as ForeFlight writes them on a MOA's or a
@@ -36,8 +36,9 @@ export const SUA_TAB_PICTURES: [id: string, svg: () => string, stretch?: Stretch
 ]);
 
 /** How far off its point a tab sits, ems towards the area's side: about
- *  half its two lines' height, so its edge meets the line. */
-const INSIDE_EM = 1.35;
+ *  half its two lines' height (at the tabs' line height of 1, TAB_BOX),
+ *  so its edge meets the line. */
+const INSIDE_EM = 1.2;
 
 /** The tabs' one layer, from the tiles' `special_use_labels` (the charts
  *  job's points, one an area on its longest side): `tab` the engine's
@@ -73,16 +74,13 @@ export function specialUseLabelLayer(font: string[]): SymbolLayerSpecification {
  *  view's (features/plan-map/terrain/AirspaceVolumesGl). */
 export function suaTabLayout(font: string[]) {
   return {
+    // The Class B, C and D tabs' size and box (map.label.kind.airspace-tab,
+    // TAB_BOX): they grew to 13 close in, in a roomier tab, so one kind of
+    // tab was lettered two ways side by side.
     "text-font": font,
-    "text-size": labelByZoom([
-      [glZoom(8), LABEL_SIZE.small],
-      [glZoom(12), LABEL_SIZE.large],
-    ]),
-    "text-line-height": 1.15,
+    "text-size": labelText("airspaceTab")["text-size"],
+    ...TAB_BOX,
     "icon-image": ["case", restricted, suaTab("restricted"), suaTab("moa")] as never,
-    "icon-text-fit": "both" as const,
-    "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
-    "text-padding": 4,
     "text-allow-overlap": false,
     "icon-allow-overlap": false,
     // A restricted area's tab before a MOA's it lies in, as its line is

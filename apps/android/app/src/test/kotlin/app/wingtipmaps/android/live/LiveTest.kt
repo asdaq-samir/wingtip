@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.live
 
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.api.generated.AirportAtis
 import app.wingtipmaps.android.api.generated.AirportRvr
@@ -21,6 +22,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 private val READING = Json.parseToJsonElement(
     """{"information":"K","time_z":"1452Z","wind":{"from_deg":210,"kt":12,"gust_kt":18,"variable":false},
@@ -39,7 +42,8 @@ class LiveTest {
         var saaAsked: List<String>? = null
         override suspend fun atis(airport: String) = AirportAtis(airport, listOf(DigitalAtis(airport, 0.0, null, "K", READING, "ORD ATIS INFO K", "arrival")))
         override suspend fun rvr(airport: String) = AirportRvr(airport, listOf(RunwayRvr(airport, heard = 0.0, runway = "27L", touchdownFt = 6000, touchdownMore = true, rolloutFt = 1800)))
-        override suspend fun flow(airports: List<String>) = FlowAtAirports(listOf(FlowProgram(airport = "ORD", heard = 0.0, program = "ground stop", ends = 1_700_000_000.0, averageDelayMin = 45)))
+        var flows = 0
+        override suspend fun flow(airports: List<String>) = FlowAtAirports(listOf(FlowProgram(airport = "ORD", heard = 0.0, program = "ground stop", ends = 1_700_000_000.0, averageDelayMin = 45))).also { flows++ }
         override suspend fun saa(designators: List<String>): SaaStatuses {
             saaAsked = designators
             return SaaStatuses(mapOf("R-4401A" to SaaStatus(active = true, designator = "R-4401A", heard = 0.0, until = 1_700_000_000.0)))
@@ -82,6 +86,34 @@ class LiveTest {
         assertEquals("6000+ · — · 1800", s.rvr.single().readings)
         assertEquals("Under your 1/2 SM minimum (14 CFR 91.175(h))", s.rvr.single().under)
         assertEquals("Ground stop at ORD until 2213Z, delays average 45 min", s.programs.single())
+    }
+
+    @Test
+    fun theProgramsAreAskedEachFiveMinutesAndTheCardKeepsItsReportsWhenBack() {
+        var now = Instant.parse("2026-11-21T15:00:00Z")
+        AppClock.clock = object : Clock {
+            override fun now(): Instant = now
+        }
+        try {
+            val source = Fake()
+            val model = LiveAirportModel(source, Rules)
+            model.watch("KORD")
+            assertEquals(1, source.flows)
+            // The app put away and back a minute on: ATIS and RVR again, the
+            // programs not yet, and what was heard stands meanwhile.
+            model.stop()
+            now = now.plus(kotlin.time.Duration.parse("1m"))
+            model.watch("KORD")
+            assertEquals(1, source.flows)
+            assertEquals(1, model.state.value.programs.size)
+            model.stop()
+            now = now.plus(kotlin.time.Duration.parse("5m"))
+            model.watch("KORD")
+            assertEquals(2, source.flows)
+            model.stop()
+        } finally {
+            AppClock.clock = Clock.System
+        }
     }
 
     @Test

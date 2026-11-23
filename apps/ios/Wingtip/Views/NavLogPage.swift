@@ -44,7 +44,7 @@ struct NavLogPage: View {
         List {
             if plan.legs.isEmpty {
                 ContentUnavailableView(plan.planning ? "Planning…" : "No Legs Yet", systemImage: WingtipIcon.navLog,
-                                       description: Text(plan.planning ? "The legs come in as the planner works them out." : "Plan the route first.")
+                                       description: Text(plan.planning ? String(localized: "The legs come in as the planner works them out.") : Wording.navLogEmpty)
                                            // The system's secondary label: the view's own grey read
                                            // faint in the iPad's glass sidebar (the audit, 2026-11-09).
                                            .foregroundStyle(Color(.secondaryLabel)))
@@ -146,7 +146,7 @@ struct AlternateLegRow: View {
                       leg.eteMin.map(Format.navLogTime), leg.fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · "))
                     .font(WingtipType.detail.monospacedDigit()).foregroundStyle(.secondary)
                 if leg.stillAir == true {
-                    Text("In still air: the winds there couldn't be read.").font(.footnote).foregroundStyle(WingtipInk.caution)
+                    Text("In still air: the winds there could not be read.").font(.footnote).foregroundStyle(WingtipInk.caution)
                 }
             }
             .accessibilityElement(children: .combine)
@@ -162,7 +162,8 @@ struct NavLogTable: View {
     let legs: [Leg]
     @State private var order = [KeyPathComparator(\NavLogTable.Row.number)]
 
-    struct Row: Identifiable {
+    /// Nonisolated: the Table sorts by key paths into it, which are Sendable.
+    nonisolated struct Row: Identifiable {
         let number: Int
         let leg: Leg
         var id: String { leg.id + "#\(number)" }

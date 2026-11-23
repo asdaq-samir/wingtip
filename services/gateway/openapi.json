@@ -49,6 +49,9 @@
             },
             "type" : "array"
           },
+          "photo" : {
+            "type" : [ "string", "null" ]
+          },
           "records" : {
             "$ref" : "#/components/schemas/AccountRecordsDto"
           },
@@ -59,32 +62,19 @@
             "$ref" : "#/components/schemas/TrainingDto"
           }
         },
-        "required" : [ "account", "airplanes", "checkpointNotes", "connectedApps", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "records", "reminders", "training" ],
+        "required" : [ "account", "airplanes", "checkpointNotes", "connectedApps", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "photo", "records", "reminders", "training" ],
         "type" : "object"
       },
       "AccountRecordsDto" : {
         "properties" : {
-          "featureUses" : {
-            "items" : {
-              "$ref" : "#/components/schemas/FeatureUse"
-            },
-            "type" : "array"
-          },
           "remindersSent" : {
             "items" : {
               "$ref" : "#/components/schemas/SentReminder"
             },
             "type" : "array"
-          },
-          "subscription" : {
-            "anyOf" : [ {
-              "$ref" : "#/components/schemas/SubscriptionRow"
-            }, {
-              "type" : "null"
-            } ]
           }
         },
-        "required" : [ "featureUses", "remindersSent", "subscription" ],
+        "required" : [ "remindersSent" ],
         "type" : "object"
       },
       "AircraftDto" : {
@@ -253,6 +243,24 @@
         "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
         "type" : "object"
       },
+      "AppVersionsDto" : {
+        "properties" : {
+          "faults" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VersionFaultsDto"
+            },
+            "type" : "array"
+          },
+          "figures" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VersionFigureDto"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "faults", "figures" ],
+        "type" : "object"
+      },
       "AppleNonceAnswer" : {
         "properties" : {
           "nonce" : {
@@ -264,6 +272,11 @@
       },
       "AppleToken" : {
         "properties" : {
+          "authorizationCode" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
           "identityToken" : {
             "maxLength" : 8000,
             "minLength" : 0,
@@ -275,7 +288,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "identityToken", "nonce" ],
+        "required" : [ "authorizationCode", "identityToken", "nonce" ],
         "type" : "object"
       },
       "ApproachLessonDto" : {
@@ -479,14 +492,38 @@
               "type" : "string"
             },
             "type" : "array"
-          },
-          "subscriptions" : {
-            "description" : "Whether this deployment sells the subscription; where not, the page says nothing of one.",
-            "example" : false,
-            "type" : "boolean"
           }
         },
-        "required" : [ "access", "providers", "subscriptions" ],
+        "required" : [ "access", "providers" ],
+        "type" : "object"
+      },
+      "ConnectionDto" : {
+        "properties" : {
+          "app" : {
+            "type" : "string"
+          },
+          "can" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "renewedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "scopes" : {
+            "type" : [ "string", "null" ]
+          },
+          "until" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "app", "can", "id", "renewedAt", "scopes", "until" ],
         "type" : "object"
       },
       "ConnectorGrantDto" : {
@@ -856,7 +893,7 @@
             "type" : [ "string", "null" ]
           },
           "title" : {
-            "example" : "Annual inspection",
+            "example" : "Annual Inspection",
             "type" : "string"
           },
           "what" : {
@@ -1102,23 +1139,6 @@
           }
         },
         "required" : [ "at", "detail", "kind", "signature" ],
-        "type" : "object"
-      },
-      "FeatureUse" : {
-        "properties" : {
-          "feature" : {
-            "type" : "string"
-          },
-          "month" : {
-            "format" : "date",
-            "type" : "string"
-          },
-          "uses" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        },
-        "required" : [ "feature", "month", "uses" ],
         "type" : "object"
       },
       "FieldReport" : {
@@ -2208,6 +2228,11 @@
       "PilotDto" : {
         "description" : "The signed-in pilot",
         "properties" : {
+          "avatarUrl" : {
+            "description" : "Where their avatar's photo is read, its version in the address so a new photo is never a cached one (GET /api/me/avatar); null when they have set none and their initials show",
+            "example" : "/api/me/avatar?v=1763650000000",
+            "type" : [ "string", "null" ]
+          },
           "developer" : {
             "description" : "Whether this pilot also does development work here: the training workspace and the developer console are theirs, a plain pilot's are not.",
             "example" : false,
@@ -2245,7 +2270,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "developer", "displayName", "email", "fullName", "homeBase", "id", "phone" ],
+        "required" : [ "avatarUrl", "developer", "displayName", "email", "fullName", "homeBase", "id", "phone" ],
         "type" : "object"
       },
       "PlannerCheckpointNote" : {
@@ -2631,6 +2656,9 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "instructorVerified" : {
+            "type" : "boolean"
+          },
           "signature" : {
             "type" : "string"
           },
@@ -2648,11 +2676,14 @@
             "format" : "date",
             "type" : [ "string", "null" ]
           },
+          "verification" : {
+            "type" : [ "string", "null" ]
+          },
           "voided" : {
             "type" : "boolean"
           }
         },
-        "required" : [ "code", "digest", "fields", "id", "signature", "signedOn", "studentName", "text", "until", "voided" ],
+        "required" : [ "code", "digest", "fields", "id", "instructorVerified", "signature", "signedOn", "studentName", "text", "until", "verification", "voided" ],
         "type" : "object"
       },
       "SignedIn" : {
@@ -2803,81 +2834,6 @@
         "required" : [ "accepted", "askedAt", "email", "experienceMet", "experienceOf", "linkId", "name", "reviewsWaiting", "soloUntil", "studentId" ],
         "type" : "object"
       },
-      "SubscriptionDto" : {
-        "description" : "The signed-in pilot's subscription to the paid features",
-        "properties" : {
-          "entitled" : {
-            "description" : "Whether the paid features are theirs now",
-            "example" : true,
-            "type" : "boolean"
-          },
-          "plan" : {
-            "description" : "MONTHLY or YEARLY, when paid for",
-            "enum" : [ "MONTHLY", "YEARLY" ],
-            "type" : [ "string", "null" ]
-          },
-          "state" : {
-            "description" : "FREE (none), TRIAL (the free month), SUBSCRIBED (paid for), or COMPED (given: a developer's, an instructor's)",
-            "enum" : [ "FREE", "TRIAL", "SUBSCRIBED", "COMPED" ],
-            "example" : "TRIAL",
-            "type" : "string"
-          },
-          "store" : {
-            "description" : "Where it was bought, when paid for",
-            "enum" : [ "APP_STORE", "PLAY", "WEB", "GRANT" ],
-            "type" : [ "string", "null" ]
-          },
-          "trialAvailable" : {
-            "description" : "Whether the free month is still theirs to start: once an account",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "trialDays" : {
-            "description" : "The free month's length, days",
-            "example" : 30,
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "until" : {
-            "description" : "When the free month or the paid time runs out; null for FREE and COMPED",
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          }
-        },
-        "required" : [ "entitled", "plan", "state", "store", "trialAvailable", "trialDays", "until" ],
-        "type" : "object"
-      },
-      "SubscriptionRow" : {
-        "properties" : {
-          "paidUntil" : {
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          },
-          "plan" : {
-            "type" : [ "string", "null" ]
-          },
-          "store" : {
-            "type" : [ "string", "null" ]
-          },
-          "storeRef" : {
-            "type" : [ "string", "null" ]
-          },
-          "trialEndsAt" : {
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          },
-          "trialStartedAt" : {
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          }
-        },
-        "required" : [ "paidUntil", "plan", "store", "storeRef", "trialEndsAt", "trialStartedAt", "updatedAt" ],
-        "type" : "object"
-      },
       "TrackDto" : {
         "properties" : {
           "points" : {
@@ -2994,6 +2950,59 @@
           }
         },
         "required" : [ "name", "notes" ],
+        "type" : "object"
+      },
+      "VersionFaultsDto" : {
+        "properties" : {
+          "count" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "lastAt" : {
+            "type" : "string"
+          },
+          "platform" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "count", "kind", "lastAt", "platform", "version" ],
+        "type" : "object"
+      },
+      "VersionFigureDto" : {
+        "properties" : {
+          "count" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "metric" : {
+            "type" : "string"
+          },
+          "p50" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "p75" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "p95" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "count", "metric", "p50", "p75", "p95", "source", "version" ],
         "type" : "object"
       },
       "VorCheckDto" : {
@@ -3572,7 +3581,7 @@
     },
     "/api/auth/apple/native" : {
       "post" : {
-        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.",
+        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.",
         "operationId" : "signIn",
         "requestBody" : {
           "content" : {
@@ -3845,6 +3854,36 @@
           }
         },
         "summary" : "Report faults and speed from a pilot's device",
+        "tags" : [ "Diagnostics" ]
+      }
+    },
+    "/api/diagnostics/versions" : {
+      "get" : {
+        "description" : "Counted over the last few days (at most the 30 a fault is kept); the developer's.",
+        "operationId" : "byVersion",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 7,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppVersionsDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The apps' faults and speed figures by build",
         "tags" : [ "Diagnostics" ]
       }
     },
@@ -4891,6 +4930,146 @@
         "tags" : [ "pilot-controller" ]
       }
     },
+    "/api/me/avatar" : {
+      "delete" : {
+        "description" : "Their initials show again.",
+        "operationId" : "removeAvatar",
+        "responses" : {
+          "204" : {
+            "description" : "Taken out"
+          },
+          "401" : {
+            "description" : "No session"
+          },
+          "404" : {
+            "description" : "They had no photo"
+          }
+        },
+        "summary" : "Take out the signed-in pilot's photo",
+        "tags" : [ "Pilot" ]
+      },
+      "get" : {
+        "description" : "Their avatar's image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).",
+        "operationId" : "avatar",
+        "parameters" : [ {
+          "description" : "The photo's version, which only makes its address new",
+          "in" : "query",
+          "name" : "v",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "image/jpeg" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              },
+              "image/png" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              },
+              "image/webp" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "The image"
+          },
+          "401" : {
+            "description" : "No session"
+          },
+          "404" : {
+            "description" : "They have set no photo"
+          }
+        },
+        "summary" : "The signed-in pilot's photo",
+        "tags" : [ "Pilot" ]
+      },
+      "put" : {
+        "description" : "One image, as the form's photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.",
+        "operationId" : "setAvatar",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "photo" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "photo" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Kept; GET /api/me gives its new address"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "The photo was empty"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "No session"
+          },
+          "413" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Over 512 KB"
+          },
+          "415" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Not a JPEG, PNG or WebP image"
+          }
+        },
+        "summary" : "Set the signed-in pilot's photo",
+        "tags" : [ "Pilot" ]
+      }
+    },
     "/api/me/checkpoint-notes" : {
       "delete" : {
         "description" : "Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.",
@@ -4929,6 +5108,70 @@
         },
         "summary" : "Forget the signed-in pilot's own checkpoint notes",
         "tags" : [ "pilot-controller" ]
+      }
+    },
+    "/api/me/connections" : {
+      "get" : {
+        "description" : "Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.",
+        "operationId" : "connections",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectionDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Their connections"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectionDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "No session"
+          }
+        },
+        "summary" : "The signed-in pilot's connected AI apps",
+        "tags" : [ "Pilot" ]
+      }
+    },
+    "/api/me/connections/{id}" : {
+      "delete" : {
+        "description" : "Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.",
+        "operationId" : "disconnect",
+        "parameters" : [ {
+          "description" : "The connection's id, as listed",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Disconnected"
+          },
+          "401" : {
+            "description" : "No session"
+          },
+          "404" : {
+            "description" : "No such connection of theirs"
+          }
+        },
+        "summary" : "Disconnect one connected AI app",
+        "tags" : [ "Pilot" ]
       }
     },
     "/api/me/contact" : {
@@ -4983,7 +5226,7 @@
     },
     "/api/me/export" : {
       "get" : {
-        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.",
+        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders and connected AI apps (never a token); sent as a download.",
         "operationId" : "export",
         "responses" : {
           "200" : {
@@ -5214,45 +5457,6 @@
         },
         "summary" : "Report the nightly lab measurement",
         "tags" : [ "Speed" ]
-      }
-    },
-    "/api/subscription" : {
-      "get" : {
-        "operationId" : "get_5",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SubscriptionDto"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "summary" : "The pilot's subscription, with this month's uses against each cap",
-        "tags" : [ "Subscription" ]
-      }
-    },
-    "/api/subscription/trial" : {
-      "post" : {
-        "description" : "Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store's introductory offer.",
-        "operationId" : "startTrial",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SubscriptionDto"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "summary" : "Start the free month",
-        "tags" : [ "Subscription" ]
       }
     },
     "/api/training" : {
@@ -5553,9 +5757,6 @@
   }, {
     "description" : "Chart vision, course and nav log, proxied from the planner service",
     "name" : "Planner"
-  }, {
-    "description" : "The paid features: the free month, and what is paid for",
-    "name" : "Subscription"
   }, {
     "description" : "The signed-in pilot",
     "name" : "Pilot"

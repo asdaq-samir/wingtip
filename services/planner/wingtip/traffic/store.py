@@ -1,6 +1,6 @@
 """The live feeds' store, shared by two processes (issue #535's first
 split). ingest (services/ingest) reads the FAA's terminal radar through
-SWIM and asks adsb.fi for the followed airplanes, and writes what it
+SWIM and asks adsb.lol for the followed airplanes, and writes what it
 hears here; the planner reads it for the map, a card and an alert, and
 writes where the map looks and which airplanes are followed, which
 ingest reads back to know what of the country's radar to keep.
@@ -104,6 +104,34 @@ def radar_heard(plane: dict, at: float) -> bool:
     )
 
 
+def radar_heard_many(reports: list[tuple[dict, float]]) -> list[bool]:
+    """radar_heard for each of a message's reports, (plane, at), in one
+    transaction: a STARS message carries some twenty tracks, and each as
+    its own autocommit write was a WAL commit of its own, hundreds a
+    second while a map shows traffic. Whether each was kept, in order."""
+    if not reports:
+        return []
+    with _LOCK:
+        db = _connection()
+        db.execute("BEGIN IMMEDIATE")
+        try:
+            kept = [
+                db.execute(
+                    "INSERT INTO radar (hex, lat, lon, at, plane) VALUES (?, ?, ?, ?, ?) "
+                    "ON CONFLICT (hex) DO UPDATE SET lat = excluded.lat, lon = excluded.lon, at = excluded.at, plane = excluded.plane "
+                    "WHERE excluded.at > radar.at",
+                    (plane["hex"], plane["lat"], plane["lon"], at, json.dumps(plane)),
+                ).rowcount
+                > 0
+                for plane, at in reports
+            ]
+            db.execute("COMMIT")
+        except BaseException:
+            db.execute("ROLLBACK")
+            raise
+    return kept
+
+
 def radar_one(hex_id: str, since: float) -> tuple[dict, float] | None:
     """An airplane's latest report heard at or after `since`, and when."""
     rows = _query("SELECT plane, at FROM radar WHERE hex = ? AND at >= ?", (hex_id, since))
@@ -182,7 +210,7 @@ def record(hex_id: str, point: dict, oldest: float) -> bool:
     """A point added to an airplane's track where it is later than the
     track's last, and the track's points before `oldest` dropped. Both
     processes record (the planner an open card's airplane, ingest the
-    radar's and adsb.fi's), so a point a row: neither writes over the
+    radar's and adsb.lol's), so a point a row: neither writes over the
     other's."""
     with _LOCK:
         db = _connection()

@@ -11,10 +11,11 @@ import SwiftUI
 /// and nothing more under it, and the rows that need an account are there
 /// but disabled. Then one inset list of round-badged rows with
 /// their values: Pilot Details, Airplanes (the checklists inside), Flights,
-/// Logbook, Minimums, Training (the coach and the drills) and Emergency.
+/// Logbook, Minimums, Documents (the library), Training (the coach and
+/// the drills), Emergency and Connected Apps (the AI apps connected
+/// through the connector).
 /// Settings is the gear at the card's top left, the close at its right
-/// (CardStack). No Subscription row: nothing is sold yet (the free app,
-/// the owner's word).
+/// (CardStack).
 struct YouView: View {
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
@@ -30,35 +31,49 @@ struct YouView: View {
                 ProblemLine(session.problem)
             }
             Section {
-                NavigationLink { PilotDetailsView() } label: {
+                NavigationLink(value: SheetPage.pilotDetails) {
                     YouRowLabel(title: "Pilot Details", systemImage: "person.text.rectangle", colour: WingtipColor.Badge.tower,
                                 value: session.pilot?.homeBase)
                 }
                 .disabled(!session.signedIn)
                 .accessibilityIdentifier("pilot-details-row")
-                NavigationLink { OwnAircraftListView() } label: {
+                NavigationLink(value: SheetPage.screen(.airplanes)) {
                     YouRowLabel(title: "Airplanes", systemImage: WingtipIcon.airplane, colour: WingtipColor.Badge.approach,
                                 value: plan.airplaneName)
                 }
                 .accessibilityIdentifier("airplanes-row")
-                NavigationLink { FlightsView() } label: {
+                NavigationLink(value: SheetPage.screen(.flights)) {
                     YouRowLabel(title: "Flights", systemImage: "tray.full", colour: WingtipColor.Badge.weather)
                 }
-                NavigationLink { LogbookView() } label: {
+                NavigationLink(value: SheetPage.screen(.logbook)) {
                     YouRowLabel(title: Screen.logbook.title, systemImage: "book", colour: WingtipColor.Badge.fuel)
                 }
                 .disabled(!session.signedIn)
                 .accessibilityIdentifier("logbook-row")
                 // The weather the pilot will not take off or land in, kept
                 // on this phone: the Brief's Go / No-Go holds it to them.
-                NavigationLink { MinimumsView() } label: {
+                NavigationLink(value: SheetPage.screen(.minimums)) {
                     YouRowLabel(title: "Minimums", systemImage: "cloud.sun", colour: WingtipColor.Badge.ground)
                 }
-                NavigationLink { TrainingPage() } label: {
+                // The documents library: the FAA's, kept current, and the
+                // pilot's own PDFs on this device (DocumentsPage).
+                NavigationLink(value: SheetPage.screen(.documents)) {
+                    YouRowLabel(title: Screen.documents.title, systemImage: "books.vertical", colour: WingtipColor.Badge.chart)
+                }
+                .accessibilityIdentifier("documents-row")
+                NavigationLink(value: SheetPage.trainingHome) {
                     YouRowLabel(title: "Training", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging)
                 }
                 .accessibilityIdentifier("training-row")
                 EmergencyRow()
+                // The AI apps connected through the connector, each ended
+                // from here (the deep security review of 2026-11-21, N2):
+                // the account's, greyed signed out as the others are.
+                NavigationLink(value: SheetPage.connectedApps) {
+                    YouRowLabel(title: "Connected Apps", systemImage: "powerplug", colour: WingtipColor.Badge.approach)
+                }
+                .disabled(!session.signedIn)
+                .accessibilityIdentifier("connected-apps-row")
             }
         }
         .listStyle(.insetGrouped)
@@ -112,7 +127,7 @@ private struct YouHead: View {
                 }
                 Text(pilot.email).font(WingtipType.detail).foregroundStyle(.secondary)
             } else {
-                Button("Sign In", action: signIn)
+                Button(Wording.signIn, action: signIn)
                     .font(.title.bold())
                     .buttonStyle(.borderless)
                     .disabled(!session.loaded)
@@ -142,24 +157,28 @@ private struct YouHead: View {
 /// students they teach.
 struct TrainingPage: View {
     @Environment(Session.self) private var session
+    /// Practice, the drills, only while Training Tools is on in Settings' Extras (Extra).
+    @AppStorage(Extra.trainingTools.key) private var trainingTools = false
 
     var body: some View {
         List {
             // What needs an account is there but disabled signed out, with
             // no words of its own: You's head is the one Sign In.
-            NavigationLink { CoachView() } label: {
+            NavigationLink(value: SheetPage.screen(.coach)) {
                 SettingsLabel(Screen.coach.title, systemImage: "target", colour: WingtipColor.Badge.food)
             }
             .disabled(!session.signedIn)
-            NavigationLink { PracticeView() } label: {
-                SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic)
+            if trainingTools {
+                NavigationLink(value: SheetPage.practice) {
+                    SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic)
+                }
+                .accessibilityIdentifier("practice-row")
             }
-            .accessibilityIdentifier("practice-row")
             Group {
-                NavigationLink { TrainingView() } label: {
+                NavigationLink(value: SheetPage.training) {
                     SettingsLabel("Lessons and Endorsements", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging)
                 }
-                NavigationLink { InstructorView() } label: {
+                NavigationLink(value: SheetPage.instructing) {
                     SettingsLabel("Instructing", systemImage: "person.2", colour: WingtipColor.Badge.ground)
                 }
             }

@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.ui.rememberShownText
 import kotlin.math.roundToInt
 
 /**
@@ -45,8 +46,7 @@ private fun MinimumMenu(kind: Minimums.Kind, value: Double?, onPick: (Double?) -
     val off = stringResource(R.string.minimum_off)
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
-            value = value?.let { words(kind, it) } ?: off,
-            onValueChange = {},
+            state = rememberShownText(value?.let { words(kind, it) } ?: off),
             readOnly = true,
             label = { Text(stringResource(title(kind))) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },

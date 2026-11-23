@@ -22,8 +22,14 @@ test("profile: the slider, its tag and the ruler all say the planned cruise, wit
   // with the tag (it sat a step a row down the graph, at about 9,500).
   const wheel = card.getByRole("slider", { name: "Cruise altitude" });
   await expect(wheel).toHaveAttribute("aria-valuenow", String(cruiseFt));
-  const knob = await card.locator("[data-slot=slider-thumb]").boundingBox();
-  const tag = await card.getByTestId("mini-profile-cruise").boundingBox();
+  // Both read in one frame: the card is still easing into its place as it
+  // opens, and two reads a frame or two apart differed by the slide (4.7 px
+  // on CI's slower runner, nightly run 44503184146), not by the scales.
+  const [knob, tag] = await card.evaluate((c) =>
+    ["[data-slot=slider-thumb]", "[data-testid=mini-profile-cruise]"].map(
+      (s) => c.querySelector(s)!.getBoundingClientRect().toJSON() as DOMRect,
+    ),
+  );
   expect(Math.abs(knob!.y + knob!.height / 2 - (tag!.y + tag!.height / 2))).toBeLessThan(4);
   // The ruler's figures and the tag beside the slider's track, not under it.
   expect(tag!.x).toBeGreaterThanOrEqual(knob!.x + knob!.width);
@@ -54,14 +60,20 @@ test("nav log and brief: no zero count, the dashes said, the plan line in the Br
   await closeNavLog(page);
   await openBrief(page);
   const brief = page.getByTestId("brief-card");
-  // The plan's line is the pinned head's own, the altitude first.
-  await expect(brief.getByTestId("card-sub")).toHaveText(/^FL-\d{3} · leaving /);
-  // The cards' names are section titles, not small grey capitals.
-  const label = brief.getByTestId("brief-glance-preflight").getByText("Before you go", { exact: true });
+  // Named "Brief" as the Nav Log and the Profile are (the owner,
+  // 2026-11-19), the plan's line under it the pinned head's own, the route
+  // by its idents first.
+  await expect(brief.getByTestId("brief-name")).toHaveText("Brief");
+  await expect(brief.getByTestId("card-sub")).toHaveText(/^C81 → KDLH · FL-\d{3} · leaving /);
+  // The rows' names are words, not small grey capitals (option A's grouped list).
+  const label = brief.getByTestId("brief-glance-preflight").getByText("Before You Go", { exact: true });
   await expect(label).toHaveCSS("text-transform", "none");
-  // The verdict first, before anything else on the page.
+  // The verdict first, before anything else on the page: under the name in
+  // the pinned head (option A, the owner 2026-11-19).
   const verdict = brief.getByTestId("brief-verdict");
   await expect(verdict).toBeVisible({ timeout: slow(60_000) });
+  expect((await verdict.boundingBox())!.y).toBeGreaterThan((await brief.getByTestId("brief-name").boundingBox())!.y);
+  expect((await verdict.boundingBox())!.y).toBeLessThan((await brief.getByTestId("brief-list").boundingBox())!.y);
   const notices = brief.getByTestId("briefing-notices");
   if (await notices.count()) expect((await notices.boundingBox())!.y).toBeGreaterThan((await verdict.boundingBox())!.y);
 });

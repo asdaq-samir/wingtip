@@ -21,6 +21,7 @@ data class AccountExport (
     val format: String,
     val instructing: InstructorDto,
     val logbook: List<LogbookEntryDto>,
+    val photo: String? = null,
     val records: AccountRecordsDto,
     val reminders: RemindersDto,
     val training: TrainingDto
@@ -31,6 +32,12 @@ data class AccountExport (
  */
 @Serializable
 data class PilotDto (
+    /**
+     * Where their avatar's photo is read, its version in the address so a new photo is never a
+     * cached one (GET /api/me/avatar); null when they have set none and their initials show
+     */
+    val avatarUrl: String? = null,
+
     /**
      * Whether this pilot also does development work here: the training workspace and the
      * developer console are theirs, a plain pilot's are not.
@@ -627,11 +634,13 @@ data class SignedEndorsementDto (
     val digest: String,
     val fields: Map<String, String>,
     val id: Long,
+    val instructorVerified: Boolean,
     val signature: String,
     val signedOn: String,
     val studentName: String,
     val text: String,
     val until: String? = null,
+    val verification: String? = null,
     val voided: Boolean
 )
 
@@ -686,16 +695,7 @@ data class LogbookEntryDto (
 
 @Serializable
 data class AccountRecordsDto (
-    val featureUses: List<FeatureUse>,
-    val remindersSent: List<SentReminder>,
-    val subscription: SubscriptionRow? = null
-)
-
-@Serializable
-data class FeatureUse (
-    val feature: String,
-    val month: String,
-    val uses: Int
+    val remindersSent: List<SentReminder>
 )
 
 @Serializable
@@ -704,17 +704,6 @@ data class SentReminder (
     val dueOn: String,
     val sentAt: String,
     val what: String
-)
-
-@Serializable
-data class SubscriptionRow (
-    val paidUntil: String? = null,
-    val plan: String? = null,
-    val store: String? = null,
-    val storeRef: String? = null,
-    val trialEndsAt: String? = null,
-    val trialStartedAt: String? = null,
-    val updatedAt: String
 )
 
 @Serializable
@@ -818,12 +807,39 @@ data class AircraftRequest (
 )
 
 @Serializable
+data class AppVersionsDto (
+    val faults: List<VersionFaultsDto>,
+    val figures: List<VersionFigureDto>
+)
+
+@Serializable
+data class VersionFaultsDto (
+    val count: Long,
+    val kind: String,
+    val lastAt: String,
+    val platform: String,
+    val version: String
+)
+
+@Serializable
+data class VersionFigureDto (
+    val count: Long,
+    val metric: String,
+    val p50: Double,
+    val p75: Double,
+    val p95: Double,
+    val source: String,
+    val version: String
+)
+
+@Serializable
 data class AppleNonceAnswer (
     val nonce: String
 )
 
 @Serializable
 data class AppleToken (
+    val authorizationCode: String? = null,
     val identityToken: String,
     val nonce: String? = null
 )
@@ -865,12 +881,17 @@ data class Capabilities (
      * The OIDC providers with real credentials, by registration id: the sign-in buttons to
      * offer. Empty where only the emailed link signs in (the local stack).
      */
-    val providers: List<String>,
+    val providers: List<String>
+)
 
-    /**
-     * Whether this deployment sells the subscription; where not, the page says nothing of one.
-     */
-    val subscriptions: Boolean
+@Serializable
+data class ConnectionDto (
+    val app: String,
+    val can: List<String>,
+    val id: String,
+    val renewedAt: String? = null,
+    val scopes: String? = null,
+    val until: String? = null
 )
 
 @Serializable
@@ -1244,48 +1265,6 @@ data class SquawkRequest (
     val inoperative: Boolean,
     val reportedOn: String,
     val text: String
-)
-
-/**
- * The signed-in pilot's subscription to the paid features
- */
-@Serializable
-data class SubscriptionDto (
-    /**
-     * Whether the paid features are theirs now
-     */
-    val entitled: Boolean,
-
-    /**
-     * MONTHLY or YEARLY, when paid for
-     */
-    val plan: String? = null,
-
-    /**
-     * FREE (none), TRIAL (the free month), SUBSCRIBED (paid for), or COMPED (given: a
-     * developer's, an instructor's)
-     */
-    val state: String,
-
-    /**
-     * Where it was bought, when paid for
-     */
-    val store: String? = null,
-
-    /**
-     * Whether the free month is still theirs to start: once an account
-     */
-    val trialAvailable: Boolean,
-
-    /**
-     * The free month's length, days
-     */
-    val trialDays: Int,
-
-    /**
-     * When the free month or the paid time runs out; null for FREE and COMPED
-     */
-    val until: String? = null
 )
 
 @Serializable

@@ -1,18 +1,31 @@
-import { Suspense, lazy, useState } from "react";
-import { clockTime, localDay, twoFigures } from "../../lib/format";
-import { leaveWhen } from "../../lib/format/leaveWhen";
+import { Suspense, useState } from "react";
+import { clockTime, localDay, zoneName } from "../../lib/format";
+import { dayAtNextHour, leaveWhen } from "../../lib/format/leaveWhen";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import { fromChunk } from "../../lib/fromChunk";
 
-/** The month grid and the time field are React Aria's, only ever seen
- *  inside this popover -- so they arrive with the popover rather than
- *  with the page. */
-const DayCalendar = lazy(() => import("../../components/ui/calendar").then((m) => ({ default: m.DayCalendar })));
-const TimeField = lazy(() => import("../../components/ui/date-field").then((m) => ({ default: m.TimeField })));
+/** The month grid and the time's wheels are React Aria's, only ever seen
+ *  inside this popover -- so they arrive with it rather than with the
+ *  page: one chunk for both (departPickerParts), asked as the trigger is
+ *  touched, hovered or focused, ahead of the tap's open, and drawn from
+ *  its module once in (fromChunk), where two `lazy()`s were each fetched
+ *  only at the open and suspended it once more (the speed audit of
+ *  2026-11-21). */
+const loadParts = () => import("./departPickerParts");
+const { Part: DayCalendar, prefetch: prefetchCalendar } = fromChunk(loadParts, (m) => m.DayCalendar);
+const { Part: TimeField, prefetch: prefetchTime } = fromChunk(loadParts, (m) => m.TimeField);
+const prefetchParts = () => {
+  prefetchCalendar();
+  prefetchTime();
+};
+/** The trigger's intent: a touch, a hover or a focus asks for the parts. */
+const INTENT = { onPointerDown: prefetchParts, onPointerEnter: prefetchParts, onFocus: prefetchParts };
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { cn } from "cn";
 import { CHIP_TEXT } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
+import { useMinuteClock } from "../../lib/useMinuteClock";
 
 interface Props {
   /** The departure as an ISO instant, or "" for about now. */
@@ -39,12 +52,6 @@ interface Props {
 function instantAt(day: Date, time: string): string {
   const [h, m] = time.split(":").map(Number);
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h || 0, m || 0).toISOString();
-}
-
-/** The next whole hour, local: the time a freshly picked day starts
- *  with, so picking a day alone already means something. */
-function nextHour(): string {
-  return `${twoFigures((new Date().getHours() + 1) % 24)}:00`;
 }
 
 /**
@@ -86,20 +93,36 @@ export default function DepartPicker({
           <Button
             variant="link"
             size="inline"
-            aria-label={`${label}, ${date ? leaveWhen(date) : "now"}: change`}
             data-testid={testId}
+            {...INTENT}
             className={cn(
               // 44 tall round its 20 (12 over and under), so a tap just
               // above or below "Now" picks the time, not the field's row
               // toggle under it (the audit's WEB-5); 10 either side.
-              "relative shrink-0 gap-0.5 font-semibold tabular-nums after:absolute after:-inset-x-2.5 after:-inset-y-3 after:content-['']",
+              "relative shrink-0 gap-0.5 font-semibold tabular-nums hit-x-2.5 hit-y-3",
               TEXT.detail,
             )}
           >
             {/* The tint alone says it opens, as every other tappable
                 figure's does: no chevron after it (the owner's list,
-                2026-11-17, "Now ⌄"). */}
-            {date ? leaveWhen(date) : "Now"}
+                2026-11-17, "Now ⌄"). "Now" says the clock's time under it
+                (the owner, 2026-11-19: "Can depart time show under now?"). */}
+            {/* Its name is what it shows, the label and "change" round it for
+                a screen reader alone, so the name holds the words in sight,
+                the clock under "Now" too (WCAG 2.5.3, Label in Name; axe's
+                label-content-name-mismatch, a11y.spec's Nav Log). */}
+            <span className="sr-only">{label}, </span>
+            {date ? (
+              leaveWhen(date)
+            ) : (
+              // Each line at its own size's leading (TEXT.detail's), as
+              // the iOS audit's P3 asks: tightened, "Now" sat on 18.8.
+              <span className="flex flex-col items-end">
+                Now
+                <NowTime />
+              </span>
+            )}
+            <span className="sr-only">: change</span>
           </Button>
         ) : (
           <Button
@@ -108,11 +131,21 @@ export default function DepartPicker({
             // the airplane beside it (FlightInputs).
             variant="glass"
             size="sm"
-            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
-            aria-label={`${label} date`}
+            // Over the head under it (z-10), whose row starts inside its
+            // 44-point area's foot, and 4 more after the pill before it,
+            // whose end's glyph's area runs 12 past that pill (pillLook's
+            // PILL_END): its own area's edge clear of both (the iOS
+            // audit's P1, "Departure date" 57×32 on a local flight).
+            className={cn("relative z-10 ml-1 rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
             data-testid={testId}
+            {...INTENT}
           >
-            {!date && <CalendarIcon className="text-muted-foreground" />}
+            {/* Named by what it shows, its label before it for a screen
+                reader alone, as the time's look is: "Departure date" held
+                none of the "Now" in sight (WCAG 2.5.3, Label in Name; axe's
+                label-content-name-mismatch on a local flight). */}
+            <span className="sr-only">{label}, </span>
+            {!date && <CalendarIcon className="text-muted-foreground" aria-hidden="true" />}
             {date ? leaveWhen(date) : "Now"}
           </Button>
         )}
@@ -125,7 +158,8 @@ export default function DepartPicker({
       <ResponsivePopoverContent
         title={label}
         description={date ? `Leaving ${leaveWhen(date)}` : "Leaving now"}
-        className="w-auto p-0"
+        className="w-auto"
+        bleed
         align="start"
         closeButton={false}
         leading={
@@ -156,18 +190,17 @@ export default function DepartPicker({
       >
         <div className="flex flex-col items-center gap-3 pb-3" data-testid="depart-picker">
           {/* The time once a day is picked -- picking one gives it the
-              next whole hour: React Aria's time field, hours and minutes
-              on the 24-hour clock, 16px below md so a phone does not zoom
-              on it, its 44 a band round it (ui/date-field). */}
+              next whole hour: one button showing it, the zone after it, a
+              tap opening the hours and minutes as two wheels under it, as
+              iOS's compact time picker does (ui/time-field; the owner,
+              2026-11-21), on the 24-hour clock. */}
           {date && (
             <Suspense fallback={<div className="h-8 w-28" />}>
               <TimeField
                 value={time}
-                onChange={(hhmm) => {
-                  if (hhmm) onChange(instantAt(date, hhmm));
-                }}
+                zone={zoneName(date)}
+                onChange={(hhmm) => onChange(instantAt(date, hhmm))}
                 aria-label={`${label} time`}
-                className="h-8 w-28 bg-background"
                 data-testid="depart-time"
               />
             </Suspense>
@@ -186,11 +219,17 @@ export default function DepartPicker({
               captionLayout="dropdown"
               min={earliest != null ? localDay(new Date(earliest)) : undefined}
               max={latest != null ? localDay(new Date(latest)) : undefined}
-              onChange={(day) => onChange(instantAt(new Date(`${day}T00:00`), time || nextHour()))}
+              onChange={(day) => onChange(time ? instantAt(new Date(`${day}T00:00`), time) : dayAtNextHour(new Date(`${day}T00:00`)))}
             />
           </Suspense>
         </div>
       </ResponsivePopoverContent>
     </ResponsivePopover>
   );
+}
+
+/** The time now, under "Now", kept to the minute. */
+function NowTime() {
+  const now = useMinuteClock();
+  return <span className={cn("font-normal text-muted-foreground", TEXT.caption)}>{clockTime(new Date(now))}</span>;
 }

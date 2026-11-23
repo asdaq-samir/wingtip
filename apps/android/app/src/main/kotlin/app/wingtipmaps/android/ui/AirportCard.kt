@@ -2,7 +2,6 @@ package app.wingtipmaps.android.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +41,7 @@ import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
+import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
@@ -50,6 +50,9 @@ import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
+import app.wingtipmaps.android.ui.sheet.InSightFoot
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * A field's card, laid out as Google Maps' place sheet on Android is in
@@ -65,9 +68,10 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * ship, else "From KMSN", the route's departure) -- as containers; the
  * actions, four and no more, as the web's (the owner, 2026-11-11): Fly
  * Here filled, with its time at the airplane's cruise speed, then Add as
- * Stop, Call and Favorite; right under them the sections in a tab row
- * (AirportTabRow, the owner's T4 of 2026-11-14), Overview's first the
- * pictures (AirportSections), and the field's report in one line; each
+ * Stop, Call and Favorite; under them the field's report in one line,
+ * then the page of the tab picked in the bar floating at the foot of the
+ * card in sight (AirportTabBar; C1, the owner, 2026-11-14, as the web's
+ * and the iPhone's), Info's first the pictures (AirportSections); each
  * thing a NOTAM in force addresses badged by its name (NotamMarks). A NOTAM, from its row
  * or a badge, opens on a page of its own in the card's stack
  * (NotamPage), ← and Back coming back to the card where it was. The
@@ -81,7 +85,14 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     val context = LocalContext.current
     val state by model.state.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
-    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
+    // The airplane's place to a thousandth of a degree, told only as it
+    // changes: the whole card was drawn again, and its facts asked of the
+    // engine again, at every fix.
+    val ship = flight.ownShip
+    // The first place read once, as the flow is made, not at each drawing.
+    val nearFirst = remember(ship) { ship.fix.value?.let(AirportFacts.From::near) }
+    val near by remember(ship) { ship.fix.map { it?.let(AirportFacts.From::near) }.distinctUntilChanged() }
+        .collectAsStateWithLifecycle(nearFirst)
     val airplane = rememberAirplaneNow(plan)
     val actions = rememberRouteActions(plan)
     LaunchedEffect(ident) { if (ident.isNotEmpty()) model.open(ident) }
@@ -91,7 +102,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     // route's departure, its place the course's or its own card's.
     val known = planState.course?.departure?.let { AirportModel.Departure(it.ident, it.lat, it.lon) }
     LaunchedEffect(planState.dep, known) { model.departFrom(planState.dep, known) }
-    val from = fix?.let { AirportFacts.From(it.lat, it.lon) } ?: state.departure?.let { AirportFacts.From(it.lat, it.lon, it.ident) }
+    val from = near ?: state.departure?.let { AirportFacts.From(it.lat, it.lon, it.ident) }
     val cruise = airplane.value(FigureKey.CRUISE)
     val facts = remember(place, from, cruise) { place?.let { AirportFacts.of(it, from, cruise) } }
     var section by rememberSaveable(ident) { mutableIntStateOf(0) }
@@ -117,7 +128,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     val view = AirportCardView(
         marks = marks,
         runways = badges,
-        notams = CardNotams(ranked, said, state.notamsProblem, allNotams, toggle = { allNotams = !allNotams }, open = open, none = words.notamsNone),
+        notams = CardNotams(ranked, said, state.notamsProblem, allNotams, toggle = { allNotams = !allNotams }, open = open, none = words.notamsNone, fetchedAtMs = state.notamsAtMs, retry = model::retryNotams),
         onNotam = { open(it.notams) },
         onDiagram = place?.airportDiagramUrl?.let { { diagram = true } },
         words = words,
@@ -132,8 +143,16 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     ) { padding ->
         // The card is fetched as it opens; no pull to refresh in a sheet,
         // whose drag down is the sheet's (the scrolling rule, 2026-11-10).
-        Box(Modifier.padding(padding)) {
-            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
+        // The tabs float at the foot of the card in sight (C1), there once
+        // the field's answer is in, as their pages are.
+        val tabs: @Composable (Modifier) -> Unit = { at ->
+            if (place != null) {
+                AirportTabBar(AirportSection.entries[section], onPick = { section = it.ordinal }, category = place.metar?.flightCategory, charts = chartCount(place), modifier = at)
+            }
+        }
+        InSightFoot(Modifier.padding(padding).fillMaxSize(), foot = tabs) {
+            // Clear of the floating tabs at the list's end.
+            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = WingtipSize.TabBar + WingtipSpace.Xl)) {
                 state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg), onRetry = { model.open(ident) }) } }
                 if (place == null) {
                     if (state.loading) item(key = "loading") { LoadingRow(Modifier.padding(WingtipSpace.Lg)) }
@@ -150,19 +169,13 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
                 // as Maps' place sheet has them (the audit's AND-1): docked at
                 // the foot of the full-height layout they sat below the window.
                 item(key = "actions") { ActionPills(place, facts, actions, onDone = onDone) }
-                // The sections' tabs right under the actions (the owner's T4,
-                // 2026-11-14), pinned under the bar as the card scrolls (the
-                // scrolling rule, 2026-11-10), in the sheet's own colour.
-                stickyHeader(key = "tabs") {
-                    AirportTabRow(section, onPick = { section = it }, category = place.metar?.flightCategory, charts = chartCount(place))
-                }
-                // The field's own report in one line under the tabs (T4).
+                // The field's own report in one line under the actions.
                 item(key = "weather-line") { AirportWeatherLine(place.metar, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 airportSection(AirportSection.entries[section], place, state, view)
             }
         }
     }
-    if (diagram) place?.airportDiagramUrl?.let { url -> DiagramOwnShipDialog(place.ident, url, onClose = { diagram = false }) }
+    if (diagram) place?.airportDiagramUrl?.let { url -> DiagramOwnShipDialog(place, url, onClose = { diagram = false }) }
 }
 
 /** A closed field's label in the error ink, and the field's use line

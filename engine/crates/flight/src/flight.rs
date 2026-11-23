@@ -116,6 +116,24 @@ pub const NIGHT_RESERVE_MIN: f64 = 45.0;
 /// the destination), day or night.
 pub const IFR_RESERVE_MIN: f64 = 45.0;
 
+/// The fuel in the tanks as a flight leaves a field, gallons: the pilot's
+/// own figure where they set one (`fill_gal`), else full, the usable fuel
+/// (the planner's way since the first fuel check: the tanks filled at the
+/// departure and at each field landed at). At the departure the figure is
+/// what is on board at engine start; at a stop it is what the tanks are
+/// fuelled to, so a figure under what is left (`left_gal`, None where the
+/// leg in has no burn known) keeps what is left -- 0 is "no fuel bought".
+/// A figure over the usable fuel is kept as set, with the app's warning:
+/// warn, never limit (the owner's rule); the tanks' size is the airplane's
+/// handbook figure, not ours to cap the pilot's word at.
+pub fn tanks_leaving(usable_gal: f64, fill_gal: Option<f64>, left_gal: Option<f64>) -> f64 {
+    match (fill_gal, left_gal) {
+        (Some(fill), Some(left)) => fill.max(left),
+        (Some(fill), None) => fill,
+        (None, _) => usable_gal,
+    }
+}
+
 /// The reserve in minutes for the rules flown and the time of day.
 pub fn reserve_min(ifr: bool, night: bool) -> f64 {
     if ifr {
@@ -189,6 +207,18 @@ pub fn isa_pressure_hpa(altitude_ft: f64) -> f64 {
     let ft = altitude_ft.clamp(LOWEST_FT, ISA_TROPOPAUSE_FT);
     ISA_SEA_LEVEL_HPA * (1.0 - LAPSE_OVER_T0_PER_FT * ft).powf(PRESSURE_EXPONENT)
 }
+
+/// The fuels an airplane is loaded with, by grade, and the standard weight
+/// of a US gallon of each, for the weight and balance's fuel where the
+/// airplane's own figure is not given (the POH's, where the pilot enters
+/// it, rules): FAA-H-8083-1B, the Aircraft Weight and Balance Handbook --
+/// avgas 6 lb ("aviation gasoline weighs 6 pounds per gallon", chapter 7;
+/// Figure 3-4's 6.01 at 59 °F), Jet A and A-1 6.8 lb (chapter 9, "Jet A
+/// fuel has a nominal specific gravity at +15 °C of 0.812 and weighs 6.8
+/// pounds per gallon"; Figure 3-4 gives 6.68 at 59 °F, and the heavier
+/// errs toward the weight limit, the one the loading is most often near).
+/// (grade, name as the pump and the POH write it, lb a gallon).
+pub const FUEL_GRADES: [(&str, &str, f64); 2] = [("avgas", "Avgas (100LL)", 6.0), ("jet_a", "Jet A", 6.8)];
 
 #[cfg(test)]
 mod speed_tests {

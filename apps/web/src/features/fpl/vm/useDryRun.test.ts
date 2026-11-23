@@ -10,6 +10,7 @@
  */
 import { createElement, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import type { Address } from "../../../lib/address";
@@ -60,7 +61,9 @@ function useFlight(view: PanelView) {
   return { cards, run, nearestFrom: useOwnFixShown() };
 }
 
-const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: new QueryClient() }, children);
+// The address too: the run reads its procedures' missed approach from it (useAddressKey).
+const wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(NuqsTestingAdapter, null, createElement(QueryClientProvider, { client: new QueryClient() }, children));
 
 /** The Profile card opened on FPL and its dry run started. */
 function flying() {

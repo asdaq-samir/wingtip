@@ -7,6 +7,7 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.RouteProfile
+import app.wingtipmaps.android.api.generated.RouteWeather
 import app.wingtipmaps.android.dryrun.DryRunRows
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.planProfile
@@ -25,8 +26,9 @@ import javax.inject.Inject
 /**
  * The Profile card's view model: the route's side view from the planner
  * (/api/route-profile, the web's and the iPhone's, kept on the phone for
- * the next launch and the air), the plan's altitude
- * line over it from the engine (`plan_profile`, from the nav log's rows),
+ * the next launch and the air), the weather along it for the flight
+ * planned (/api/route-profile/weather), the plan's altitude line over it
+ * from the engine (`plan_profile`, from the nav log's rows),
  * the legal altitudes the slider steps through (the planner's, by 14 CFR
  * 91.159 or 91.179), and the altitude previewed on the slider, which
  * changes nothing until Set. The clearance at a previewed altitude is the
@@ -39,6 +41,9 @@ class ProfileModel @Inject constructor() : ViewModel() {
         val problem: String? = null,
         /** The altitude previewed on the slider, feet MSL; null for the plan's. */
         val previewFt: Double? = null,
+        /** The weather along it for the flight planned (its departure and
+         *  time en route); null till it comes or where it could not be had. */
+        val weather: RouteWeather? = null,
     )
 
     private val _state = MutableStateFlow(State())
@@ -46,9 +51,13 @@ class ProfileModel @Inject constructor() : ViewModel() {
 
     private var loaded: List<String>? = null
     private var loading: Job? = null
+    private var weatherOf: List<String?>? = null
+    private var weatherLoading: Job? = null
 
-    /** The side view for the route, fetched once per route. */
+    /** The side view for the route, fetched once per route, and its
+     *  weather once per route, departure and time en route. */
     fun load(plan: Plan.State) {
+        loadWeather(plan)
         val key = listOf(plan.dep) + plan.stops + plan.dest
         if (!plan.routed || key == loaded) return
         loaded = key
@@ -66,6 +75,28 @@ class ProfileModel @Inject constructor() : ViewModel() {
             } catch (e: Exception) {
                 loaded = null
                 _state.update { it.copy(problem = Problems.say("The route's side view could not be fetched", e)) }
+            }
+        }
+    }
+
+    /** The cloud bases, freezing level and icing along the route for the
+     *  flight planned (/api/route-profile/weather); where it fails the side
+     *  view stands without them, the key saying nothing it does not have. */
+    private fun loadWeather(plan: Plan.State) {
+        val eteMin = plan.totals?.eteMin
+        val key = listOf(plan.dep) + plan.stops + plan.dest + plan.depart + eteMin?.toString()
+        if (!plan.routed || key == weatherOf) return
+        weatherOf = key
+        weatherLoading?.cancel()
+        weatherLoading = viewModelScope.launch {
+            try {
+                val weather = Planner.routeWeather(plan.dep, plan.dest, plan.stops, plan.depart, eteMin)
+                _state.update { it.copy(weather = weather) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                weatherOf = null
+                _state.update { it.copy(weather = null) }
             }
         }
     }

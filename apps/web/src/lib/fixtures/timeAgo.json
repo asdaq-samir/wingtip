@@ -1,0 +1,75 @@
+{
+  "why": "time_ago's cases: the one \"... ago\" the engine (engine/facade/tests/time_ago.rs), the web (lib/format/time) and both phones (Format.ago) write.",
+  "cases": [
+    {
+      "why": "A time a little ahead of the feed's",
+      "input": {
+        "seconds": -30
+      },
+      "expected": "just now"
+    },
+    {
+      "why": "Now",
+      "input": {
+        "seconds": 0
+      },
+      "expected": "just now"
+    },
+    {
+      "why": "Under a minute",
+      "input": {
+        "seconds": 59
+      },
+      "expected": "just now"
+    },
+    {
+      "why": "A minute",
+      "input": {
+        "seconds": 60
+      },
+      "expected": "1m ago"
+    },
+    {
+      "why": "Whole minutes, counted down",
+      "input": {
+        "seconds": 1439
+      },
+      "expected": "23m ago"
+    },
+    {
+      "why": "On the hour, no minutes",
+      "input": {
+        "seconds": 3600
+      },
+      "expected": "1h ago"
+    },
+    {
+      "why": "Hours and minutes",
+      "input": {
+        "seconds": 7500
+      },
+      "expected": "2h 5m ago"
+    },
+    {
+      "why": "Under two days",
+      "input": {
+        "seconds": 172799
+      },
+      "expected": "47h 59m ago"
+    },
+    {
+      "why": "Two days",
+      "input": {
+        "seconds": 172800
+      },
+      "expected": "2d ago"
+    },
+    {
+      "why": "Whole days, counted down",
+      "input": {
+        "seconds": 453600
+      },
+      "expected": "5d ago"
+    }
+  ]
+}

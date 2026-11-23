@@ -174,6 +174,21 @@ class RecentError(BaseModel):
     detail: str
 
 
+class RouteStat(BaseModel):
+    """One route and method as the planner has answered it since it
+    started (app.route_metrics): calls, those of 500 or more, their share,
+    and the time at the 50th and 95th percentile in milliseconds (none
+    before a call)."""
+
+    route: str
+    method: str
+    count: int
+    errors: int
+    error_rate: float
+    p50_ms: float | None = None
+    p95_ms: float | None = None
+
+
 class Status(BaseModel):
     checked_at: str
     services: Services
@@ -191,6 +206,9 @@ class Status(BaseModel):
     # The live feeds (app.feeds): SWIM's through ingest's beats, the
     # weather's through the weather service.
     feeds: "FeedHealth | None" = None
+    # Each route's calls, failures and times since the planner started,
+    # the busiest first (app.route_metrics).
+    routes: list[RouteStat] = []
 
 
 class RetrainStarted(BaseModel):

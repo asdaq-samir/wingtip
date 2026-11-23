@@ -5,14 +5,14 @@ import Foundation
 import OpenAPIRuntime
 
 /// The engine's inputs and answers by rule, as engine/contract/engine.schema.json
-/// types them; Engine's functions in EngineCalls.swift take and return them.
-enum EngineContract {
+/// types them; Engine's functions in EngineCalls.swift take and return them. Nonisolated: any thread asks the engine.
+nonisolated enum EngineContract {
 
-    struct AcsCodesInput: Codable, Equatable, Sendable {
+    nonisolated struct AcsCodesInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct AheadFrameAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AheadFrameAnswer: Codable, Equatable, Sendable {
         /// [south, west, north, east].
         var box: [Double]
         /// [south, west, north, east].
@@ -29,7 +29,7 @@ enum EngineContract {
         }
     }
 
-    struct AheadFrameInput: Codable, Equatable, Sendable {
+    nonisolated struct AheadFrameInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         /// True track over the ground.
@@ -49,7 +49,7 @@ enum EngineContract {
         }
     }
 
-    struct AirborneNowInput: Codable, Equatable, Sendable {
+    nonisolated struct AirborneNowInput: Codable, Equatable, Sendable {
         var before: Bool?
         var airborne: Bool?
         var arrived: Bool?
@@ -63,7 +63,7 @@ enum EngineContract {
         }
     }
 
-    struct AircraftProblemsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AircraftProblemsAnswer: Codable, Equatable, Sendable {
         var tailNumber: String?
         var typeDesignator: String?
         var cruiseTasKt: String?
@@ -83,7 +83,7 @@ enum EngineContract {
         var colour: String?
     }
 
-    struct AircraftProblemsInput: Codable, Equatable, Sendable {
+    nonisolated struct AircraftProblemsInput: Codable, Equatable, Sendable {
         var tailNumber: String?
         var typeDesignator: String?
         var cruiseTasKt: String?
@@ -103,11 +103,11 @@ enum EngineContract {
         var colour: String?
     }
 
-    struct AirplaneFigureRangesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneFigureRangesAnswer: Codable, Equatable, Sendable {
         var ranges: [EngineContract.AirplaneFigureRangesAnswerRangesItem]
     }
 
-    struct AirplaneFigureRangesAnswerRangesItem: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneFigureRangesAnswerRangesItem: Codable, Equatable, Sendable {
         /// The form's and the gateway's name, cruiseTasKt.
         var field: String
         /// The planner's query parameter, cruise_tas_kt.
@@ -136,15 +136,15 @@ enum EngineContract {
         }
     }
 
-    struct AirplaneFigureRangesInput: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneFigureRangesInput: Codable, Equatable, Sendable {
     }
 
-    struct AirplaneFiguresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneFiguresAnswer: Codable, Equatable, Sendable {
         var figures: [EngineContract.AirplaneFiguresAnswerFiguresItem]
         var profile: [String: OpenAPIValueContainer]?
     }
 
-    struct AirplaneFiguresAnswerFiguresItem: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneFiguresAnswerFiguresItem: Codable, Equatable, Sendable {
         /// The figure's name, the gateway record's and the planner's query's in snake case.
         var key: String
         var value: Double?
@@ -154,7 +154,7 @@ enum EngineContract {
         var book: Double?
     }
 
-    struct AirplaneFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneFiguresInput: Codable, Equatable, Sendable {
         /// The type's stock profile (the planner's /api/aircraft-profiles entry); null for a type with none.
         var book: [String: OpenAPIValueContainer]?
         /// The figures its pilot confirmed off a photographed handbook page (handbook_figures' answer); null for none.
@@ -163,18 +163,18 @@ enum EngineContract {
         var own: [String: OpenAPIValueContainer]?
     }
 
-    struct AirplaneNeedsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneNeedsAnswer: Codable, Equatable, Sendable {
         /// The inputs' names in order: a figure's key (taxi_fuel_gal, glide_ratio ...), a table (loading, takeoff, landing), or airplane.
         var missing: [String]
     }
 
-    struct AirplaneNeedsInput: Codable, Equatable, Sendable {
+    nonisolated struct AirplaneNeedsInput: Codable, Equatable, Sendable {
         /// The airplane (airplane_figures' profile); null for no airplane.
         var profile: [String: OpenAPIValueContainer]?
         var figure: String
     }
 
-    struct AirportDataWordsInput: Codable, Equatable, Sendable {
+    nonisolated struct AirportDataWordsInput: Codable, Equatable, Sendable {
         /// The planner's AirportPlace data_source.
         var dataSource: String?
         /// The planner's AirportPlace info_date, YYYY-MM-DD: NASR's LAST_INFO_RESPONSE, else LAST_INSPECTION.
@@ -186,11 +186,11 @@ enum EngineContract {
         }
     }
 
-    struct AirportNamesInput: Codable, Equatable, Sendable {
+    nonisolated struct AirportNamesInput: Codable, Equatable, Sendable {
         var names: [String]
     }
 
-    struct AirportNotamsNoneInput: Codable, Equatable, Sendable {
+    nonisolated struct AirportNotamsNoneInput: Codable, Equatable, Sendable {
         /// The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
         var `private`: Bool?
         /// A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
@@ -205,7 +205,7 @@ enum EngineContract {
         }
     }
 
-    struct AirportUseWordsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AirportUseWordsAnswer: Codable, Equatable, Sendable {
         var use: String
         /// The card's line; null for a public or joint-use field.
         var words: String?
@@ -219,19 +219,21 @@ enum EngineContract {
         }
     }
 
-    struct AirportUseWordsInput: Codable, Equatable, Sendable {
+    nonisolated struct AirportUseWordsInput: Codable, Equatable, Sendable {
         /// The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
         var `private`: Bool?
         /// A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
         var military: String?
     }
 
-    /// A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
-    struct AirspaceBand: Codable, Equatable, Sendable {
+    /// A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name and primary airport for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
+    nonisolated struct AirspaceBand: Codable, Equatable, Sendable {
         var floorFt: Double
         var ceilingFt: Double
         var `class`: String
         var name: String?
+        /// A B, C or D band's primary airport (NASR's IDENT), for its special VFR (14 CFR 91.157(a), part 91 Appendix D section 3).
+        var ident: String?
         var minimums: EngineContract.AirspaceBandMinimums?
         var entry: String
         var equipment: String?
@@ -242,6 +244,7 @@ enum EngineContract {
             case ceilingFt = "ceiling_ft"
             case `class`
             case name
+            case ident
             case minimums
             case entry
             case equipment
@@ -249,12 +252,12 @@ enum EngineContract {
         }
     }
 
-    struct AirspaceBandMinimums: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceBandMinimums: Codable, Equatable, Sendable {
         var day: EngineContract.AirspaceBandMinimumsDay
         var night: EngineContract.AirspaceBandMinimumsNight
     }
 
-    struct AirspaceBandMinimumsDay: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceBandMinimumsDay: Codable, Equatable, Sendable {
         var visibilitySm: Double
         var clearOfClouds: Bool
         var belowFt: Double?
@@ -270,7 +273,7 @@ enum EngineContract {
         }
     }
 
-    struct AirspaceBandMinimumsNight: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceBandMinimumsNight: Codable, Equatable, Sendable {
         var visibilitySm: Double
         var clearOfClouds: Bool
         var belowFt: Double?
@@ -286,7 +289,7 @@ enum EngineContract {
         }
     }
 
-    struct AirspaceColumnInput: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceColumnInput: Codable, Equatable, Sendable {
         var groundFt: Double?
         /// Inside a 30 nm Mode C veil (91.215(b)(2)).
         var inVeil: Bool?
@@ -299,9 +302,11 @@ enum EngineContract {
         }
     }
 
-    struct AirspaceColumnInputVolumesItem: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceColumnInputVolumesItem: Codable, Equatable, Sendable {
         var `class`: String
         var name: String?
+        /// The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D.
+        var ident: String?
         var floorFt: Double
         var floorRef: String
         /// Feet MSL.
@@ -310,30 +315,31 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case `class`
             case name
+            case ident
             case floorFt = "floor_ft"
             case floorRef = "floor_ref"
             case ceilingFt = "ceiling_ft"
         }
     }
 
-    struct AirspaceEntryRulesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceEntryRulesAnswer: Codable, Equatable, Sendable {
         var rules: [EngineContract.AirspaceEntryRulesAnswerRulesItem]
         /// The frequency types to call: TWR for a Class D, APP then TWR otherwise.
         var call: [String]
     }
 
-    struct AirspaceEntryRulesAnswerRulesItem: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceEntryRulesAnswerRulesItem: Codable, Equatable, Sendable {
         var rule: String
         /// The regulation, e.g. "14 CFR 91.131(a)(1)".
         var cite: String
     }
 
-    struct AirspaceEntryRulesInput: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceEntryRulesInput: Codable, Equatable, Sendable {
         /// One letter: B, C or D.
         var `class`: String
     }
 
-    struct AirspaceShelfLabelAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceShelfLabelAnswer: Codable, Equatable, Sendable {
         /// The ceiling as the chart writes it: "100", "T", "-30".
         var ceiling: String
         /// The floor as the chart writes it, "30" or "SFC"; null for a Class D.
@@ -342,7 +348,7 @@ enum EngineContract {
         var text: String
     }
 
-    struct AirspaceShelfLabelInput: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceShelfLabelInput: Codable, Equatable, Sendable {
         var `class`: String
         var floorFt: Double?
         var floorRef: String?
@@ -360,7 +366,7 @@ enum EngineContract {
         }
     }
 
-    struct AirspaceVolumeSpanAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceVolumeSpanAnswer: Codable, Equatable, Sendable {
         /// Feet MSL.
         var floorFt: Double
         /// Feet MSL, at most 18,000.
@@ -378,7 +384,7 @@ enum EngineContract {
         }
     }
 
-    struct AirspaceVolumeSpanInput: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceVolumeSpanInput: Codable, Equatable, Sendable {
         var floor: EngineContract.SpecialUseTabLimit?
         var ceiling: EngineContract.SpecialUseTabLimit?
         /// The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
@@ -394,7 +400,7 @@ enum EngineContract {
         }
     }
 
-    struct AirspaceVolumeSpanInputGround: Codable, Equatable, Sendable {
+    nonisolated struct AirspaceVolumeSpanInputGround: Codable, Equatable, Sendable {
         var lowFt: Double
         var highFt: Double
 
@@ -404,7 +410,7 @@ enum EngineContract {
         }
     }
 
-    struct AirwayFloorFtInput: Codable, Equatable, Sendable {
+    nonisolated struct AirwayFloorFtInput: Codable, Equatable, Sendable {
         var meaFt: Double?
         var gnssMeaFt: Double?
 
@@ -414,7 +420,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertFiresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AlertFiresAnswer: Codable, Equatable, Sendable {
         var fires: Bool
         /// Near something: whether it is that near now; null for the others.
         var inside: Bool?
@@ -430,7 +436,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertFiresInput: Codable, Equatable, Sendable {
+    nonisolated struct AlertFiresInput: Codable, Equatable, Sendable {
         var kind: String
         var beforeAirborne: Bool?
         var wasInside: Bool?
@@ -452,17 +458,17 @@ enum EngineContract {
         }
     }
 
-    struct AlertFiresInputPlane: Codable, Equatable, Sendable {
+    nonisolated struct AlertFiresInputPlane: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct AlertFiresInputTo: Codable, Equatable, Sendable {
+    nonisolated struct AlertFiresInputTo: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct AlertsAheadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadAnswer: Codable, Equatable, Sendable {
         var alerts: [EngineContract.AlertsAheadAnswerAlertsItem]
         var unavailable: [String]
         var tfrsAsOf: Double?
@@ -477,7 +483,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertsAheadAnswerAlertsItem: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadAnswerAlertsItem: Codable, Equatable, Sendable {
         var id: String
         var kind: String
         var level: String
@@ -517,7 +523,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertsAheadInput: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var trackDeg: Double
@@ -554,7 +560,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertsAheadInputAirspaceItem: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadInputAirspaceItem: Codable, Equatable, Sendable {
         var name: String
         var `class`: String
         var floorFt: Double?
@@ -571,7 +577,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertsAheadInputNearField: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadInputNearField: Codable, Equatable, Sendable {
         var distanceNm: Double
         var elevationFt: Double?
 
@@ -581,7 +587,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertsAheadInputObstaclesItem: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadInputObstaclesItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var amslFt: Double
@@ -595,7 +601,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertsAheadInputSpecialUseItem: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadInputSpecialUseItem: Codable, Equatable, Sendable {
         var name: String
         /// P, R, MOA, W or A.
         var type: String
@@ -627,7 +633,7 @@ enum EngineContract {
         }
     }
 
-    struct AlertsAheadInputTfrsItem: Codable, Equatable, Sendable {
+    nonisolated struct AlertsAheadInputTfrsItem: Codable, Equatable, Sendable {
         var notamId: String
         var title: String?
         var rule: String?
@@ -657,7 +663,7 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeAdvisorAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeAdvisorAnswerItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var eteMin: Double?
         var fuelGal: Double?
@@ -684,7 +690,7 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeAdvisorInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeAdvisorInput: Codable, Equatable, Sendable {
         var figures: [EngineContract.AltitudeAdvisorInputFiguresItem]
         var flownFt: Double?
         var plans: [EngineContract.AltitudeAdvisorInputPlansItem]?
@@ -696,7 +702,7 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeAdvisorInputFiguresItem: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeAdvisorInputFiguresItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var eteMin: Double?
         var fuelGal: Double?
@@ -712,7 +718,7 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeAdvisorInputPlansItem: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeAdvisorInputPlansItem: Codable, Equatable, Sendable {
         var kind: String
         var altitudeFt: Double
 
@@ -722,16 +728,16 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeAllowedInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeAllowedInput: Codable, Equatable, Sendable {
         var ft: Double
         var ifr: Bool?
     }
 
-    struct AltitudeAnywayInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeAnywayInput: Codable, Equatable, Sendable {
         var selection: [String: OpenAPIValueContainer]
     }
 
-    struct AltitudeChangeAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeChangeAnswer: Codable, Equatable, Sendable {
         var kind: String
         var beginsNm: Double
         var endsNm: Double
@@ -749,7 +755,7 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeChangeInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeChangeInput: Codable, Equatable, Sendable {
         /// The picked airplane's profile, the same one the nav log takes (NavLogProfile: its cruise_tas_kt, fuel_burn_gph and service_ceiling_ft, and for a climb climb_tas_kt, climb_rate_fpm_sea_level and climb_fuel_burn_gph, wingtip_flight::performance). A climb's ground, minutes and gallons come from its climb figures; with none of them (no climb_tas_kt) the climb is drawn as a step. Null or left out where no airplane is picked: nothing is assumed (the owner, 2026-11-09), a descent keeps its geometry and has no time or fuel.
         var profile: EngineContract.NavLogProfile?
         /// Where the waypoint is along the route, nautical miles from the departure.
@@ -791,7 +797,7 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeLimitsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeLimitsAnswer: Codable, Equatable, Sendable {
         var lowestFt: Double
         var highestFt: Double
         var classAFloorFt: Double
@@ -807,22 +813,22 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeLimitsInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeLimitsInput: Codable, Equatable, Sendable {
         var ifr: Bool?
     }
 
-    struct AltitudeLinesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeLinesAnswer: Codable, Equatable, Sendable {
         var crossing: String?
         var lines: [EngineContract.AltitudeLinesAnswerLinesItem]
     }
 
-    struct AltitudeLinesAnswerLinesItem: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeLinesAnswerLinesItem: Codable, Equatable, Sendable {
         var ft: Double
         var under: Bool
         var over: Bool
     }
 
-    struct AltitudeLinesInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeLinesInput: Codable, Equatable, Sendable {
         var minFt: Double?
         var maxFt: Double?
 
@@ -832,12 +838,12 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeSaidInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeSaidInput: Codable, Equatable, Sendable {
         var ft: Double
     }
 
     /// One leg's band: its floor (91.119 under VFR, 91.177(a) under IFR), the ceilings over it, its legal altitudes by its own magnetic course, and what its floor was found from.
-    struct AltitudeSegment: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeSegment: Codable, Equatable, Sendable {
         var fromNm: Double
         var toNm: Double
         var floorFt: Double
@@ -885,53 +891,53 @@ enum EngineContract {
         }
     }
 
-    struct AltitudeTypedAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeTypedAnswer: Codable, Equatable, Sendable {
         /// The altitude to plan, ft MSL; null where none can be.
         var ft: Double?
         /// Why there is no ft, or the warning a planned one carries; null where there is none.
         var reason: String?
     }
 
-    struct AltitudeTypedInput: Codable, Equatable, Sendable {
+    nonisolated struct AltitudeTypedInput: Codable, Equatable, Sendable {
         var text: String
         var ifr: Bool?
     }
 
-    struct ApproachAlongNmInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachAlongNmInput: Codable, Equatable, Sendable {
         var path: [EngineContract.ApproachAlongNmInputPathItem]?
         var at: EngineContract.ApproachAlongNmInputAt
     }
 
-    struct ApproachAlongNmInputAt: Codable, Equatable, Sendable {
+    nonisolated struct ApproachAlongNmInputAt: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct ApproachAlongNmInputPathItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachAlongNmInputPathItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
     /// An attempt at an approach as indices into the track's points: where it crossed the final approach fix inbound, and the points it runs from and to.
-    struct ApproachAttempt: Codable, Equatable, Sendable {
+    nonisolated struct ApproachAttempt: Codable, Equatable, Sendable {
         var faf: Int
         var from: Int
         var to: Int
     }
 
-    struct ApproachAttemptsInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachAttemptsInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
         var points: [EngineContract.TrackPoint]?
     }
 
-    struct ApproachBriefAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachBriefAnswerItem: Codable, Equatable, Sendable {
         var key: String
         var title: String
         var lines: [String]
         var focus: EngineContract.LessonFocus
     }
 
-    struct ApproachBriefInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachBriefInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
         var frequencies: [EngineContract.FieldFrequency]?
         var vrefKt: Double?
@@ -945,7 +951,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachCategoryInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachCategoryInput: Codable, Equatable, Sendable {
         var vrefKt: Double?
         var vsoKt: Double?
 
@@ -955,7 +961,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachCoachingAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachCoachingAnswerItem: Codable, Equatable, Sendable {
         var key: String
         var title: String
         var say: String
@@ -975,12 +981,12 @@ enum EngineContract {
         }
     }
 
-    struct ApproachCoachingAnswerItemAt: Codable, Equatable, Sendable {
+    nonisolated struct ApproachCoachingAnswerItemAt: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct ApproachCoachingInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachCoachingInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
         var gsKt: Double
 
@@ -991,7 +997,7 @@ enum EngineContract {
     }
 
     /// One attempt at an approach debriefed (the web's ApproachDebrief, snake_case): off the course past full scale (AIM 1-1-9, 1-1-17), each fix's crossing (AIM 5-4-5), the lowest against the pilot's minimums (14 CFR 91.175(c), (e)).
-    struct ApproachDebrief: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebrief: Codable, Equatable, Sendable {
         var airport: String
         var id: String
         var name: String
@@ -1037,7 +1043,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachDebriefCrossingsItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefCrossingsItem: Codable, Equatable, Sendable {
         var ident: String
         var roles: [String]
         var minFt: Double?
@@ -1058,7 +1064,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachDebriefInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
         var points: [EngineContract.TrackPoint]?
         var attempt: EngineContract.ApproachAttempt?
@@ -1072,7 +1078,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachDebriefOutcome: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefOutcome: Codable, Equatable, Sendable {
         var kind: String
         var secondsAfterMap: Double?
 
@@ -1082,33 +1088,33 @@ enum EngineContract {
         }
     }
 
-    struct ApproachDebriefPlan: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefPlan: Codable, Equatable, Sendable {
         var inbound: [[OpenAPIValueContainer]]
         var missed: [[[OpenAPIValueContainer]]]
         var fixes: [EngineContract.ApproachDebriefPlanFixesItem]
         var track: [EngineContract.ApproachDebriefPlanTrackItem]
     }
 
-    struct ApproachDebriefPlanFixesItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefPlanFixesItem: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
         var roles: [String]
     }
 
-    struct ApproachDebriefPlanTrackItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefPlanTrackItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var off: Bool
     }
 
-    struct ApproachDebriefProfile: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefProfile: Codable, Equatable, Sendable {
         var track: [EngineContract.ApproachDebriefProfileTrackItem]
         var fixes: [EngineContract.ApproachDebriefProfileFixesItem]
         var glidepath: EngineContract.ApproachDebriefProfileGlidepath?
     }
 
-    struct ApproachDebriefProfileFixesItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefProfileFixesItem: Codable, Equatable, Sendable {
         var ident: String
         var toGoNm: Double
         var minFt: Double?
@@ -1122,7 +1128,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachDebriefProfileGlidepath: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefProfileGlidepath: Codable, Equatable, Sendable {
         var fromNm: Double
         var fromFt: Double
         var toNm: Double
@@ -1136,7 +1142,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachDebriefProfileTrackItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefProfileTrackItem: Codable, Equatable, Sendable {
         var toGoNm: Double
         var altFt: Double
         var off: Bool
@@ -1148,20 +1154,20 @@ enum EngineContract {
         }
     }
 
-    struct ApproachDebriefWayIn: Codable, Equatable, Sendable {
+    nonisolated struct ApproachDebriefWayIn: Codable, Equatable, Sendable {
         var fixes: Int
         var passed: Int
     }
 
     /// What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised.
-    struct ApproachFacts: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFacts: Codable, Equatable, Sendable {
         var runway: EngineContract.ApproachFactsRunway?
         var coded: [EngineContract.ApproachFactsCodedItem]?
         /// The levels of service the CIFP authorises (ARINC 424-19 5.275, 5.276): "LPV", "LNAV/VNAV", "LNAV", ...
         var levels: [String]?
     }
 
-    struct ApproachFactsCodedItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFactsCodedItem: Codable, Equatable, Sendable {
         var fix: String
         /// The fix's altitude description (ARINC 424-18 5.29): "G" or "H" the glide slope's altitude at the FAF, "I" or "J" its intercept altitude at the FACF, "V" the vertical path's at a step-down fix.
         var code: String
@@ -1169,7 +1175,7 @@ enum EngineContract {
         var ft: Double
     }
 
-    struct ApproachFactsRunway: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFactsRunway: Codable, Equatable, Sendable {
         /// The CIFP's runway ident, "RW36".
         var ident: String
         var lat: Double
@@ -1191,14 +1197,14 @@ enum EngineContract {
         }
     }
 
-    struct ApproachFinding: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFinding: Codable, Equatable, Sendable {
         var tone: String
         var text: String
         /// The minimums' finding, put in again as the pilot types theirs; written only when true.
         var minimums: Bool?
     }
 
-    struct ApproachFindInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFindInput: Codable, Equatable, Sendable {
         var drawings: [EngineContract.ProcedureDrawing]?
         var points: [EngineContract.TrackPoint]?
         var picked: String?
@@ -1213,7 +1219,7 @@ enum EngineContract {
     }
 
     /// One fix's tag on the map with its approach's plate.
-    struct ApproachFixTag: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFixTag: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
@@ -1229,7 +1235,7 @@ enum EngineContract {
         var runway: EngineContract.ApproachFixTagRunway?
     }
 
-    struct ApproachFixTagAltitude: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFixTagAltitude: Codable, Equatable, Sendable {
         var sense: String
         var minFt: Double?
         var maxFt: Double?
@@ -1241,7 +1247,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachFixTagRunway: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFixTagRunway: Codable, Equatable, Sendable {
         var thresholdFt: Double
         var tchFt: Double
         /// Whole feet, as the plate prints it.
@@ -1254,23 +1260,23 @@ enum EngineContract {
         }
     }
 
-    struct ApproachFixTagsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFixTagsAnswer: Codable, Equatable, Sendable {
         var tags: [EngineContract.ApproachFixTag]
         /// The final approach segment, from the FAF to the MAP, for the map to mark.
         var final: EngineContract.ApproachFixTagsAnswerFinal?
     }
 
-    struct ApproachFixTagsAnswerFinal: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFixTagsAnswerFinal: Codable, Equatable, Sendable {
         var from: String
         var to: String
         var points: [[OpenAPIValueContainer]]
     }
 
-    struct ApproachFixTagsInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFixTagsInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
     }
 
-    struct ApproachFixTagVertical: Codable, Equatable, Sendable {
+    nonisolated struct ApproachFixTagVertical: Codable, Equatable, Sendable {
         /// An ILS's electronic glide slope ("GS") or an RNAV approach's glidepath ("GP").
         var kind: String
         /// Its altitude at the FAF, ft MSL.
@@ -1280,20 +1286,20 @@ enum EngineContract {
         var source: String
     }
 
-    struct ApproachGuidanceInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachGuidanceInput: Codable, Equatable, Sendable {
         var id: String?
     }
 
-    struct ApproachLessonPathAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachLessonPathAnswerItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct ApproachLessonPathInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachLessonPathInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
     }
 
-    struct ApproachMinimumsInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachMinimumsInput: Codable, Equatable, Sendable {
         var findings: [EngineContract.ApproachMinimumsInputFindingsItem]?
         var lowestFt: Double?
         var outcome: String
@@ -1307,14 +1313,14 @@ enum EngineContract {
         }
     }
 
-    struct ApproachMinimumsInputFindingsItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachMinimumsInputFindingsItem: Codable, Equatable, Sendable {
         var tone: String
         var text: String?
         var minimums: Bool?
     }
 
     /// A missed approach's coded leg (ARINC 424-18 5.21).
-    struct ApproachMissedLeg: Codable, Equatable, Sendable {
+    nonisolated struct ApproachMissedLeg: Codable, Equatable, Sendable {
         /// ARINC 424-18 5.21's path and terminator: "CA", "VI", "CF", "HM" ...
         var path: String?
         var fix: String?
@@ -1334,38 +1340,38 @@ enum EngineContract {
         }
     }
 
-    struct ApproachPathBetweenAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachPathBetweenAnswerItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct ApproachPathBetweenInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachPathBetweenInput: Codable, Equatable, Sendable {
         var path: [EngineContract.ApproachPathBetweenInputPathItem]?
         var a: EngineContract.ApproachPathBetweenInputA
         var b: EngineContract.ApproachPathBetweenInputB
     }
 
-    struct ApproachPathBetweenInputA: Codable, Equatable, Sendable {
+    nonisolated struct ApproachPathBetweenInputA: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct ApproachPathBetweenInputB: Codable, Equatable, Sendable {
+    nonisolated struct ApproachPathBetweenInputB: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct ApproachPathBetweenInputPathItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachPathBetweenInputPathItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct ApproachProfileAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ApproachProfileAnswer: Codable, Equatable, Sendable {
         var marks: [EngineContract.ApproachProfileAnswerMarksItem]
         var path: EngineContract.ApproachProfileAnswerPath?
     }
 
-    struct ApproachProfileAnswerMarksItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachProfileAnswerMarksItem: Codable, Equatable, Sendable {
         var ident: String
         var alongNm: Double
         var ft: Double?
@@ -1381,26 +1387,26 @@ enum EngineContract {
         }
     }
 
-    struct ApproachProfileAnswerPath: Codable, Equatable, Sendable {
+    nonisolated struct ApproachProfileAnswerPath: Codable, Equatable, Sendable {
         var from: EngineContract.ApproachProfileAnswerPathFrom
         var to: EngineContract.ApproachProfileAnswerPathTo
     }
 
-    struct ApproachProfileAnswerPathFrom: Codable, Equatable, Sendable {
+    nonisolated struct ApproachProfileAnswerPathFrom: Codable, Equatable, Sendable {
         var nm: Double
         var ft: Double
     }
 
-    struct ApproachProfileAnswerPathTo: Codable, Equatable, Sendable {
+    nonisolated struct ApproachProfileAnswerPathTo: Codable, Equatable, Sendable {
         var nm: Double
         var ft: Double
     }
 
-    struct ApproachProfileInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachProfileInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
     }
 
-    struct ApproachQuizAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachQuizAnswerItem: Codable, Equatable, Sendable {
         var key: String
         var prompt: String
         var choices: [String]
@@ -1409,7 +1415,7 @@ enum EngineContract {
         var focus: EngineContract.LessonFocus
     }
 
-    struct ApproachQuizInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachQuizInput: Codable, Equatable, Sendable {
         var drawing: EngineContract.ProcedureDrawing
         var gsKt: Double
 
@@ -1420,7 +1426,7 @@ enum EngineContract {
     }
 
     /// The glidepath placed on its runway: its threshold, the height it crosses it at and its angle.
-    struct ApproachRunwayPath: Codable, Equatable, Sendable {
+    nonisolated struct ApproachRunwayPath: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         /// Threshold crossing height, ft MSL.
@@ -1429,7 +1435,7 @@ enum EngineContract {
         var deg: Double
     }
 
-    struct ApproachSceneAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ApproachSceneAnswer: Codable, Equatable, Sendable {
         var centrelines: [EngineContract.ApproachSceneAnswerCentrelinesItem]
         var glidepaths: [EngineContract.ApproachSceneAnswerGlidepathsItem]
         /// The approach's line at its altitudes, transition and final.
@@ -1437,12 +1443,12 @@ enum EngineContract {
         var ring: EngineContract.ApproachSceneAnswerRing?
     }
 
-    struct ApproachSceneAnswerCentrelinesItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachSceneAnswerCentrelinesItem: Codable, Equatable, Sendable {
         var end: String
         var points: [[OpenAPIValueContainer]]
     }
 
-    struct ApproachSceneAnswerGlidepathsItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachSceneAnswerGlidepathsItem: Codable, Equatable, Sendable {
         var end: String
         var deg: Double
         /// The height it crosses the threshold at, ft MSL.
@@ -1464,7 +1470,7 @@ enum EngineContract {
     }
 
     /// The pattern's ring: its altitude, ft MSL, and as far round the field as it is drawn, nm; the apps draw the circle.
-    struct ApproachSceneAnswerRing: Codable, Equatable, Sendable {
+    nonisolated struct ApproachSceneAnswerRing: Codable, Equatable, Sendable {
         var ft: Double
         var radiusNm: Double
         /// [lat, lon], the field's place.
@@ -1477,7 +1483,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachSceneInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachSceneInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         /// The field's elevation, ft MSL (NASR): the highest point of its usable runways.
@@ -1498,7 +1504,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachSceneInputRunwaysItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachSceneInputRunwaysItem: Codable, Equatable, Sendable {
         var lengthFt: Double?
         var runwayEnds: [EngineContract.ApproachSceneInputRunwaysItemRunwayEndsItem]?
 
@@ -1508,7 +1514,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachSceneInputRunwaysItemRunwayEndsItem: Codable, Equatable, Sendable {
+    nonisolated struct ApproachSceneInputRunwaysItemRunwayEndsItem: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double?
         var lon: Double?
@@ -1522,7 +1528,7 @@ enum EngineContract {
         }
     }
 
-    struct ApproachTransitionInput: Codable, Equatable, Sendable {
+    nonisolated struct ApproachTransitionInput: Codable, Equatable, Sendable {
         var drawings: [EngineContract.ProcedureDrawing]?
         var points: [EngineContract.TrackPoint]?
         /// ms.
@@ -1539,11 +1545,11 @@ enum EngineContract {
         }
     }
 
-    struct ArrivalCircuitAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ArrivalCircuitAnswer: Codable, Equatable, Sendable {
         var points: [[OpenAPIValueContainer]]
     }
 
-    struct ArrivalCircuitInput: Codable, Equatable, Sendable {
+    nonisolated struct ArrivalCircuitInput: Codable, Equatable, Sendable {
         var runway: EngineContract.CircuitRunwayIn
         var endIdent: String
 
@@ -1553,18 +1559,18 @@ enum EngineContract {
         }
     }
 
-    struct AtcCallAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AtcCallAnswer: Codable, Equatable, Sendable {
         var who: String
         var items: [EngineContract.AtcItem]
     }
 
-    struct AtcCallInput: Codable, Equatable, Sendable {
+    nonisolated struct AtcCallInput: Codable, Equatable, Sendable {
         var text: String
         var tail: String?
         var prior: EngineContract.AtcCallInputPrior?
     }
 
-    struct AtcCallInputPrior: Codable, Equatable, Sendable {
+    nonisolated struct AtcCallInputPrior: Codable, Equatable, Sendable {
         var text: String
         var agoS: Double
 
@@ -1574,7 +1580,7 @@ enum EngineContract {
         }
     }
 
-    struct AtcItem: Codable, Equatable, Sendable {
+    nonisolated struct AtcItem: Codable, Equatable, Sendable {
         /// One of: altitude, expect, heading, direct, route, class_b, hold, frequency, squawk, altimeter, approach, runway.
         var kind: String
         var ft: Int?
@@ -1633,7 +1639,7 @@ enum EngineContract {
         }
     }
 
-    struct AverageGroundspeedKtInput: Codable, Equatable, Sendable {
+    nonisolated struct AverageGroundspeedKtInput: Codable, Equatable, Sendable {
         var distanceNm: Double
         var minutes: Double
 
@@ -1643,50 +1649,54 @@ enum EngineContract {
         }
     }
 
-    struct AviationGridBandsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct AviationGridBandsAnswer: Codable, Equatable, Sendable {
         var icing: [EngineContract.AviationGridBandsAnswerIcingItem]
         var turbulence: EngineContract.AviationGridBandsAnswerTurbulence
     }
 
-    struct AviationGridBandsAnswerIcingItem: Codable, Equatable, Sendable {
+    nonisolated struct AviationGridBandsAnswerIcingItem: Codable, Equatable, Sendable {
         var word: String
         var from: Double
     }
 
-    struct AviationGridBandsAnswerTurbulence: Codable, Equatable, Sendable {
+    nonisolated struct AviationGridBandsAnswerTurbulence: Codable, Equatable, Sendable {
         var light: [EngineContract.AviationGridBandsAnswerTurbulenceLightItem]
         var medium: [EngineContract.AviationGridBandsAnswerTurbulenceMediumItem]
         var heavy: [EngineContract.AviationGridBandsAnswerTurbulenceHeavyItem]
     }
 
-    struct AviationGridBandsAnswerTurbulenceHeavyItem: Codable, Equatable, Sendable {
+    nonisolated struct AviationGridBandsAnswerTurbulenceHeavyItem: Codable, Equatable, Sendable {
         var word: String
         var from: Double
     }
 
-    struct AviationGridBandsAnswerTurbulenceLightItem: Codable, Equatable, Sendable {
+    nonisolated struct AviationGridBandsAnswerTurbulenceLightItem: Codable, Equatable, Sendable {
         var word: String
         var from: Double
     }
 
-    struct AviationGridBandsAnswerTurbulenceMediumItem: Codable, Equatable, Sendable {
+    nonisolated struct AviationGridBandsAnswerTurbulenceMediumItem: Codable, Equatable, Sendable {
         var word: String
         var from: Double
     }
 
-    struct AviationGridBandsInput: Codable, Equatable, Sendable {
+    nonisolated struct AviationGridBandsInput: Codable, Equatable, Sendable {
     }
 
-    struct AwcAirsigmetsReadInput: Codable, Equatable, Sendable {
+    nonisolated struct AwcAirmetsReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct AwcGairmetsReadInput: Codable, Equatable, Sendable {
+    nonisolated struct AwcAirsigmetsReadInput: Codable, Equatable, Sendable {
+        var text: String
+    }
+
+    nonisolated struct AwcGairmetsReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
     /// A station's newest METAR as the weather store keeps it.
-    struct AwcMetarsReadAnswerValue: Codable, Equatable, Sendable {
+    nonisolated struct AwcMetarsReadAnswerValue: Codable, Equatable, Sendable {
         var raw: String?
         var observedAt: String?
         var flightCategory: String?
@@ -1728,30 +1738,30 @@ enum EngineContract {
         }
     }
 
-    struct AwcMetarsReadInput: Codable, Equatable, Sendable {
+    nonisolated struct AwcMetarsReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct AwcPirepsReadInput: Codable, Equatable, Sendable {
+    nonisolated struct AwcPirepsReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct AwcTafsReadInput: Codable, Equatable, Sendable {
+    nonisolated struct AwcTafsReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct BareFieldInput: Codable, Equatable, Sendable {
+    nonisolated struct BareFieldInput: Codable, Equatable, Sendable {
         var ident: String
     }
 
-    struct BearingDegInput: Codable, Equatable, Sendable {
+    nonisolated struct BearingDegInput: Codable, Equatable, Sendable {
         var lat1: Double
         var lon1: Double
         var lat2: Double
         var lon2: Double
     }
 
-    struct BelowVfrMinimumsInput: Codable, Equatable, Sendable {
+    nonisolated struct BelowVfrMinimumsInput: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
 
@@ -1762,7 +1772,7 @@ enum EngineContract {
     }
 
     /// One field ranked by best_fields, with its reasons.
-    struct BestField: Codable, Equatable, Sendable {
+    nonisolated struct BestField: Codable, Equatable, Sendable {
         var ident: String
         var name: String
         var lat: Double
@@ -1816,13 +1826,13 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldReasonsItem: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldReasonsItem: Codable, Equatable, Sendable {
         var tone: String
         var text: String
     }
 
     /// The end to land on: the POH's distance fits, the crosswind within the demonstrated, the most headwind, the most nearly straight in, the longest.
-    struct BestFieldRunway: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldRunway: Codable, Equatable, Sendable {
         var end: String
         var headingTrueDeg: Double?
         var surface: String?
@@ -1849,7 +1859,7 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsAnswer: Codable, Equatable, Sendable {
         var mode: String
         /// Glide mode with no best-glide figures: ranked by distance alone.
         var needsAirplane: Bool
@@ -1864,7 +1874,7 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldsAnswerGlide: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsAnswerGlide: Codable, Equatable, Sendable {
         var nmPer1000Ft: Double
         var aglFt: Double
         var stillAirNm: Double
@@ -1882,7 +1892,7 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldsInput: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInput: Codable, Equatable, Sendable {
         var mode: String?
         var at: EngineContract.BestFieldsInputAt
         /// GPS altitude, feet MSL.
@@ -1911,7 +1921,7 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldsInputAirplane: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInputAirplane: Codable, Equatable, Sendable {
         /// The POH's best-glide speed and glide ratio (Section 3).
         var glide: EngineContract.BestFieldsInputAirplaneGlide?
         var landing: EngineContract.ShortFieldTable?
@@ -1926,7 +1936,7 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldsInputAirplaneCrosswind: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInputAirplaneCrosswind: Codable, Equatable, Sendable {
         var demonstratedKt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -1935,7 +1945,7 @@ enum EngineContract {
     }
 
     /// The POH's best-glide speed and glide ratio (Section 3).
-    struct BestFieldsInputAirplaneGlide: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInputAirplaneGlide: Codable, Equatable, Sendable {
         /// The POH's best-glide speed, indicated; null or missing where the profile has none (a pilot's own airplane given its glide ratio alone): the reach is then worked only in still air: with a wind aloft it is not (a headwind's loss cannot be worked without the airspeed), and the fields are ranked as with no glide.
         var bestGlideKias: Double?
         var ratio: Double
@@ -1946,12 +1956,12 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldsInputAt: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInputAt: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct BestFieldsInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var lat: Double
@@ -1982,7 +1992,7 @@ enum EngineContract {
         }
     }
 
-    struct BestFieldsInputFieldsItemMetar: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInputFieldsItemMetar: Codable, Equatable, Sendable {
         var dirTrueDeg: Double?
         var speedKt: Double?
         var gustKt: Double?
@@ -2001,7 +2011,7 @@ enum EngineContract {
     }
 
     /// The wind at the airplane's altitude, true.
-    struct BestFieldsInputWind: Codable, Equatable, Sendable {
+    nonisolated struct BestFieldsInputWind: Codable, Equatable, Sendable {
         var fromDeg: Double
         var kt: Double
 
@@ -2011,11 +2021,11 @@ enum EngineContract {
         }
     }
 
-    struct CallPatternInput: Codable, Equatable, Sendable {
+    nonisolated struct CallPatternInput: Codable, Equatable, Sendable {
         var tail: String
     }
 
-    struct CapeCategoryInput: Codable, Equatable, Sendable {
+    nonisolated struct CapeCategoryInput: Codable, Equatable, Sendable {
         var jKg: Double
 
         enum CodingKeys: String, CodingKey {
@@ -2023,7 +2033,7 @@ enum EngineContract {
         }
     }
 
-    struct CeilingFtInput: Codable, Equatable, Sendable {
+    nonisolated struct CeilingFtInput: Codable, Equatable, Sendable {
         var layers: [EngineContract.CeilingFtInputLayersItem]?
         var vertVisFt: Double?
 
@@ -2033,7 +2043,7 @@ enum EngineContract {
         }
     }
 
-    struct CeilingFtInputLayersItem: Codable, Equatable, Sendable {
+    nonisolated struct CeilingFtInputLayersItem: Codable, Equatable, Sendable {
         var cover: String?
         var baseFt: Double?
 
@@ -2043,7 +2053,7 @@ enum EngineContract {
         }
     }
 
-    struct CeilingVisibilityAnswer: Codable, Equatable, Sendable {
+    nonisolated struct CeilingVisibilityAnswer: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
 
@@ -2053,7 +2063,7 @@ enum EngineContract {
         }
     }
 
-    struct CeilingVisibilityInput: Codable, Equatable, Sendable {
+    nonisolated struct CeilingVisibilityInput: Codable, Equatable, Sendable {
         var layers: [EngineContract.CeilingVisibilityInputLayersItem]?
         /// Into an obscuration: a ceiling.
         var verticalVisibilityFt: Double?
@@ -2068,7 +2078,7 @@ enum EngineContract {
         }
     }
 
-    struct CeilingVisibilityInputLayersItem: Codable, Equatable, Sendable {
+    nonisolated struct CeilingVisibilityInputLayersItem: Codable, Equatable, Sendable {
         /// As a METAR codes it: FEW, SCT, BKN, OVC, VV; others count for no ceiling.
         var cover: String
         /// Above the ground.
@@ -2080,57 +2090,57 @@ enum EngineContract {
         }
     }
 
-    struct CeilingVisibilityInputVisibility: Codable, Equatable, Sendable {
+    nonisolated struct CeilingVisibilityInputVisibility: Codable, Equatable, Sendable {
         var value: Double
         var unit: String?
     }
 
-    struct Checklist: Codable, Equatable, Sendable {
+    nonisolated struct Checklist: Codable, Equatable, Sendable {
         var sections: [EngineContract.ChecklistSectionsItem]
     }
 
-    struct ChecklistPhasesInput: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistPhasesInput: Codable, Equatable, Sendable {
         var kind: String
     }
 
-    struct ChecklistRead: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistRead: Codable, Equatable, Sendable {
         var sections: [EngineContract.ChecklistReadSectionsItem]
     }
 
-    struct ChecklistReadInput: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct ChecklistReadSectionsItem: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistReadSectionsItem: Codable, Equatable, Sendable {
         var title: String
         var items: [EngineContract.ChecklistReadSectionsItemItemsItem]
     }
 
-    struct ChecklistReadSectionsItemItemsItem: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistReadSectionsItemItemsItem: Codable, Equatable, Sendable {
         var challenge: String
         var response: String?
     }
 
-    struct ChecklistSectionInput: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistSectionInput: Codable, Equatable, Sendable {
         var titles: [String]
         var want: String?
     }
 
-    struct ChecklistSectionsItem: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistSectionsItem: Codable, Equatable, Sendable {
         var title: String
         var items: [EngineContract.ChecklistSectionsItemItemsItem]
     }
 
-    struct ChecklistSectionsItemItemsItem: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistSectionsItemItemsItem: Codable, Equatable, Sendable {
         var challenge: String
         var response: String?
     }
 
-    struct ChecklistWriteInput: Codable, Equatable, Sendable {
+    nonisolated struct ChecklistWriteInput: Codable, Equatable, Sendable {
         var checklist: EngineContract.Checklist
     }
 
-    struct CheckpointsSelectInput: Codable, Equatable, Sendable {
+    nonisolated struct CheckpointsSelectInput: Codable, Equatable, Sendable {
         var candidates: [EngineContract.CheckpointsSelectInputCandidatesItem]
         var minSpacingNm: Double?
         var maxCount: Double?
@@ -2147,7 +2157,7 @@ enum EngineContract {
         }
     }
 
-    struct CheckpointsSelectInputCandidatesItem: Codable, Equatable, Sendable {
+    nonisolated struct CheckpointsSelectInputCandidatesItem: Codable, Equatable, Sendable {
         var alongTrackNm: Double?
         var predictedScore: Double?
 
@@ -2158,7 +2168,7 @@ enum EngineContract {
     }
 
     /// A runway as the traffic pattern draws it: its ends' idents, true headings, traffic and thresholds.
-    struct CircuitRunwayIn: Codable, Equatable, Sendable {
+    nonisolated struct CircuitRunwayIn: Codable, Equatable, Sendable {
         var lengthFt: Double?
         var runwayEnds: [EngineContract.CircuitRunwayInRunwayEndsItem]?
 
@@ -2168,7 +2178,7 @@ enum EngineContract {
         }
     }
 
-    struct CircuitRunwayInRunwayEndsItem: Codable, Equatable, Sendable {
+    nonisolated struct CircuitRunwayInRunwayEndsItem: Codable, Equatable, Sendable {
         var ident: String?
         var headingTrueDeg: Double?
         /// "right" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1)).
@@ -2185,7 +2195,31 @@ enum EngineContract {
         }
     }
 
-    struct ClassBAtAltitudeInput: Codable, Equatable, Sendable {
+    nonisolated struct CitationsAnswer: Codable, Equatable, Sendable {
+        var pieces: [EngineContract.CitationsAnswerPiecesItem]
+    }
+
+    nonisolated struct CitationsAnswerPiecesItem: Codable, Equatable, Sendable {
+        var text: String
+        var cite: EngineContract.CitationsAnswerPiecesItemCite?
+    }
+
+    nonisolated struct CitationsAnswerPiecesItemCite: Codable, Equatable, Sendable {
+        var kind: String
+        /// The library's document: "cfr-14-91", "aim", "ac-61-65".
+        var doc: String
+        /// The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+        var at: String?
+        /// A CFR section's paragraph as written, "(a)(1)".
+        var paragraph: String?
+    }
+
+    nonisolated struct CitationsInput: Codable, Equatable, Sendable {
+        /// The words as the app shows them: a finding's why, a rule's cite.
+        var text: String?
+    }
+
+    nonisolated struct ClassBAtAltitudeInput: Codable, Equatable, Sendable {
         var bands: [EngineContract.ClassBAtAltitudeInputBandsItem]
         var altitudeFt: Double
 
@@ -2195,7 +2229,7 @@ enum EngineContract {
         }
     }
 
-    struct ClassBAtAltitudeInputBandsItem: Codable, Equatable, Sendable {
+    nonisolated struct ClassBAtAltitudeInputBandsItem: Codable, Equatable, Sendable {
         var `class`: String
         var floorFt: Double
         var ceilingFt: Double?
@@ -2207,7 +2241,7 @@ enum EngineContract {
         }
     }
 
-    struct ClassBDetoursAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ClassBDetoursAnswerItem: Codable, Equatable, Sendable {
         var ident: String
         var kind: String
         var addedNm: Double
@@ -2219,7 +2253,7 @@ enum EngineContract {
         }
     }
 
-    struct ClassBDetoursInput: Codable, Equatable, Sendable {
+    nonisolated struct ClassBDetoursInput: Codable, Equatable, Sendable {
         var start: [Double]
         var end: [Double]
         var belowFt: Double
@@ -2235,7 +2269,7 @@ enum EngineContract {
         }
     }
 
-    struct ClassBDetoursInputFixesItem: Codable, Equatable, Sendable {
+    nonisolated struct ClassBDetoursInputFixesItem: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
@@ -2243,7 +2277,7 @@ enum EngineContract {
         var kind: String?
     }
 
-    struct ClassBEnteredInput: Codable, Equatable, Sendable {
+    nonisolated struct ClassBEnteredInput: Codable, Equatable, Sendable {
         var start: [Double]
         var end: [Double]
         var altitudeFt: Double
@@ -2258,7 +2292,7 @@ enum EngineContract {
     }
 
     /// A Class B shelf other than the flight's own (whose surface area holds one of its ends), as the FAA's Class Airspace shapefile has it: its floor and ceiling, ft MSL, and its rings of [lat, lon].
-    struct ClassBShelf: Codable, Equatable, Sendable {
+    nonisolated struct ClassBShelf: Codable, Equatable, Sendable {
         var floorFtMsl: Double?
         var ceilingFtMsl: Double?
         var rings: [[[Double]]]
@@ -2270,7 +2304,7 @@ enum EngineContract {
         }
     }
 
-    struct Clearance: Codable, Equatable, Sendable {
+    nonisolated struct Clearance: Codable, Equatable, Sendable {
         var limit: String?
         var route: [OpenAPIValueContainer]
         var asFiled: Bool
@@ -2285,7 +2319,7 @@ enum EngineContract {
         var classB: Bool
     }
 
-    struct ClearanceFound: Codable, Equatable, Sendable {
+    nonisolated struct ClearanceFound: Codable, Equatable, Sendable {
         var said: String?
         var ident: String?
         var name: String?
@@ -2298,31 +2332,31 @@ enum EngineContract {
         var sure: Bool?
     }
 
-    struct ClearanceFoundProcedure: Codable, Equatable, Sendable {
+    nonisolated struct ClearanceFoundProcedure: Codable, Equatable, Sendable {
         var id: String
         var transition: String?
     }
 
-    struct ClearancePlacesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesAnswer: Codable, Equatable, Sendable {
         var limit: EngineContract.ClearanceFound?
         var route: [[EngineContract.ClearanceFound]]
         var departure: EngineContract.ClearancePlacesAnswerDeparture?
         var arrival: EngineContract.ClearancePlacesAnswerArrival?
     }
 
-    struct ClearancePlacesAnswerArrival: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesAnswerArrival: Codable, Equatable, Sendable {
         var id: String
         var transition: String?
         var sure: Bool
     }
 
-    struct ClearancePlacesAnswerDeparture: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesAnswerDeparture: Codable, Equatable, Sendable {
         var id: String
         var transition: String?
         var sure: Bool
     }
 
-    struct ClearancePlacesInput: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesInput: Codable, Equatable, Sendable {
         var places: [EngineContract.SpokenCandidate]
         /// The route's points, [lat, lon] each: the places are ordered nearest to them first (a flat-earth distance, enough for an order). None given keeps the places' order.
         var near: [[Double]]?
@@ -2344,7 +2378,7 @@ enum EngineContract {
         }
     }
 
-    struct ClearancePlacesInputArrival: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesInputArrival: Codable, Equatable, Sendable {
         /// The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
         var name: String
         var number: String
@@ -2354,14 +2388,14 @@ enum EngineContract {
         var procedures: [EngineContract.ClearancePlacesInputArrivalProceduresItem]
     }
 
-    struct ClearancePlacesInputArrivalProceduresItem: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesInputArrivalProceduresItem: Codable, Equatable, Sendable {
         /// "BUNYN1": the name's letters and the number.
         var id: String
         var kind: String
         var transitions: [String]?
     }
 
-    struct ClearancePlacesInputDeparture: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesInputDeparture: Codable, Equatable, Sendable {
         /// The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
         var name: String
         var number: String
@@ -2371,44 +2405,44 @@ enum EngineContract {
         var procedures: [EngineContract.ClearancePlacesInputDepartureProceduresItem]
     }
 
-    struct ClearancePlacesInputDepartureProceduresItem: Codable, Equatable, Sendable {
+    nonisolated struct ClearancePlacesInputDepartureProceduresItem: Codable, Equatable, Sendable {
         /// "BUNYN1": the name's letters and the number.
         var id: String
         var kind: String
         var transitions: [String]?
     }
 
-    struct ClearanceRoute: Codable, Equatable, Sendable {
+    nonisolated struct ClearanceRoute: Codable, Equatable, Sendable {
         var dep: String
         var stops: [String]
         var dest: String
     }
 
-    struct ClearedRouteAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ClearedRouteAnswer: Codable, Equatable, Sendable {
         var route: EngineContract.ClearanceRoute
         var typed: [EngineContract.ClearedRouteAnswerTypedItem]
     }
 
-    struct ClearedRouteAnswerTypedItem: Codable, Equatable, Sendable {
+    nonisolated struct ClearedRouteAnswerTypedItem: Codable, Equatable, Sendable {
         var name: String
         var before: String?
         var after: String?
     }
 
-    struct ClearedRouteInput: Codable, Equatable, Sendable {
+    nonisolated struct ClearedRouteInput: Codable, Equatable, Sendable {
         var text: String
         var found: EngineContract.ClearedRouteInputFound?
         var planned: EngineContract.ClearanceRoute
     }
 
-    struct ClearedRouteInputFound: Codable, Equatable, Sendable {
+    nonisolated struct ClearedRouteInputFound: Codable, Equatable, Sendable {
         var limit: EngineContract.ClearanceFound?
         var route: [[EngineContract.ClearanceFound]]?
         var departure: EngineContract.ClearanceFoundProcedure?
         var arrival: EngineContract.ClearanceFoundProcedure?
     }
 
-    struct ClosestApproachAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ClosestApproachAnswer: Codable, Equatable, Sendable {
         var inMin: Double
         var nm: Double
         /// Its height above own ship's then, ft.
@@ -2421,12 +2455,12 @@ enum EngineContract {
         }
     }
 
-    struct ClosestApproachInput: Codable, Equatable, Sendable {
+    nonisolated struct ClosestApproachInput: Codable, Equatable, Sendable {
         var own: EngineContract.OwnShipFix
         var plane: EngineContract.TrafficPlane
     }
 
-    struct CloudClearanceAtFtInput: Codable, Equatable, Sendable {
+    nonisolated struct CloudClearanceAtFtInput: Codable, Equatable, Sendable {
         var altitudeFt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -2434,17 +2468,17 @@ enum EngineContract {
         }
     }
 
-    struct CloudCoverAnswer: Codable, Equatable, Sendable {
+    nonisolated struct CloudCoverAnswer: Codable, Equatable, Sendable {
         var oktas: Int
         var cover: String
     }
 
-    struct CloudCoverInput: Codable, Equatable, Sendable {
+    nonisolated struct CloudCoverInput: Codable, Equatable, Sendable {
         var percent: Double
     }
 
     /// One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.
-    struct CoachDebrief: Codable, Equatable, Sendable {
+    nonisolated struct CoachDebrief: Codable, Equatable, Sendable {
         /// An approach debriefed (route's approach_debrief) or a flight against its plan (debrief).
         var kind: String
         /// YYYY-MM-DD, the pilot's own calendar.
@@ -2477,7 +2511,7 @@ enum EngineContract {
         }
     }
 
-    struct CoachDebriefLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct CoachDebriefLegsItem: Codable, Equatable, Sendable {
         var from: String
         var to: String
         var altitudeWithin: Double?
@@ -2493,7 +2527,7 @@ enum EngineContract {
         }
     }
 
-    struct CoachDebriefPatternsItem: Codable, Equatable, Sendable {
+    nonisolated struct CoachDebriefPatternsItem: Codable, Equatable, Sendable {
         var ident: String
         /// Its altitude less pattern altitude, ft (+ high).
         var offFt: Double
@@ -2506,7 +2540,7 @@ enum EngineContract {
         }
     }
 
-    struct CoachDebriefProfileItem: Codable, Equatable, Sendable {
+    nonisolated struct CoachDebriefProfileItem: Codable, Equatable, Sendable {
         var toGoNm: Double?
         var altFt: Double
         /// Past full scale, or under a minimum, there.
@@ -2519,7 +2553,7 @@ enum EngineContract {
         }
     }
 
-    struct CompassPointInput: Codable, Equatable, Sendable {
+    nonisolated struct CompassPointInput: Codable, Equatable, Sendable {
         /// Degrees true, any turn.
         var bearingDeg: Double
 
@@ -2528,7 +2562,7 @@ enum EngineContract {
         }
     }
 
-    struct CompassWordInput: Codable, Equatable, Sendable {
+    nonisolated struct CompassWordInput: Codable, Equatable, Sendable {
         var bearingDeg: Double
 
         enum CodingKeys: String, CodingKey {
@@ -2536,7 +2570,7 @@ enum EngineContract {
         }
     }
 
-    struct CongestedPointsInput: Codable, Equatable, Sendable {
+    nonisolated struct CongestedPointsInput: Codable, Equatable, Sendable {
         /// Each town's outline.
         var areas: [[[[[Double]]]]]
         /// [[lat, lon], ...].
@@ -2545,7 +2579,7 @@ enum EngineContract {
         var candidates: [[Int]]?
     }
 
-    struct CongestedReachAnswer: Codable, Equatable, Sendable {
+    nonisolated struct CongestedReachAnswer: Codable, Equatable, Sendable {
         /// The search's reach, ft.
         var searchFt: Double
         /// The reach in degrees, never short of search_ft in any direction.
@@ -2557,13 +2591,13 @@ enum EngineContract {
         }
     }
 
-    struct CongestedReachInput: Codable, Equatable, Sendable {
+    nonisolated struct CongestedReachInput: Codable, Equatable, Sendable {
         /// The farthest latitude of the points asked, degrees (either sign).
         var lat: Double
     }
 
     /// The best alternative: best_fields' first diversion pick that the copilot's weather and fuel checks find good.
-    struct CopilotAlternative: Codable, Equatable, Sendable {
+    nonisolated struct CopilotAlternative: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var lat: Double
@@ -2606,7 +2640,7 @@ enum EngineContract {
     }
 
     /// A candidate as best_fields reads it, with fuel and the category first seen: /api/copilot/around's.
-    struct CopilotField: Codable, Equatable, Sendable {
+    nonisolated struct CopilotField: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var lat: Double
@@ -2643,7 +2677,7 @@ enum EngineContract {
         }
     }
 
-    struct CopilotFieldMetar: Codable, Equatable, Sendable {
+    nonisolated struct CopilotFieldMetar: Codable, Equatable, Sendable {
         /// The report as sent, which copilot_watch reads its category and ceiling from (metar::parse); without it the field has no weather.
         var raw: String?
         var dirTrueDeg: Double?
@@ -2664,7 +2698,7 @@ enum EngineContract {
         }
     }
 
-    struct CopilotFlightAnswer: Codable, Equatable, Sendable {
+    nonisolated struct CopilotFlightAnswer: Codable, Equatable, Sendable {
         var fuelGal: Double?
         var plannedGsKt: Double?
         var passengers: Bool
@@ -2676,7 +2710,7 @@ enum EngineContract {
         }
     }
 
-    struct CopilotFlightInput: Codable, Equatable, Sendable {
+    nonisolated struct CopilotFlightInput: Codable, Equatable, Sendable {
         var fuelGal: Double?
         var taxiGal: Double?
         var distanceNm: Double?
@@ -2692,12 +2726,12 @@ enum EngineContract {
         }
     }
 
-    struct CopilotFlightInputStationsItem: Codable, Equatable, Sendable {
+    nonisolated struct CopilotFlightInputStationsItem: Codable, Equatable, Sendable {
         var name: String
         var lb: Double?
     }
 
-    struct CopilotMessage: Codable, Equatable, Sendable {
+    nonisolated struct CopilotMessage: Codable, Equatable, Sendable {
         /// The same while what it says is; speak a message once by it.
         var id: String
         var kind: String
@@ -2713,7 +2747,7 @@ enum EngineContract {
         var alternative: EngineContract.CopilotAlternative?
     }
 
-    struct CopilotWatchAnswer: Codable, Equatable, Sendable {
+    nonisolated struct CopilotWatchAnswer: Codable, Equatable, Sendable {
         var messages: [EngineContract.CopilotMessage]
         var etaS: Double?
         var remainingNm: Double
@@ -2729,13 +2763,16 @@ enum EngineContract {
         }
     }
 
-    struct CopilotWatchInput: Codable, Equatable, Sendable {
+    nonisolated struct CopilotWatchInput: Codable, Equatable, Sendable {
         var nowS: Double
         var own: EngineContract.CopilotWatchInputOwn
         var fields: [EngineContract.CopilotField]
         var rules: String?
         var minimums: EngineContract.CopilotWatchInputMinimums?
+        /// The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
         var fuelGal: Double?
+        /// When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+        var startedS: Double?
         var burnGph: Double?
         var tasKt: Double?
         /// The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a "closed" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's.
@@ -2756,6 +2793,7 @@ enum EngineContract {
             case rules
             case minimums
             case fuelGal = "fuel_gal"
+            case startedS = "started_s"
             case burnGph = "burn_gph"
             case tasKt = "tas_kt"
             case dest
@@ -2770,14 +2808,14 @@ enum EngineContract {
         }
     }
 
-    struct CopilotWatchInputAheadItem: Codable, Equatable, Sendable {
+    nonisolated struct CopilotWatchInputAheadItem: Codable, Equatable, Sendable {
         var id: String?
         var kind: String?
         var level: String?
         var name: String?
     }
 
-    struct CopilotWatchInputAreasItem: Codable, Equatable, Sendable {
+    nonisolated struct CopilotWatchInputAreasItem: Codable, Equatable, Sendable {
         var kind: String
         var id: String?
         var name: String?
@@ -2799,13 +2837,13 @@ enum EngineContract {
         }
     }
 
-    struct CopilotWatchInputItwsItem: Codable, Equatable, Sendable {
+    nonisolated struct CopilotWatchInputItwsItem: Codable, Equatable, Sendable {
         var airport: String
         var alert: String
         var words: String
     }
 
-    struct CopilotWatchInputMinimums: Codable, Equatable, Sendable {
+    nonisolated struct CopilotWatchInputMinimums: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
         var crosswindKt: Double?
@@ -2819,7 +2857,7 @@ enum EngineContract {
         }
     }
 
-    struct CopilotWatchInputOwn: Codable, Equatable, Sendable {
+    nonisolated struct CopilotWatchInputOwn: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var trackDeg: Double?
@@ -2833,15 +2871,15 @@ enum EngineContract {
         }
     }
 
-    struct CsvRowsInput: Codable, Equatable, Sendable {
+    nonisolated struct CsvRowsInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct CtafOfInput: Codable, Equatable, Sendable {
+    nonisolated struct CtafOfInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
     }
 
-    struct DataCycleAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DataCycleAnswer: Codable, Equatable, Sendable {
         var kind: String
         /// The cycle's length, 28 or 56 days.
         var cycleDays: Int
@@ -2851,10 +2889,14 @@ enum EngineContract {
         var currentIdent: String?
         /// YYYY-MM-DD: the day the next edition takes its place.
         var next: String
+        /// YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
+        var nextAt: String
         /// YYYY-MM-DD: the day the edition held counts from; null where unknown.
         var effective: String?
         /// YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
         var expires: String?
+        /// YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
+        var expiresAt: String?
         var state: String
         /// How many editions have come out since the one held; 0 unless expired.
         var behind: Int
@@ -2865,47 +2907,49 @@ enum EngineContract {
             case current
             case currentIdent = "current_ident"
             case next
+            case nextAt = "next_at"
             case effective
             case expires
+            case expiresAt = "expires_at"
             case state
             case behind
         }
     }
 
-    struct DataCycleInput: Codable, Equatable, Sendable {
+    nonisolated struct DataCycleInput: Codable, Equatable, Sendable {
         /// The schedule the data set is published on.
         var kind: String
         /// YYYY-MM-DD: the date the edition held is named by (its effective date; a DOF file's last day of changes). Missing or null where nothing says.
         var effective: String?
-        /// YYYY-MM-DD: the UTC day it is used on.
+        /// YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
         var on: String
     }
 
-    struct DatisEndsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DatisEndsAnswer: Codable, Equatable, Sendable {
         /// When it is no longer the airport's, Unix seconds.
         var ends: Double
     }
 
-    struct DatisEndsInput: Codable, Equatable, Sendable {
+    nonisolated struct DatisEndsInput: Codable, Equatable, Sendable {
         /// When it was heard, Unix seconds.
         var heard: Double
     }
 
-    struct DatisRemarksInput: Codable, Equatable, Sendable {
+    nonisolated struct DatisRemarksInput: Codable, Equatable, Sendable {
         /// The D-ATIS as the data link sent it.
         var text: String
     }
 
-    struct DebriefAirborneInput: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAirborneInput: Codable, Equatable, Sendable {
         var points: [EngineContract.TrackPoint]
     }
 
-    struct DebriefAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswer: Codable, Equatable, Sendable {
         var debrief: EngineContract.DebriefAnswerDebrief?
         var tolerances: EngineContract.DebriefAnswerTolerances
     }
 
-    struct DebriefAnswerDebrief: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerDebrief: Codable, Equatable, Sendable {
         /// ms since 1970.
         var takeoff: Double
         var landing: Double
@@ -2936,7 +2980,7 @@ enum EngineContract {
         }
     }
 
-    struct DebriefAnswerDebriefLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerDebriefLegsItem: Codable, Equatable, Sendable {
         var from: String
         var to: String
         var plannedAltFt: Double?
@@ -2960,13 +3004,13 @@ enum EngineContract {
         }
     }
 
-    struct DebriefAnswerDebriefLineItem: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerDebriefLineItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var off: Bool
     }
 
-    struct DebriefAnswerDebriefPassesItem: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerDebriefPassesItem: Codable, Equatable, Sendable {
         var name: String
         var category: String
         var dueMin: Double?
@@ -2988,7 +3032,7 @@ enum EngineContract {
         }
     }
 
-    struct DebriefAnswerDebriefPatternsItem: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerDebriefPatternsItem: Codable, Equatable, Sendable {
         var ident: String
         var altFt: Double
         var patternFt: Double
@@ -3004,7 +3048,7 @@ enum EngineContract {
         }
     }
 
-    struct DebriefAnswerDebriefPlannedItem: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerDebriefPlannedItem: Codable, Equatable, Sendable {
         var fromNm: Double
         var toNm: Double
         var altFt: Double?
@@ -3016,7 +3060,7 @@ enum EngineContract {
         }
     }
 
-    struct DebriefAnswerDebriefProfileItem: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerDebriefProfileItem: Codable, Equatable, Sendable {
         var alongNm: Double
         var altFt: Double
 
@@ -3026,7 +3070,7 @@ enum EngineContract {
         }
     }
 
-    struct DebriefAnswerTolerances: Codable, Equatable, Sendable {
+    nonisolated struct DebriefAnswerTolerances: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var courseDeg: Double
         var offRouteNm: Double
@@ -3044,13 +3088,13 @@ enum EngineContract {
         }
     }
 
-    struct DebriefInput: Codable, Equatable, Sendable {
+    nonisolated struct DebriefInput: Codable, Equatable, Sendable {
         var checkpoints: [EngineContract.DebriefInputCheckpointsItem]
         var points: [EngineContract.TrackPoint]
         var patterns: [String: Double]?
     }
 
-    struct DebriefInputCheckpointsItem: Codable, Equatable, Sendable {
+    nonisolated struct DebriefInputCheckpointsItem: Codable, Equatable, Sendable {
         var sequenceNo: Int
         var name: String
         var category: String
@@ -3074,11 +3118,11 @@ enum EngineContract {
         }
     }
 
-    struct DensityAltitudeFtInput: Codable, Equatable, Sendable {
+    nonisolated struct DensityAltitudeFtInput: Codable, Equatable, Sendable {
         var sigma: Double
     }
 
-    struct DensityRatioInput: Codable, Equatable, Sendable {
+    nonisolated struct DensityRatioInput: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var oatC: Double
 
@@ -3088,7 +3132,7 @@ enum EngineContract {
         }
     }
 
-    struct DepartureCircuitAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DepartureCircuitAnswer: Codable, Equatable, Sendable {
         var points: [[OpenAPIValueContainer]]
         var exitDeg: Double
 
@@ -3098,7 +3142,7 @@ enum EngineContract {
         }
     }
 
-    struct DepartureCircuitInput: Codable, Equatable, Sendable {
+    nonisolated struct DepartureCircuitInput: Codable, Equatable, Sendable {
         var runway: EngineContract.CircuitRunwayIn
         var endIdent: String
         /// [lat, lon]
@@ -3111,7 +3155,7 @@ enum EngineContract {
         }
     }
 
-    struct DeparturePatternInput: Codable, Equatable, Sendable {
+    nonisolated struct DeparturePatternInput: Codable, Equatable, Sendable {
         var ident: String?
         var runway: EngineContract.CircuitRunwayIn
         var endIdent: String
@@ -3127,18 +3171,18 @@ enum EngineContract {
         }
     }
 
-    struct DeparturePatternInputToward: Codable, Equatable, Sendable {
+    nonisolated struct DeparturePatternInputToward: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct DepartureWindowAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DepartureWindowAnswer: Codable, Equatable, Sendable {
         var hours: [EngineContract.DepartureWindowAnswerHoursItem]
         /// The runs of go hours, best first.
         var windows: [EngineContract.DepartureWindowAnswerWindowsItem]
     }
 
-    struct DepartureWindowAnswerHoursItem: Codable, Equatable, Sendable {
+    nonisolated struct DepartureWindowAnswerHoursItem: Codable, Equatable, Sendable {
         var departS: Double
         var verdict: String
         /// The one or two findings that decide it; for a go, the weather's.
@@ -3164,7 +3208,7 @@ enum EngineContract {
         }
     }
 
-    struct DepartureWindowAnswerWindowsItem: Codable, Equatable, Sendable {
+    nonisolated struct DepartureWindowAnswerWindowsItem: Codable, Equatable, Sendable {
         var fromS: Double
         /// Its last departure hour.
         var lastS: Double
@@ -3184,7 +3228,7 @@ enum EngineContract {
         }
     }
 
-    struct DepartureWindowInput: Codable, Equatable, Sendable {
+    nonisolated struct DepartureWindowInput: Codable, Equatable, Sendable {
         /// The departure, [lat, lon]: the night is judged along the straight line to `end`.
         var start: [Double]
         /// The destination, [lat, lon].
@@ -3198,7 +3242,7 @@ enum EngineContract {
         var hours: [EngineContract.DepartureWindowInputHoursItem]
     }
 
-    struct DepartureWindowInputHoursItem: Codable, Equatable, Sendable {
+    nonisolated struct DepartureWindowInputHoursItem: Codable, Equatable, Sendable {
         /// The departure, UNIX seconds.
         var departS: Double
         /// The forecasts reach the whole flight; false, the hour is unknown.
@@ -3227,7 +3271,7 @@ enum EngineContract {
     }
 
     /// The pilot's own ceiling and visibility minimums, which the margin is counted against; 14 CFR 91.155(c), (d)'s 1,000 ft and 3 sm where one is not set.
-    struct DepartureWindowInputMinimums: Codable, Equatable, Sendable {
+    nonisolated struct DepartureWindowInputMinimums: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
 
@@ -3237,16 +3281,16 @@ enum EngineContract {
         }
     }
 
-    struct DestinationAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct DestinationAnswerItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct DestinationInput: Codable, Equatable, Sendable {
+    nonisolated struct DestinationInput: Codable, Equatable, Sendable {
         var points: [EngineContract.DestinationInputPointsItem]
     }
 
-    struct DestinationInputPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct DestinationInputPointsItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var bearingDeg: Double
@@ -3260,7 +3304,7 @@ enum EngineContract {
         }
     }
 
-    struct DiagramFixUsableInput: Codable, Equatable, Sendable {
+    nonisolated struct DiagramFixUsableInput: Codable, Equatable, Sendable {
         /// The fix's age, s.
         var ageS: Double
         /// Its horizontal accuracy, m.
@@ -3272,7 +3316,7 @@ enum EngineContract {
         }
     }
 
-    struct DiagramGraticuleAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DiagramGraticuleAnswer: Codable, Equatable, Sendable {
         var latOnX: Bool
         var a: Double
         var b: Double
@@ -3290,21 +3334,65 @@ enum EngineContract {
         }
     }
 
-    struct DiagramGraticuleInput: Codable, Equatable, Sendable {
+    nonisolated struct DiagramGraticuleInput: Codable, Equatable, Sendable {
         var labels: [EngineContract.DiagramGraticuleInputLabelsItem]
     }
 
-    struct DiagramGraticuleInputLabelsItem: Codable, Equatable, Sendable {
+    nonisolated struct DiagramGraticuleInputLabelsItem: Codable, Equatable, Sendable {
         var text: String
         var x: Double
         var y: Double
     }
 
-    struct DiagramLabelsInput: Codable, Equatable, Sendable {
+    nonisolated struct DiagramHotSpotLabelsInput: Codable, Equatable, Sendable {
+        /// The page's text.
         var text: String
     }
 
-    struct DiagramPointAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DiagramHotSpotsAnswerItem: Codable, Equatable, Sendable {
+        var name: String
+        var lat: Double
+        var lon: Double
+        var x: Double
+        var y: Double
+    }
+
+    nonisolated struct DiagramHotSpotsInput: Codable, Equatable, Sendable {
+        /// diagram_graticule's answer.
+        var graticule: EngineContract.DiagramHotSpotsInputGraticule
+        var labels: [EngineContract.DiagramHotSpotsInputLabelsItem]
+    }
+
+    /// diagram_graticule's answer.
+    nonisolated struct DiagramHotSpotsInputGraticule: Codable, Equatable, Sendable {
+        var latOnX: Bool
+        var a: Double
+        var b: Double
+        var c: Double
+        var d: Double
+        var northDeg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case latOnX = "lat_on_x"
+            case a
+            case b
+            case c
+            case d
+            case northDeg = "north_deg"
+        }
+    }
+
+    nonisolated struct DiagramHotSpotsInputLabelsItem: Codable, Equatable, Sendable {
+        var text: String
+        var x: Double
+        var y: Double
+    }
+
+    nonisolated struct DiagramLabelsInput: Codable, Equatable, Sendable {
+        var text: String
+    }
+
+    nonisolated struct DiagramPointAnswer: Codable, Equatable, Sendable {
         var x: Double
         var y: Double
         var onPage: Bool
@@ -3316,7 +3404,7 @@ enum EngineContract {
         }
     }
 
-    struct DiagramPointInput: Codable, Equatable, Sendable {
+    nonisolated struct DiagramPointInput: Codable, Equatable, Sendable {
         var graticule: EngineContract.DiagramPointInputGraticule
         var lat: Double
         var lon: Double
@@ -3324,7 +3412,7 @@ enum EngineContract {
         var height: Double
     }
 
-    struct DiagramPointInputGraticule: Codable, Equatable, Sendable {
+    nonisolated struct DiagramPointInputGraticule: Codable, Equatable, Sendable {
         var latOnX: Bool
         var a: Double
         var b: Double
@@ -3342,25 +3430,25 @@ enum EngineContract {
         }
     }
 
-    struct DirectOfInput: Codable, Equatable, Sendable {
+    nonisolated struct DirectOfInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct DistanceNmInput: Codable, Equatable, Sendable {
+    nonisolated struct DistanceNmInput: Codable, Equatable, Sendable {
         var lat1: Double
         var lon1: Double
         var lat2: Double
         var lon2: Double
     }
 
-    struct DiversionAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DiversionAnswer: Codable, Equatable, Sendable {
         var solved: EngineContract.DiversionAnswerSolved?
         var steps: [EngineContract.DiversionAnswerStepsItem]
         var problem: String?
         var checks: [EngineContract.DiversionAnswerChecksItem]
     }
 
-    struct DiversionAnswerChecksItem: Codable, Equatable, Sendable {
+    nonisolated struct DiversionAnswerChecksItem: Codable, Equatable, Sendable {
         var key: String
         var label: String
         var unit: String
@@ -3371,7 +3459,7 @@ enum EngineContract {
         var reasonable: Bool?
     }
 
-    struct DiversionAnswerSolved: Codable, Equatable, Sendable {
+    nonisolated struct DiversionAnswerSolved: Codable, Equatable, Sendable {
         var tc: Double
         var distanceNm: Double
         var wca: Double
@@ -3393,12 +3481,12 @@ enum EngineContract {
         }
     }
 
-    struct DiversionAnswerStepsItem: Codable, Equatable, Sendable {
+    nonisolated struct DiversionAnswerStepsItem: Codable, Equatable, Sendable {
         var name: String
         var value: String
     }
 
-    struct DiversionInput: Codable, Equatable, Sendable {
+    nonisolated struct DiversionInput: Codable, Equatable, Sendable {
         var trueCourseDeg: Double
         var distanceNm: Double
         var tasKt: Double
@@ -3428,7 +3516,7 @@ enum EngineContract {
         }
     }
 
-    struct DiversionInputWind: Codable, Equatable, Sendable {
+    nonisolated struct DiversionInputWind: Codable, Equatable, Sendable {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
 
@@ -3438,13 +3526,41 @@ enum EngineContract {
         }
     }
 
-    struct DiversionReasonableInput: Codable, Equatable, Sendable {
+    nonisolated struct DiversionRangeNmAnswer: Codable, Equatable, Sendable {
+        /// The range, nm; null with no cruise speed.
+        var rangeNm: Double?
+        var reserveMin: Double
+        var basis: String
+
+        enum CodingKeys: String, CodingKey {
+            case rangeNm = "range_nm"
+            case reserveMin = "reserve_min"
+            case basis
+        }
+    }
+
+    nonisolated struct DiversionRangeNmInput: Codable, Equatable, Sendable {
+        /// The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked.
+        var tasKt: Double?
+        /// Its usable fuel, gallons; null or missing for none.
+        var usableGal: Double?
+        /// Its cruise burn, gallons an hour; null or missing for none.
+        var burnGph: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case tasKt = "tas_kt"
+            case usableGal = "usable_gal"
+            case burnGph = "burn_gph"
+        }
+    }
+
+    nonisolated struct DiversionReasonableInput: Codable, Equatable, Sendable {
         var key: String
         var typed: Double
         var exact: Double
     }
 
-    struct DocumentFlag: Codable, Equatable, Sendable {
+    nonisolated struct DocumentFlag: Codable, Equatable, Sendable {
         /// "check": outside what light airplanes' handbooks give, or at odds with another figure; "wrong": cannot be right as read.
         var level: String
         /// The figure it is about where it is one: a logbook entry's member ("nightHours").
@@ -3453,7 +3569,7 @@ enum EngineContract {
         var says: String
     }
 
-    struct DrillCard: Codable, Equatable, Sendable {
+    nonisolated struct DrillCard: Codable, Equatable, Sendable {
         var id: String
         var prompt: String
         var answer: String
@@ -3462,7 +3578,7 @@ enum EngineContract {
         var flashing: Bool
     }
 
-    struct DrillDeck: Codable, Equatable, Sendable {
+    nonisolated struct DrillDeck: Codable, Equatable, Sendable {
         var key: String
         var title: String
         var source: String
@@ -3470,10 +3586,10 @@ enum EngineContract {
         var cards: [EngineContract.DrillCard]
     }
 
-    struct DrillDecksInput: Codable, Equatable, Sendable {
+    nonisolated struct DrillDecksInput: Codable, Equatable, Sendable {
     }
 
-    struct DrillNextAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DrillNextAnswer: Codable, Equatable, Sendable {
         var box: Double
         var inDays: Double
 
@@ -3483,12 +3599,12 @@ enum EngineContract {
         }
     }
 
-    struct DrillNextInput: Codable, Equatable, Sendable {
+    nonisolated struct DrillNextInput: Codable, Equatable, Sendable {
         var box: Double?
         var knew: Bool
     }
 
-    struct DryRunAnswer: Codable, Equatable, Sendable {
+    nonisolated struct DryRunAnswer: Codable, Equatable, Sendable {
         var points: [EngineContract.DryRunAnswerPointsItem]
         var alongNm: [Double]
         var fuelGal: [Double]
@@ -3510,24 +3626,24 @@ enum EngineContract {
         }
     }
 
-    struct DryRunAnswerBendsItem: Codable, Equatable, Sendable {
+    nonisolated struct DryRunAnswerBendsItem: Codable, Equatable, Sendable {
         var route: Double
         var run: Double
     }
 
-    struct DryRunAnswerFinal: Codable, Equatable, Sendable {
+    nonisolated struct DryRunAnswerFinal: Codable, Equatable, Sendable {
         var from: Double
         var to: Double
     }
 
-    struct DryRunAnswerLandingsItem: Codable, Equatable, Sendable {
+    nonisolated struct DryRunAnswerLandingsItem: Codable, Equatable, Sendable {
         var ident: String
         var t: Double
         var nm: Double
         var fuel: Double
     }
 
-    struct DryRunAnswerPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct DryRunAnswerPointsItem: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -3545,7 +3661,7 @@ enum EngineContract {
         }
     }
 
-    struct DryRunInput: Codable, Equatable, Sendable {
+    nonisolated struct DryRunInput: Codable, Equatable, Sendable {
         var rows: [EngineContract.NavLogRow]
         /// Seconds since 1970 at the start.
         var startS: Double
@@ -3561,7 +3677,7 @@ enum EngineContract {
         }
     }
 
-    struct DueToneInput: Codable, Equatable, Sendable {
+    nonisolated struct DueToneInput: Codable, Equatable, Sendable {
         var daysLeft: Double?
         var hoursLeft: Double?
 
@@ -3571,37 +3687,37 @@ enum EngineContract {
         }
     }
 
-    struct EmergencyGuidanceAnswer: Codable, Equatable, Sendable {
+    nonisolated struct EmergencyGuidanceAnswer: Codable, Equatable, Sendable {
         var items: [EngineContract.EmergencyGuidanceAnswerItemsItem]
     }
 
-    struct EmergencyGuidanceAnswerItemsItem: Codable, Equatable, Sendable {
+    nonisolated struct EmergencyGuidanceAnswerItemsItem: Codable, Equatable, Sendable {
         var title: String
         var detail: String
         /// Where it comes from: the AIM paragraph, the handbook's chapter or the CFR section.
         var source: String
     }
 
-    struct EmergencyGuidanceInput: Codable, Equatable, Sendable {
+    nonisolated struct EmergencyGuidanceInput: Codable, Equatable, Sendable {
     }
 
-    struct EmitterCategoryInput: Codable, Equatable, Sendable {
+    nonisolated struct EmitterCategoryInput: Codable, Equatable, Sendable {
         var category: String?
     }
 
-    struct EndorsementFillAnswer: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementFillAnswer: Codable, Equatable, Sendable {
         var fields: [String: String]
         var missing: [String]
         var text: String
     }
 
-    struct EndorsementFillInput: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementFillInput: Codable, Equatable, Sendable {
         var code: String
         var student: String?
         var fields: [String: String]?
     }
 
-    struct EndorsementKindsAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementKindsAnswerItem: Codable, Equatable, Sendable {
         var code: String
         /// AC 61-65K's paragraph, "A.10".
         var paragraph: String
@@ -3613,17 +3729,17 @@ enum EngineContract {
         var fields: [EngineContract.EndorsementKindsAnswerItemFieldsItem]
     }
 
-    struct EndorsementKindsAnswerItemFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementKindsAnswerItemFieldsItem: Codable, Equatable, Sendable {
         var key: String
         var label: String
         var example: String
         var required: Bool
     }
 
-    struct EndorsementKindsInput: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementKindsInput: Codable, Equatable, Sendable {
     }
 
-    struct EndorsementLapseInput: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementLapseInput: Codable, Equatable, Sendable {
         /// YYYY-MM-DD.
         var until: String?
         /// "EXP" for the certificate's expiry; anything else is recent experience ("RE").
@@ -3638,7 +3754,7 @@ enum EngineContract {
         }
     }
 
-    struct EndorsementRecordsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementRecordsAnswer: Codable, Equatable, Sendable {
         var until: [String?]
         /// YYYY-MM-DD
         var soloUntil: String?
@@ -3651,14 +3767,14 @@ enum EngineContract {
         }
     }
 
-    struct EndorsementRecordsAnswerChecksItem: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementRecordsAnswerChecksItem: Codable, Equatable, Sendable {
         var rule: String
         var label: String
         var met: Bool
         var detail: String
     }
 
-    struct EndorsementRecordsInput: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementRecordsInput: Codable, Equatable, Sendable {
         var held: [EngineContract.EndorsementRecordsInputHeldItem]?
         /// YYYY-MM-DD
         var flightOn: String?
@@ -3669,7 +3785,7 @@ enum EngineContract {
         }
     }
 
-    struct EndorsementRecordsInputHeldItem: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementRecordsInputHeldItem: Codable, Equatable, Sendable {
         var code: String
         var on: String
         var makeModel: String?
@@ -3681,22 +3797,24 @@ enum EngineContract {
         }
     }
 
-    struct EndorsementRenderInput: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementRenderInput: Codable, Equatable, Sendable {
         var template: String
         var student: String?
         var fields: [String: String]?
     }
 
-    struct EndorsementsInForceInput: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementsInForceInput: Codable, Equatable, Sendable {
         var signed: [EngineContract.EndorsementsInForceInputSignedItem]
     }
 
-    struct EndorsementsInForceInputSignedItem: Codable, Equatable, Sendable {
+    nonisolated struct EndorsementsInForceInputSignedItem: Codable, Equatable, Sendable {
         var code: String
         var voided: Bool?
+        /// The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+        var verified: Bool?
     }
 
-    struct EnduranceAnswer: Codable, Equatable, Sendable {
+    nonisolated struct EnduranceAnswer: Codable, Equatable, Sendable {
         var minutes: Double?
         var reserveMin: Double
         var reserveGal: Double?
@@ -3712,7 +3830,7 @@ enum EngineContract {
         }
     }
 
-    struct EnduranceInput: Codable, Equatable, Sendable {
+    nonisolated struct EnduranceInput: Codable, Equatable, Sendable {
         /// The airplane's usable fuel, gallons (its profile's); null or missing where it has none.
         var usableGal: Double?
         /// The airplane's cruise burn, gallons an hour (its profile's); null or missing where it has none.
@@ -3727,18 +3845,18 @@ enum EngineContract {
         }
     }
 
-    struct FaaIdsInput: Codable, Equatable, Sendable {
+    nonisolated struct FaaIdsInput: Codable, Equatable, Sendable {
         var ident: String
     }
 
-    struct FaaWordsInput: Codable, Equatable, Sendable {
+    nonisolated struct FaaWordsInput: Codable, Equatable, Sendable {
         var text: String?
         /// A long list's rows in one call; where given, text is not read.
         var texts: [String?]?
     }
 
     /// A field's frequency as the planner sends it (NASR's type code, description and MHz).
-    struct FieldFrequency: Codable, Equatable, Sendable {
+    nonisolated struct FieldFrequency: Codable, Equatable, Sendable {
         /// NASR's code: TWR, GND, ATIS, CTAF, UNICOM...
         var type: String?
         var description: String?
@@ -3752,7 +3870,7 @@ enum EngineContract {
     }
 
     /// One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (FAA-H-8083-28B 27.4.2.10's change groups).
-    struct FieldHour: Codable, Equatable, Sendable {
+    nonisolated struct FieldHour: Codable, Equatable, Sendable {
         /// The hour's start, ms; Now's the report's time (or now).
         var at: Double
         var now: Bool
@@ -3790,7 +3908,7 @@ enum EngineContract {
         }
     }
 
-    struct FieldHoursInput: Codable, Equatable, Sendable {
+    nonisolated struct FieldHoursInput: Codable, Equatable, Sendable {
         /// The field's report as the planner gives it.
         var metar: [String: OpenAPIValueContainer]?
         /// The TAF as sent.
@@ -3801,7 +3919,7 @@ enum EngineContract {
         var count: Double?
     }
 
-    struct FieldMarkRankAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FieldMarkRankAnswer: Codable, Equatable, Sendable {
         /// 0 towered, 1 public with a long hard runway, 2 other public, 3 private, 4 heliports and the rest: which zoom the mark is first drawn at.
         var tier: Int
         /// The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
@@ -3810,7 +3928,7 @@ enum EngineContract {
         var size: String
     }
 
-    struct FieldMarkRankInput: Codable, Equatable, Sendable {
+    nonisolated struct FieldMarkRankInput: Codable, Equatable, Sendable {
         /// NASR APT_BASE's SITE_TYPE_CODE (A airport, H heliport, C seaplane base, G gliderport, U ultralight, B balloonport).
         var siteType: String?
         /// NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
@@ -3831,19 +3949,29 @@ enum EngineContract {
         }
     }
 
-    struct FieldMilitaryAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FieldMilitaryAnswer: Codable, Equatable, Sendable {
         /// military, joint, or null for a field the services do not own.
         var military: String?
     }
 
-    struct FieldMilitaryInput: Codable, Equatable, Sendable {
+    nonisolated struct FieldMilitaryInput: Codable, Equatable, Sendable {
         /// NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG).
         var ownership: String?
         /// NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
         var use: String?
     }
 
-    struct FieldsAlongAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct FieldNamesInput: Codable, Equatable, Sendable {
+        var ident: String
+        var icaoId: String?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case icaoId = "icao_id"
+        }
+    }
+
+    nonisolated struct FieldsAlongAnswerItem: Codable, Equatable, Sendable {
         var ident: String
         var name: String
         var city: String
@@ -3873,24 +4001,26 @@ enum EngineContract {
         }
     }
 
-    struct FieldsAlongInput: Codable, Equatable, Sendable {
+    nonisolated struct FieldsAlongInput: Codable, Equatable, Sendable {
         var flights: [EngineContract.FieldsAlongInputFlightsItem]
         var skip: [String]?
         var fields: [EngineContract.FuelField]?
     }
 
-    struct FieldsAlongInputFlightsItem: Codable, Equatable, Sendable {
+    nonisolated struct FieldsAlongInputFlightsItem: Codable, Equatable, Sendable {
         var departure: String
         var start: [Double]
         var end: [Double]
     }
 
-    struct FieldSiteTypeAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FieldSiteTypeAnswer: Codable, Equatable, Sendable {
         /// The site's kind in words, or null for an airport.
         var words: String?
+        /// Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+        var airplane: Bool
     }
 
-    struct FieldSiteTypeInput: Codable, Equatable, Sendable {
+    nonisolated struct FieldSiteTypeInput: Codable, Equatable, Sendable {
         /// NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record.
         var siteType: String?
 
@@ -3899,19 +4029,19 @@ enum EngineContract {
         }
     }
 
-    struct FieldStatusAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FieldStatusAnswer: Codable, Equatable, Sendable {
         /// Whether the field may be shown or offered as an open one.
         var `open`: Bool
         /// A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one.
         var closed: String?
     }
 
-    struct FieldStatusInput: Codable, Equatable, Sendable {
+    nonisolated struct FieldStatusInput: Codable, Equatable, Sendable {
         /// NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record.
         var status: String?
     }
 
-    struct FieldTafAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FieldTafAnswer: Codable, Equatable, Sendable {
         /// The station's index in `stations`; null for none within reach.
         var index: Int?
         /// How far the nearest is; null for the field's own.
@@ -3926,7 +4056,7 @@ enum EngineContract {
         }
     }
 
-    struct FieldTafInput: Codable, Equatable, Sendable {
+    nonisolated struct FieldTafInput: Codable, Equatable, Sendable {
         var ident: String
         /// Where the field is; null where it is not known (its own TAF only).
         var at: EngineContract.FieldTafInputAt?
@@ -3934,12 +4064,12 @@ enum EngineContract {
     }
 
     /// Where the field is; null where it is not known (its own TAF only).
-    struct FieldTafInputAt: Codable, Equatable, Sendable {
+    nonisolated struct FieldTafInputAt: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct FieldTafInputStationsItem: Codable, Equatable, Sendable {
+    nonisolated struct FieldTafInputStationsItem: Codable, Equatable, Sendable {
         var icaoId: String
         var lat: Double?
         var lon: Double?
@@ -3951,18 +4081,18 @@ enum EngineContract {
         }
     }
 
-    struct FiledDofInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledDofInput: Codable, Equatable, Sendable {
         /// ISO, UTC.
         var depart: String
         /// ISO, UTC.
         var today: String
     }
 
-    struct FiledDurationInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledDurationInput: Codable, Equatable, Sendable {
         var minutes: Double
     }
 
-    struct FiledEnduranceInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledEnduranceInput: Codable, Equatable, Sendable {
         var fuelGal: Double
         var burnGph: Double
 
@@ -3972,32 +4102,32 @@ enum EngineContract {
         }
     }
 
-    struct FiledLevelInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledLevelInput: Codable, Equatable, Sendable {
         var ft: Double
     }
 
-    struct FiledRnavInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledRnavInput: Codable, Equatable, Sendable {
         var airways: [String]
     }
 
-    struct FiledRouteInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledRouteInput: Codable, Equatable, Sendable {
         var stops: [String]
         var airways: [String]?
         var departure: EngineContract.FiledRouteInputDeparture?
         var arrival: EngineContract.FiledRouteInputArrival?
     }
 
-    struct FiledRouteInputArrival: Codable, Equatable, Sendable {
+    nonisolated struct FiledRouteInputArrival: Codable, Equatable, Sendable {
         var id: String
         var transition: String?
     }
 
-    struct FiledRouteInputDeparture: Codable, Equatable, Sendable {
+    nonisolated struct FiledRouteInputDeparture: Codable, Equatable, Sendable {
         var id: String
         var transition: String?
     }
 
-    struct FiledSpeedInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledSpeedInput: Codable, Equatable, Sendable {
         var tasKt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -4005,7 +4135,7 @@ enum EngineContract {
         }
     }
 
-    struct FiledTimesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FiledTimesAnswer: Codable, Equatable, Sendable {
         var burnGph: Double?
         var eetMinutes: Int?
         var eet: String?
@@ -4021,7 +4151,7 @@ enum EngineContract {
         }
     }
 
-    struct FiledTimesInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledTimesInput: Codable, Equatable, Sendable {
         var eteMin: Double?
         var fuelGal: Double?
         var legs: [EngineContract.FiledTimesInputLegsItem]
@@ -4035,7 +4165,7 @@ enum EngineContract {
         }
     }
 
-    struct FiledTimesInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct FiledTimesInputLegsItem: Codable, Equatable, Sendable {
         var phase: String?
         var fuelBurnGph: Double?
 
@@ -4045,7 +4175,7 @@ enum EngineContract {
         }
     }
 
-    struct FiledWakeInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledWakeInput: Codable, Equatable, Sendable {
         var maxTakeoffLb: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -4053,7 +4183,7 @@ enum EngineContract {
         }
     }
 
-    struct FiledZzzzInput: Codable, Equatable, Sendable {
+    nonisolated struct FiledZzzzInput: Codable, Equatable, Sendable {
         var ident: String
         /// NASR APT_BASE's ICAO_ID for the field: null or "" where NASR lists none. Leave it out only where the host has no NASR row for the field.
         var icaoId: String?
@@ -4064,12 +4194,12 @@ enum EngineContract {
         }
     }
 
-    struct FixRadialDistanceInput: Codable, Equatable, Sendable {
+    nonisolated struct FixRadialDistanceInput: Codable, Equatable, Sendable {
         var at: EngineContract.WordingLatLon
         var stations: [EngineContract.WordingStation]
     }
 
-    struct FlightCategoryInput: Codable, Equatable, Sendable {
+    nonisolated struct FlightCategoryInput: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
         /// The lowest broken, overcast or obscured layer was sent with no height (OVC///): the ceiling is not known, and only a visibility under a mile says the category (14 CFR 1.1).
@@ -4083,7 +4213,7 @@ enum EngineContract {
     }
 
     /// The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
-    struct FloorAlongPathAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FloorAlongPathAnswer: Codable, Equatable, Sendable {
         var floorFt: Double
         var lowestGroundFt: Double?
 
@@ -4093,12 +4223,12 @@ enum EngineContract {
         }
     }
 
-    struct FloorAlongPathInput: Codable, Equatable, Sendable {
+    nonisolated struct FloorAlongPathInput: Codable, Equatable, Sendable {
         /// The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
         var floors: [EngineContract.FloorAlongPathInputFloorsItem]
     }
 
-    struct FloorAlongPathInputFloorsItem: Codable, Equatable, Sendable {
+    nonisolated struct FloorAlongPathInputFloorsItem: Codable, Equatable, Sendable {
         var floorFt: Double
         /// VFR's lowest ground under the piece; none under IFR.
         var lowestGroundFt: Double?
@@ -4109,17 +4239,17 @@ enum EngineContract {
         }
     }
 
-    struct FloorCorridorNmInput: Codable, Equatable, Sendable {
+    nonisolated struct FloorCorridorNmInput: Codable, Equatable, Sendable {
     }
 
-    struct FlowCellAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FlowCellAnswer: Codable, Equatable, Sendable {
         /// Four indices: north-west, north-east, south-west, south-east.
         var pixels: [Int]
         var fx: Double
         var fy: Double
     }
 
-    struct FlowCellInput: Codable, Equatable, Sendable {
+    nonisolated struct FlowCellInput: Codable, Equatable, Sendable {
         /// [west, south, east, north], degrees.
         var bounds: [Double]
         var width: Int
@@ -4128,7 +4258,7 @@ enum EngineContract {
         var lon: Double
     }
 
-    struct FlowLevelsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FlowLevelsAnswer: Codable, Equatable, Sendable {
         var wind: [EngineContract.FlowLevelsAnswerWindItem]
         var icing: [EngineContract.FlowLevelsAnswerIcingItem]
         var turbulence: [EngineContract.FlowLevelsAnswerTurbulenceItem]
@@ -4144,7 +4274,7 @@ enum EngineContract {
         }
     }
 
-    struct FlowLevelsAnswerIcingItem: Codable, Equatable, Sendable {
+    nonisolated struct FlowLevelsAnswerIcingItem: Codable, Equatable, Sendable {
         var id: String
         var ft: Double?
         var isaHpa: Double?
@@ -4156,7 +4286,7 @@ enum EngineContract {
         }
     }
 
-    struct FlowLevelsAnswerTurbulenceItem: Codable, Equatable, Sendable {
+    nonisolated struct FlowLevelsAnswerTurbulenceItem: Codable, Equatable, Sendable {
         var id: String
         var ft: Double?
         var isaHpa: Double?
@@ -4168,7 +4298,7 @@ enum EngineContract {
         }
     }
 
-    struct FlowLevelsAnswerWindItem: Codable, Equatable, Sendable {
+    nonisolated struct FlowLevelsAnswerWindItem: Codable, Equatable, Sendable {
         var id: String
         var ft: Double?
         var isaHpa: Double?
@@ -4180,10 +4310,10 @@ enum EngineContract {
         }
     }
 
-    struct FlowLevelsInput: Codable, Equatable, Sendable {
+    nonisolated struct FlowLevelsInput: Codable, Equatable, Sendable {
     }
 
-    struct FlowSampleAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FlowSampleAnswer: Codable, Equatable, Sendable {
         var value: Double
         var fromDeg: Double?
         /// A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar.
@@ -4199,7 +4329,7 @@ enum EngineContract {
         }
     }
 
-    struct FlowSampleInput: Codable, Equatable, Sendable {
+    nonisolated struct FlowSampleInput: Codable, Equatable, Sendable {
         /// Four pixels, as flow_cell orders them, each [red, green, alpha] bytes.
         var pixels: [[Double]]
         var fx: Double
@@ -4213,7 +4343,7 @@ enum EngineContract {
         var field: String?
     }
 
-    struct ForecastHourInput: Codable, Equatable, Sendable {
+    nonisolated struct ForecastHourInput: Codable, Equatable, Sendable {
         var hoursAhead: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -4221,7 +4351,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunAnswer: Codable, Equatable, Sendable {
         var samples: [EngineContract.ForecastRunAnswerSamplesItem]
         var legs: [EngineContract.ForecastRunAnswerLegsItem]
         var fields: [EngineContract.ForecastRunAnswerFieldsItem]
@@ -4229,7 +4359,7 @@ enum EngineContract {
         var alerts: [EngineContract.ForecastRunAnswerAlertsItem]
     }
 
-    struct ForecastRunAnswerAlertsItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunAnswerAlertsItem: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -4239,7 +4369,7 @@ enum EngineContract {
         var source: String
     }
 
-    struct ForecastRunAnswerAreasItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunAnswerAreasItem: Codable, Equatable, Sendable {
         var kind: String
         var words: String
         var source: String
@@ -4261,7 +4391,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunAnswerFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunAnswerFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         var role: String
         var t: Double
@@ -4271,7 +4401,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
 
         enum CodingKeys: String, CodingKey {
@@ -4286,7 +4416,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunAnswerLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunAnswerLegsItem: Codable, Equatable, Sendable {
         var row: Int
         var fromT: Double
         var toT: Double
@@ -4303,7 +4433,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunAnswerSamplesItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunAnswerSamplesItem: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -4313,7 +4443,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
@@ -4335,7 +4465,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunInput: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunInput: Codable, Equatable, Sendable {
         /// The run's points, in time order.
         var track: [EngineContract.ForecastRunInputTrackItem]
         var fields: [EngineContract.ForecastRunInputFieldsItem]?
@@ -4349,7 +4479,7 @@ enum EngineContract {
         var minimums: EngineContract.ForecastRunInputMinimums?
     }
 
-    struct ForecastRunInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         var role: String
         var t: Double
@@ -4357,7 +4487,7 @@ enum EngineContract {
         var lon: Double
     }
 
-    struct ForecastRunInputMinimums: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunInputMinimums: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
 
@@ -4367,7 +4497,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunInputTrackItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunInputTrackItem: Codable, Equatable, Sendable {
         /// s since 1970.
         var t: Double
         var lat: Double
@@ -4392,7 +4522,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunInputTrackItemModelledItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunInputTrackItemModelledItem: Codable, Equatable, Sendable {
         var valid: Double
         var ceilingFt: Double?
         var visibilitySm: Double?
@@ -4404,7 +4534,7 @@ enum EngineContract {
         }
     }
 
-    struct ForecastRunInputTrackItemWindsItem: Codable, Equatable, Sendable {
+    nonisolated struct ForecastRunInputTrackItemWindsItem: Codable, Equatable, Sendable {
         var useFrom: Double
         var useTo: Double
         var levels: [String: [String: OpenAPIValueContainer]]
@@ -4416,7 +4546,7 @@ enum EngineContract {
         }
     }
 
-    struct FrdNearAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FrdNearAnswer: Codable, Equatable, Sendable {
         var base: String
         var courseDeg: Int
         var distanceNm: Double
@@ -4432,7 +4562,7 @@ enum EngineContract {
         }
     }
 
-    struct FrdNearInput: Codable, Equatable, Sendable {
+    nonisolated struct FrdNearInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var maxNm: Double?
@@ -4448,7 +4578,7 @@ enum EngineContract {
         }
     }
 
-    struct FrdReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FrdReadAnswer: Codable, Equatable, Sendable {
         var base: String
         /// Magnetic degrees from the base.
         var course: Int
@@ -4461,11 +4591,11 @@ enum EngineContract {
         }
     }
 
-    struct FrdReadInput: Codable, Equatable, Sendable {
+    nonisolated struct FrdReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct FrdWriteInput: Codable, Equatable, Sendable {
+    nonisolated struct FrdWriteInput: Codable, Equatable, Sendable {
         var base: String
         var course: Double
         var distanceNm: Double
@@ -4477,7 +4607,7 @@ enum EngineContract {
         }
     }
 
-    struct FreezingLevelAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FreezingLevelAnswer: Codable, Equatable, Sendable {
         var ft: Double
         var atOrBelow: Bool
 
@@ -4487,28 +4617,28 @@ enum EngineContract {
         }
     }
 
-    struct FreezingLevelInput: Codable, Equatable, Sendable {
+    nonisolated struct FreezingLevelInput: Codable, Equatable, Sendable {
         /// [[altitude_ft, temp_c], ...]
         var profile: [[Double]]?
     }
 
-    struct FreezingPrecipAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FreezingPrecipAnswer: Codable, Equatable, Sendable {
         var found: [EngineContract.FreezingPrecipAnswerFoundItem]
         var line: String?
     }
 
-    struct FreezingPrecipAnswerFoundItem: Codable, Equatable, Sendable {
+    nonisolated struct FreezingPrecipAnswerFoundItem: Codable, Equatable, Sendable {
         var ident: String
         var source: String
         /// The group as sent, "-FZRA".
         var group: String
     }
 
-    struct FreezingPrecipInput: Codable, Equatable, Sendable {
+    nonisolated struct FreezingPrecipInput: Codable, Equatable, Sendable {
         var fields: [EngineContract.FreezingPrecipInputFieldsItem]
     }
 
-    struct FreezingPrecipInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct FreezingPrecipInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         /// The METAR as sent.
         var metar: String?
@@ -4516,17 +4646,17 @@ enum EngineContract {
         var taf: String?
     }
 
-    struct FrequenciesInOrderInput: Codable, Equatable, Sendable {
+    nonisolated struct FrequenciesInOrderInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
     }
 
-    struct FrequencyLineAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FrequencyLineAnswer: Codable, Equatable, Sendable {
         var name: String
         var kind: String
         var detail: String?
     }
 
-    struct FrequencyLineInput: Codable, Equatable, Sendable {
+    nonisolated struct FrequencyLineInput: Codable, Equatable, Sendable {
         var type: String?
         var description: String?
         /// This frequency's figure, MHz.
@@ -4542,12 +4672,12 @@ enum EngineContract {
         }
     }
 
-    struct FrequencyOfInput: Codable, Equatable, Sendable {
+    nonisolated struct FrequencyOfInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
         var types: [String]
     }
 
-    struct FuelEstimateAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FuelEstimateAnswer: Codable, Equatable, Sendable {
         var minutes: Double?
         var tripGal: Double?
         var requiredGal: Double?
@@ -4559,7 +4689,7 @@ enum EngineContract {
         }
     }
 
-    struct FuelEstimateInput: Codable, Equatable, Sendable {
+    nonisolated struct FuelEstimateInput: Codable, Equatable, Sendable {
         var distanceNm: Double
         var cruiseTasKt: Double?
         var fuelBurnGph: Double?
@@ -4575,7 +4705,7 @@ enum EngineContract {
     }
 
     /// A public field as NASR's APT_BASE has it (its ICAO ident where it has one, and the FAA's), with what fuel it sells and its longest open paved runway (OurAirports' runways).
-    struct FuelField: Codable, Equatable, Sendable {
+    nonisolated struct FuelField: Codable, Equatable, Sendable {
         var ident: String
         var faaIdent: String?
         var name: String?
@@ -4599,45 +4729,75 @@ enum EngineContract {
         }
     }
 
-    struct FuelInTanksAnswerItem: Codable, Equatable, Sendable {
-        var gal: Double
-        var low: Bool
+    nonisolated struct FuelGradesAnswerItem: Codable, Equatable, Sendable {
+        var grade: String
+        var name: String
+        var lbPerGal: Double
+
+        enum CodingKeys: String, CodingKey {
+            case grade
+            case name
+            case lbPerGal = "lb_per_gal"
+        }
     }
 
-    struct FuelInTanksInput: Codable, Equatable, Sendable {
+    nonisolated struct FuelGradesInput: Codable, Equatable, Sendable {
+    }
+
+    nonisolated struct FuelInTanksAnswerItem: Codable, Equatable, Sendable {
+        var gal: Double
+        var low: Bool
+        /// Where the tanks are filled (the departure, a field landed at), what they hold as the airplane leaves: the pilot's own figure, full, or what it landed with where the figure is under that; null elsewhere.
+        var leavesGal: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case gal
+            case low
+            case leavesGal = "leaves_gal"
+        }
+    }
+
+    nonisolated struct FuelInTanksInput: Codable, Equatable, Sendable {
         var points: [EngineContract.FuelInTanksInputPointsItem]
         var usableGal: Double
         var taxiGal: Double
-        var reserveGal: Double
+        /// Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given.
+        var reservesGal: [Double?]
+        /// Under IFR with an alternate filed, the fuel on to it from the destination, gallons (14 CFR 91.167(a)(2)): the route's last point is held to its flight's reserve and this; null or 0 under VFR.
+        var alternateGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case points
             case usableGal = "usable_gal"
             case taxiGal = "taxi_gal"
-            case reserveGal = "reserve_gal"
+            case reservesGal = "reserves_gal"
+            case alternateGal = "alternate_gal"
         }
     }
 
-    struct FuelInTanksInputPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct FuelInTanksInputPointsItem: Codable, Equatable, Sendable {
         var departure: Bool?
         /// The burn of the leg to it.
         var fuelGal: Double?
         /// The tanks filled on landing there.
         var refuel: Bool?
+        /// The pilot's own figure for the tanks as the airplane leaves there, gallons: at the departure the fuel on board at engine start, at a field landed at what it is fuelled to (under what is left keeps what is left; 0, no fuel bought); null, full.
+        var fillGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case departure
             case fuelGal = "fuel_gal"
             case refuel
+            case fillGal = "fill_gal"
         }
     }
 
-    struct FuelNamesInput: Codable, Equatable, Sendable {
+    nonisolated struct FuelNamesInput: Codable, Equatable, Sendable {
         var types: [String]
     }
 
     /// A field to land at for fuel: its miles from the flight's departure and those it adds to the straight line, the fuel left on landing and the minutes flown to it.
-    struct FuelStop: Codable, Equatable, Sendable {
+    nonisolated struct FuelStop: Codable, Equatable, Sendable {
         var ident: String
         var name: String
         var city: String
@@ -4667,22 +4827,26 @@ enum EngineContract {
         }
     }
 
-    struct FuelStopsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct FuelStopsAnswer: Codable, Equatable, Sendable {
         var stops: [EngineContract.FuelStop]
         var choices: [EngineContract.FuelStop]
     }
 
-    struct FuelStopsInput: Codable, Equatable, Sendable {
+    nonisolated struct FuelStopsInput: Codable, Equatable, Sendable {
         var start: [Double]
         var end: [Double]
         var fuelPerNm: Double
         var minPerNm: Double
         var usableGal: Double
+        /// The fuel in the tanks at the start, gallons (the pilot's own, at engine start; null, full, usable_gal): the first stretch's reach and its landing's fuel. Each stop fills the tanks.
+        var startGal: Double?
         var taxiGal: Double
         var reserveGal: Double
         var groundMin: Double?
         var skip: [String]?
         var fields: [EngineContract.FuelField]?
+        /// Under IFR with an alternate filed, the fuel from the destination on to it, gallons (14 CFR 91.167(a)(2)): the stretch landing at the destination keeps it with the reserve. Each stop is itself a first point of intended landing under 91.167(a)(1); only the destination's alternate is counted, as the planner's fuel check counts it. Null or 0 under VFR.
+        var alternateGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case start
@@ -4690,15 +4854,17 @@ enum EngineContract {
             case fuelPerNm = "fuel_per_nm"
             case minPerNm = "min_per_nm"
             case usableGal = "usable_gal"
+            case startGal = "start_gal"
             case taxiGal = "taxi_gal"
             case reserveGal = "reserve_gal"
             case groundMin = "ground_min"
             case skip
             case fields
+            case alternateGal = "alternate_gal"
         }
     }
 
-    struct GairmetHazardsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GairmetHazardsAnswer: Codable, Equatable, Sendable {
         var hazards: [String: String]
         var labels: [String: String]
         var snapshotS: Double
@@ -4710,10 +4876,10 @@ enum EngineContract {
         }
     }
 
-    struct GairmetHazardsInput: Codable, Equatable, Sendable {
+    nonisolated struct GairmetHazardsInput: Codable, Equatable, Sendable {
     }
 
-    struct GairmetsAlongRouteInput: Codable, Equatable, Sendable {
+    nonisolated struct GairmetsAlongRouteInput: Codable, Equatable, Sendable {
         var advisories: [[String: OpenAPIValueContainer]]
         /// The route flown, [[lat, lon], ...].
         var path: [[Double]]
@@ -4721,12 +4887,12 @@ enum EngineContract {
         var end: Double
     }
 
-    struct GairmetTitleInput: Codable, Equatable, Sendable {
+    nonisolated struct GairmetTitleInput: Codable, Equatable, Sendable {
         var hazard: String?
         var severity: String?
     }
 
-    struct GairmetWindowAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GairmetWindowAnswer: Codable, Equatable, Sendable {
         var validFrom: Double
         var validTo: Double
 
@@ -4736,12 +4902,12 @@ enum EngineContract {
         }
     }
 
-    struct GairmetWindowInput: Codable, Equatable, Sendable {
+    nonisolated struct GairmetWindowInput: Codable, Equatable, Sendable {
         /// The snapshot's valid time, UNIX seconds.
         var valid: Double
     }
 
-    struct GfaCloudLayersAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GfaCloudLayersAnswer: Codable, Equatable, Sendable {
         var percent: [Double]
         var topFt: [Double?]
 
@@ -4751,12 +4917,12 @@ enum EngineContract {
         }
     }
 
-    struct GfaCloudLayersInput: Codable, Equatable, Sendable {
+    nonisolated struct GfaCloudLayersInput: Codable, Equatable, Sendable {
         var layers: [String]
         var covers: [String]
     }
 
-    struct GlideRangeInput: Codable, Equatable, Sendable {
+    nonisolated struct GlideRangeInput: Codable, Equatable, Sendable {
         var altitudeFt: Double?
         var speedKt: Double?
         var groundFt: Double?
@@ -4771,7 +4937,7 @@ enum EngineContract {
         }
     }
 
-    struct GlideReachesInput: Codable, Equatable, Sendable {
+    nonisolated struct GlideReachesInput: Codable, Equatable, Sendable {
         var altitudeFt: Double?
         var speedKt: Double?
         var distanceNm: Double
@@ -4788,7 +4954,7 @@ enum EngineContract {
         }
     }
 
-    struct GlideRingAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GlideRingAnswer: Codable, Equatable, Sendable {
         var rangeNm: Double
         var groundFt: Double
         var ring: [[Double]]
@@ -4800,7 +4966,7 @@ enum EngineContract {
         }
     }
 
-    struct GlideRingInput: Codable, Equatable, Sendable {
+    nonisolated struct GlideRingInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var altitudeFt: Double?
@@ -4821,25 +4987,84 @@ enum EngineContract {
         }
     }
 
+    nonisolated struct GonogoAdverseRowsAnswer: Codable, Equatable, Sendable {
+        var rows: [EngineContract.GonogoAdverseRowsAnswerRowsItem]
+        var more: Int
+    }
+
+    nonisolated struct GonogoAdverseRowsAnswerRowsItem: Codable, Equatable, Sendable {
+        var source: String
+        var title: String
+        var finding: String
+        var tab: String
+        var section: String
+        var timeKind: String?
+        var time: String?
+        var legs: [Double]
+
+        enum CodingKeys: String, CodingKey {
+            case source
+            case title
+            case finding
+            case tab
+            case section
+            case timeKind = "time_kind"
+            case time
+            case legs
+        }
+    }
+
+    nonisolated struct GonogoAdverseRowsInput: Codable, Equatable, Sendable {
+        var advisories: [EngineContract.GonogoAdverseRowsInputAdvisoriesItem]
+    }
+
+    nonisolated struct GonogoAdverseRowsInputAdvisoriesItem: Codable, Equatable, Sendable {
+        /// OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+        var source: String
+        /// Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+        var name: String?
+        var when: String?
+        var enter: String?
+        var validTo: String?
+        var issued: String?
+        var fromNm: Double?
+        var legs: [Double]
+        var crosses: Bool
+        var urgent: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case source
+            case name
+            case when
+            case enter
+            case validTo = "valid_to"
+            case issued
+            case fromNm = "from_nm"
+            case legs
+            case crosses
+            case urgent
+        }
+    }
+
     /// The planner's /api/alternate answer, as much as the finding reads.
-    struct GonogoAlternateData: Codable, Equatable, Sendable {
+    nonisolated struct GonogoAlternateData: Codable, Equatable, Sendable {
         var destination: EngineContract.GonogoAlternateDataDestination?
         var alternate: EngineContract.GonogoAlternateDataAlternate?
     }
 
-    struct GonogoAlternateDataAlternate: Codable, Equatable, Sendable {
+    nonisolated struct GonogoAlternateDataAlternate: Codable, Equatable, Sendable {
         var ident: String?
         /// False: under its alternate minimums; null: the pilot's to check; left out: says nothing.
         var good: Bool?
         var reasons: [String]?
     }
 
-    struct GonogoAlternateDataDestination: Codable, Equatable, Sendable {
+    nonisolated struct GonogoAlternateDataDestination: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var required: Bool?
     }
 
-    struct GonogoBalanceAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoBalanceAnswer: Codable, Equatable, Sendable {
         var takeoff: EngineContract.GonogoBalanceAnswerTakeoff
         var landing: EngineContract.GonogoBalanceAnswerLanding
         var problems: [String]
@@ -4854,7 +5079,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoBalanceAnswerLanding: Codable, Equatable, Sendable {
+    nonisolated struct GonogoBalanceAnswerLanding: Codable, Equatable, Sendable {
         var weightLb: Double
         /// null where the weight is zero.
         var armIn: Double?
@@ -4865,7 +5090,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoBalanceAnswerTakeoff: Codable, Equatable, Sendable {
+    nonisolated struct GonogoBalanceAnswerTakeoff: Codable, Equatable, Sendable {
         var weightLb: Double
         /// null where the weight is zero.
         var armIn: Double?
@@ -4876,7 +5101,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoBalanceInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoBalanceInput: Codable, Equatable, Sendable {
         var loading: EngineContract.GonogoLoading
         var load: EngineContract.GonogoLoad
         var tripFuelGal: Double?
@@ -4888,13 +5113,13 @@ enum EngineContract {
         }
     }
 
-    struct GonogoBriefAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoBriefAnswer: Codable, Equatable, Sendable {
         /// The findings in the order the Brief shows them.
         var items: [EngineContract.GonogoItem]
         var line: EngineContract.GonogoLine
     }
 
-    struct GonogoBriefInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoBriefInput: Codable, Equatable, Sendable {
         var verdict: EngineContract.VerdictInput
         /// /api/alternate's answer; null while it is awaited or where none was asked.
         var alternate: EngineContract.GonogoAlternateData?
@@ -4904,7 +5129,7 @@ enum EngineContract {
         var airplane: Bool
     }
 
-    struct GonogoDefaultLoadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoDefaultLoadAnswer: Codable, Equatable, Sendable {
         var emptyWeightLb: Double
         var emptyArmIn: Double
         /// 170 lb at the first station, 0 at the others.
@@ -4919,7 +5144,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoDefaultLoadInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoDefaultLoadInput: Codable, Equatable, Sendable {
         var loading: EngineContract.GonogoLoading
         var fuelGal: Double
 
@@ -4929,7 +5154,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoDensityAltitudeInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoDensityAltitudeInput: Codable, Equatable, Sendable {
         var pressureAltFt: Double
         var tempC: Double
 
@@ -4939,7 +5164,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoEndDistanceAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoEndDistanceAnswer: Codable, Equatable, Sendable {
         var groundRollFt: Double
         /// Over a 50 ft obstacle.
         var totalFt: Double
@@ -4955,7 +5180,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoEndDistanceInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoEndDistanceInput: Codable, Equatable, Sendable {
         var table: EngineContract.ShortFieldTable
         var runway: EngineContract.Runway?
         var pressureAltFt: Double
@@ -4974,7 +5199,7 @@ enum EngineContract {
     }
 
     /// One risk factor.
-    struct GonogoFactor: Codable, Equatable, Sendable {
+    nonisolated struct GonogoFactor: Codable, Equatable, Sendable {
         var key: String
         var label: String
         /// The rule or the reason it counts.
@@ -4989,7 +5214,7 @@ enum EngineContract {
     }
 
     /// A field the route uses, as the host has it from NASR APT_BASE and APT_CON.
-    struct GonogoFieldUse: Codable, Equatable, Sendable {
+    nonisolated struct GonogoFieldUse: Codable, Equatable, Sendable {
         var ident: String
         /// Null is taken as destination.
         var role: String?
@@ -5003,7 +5228,7 @@ enum EngineContract {
         var status: String?
     }
 
-    struct GonogoFlown: Codable, Equatable, Sendable {
+    nonisolated struct GonogoFlown: Codable, Equatable, Sendable {
         /// Index into the runways given.
         var runway: Int
         /// Index into that runway's ends.
@@ -5017,12 +5242,12 @@ enum EngineContract {
         }
     }
 
-    struct GonogoGlanceLinesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoGlanceLinesAnswer: Codable, Equatable, Sendable {
         var act: [EngineContract.GonogoGlanceLinesAnswerActItem]
         var rest: EngineContract.GonogoGlanceLinesAnswerRest
     }
 
-    struct GonogoGlanceLinesAnswerActItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoGlanceLinesAnswerActItem: Codable, Equatable, Sendable {
         var key: String
         var finding: String
         var tab: String
@@ -5041,13 +5266,13 @@ enum EngineContract {
         var raw: [String]
     }
 
-    struct GonogoGlanceLinesAnswerRest: Codable, Equatable, Sendable {
+    nonisolated struct GonogoGlanceLinesAnswerRest: Codable, Equatable, Sendable {
         var line: String
         var finding: String
         var items: [EngineContract.GonogoItem]
     }
 
-    struct GonogoGlanceLinesInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoGlanceLinesInput: Codable, Equatable, Sendable {
         /// gonogo_brief's items.
         var items: [EngineContract.GonogoItem]
         /// The departure's and the destination's figures, for the crosswind's line.
@@ -5056,7 +5281,7 @@ enum EngineContract {
         var raw: EngineContract.GonogoGlanceLinesInputRaw?
     }
 
-    struct GonogoGlanceLinesInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoGlanceLinesInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         /// The runway flown there, "24".
         var runway: String?
@@ -5075,13 +5300,13 @@ enum EngineContract {
         }
     }
 
-    struct GonogoGlanceLinesInputRaw: Codable, Equatable, Sendable {
+    nonisolated struct GonogoGlanceLinesInputRaw: Codable, Equatable, Sendable {
         var metars: [String]
         var tafs: [String]
         var tfrs: [String]
     }
 
-    struct GonogoHazardWindowInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoHazardWindowInput: Codable, Equatable, Sendable {
         var enter: Double
         var leave: Double
         var validFrom: Double?
@@ -5097,7 +5322,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoIcingAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingAnswer: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var freezingLevelFt: Double
         var atOrBelow: Bool
@@ -5114,7 +5339,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoIcingInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingInput: Codable, Equatable, Sendable {
         var selection: EngineContract.GonogoIcingInputSelection?
         /// The altitudes flown.
         var flownFt: [Double]?
@@ -5127,11 +5352,11 @@ enum EngineContract {
         }
     }
 
-    struct GonogoIcingInputPirepsItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingInputPirepsItem: Codable, Equatable, Sendable {
         var icing: String?
     }
 
-    struct GonogoIcingInputSelection: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingInputSelection: Codable, Equatable, Sendable {
         var freezingLevelFt: Double?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var icingPossible: Bool?
@@ -5145,11 +5370,11 @@ enum EngineContract {
         }
     }
 
-    struct GonogoIcingLineInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingLineInput: Codable, Equatable, Sendable {
         var icing: EngineContract.GonogoIcingLineInputIcing
     }
 
-    struct GonogoIcingLineInputIcing: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingLineInputIcing: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var freezingLevelFt: Double
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -5164,7 +5389,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoIcingUncheckedInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingUncheckedInput: Codable, Equatable, Sendable {
         var selection: EngineContract.GonogoIcingUncheckedInputSelection?
         /// The altitudes flown.
         var flownFt: [Double]?
@@ -5175,7 +5400,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoIcingUncheckedInputSelection: Codable, Equatable, Sendable {
+    nonisolated struct GonogoIcingUncheckedInputSelection: Codable, Equatable, Sendable {
         var freezingLevelFt: Double?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var icingPossible: Bool?
@@ -5189,7 +5414,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoInspections: Codable, Equatable, Sendable {
+    nonisolated struct GonogoInspections: Codable, Equatable, Sendable {
         /// yyyy-mm-dd, 14 CFR 91.409(a).
         var annualGoodThrough: String?
         /// yyyy-mm-dd, 91.207(d).
@@ -5216,7 +5441,7 @@ enum EngineContract {
     }
 
     /// One tab's finding and where it is shown in full.
-    struct GonogoItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoItem: Codable, Equatable, Sendable {
         var key: String
         var label: String
         /// The planning panel's tab that shows it in full.
@@ -5229,29 +5454,32 @@ enum EngineContract {
     }
 
     /// What the findings come to, in a line over them.
-    struct GonogoLine: Codable, Equatable, Sendable {
+    nonisolated struct GonogoLine: Codable, Equatable, Sendable {
         var finding: String
         var words: String
     }
 
     /// What is aboard.
-    struct GonogoLoad: Codable, Equatable, Sendable {
+    nonisolated struct GonogoLoad: Codable, Equatable, Sendable {
         var emptyWeightLb: Double
         var emptyArmIn: Double
         /// Each station's load, in the loading's station order.
         var stationsLb: [Double?]
         var fuelGal: Double
+        /// The grade the pilot picked for the fuel aboard: its standard weight a gallon (fuel_grades) comes before the loading's fuel_lb_per_gal and its own fuel_grade. Null or not given, the loading's.
+        var fuelGrade: String?
 
         enum CodingKeys: String, CodingKey {
             case emptyWeightLb = "empty_weight_lb"
             case emptyArmIn = "empty_arm_in"
             case stationsLb = "stations_lb"
             case fuelGal = "fuel_gal"
+            case fuelGrade = "fuel_grade"
         }
     }
 
     /// A profile's loading: limits, stations, fuel and envelope.
-    struct GonogoLoading: Codable, Equatable, Sendable {
+    nonisolated struct GonogoLoading: Codable, Equatable, Sendable {
         var maxRampLb: Double
         var maxTakeoffLb: Double
         var maxLandingLb: Double
@@ -5261,8 +5489,10 @@ enum EngineContract {
         var baggageCombinedMaxLb: Double?
         var fuelArmIn: Double
         var fuelMaxGal: Double
-        /// 6 where not given, avgas's standard (FAA-H-8083-1B).
+        /// The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given. A grade the load picks (GonogoLoad's fuel_grade) comes first.
         var fuelLbPerGal: Double?
+        /// The fuel the airplane burns, for its standard weight where its handbook gives none.
+        var fuelGrade: String?
         var startTaxiFuelLb: Double?
         /// The CG envelope's points, [arm in, weight lb].
         var envelope: [[OpenAPIValueContainer]]?
@@ -5278,12 +5508,13 @@ enum EngineContract {
             case fuelArmIn = "fuel_arm_in"
             case fuelMaxGal = "fuel_max_gal"
             case fuelLbPerGal = "fuel_lb_per_gal"
+            case fuelGrade = "fuel_grade"
             case startTaxiFuelLb = "start_taxi_fuel_lb"
             case envelope
         }
     }
 
-    struct GonogoLoadingStationsItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoLoadingStationsItem: Codable, Equatable, Sendable {
         var name: String
         var armIn: Double
         var maxLb: Double?
@@ -5296,7 +5527,7 @@ enum EngineContract {
     }
 
     /// A field's METAR, as much as the rules read of it.
-    struct GonogoMetar: Codable, Equatable, Sendable {
+    nonisolated struct GonogoMetar: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
         var altimeterInHg: Double?
@@ -5316,7 +5547,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoPassMinutesInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoPassMinutesInput: Codable, Equatable, Sendable {
         var legs: [EngineContract.GonogoPassMinutesInputLegsItem]?
         var alongNm: Double
 
@@ -5326,7 +5557,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoPassMinutesInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoPassMinutesInputLegsItem: Codable, Equatable, Sendable {
         var distanceNm: Double
         var eteMin: Double?
 
@@ -5336,7 +5567,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoPickedEndInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoPickedEndInput: Codable, Equatable, Sendable {
         var picks: EngineContract.GonogoPicks?
         var ident: String
         /// "takeoff" or anything else for a landing.
@@ -5345,14 +5576,14 @@ enum EngineContract {
         var departure: Bool?
     }
 
-    struct GonogoPicks: Codable, Equatable, Sendable {
+    nonisolated struct GonogoPicks: Codable, Equatable, Sendable {
         /// Field to end, as an object or [field, end] pairs.
         var pattern: OpenAPIValueContainer?
         /// Field to end, as an object or [field, end] pairs.
         var takeoff: OpenAPIValueContainer?
     }
 
-    struct GonogoRiskAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRiskAnswer: Codable, Equatable, Sendable {
         var score: Int
         var level: String
         var line: String
@@ -5361,7 +5592,7 @@ enum EngineContract {
         var factors: [EngineContract.GonogoFactor]
     }
 
-    struct GonogoRiskInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRiskInput: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var vfrNotRecommended: Bool?
         var underMinimums: [String]?
@@ -5373,6 +5604,8 @@ enum EngineContract {
         var night: Bool?
         /// Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
         var nightPassengers: Bool?
+        /// Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
+        var lights: Bool?
         var fuelMarginGal: Double?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var ifr: Bool?
@@ -5393,6 +5626,7 @@ enum EngineContract {
             case hazards
             case night
             case nightPassengers = "night_passengers"
+            case lights
             case fuelMarginGal = "fuel_margin_gal"
             case ifr
             case vorCheck = "vor_check"
@@ -5404,7 +5638,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRiskInputCurrency: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRiskInputCurrency: Codable, Equatable, Sendable {
         var flights: Double?
         var totalHours: Double?
         var dayPassengersUntil: String?
@@ -5429,7 +5663,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRiskInputSquawksItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRiskInputSquawksItem: Codable, Equatable, Sendable {
         var text: String?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var inoperative: Bool?
@@ -5442,7 +5676,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRiskInputVorCheck: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRiskInputVorCheck: Codable, Equatable, Sendable {
         var goodThrough: String?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var withinLimit: Bool?
@@ -5453,12 +5687,12 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRiskLineInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRiskLineInput: Codable, Equatable, Sendable {
         var level: String
         var score: Double
     }
 
-    struct GonogoRouteFiguresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRouteFiguresAnswer: Codable, Equatable, Sendable {
         var leastMarginGal: Double?
         var requiredGal: Double?
         var reserveMin: Double?
@@ -5474,7 +5708,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRouteFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRouteFiguresInput: Codable, Equatable, Sendable {
         /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
         var totals: EngineContract.GonogoRouteFiguresInputTotals?
         /// How many TFRs the briefing lists along the route.
@@ -5490,7 +5724,7 @@ enum EngineContract {
     }
 
     /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
-    struct GonogoRouteFiguresInputTotals: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRouteFiguresInputTotals: Codable, Equatable, Sendable {
         var fuelMarginGal: Double?
         var fuelRequiredGal: Double?
         var reserveMin: Double?
@@ -5504,11 +5738,11 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRouteFiguresInputTotalsHopsItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRouteFiguresInputTotalsHopsItem: Codable, Equatable, Sendable {
         var totals: EngineContract.GonogoRouteFiguresInputTotalsHopsItemTotals?
     }
 
-    struct GonogoRouteFiguresInputTotalsHopsItemTotals: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRouteFiguresInputTotalsHopsItemTotals: Codable, Equatable, Sendable {
         var fuelMarginGal: Double?
         var fuelRequiredGal: Double?
         var reserveMin: Double?
@@ -5520,7 +5754,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRunwayChecksAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayChecksAnswerItem: Codable, Equatable, Sendable {
         /// Index into fields.
         var field: Int
         var role: String
@@ -5562,7 +5796,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRunwayChecksAnswerItemDistancesItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayChecksAnswerItemDistancesItem: Codable, Equatable, Sendable {
         var groundRollFt: Double
         /// Over a 50 ft obstacle.
         var totalFt: Double
@@ -5590,7 +5824,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRunwayChecksInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayChecksInput: Codable, Equatable, Sendable {
         var aircraft: EngineContract.GonogoRunwayChecksInputAircraft?
         var fields: [EngineContract.GonogoRunwayChecksInputFieldsItem]?
         /// The briefing's METARs by field ident; null or missing for none.
@@ -5612,13 +5846,13 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRunwayChecksInputAircraft: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayChecksInputAircraft: Codable, Equatable, Sendable {
         var takeoff: EngineContract.ShortFieldTable?
         var landing: EngineContract.ShortFieldTable?
         var crosswind: EngineContract.GonogoRunwayChecksInputAircraftCrosswind?
     }
 
-    struct GonogoRunwayChecksInputAircraftCrosswind: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayChecksInputAircraftCrosswind: Codable, Equatable, Sendable {
         var demonstratedKt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -5626,11 +5860,11 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRunwayChecksInputAirportsValue: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayChecksInputAirportsValue: Codable, Equatable, Sendable {
         var runways: [EngineContract.Runway]?
     }
 
-    struct GonogoRunwayChecksInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayChecksInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         var elevationFt: Double?
 
@@ -5640,22 +5874,22 @@ enum EngineContract {
         }
     }
 
-    struct GonogoRunwayFlownInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayFlownInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.Runway]?
         /// The end picked.
         var picked: String?
     }
 
-    struct GonogoRunwayInUseInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayInUseInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.Runway]?
     }
 
-    struct GonogoRunwayNumberInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayNumberInput: Codable, Equatable, Sendable {
         var ident: String
     }
 
     /// The planner's RunwayWind on a runway.
-    struct GonogoRunwayWind: Codable, Equatable, Sendable {
+    nonisolated struct GonogoRunwayWind: Codable, Equatable, Sendable {
         var end: String
         var headwindKt: Double
         var crosswindKt: Double
@@ -5675,14 +5909,14 @@ enum EngineContract {
         }
     }
 
-    struct GonogoSelfChecksInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoSelfChecksInput: Codable, Equatable, Sendable {
     }
 
-    struct GonogoSoftSurfaceInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoSoftSurfaceInput: Codable, Equatable, Sendable {
         var surface: String?
     }
 
-    struct GonogoSuaWhenInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoSuaWhenInput: Codable, Equatable, Sendable {
         var timesOfUse: String?
         /// [day 0-6 (0 Sunday), minute of the day], UTC.
         var utc: [OpenAPIValueContainer]
@@ -5696,7 +5930,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoTfrWhenInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoTfrWhenInput: Codable, Equatable, Sendable {
         /// Microseconds since 1970.
         var atUs: Double
         var effectiveUs: Double?
@@ -5709,7 +5943,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoUnderMinimumsInput: Codable, Equatable, Sendable {
+    nonisolated struct GonogoUnderMinimumsInput: Codable, Equatable, Sendable {
         /// The pilot's personal minimums.
         var minimums: EngineContract.GonogoUnderMinimumsInputMinimums?
         /// The fields landed at, by ident.
@@ -5723,11 +5957,11 @@ enum EngineContract {
         var forecast: EngineContract.GonogoUnderMinimumsInputForecast?
     }
 
-    struct GonogoUnderMinimumsInputAirportsValue: Codable, Equatable, Sendable {
+    nonisolated struct GonogoUnderMinimumsInputAirportsValue: Codable, Equatable, Sendable {
         var runways: [EngineContract.Runway]?
     }
 
-    struct GonogoUnderMinimumsInputForecast: Codable, Equatable, Sendable {
+    nonisolated struct GonogoUnderMinimumsInputForecast: Codable, Equatable, Sendable {
         var stations: [EngineContract.GonogoUnderMinimumsInputForecastStationsItem]?
         var minCeilingFt: Double?
         var minVisibilitySm: Double?
@@ -5739,7 +5973,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoUnderMinimumsInputForecastStationsItem: Codable, Equatable, Sendable {
+    nonisolated struct GonogoUnderMinimumsInputForecastStationsItem: Codable, Equatable, Sendable {
         var icaoId: String?
         var ceilingFt: Double?
         var visibilitySm: Double?
@@ -5751,7 +5985,7 @@ enum EngineContract {
         }
     }
 
-    struct GonogoUnderMinimumsInputMinimums: Codable, Equatable, Sendable {
+    nonisolated struct GonogoUnderMinimumsInputMinimums: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
         var crosswindKt: Double?
@@ -5765,7 +5999,7 @@ enum EngineContract {
         }
     }
 
-    struct GreatCirclesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GreatCirclesAnswer: Codable, Equatable, Sendable {
         var distanceNm: [Double]
         var bearingDeg: [Double]
 
@@ -5775,14 +6009,14 @@ enum EngineContract {
         }
     }
 
-    struct GreatCirclesInput: Codable, Equatable, Sendable {
+    nonisolated struct GreatCirclesInput: Codable, Equatable, Sendable {
         var lat1: [Double]
         var lon1: [Double]
         var lat2: [Double]
         var lon2: [Double]
     }
 
-    struct GroundFiguresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct GroundFiguresAnswer: Codable, Equatable, Sendable {
         var lowestGroundFt: Double
         var obstacleShownAglFt: Double
         var profileObstacleNm: Double
@@ -5796,10 +6030,10 @@ enum EngineContract {
         }
     }
 
-    struct GroundFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct GroundFiguresInput: Codable, Equatable, Sendable {
     }
 
-    struct GroundspeedKtInput: Codable, Equatable, Sendable {
+    nonisolated struct GroundspeedKtInput: Codable, Equatable, Sendable {
         var trueCourseDeg: Double
         var windFromDeg: Double
         var windKt: Double
@@ -5816,7 +6050,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookDistance: Codable, Equatable, Sendable {
+    nonisolated struct HandbookDistance: Codable, Equatable, Sendable {
         var pressureAltitudeFt: Double
         var tempC: Double
         var groundRollFt: Double
@@ -5830,7 +6064,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookDistanceRead: Codable, Equatable, Sendable {
+    nonisolated struct HandbookDistanceRead: Codable, Equatable, Sendable {
         var pressureAltitudeFt: Double?
         var tempC: Double?
         /// In distance_unit.
@@ -5846,13 +6080,13 @@ enum EngineContract {
         }
     }
 
-    struct HandbookFigure: Codable, Equatable, Sendable {
+    nonisolated struct HandbookFigure: Codable, Equatable, Sendable {
         var value: Double
         /// The words on the page the figure was read from.
         var words: String
     }
 
-    struct HandbookFiguresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct HandbookFiguresAnswer: Codable, Equatable, Sendable {
         var serviceCeilingFt: EngineContract.HandbookFigure?
         var climbTasKt: EngineContract.HandbookFigure?
         var usableFuelGal: EngineContract.HandbookFigure?
@@ -5861,11 +6095,11 @@ enum EngineContract {
         var fuelBurnGph: EngineContract.HandbookFigure?
     }
 
-    struct HandbookFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct HandbookFiguresInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct HandbookReadCheckAnswer: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckAnswer: Codable, Equatable, Sendable {
         var items: [EngineContract.HandbookReadCheckAnswerItemsItem]
         /// Every figure in the app's units, for the airplane's record.
         var handbook: EngineContract.HandbookReadCheckAnswerHandbook
@@ -5874,7 +6108,7 @@ enum EngineContract {
     }
 
     /// Every figure in the app's units, for the airplane's record.
-    struct HandbookReadCheckAnswerHandbook: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckAnswerHandbook: Codable, Equatable, Sendable {
         var cruise: [EngineContract.HandbookReadCheckAnswerHandbookCruiseItem]
         var climbSpeedKias: Double?
         var climbRateFpm: Double?
@@ -5908,7 +6142,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckAnswerHandbookCruiseItem: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckAnswerHandbookCruiseItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var powerPct: Double?
         var rpm: Double?
@@ -5924,7 +6158,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckAnswerHandbookEnvelopeItem: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckAnswerHandbookEnvelopeItem: Codable, Equatable, Sendable {
         var armIn: Double
         var weightLb: Double
 
@@ -5934,7 +6168,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckAnswerItemsItem: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckAnswerItemsItem: Codable, Equatable, Sendable {
         /// "cruise.2", "climb", "envelope": what the pilot confirms.
         var key: String
         var group: String
@@ -5943,7 +6177,7 @@ enum EngineContract {
         var flags: [EngineContract.DocumentFlag]
     }
 
-    struct HandbookReadCheckAnswerItemsItemFiguresItem: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckAnswerItemsItemFiguresItem: Codable, Equatable, Sendable {
         /// Where it is in the read: "cruise.2.tas".
         var path: String
         var label: String
@@ -5965,7 +6199,7 @@ enum EngineContract {
     }
 
     /// The airplane form's figures: the cruise row at the cruise reference altitude (6,000 ft, within 1,000 ft) and the power nearest 65%, free of wrong flags.
-    struct HandbookReadCheckAnswerProfile: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckAnswerProfile: Codable, Equatable, Sendable {
         var cruiseTasKt: Double?
         var fuelBurnGph: Double?
         var cruisePowerPct: Double?
@@ -5984,7 +6218,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckInput: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckInput: Codable, Equatable, Sendable {
         /// The speeds' unit as printed; knots where none.
         var speedUnit: String?
         /// What the cruise table's speeds are: true, indicated or calibrated; true where none.
@@ -6034,7 +6268,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckInputClimb: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckInputClimb: Codable, Equatable, Sendable {
         /// Best rate of climb speed, Vy, indicated, in speed_unit.
         var speed: Double?
         var rateFpm: Double?
@@ -6048,7 +6282,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckInputCruiseItem: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckInputCruiseItem: Codable, Equatable, Sendable {
         /// Pressure altitude.
         var altitudeFt: Double?
         var powerPct: Double?
@@ -6067,7 +6301,7 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckInputEmpty: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckInputEmpty: Codable, Equatable, Sendable {
         /// In weight_unit.
         var weight: Double?
         /// In arm_unit.
@@ -6085,29 +6319,79 @@ enum EngineContract {
         }
     }
 
-    struct HandbookReadCheckInputEnvelopeItem: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckInputEnvelopeItem: Codable, Equatable, Sendable {
         /// In arm_unit.
         var arm: Double?
         /// In weight_unit.
         var weight: Double?
     }
 
-    struct HandbookReadCheckInputFuel: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckInputFuel: Codable, Equatable, Sendable {
         /// In fuel_unit.
         var total: Double?
         /// In fuel_unit.
         var usable: Double?
     }
 
-    struct HandbookReadCheckInputGlide: Codable, Equatable, Sendable {
+    nonisolated struct HandbookReadCheckInputGlide: Codable, Equatable, Sendable {
         /// Best glide speed, indicated, in speed_unit.
         var speed: Double?
         /// Feet forward for each foot down.
         var ratio: Double?
     }
 
+    nonisolated struct HazardViewAnswer: Codable, Equatable, Sendable {
+        var shown: Bool
+        var inFlight: Bool
+        var altitudeFt: Double?
+        var source: String?
+        var clearanceFt: Double
+        var cautionBandFt: Double
+        var clearancesFt: [Double]
+        var warningFromFt: Double?
+        var cautionFromFt: Double?
+        var levels: [String?]
+
+        enum CodingKeys: String, CodingKey {
+            case shown
+            case inFlight = "in_flight"
+            case altitudeFt = "altitude_ft"
+            case source
+            case clearanceFt = "clearance_ft"
+            case cautionBandFt = "caution_band_ft"
+            case clearancesFt = "clearances_ft"
+            case warningFromFt = "warning_from_ft"
+            case cautionFromFt = "caution_from_ft"
+            case levels
+        }
+    }
+
+    nonisolated struct HazardViewInput: Codable, Equatable, Sendable {
+        /// The Map card's Hazard Colouring: off, on, or on by itself in flight.
+        var setting: String
+        /// The GPS's ground speed, kt; null with no fix.
+        var speedKt: Double?
+        /// The GPS's height, ft, where it gives one.
+        var gpsAltitudeFt: Double?
+        /// The plan's cruise, ft MSL.
+        var plannedAltitudeFt: Double?
+        /// The pilot's clearance, one of clearances_ft; the default for null or another.
+        var clearanceFt: Double?
+        /// Obstacle tops, ft MSL, to colour.
+        var topsFt: [Double]?
+
+        enum CodingKeys: String, CodingKey {
+            case setting
+            case speedKt = "speed_kt"
+            case gpsAltitudeFt = "gps_altitude_ft"
+            case plannedAltitudeFt = "planned_altitude_ft"
+            case clearanceFt = "clearance_ft"
+            case topsFt = "tops_ft"
+        }
+    }
+
     /// An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.
-    struct HeardPlane: Codable, Equatable, Sendable {
+    nonisolated struct HeardPlane: Codable, Equatable, Sendable {
         var hex: String
         var callsign: String?
         var registration: String?
@@ -6143,13 +6427,13 @@ enum EngineContract {
         }
     }
 
-    struct HeardToken: Codable, Equatable, Sendable {
+    nonisolated struct HeardToken: Codable, Equatable, Sendable {
         var word: String
         /// The run of figures said as one number, as digits; left out where the word is no figure.
         var num: String?
     }
 
-    struct HoldEntryInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldEntryInput: Codable, Equatable, Sendable {
         /// The magnetic course flown to the fix.
         var arrivalDeg: Double
         /// The hold's inbound course.
@@ -6164,7 +6448,7 @@ enum EngineContract {
         }
     }
 
-    struct HoldFiguresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct HoldFiguresAnswer: Codable, Equatable, Sendable {
         var lapMin: Double
         var heldMin: Double
         var turnRadiusNm: Double
@@ -6176,7 +6460,7 @@ enum EngineContract {
         }
     }
 
-    struct HoldFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldFiguresInput: Codable, Equatable, Sendable {
         var hold: EngineContract.RouteHoldIn
         var tasKt: Double
 
@@ -6186,7 +6470,7 @@ enum EngineContract {
         }
     }
 
-    struct HoldInboundDegInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldInboundDegInput: Codable, Equatable, Sendable {
         var courseDeg: Double
         var outbound: Bool?
 
@@ -6196,7 +6480,7 @@ enum EngineContract {
         }
     }
 
-    struct HoldingAnswer: Codable, Equatable, Sendable {
+    nonisolated struct HoldingAnswer: Codable, Equatable, Sendable {
         var entry: String
         var entryName: String
         var steps: String
@@ -6218,7 +6502,7 @@ enum EngineContract {
         }
     }
 
-    struct HoldingAnswerWind: Codable, Equatable, Sendable {
+    nonisolated struct HoldingAnswerWind: Codable, Equatable, Sendable {
         var legMin: Double
         var inbound: EngineContract.HoldingAnswerWindInbound
         var outbound: EngineContract.HoldingAnswerWindOutbound
@@ -6240,19 +6524,19 @@ enum EngineContract {
         }
     }
 
-    struct HoldingAnswerWindInbound: Codable, Equatable, Sendable {
+    nonisolated struct HoldingAnswerWindInbound: Codable, Equatable, Sendable {
         var heading: Double
         var wca: Double
         var gs: Double
     }
 
-    struct HoldingAnswerWindOutbound: Codable, Equatable, Sendable {
+    nonisolated struct HoldingAnswerWindOutbound: Codable, Equatable, Sendable {
         var heading: Double
         var wca: Double
         var gs: Double
     }
 
-    struct HoldingInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldingInput: Codable, Equatable, Sendable {
         /// The inbound course, degrees.
         var inbound: Double
         /// The airplane's heading to the fix, degrees.
@@ -6277,7 +6561,7 @@ enum EngineContract {
         }
     }
 
-    struct HoldingLegMinutesInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldingLegMinutesInput: Codable, Equatable, Sendable {
         var altitudeFt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -6285,40 +6569,40 @@ enum EngineContract {
         }
     }
 
-    struct HoldLengthReadInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldLengthReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct HoldLengthWriteInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldLengthWriteInput: Codable, Equatable, Sendable {
         var turns: Double?
         var minutes: Double?
     }
 
-    struct HoldReadInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct HoldsReadAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct HoldsReadAnswerItem: Codable, Equatable, Sendable {
         var part: String
         var hold: EngineContract.RouteHold?
     }
 
-    struct HoldsReadInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldsReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct HoldWriteInput: Codable, Equatable, Sendable {
+    nonisolated struct HoldWriteInput: Codable, Equatable, Sendable {
         var hold: EngineContract.RouteHoldIn
     }
 
-    struct IcingForecastRouteAnswer: Codable, Equatable, Sendable {
+    nonisolated struct IcingForecastRouteAnswer: Codable, Equatable, Sendable {
         var legs: [EngineContract.IcingForecastRouteAnswerLegsItem]
         var worst: EngineContract.IcingForecastRouteAnswerWorst?
         var unchecked: [Double]
         var line: String?
     }
 
-    struct IcingForecastRouteAnswerLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct IcingForecastRouteAnswerLegsItem: Codable, Equatable, Sendable {
         var index: Double
         var altitudeFt: Double
         var severity: String?
@@ -6336,7 +6620,7 @@ enum EngineContract {
         }
     }
 
-    struct IcingForecastRouteAnswerLegsItemLayer: Codable, Equatable, Sendable {
+    nonisolated struct IcingForecastRouteAnswerLegsItemLayer: Codable, Equatable, Sendable {
         var bottomFt: Double
         var topFt: Double
 
@@ -6346,7 +6630,7 @@ enum EngineContract {
         }
     }
 
-    struct IcingForecastRouteAnswerWorst: Codable, Equatable, Sendable {
+    nonisolated struct IcingForecastRouteAnswerWorst: Codable, Equatable, Sendable {
         var severity: String
         var altitudesFt: [Double]
         var legs: [Double]
@@ -6358,7 +6642,7 @@ enum EngineContract {
         }
     }
 
-    struct IcingForecastRouteInput: Codable, Equatable, Sendable {
+    nonisolated struct IcingForecastRouteInput: Codable, Equatable, Sendable {
         /// The sections' levels, ft MSL, climbing.
         var levelsFt: [Double]
         var legs: [EngineContract.IcingForecastRouteInputLegsItem]
@@ -6369,7 +6653,7 @@ enum EngineContract {
         }
     }
 
-    struct IcingForecastRouteInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct IcingForecastRouteInputLegsItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
         /// The AWC's cross-section along the leg, null where it could not be had.
         var section: EngineContract.IcingForecastRouteInputLegsItemSection?
@@ -6383,7 +6667,7 @@ enum EngineContract {
     }
 
     /// The AWC's cross-section along the leg, null where it could not be had.
-    struct IcingForecastRouteInputLegsItemSection: Codable, Equatable, Sendable {
+    nonisolated struct IcingForecastRouteInputLegsItemSection: Codable, Equatable, Sendable {
         var width: Double
         var dataLevels: Double
         /// The AWC's severity, 0 none to 4 heavy, negative none forecast, level-fastest.
@@ -6399,11 +6683,11 @@ enum EngineContract {
         }
     }
 
-    struct IcingSeverityInput: Codable, Equatable, Sendable {
+    nonisolated struct IcingSeverityInput: Codable, Equatable, Sendable {
         var category: Double
     }
 
-    struct IfrAlternateCheck: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateCheck: Codable, Equatable, Sendable {
         var ident: String
         var approach: Bool
         var precision: Bool
@@ -6431,7 +6715,7 @@ enum EngineContract {
         }
     }
 
-    struct IfrAlternateCheckMinimums: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateCheckMinimums: Codable, Equatable, Sendable {
         var ceilingFt: Double
         var visibilitySm: Double
 
@@ -6441,7 +6725,7 @@ enum EngineContract {
         }
     }
 
-    struct IfrAlternateDestinationAnswer: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateDestinationAnswer: Codable, Equatable, Sendable {
         var ident: String
         var approach: Bool
         var ceilingFt: Double?
@@ -6461,7 +6745,7 @@ enum EngineContract {
         }
     }
 
-    struct IfrAlternateIn: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateIn: Codable, Equatable, Sendable {
         var ident: String
         /// The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
         var approaches: EngineContract.IfrAlternateInApproaches
@@ -6474,7 +6758,7 @@ enum EngineContract {
     }
 
     /// The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
-    struct IfrAlternateInApproaches: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateInApproaches: Codable, Equatable, Sendable {
         /// The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
         var names: [String]
         var alternateMinimumsUrl: String?
@@ -6486,7 +6770,7 @@ enum EngineContract {
     }
 
     /// The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
-    struct IfrAlternateInForecast: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateInForecast: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var ceilingUnknown: Bool?
         var visibilitySm: Double?
@@ -6503,25 +6787,25 @@ enum EngineContract {
         }
     }
 
-    struct IfrAlternateNotRequiredInput: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateNotRequiredInput: Codable, Equatable, Sendable {
     }
 
-    struct IfrAlternatesRankedInput: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternatesRankedInput: Codable, Equatable, Sendable {
         var checks: [[String: OpenAPIValueContainer]]
         var limit: Double?
     }
 
-    struct IfrAlternateWindowAnswer: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateWindowAnswer: Codable, Equatable, Sendable {
         var start: Double
         var end: Double
     }
 
-    struct IfrAlternateWindowInput: Codable, Equatable, Sendable {
+    nonisolated struct IfrAlternateWindowInput: Codable, Equatable, Sendable {
         var eta: Double
         var `for`: String
     }
 
-    struct IfrFloorsAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct IfrFloorsAnswerItem: Codable, Equatable, Sendable {
         var floorFt: Double
         var highestFt: Double
         var highestIsObstacle: Bool
@@ -6535,12 +6819,12 @@ enum EngineContract {
         }
     }
 
-    struct IfrFloorsInput: Codable, Equatable, Sendable {
+    nonisolated struct IfrFloorsInput: Codable, Equatable, Sendable {
         var legs: [EngineContract.IfrFloorsInputLegsItem]
         var obstacles: [EngineContract.IfrFloorsInputObstaclesItem]?
     }
 
-    struct IfrFloorsInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct IfrFloorsInputLegsItem: Codable, Equatable, Sendable {
         /// [lat, lon], degrees.
         var a: [Double]
         /// [lat, lon], degrees.
@@ -6554,7 +6838,7 @@ enum EngineContract {
         }
     }
 
-    struct IfrFloorsInputObstaclesItem: Codable, Equatable, Sendable {
+    nonisolated struct IfrFloorsInputObstaclesItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var amslFt: Double
@@ -6566,10 +6850,10 @@ enum EngineContract {
         }
     }
 
-    struct IfrObstacleRadiusNmInput: Codable, Equatable, Sendable {
+    nonisolated struct IfrObstacleRadiusNmInput: Codable, Equatable, Sendable {
     }
 
-    struct InFlightAnswer: Codable, Equatable, Sendable {
+    nonisolated struct InFlightAnswer: Codable, Equatable, Sendable {
         var onRoute: Bool
         var alongNm: Double
         var totalNm: Double
@@ -6618,7 +6902,7 @@ enum EngineContract {
         }
     }
 
-    struct InFlightAnswerDestination: Codable, Equatable, Sendable {
+    nonisolated struct InFlightAnswerDestination: Codable, Equatable, Sendable {
         var index: Int
         var name: String
         var distanceNm: Double
@@ -6640,7 +6924,7 @@ enum EngineContract {
         }
     }
 
-    struct InFlightAnswerNext: Codable, Equatable, Sendable {
+    nonisolated struct InFlightAnswerNext: Codable, Equatable, Sendable {
         var index: Int
         var name: String
         var distanceNm: Double
@@ -6662,7 +6946,7 @@ enum EngineContract {
         }
     }
 
-    struct InFlightInput: Codable, Equatable, Sendable {
+    nonisolated struct InFlightInput: Codable, Equatable, Sendable {
         var fix: EngineContract.InFlightInputFix
         var line: [[Double]]?
         var points: [EngineContract.InFlightInputPointsItem]?
@@ -6689,7 +6973,7 @@ enum EngineContract {
         }
     }
 
-    struct InFlightInputFix: Codable, Equatable, Sendable {
+    nonisolated struct InFlightInputFix: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var trackDeg: Double?
@@ -6703,7 +6987,7 @@ enum EngineContract {
         }
     }
 
-    struct InFlightInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct InFlightInputLegsItem: Codable, Equatable, Sendable {
         var distanceNm: Double
         var fuelGal: Double?
 
@@ -6713,13 +6997,13 @@ enum EngineContract {
         }
     }
 
-    struct InFlightInputPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct InFlightInputPointsItem: Codable, Equatable, Sendable {
         var name: String
         var lat: Double
         var lon: Double
     }
 
-    struct InspectionsDueAnswer: Codable, Equatable, Sendable {
+    nonisolated struct InspectionsDueAnswer: Codable, Equatable, Sendable {
         /// YYYY-MM-DD
         var annualUntil: String?
         /// YYYY-MM-DD
@@ -6744,7 +7028,7 @@ enum EngineContract {
         }
     }
 
-    struct InspectionsDueAnswerVorCheck: Codable, Equatable, Sendable {
+    nonisolated struct InspectionsDueAnswerVorCheck: Codable, Equatable, Sendable {
         var limitDeg: Double
         var within: Bool
         var until: String
@@ -6756,7 +7040,7 @@ enum EngineContract {
         }
     }
 
-    struct InspectionsDueInput: Codable, Equatable, Sendable {
+    nonisolated struct InspectionsDueInput: Codable, Equatable, Sendable {
         /// YYYY-MM-DD
         var annualOn: String?
         /// YYYY-MM-DD
@@ -6790,7 +7074,7 @@ enum EngineContract {
         }
     }
 
-    struct InspectionsDueInputKeptItem: Codable, Equatable, Sendable {
+    nonisolated struct InspectionsDueInputKeptItem: Codable, Equatable, Sendable {
         var id: Int
         var kind: String
         var title: String
@@ -6809,7 +7093,7 @@ enum EngineContract {
         }
     }
 
-    struct InspectionsDueInputVorCheck: Codable, Equatable, Sendable {
+    nonisolated struct InspectionsDueInputVorCheck: Codable, Equatable, Sendable {
         var on: String
         var kind: String
         var errorDeg: Double
@@ -6821,12 +7105,64 @@ enum EngineContract {
         }
     }
 
-    struct InstructorRecordsSinceInput: Codable, Equatable, Sendable {
+    nonisolated struct InstructorRecordsSinceInput: Codable, Equatable, Sendable {
         /// YYYY-MM-DD, UTC: the engine has no clock.
         var today: String
     }
 
-    struct IsaTempCInput: Codable, Equatable, Sendable {
+    nonisolated struct InstructorVerificationAnswer: Codable, Equatable, Sendable {
+        var verified: Bool
+        var registryId: String?
+        /// verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+        var reason: String
+        var words: String
+
+        enum CodingKeys: String, CodingKey {
+            case verified
+            case registryId = "registry_id"
+            case reason
+            case words
+        }
+    }
+
+    nonisolated struct InstructorVerificationInput: Codable, Equatable, Sendable {
+        /// The instructor's name as on their certificate.
+        var instructorName: String
+        /// The student's name as on their certificate.
+        var studentName: String?
+        /// YYYY-MM-DD.
+        var signedOn: String
+        /// The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+        var registry: [EngineContract.InstructorVerificationInputRegistryItem]?
+        /// Registry ids another Wingtip account already signs as.
+        var boundElsewhere: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case instructorName = "instructor_name"
+            case studentName = "student_name"
+            case signedOn = "signed_on"
+            case registry
+            case boundElsewhere = "bound_elsewhere"
+        }
+    }
+
+    nonisolated struct InstructorVerificationInputRegistryItem: Codable, Equatable, Sendable {
+        /// The FAA's unique id, A or C and seven digits.
+        var id: String
+        var firstMiddle: String
+        var lastSuffix: String
+        /// YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+        var expires: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case firstMiddle = "first_middle"
+            case lastSuffix = "last_suffix"
+            case expires
+        }
+    }
+
+    nonisolated struct IsaTempCInput: Codable, Equatable, Sendable {
         var altitudeFt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -6834,7 +7170,7 @@ enum EngineContract {
         }
     }
 
-    struct IsEastboundInput: Codable, Equatable, Sendable {
+    nonisolated struct IsEastboundInput: Codable, Equatable, Sendable {
         var magneticCourseDeg: Double
 
         enum CodingKeys: String, CodingKey {
@@ -6842,10 +7178,24 @@ enum EngineContract {
         }
     }
 
-    struct KeptAgeAnswer: Codable, Equatable, Sendable {
+    nonisolated struct JurisdictionOfAnswer: Codable, Equatable, Sendable {
+        /// US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+        var code: String
+        /// The country's name as the warning starts, "Canada"; "Outside the US" for other.
+        var name: String
+        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        var caution: String?
+    }
+
+    nonisolated struct JurisdictionOfInput: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+    }
+
+    nonisolated struct KeptAgeAnswer: Codable, Equatable, Sendable {
         var kind: String
         var ageMin: Double
-        /// "Fetched 42 min ago".
+        /// "Fetched 42m ago".
         var line: String
         /// Caution once past its freshness: the line drawn in the caution colour.
         var finding: String
@@ -6865,7 +7215,7 @@ enum EngineContract {
         }
     }
 
-    struct KeptAgeInput: Codable, Equatable, Sendable {
+    nonisolated struct KeptAgeInput: Codable, Equatable, Sendable {
         /// Unix seconds, UTC: the engine has no clock.
         var now: Double
         /// When the network gave the kept answer, Unix seconds.
@@ -6879,11 +7229,37 @@ enum EngineContract {
         }
     }
 
-    struct KneeboardRadioInput: Codable, Equatable, Sendable {
+    nonisolated struct KneeboardRadioInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
     }
 
-    struct LeastCrosswindAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LandingRunwayAnswer: Codable, Equatable, Sendable {
+        var runway: String?
+        var othersAllowed: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case runway
+            case othersAllowed = "others_allowed"
+        }
+    }
+
+    nonisolated struct LandingRunwayInput: Codable, Equatable, Sendable {
+        var approach: Bool
+        var straightIn: String?
+        var circling: Bool?
+        var picked: String?
+        var byPilot: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case approach
+            case straightIn = "straight_in"
+            case circling
+            case picked
+            case byPilot = "by_pilot"
+        }
+    }
+
+    nonisolated struct LeastCrosswindAnswer: Codable, Equatable, Sendable {
         /// The end it is on, null for a variable wind or calm.
         var end: String?
         /// Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
@@ -6895,7 +7271,7 @@ enum EngineContract {
         }
     }
 
-    struct LeastCrosswindInput: Codable, Equatable, Sendable {
+    nonisolated struct LeastCrosswindInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.LeastCrosswindInputRunwaysItem]?
         var metar: EngineContract.MetarWindIn?
         /// The field's magnetic variation, east positive, to turn a runway's number true where its end has no true heading.
@@ -6908,7 +7284,7 @@ enum EngineContract {
         }
     }
 
-    struct LeastCrosswindInputRunwaysItem: Codable, Equatable, Sendable {
+    nonisolated struct LeastCrosswindInputRunwaysItem: Codable, Equatable, Sendable {
         var endHeadings: [[OpenAPIValueContainer]]??
 
         enum CodingKeys: String, CodingKey {
@@ -6916,7 +7292,7 @@ enum EngineContract {
         }
     }
 
-    struct LegalCruisingAltitudesInput: Codable, Equatable, Sendable {
+    nonisolated struct LegalCruisingAltitudesInput: Codable, Equatable, Sendable {
         var floorFt: Double
         var ceilingFt: Double?
         var magneticCourseDeg: Double
@@ -6933,12 +7309,12 @@ enum EngineContract {
     }
 
     /// What a lesson's step shows on the map: a fix ringed, a part of the procedure's line drawn over.
-    struct LessonFocus: Codable, Equatable, Sendable {
+    nonisolated struct LessonFocus: Codable, Equatable, Sendable {
         var fix: String?
         var segment: String?
     }
 
-    struct LightingReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LightingReadAnswer: Codable, Equatable, Sendable {
         var systems: [EngineContract.LightingReadAnswerSystemsItem]
         /// The sentences not read as systems, in the remarks' order.
         var notes: [EngineContract.LightingReadAnswerNotesItem]
@@ -6952,7 +7328,7 @@ enum EngineContract {
         }
     }
 
-    struct LightingReadAnswerNotesItem: Codable, Equatable, Sendable {
+    nonisolated struct LightingReadAnswerNotesItem: Codable, Equatable, Sendable {
         /// The sentence, its contractions written out, every other word kept.
         var words: String
         var asWritten: String
@@ -6963,7 +7339,7 @@ enum EngineContract {
         }
     }
 
-    struct LightingReadAnswerSystemsItem: Codable, Equatable, Sendable {
+    nonisolated struct LightingReadAnswerSystemsItem: Codable, Equatable, Sendable {
         /// The Chart Supplement legend's code (MALSR, REIL, HIRL, PAPI); null where the name says it all (taxiway lights, the rotating beacon).
         var code: String?
         /// Its name in words: Approach lights, Runway end identifier lights, Runway edge lights, high intensity, Precision approach path indicator, Taxiway lights, Rotating beacon.
@@ -7011,14 +7387,33 @@ enum EngineContract {
         }
     }
 
-    struct LightingReadInput: Codable, Equatable, Sendable {
+    nonisolated struct LightingReadInput: Codable, Equatable, Sendable {
         /// The field's lighting remarks as sent (LGT_SKED): "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27 - CTAF."
         var lighting: [String]
         /// Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
         var beacon: [String]?
     }
 
-    struct LiveFeedRefreshAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LightsOnTheWayInput: Codable, Equatable, Sendable {
+        /// [lat, lon]
+        var start: [Double]
+        /// [lat, lon]
+        var end: [Double]
+        var departS: Double
+        var minutes: Double
+        /// In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
+        var alaskaVisibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case start
+            case end
+            case departS = "depart_s"
+            case minutes
+            case alaskaVisibilitySm = "alaska_visibility_sm"
+        }
+    }
+
+    nonisolated struct LiveFeedRefreshAnswer: Codable, Equatable, Sendable {
         /// How long an answer is fresh, seconds.
         var freshS: Double
         /// How often a screen showing it asks again, seconds; null where it is not polled.
@@ -7032,16 +7427,16 @@ enum EngineContract {
         }
     }
 
-    struct LiveFeedRefreshInput: Codable, Equatable, Sendable {
+    nonisolated struct LiveFeedRefreshInput: Codable, Equatable, Sendable {
         var feed: String
     }
 
-    struct LogbookCsvReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LogbookCsvReadAnswer: Codable, Equatable, Sendable {
         var entries: [EngineContract.LogbookCsvReadAnswerEntriesItem]
         var skipped: [EngineContract.LogbookCsvReadAnswerSkippedItem]
     }
 
-    struct LogbookCsvReadAnswerEntriesItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookCsvReadAnswerEntriesItem: Codable, Equatable, Sendable {
         var flownOn: String
         var aircraft: String?
         var aircraftType: String?
@@ -7071,21 +7466,21 @@ enum EngineContract {
         var flightId: Int?
     }
 
-    struct LogbookCsvReadAnswerSkippedItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookCsvReadAnswerSkippedItem: Codable, Equatable, Sendable {
         var line: Int
         var reason: String
     }
 
-    struct LogbookCsvReadInput: Codable, Equatable, Sendable {
+    nonisolated struct LogbookCsvReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct LogbookCsvWriteInput: Codable, Equatable, Sendable {
+    nonisolated struct LogbookCsvWriteInput: Codable, Equatable, Sendable {
         var entries: [[String: OpenAPIValueContainer]]
     }
 
     /// The gateway's LogbookEntry, camelCase: the columns the currency and 61.109 rules read. A column missing or null is none of it.
-    struct LogbookEntry: Codable, Equatable, Sendable {
+    nonisolated struct LogbookEntry: Codable, Equatable, Sendable {
         /// YYYY-MM-DD.
         var flownOn: String
         var totalHours: Double?
@@ -7106,7 +7501,7 @@ enum EngineContract {
         var tracking: Bool?
     }
 
-    struct LogbookFromTrackAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswer: Codable, Equatable, Sendable {
         var entry: EngineContract.LogbookFromTrackAnswerEntry
         /// 61.57(c)(1)'s items the track shows, to add to the entry where flown by instruments.
         var instrument: EngineContract.LogbookFromTrackAnswerInstrument
@@ -7133,7 +7528,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookFromTrackAnswerApproachesItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswerApproachesItem: Codable, Equatable, Sendable {
         var airport: String
         var id: String
         var name: String
@@ -7152,12 +7547,12 @@ enum EngineContract {
         }
     }
 
-    struct LogbookFromTrackAnswerBlock: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswerBlock: Codable, Equatable, Sendable {
         var from: Double?
         var to: Double?
     }
 
-    struct LogbookFromTrackAnswerCrossCountry: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswerCrossCountry: Codable, Equatable, Sendable {
         var landedElsewhere: Bool
         var over50Nm: Bool
         var farthestNm: Double
@@ -7169,7 +7564,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookFromTrackAnswerEntry: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswerEntry: Codable, Equatable, Sendable {
         /// YYYY-MM-DD on the pilot's clock (61.51(b)(1)(i)).
         var flownOn: String
         var aircraft: String?
@@ -7199,7 +7594,7 @@ enum EngineContract {
         var remarks: String
     }
 
-    struct LogbookFromTrackAnswerHoldsItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswerHoldsItem: Codable, Equatable, Sendable {
         var from: Double
         var to: Double
         var racetracks: Double
@@ -7209,19 +7604,19 @@ enum EngineContract {
     }
 
     /// 61.57(c)(1)'s items the track shows, to add to the entry where flown by instruments.
-    struct LogbookFromTrackAnswerInstrument: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswerInstrument: Codable, Equatable, Sendable {
         var approaches: Double
         var holding: Bool
         var tracking: Bool
     }
 
-    struct LogbookFromTrackAnswerReasonsItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackAnswerReasonsItem: Codable, Equatable, Sendable {
         var item: String
         var says: String
         var source: String
     }
 
-    struct LogbookFromTrackInput: Codable, Equatable, Sendable {
+    nonisolated struct LogbookFromTrackInput: Codable, Equatable, Sendable {
         /// The track, in any order; put in time order first.
         var points: [EngineContract.TrackPoint]
         /// The fields near the places logbook_track_places named.
@@ -7246,7 +7641,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookLanding: Codable, Equatable, Sendable {
+    nonisolated struct LogbookLanding: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -7273,20 +7668,20 @@ enum EngineContract {
         }
     }
 
-    struct LogbookReadCheckAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LogbookReadCheckAnswer: Codable, Equatable, Sendable {
         var rows: [EngineContract.LogbookReadCheckAnswerRowsItem]
         /// The page's: its totals against its rows.
         var flags: [EngineContract.DocumentFlag]
     }
 
-    struct LogbookReadCheckAnswerRowsItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookReadCheckAnswerRowsItem: Codable, Equatable, Sendable {
         /// The gateway's LogbookEntryRequest, as the page gives it.
         var entry: EngineContract.LogbookReadCheckAnswerRowsItemEntry
         var flags: [EngineContract.DocumentFlag]
     }
 
     /// The gateway's LogbookEntryRequest, as the page gives it.
-    struct LogbookReadCheckAnswerRowsItemEntry: Codable, Equatable, Sendable {
+    nonisolated struct LogbookReadCheckAnswerRowsItemEntry: Codable, Equatable, Sendable {
         /// YYYY-MM-DD; null where no date was read.
         var flownOn: String?
         var aircraft: String?
@@ -7313,7 +7708,7 @@ enum EngineContract {
         var flightId: OpenAPIValueContainer
     }
 
-    struct LogbookReadCheckInput: Codable, Equatable, Sendable {
+    nonisolated struct LogbookReadCheckInput: Codable, Equatable, Sendable {
         /// The page's rows, in order.
         var rows: [EngineContract.LogbookReadCheckInputRowsItem]?
         /// The page's "total this page" row, where it has one.
@@ -7329,7 +7724,7 @@ enum EngineContract {
     }
 
     /// The page's "total this page" row, where it has one.
-    struct LogbookReadCheckInputPageTotals: Codable, Equatable, Sendable {
+    nonisolated struct LogbookReadCheckInputPageTotals: Codable, Equatable, Sendable {
         var total: Double?
         var night: Double?
         var crossCountry: Double?
@@ -7355,7 +7750,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookReadCheckInputRowsItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookReadCheckInputRowsItem: Codable, Equatable, Sendable {
         /// YYYY-MM-DD.
         var date: String?
         var aircraftType: String?
@@ -7400,7 +7795,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookTakeoff: Codable, Equatable, Sendable {
+    nonisolated struct LogbookTakeoff: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -7422,7 +7817,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookTrackField: Codable, Equatable, Sendable {
+    nonisolated struct LogbookTrackField: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
@@ -7440,7 +7835,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookTrackPlacesAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LogbookTrackPlacesAnswer: Codable, Equatable, Sendable {
         var places: [EngineContract.LogbookTrackPlacesAnswerPlacesItem]
         /// How far round each place a field is looked for.
         var withinNm: Double
@@ -7451,7 +7846,7 @@ enum EngineContract {
         }
     }
 
-    struct LogbookTrackPlacesAnswerPlacesItem: Codable, Equatable, Sendable {
+    nonisolated struct LogbookTrackPlacesAnswerPlacesItem: Codable, Equatable, Sendable {
         /// ms since 1970.
         var t: Double
         var lat: Double
@@ -7459,12 +7854,12 @@ enum EngineContract {
         var kind: String
     }
 
-    struct LogbookTrackPlacesInput: Codable, Equatable, Sendable {
+    nonisolated struct LogbookTrackPlacesInput: Codable, Equatable, Sendable {
         /// The track, in any order; put in time order first.
         var points: [EngineContract.TrackPoint]
     }
 
-    struct LostCommsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct LostCommsAnswer: Codable, Equatable, Sendable {
         var vfr: String
         var routes: [EngineContract.LostCommsAnswerRoutesItem]
         /// 91.185(c)(2), the altitude rule, in words.
@@ -7473,13 +7868,13 @@ enum EngineContract {
         var leave: String
     }
 
-    struct LostCommsAnswerRoutesItem: Codable, Equatable, Sendable {
+    nonisolated struct LostCommsAnswerRoutesItem: Codable, Equatable, Sendable {
         var key: String
         var label: String
         var rule: String
     }
 
-    struct LostCommsAnswerSegmentsItem: Codable, Equatable, Sendable {
+    nonisolated struct LostCommsAnswerSegmentsItem: Codable, Equatable, Sendable {
         /// "Segment" where none is given.
         var name: String
         var fly: Double?
@@ -7487,7 +7882,7 @@ enum EngineContract {
         var words: String
     }
 
-    struct LostCommsInput: Codable, Equatable, Sendable {
+    nonisolated struct LostCommsInput: Codable, Equatable, Sendable {
         var segments: [EngineContract.LostCommsInputSegmentsItem]
         var assignedFt: Double?
         var expectedFt: Double?
@@ -7508,7 +7903,7 @@ enum EngineContract {
         }
     }
 
-    struct LostCommsInputSegmentsItem: Codable, Equatable, Sendable {
+    nonisolated struct LostCommsInputSegmentsItem: Codable, Equatable, Sendable {
         var name: String?
         var minimumFt: Double?
 
@@ -7518,7 +7913,7 @@ enum EngineContract {
         }
     }
 
-    struct MagneticVariationInput: Codable, Equatable, Sendable {
+    nonisolated struct MagneticVariationInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         /// YYYY-MM-DD.
@@ -7527,7 +7922,7 @@ enum EngineContract {
         var year: Double?
     }
 
-    struct MaydayCallAnswer: Codable, Equatable, Sendable {
+    nonisolated struct MaydayCallAnswer: Codable, Equatable, Sendable {
         var lines: [String]
         var words: String
         var missing: [String]
@@ -7545,13 +7940,13 @@ enum EngineContract {
         }
     }
 
-    struct MaydayCallAnswerChannelsItem: Codable, Equatable, Sendable {
+    nonisolated struct MaydayCallAnswerChannelsItem: Codable, Equatable, Sendable {
         var label: String
         var mhz: Double?
         var why: String
     }
 
-    struct MaydayCallInput: Codable, Equatable, Sendable {
+    nonisolated struct MaydayCallInput: Codable, Equatable, Sendable {
         var station: String?
         var callsign: String?
         var airplaneType: String?
@@ -7583,7 +7978,7 @@ enum EngineContract {
         }
     }
 
-    struct MaydayCallInputFrequenciesItem: Codable, Equatable, Sendable {
+    nonisolated struct MaydayCallInputFrequenciesItem: Codable, Equatable, Sendable {
         var ident: String
         var kind: String
         var mhz: Double
@@ -7598,7 +7993,7 @@ enum EngineContract {
     }
 
     /// A METAR's wind; null, missing or empty for none.
-    struct MetarWindIn: Codable, Equatable, Sendable {
+    nonisolated struct MetarWindIn: Codable, Equatable, Sendable {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
@@ -7610,7 +8005,7 @@ enum EngineContract {
         }
     }
 
-    struct ModeCVeilAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ModeCVeilAnswer: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var distanceNm: Double
@@ -7622,38 +8017,38 @@ enum EngineContract {
         }
     }
 
-    struct ModeCVeilInput: Codable, Equatable, Sendable {
+    nonisolated struct ModeCVeilInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var airports: [EngineContract.ModeCVeilInputAirportsItem]
     }
 
-    struct ModeCVeilInputAirportsItem: Codable, Equatable, Sendable {
+    nonisolated struct ModeCVeilInputAirportsItem: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var lat: Double?
         var lon: Double?
     }
 
-    struct ModelWeatherBandsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ModelWeatherBandsAnswer: Codable, Equatable, Sendable {
         var precip: EngineContract.ModelWeatherBandsAnswerPrecip
         var ceiling: [EngineContract.ModelWeatherBandsAnswerCeilingItem]
         var cape: [EngineContract.ModelWeatherBandsAnswerCapeItem]
     }
 
-    struct ModelWeatherBandsAnswerCapeItem: Codable, Equatable, Sendable {
+    nonisolated struct ModelWeatherBandsAnswerCapeItem: Codable, Equatable, Sendable {
         var word: String
         /// The band's least value, in the field's unit; the band runs to the next one's.
         var from: Double
     }
 
-    struct ModelWeatherBandsAnswerCeilingItem: Codable, Equatable, Sendable {
+    nonisolated struct ModelWeatherBandsAnswerCeilingItem: Codable, Equatable, Sendable {
         var word: String
         /// The band's least value, in the field's unit; the band runs to the next one's.
         var from: Double
     }
 
-    struct ModelWeatherBandsAnswerPrecip: Codable, Equatable, Sendable {
+    nonisolated struct ModelWeatherBandsAnswerPrecip: Codable, Equatable, Sendable {
         /// Under it nothing is said to fall: the app's choice, a trace.
         var leastDbz: Double
         var bands: [EngineContract.ModelWeatherBandsAnswerPrecipBandsItem]
@@ -7664,16 +8059,16 @@ enum EngineContract {
         }
     }
 
-    struct ModelWeatherBandsAnswerPrecipBandsItem: Codable, Equatable, Sendable {
+    nonisolated struct ModelWeatherBandsAnswerPrecipBandsItem: Codable, Equatable, Sendable {
         var word: String
         /// The band's least value, in the field's unit; the band runs to the next one's.
         var from: Double
     }
 
-    struct ModelWeatherBandsInput: Codable, Equatable, Sendable {
+    nonisolated struct ModelWeatherBandsInput: Codable, Equatable, Sendable {
     }
 
-    struct ModelWindLevelsAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ModelWindLevelsAnswerItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var windDirTrueDeg: Double
         var windSpeedKt: Double
@@ -7687,11 +8082,11 @@ enum EngineContract {
         }
     }
 
-    struct ModelWindLevelsInput: Codable, Equatable, Sendable {
+    nonisolated struct ModelWindLevelsInput: Codable, Equatable, Sendable {
         var levels: [EngineContract.ModelWindLevelsInputLevelsItem]
     }
 
-    struct ModelWindLevelsInputLevelsItem: Codable, Equatable, Sendable {
+    nonisolated struct ModelWindLevelsInputLevelsItem: Codable, Equatable, Sendable {
         var heightM: Double?
         var tempK: Double?
         var uMS: Double?
@@ -7705,16 +8100,16 @@ enum EngineContract {
         }
     }
 
-    struct MorseInput: Codable, Equatable, Sendable {
+    nonisolated struct MorseInput: Codable, Equatable, Sendable {
         var ident: String?
     }
 
-    struct NavaidHoursInput: Codable, Equatable, Sendable {
+    nonisolated struct NavaidHoursInput: Codable, Equatable, Sendable {
         var hours: String?
     }
 
     /// A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day.
-    struct NavLogAirAt: Codable, Equatable, Sendable {
+    nonisolated struct NavLogAirAt: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var wind: EngineContract.NavLogWind?
         var oatC: Double?
@@ -7726,7 +8121,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogAlternateLegAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NavlogAlternateLegAnswer: Codable, Equatable, Sendable {
         var ident: String
         var distanceNm: Double
         var eteMin: Double?
@@ -7744,7 +8139,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogAlternateLegInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogAlternateLegInput: Codable, Equatable, Sendable {
         var dest: EngineContract.NavlogAlternateLegInputDest
         var alternate: EngineContract.NavlogAlternateLegInputAlternate
         var altitudeFt: Double
@@ -7761,7 +8156,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogAlternateLegInputAir: Codable, Equatable, Sendable {
+    nonisolated struct NavlogAlternateLegInputAir: Codable, Equatable, Sendable {
         var variationDeg: Double
         var wind: EngineContract.NavLogWind?
         var oatC: Double?
@@ -7773,19 +8168,19 @@ enum EngineContract {
         }
     }
 
-    struct NavlogAlternateLegInputAlternate: Codable, Equatable, Sendable {
+    nonisolated struct NavlogAlternateLegInputAlternate: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogAlternateLegInputDest: Codable, Equatable, Sendable {
+    nonisolated struct NavlogAlternateLegInputDest: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogApproachEndAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NavlogApproachEndAnswer: Codable, Equatable, Sendable {
         var endAltitudeFt: Double
         var endBeforeNm: Double
         var endFix: String?
@@ -7797,7 +8192,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogApproachEndInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogApproachEndInput: Codable, Equatable, Sendable {
         var fixes: [EngineContract.NavlogApproachEndInputFixesItem]
         var cruiseFt: Double?
         var field: EngineContract.NavlogApproachEndInputField
@@ -7809,12 +8204,12 @@ enum EngineContract {
         }
     }
 
-    struct NavlogApproachEndInputField: Codable, Equatable, Sendable {
+    nonisolated struct NavlogApproachEndInputField: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogApproachEndInputFixesItem: Codable, Equatable, Sendable {
+    nonisolated struct NavlogApproachEndInputFixesItem: Codable, Equatable, Sendable {
         var ident: String?
         var lat: Double
         var lon: Double
@@ -7832,7 +8227,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogCandidatesInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogCandidatesInput: Codable, Equatable, Sendable {
         var segments: [EngineContract.NavLogSegment]
         var legs: Double
         /// null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
@@ -7840,7 +8235,7 @@ enum EngineContract {
     }
 
     /// The route flown at one altitude for the altitude wheel: each leg at it where legal, else at its nearest legal one.
-    struct NavLogFigure: Codable, Equatable, Sendable {
+    nonisolated struct NavLogFigure: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var eteMin: Double?
         var fuelGal: Double?
@@ -7856,20 +8251,24 @@ enum EngineContract {
         }
     }
 
-    struct NavLogFix: Codable, Equatable, Sendable {
+    nonisolated struct NavLogFix: Codable, Equatable, Sendable {
         var name: String?
         var category: String?
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogFuelPlanAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelPlanAnswer: Codable, Equatable, Sendable {
         var reserveMin: Double
         var reserveGal: Double?
         var taxiGal: Double?
         var fuelRequiredGal: Double?
         var usableFuelGal: Double?
         var fuelMarginGal: Double?
+        /// The fuel in the tanks as the flight leaves, gallons; null with no airplane or no usable fuel known and none set.
+        var onBoardGal: Double?
+        /// The fuel it lands with: on_board_gal less the start and taxi allowance and the trip; null where either is not known.
+        var landsWithGal: Double?
         var night: Bool?
         var rules: String
 
@@ -7880,12 +8279,14 @@ enum EngineContract {
             case fuelRequiredGal = "fuel_required_gal"
             case usableFuelGal = "usable_fuel_gal"
             case fuelMarginGal = "fuel_margin_gal"
+            case onBoardGal = "on_board_gal"
+            case landsWithGal = "lands_with_gal"
             case night
             case rules
         }
     }
 
-    struct NavlogFuelPlanInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelPlanInput: Codable, Equatable, Sendable {
         var totalFuelGal: Double?
         /// null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
         var profile: EngineContract.NavLogProfile?
@@ -7893,6 +8294,10 @@ enum EngineContract {
         var night: Bool?
         var rules: String?
         var alternateGal: Double?
+        /// The pilot's own figure for the tanks as the flight leaves, gallons: at the departure the fuel on board at engine start, at a stop what it is fuelled to (0, no fuel bought); null, full.
+        var fillGal: Double?
+        /// At a stop, what the flight before landed with (its lands_with_gal), which fuelling never takes from; null at the departure or where not known.
+        var leftGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case totalFuelGal = "total_fuel_gal"
@@ -7900,26 +8305,37 @@ enum EngineContract {
             case night
             case rules
             case alternateGal = "alternate_gal"
+            case fillGal = "fill_gal"
+            case leftGal = "left_gal"
         }
     }
 
-    struct NavlogFuelStopNeedAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelStopNeedAnswer: Codable, Equatable, Sendable {
         var fuelPerNm: Double
         var minPerNm: Double
         var usableGal: Double
+        /// The fuel in the tanks as the flight leaves (the totals' on_board_gal; full where it has none), for fuel_stops' first stretch.
+        var startGal: Double
         var taxiGal: Double
         var reserveGal: Double
+        /// The fuel on to the IFR alternate the last stretch keeps with its reserve (91.167(a)(2)), for fuel_stops; 0 under VFR.
+        var alternateGal: Double
+        /// Whether the fuel on board at the start, less the start and taxi, is under the reserve already: no field is in its reach, so no stop is offered.
+        var onBoardShort: Bool
 
         enum CodingKeys: String, CodingKey {
             case fuelPerNm = "fuel_per_nm"
             case minPerNm = "min_per_nm"
             case usableGal = "usable_gal"
+            case startGal = "start_gal"
             case taxiGal = "taxi_gal"
             case reserveGal = "reserve_gal"
+            case alternateGal = "alternate_gal"
+            case onBoardShort = "on_board_short"
         }
     }
 
-    struct NavlogFuelStopNeedInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelStopNeedInput: Codable, Equatable, Sendable {
         /// The flight's nav log totals with its fuel check (navlog_totals, navlog_fuel_plan).
         var totals: EngineContract.NavlogFuelStopNeedInputTotals
         var legs: [EngineContract.NavlogFuelStopNeedInputLegsItem]
@@ -7937,12 +8353,12 @@ enum EngineContract {
         }
     }
 
-    struct NavlogFuelStopNeedInputEnd: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelStopNeedInputEnd: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogFuelStopNeedInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelStopNeedInputLegsItem: Codable, Equatable, Sendable {
         var distanceNm: Double?
         var fuelGal: Double?
 
@@ -7952,15 +8368,17 @@ enum EngineContract {
         }
     }
 
-    struct NavlogFuelStopNeedInputStart: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelStopNeedInputStart: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
     /// The flight's nav log totals with its fuel check (navlog_totals, navlog_fuel_plan).
-    struct NavlogFuelStopNeedInputTotals: Codable, Equatable, Sendable {
+    nonisolated struct NavlogFuelStopNeedInputTotals: Codable, Equatable, Sendable {
         var fuelMarginGal: Double?
         var usableFuelGal: Double?
+        /// The fuel in the tanks as the flight leaves (navlog_fuel_plan's); null, full.
+        var onBoardGal: Double?
         var distanceNm: Double?
         var fuelGal: Double?
         var eteMin: Double?
@@ -7968,10 +8386,13 @@ enum EngineContract {
         var reserveGal: Double?
         var rules: String?
         var night: Bool?
+        /// Under IFR, the last flight's fuel on to its alternate (the alternate leg's fuel_gal, 14 CFR 91.167(a)(2)); null where none is filed.
+        var alternateGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case fuelMarginGal = "fuel_margin_gal"
             case usableFuelGal = "usable_fuel_gal"
+            case onBoardGal = "on_board_gal"
             case distanceNm = "distance_nm"
             case fuelGal = "fuel_gal"
             case eteMin = "ete_min"
@@ -7979,10 +8400,11 @@ enum EngineContract {
             case reserveGal = "reserve_gal"
             case rules
             case night
+            case alternateGal = "alternate_gal"
         }
     }
 
-    struct NavlogHoldInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogHoldInput: Codable, Equatable, Sendable {
         var leg: EngineContract.NavLogLeg
         var before: EngineContract.NavLogLeg?
         var hold: EngineContract.NavlogHoldInputHold
@@ -8000,12 +8422,12 @@ enum EngineContract {
         }
     }
 
-    struct NavlogHoldInputFix: Codable, Equatable, Sendable {
+    nonisolated struct NavlogHoldInputFix: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogHoldInputHold: Codable, Equatable, Sendable {
+    nonisolated struct NavlogHoldInputHold: Codable, Equatable, Sendable {
         var fix: String
         var inbound: Double
         var right: Bool
@@ -8025,7 +8447,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogJoinFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogJoinFiguresInput: Codable, Equatable, Sendable {
         var byHop: [[EngineContract.NavLogFigure]]
         var lengths: [Double]
 
@@ -8035,7 +8457,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogJoinPlansInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogJoinPlansInput: Codable, Equatable, Sendable {
         var byHop: [[EngineContract.NavLogPlan]]
         var lengths: [Double]
 
@@ -8046,7 +8468,7 @@ enum EngineContract {
     }
 
     /// A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through.
-    struct NavLogLeg: Codable, Equatable, Sendable {
+    nonisolated struct NavLogLeg: Codable, Equatable, Sendable {
         var from: String?
         var to: String?
         var trueCourseDeg: Double?
@@ -8106,7 +8528,7 @@ enum EngineContract {
         }
     }
 
-    struct NavLogLegAir: Codable, Equatable, Sendable {
+    nonisolated struct NavLogLegAir: Codable, Equatable, Sendable {
         /// Magnetic variation, east positive.
         var variationDeg: Double
         var at: [EngineContract.NavLogAirAt]
@@ -8117,7 +8539,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogLegInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogLegInput: Codable, Equatable, Sendable {
         var start: EngineContract.NavlogLegInputStart
         var end: EngineContract.NavlogLegInputEnd
         var altitudeFt: Double
@@ -8138,17 +8560,17 @@ enum EngineContract {
         }
     }
 
-    struct NavlogLegInputEnd: Codable, Equatable, Sendable {
+    nonisolated struct NavlogLegInputEnd: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogLegInputStart: Codable, Equatable, Sendable {
+    nonisolated struct NavlogLegInputStart: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct NavlogLegsAtInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogLegsAtInput: Codable, Equatable, Sendable {
         var fixes: [EngineContract.NavLogFix]
         var segments: [EngineContract.NavLogSegment]
         /// null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
@@ -8167,7 +8589,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogLegsInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogLegsInput: Codable, Equatable, Sendable {
         var fixes: [EngineContract.NavLogFix]
         var altitudeFt: Double
         /// null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
@@ -8182,7 +8604,7 @@ enum EngineContract {
         }
     }
 
-    struct NavLogPlan: Codable, Equatable, Sendable {
+    nonisolated struct NavLogPlan: Codable, Equatable, Sendable {
         var kind: String?
         var steps: [EngineContract.NavLogStep]
         var needsOxygen: Bool
@@ -8210,7 +8632,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogPlansAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NavlogPlansAnswer: Codable, Equatable, Sendable {
         var plans: [String: EngineContract.NavLogPlan]
         var byAltitude: [EngineContract.NavLogFigure]
 
@@ -8220,7 +8642,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogPlansInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogPlansInput: Codable, Equatable, Sendable {
         var fixes: [EngineContract.NavLogFix]
         var segments: [EngineContract.NavLogSegment]
         /// null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
@@ -8238,7 +8660,7 @@ enum EngineContract {
     }
 
     /// An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
-    struct NavLogProfile: Codable, Equatable, Sendable {
+    nonisolated struct NavLogProfile: Codable, Equatable, Sendable {
         /// At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day.
         var cruiseTasKt: Double?
         var fuelBurnGph: Double?
@@ -8276,7 +8698,7 @@ enum EngineContract {
     }
 
     /// A nav log row, the web's NavLogRow: its place is the checkpoint's (cp), the top of climb's or descent's (point) or the airport's.
-    struct NavLogRow: Codable, Equatable, Sendable {
+    nonisolated struct NavLogRow: Codable, Equatable, Sendable {
         var kind: String
         var airport: EngineContract.NavLogRowAirport?
         var cp: EngineContract.NavLogRowCp?
@@ -8285,7 +8707,7 @@ enum EngineContract {
         var part: [String: OpenAPIValueContainer]?
     }
 
-    struct NavLogRowAirport: Codable, Equatable, Sendable {
+    nonisolated struct NavLogRowAirport: Codable, Equatable, Sendable {
         var ident: String?
         var elevationFt: Double?
         /// "fix" for a fix flown through rather than a field.
@@ -8302,12 +8724,12 @@ enum EngineContract {
         }
     }
 
-    struct NavLogRowCp: Codable, Equatable, Sendable {
+    nonisolated struct NavLogRowCp: Codable, Equatable, Sendable {
         var lat: Double?
         var lon: Double?
     }
 
-    struct NavLogRowPoint: Codable, Equatable, Sendable {
+    nonisolated struct NavLogRowPoint: Codable, Equatable, Sendable {
         var lat: Double?
         var lon: Double?
         var alongNm: Double?
@@ -8326,7 +8748,7 @@ enum EngineContract {
     }
 
     /// The altitude selection's segment for a leg: its legal altitudes (14 CFR 91.119, 91.159, the airspace, the clouds and the service ceiling).
-    struct NavLogSegment: Codable, Equatable, Sendable {
+    nonisolated struct NavLogSegment: Codable, Equatable, Sendable {
         var candidatesFt: [Double]?
 
         enum CodingKeys: String, CodingKey {
@@ -8334,7 +8756,7 @@ enum EngineContract {
         }
     }
 
-    struct NavLogStep: Codable, Equatable, Sendable {
+    nonisolated struct NavLogStep: Codable, Equatable, Sendable {
         var from: String?
         var to: String?
         var altitudeFt: Double
@@ -8349,7 +8771,7 @@ enum EngineContract {
     }
 
     /// A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow. A top of descent with an airplane whose profile gives the descent's figures carries them the same way for the piece of its leg after it, that piece's ground speed its miles over its minutes.
-    struct NavLogTop: Codable, Equatable, Sendable {
+    nonisolated struct NavLogTop: Codable, Equatable, Sendable {
         var alongNm: Double
         var eteMin: Double
         var fuelGal: Double?
@@ -8390,7 +8812,7 @@ enum EngineContract {
         }
     }
 
-    struct NavLogTotals: Codable, Equatable, Sendable {
+    nonisolated struct NavLogTotals: Codable, Equatable, Sendable {
         var distanceNm: Double
         var procedureNm: Double
         var eteMin: Double?
@@ -8408,12 +8830,12 @@ enum EngineContract {
         }
     }
 
-    struct NavlogTotalsInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogTotalsInput: Codable, Equatable, Sendable {
         var legs: [EngineContract.NavLogLeg]
     }
 
     /// The wind aloft, the direction it blows from in true degrees, carried onto the leg as it is.
-    struct NavLogWind: Codable, Equatable, Sendable {
+    nonisolated struct NavLogWind: Codable, Equatable, Sendable {
         var windDirTrueDeg: Double
         var windSpeedKt: Double
 
@@ -8423,7 +8845,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogWithClimbsInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogWithClimbsInput: Codable, Equatable, Sendable {
         var legs: [EngineContract.NavLogLeg]
         var startAltitudeFt: Double?
         /// null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
@@ -8436,7 +8858,7 @@ enum EngineContract {
         }
     }
 
-    struct NavlogWithDescentsInput: Codable, Equatable, Sendable {
+    nonisolated struct NavlogWithDescentsInput: Codable, Equatable, Sendable {
         var legs: [EngineContract.NavLogLeg]
         var fixes: [EngineContract.NavLogFix]
         var endAltitudeFt: Double?
@@ -8456,7 +8878,7 @@ enum EngineContract {
         }
     }
 
-    struct NightAtEitherEndInput: Codable, Equatable, Sendable {
+    nonisolated struct NightAtEitherEndInput: Codable, Equatable, Sendable {
         /// [lat, lon]
         var start: [Double]
         var departS: Double
@@ -8472,7 +8894,7 @@ enum EngineContract {
         }
     }
 
-    struct NightOnTheWayInput: Codable, Equatable, Sendable {
+    nonisolated struct NightOnTheWayInput: Codable, Equatable, Sendable {
         /// [lat, lon]
         var start: [Double]
         /// [lat, lon]
@@ -8488,7 +8910,7 @@ enum EngineContract {
         }
     }
 
-    struct NmAlongInput: Codable, Equatable, Sendable {
+    nonisolated struct NmAlongInput: Codable, Equatable, Sendable {
         var legsNm: [Double?]
 
         enum CodingKeys: String, CodingKey {
@@ -8496,11 +8918,11 @@ enum EngineContract {
         }
     }
 
-    struct NNumberInput: Codable, Equatable, Sendable {
+    nonisolated struct NNumberInput: Codable, Equatable, Sendable {
         var text: String?
     }
 
-    struct NoAltitudeAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NoAltitudeAnswer: Codable, Equatable, Sendable {
         var title: String
         var brief: String
         var reasons: [String]
@@ -8508,13 +8930,13 @@ enum EngineContract {
         var detail: String
     }
 
-    struct NoAltitudeInput: Codable, Equatable, Sendable {
+    nonisolated struct NoAltitudeInput: Codable, Equatable, Sendable {
         var selection: [String: OpenAPIValueContainer]
         var between: [String]?
         var `where`: String?
     }
 
-    struct NotamReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NotamReadAnswer: Codable, Equatable, Sendable {
         /// The form it was read in; text where it is in neither, its words then as sent.
         var form: String
         var number: String?
@@ -8541,14 +8963,14 @@ enum EngineContract {
         var permanent: Bool
     }
 
-    struct NotamReadInput: Codable, Equatable, Sendable {
+    nonisolated struct NotamReadInput: Codable, Equatable, Sendable {
         /// The NOTAM as sent: the domestic form ("!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700") or the ICAO form (Q) A) B) C) E) ...).
         var text: String
         /// The field's idents (OSH, KOSH), kept as written in its words.
         var idents: [String]?
     }
 
-    struct NotamsFnsAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamsFnsAnswerItem: Codable, Equatable, Sendable {
         var id: String
         var icaoId: String?
         var names: String?
@@ -8582,16 +9004,16 @@ enum EngineContract {
         }
     }
 
-    struct NotamsFnsInput: Codable, Equatable, Sendable {
+    nonisolated struct NotamsFnsInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct NotamsRankedAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NotamsRankedAnswer: Codable, Equatable, Sendable {
         var ranked: [EngineContract.NotamsRankedAnswerRankedItem]
         var top: Int
     }
 
-    struct NotamsRankedAnswerRankedItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamsRankedAnswerRankedItem: Codable, Equatable, Sendable {
         var id: String
         var rank: Int
         var score: Int
@@ -8628,12 +9050,12 @@ enum EngineContract {
         }
     }
 
-    struct NotamsRankedAnswerRankedItemReasonsItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamsRankedAnswerRankedItemReasonsItem: Codable, Equatable, Sendable {
         var key: String
         var words: String
     }
 
-    struct NotamsRankedInput: Codable, Equatable, Sendable {
+    nonisolated struct NotamsRankedInput: Codable, Equatable, Sendable {
         var notams: [EngineContract.NotamsRankedInputNotamsItem]
         var fields: [EngineContract.NotamsRankedInputFieldsItem]?
         /// The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route.
@@ -8654,7 +9076,7 @@ enum EngineContract {
         }
     }
 
-    struct NotamsRankedInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamsRankedInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         var role: String
         /// When the flight's time at the field starts, ISO 8601 UTC.
@@ -8664,7 +9086,7 @@ enum EngineContract {
         var runways: [String]?
     }
 
-    struct NotamsRankedInputNotamsItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamsRankedInputNotamsItem: Codable, Equatable, Sendable {
         var id: String
         /// The place the NOTAM is issued for, as the feed names it (OSH, KOSH).
         var location: String?
@@ -8695,11 +9117,11 @@ enum EngineContract {
         }
     }
 
-    struct NotamSubjectAnswer: Codable, Equatable, Sendable {
+    nonisolated struct NotamSubjectAnswer: Codable, Equatable, Sendable {
         var badges: [EngineContract.NotamSubjectAnswerBadgesItem]
     }
 
-    struct NotamSubjectAnswerBadgesItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamSubjectAnswerBadgesItem: Codable, Equatable, Sendable {
         /// What the badge goes next to.
         var on: String
         /// Its row in the list the card gave (runways, lights, approaches, frequencies); null for the field and the fuel.
@@ -8711,7 +9133,7 @@ enum EngineContract {
         var label: String
     }
 
-    struct NotamSubjectInput: Codable, Equatable, Sendable {
+    nonisolated struct NotamSubjectInput: Codable, Equatable, Sendable {
         /// The NOTAM as sent, domestic or ICAO form.
         var text: String
         /// The planner's kind "tfr": a TFR within 5 nm of the field.
@@ -8728,18 +9150,18 @@ enum EngineContract {
         var frequencies: [EngineContract.NotamSubjectInputFrequenciesItem]?
     }
 
-    struct NotamSubjectInputFrequenciesItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamSubjectInputFrequenciesItem: Codable, Equatable, Sendable {
         var type: String?
         var mhz: Double?
     }
 
-    struct NotamSubjectInputLightsItem: Codable, Equatable, Sendable {
+    nonisolated struct NotamSubjectInputLightsItem: Codable, Equatable, Sendable {
         var code: String?
         var name: String
         var runways: [String]
     }
 
-    struct OccurrenceIdentityAnswer: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityAnswer: Codable, Equatable, Sendable {
         var verdict: String
         /// Each check made, in order (registry, then track or address, window, place), with what it found in words.
         var checks: [EngineContract.OccurrenceIdentityAnswerChecksItem]
@@ -8757,14 +9179,14 @@ enum EngineContract {
         }
     }
 
-    struct OccurrenceIdentityAnswerChecksItem: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityAnswerChecksItem: Codable, Equatable, Sendable {
         var check: String
         var ok: Bool
         var words: String
     }
 
     /// The track's report in the window nearest the place, with its distance; null where it has none.
-    struct OccurrenceIdentityAnswerNearest: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityAnswerNearest: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -8778,12 +9200,12 @@ enum EngineContract {
         }
     }
 
-    struct OccurrenceIdentityAnswerWindow: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityAnswerWindow: Codable, Equatable, Sendable {
         var start: Double
         var end: Double
     }
 
-    struct OccurrenceIdentityInput: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityInput: Codable, Equatable, Sendable {
         var report: EngineContract.OccurrenceIdentityInputReport
         /// The FAA registry's answer for the report's N-number; null or missing where it has none.
         var registry: EngineContract.OccurrenceIdentityInputRegistry?
@@ -8792,7 +9214,7 @@ enum EngineContract {
     }
 
     /// The FAA registry's answer for the report's N-number; null or missing where it has none.
-    struct OccurrenceIdentityInputRegistry: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityInputRegistry: Codable, Equatable, Sendable {
         var nNumber: String
         var hex: String?
 
@@ -8802,7 +9224,7 @@ enum EngineContract {
         }
     }
 
-    struct OccurrenceIdentityInputReport: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityInputReport: Codable, Equatable, Sendable {
         /// The N-number the report gives; null or missing where it gives none.
         var nNumber: String?
         /// The local date of the event, YYYY-MM-DD.
@@ -8828,24 +9250,24 @@ enum EngineContract {
     }
 
     /// The ADS-B track of that address over the window's UTC days; null or missing where there is none.
-    struct OccurrenceIdentityInputTrack: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityInputTrack: Codable, Equatable, Sendable {
         var hex: String
         var points: [EngineContract.OccurrenceIdentityInputTrackPointsItem]
     }
 
-    struct OccurrenceIdentityInputTrackPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct OccurrenceIdentityInputTrackPointsItem: Codable, Equatable, Sendable {
         /// Seconds since 1970, UTC.
         var t: Double
         var lat: Double
         var lon: Double
     }
 
-    struct OurCallInput: Codable, Equatable, Sendable {
+    nonisolated struct OurCallInput: Codable, Equatable, Sendable {
         var text: String
         var tail: String
     }
 
-    struct OwnAltitudeCautionAnswer: Codable, Equatable, Sendable {
+    nonisolated struct OwnAltitudeCautionAnswer: Codable, Equatable, Sendable {
         var fromIdent: String
         var toIdent: String
         var altitudeFt: Double
@@ -8859,7 +9281,7 @@ enum EngineContract {
         }
     }
 
-    struct OwnAltitudeCautionInput: Codable, Equatable, Sendable {
+    nonisolated struct OwnAltitudeCautionInput: Codable, Equatable, Sendable {
         /// select_cruise_altitude's answer: its `rules` and `segments`.
         var selection: [String: OpenAPIValueContainer]
         var legs: [EngineContract.OwnAltitudeCautionInputLegsItem]
@@ -8869,7 +9291,7 @@ enum EngineContract {
         var profile: [String: OpenAPIValueContainer]?
     }
 
-    struct OwnAltitudeCautionInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct OwnAltitudeCautionInputLegsItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -8878,7 +9300,7 @@ enum EngineContract {
     }
 
     /// Own ship as the GPS has it.
-    struct OwnShipFix: Codable, Equatable, Sendable {
+    nonisolated struct OwnShipFix: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var headingDeg: Double?
@@ -8894,13 +9316,13 @@ enum EngineContract {
         }
     }
 
-    struct OwnShipHexInput: Codable, Equatable, Sendable {
+    nonisolated struct OwnShipHexInput: Codable, Equatable, Sendable {
         var planes: [EngineContract.TrafficPlane]
         var fix: EngineContract.OwnShipFix?
     }
 
     /// One thing that falls due, named and with the rule that asks for it, for the gateway's Coming up list and reminders (PaperworkService), which adds only the days and hours left.
-    struct PaperworkDue: Codable, Equatable, Sendable {
+    nonisolated struct PaperworkDue: Codable, Equatable, Sendable {
         /// flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item (an owner's own).
         var what: String
         /// The owner's item it is, where it is one.
@@ -8915,16 +9337,16 @@ enum EngineContract {
         var lead: String
     }
 
-    struct PassengerBriefingAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct PassengerBriefingAnswerItem: Codable, Equatable, Sendable {
         var key: String
         var title: String
         var rule: String
     }
 
-    struct PassengerBriefingInput: Codable, Equatable, Sendable {
+    nonisolated struct PassengerBriefingInput: Codable, Equatable, Sendable {
     }
 
-    struct PassengerNightOnTheWayInput: Codable, Equatable, Sendable {
+    nonisolated struct PassengerNightOnTheWayInput: Codable, Equatable, Sendable {
         /// [lat, lon]
         var start: [Double]
         /// [lat, lon]
@@ -8940,7 +9362,7 @@ enum EngineContract {
         }
     }
 
-    struct PatternAltitudeAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PatternAltitudeAnswer: Codable, Equatable, Sendable {
         var aglFt: Double
         /// Feet MSL: the published height over the field's elevation, whole, halves up; with none published, to the nearest hundred (as flown_ft); null with no elevation.
         var altitudeFt: Int?
@@ -8956,7 +9378,7 @@ enum EngineContract {
         }
     }
 
-    struct PatternAltitudeInput: Codable, Equatable, Sendable {
+    nonisolated struct PatternAltitudeInput: Codable, Equatable, Sendable {
         var elevationFt: Double?
         var publishedAglFt: Double?
 
@@ -8966,7 +9388,7 @@ enum EngineContract {
         }
     }
 
-    struct PatternEntryAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PatternEntryAnswer: Codable, Equatable, Sendable {
         /// Where the airplane comes from.
         var from: String
         /// Whether it comes from the pattern's side.
@@ -8980,7 +9402,7 @@ enum EngineContract {
         }
     }
 
-    struct PatternEntryInput: Codable, Equatable, Sendable {
+    nonisolated struct PatternEntryInput: Codable, Equatable, Sendable {
         var end: EngineContract.PatternEntryInputEnd
         var courseDeg: Double
 
@@ -8990,7 +9412,7 @@ enum EngineContract {
         }
     }
 
-    struct PatternEntryInputEnd: Codable, Equatable, Sendable {
+    nonisolated struct PatternEntryInputEnd: Codable, Equatable, Sendable {
         var ident: String
         var headingTrueDeg: Double?
         /// "right" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1)).
@@ -9003,18 +9425,18 @@ enum EngineContract {
         }
     }
 
-    struct PatternExitInput: Codable, Equatable, Sendable {
+    nonisolated struct PatternExitInput: Codable, Equatable, Sendable {
         /// "right" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1)).
         var traffic: String?
     }
 
     /// A point, degrees.
-    struct PatternLegPoint: Codable, Equatable, Sendable {
+    nonisolated struct PatternLegPoint: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct PatternSideInput: Codable, Equatable, Sendable {
+    nonisolated struct PatternSideInput: Codable, Equatable, Sendable {
         var headingTrueDeg: Double?
         /// "right" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1)).
         var traffic: String?
@@ -9025,7 +9447,7 @@ enum EngineContract {
         }
     }
 
-    struct PilotCurrencyAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PilotCurrencyAnswer: Codable, Equatable, Sendable {
         /// 90 days after the third most recent landing (61.57(a)); null with fewer than three.
         var dayPassengersUntil: String?
         /// 90 days after the third most recent night full-stop landing (61.57(b)).
@@ -9062,7 +9484,7 @@ enum EngineContract {
         var due: [EngineContract.PaperworkDue]
     }
 
-    struct PilotCurrencyInput: Codable, Equatable, Sendable {
+    nonisolated struct PilotCurrencyInput: Codable, Equatable, Sendable {
         var entries: [EngineContract.LogbookEntry]
         /// The last flight review, YYYY-MM-DD.
         var flightReviewOn: String?
@@ -9082,7 +9504,7 @@ enum EngineContract {
         }
     }
 
-    struct PilotExperienceAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct PilotExperienceAnswerItem: Codable, Equatable, Sendable {
         var key: String
         /// Its paragraph, "61.109(a)(5)(ii)".
         var rule: String
@@ -9093,18 +9515,18 @@ enum EngineContract {
         var met: Bool
     }
 
-    struct PilotExperienceInput: Codable, Equatable, Sendable {
+    nonisolated struct PilotExperienceInput: Codable, Equatable, Sendable {
         var entries: [EngineContract.LogbookEntry]
         /// YYYY-MM-DD.
         var today: String
     }
 
-    struct PirepConditionsInput: Codable, Equatable, Sendable {
+    nonisolated struct PirepConditionsInput: Codable, Equatable, Sendable {
         var turbulence: String?
         var icing: String?
     }
 
-    struct PirepsAlongRouteInput: Codable, Equatable, Sendable {
+    nonisolated struct PirepsAlongRouteInput: Codable, Equatable, Sendable {
         var reports: [[String: OpenAPIValueContainer]]
         /// The route flown, [[lat, lon], ...].
         var path: [[Double]]
@@ -9119,23 +9541,23 @@ enum EngineContract {
         }
     }
 
-    struct PirepsInBoxInput: Codable, Equatable, Sendable {
+    nonisolated struct PirepsInBoxInput: Codable, Equatable, Sendable {
         var reports: [[String: OpenAPIValueContainer]]
         /// [south, west, north, east]
         var box: [Double]
         var now: Double
     }
 
-    struct PlaceNameInput: Codable, Equatable, Sendable {
+    nonisolated struct PlaceNameInput: Codable, Equatable, Sendable {
         var text: String?
         var texts: [String?]?
     }
 
-    struct PlaceWordsInput: Codable, Equatable, Sendable {
+    nonisolated struct PlaceWordsInput: Codable, Equatable, Sendable {
         var tokens: [EngineContract.HeardToken]
     }
 
-    struct PlanningFiguresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PlanningFiguresAnswer: Codable, Equatable, Sendable {
         var turnaroundMin: Double
         var cruiseReferenceFt: Double
 
@@ -9145,10 +9567,10 @@ enum EngineContract {
         }
     }
 
-    struct PlanningFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct PlanningFiguresInput: Codable, Equatable, Sendable {
     }
 
-    struct PlanProfileAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PlanProfileAnswer: Codable, Equatable, Sendable {
         var points: [EngineContract.PlanProfileAnswerPointsItem]
         var marks: [EngineContract.PlanProfileAnswerMarksItem]
         var lengthNm: Double
@@ -9160,7 +9582,7 @@ enum EngineContract {
         }
     }
 
-    struct PlanProfileAnswerMarksItem: Codable, Equatable, Sendable {
+    nonisolated struct PlanProfileAnswerMarksItem: Codable, Equatable, Sendable {
         var kind: String
         var alongNm: Double
         var planFt: Double
@@ -9172,7 +9594,7 @@ enum EngineContract {
         }
     }
 
-    struct PlanProfileAnswerPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct PlanProfileAnswerPointsItem: Codable, Equatable, Sendable {
         var alongNm: Double
         var planFt: Double
 
@@ -9182,19 +9604,19 @@ enum EngineContract {
         }
     }
 
-    struct PlanProfileInput: Codable, Equatable, Sendable {
+    nonisolated struct PlanProfileInput: Codable, Equatable, Sendable {
         var rows: [EngineContract.NavLogRow]
     }
 
     /// A box on an approach plate's page, in its points from the bottom left.
-    struct PlatePageBox: Codable, Equatable, Sendable {
+    nonisolated struct PlatePageBox: Codable, Equatable, Sendable {
         var left: Double
         var bottom: Double
         var right: Double
         var top: Double
     }
 
-    struct PlatePagePointAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PlatePagePointAnswer: Codable, Equatable, Sendable {
         var x: Double
         var y: Double
         var rotationDeg: Double?
@@ -9206,7 +9628,7 @@ enum EngineContract {
         }
     }
 
-    struct PlatePagePointInput: Codable, Equatable, Sendable {
+    nonisolated struct PlatePagePointInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var trackDeg: Double?
@@ -9220,7 +9642,7 @@ enum EngineContract {
         }
     }
 
-    struct PlatePagePointInputGeoreference: Codable, Equatable, Sendable {
+    nonisolated struct PlatePagePointInputGeoreference: Codable, Equatable, Sendable {
         var lat0: Double
         var lon0: Double
         var lat1: Double
@@ -9244,12 +9666,62 @@ enum EngineContract {
         }
     }
 
-    struct PointKindInput: Codable, Equatable, Sendable {
+    nonisolated struct PlatesKeptAnswerItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        var offNm: Double?
+        var charts: [EngineContract.PlatesKeptAnswerItemChartsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case offNm = "off_nm"
+            case charts
+        }
+    }
+
+    /// A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+    nonisolated struct PlatesKeptAnswerItemChartsItem: Codable, Equatable, Sendable {
+        var kind: String
+    }
+
+    nonisolated struct PlatesKeptInput: Codable, Equatable, Sendable {
+        /// diversion_range_nm's range; null for none.
+        var rangeNm: Double?
+        var fields: [EngineContract.PlatesKeptInputFieldsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case rangeNm = "range_nm"
+            case fields
+        }
+    }
+
+    nonisolated struct PlatesKeptInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        /// How far the field is off the route, nm (a diversion's).
+        var offNm: Double?
+        var charts: [EngineContract.PlatesKeptInputFieldsItemChartsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case offNm = "off_nm"
+            case charts
+        }
+    }
+
+    /// A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+    nonisolated struct PlatesKeptInputFieldsItemChartsItem: Codable, Equatable, Sendable {
+        var kind: String
+    }
+
+    nonisolated struct PointKindInput: Codable, Equatable, Sendable {
         var text: String
     }
 
     /// A field near the pilot's home, as the host found it in its data.
-    struct PracticePlace: Codable, Equatable, Sendable {
+    nonisolated struct PracticePlace: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         /// From the pilot's home field.
@@ -9270,17 +9742,17 @@ enum EngineContract {
         }
     }
 
-    struct PracticePlaceApproachesItem: Codable, Equatable, Sendable {
+    nonisolated struct PracticePlaceApproachesItem: Codable, Equatable, Sendable {
         var name: String
         /// Has an electronic glidepath by its name: an ILS or a GLS.
         var precision: Bool
     }
 
-    struct PrecipDbzAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PrecipDbzAnswer: Codable, Equatable, Sendable {
         var dbz: [Double]
     }
 
-    struct PrecipDbzInput: Codable, Equatable, Sendable {
+    nonisolated struct PrecipDbzInput: Codable, Equatable, Sendable {
         var ratesMmH: [Double]
 
         enum CodingKeys: String, CodingKey {
@@ -9288,7 +9760,7 @@ enum EngineContract {
         }
     }
 
-    struct PrecipIntensityAnswer: Codable, Equatable, Sendable {
+    nonisolated struct PrecipIntensityAnswer: Codable, Equatable, Sendable {
         var word: String?
         var fallsAs: String?
 
@@ -9298,7 +9770,7 @@ enum EngineContract {
         }
     }
 
-    struct PrecipIntensityInput: Codable, Equatable, Sendable {
+    nonisolated struct PrecipIntensityInput: Codable, Equatable, Sendable {
         var dbz: Double
         var tempC: Double?
 
@@ -9308,7 +9780,7 @@ enum EngineContract {
         }
     }
 
-    struct PressureAltitudeFtInput: Codable, Equatable, Sendable {
+    nonisolated struct PressureAltitudeFtInput: Codable, Equatable, Sendable {
         var elevationFt: Double
         var altimeterInhg: Double
 
@@ -9318,7 +9790,7 @@ enum EngineContract {
         }
     }
 
-    struct ProcedureArcInput: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureArcInput: Codable, Equatable, Sendable {
         /// [lat, lon]
         var center: [Double]
         /// [lat, lon]
@@ -9329,7 +9801,7 @@ enum EngineContract {
     }
 
     /// A procedure as the planner draws it from the FAA's CIFP (/api/procedure's answer as it comes); only the members the engine reads.
-    struct ProcedureDrawing: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureDrawing: Codable, Equatable, Sendable {
         var airport: String?
         /// "approach", "arrival" or "departure".
         var kind: String?
@@ -9364,7 +9836,7 @@ enum EngineContract {
         }
     }
 
-    struct ProcedureDrawingFixesItem: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureDrawingFixesItem: Codable, Equatable, Sendable {
         var ident: String?
         var lat: Double
         var lon: Double
@@ -9385,20 +9857,20 @@ enum EngineContract {
         }
     }
 
-    struct ProcedureDrawingHoldsItem: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureDrawingHoldsItem: Codable, Equatable, Sendable {
         var fix: String?
         /// "hold" or "procedure turn".
         var kind: String?
         var missed: Bool?
     }
 
-    struct ProcedureDrawingLinesItem: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureDrawingLinesItem: Codable, Equatable, Sendable {
         /// "transition", "final", "missed", "common" or "runway".
         var role: String?
         var points: [[OpenAPIValueContainer]]?
     }
 
-    struct ProcedureHoldInput: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureHoldInput: Codable, Equatable, Sendable {
         /// [lat, lon]
         var fix: [Double]
         var inboundDeg: Double
@@ -9413,7 +9885,7 @@ enum EngineContract {
         }
     }
 
-    struct ProcedureHoldLegNmInput: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureHoldLegNmInput: Codable, Equatable, Sendable {
         var minutes: Double?
         var distanceNm: Double?
 
@@ -9423,7 +9895,7 @@ enum EngineContract {
         }
     }
 
-    struct ProcedureLegNmInput: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureLegNmInput: Codable, Equatable, Sendable {
         var path: String
         var distanceNm: Double?
         var altitudeFt: Double?
@@ -9437,7 +9909,26 @@ enum EngineContract {
         }
     }
 
-    struct ProcedurePathFiguresAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureMissedAnswer: Codable, Equatable, Sendable {
+        var suspendAt: Int?
+        var missed: [Int]
+
+        enum CodingKeys: String, CodingKey {
+            case suspendAt = "suspend_at"
+            case missed
+        }
+    }
+
+    nonisolated struct ProcedureMissedInput: Codable, Equatable, Sendable {
+        var legs: [EngineContract.ProcedureMissedInputLegsItem]
+    }
+
+    nonisolated struct ProcedureMissedInputLegsItem: Codable, Equatable, Sendable {
+        var path: String
+        var map: Bool?
+    }
+
+    nonisolated struct ProcedurePathFiguresAnswer: Codable, Equatable, Sendable {
         var holdTurnNm: Double
         var vectorsJoinNm: Double
         var vectorsInterceptDeg: Double
@@ -9449,10 +9940,10 @@ enum EngineContract {
         }
     }
 
-    struct ProcedurePathFiguresInput: Codable, Equatable, Sendable {
+    nonisolated struct ProcedurePathFiguresInput: Codable, Equatable, Sendable {
     }
 
-    struct ProcedureReversalInput: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureReversalInput: Codable, Equatable, Sendable {
         var turnDeg: Double
         var coded: Bool?
         var firstFix: Bool?
@@ -9464,37 +9955,43 @@ enum EngineContract {
         }
     }
 
-    struct ProceduresReadAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct ProceduresReadAnswerItem: Codable, Equatable, Sendable {
         var part: String
         var pick: EngineContract.ProceduresReadAnswerItemPick?
         var exact: Bool
     }
 
-    struct ProceduresReadAnswerItemPick: Codable, Equatable, Sendable {
+    nonisolated struct ProceduresReadAnswerItemPick: Codable, Equatable, Sendable {
         /// The airport.
         var ident: String
         /// The procedure's id.
         var id: String
         var transition: String?
         var direct: String?
+        /// An approach loaded, not yet activated: not in the route flown.
+        var loaded: Bool
+        /// Its missed approach unsuspended: flown on from the missed approach point (AIM 5-4-21).
+        var missed: Bool
     }
 
-    struct ProceduresReadInput: Codable, Equatable, Sendable {
+    nonisolated struct ProceduresReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct ProceduresWriteInput: Codable, Equatable, Sendable {
+    nonisolated struct ProceduresWriteInput: Codable, Equatable, Sendable {
         var picks: [EngineContract.ProceduresWriteInputPicksItem]
     }
 
-    struct ProceduresWriteInputPicksItem: Codable, Equatable, Sendable {
+    nonisolated struct ProceduresWriteInputPicksItem: Codable, Equatable, Sendable {
         var ident: String
         var id: String
         var transition: String?
         var direct: String?
+        var loaded: Bool?
+        var missed: Bool?
     }
 
-    struct ProcedureTurnInput: Codable, Equatable, Sendable {
+    nonisolated struct ProcedureTurnInput: Codable, Equatable, Sendable {
         /// [lat, lon]
         var fix: [Double]
         var inboundDeg: Double
@@ -9507,7 +10004,7 @@ enum EngineContract {
         }
     }
 
-    struct ProficiencyDue: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencyDue: Codable, Equatable, Sendable {
         var key: String
         /// "due:<key>", what a plan's words cite.
         var id: String
@@ -9537,7 +10034,7 @@ enum EngineContract {
         }
     }
 
-    struct ProficiencyPlanAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencyPlanAnswer: Codable, Equatable, Sendable {
         var today: String
         var due: [EngineContract.ProficiencyDue]
         /// The currencies lapsing within remind_days, in a sentence each.
@@ -9558,7 +10055,7 @@ enum EngineContract {
         }
     }
 
-    struct ProficiencyPlanAnswerEvidenceItem: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencyPlanAnswerEvidenceItem: Codable, Equatable, Sendable {
         /// "ev:1"..., newest first.
         var id: String
         var flownOn: String
@@ -9579,7 +10076,7 @@ enum EngineContract {
         }
     }
 
-    struct ProficiencyPlanAnswerRemindersItem: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencyPlanAnswerRemindersItem: Codable, Equatable, Sendable {
         var key: String
         var text: String
         var until: String?
@@ -9593,14 +10090,14 @@ enum EngineContract {
         }
     }
 
-    struct ProficiencyPlanAnswerWeakAreasItem: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencyPlanAnswerWeakAreasItem: Codable, Equatable, Sendable {
         var key: String
         var label: String
         var acs: [String]
         var evidence: [String]
     }
 
-    struct ProficiencyPlanInput: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencyPlanInput: Codable, Equatable, Sendable {
         /// YYYY-MM-DD.
         var today: String
         var entries: [EngineContract.LogbookEntry]
@@ -9633,14 +10130,14 @@ enum EngineContract {
         }
     }
 
-    struct ProficiencyPlanInputHeldItem: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencyPlanInputHeldItem: Codable, Equatable, Sendable {
         /// AC 61-65K's, as endorsement_kinds names it.
         var code: String
         /// YYYY-MM-DD.
         var on: String
     }
 
-    struct ProficiencySession: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencySession: Codable, Equatable, Sendable {
         /// "session:1"...
         var id: String
         /// The currency ("night_passengers", "ipc") or weak area ("unstable_approach") it answers.
@@ -9659,7 +10156,7 @@ enum EngineContract {
         var wings: EngineContract.ProficiencySessionWings?
     }
 
-    struct ProficiencySessionPlace: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencySessionPlace: Codable, Equatable, Sendable {
         var ident: String
         var name: String
         var distanceNm: Double
@@ -9674,7 +10171,7 @@ enum EngineContract {
         }
     }
 
-    struct ProficiencySessionWings: Codable, Equatable, Sendable {
+    nonisolated struct ProficiencySessionWings: Codable, Equatable, Sendable {
         /// The accident causal factor's area (AC 61-91K 6).
         var area: String
         /// The ACS task flown to.
@@ -9682,7 +10179,7 @@ enum EngineContract {
         var note: String
     }
 
-    struct ProfileClearanceAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ProfileClearanceAnswer: Codable, Equatable, Sendable {
         var redFromFt: Double
         var yellowFromFt: Double
         var highestFt: Double?
@@ -9708,7 +10205,7 @@ enum EngineContract {
         }
     }
 
-    struct ProfileClearanceInput: Codable, Equatable, Sendable {
+    nonisolated struct ProfileClearanceInput: Codable, Equatable, Sendable {
         var altitudeFt: Double
         var alongNm: [Double]
         var groundFt: [Double]
@@ -9724,7 +10221,7 @@ enum EngineContract {
         }
     }
 
-    struct ProfileClearanceInputObstaclesItem: Codable, Equatable, Sendable {
+    nonisolated struct ProfileClearanceInputObstaclesItem: Codable, Equatable, Sendable {
         var alongNm: Double
         var amslFt: Double
 
@@ -9734,7 +10231,7 @@ enum EngineContract {
         }
     }
 
-    struct ProfileClearanceInputPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct ProfileClearanceInputPointsItem: Codable, Equatable, Sendable {
         var ident: String
         var alongNm: Double
 
@@ -9744,18 +10241,96 @@ enum EngineContract {
         }
     }
 
-    struct ProhibitedCautionInput: Codable, Equatable, Sendable {
+    nonisolated struct ProfileCloudsAnswerItem: Codable, Equatable, Sendable {
+        var station: String
+        var alongNm: Double
+        var baseFt: Double
+        var issued: String?
+
+        enum CodingKeys: String, CodingKey {
+            case station
+            case alongNm = "along_nm"
+            case baseFt = "base_ft"
+            case issued
+        }
+    }
+
+    nonisolated struct ProfileCloudsInput: Codable, Equatable, Sendable {
+        /// The route's points, [lat, lon], its airports in order.
+        var path: [[Double]]
+        var stations: [EngineContract.ProfileCloudsInputStationsItem]?
+    }
+
+    nonisolated struct ProfileCloudsInputStationsItem: Codable, Equatable, Sendable {
+        var icaoId: String
+        var lat: Double
+        var lon: Double
+        var ceilingFt: Double?
+        var elevationFt: Double?
+        var issued: String?
+
+        enum CodingKeys: String, CodingKey {
+            case icaoId
+            case lat
+            case lon
+            case ceilingFt = "ceiling_ft"
+            case elevationFt = "elevation_ft"
+            case issued
+        }
+    }
+
+    nonisolated struct ProfileObstaclesAnswerItem: Codable, Equatable, Sendable {
+        var alongNm: Double
+        var amslFt: Double
+        var aglFt: Double?
+        var level: String?
+        var named: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case alongNm = "along_nm"
+            case amslFt = "amsl_ft"
+            case aglFt = "agl_ft"
+            case level
+            case named
+        }
+    }
+
+    nonisolated struct ProfileObstaclesInput: Codable, Equatable, Sendable {
+        var altitudeFt: Double?
+        var lengthNm: Double
+        var obstacles: [EngineContract.ProfileObstaclesInputObstaclesItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case lengthNm = "length_nm"
+            case obstacles
+        }
+    }
+
+    nonisolated struct ProfileObstaclesInputObstaclesItem: Codable, Equatable, Sendable {
+        var alongNm: Double
+        var amslFt: Double
+        var aglFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case alongNm = "along_nm"
+            case amslFt = "amsl_ft"
+            case aglFt = "agl_ft"
+        }
+    }
+
+    nonisolated struct ProhibitedCautionInput: Codable, Equatable, Sendable {
         var selection: [String: OpenAPIValueContainer]
     }
 
-    struct PublicUseInput: Codable, Equatable, Sendable {
+    nonisolated struct PublicUseInput: Codable, Equatable, Sendable {
         /// The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
         var `private`: Bool?
         /// A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
         var military: String?
     }
 
-    struct RadialOfAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RadialOfAnswer: Codable, Equatable, Sendable {
         /// Magnetic degrees from the station.
         var radial: Double
         /// Magnetic degrees to the station.
@@ -9769,29 +10344,29 @@ enum EngineContract {
         }
     }
 
-    struct RadialOfInput: Codable, Equatable, Sendable {
+    nonisolated struct RadialOfInput: Codable, Equatable, Sendable {
         var station: EngineContract.WordingStation
         var at: EngineContract.WordingLatLon
     }
 
-    struct RadioCallSignInput: Codable, Equatable, Sendable {
+    nonisolated struct RadioCallSignInput: Codable, Equatable, Sendable {
         var make: String
         var tail: String?
     }
 
-    struct RadioPlaceNameInput: Codable, Equatable, Sendable {
+    nonisolated struct RadioPlaceNameInput: Codable, Equatable, Sendable {
         var name: String?
         var ident: String
     }
 
-    struct RadioScriptAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptAnswerItem: Codable, Equatable, Sendable {
         var title: String
         var ident: String
         var kind: String
         var calls: [EngineContract.RadioScriptAnswerItemCallsItem]
     }
 
-    struct RadioScriptAnswerItemCallsItem: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptAnswerItemCallsItem: Codable, Equatable, Sendable {
         var to: String
         var mhz: Double?
         var words: String
@@ -9799,7 +10374,7 @@ enum EngineContract {
         var listen: Bool?
     }
 
-    struct RadioScriptInput: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptInput: Codable, Equatable, Sendable {
         /// As spoken (radio_call_sign).
         var callSign: String
         var airports: [EngineContract.RadioScriptInputAirportsItem]
@@ -9812,7 +10387,7 @@ enum EngineContract {
         }
     }
 
-    struct RadioScriptInputAirportsItem: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptInputAirportsItem: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var airspaceClass: String?
@@ -9834,7 +10409,7 @@ enum EngineContract {
         }
     }
 
-    struct RadioScriptInputAirportsItemFrequenciesItem: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptInputAirportsItemFrequenciesItem: Codable, Equatable, Sendable {
         var type: String?
         var description: String?
         var frequencyMhz: Double?
@@ -9847,7 +10422,7 @@ enum EngineContract {
     }
 
     /// The runway end the host picked (gonogo_runway_flown); null where none has a heading.
-    struct RadioScriptInputAirportsItemLanding: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptInputAirportsItemLanding: Codable, Equatable, Sendable {
         /// As painted, "27".
         var ident: String
         /// "left" or "right" (91.126(b)(1)).
@@ -9855,14 +10430,14 @@ enum EngineContract {
     }
 
     /// The runway end the host picked (gonogo_runway_flown); null where none has a heading.
-    struct RadioScriptInputAirportsItemTakeoff: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptInputAirportsItemTakeoff: Codable, Equatable, Sendable {
         /// As painted, "27".
         var ident: String
         /// "left" or "right" (91.126(b)(1)).
         var traffic: String?
     }
 
-    struct RadioScriptInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct RadioScriptInputLegsItem: Codable, Equatable, Sendable {
         var from: String
         var to: String
         var trueCourseDeg: Double
@@ -9876,7 +10451,7 @@ enum EngineContract {
         }
     }
 
-    struct ReadAtisAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ReadAtisAnswer: Codable, Equatable, Sendable {
         /// The letter.
         var information: String?
         var timeZ: String?
@@ -9907,12 +10482,12 @@ enum EngineContract {
         }
     }
 
-    struct ReadAtisAnswerRunways: Codable, Equatable, Sendable {
+    nonisolated struct ReadAtisAnswerRunways: Codable, Equatable, Sendable {
         var landing: [String]
         var departing: [String]
     }
 
-    struct ReadAtisAnswerSkyItem: Codable, Equatable, Sendable {
+    nonisolated struct ReadAtisAnswerSkyItem: Codable, Equatable, Sendable {
         var cover: String
         var baseFt: Int?
 
@@ -9922,7 +10497,7 @@ enum EngineContract {
         }
     }
 
-    struct ReadAtisAnswerWind: Codable, Equatable, Sendable {
+    nonisolated struct ReadAtisAnswerWind: Codable, Equatable, Sendable {
         var fromDeg: Int?
         var kt: Int?
         var gustKt: Int?
@@ -9936,33 +10511,33 @@ enum EngineContract {
         }
     }
 
-    struct ReadAtisInput: Codable, Equatable, Sendable {
+    nonisolated struct ReadAtisInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct ReadbackCheckAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ReadbackCheckAnswer: Codable, Equatable, Sendable {
         var items: [EngineContract.ReadbackCheckAnswerItemsItem]
         var words: String
     }
 
-    struct ReadbackCheckAnswerItemsItem: Codable, Equatable, Sendable {
+    nonisolated struct ReadbackCheckAnswerItemsItem: Codable, Equatable, Sendable {
         var item: String
         var cleared: String
         var said: String?
         var required: Bool
     }
 
-    struct ReadbackCheckInput: Codable, Equatable, Sendable {
+    nonisolated struct ReadbackCheckInput: Codable, Equatable, Sendable {
         var cleared: String
         var said: String
         var tail: String?
     }
 
-    struct ReadClearanceInput: Codable, Equatable, Sendable {
+    nonisolated struct ReadClearanceInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct ReadDatisAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ReadDatisAnswer: Codable, Equatable, Sendable {
         /// The letter.
         var information: String?
         var timeZ: String?
@@ -9993,12 +10568,12 @@ enum EngineContract {
         }
     }
 
-    struct ReadDatisAnswerRunways: Codable, Equatable, Sendable {
+    nonisolated struct ReadDatisAnswerRunways: Codable, Equatable, Sendable {
         var landing: [String]
         var departing: [String]
     }
 
-    struct ReadDatisAnswerSkyItem: Codable, Equatable, Sendable {
+    nonisolated struct ReadDatisAnswerSkyItem: Codable, Equatable, Sendable {
         var cover: String
         var baseFt: Int?
 
@@ -10008,7 +10583,7 @@ enum EngineContract {
         }
     }
 
-    struct ReadDatisAnswerWind: Codable, Equatable, Sendable {
+    nonisolated struct ReadDatisAnswerWind: Codable, Equatable, Sendable {
         var fromDeg: Int?
         var kt: Int?
         var gustKt: Int?
@@ -10022,16 +10597,16 @@ enum EngineContract {
         }
     }
 
-    struct ReadDatisInput: Codable, Equatable, Sendable {
+    nonisolated struct ReadDatisInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct ReadTrackInput: Codable, Equatable, Sendable {
+    nonisolated struct ReadTrackInput: Codable, Equatable, Sendable {
         var text: String
     }
 
     /// One thing ready_to_fly checked: whether it is fine, a line to act on and the fix done in place.
-    struct ReadyItem: Codable, Equatable, Sendable {
+    nonisolated struct ReadyItem: Codable, Equatable, Sendable {
         /// route, airplane, altitude, charts, packs, briefing, fields, notams, saved, location, battery or receiver.
         var key: String
         /// Never a stop: warn, never limit.
@@ -10045,7 +10620,7 @@ enum EngineContract {
         var fix: String?
     }
 
-    struct ReadyToFlyAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyAnswer: Codable, Equatable, Sendable {
         var ready: Bool
         var finding: String
         var line: String
@@ -10068,7 +10643,7 @@ enum EngineContract {
         }
     }
 
-    struct ReadyToFlyInput: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInput: Codable, Equatable, Sendable {
         /// Unix seconds, UTC: the engine has no clock.
         var now: Double
         /// The flight plan: a route, the airplane's name and the cruise altitude, null where not set.
@@ -10088,7 +10663,7 @@ enum EngineContract {
         var receiver: EngineContract.ReadyToFlyInputReceiver?
     }
 
-    struct ReadyToFlyInputBriefing: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputBriefing: Codable, Equatable, Sendable {
         var fetchedAt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -10097,7 +10672,7 @@ enum EngineContract {
     }
 
     /// The route's offline chart tiles: kept or not, the kept edition's effective date (YYYY-MM-DD) and the download's size. Null leaves the item out.
-    struct ReadyToFlyInputCharts: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputCharts: Codable, Equatable, Sendable {
         var kept: Bool?
         /// False where the platform cannot keep tiles (a browser with no service worker).
         var canKeep: Bool?
@@ -10113,7 +10688,7 @@ enum EngineContract {
     }
 
     /// What the platform tells: a member null or missing leaves its item out.
-    struct ReadyToFlyInputDevice: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputDevice: Codable, Equatable, Sendable {
         var batteryPct: Double?
         var charging: Bool?
         var location: String?
@@ -10127,7 +10702,7 @@ enum EngineContract {
         }
     }
 
-    struct ReadyToFlyInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         var role: String?
         var metarObserved: Double?
@@ -10142,7 +10717,7 @@ enum EngineContract {
     }
 
     /// What Keep for the Air holds for the route beside its charts. Null leaves the item out.
-    struct ReadyToFlyInputKept: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputKept: Codable, Equatable, Sendable {
         /// The kinds kept on the device for this route.
         var onBoard: [String]?
         /// The kinds the route has and the device does not yet.
@@ -10157,16 +10732,22 @@ enum EngineContract {
         }
     }
 
-    struct ReadyToFlyInputNotams: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputNotams: Codable, Equatable, Sendable {
         var fetchedAt: Double?
+        /// Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+        var fullSet: Bool?
+        /// The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+        var heardSince: String?
 
         enum CodingKeys: String, CodingKey {
             case fetchedAt = "fetched_at"
+            case fullSet = "full_set"
+            case heardSince = "heard_since"
         }
     }
 
     /// The cycle packs (airports, airspace, procedures): the AIRAC edition held (YYYY-MM-DD), null where none is. Null leaves the item out.
-    struct ReadyToFlyInputPacks: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputPacks: Codable, Equatable, Sendable {
         var edition: String?
         var canUpdate: Bool?
 
@@ -10177,7 +10758,7 @@ enum EngineContract {
     }
 
     /// The flight plan: a route, the airplane's name and the cruise altitude, null where not set.
-    struct ReadyToFlyInputPlan: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputPlan: Codable, Equatable, Sendable {
         var route: Bool?
         var airplane: String?
         var altitudeFt: Double?
@@ -10189,13 +10770,13 @@ enum EngineContract {
         }
     }
 
-    struct ReadyToFlyInputReceiver: Codable, Equatable, Sendable {
+    nonisolated struct ReadyToFlyInputReceiver: Codable, Equatable, Sendable {
         var used: Bool?
         var connected: Bool?
     }
 
     /// A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.
-    struct ReceiverBlock: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverBlock: Codable, Equatable, Sendable {
         var id: Double
         var regional: Bool
         var north: Double
@@ -10208,26 +10789,62 @@ enum EngineContract {
         var at: Double
     }
 
-    struct ReceiverNexradAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverDeltaAnswer: Codable, Equatable, Sendable {
+        var receiver: EngineContract.ReceiverState
+        var ownship: EngineContract.ReceiverOwnship?
+        var targets: [EngineContract.ReceiverTarget]
+        /// How many FIS-B texts the picture holds.
+        var texts: Int
+        /// How many NEXRAD blocks the picture holds.
+        var blocks: Int
+        /// A new count each read that changed the traffic to merge: the targets, or whether a receiver has been heard at all.
+        var trafficRevision: Int
+        /// A new count each read that changed the FIS-B texts (one sent, or one dropped as no longer heard).
+        var textsRevision: Int
+        /// A new count each read that changed the NEXRAD blocks.
+        var nexradRevision: Int
+
+        enum CodingKeys: String, CodingKey {
+            case receiver
+            case ownship
+            case targets
+            case texts
+            case blocks
+            case trafficRevision = "traffic_revision"
+            case textsRevision = "texts_revision"
+            case nexradRevision = "nexrad_revision"
+        }
+    }
+
+    nonisolated struct ReceiverDeltaInput: Codable, Equatable, Sendable {
+        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+        var data: String?
+        /// Now, Unix s: when the bytes came.
+        var at: Double
+        /// The picture to hold for the read, or null for an empty one.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    nonisolated struct ReceiverNexradAnswer: Codable, Equatable, Sendable {
         var levels: [EngineContract.ReceiverNexradLevel]
         var time: String?
         var at: Double?
     }
 
-    struct ReceiverNexradInput: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverNexradInput: Codable, Equatable, Sendable {
         /// The last answer, or null at first.
         var picture: EngineContract.ReceiverPicture?
     }
 
     /// One NEXRAD level's rectangles, [south, west, north, east] degrees each.
-    struct ReceiverNexradLevel: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverNexradLevel: Codable, Equatable, Sendable {
         /// 1 to 7, DO-358B's levels (0 is none).
         var level: Double
         var rects: [[Double]]
     }
 
     /// Own ship as the receiver's GPS gives it.
-    struct ReceiverOwnship: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverOwnship: Codable, Equatable, Sendable {
         /// The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
         var hex: String
         /// The 24-bit participant address (GDL 90 3.5.1.3).
@@ -10264,6 +10881,8 @@ enum EngineContract {
         var geometricFt: Double?
         /// Its Vertical Figure of Merit, m.
         var vfomM: Double?
+        /// The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+        var verticalWarning: Bool
 
         enum CodingKeys: String, CodingKey {
             case hex
@@ -10289,19 +10908,120 @@ enum EngineContract {
             case at
             case geometricFt = "geometric_ft"
             case vfomM = "vfom_m"
+            case verticalWarning = "vertical_warning"
         }
     }
 
     /// What a receiver has said so far: hand it back with the next bytes.
-    struct ReceiverPicture: Codable, Equatable, Sendable {
-        var receiver: EngineContract.ReceiverPictureReceiver
+    nonisolated struct ReceiverPicture: Codable, Equatable, Sendable {
+        var receiver: EngineContract.ReceiverState
         var ownship: EngineContract.ReceiverOwnship?
         var targets: [EngineContract.ReceiverTarget]
         var texts: [EngineContract.ReceiverText]
         var nexrad: [EngineContract.ReceiverBlock]
     }
 
-    struct ReceiverPictureReceiver: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverPositionAnswer: Codable, Equatable, Sendable {
+        /// Whose fix own ship is.
+        var source: String
+        /// The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
+        var receiver: String
+        /// The receiver's fix, where it is the source.
+        var fix: EngineContract.ReceiverPositionAnswerFix?
+    }
+
+    nonisolated struct ReceiverPositionAnswerFix: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        /// GPS height MSL, ft, where the receiver gives MSL.
+        var altitudeFt: Double?
+        /// GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
+        var ellipsoidFt: Double?
+        /// Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+        var pressureFt: Double?
+        /// The pressure altitude as a flight level, at and above 18,000 ft only.
+        var flightLevel: Double?
+        /// True track, degrees, where the report gives one.
+        var trackDeg: Double?
+        var groundspeedKt: Double?
+        var verticalFpm: Double?
+        /// The NACp's bound on the 95% horizontal error, m.
+        var accuracyM: Double
+        var airborne: Bool
+        /// When the report was heard, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case altitudeFt = "altitude_ft"
+            case ellipsoidFt = "ellipsoid_ft"
+            case pressureFt = "pressure_ft"
+            case flightLevel = "flight_level"
+            case trackDeg = "track_deg"
+            case groundspeedKt = "groundspeed_kt"
+            case verticalFpm = "vertical_fpm"
+            case accuracyM = "accuracy_m"
+            case airborne
+            case at
+        }
+    }
+
+    nonisolated struct ReceiverPositionInput: Codable, Equatable, Sendable {
+        /// The picture's own ship.
+        var ownship: EngineContract.ReceiverOwnship?
+        /// The picture's receiver.
+        var receiver: EngineContract.ReceiverState?
+        /// The device's last fix, or null where it has none.
+        var device: EngineContract.ReceiverPositionInputDevice?
+        /// The source the last answer gave (receiver, device or none).
+        var was: String?
+        /// Now, Unix s.
+        var at: Double
+    }
+
+    nonisolated struct ReceiverPositionInputDevice: Codable, Equatable, Sendable {
+        /// The device's horizontal accuracy, m (a 68% radius).
+        var accuracyM: Double
+        /// When the device's fix was taken, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case accuracyM = "accuracy_m"
+            case at
+        }
+    }
+
+    nonisolated struct ReceiverReadInput: Codable, Equatable, Sendable {
+        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+        var data: String?
+        /// Now, Unix s: when the bytes came.
+        var at: Double
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
+    nonisolated struct ReceiverReport: Codable, Equatable, Sendable {
+        var kind: String
+        var text: String
+        var time: String
+        var at: Double
+    }
+
+    nonisolated struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
+        var metar: EngineContract.ReceiverReport?
+        var taf: EngineContract.ReceiverReport?
+    }
+
+    nonisolated struct ReceiverReportsInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+        var ident: String
+    }
+
+    /// The receiver's own state, as its Heartbeat and ID message say.
+    nonisolated struct ReceiverState: Codable, Equatable, Sendable {
         /// The name its ID message gives (Stratux, Sentry, SkyEcho).
         var name: String?
         var longName: String?
@@ -10344,36 +11064,8 @@ enum EngineContract {
         }
     }
 
-    struct ReceiverReadInput: Codable, Equatable, Sendable {
-        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
-        var data: String?
-        /// Now, Unix s: when the bytes came.
-        var at: Double
-        /// The last answer, or null at first.
-        var picture: EngineContract.ReceiverPicture?
-    }
-
-    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
-    struct ReceiverReport: Codable, Equatable, Sendable {
-        var kind: String
-        var text: String
-        var time: String
-        var at: Double
-    }
-
-    struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
-        var metar: EngineContract.ReceiverReport?
-        var taf: EngineContract.ReceiverReport?
-    }
-
-    struct ReceiverReportsInput: Codable, Equatable, Sendable {
-        /// The last answer, or null at first.
-        var picture: EngineContract.ReceiverPicture?
-        var ident: String
-    }
-
     /// An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
-    struct ReceiverTarget: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverTarget: Codable, Equatable, Sendable {
         /// The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
         var hex: String
         /// The 24-bit participant address (GDL 90 3.5.1.3).
@@ -10433,7 +11125,7 @@ enum EngineContract {
     }
 
     /// A FIS-B text product as sent (AIM 4-5-9): a METAR, TAF, winds aloft or PIREP (product 413), or a NOTAM, TFR, AIRMET, SIGMET, SUA status, G-AIRMET or CWA text record.
-    struct ReceiverText: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverText: Codable, Equatable, Sendable {
         /// The FIS-B product ID (DO-358B).
         var product: Double
         /// METAR, SPECI, TAF, WINDS, PIREP ... or NOTAM, AIRMET, SIGMET, SUA, G-AIRMET, CWA, NOTAM-TRA, NOTAM-TMOA.
@@ -10450,7 +11142,7 @@ enum EngineContract {
         var at: Double
     }
 
-    struct ReceiverTrafficInput: Codable, Equatable, Sendable {
+    nonisolated struct ReceiverTrafficInput: Codable, Equatable, Sendable {
         /// The last answer, or null at first.
         var picture: EngineContract.ReceiverPicture?
         var internet: [EngineContract.HeardPlane]?
@@ -10468,7 +11160,7 @@ enum EngineContract {
     }
 
     /// The field's last wind, for a calm one; both members needed where it is not empty.
-    struct RecentWindIn: Codable, Equatable, Sendable {
+    nonisolated struct RecentWindIn: Codable, Equatable, Sendable {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
 
@@ -10478,12 +11170,12 @@ enum EngineContract {
         }
     }
 
-    struct RegionOfInput: Codable, Equatable, Sendable {
+    nonisolated struct RegionOfInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct RegionsAheadInput: Codable, Equatable, Sendable {
+    nonisolated struct RegionsAheadInput: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         /// The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
@@ -10505,23 +11197,23 @@ enum EngineContract {
         }
     }
 
-    struct RegisteredProfileInput: Codable, Equatable, Sendable {
+    nonisolated struct RegisteredProfileInput: Codable, Equatable, Sendable {
         var manufacturer: String?
         var model: String?
         var year: Double?
     }
 
-    struct RemarksReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RemarksReadAnswer: Codable, Equatable, Sendable {
         /// Each remark in words, in their order: "Customs clearance 2 hours prior permission required - 847-894-7292. Transient utilize FBO after clearing customs. FBO CBP user fee."
         var lines: [String]
     }
 
-    struct RemarksReadInput: Codable, Equatable, Sendable {
+    nonisolated struct RemarksReadInput: Codable, Equatable, Sendable {
         /// The remarks as sent: "CUST CLNC 2 HR PPR - 847-894-7292. TSNT UTILIZE FBO AFT CLR CUST. FBO CBP USER FEE."
         var remarks: [String]
     }
 
-    struct ReplayTrackAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ReplayTrackAnswer: Codable, Equatable, Sendable {
         var points: [EngineContract.ReplayTrackAnswerPointsItem]
         var gaps: [EngineContract.ReplayTrackAnswerGapsItem]
         var lengthNm: Double
@@ -10533,12 +11225,12 @@ enum EngineContract {
         }
     }
 
-    struct ReplayTrackAnswerGapsItem: Codable, Equatable, Sendable {
+    nonisolated struct ReplayTrackAnswerGapsItem: Codable, Equatable, Sendable {
         var from: Double
         var to: Double
     }
 
-    struct ReplayTrackAnswerPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct ReplayTrackAnswerPointsItem: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -10564,7 +11256,7 @@ enum EngineContract {
         }
     }
 
-    struct ReplayTrackInput: Codable, Equatable, Sendable {
+    nonisolated struct ReplayTrackInput: Codable, Equatable, Sendable {
         var points: [EngineContract.ReplayTrackInputPointsItem]
         var gapS: Double?
 
@@ -10574,7 +11266,7 @@ enum EngineContract {
         }
     }
 
-    struct ReplayTrackInputPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct ReplayTrackInputPointsItem: Codable, Equatable, Sendable {
         /// s since 1970
         var t: Double
         var lat: Double
@@ -10596,7 +11288,7 @@ enum EngineContract {
         }
     }
 
-    struct ReportNearAnswer: Codable, Equatable, Sendable {
+    nonisolated struct ReportNearAnswer: Codable, Equatable, Sendable {
         var near: Bool
         /// How near is near, statute miles.
         var withinSm: Double
@@ -10607,7 +11299,7 @@ enum EngineContract {
         }
     }
 
-    struct ReportNearInput: Codable, Equatable, Sendable {
+    nonisolated struct ReportNearInput: Codable, Equatable, Sendable {
         /// The station's distance from the field, nm.
         var distanceNm: Double
 
@@ -10616,13 +11308,96 @@ enum EngineContract {
         }
     }
 
-    struct ReserveMinInput: Codable, Equatable, Sendable {
+    nonisolated struct ReserveMinInput: Codable, Equatable, Sendable {
         var ifr: Bool?
         var night: Bool?
     }
 
+    nonisolated struct RouteAdizAnswer: Codable, Equatable, Sendable {
+        /// Each point's zone, null outside every one.
+        var points: [String?]
+        /// From each point to the next.
+        var legs: [[String]]
+        /// Every zone the route meets, once each in order.
+        var zones: [String]
+        /// The Brief's line for the route, once; null where it meets no ADIZ.
+        var brief: EngineContract.RouteAdizAnswerBrief?
+    }
+
+    nonisolated struct RouteAdizAnswerBrief: Codable, Equatable, Sendable {
+        /// The finding alone, "Through the Alaska ADIZ".
+        var lead: String
+        /// The finding and what part 99 asks, in one line.
+        var line: String
+        /// What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+        var action: String
+        var why: String
+        var cite: String
+    }
+
+    nonisolated struct RouteAdizInput: Codable, Equatable, Sendable {
+        /// The route's points in order, as the nav log's rows: a leg from each to the next.
+        var points: [EngineContract.RouteAdizInputPointsItem]
+    }
+
+    nonisolated struct RouteAdizInputPointsItem: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+    }
+
+    nonisolated struct RouteFileReadInput: Codable, Equatable, Sendable {
+        /// The file's text.
+        var text: String
+    }
+
+    nonisolated struct RouteHeadwindAnswer: Codable, Equatable, Sendable {
+        /// The headwind on that leg's course, kt; negative a tailwind.
+        var headwindKt: Double
+        var from: String
+        var to: String
+        var windDirTrueDeg: Double
+        var windSpeedKt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case headwindKt = "headwind_kt"
+            case from
+            case to
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+        }
+    }
+
+    nonisolated struct RouteHeadwindInput: Codable, Equatable, Sendable {
+        /// The nav log's legs in order, as the planner gives them.
+        var legs: [EngineContract.RouteHeadwindInputLegsItem]
+    }
+
+    nonisolated struct RouteHeadwindInputLegsItem: Codable, Equatable, Sendable {
+        var from: String?
+        var to: String?
+        var trueCourseDeg: Double?
+        var wind: EngineContract.RouteHeadwindInputLegsItemWind?
+
+        enum CodingKeys: String, CodingKey {
+            case from
+            case to
+            case trueCourseDeg = "true_course_deg"
+            case wind
+        }
+    }
+
+    nonisolated struct RouteHeadwindInputLegsItemWind: Codable, Equatable, Sendable {
+        var windDirTrueDeg: Double
+        var windSpeedKt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+        }
+    }
+
     /// A pilot's hold as the route's address writes it ("VPBNG/090/30:270:R:1M:2T"): legs by minutes or by nm, length by turns or by minutes, the other of each pair null.
-    struct RouteHold: Codable, Equatable, Sendable {
+    nonisolated struct RouteHold: Codable, Equatable, Sendable {
         /// The point held at: an airport, a fix, or the pilot's own point off one.
         var fix: String
         /// The inbound course to the fix, magnetic degrees, 0 to 359.
@@ -10650,7 +11425,7 @@ enum EngineContract {
     }
 
     /// A hold as the engine takes one: exactly one of leg_min and leg_nm, and (to write it) exactly one of whole turns and minutes.
-    struct RouteHoldIn: Codable, Equatable, Sendable {
+    nonisolated struct RouteHoldIn: Codable, Equatable, Sendable {
         var fix: String?
         /// Magnetic degrees.
         var inbound: Double?
@@ -10671,8 +11446,53 @@ enum EngineContract {
         }
     }
 
+    nonisolated struct RouteJurisdictionAnswer: Codable, Equatable, Sendable {
+        /// Each point's, in order.
+        var points: [EngineContract.RouteJurisdictionAnswerPointsItem]
+        /// From each point to the next.
+        var legs: [EngineContract.RouteJurisdictionAnswerLegsItem]
+        /// Every country other than the United States the route meets, once each in order.
+        var outside: [String]
+        /// The Brief's line for the route, once; null where it is all in the United States.
+        var brief: EngineContract.RouteJurisdictionAnswerBrief?
+    }
+
+    nonisolated struct RouteJurisdictionAnswerBrief: Codable, Equatable, Sendable {
+        /// The finding alone.
+        var lead: String
+        /// The finding and what to do, in one line.
+        var line: String
+        var action: String
+        var why: String
+        var cite: String
+    }
+
+    nonisolated struct RouteJurisdictionAnswerLegsItem: Codable, Equatable, Sendable {
+        /// The countries other than the United States met along the leg, its ends included, in the order met.
+        var codes: [String]
+        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        var caution: String?
+    }
+
+    nonisolated struct RouteJurisdictionAnswerPointsItem: Codable, Equatable, Sendable {
+        /// US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+        var code: String
+        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        var caution: String?
+    }
+
+    nonisolated struct RouteJurisdictionInput: Codable, Equatable, Sendable {
+        /// The route's points in order, as the nav log's rows: a leg from each to the next.
+        var points: [EngineContract.RouteJurisdictionInputPointsItem]
+    }
+
+    nonisolated struct RouteJurisdictionInputPointsItem: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+    }
+
     /// One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets. With no airplane (a null profile) its minutes in the air and its fuel are null, and it has no fuel stops.
-    struct RouteOption: Codable, Equatable, Sendable {
+    nonisolated struct RouteOption: Codable, Equatable, Sendable {
         var kind: String
         var kinds: [String]
         var title: String
@@ -10719,7 +11539,7 @@ enum EngineContract {
     }
 
     /// A SIGMET (valid_from, valid_to) or a G-AIRMET (valid, its snapshot), its area as [lat, lon] points, as the AWC sends it.
-    struct RouteOptionsAdvisory: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsAdvisory: Codable, Equatable, Sendable {
         var hazard: String?
         var coords: [[Double]]
         var altitudeLowFt: Double?
@@ -10740,7 +11560,7 @@ enum EngineContract {
     }
 
     /// What a way meets: its weather as runs by the minutes they last, the mean wind along it (positive a tailwind), its floor (the highest ground with 14 CFR 91.119's 1,000 ft) and its miles out of glide of dry land.
-    struct RouteOptionsAlong: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsAlong: Codable, Equatable, Sendable {
         var bands: [EngineContract.RouteOptionsBand]
         var tailKt: Double
         var floorFt: Int
@@ -10754,7 +11574,7 @@ enum EngineContract {
         }
     }
 
-    struct RouteOptionsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsAnswer: Codable, Equatable, Sendable {
         var options: [EngineContract.RouteOption]
         var own: EngineContract.RouteOption
         var filed: EngineContract.RouteOption?
@@ -10787,14 +11607,14 @@ enum EngineContract {
         }
     }
 
-    struct RouteOptionsAnswerFoodUnreadItem: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsAnswerFoodUnreadItem: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
     }
 
     /// A special-use area (type P, R, MOA, W, A ...) or a TFR in force (notam_id, title): its rings of [lat, lon], an odd number of them holding a point inside.
-    struct RouteOptionsArea: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsArea: Codable, Equatable, Sendable {
         var type: String?
         var name: String?
         var notamId: String?
@@ -10810,19 +11630,19 @@ enum EngineContract {
         }
     }
 
-    struct RouteOptionsBand: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsBand: Codable, Equatable, Sendable {
         var kind: String
         var min: Double
     }
 
-    struct RouteOptionsEnd: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsEnd: Codable, Equatable, Sendable {
         var ident: String?
         var lat: Double
         var lon: Double
     }
 
     /// A public field selling 100LL (NASR APT_BASE), its longest open paved runway and whether there is somewhere to eat (null: not read yet).
-    struct RouteOptionsField: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsField: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var lat: Double
@@ -10841,7 +11661,7 @@ enum EngineContract {
     }
 
     /// A fix as the planner reads it (wingtip.fixes): a navaid with its own magnetic variation (east positive), a VFR waypoint or any other.
-    struct RouteOptionsFix: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsFix: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
@@ -10861,7 +11681,7 @@ enum EngineContract {
         }
     }
 
-    struct RouteOptionsFrameAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsFrameAnswer: Codable, Equatable, Sendable {
         var lat0: Double
         var lon0: Double
         var rows: Int
@@ -10898,13 +11718,13 @@ enum EngineContract {
         }
     }
 
-    struct RouteOptionsHazard: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsHazard: Codable, Equatable, Sendable {
         /// What it is: prohibited, tfr, storm, terrain, sigmet, weather, marginal or fuel; or a special-use area a way is flown through and told of (AIM 3-4): restricted, moa, warning or alert.
         var kind: String
         var name: String
     }
 
-    struct RouteOptionsInput: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsInput: Codable, Equatable, Sendable {
         var dep: EngineContract.RouteOptionsEnd
         var dest: EngineContract.RouteOptionsEnd
         /// The airplane; missing or null for none picked: the ways are then costed in still air, with no minutes, fuel or fuel stops.
@@ -10964,18 +11784,18 @@ enum EngineContract {
     }
 
     /// The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.
-    struct RouteOptionsInputClassB: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsInputClassB: Codable, Equatable, Sendable {
         var points: [[Double]]
         var idents: [String]
         var landed: [Bool]?
     }
 
-    struct RouteOptionsInputFiled: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsInputFiled: Codable, Equatable, Sendable {
         var points: [[Double]]
         var idents: [String]
     }
 
-    struct RouteOptionsProfile: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsProfile: Codable, Equatable, Sendable {
         var cruiseTasKt: Double
         var fuelBurnGph: Double
         var usableFuelGal: Double?
@@ -10992,7 +11812,7 @@ enum EngineContract {
     }
 
     /// A field's weather: a TAF (its worst over the flight, with the weather of every group then) or a METAR.
-    struct RouteOptionsReport: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsReport: Codable, Equatable, Sendable {
         var ident: String
         var lat: Double
         var lon: Double
@@ -11013,13 +11833,13 @@ enum EngineContract {
     }
 
     /// An FD station and its wind [from true, kt] at each of the frame's altitudes_ft, null where it gives none.
-    struct RouteOptionsStation: Codable, Equatable, Sendable {
+    nonisolated struct RouteOptionsStation: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var winds: [[Double]?]
     }
 
-    struct RoutePositionAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RoutePositionAnswer: Codable, Equatable, Sendable {
         var alongNm: Double
         var totalNm: Double
         var leftNm: Double
@@ -11041,19 +11861,19 @@ enum EngineContract {
         }
     }
 
-    struct RoutePositionInput: Codable, Equatable, Sendable {
+    nonisolated struct RoutePositionInput: Codable, Equatable, Sendable {
         var at: EngineContract.RoutePositionInputAt
         var line: [[Double]]?
         var points: [[Double]?]?
         var legs: [EngineContract.RoutePositionInputLegsItem]?
     }
 
-    struct RoutePositionInputAt: Codable, Equatable, Sendable {
+    nonisolated struct RoutePositionInputAt: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct RoutePositionInputLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct RoutePositionInputLegsItem: Codable, Equatable, Sendable {
         var distanceNm: Double
         var fuelGal: Double?
 
@@ -11063,7 +11883,18 @@ enum EngineContract {
         }
     }
 
-    struct RouteReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RouteProceduresAnswerItem: Codable, Equatable, Sendable {
+        var name: String
+        var before: String?
+        var after: String?
+    }
+
+    nonisolated struct RouteProceduresInput: Codable, Equatable, Sendable {
+        /// The route's words in order, upper case, as route_read gives its points.
+        var words: [String]
+    }
+
+    nonisolated struct RouteReadAnswer: Codable, Equatable, Sendable {
         var points: [String]
         /// The cruise's altitude, feet MSL; null where none was given or it is VFR's.
         var cruiseFt: Double?
@@ -11079,23 +11910,23 @@ enum EngineContract {
         }
     }
 
-    struct RouteReadAnswerChangesItem: Codable, Equatable, Sendable {
+    nonisolated struct RouteReadAnswerChangesItem: Codable, Equatable, Sendable {
         var at: String
         var ft: Double
     }
 
-    struct RouteReadInput: Codable, Equatable, Sendable {
+    nonisolated struct RouteReadInput: Codable, Equatable, Sendable {
         /// The route as typed or pasted: "KPWK DCT OBK V100 KLAS".
         var text: String
     }
 
-    struct RouteWayWarningInput: Codable, Equatable, Sendable {
+    nonisolated struct RouteWayWarningInput: Codable, Equatable, Sendable {
         /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
         var kinds: [String]
     }
 
     /// A runway as the planner sends one.
-    struct Runway: Codable, Equatable, Sendable {
+    nonisolated struct Runway: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var closed: Bool?
         var surface: String?
@@ -11112,11 +11943,11 @@ enum EngineContract {
         }
     }
 
-    struct RunwayCalmInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayCalmInput: Codable, Equatable, Sendable {
         var wind: EngineContract.RunwayCalmInputWind
     }
 
-    struct RunwayCalmInputWind: Codable, Equatable, Sendable {
+    nonisolated struct RunwayCalmInputWind: Codable, Equatable, Sendable {
         var end: String?
         var headwindKt: Double?
         var crosswindKt: Double
@@ -11132,19 +11963,19 @@ enum EngineContract {
         }
     }
 
-    struct RunwayClosureMarksAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RunwayClosureMarksAnswer: Codable, Equatable, Sendable {
         /// One for each runway asked, in its order.
         var runways: [EngineContract.RunwayClosureMarksAnswerRunwaysItem]
     }
 
-    struct RunwayClosureMarksAnswerRunwaysItem: Codable, Equatable, Sendable {
+    nonisolated struct RunwayClosureMarksAnswerRunwaysItem: Codable, Equatable, Sendable {
         /// The parts closed, each from and to as fractions of the way from its first end; [[0, 1]] closed end to end; none open.
         var closed: [[Double]]
         /// Each X's centre on the centre line, as a fraction of the way from its first end.
         var marks: [Double]
     }
 
-    struct RunwayClosureMarksInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayClosureMarksInput: Codable, Equatable, Sendable {
         /// Every runway drawn, in the sketch's order.
         var runways: [EngineContract.RunwayClosureMarksInputRunwaysItem]
         /// An X's half size as drawn, in the runways' feet.
@@ -11156,7 +11987,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayClosureMarksInputRunwaysItem: Codable, Equatable, Sendable {
+    nonisolated struct RunwayClosureMarksInputRunwaysItem: Codable, Equatable, Sendable {
         /// Its ends' designations as the card writes them, the first end first ("02", "20").
         var ends: [String]
         /// Its first end, feet east and north of a point of the field.
@@ -11180,11 +12011,11 @@ enum EngineContract {
         }
     }
 
-    struct RunwayCrosswindInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayCrosswindInput: Codable, Equatable, Sendable {
         var wind: EngineContract.RunwayCrosswindInputWind
     }
 
-    struct RunwayCrosswindInputWind: Codable, Equatable, Sendable {
+    nonisolated struct RunwayCrosswindInputWind: Codable, Equatable, Sendable {
         var end: String?
         var headwindKt: Double?
         var crosswindKt: Double
@@ -11200,7 +12031,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndFitAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndFitAnswer: Codable, Equatable, Sendable {
         var crosswindKt: Double
         var crosswindOver: Bool
         var neededFt: Double?
@@ -11225,7 +12056,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndFitInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndFitInput: Codable, Equatable, Sendable {
         var aircraft: EngineContract.RunwayEndFitInputAircraft?
         var runway: EngineContract.Runway
         var end: EngineContract.RunwayEndFitInputEnd?
@@ -11252,13 +12083,13 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndFitInputAircraft: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndFitInputAircraft: Codable, Equatable, Sendable {
         var takeoff: EngineContract.ShortFieldTable?
         var landing: EngineContract.ShortFieldTable?
         var crosswind: EngineContract.RunwayEndFitInputAircraftCrosswind?
     }
 
-    struct RunwayEndFitInputAircraftCrosswind: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndFitInputAircraftCrosswind: Codable, Equatable, Sendable {
         var demonstratedKt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -11266,7 +12097,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndFitInputEnd: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndFitInputEnd: Codable, Equatable, Sendable {
         /// The end's ident: a landing reads that end's displaced threshold and LDA from the runway's ends where the end does not send its own.
         var ident: String?
         var headingTrueDeg: Double?
@@ -11283,7 +12114,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndFitInputWind: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndFitInputWind: Codable, Equatable, Sendable {
         var dirTrueDeg: Double?
         var speedKt: Double?
         var gustKt: Double?
@@ -11295,7 +12126,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndHeadingInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndHeadingInput: Codable, Equatable, Sendable {
         var ident: String?
         var headingTrueDeg: Double?
         /// Degrees, east positive.
@@ -11308,11 +12139,11 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndKeyInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndKeyInput: Codable, Equatable, Sendable {
         var ident: String?
     }
 
-    struct RunwayEndsTrafficAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndsTrafficAnswerItem: Codable, Equatable, Sendable {
         var ident: String?
         var headingTrueDeg: Double?
         var traffic: String
@@ -11324,7 +12155,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayEndsTrafficInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayEndsTrafficInput: Codable, Equatable, Sendable {
         var endHeadings: [[OpenAPIValueContainer]]??
         var variationDeg: Double
         /// Ends' keys flown with right traffic.
@@ -11337,16 +12168,132 @@ enum EngineContract {
         }
     }
 
-    struct RunwayHardSurfaceAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RunwayHardSurfaceAnswer: Codable, Equatable, Sendable {
         var hard: Bool
     }
 
-    struct RunwayHardSurfaceInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayHardSurfaceInput: Codable, Equatable, Sendable {
         /// NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
         var surface: String?
     }
 
-    struct RunwayRunwayEndsItem: Codable, Equatable, Sendable {
+    nonisolated struct RunwayProximityAnswer: Codable, Equatable, Sendable {
+        var state: String
+        /// The runway as its sign reads, '9-27'.
+        var runway: String?
+        /// The end whose runway it is, as painted ('27'): rolled along on it, or landed on when lined up.
+        var end: String?
+        var closed: Bool
+        /// To the assumed holding position, ft; 0 at or past it.
+        var holdShortFt: Int?
+        /// To the threshold ahead when lined up, ft.
+        var thresholdFt: Int?
+        var hotSpot: EngineContract.RunwayProximityAnswerHotSpot?
+        /// The line shown: 'Approaching runway 9-27'.
+        var shown: String?
+        /// The line under it: 'Hold short line in about 150 ft'.
+        var detail: String?
+        /// What is said: 'Approaching runway niner, two seven'.
+        var spoken: String?
+        /// Changes when what is said changes, never with a distance: speak when it changes.
+        var key: String
+
+        enum CodingKeys: String, CodingKey {
+            case state
+            case runway
+            case end
+            case closed
+            case holdShortFt = "hold_short_ft"
+            case thresholdFt = "threshold_ft"
+            case hotSpot = "hot_spot"
+            case shown
+            case detail
+            case spoken
+            case key
+        }
+    }
+
+    nonisolated struct RunwayProximityAnswerHotSpot: Codable, Equatable, Sendable {
+        var name: String
+        var distanceFt: Int
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case distanceFt = "distance_ft"
+        }
+    }
+
+    nonisolated struct RunwayProximityInput: Codable, Equatable, Sendable {
+        /// Own ship.
+        var fix: EngineContract.RunwayProximityInputFix
+        /// The field's elevation, ft MSL.
+        var elevationFt: Double?
+        /// Its traffic pattern's height above it, published; null for AC 90-66C's 1,000 ft.
+        var patternAglFt: Double?
+        /// The field's runways as the airport card has them; one without both ends placed is left out.
+        var runways: [EngineContract.RunwayProximityInputRunwaysItem]
+        /// The diagram's hot spots placed on the ground (diagram_hot_spots).
+        var hotSpots: [EngineContract.RunwayProximityInputHotSpotsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case fix
+            case elevationFt = "elevation_ft"
+            case patternAglFt = "pattern_agl_ft"
+            case runways
+            case hotSpots = "hot_spots"
+        }
+    }
+
+    /// Own ship.
+    nonisolated struct RunwayProximityInputFix: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        /// The fix's age, s.
+        var ageS: Double
+        /// Its horizontal accuracy, m; negative where not known.
+        var accuracyM: Double
+        /// Track over the ground, degrees true.
+        var trackDeg: Double?
+        var groundspeedKt: Double?
+        /// Altitude, ft MSL where the device gives it. An ellipsoid height (a browser's, Android's before API 34) is about 100 ft under MSL in the contiguous US, which errs toward the surface's prompts.
+        var altitudeFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case ageS = "age_s"
+            case accuracyM = "accuracy_m"
+            case trackDeg = "track_deg"
+            case groundspeedKt = "groundspeed_kt"
+            case altitudeFt = "altitude_ft"
+        }
+    }
+
+    nonisolated struct RunwayProximityInputHotSpotsItem: Codable, Equatable, Sendable {
+        var name: String?
+        var lat: Double
+        var lon: Double
+    }
+
+    nonisolated struct RunwayProximityInputRunwaysItem: Codable, Equatable, Sendable {
+        var widthFt: Double?
+        var closed: Bool?
+        var runwayEnds: [EngineContract.RunwayProximityInputRunwaysItemRunwayEndsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case widthFt = "width_ft"
+            case closed
+            case runwayEnds = "runway_ends"
+        }
+    }
+
+    nonisolated struct RunwayProximityInputRunwaysItemRunwayEndsItem: Codable, Equatable, Sendable {
+        var ident: String?
+        var lat: Double?
+        var lon: Double?
+    }
+
+    nonisolated struct RunwayRunwayEndsItem: Codable, Equatable, Sendable {
         var ident: String
         var headingTrueDeg: Double?
         /// The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
@@ -11362,21 +12309,21 @@ enum EngineContract {
         }
     }
 
-    struct RunwaysReadAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct RunwaysReadAnswerItem: Codable, Equatable, Sendable {
         var part: String
         var pick: EngineContract.RunwaysReadAnswerItemPick?
     }
 
-    struct RunwaysReadAnswerItemPick: Codable, Equatable, Sendable {
+    nonisolated struct RunwaysReadAnswerItemPick: Codable, Equatable, Sendable {
         var field: String
         var runway: String
     }
 
-    struct RunwaysReadInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwaysReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct RunwayWindOut: Codable, Equatable, Sendable {
+    nonisolated struct RunwayWindOut: Codable, Equatable, Sendable {
         var end: String?
         var headwindKt: Double
         var crosswindKt: Double
@@ -11396,7 +12343,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayWithWindsInput: Codable, Equatable, Sendable {
+    nonisolated struct RunwayWithWindsInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.RunwayWithWindsInputRunwaysItem]?
         var metar: EngineContract.MetarWindIn?
         var variationDeg: Double
@@ -11410,7 +12357,7 @@ enum EngineContract {
         }
     }
 
-    struct RunwayWithWindsInputRunwaysItem: Codable, Equatable, Sendable {
+    nonisolated struct RunwayWithWindsInputRunwaysItem: Codable, Equatable, Sendable {
         var endHeadings: [[OpenAPIValueContainer]]??
 
         enum CodingKeys: String, CodingKey {
@@ -11418,7 +12365,7 @@ enum EngineContract {
         }
     }
 
-    struct RvrCheckAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RvrCheckAnswer: Codable, Equatable, Sendable {
         /// The minimum as an RVR, ft; null where it has none.
         var minimumFt: Double?
         var judged: Bool
@@ -11431,7 +12378,7 @@ enum EngineContract {
         }
     }
 
-    struct RvrCheckAnswerRunwaysItem: Codable, Equatable, Sendable {
+    nonisolated struct RvrCheckAnswerRunwaysItem: Codable, Equatable, Sendable {
         var runway: String?
         /// The lowest reading reported, ft.
         var readingFt: Double?
@@ -11450,7 +12397,7 @@ enum EngineContract {
         }
     }
 
-    struct RvrCheckInput: Codable, Equatable, Sendable {
+    nonisolated struct RvrCheckInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.RvrCheckInputRunwaysItem]
         var minimumRvrFt: Double?
         var minimumSm: Double?
@@ -11462,7 +12409,7 @@ enum EngineContract {
         }
     }
 
-    struct RvrCheckInputRunwaysItem: Codable, Equatable, Sendable {
+    nonisolated struct RvrCheckInputRunwaysItem: Codable, Equatable, Sendable {
         var runway: String
         var touchdownFt: Double?
         var midpointFt: Double?
@@ -11476,29 +12423,29 @@ enum EngineContract {
         }
     }
 
-    struct RvrReadingsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct RvrReadingsAnswer: Codable, Equatable, Sendable {
         /// Each reading, in the order given.
         var readings: [EngineContract.RvrReadingsAnswerReadingsItem]
     }
 
-    struct RvrReadingsAnswerReadingsItem: Codable, Equatable, Sendable {
+    nonisolated struct RvrReadingsAnswerReadingsItem: Codable, Equatable, Sendable {
         /// The reading, ft; null where the part reports none.
         var ft: Int?
         /// The system's most, 6,000 ft or more (AIM 7-1-13).
         var more: Bool
     }
 
-    struct RvrReadingsInput: Codable, Equatable, Sendable {
+    nonisolated struct RvrReadingsInput: Codable, Equatable, Sendable {
         /// Each part's reading as sent (touchdown, midpoint, rollout ...), in any order.
         var readings: [String?]
     }
 
-    struct SameFieldInput: Codable, Equatable, Sendable {
+    nonisolated struct SameFieldInput: Codable, Equatable, Sendable {
         var a: String
         var b: String
     }
 
-    struct SelectCruiseAltitudeAnswer: Codable, Equatable, Sendable {
+    nonisolated struct SelectCruiseAltitudeAnswer: Codable, Equatable, Sendable {
         var rules: String
         var recommendedFt: Double?
         var candidatesFt: [Double]
@@ -11540,7 +12487,7 @@ enum EngineContract {
         }
     }
 
-    struct SelectCruiseAltitudeInput: Codable, Equatable, Sendable {
+    nonisolated struct SelectCruiseAltitudeInput: Codable, Equatable, Sendable {
         /// [lat, lon], degrees.
         var start: [Double]
         /// [lat, lon], degrees.
@@ -11582,7 +12529,7 @@ enum EngineContract {
         }
     }
 
-    struct SelectCruiseAltitudeInputAirway: Codable, Equatable, Sendable {
+    nonisolated struct SelectCruiseAltitudeInputAirway: Codable, Equatable, Sendable {
         var meaFt: Double?
         var gnssMeaFt: Double?
         var maaFt: Double?
@@ -11594,7 +12541,7 @@ enum EngineContract {
         }
     }
 
-    struct SelectCruiseAltitudeInputFreezing: Codable, Equatable, Sendable {
+    nonisolated struct SelectCruiseAltitudeInputFreezing: Codable, Equatable, Sendable {
         var ft: Double?
         var atOrBelow: Bool?
 
@@ -11604,7 +12551,7 @@ enum EngineContract {
         }
     }
 
-    struct SelectCruiseAltitudeInputStationsItem: Codable, Equatable, Sendable {
+    nonisolated struct SelectCruiseAltitudeInputStationsItem: Codable, Equatable, Sendable {
         var icaoId: String?
         var lat: Double?
         var lon: Double?
@@ -11620,7 +12567,7 @@ enum EngineContract {
         }
     }
 
-    struct ServiceCeilingOnTheDayInput: Codable, Equatable, Sendable {
+    nonisolated struct ServiceCeilingOnTheDayInput: Codable, Equatable, Sendable {
         /// The profile's service ceiling, a standard day's.
         var bookFt: Double
         /// [[altitude_ft, temp_c], ...]
@@ -11632,16 +12579,16 @@ enum EngineContract {
         }
     }
 
-    struct ServiceVolumeInput: Codable, Equatable, Sendable {
+    nonisolated struct ServiceVolumeInput: Codable, Equatable, Sendable {
         var code: String?
     }
 
-    struct ShortAirspaceNameInput: Codable, Equatable, Sendable {
+    nonisolated struct ShortAirspaceNameInput: Codable, Equatable, Sendable {
         var name: String?
     }
 
     /// A POH's short-field takeoff or landing table: at least two altitudes and two temperatures, a grid of them for every weight.
-    struct ShortFieldTable: Codable, Equatable, Sendable {
+    nonisolated struct ShortFieldTable: Codable, Equatable, Sendable {
         var pressureAltitudesFt: [Double]
         var temperaturesC: [Double]
         var weightsLb: [Double]
@@ -11667,7 +12614,7 @@ enum EngineContract {
         }
     }
 
-    struct ShortFieldTableTablesItem: Codable, Equatable, Sendable {
+    nonisolated struct ShortFieldTableTablesItem: Codable, Equatable, Sendable {
         var groundRollFt: [[Double]]
         var total50ftFt: [[Double]]
 
@@ -11677,12 +12624,12 @@ enum EngineContract {
         }
     }
 
-    struct SigmetHazardInput: Codable, Equatable, Sendable {
+    nonisolated struct SigmetHazardInput: Codable, Equatable, Sendable {
         var hazard: String?
         var kind: String?
     }
 
-    struct SigmetsAlongRouteInput: Codable, Equatable, Sendable {
+    nonisolated struct SigmetsAlongRouteInput: Codable, Equatable, Sendable {
         var advisories: [[String: OpenAPIValueContainer]]
         /// [lat, lon], degrees.
         var from: [Double]
@@ -11700,11 +12647,11 @@ enum EngineContract {
         }
     }
 
-    struct SimFlightAnswer: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightAnswer: Codable, Equatable, Sendable {
         var segments: [EngineContract.SimFlightAnswerSegmentsItem]
     }
 
-    struct SimFlightAnswerSegmentsItem: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightAnswerSegmentsItem: Codable, Equatable, Sendable {
         var rows: [EngineContract.SimFlightAnswerSegmentsItemRowsItem]
         var msl: Bool
         var settingHpa: Double?
@@ -11716,7 +12663,7 @@ enum EngineContract {
         }
     }
 
-    struct SimFlightAnswerSegmentsItemRowsItem: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightAnswerSegmentsItemRowsItem: Codable, Equatable, Sendable {
         var t: Double
         var lat: Double
         var lon: Double
@@ -11763,7 +12710,7 @@ enum EngineContract {
     }
 
     /// Estimated.
-    struct SimFlightAnswerSegmentsItemRowsItemLights: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightAnswerSegmentsItemRowsItemLights: Codable, Equatable, Sendable {
         var nav: Bool
         var beacon: Bool
         var strobe: Bool
@@ -11772,7 +12719,7 @@ enum EngineContract {
         var logo: Bool
     }
 
-    struct SimFlightInput: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightInput: Codable, Equatable, Sendable {
         /// replay_track's points, in time order.
         var points: [EngineContract.SimFlightInputPointsItem]
         /// The altimeter settings the airplane sent (ADS-B's barometric pressure setting), each with its pressure altitude then; null on the ground.
@@ -11797,7 +12744,7 @@ enum EngineContract {
         }
     }
 
-    struct SimFlightInputGroundItem: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightInputGroundItem: Codable, Equatable, Sendable {
         var alongNm: Double
         var groundFt: Double
 
@@ -11807,7 +12754,7 @@ enum EngineContract {
         }
     }
 
-    struct SimFlightInputPointsItem: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightInputPointsItem: Codable, Equatable, Sendable {
         /// s since 1970
         var t: Double
         var lat: Double
@@ -11834,7 +12781,7 @@ enum EngineContract {
         }
     }
 
-    struct SimFlightInputSettingsItem: Codable, Equatable, Sendable {
+    nonisolated struct SimFlightInputSettingsItem: Codable, Equatable, Sendable {
         var t: Double
         var hpa: Double
         var altFt: Double?
@@ -11846,26 +12793,26 @@ enum EngineContract {
         }
     }
 
-    struct SoloStandingAnswer: Codable, Equatable, Sendable {
+    nonisolated struct SoloStandingAnswer: Codable, Equatable, Sendable {
         var days: Int?
         var standing: String
     }
 
-    struct SoloStandingInput: Codable, Equatable, Sendable {
+    nonisolated struct SoloStandingInput: Codable, Equatable, Sendable {
         /// The last day it is good, YYYY-MM-DD; null for none on record.
         var until: String?
         var today: String
     }
 
-    struct SoloXcDeterminationsAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct SoloXcDeterminationsAnswerItem: Codable, Equatable, Sendable {
         var rule: String
         var label: String
     }
 
-    struct SoloXcDeterminationsInput: Codable, Equatable, Sendable {
+    nonisolated struct SoloXcDeterminationsInput: Codable, Equatable, Sendable {
     }
 
-    struct SpecialUseTabAnswer: Codable, Equatable, Sendable {
+    nonisolated struct SpecialUseTabAnswer: Codable, Equatable, Sendable {
         var name: String
         var floorFt: Double?
         var floorRef: String
@@ -11884,7 +12831,7 @@ enum EngineContract {
         }
     }
 
-    struct SpecialUseTabInput: Codable, Equatable, Sendable {
+    nonisolated struct SpecialUseTabInput: Codable, Equatable, Sendable {
         var name: String
         var type: String?
         var floor: EngineContract.SpecialUseTabLimit?
@@ -11893,14 +12840,90 @@ enum EngineContract {
     }
 
     /// One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
-    struct SpecialUseTabLimit: Codable, Equatable, Sendable {
+    nonisolated struct SpecialUseTabLimit: Codable, Equatable, Sendable {
         var ft: Double?
         var code: String?
         var desc: String?
     }
 
+    nonisolated struct SpecialVfrAnswer: Codable, Equatable, Sendable {
+        /// Nothing known rules special VFR out.
+        var available: Bool
+        /// What rules it out, each with its rule.
+        var problems: [EngineContract.SpecialVfrAnswerProblemsItem]
+        /// What it asks, each with its rule.
+        var needs: [EngineContract.SpecialVfrAnswerNeedsItem]
+        /// The airport's entry in part 91 appendix D, section 3, "Chicago, IL (Chicago-O'Hare International Airport)"; null where it is not listed.
+        var listed: String?
+        var visibilitySm: Double
+        var belowMslFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case available
+            case problems
+            case needs
+            case listed
+            case visibilitySm = "visibility_sm"
+            case belowMslFt = "below_msl_ft"
+        }
+    }
+
+    nonisolated struct SpecialVfrAnswerNeedsItem: Codable, Equatable, Sendable {
+        var words: String
+        /// The rule, "14 CFR 91.157(b)(3)".
+        var source: String
+    }
+
+    nonisolated struct SpecialVfrAnswerProblemsItem: Codable, Equatable, Sendable {
+        var words: String
+        /// The rule, "14 CFR 91.157(b)(3)".
+        var source: String
+    }
+
+    nonisolated struct SpecialVfrInput: Codable, Equatable, Sendable {
+        /// The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none.
+        var surfaceArea: String?
+        /// The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3.
+        var airport: String?
+        /// Feet MSL; null where not known.
+        var altitudeFt: Double?
+        /// Between sunset and sunrise; null where not known.
+        var night: Bool?
+        /// In Alaska, where 91.157(b)(4) reads the sun's elevation.
+        var alaska: Bool?
+        /// The sun's elevation, degrees (negative below the horizon); read in Alaska alone.
+        var sunElevationDeg: Double?
+        /// The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c)).
+        var instrumentCurrent: Bool?
+        /// The airplane is equipped as 91.205(d) asks for IFR.
+        var ifrEquipped: Bool?
+        /// Statute miles.
+        var flightVisibilitySm: Double?
+        /// Statute miles, as reported at the airport; null where none is.
+        var groundVisibilitySm: Double?
+        /// Whether the flight can keep clear of clouds.
+        var clearOfClouds: Bool?
+        /// Taking off or landing under special VFR (91.157(c)).
+        var takeoffOrLanding: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case surfaceArea = "surface_area"
+            case airport
+            case altitudeFt = "altitude_ft"
+            case night
+            case alaska
+            case sunElevationDeg = "sun_elevation_deg"
+            case instrumentCurrent = "instrument_current"
+            case ifrEquipped = "ifr_equipped"
+            case flightVisibilitySm = "flight_visibility_sm"
+            case groundVisibilitySm = "ground_visibility_sm"
+            case clearOfClouds = "clear_of_clouds"
+            case takeoffOrLanding = "takeoff_or_landing"
+        }
+    }
+
     /// A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
-    struct SpokenCandidate: Codable, Equatable, Sendable {
+    nonisolated struct SpokenCandidate: Codable, Equatable, Sendable {
         var ident: String
         var name: String?
         var what: String
@@ -11908,11 +12931,11 @@ enum EngineContract {
         var lon: Double
     }
 
-    struct SquawkMeaningInput: Codable, Equatable, Sendable {
+    nonisolated struct SquawkMeaningInput: Codable, Equatable, Sendable {
         var squawk: String?
     }
 
-    struct StripFuelAnswer: Codable, Equatable, Sendable {
+    nonisolated struct StripFuelAnswer: Codable, Equatable, Sendable {
         var requiredGal: Double?
         var short: [EngineContract.StripFuelAnswerShortItem]
 
@@ -11922,7 +12945,7 @@ enum EngineContract {
         }
     }
 
-    struct StripFuelAnswerShortItem: Codable, Equatable, Sendable {
+    nonisolated struct StripFuelAnswerShortItem: Codable, Equatable, Sendable {
         /// The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is "@lat,lon" in the idents); null for a route with no stops.
         var hop: Int?
         /// The flight's idents as sent, "C81 → KMSN"; "" for a route with no stops. A pilot's own point shows here as its raw "@lat,lon": name the ends from `hop` instead.
@@ -11936,7 +12959,7 @@ enum EngineContract {
         }
     }
 
-    struct StripFuelInput: Codable, Equatable, Sendable {
+    nonisolated struct StripFuelInput: Codable, Equatable, Sendable {
         var fuelRequiredGal: Double?
         var fuelMarginGal: Double?
         var hops: [EngineContract.StripFuelInputHopsItem]?
@@ -11954,7 +12977,7 @@ enum EngineContract {
         }
     }
 
-    struct StripFuelInputHopsItem: Codable, Equatable, Sendable {
+    nonisolated struct StripFuelInputHopsItem: Codable, Equatable, Sendable {
         var departure: String
         var destination: String
         var fuelRequiredGal: Double?
@@ -11968,7 +12991,7 @@ enum EngineContract {
         }
     }
 
-    struct SuaAltitudesInput: Codable, Equatable, Sendable {
+    nonisolated struct SuaAltitudesInput: Codable, Equatable, Sendable {
         var floorFt: Double?
         /// MSL, AGL, SFC or STD.
         var floorRef: String?
@@ -11986,7 +13009,7 @@ enum EngineContract {
         }
     }
 
-    struct SunDownInput: Codable, Equatable, Sendable {
+    nonisolated struct SunDownInput: Codable, Equatable, Sendable {
         var lat: Double
         /// East positive.
         var lon: Double
@@ -12000,7 +13023,99 @@ enum EngineContract {
         }
     }
 
-    struct SurfaceAirspaceAnswer: Codable, Equatable, Sendable {
+    nonisolated struct SunTimesAnswer: Codable, Equatable, Sendable {
+        /// UNIX seconds.
+        var solarNoonS: Double
+        /// both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+        var sun: String
+        /// UNIX seconds.
+        var sunriseS: Double?
+        /// UNIX seconds.
+        var sunsetS: Double?
+        /// both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+        var civilTwilight: String
+        /// Morning civil twilight begins, UNIX seconds.
+        var civilDawnS: Double?
+        /// Evening civil twilight ends, UNIX seconds.
+        var civilDuskS: Double?
+        /// 14 CFR 1.1's night from this evening.
+        var night: EngineContract.SunTimesAnswerNight
+        /// 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
+        var passengerNight: EngineContract.SunTimesAnswerPassengerNight
+        /// 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
+        var lights: EngineContract.SunTimesAnswerLights
+
+        enum CodingKeys: String, CodingKey {
+            case solarNoonS = "solar_noon_s"
+            case sun
+            case sunriseS = "sunrise_s"
+            case sunsetS = "sunset_s"
+            case civilTwilight = "civil_twilight"
+            case civilDawnS = "civil_dawn_s"
+            case civilDuskS = "civil_dusk_s"
+            case night
+            case passengerNight = "passenger_night"
+            case lights
+        }
+    }
+
+    /// 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
+    nonisolated struct SunTimesAnswerLights: Codable, Equatable, Sendable {
+        /// When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+        var fromS: Double?
+        /// When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+        var untilS: Double?
+        /// The sun never comes above that line this day: the whole day is in the period.
+        var allDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case fromS = "from_s"
+            case untilS = "until_s"
+            case allDay = "all_day"
+        }
+    }
+
+    /// 14 CFR 1.1's night from this evening.
+    nonisolated struct SunTimesAnswerNight: Codable, Equatable, Sendable {
+        /// When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+        var fromS: Double?
+        /// When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+        var untilS: Double?
+        /// The sun never comes above that line this day: the whole day is in the period.
+        var allDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case fromS = "from_s"
+            case untilS = "until_s"
+            case allDay = "all_day"
+        }
+    }
+
+    /// 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
+    nonisolated struct SunTimesAnswerPassengerNight: Codable, Equatable, Sendable {
+        /// When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+        var fromS: Double?
+        /// When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+        var untilS: Double?
+        /// The sun never comes above that line this day: the whole day is in the period.
+        var allDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case fromS = "from_s"
+            case untilS = "until_s"
+            case allDay = "all_day"
+        }
+    }
+
+    nonisolated struct SunTimesInput: Codable, Equatable, Sendable {
+        var lat: Double
+        /// East positive.
+        var lon: Double
+        /// The local date, yyyy-mm-dd.
+        var date: String
+    }
+
+    nonisolated struct SurfaceAirspaceAnswer: Codable, Equatable, Sendable {
         var `class`: String
         var partTime: Bool
         /// The class at other times where it is part-time; null where it is not.
@@ -12016,7 +13131,7 @@ enum EngineContract {
         }
     }
 
-    struct SurfaceAirspaceInput: Codable, Equatable, Sendable {
+    nonisolated struct SurfaceAirspaceInput: Codable, Equatable, Sendable {
         /// The field's elevation, feet MSL (NASR APT_BASE ELEV).
         var elevationFt: Double?
         var volumes: [EngineContract.SurfaceAirspaceInputVolumesItem]
@@ -12027,7 +13142,7 @@ enum EngineContract {
         }
     }
 
-    struct SurfaceAirspaceInputVolumesItem: Codable, Equatable, Sendable {
+    nonisolated struct SurfaceAirspaceInputVolumesItem: Codable, Equatable, Sendable {
         var `class`: String
         var floorFt: Double?
         var floorRef: String
@@ -12042,7 +13157,7 @@ enum EngineContract {
         }
     }
 
-    struct SurfaceHoursAnswer: Codable, Equatable, Sendable {
+    nonisolated struct SurfaceHoursAnswer: Codable, Equatable, Sendable {
         var known: Bool
         /// The class at other times, as the line names it.
         var other: String?
@@ -12059,7 +13174,7 @@ enum EngineContract {
         }
     }
 
-    struct SurfaceHoursAnswerChange: Codable, Equatable, Sendable {
+    nonisolated struct SurfaceHoursAnswerChange: Codable, Equatable, Sendable {
         var at: Int
         var nextDay: Bool
 
@@ -12069,17 +13184,17 @@ enum EngineContract {
         }
     }
 
-    struct SurfaceHoursAnswerDaysItem: Codable, Equatable, Sendable {
+    nonisolated struct SurfaceHoursAnswerDaysItem: Codable, Equatable, Sendable {
         var weekday: Int
         var spans: [EngineContract.SurfaceHoursAnswerDaysItemSpansItem]?
     }
 
-    struct SurfaceHoursAnswerDaysItemSpansItem: Codable, Equatable, Sendable {
+    nonisolated struct SurfaceHoursAnswerDaysItemSpansItem: Codable, Equatable, Sendable {
         var from: Int
         var to: Int
     }
 
-    struct SurfaceHoursInput: Codable, Equatable, Sendable {
+    nonisolated struct SurfaceHoursInput: Codable, Equatable, Sendable {
         /// NASR CLS_ARSP AIRSPACE_HRS as sent.
         var hours: String?
         var year: Int
@@ -12108,7 +13223,7 @@ enum EngineContract {
     }
 
     /// One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
-    struct TafPeriod: Codable, Equatable, Sendable {
+    nonisolated struct TafPeriod: Codable, Equatable, Sendable {
         var timeFrom: Double
         var timeTo: Double
         var change: String?
@@ -12136,7 +13251,7 @@ enum EngineContract {
         }
     }
 
-    struct TafsAlongRouteAnswer: Codable, Equatable, Sendable {
+    nonisolated struct TafsAlongRouteAnswer: Codable, Equatable, Sendable {
         var minCeilingFt: Double?
         var minVisibilitySm: Double?
         var ceilingUnknownAt: [String]
@@ -12150,7 +13265,7 @@ enum EngineContract {
         }
     }
 
-    struct TafsAlongRouteInput: Codable, Equatable, Sendable {
+    nonisolated struct TafsAlongRouteInput: Codable, Equatable, Sendable {
         var tafs: [[String: OpenAPIValueContainer]]
         /// [lat, lon], degrees.
         var from: [Double]
@@ -12170,20 +13285,46 @@ enum EngineContract {
         }
     }
 
-    struct TafWindowAnswer: Codable, Equatable, Sendable {
+    nonisolated struct TafValidityAnswer: Codable, Equatable, Sendable {
+        var station: String
+        /// When it was issued, Unix seconds; the time it was read where its header gives none.
+        var issued: Double
+        /// The start of its valid period, Unix seconds.
+        var validFrom: Double
+        /// The end of its valid period, Unix seconds.
+        var validTo: Double
+        var state: String
+
+        enum CodingKeys: String, CodingKey {
+            case station
+            case issued
+            case validFrom = "valid_from"
+            case validTo = "valid_to"
+            case state
+        }
+    }
+
+    nonisolated struct TafValidityInput: Codable, Equatable, Sendable {
+        /// The TAF as sent.
+        var taf: String
+        /// Unix seconds, UTC: the engine has no clock.
+        var now: Double
+    }
+
+    nonisolated struct TafWindowAnswer: Codable, Equatable, Sendable {
         var periods: [EngineContract.TafPeriod]
         var worst: EngineContract.WeatherWorst?
         var current: EngineContract.TafPeriod?
         var prevailing: EngineContract.TafPeriod?
     }
 
-    struct TafWindowInput: Codable, Equatable, Sendable {
+    nonisolated struct TafWindowInput: Codable, Equatable, Sendable {
         var fcsts: [EngineContract.TafPeriod]
         var start: Double
         var end: Double?
     }
 
-    struct TemperatureAtInput: Codable, Equatable, Sendable {
+    nonisolated struct TemperatureAtInput: Codable, Equatable, Sendable {
         /// [[altitude_ft, temp_c], ...]
         var profile: [[Double]]?
         var altitudeFt: Double
@@ -12194,7 +13335,7 @@ enum EngineContract {
         }
     }
 
-    struct TerrainViewBandsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct TerrainViewBandsAnswer: Codable, Equatable, Sendable {
         var cautionFromFt: Double
         var warningFromFt: Double
 
@@ -12204,7 +13345,7 @@ enum EngineContract {
         }
     }
 
-    struct TerrainViewBandsInput: Codable, Equatable, Sendable {
+    nonisolated struct TerrainViewBandsInput: Codable, Equatable, Sendable {
         /// The airplane's altitude, ft MSL.
         var altitudeFt: Double
 
@@ -12213,7 +13354,7 @@ enum EngineContract {
         }
     }
 
-    struct TerrainWayFrameAnswer: Codable, Equatable, Sendable {
+    nonisolated struct TerrainWayFrameAnswer: Codable, Equatable, Sendable {
         var lat0: Double
         var lon0: Double
         var rows: Int
@@ -12235,7 +13376,7 @@ enum EngineContract {
         }
     }
 
-    struct TerrainWayFrameInput: Codable, Equatable, Sendable {
+    nonisolated struct TerrainWayFrameInput: Codable, Equatable, Sendable {
         var start: [Double]
         var end: [Double]
         var ceilingFt: Double
@@ -12247,14 +13388,14 @@ enum EngineContract {
         }
     }
 
-    struct TerrainWayRoundAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct TerrainWayRoundAnswerItem: Codable, Equatable, Sendable {
         var ident: String?
         var name: String?
         var lat: Double
         var lon: Double
     }
 
-    struct TerrainWayRoundInput: Codable, Equatable, Sendable {
+    nonisolated struct TerrainWayRoundInput: Codable, Equatable, Sendable {
         var start: [Double]
         var end: [Double]
         var ceilingFt: Double
@@ -12270,14 +13411,14 @@ enum EngineContract {
         }
     }
 
-    struct TerrainWayRoundInputFieldsItem: Codable, Equatable, Sendable {
+    nonisolated struct TerrainWayRoundInputFieldsItem: Codable, Equatable, Sendable {
         var ident: String
         var name: String
         var lat: Double
         var lon: Double
     }
 
-    struct TfrDetailReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct TfrDetailReadAnswer: Codable, Equatable, Sendable {
         var effective: String?
         var expires: String?
         var rule: String?
@@ -12312,30 +13453,30 @@ enum EngineContract {
     }
 
     /// Its point of contact, who is in charge inside it.
-    struct TfrDetailReadAnswerContact: Codable, Equatable, Sendable {
+    nonisolated struct TfrDetailReadAnswerContact: Codable, Equatable, Sendable {
         var name: String
         var phone: String?
         var frequency: String?
     }
 
     /// The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept ("Fort Worth ARTCC").
-    struct TfrDetailReadAnswerFacility: Codable, Equatable, Sendable {
+    nonisolated struct TfrDetailReadAnswerFacility: Codable, Equatable, Sendable {
         var name: String
         var phone: String?
         var frequency: String?
     }
 
-    struct TfrDetailReadInput: Codable, Equatable, Sendable {
+    nonisolated struct TfrDetailReadInput: Codable, Equatable, Sendable {
         var text: String
     }
 
     /// A point in degrees, WGS-84 (the field, or a TFR's nearest edge to it); null where not known.
-    struct TfrPoint: Codable, Equatable, Sendable {
+    nonisolated struct TfrPoint: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct TfrReadAnswer: Codable, Equatable, Sendable {
+    nonisolated struct TfrReadAnswer: Codable, Equatable, Sendable {
         /// Its kind: "Security TFR", or "TFR".
         var heading: String
         /// Its kind and the rule it is under: "Security TFR, 14 CFR 99.7".
@@ -12348,7 +13489,7 @@ enum EngineContract {
         var place: String?
     }
 
-    struct TfrReadInput: Codable, Equatable, Sendable {
+    nonisolated struct TfrReadInput: Codable, Equatable, Sendable {
         /// tfr.faa.gov's kind ("Security", "Hazards", "Vip", "Space Operations", "Air Shows/Sports", "Uas Public Gathering").
         var kind: String?
         /// The rule as tfr_detail_read names it ("special security instructions (99.7)") or its code.
@@ -12380,26 +13521,31 @@ enum EngineContract {
         }
     }
 
-    struct ThinTrackInput: Codable, Equatable, Sendable {
+    nonisolated struct ThinTrackInput: Codable, Equatable, Sendable {
         var points: [OpenAPIValueContainer]
         var most: Int?
     }
 
-    struct TitleCaseInput: Codable, Equatable, Sendable {
+    nonisolated struct TimeAgoInput: Codable, Equatable, Sendable {
+        /// Seconds since it happened: now less then.
+        var seconds: Double
+    }
+
+    nonisolated struct TitleCaseInput: Codable, Equatable, Sendable {
         var text: String?
         var texts: [String?]?
     }
 
-    struct TokensInput: Codable, Equatable, Sendable {
+    nonisolated struct TokensInput: Codable, Equatable, Sendable {
         var text: String
     }
 
-    struct TrackLeftFromAnswer: Codable, Equatable, Sendable {
+    nonisolated struct TrackLeftFromAnswer: Codable, Equatable, Sendable {
         /// The track starts at its takeoff from the field.
         var left: Bool
     }
 
-    struct TrackLeftFromInput: Codable, Equatable, Sendable {
+    nonisolated struct TrackLeftFromInput: Codable, Equatable, Sendable {
         /// The first point's distance from the nearest field, nm.
         var distanceNm: Double
         /// Its altitude over the field's elevation, ft.
@@ -12412,7 +13558,7 @@ enum EngineContract {
     }
 
     /// A flown track's point.
-    struct TrackPoint: Codable, Equatable, Sendable {
+    nonisolated struct TrackPoint: Codable, Equatable, Sendable {
         /// ms since 1970.
         var t: Double
         var lat: Double
@@ -12428,7 +13574,7 @@ enum EngineContract {
         }
     }
 
-    struct TrafficFreshInput: Codable, Equatable, Sendable {
+    nonisolated struct TrafficFreshInput: Codable, Equatable, Sendable {
         var ageS: Double?
         var planes: [EngineContract.TrafficFreshInputPlanesItem]
 
@@ -12438,7 +13584,7 @@ enum EngineContract {
         }
     }
 
-    struct TrafficFreshInputPlanesItem: Codable, Equatable, Sendable {
+    nonisolated struct TrafficFreshInputPlanesItem: Codable, Equatable, Sendable {
         var seenS: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -12446,7 +13592,7 @@ enum EngineContract {
         }
     }
 
-    struct TrafficMarksAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct TrafficMarksAnswerItem: Codable, Equatable, Sendable {
         var label: String
         var near: Bool
         var nm: Double?
@@ -12462,7 +13608,7 @@ enum EngineContract {
         }
     }
 
-    struct TrafficMarksInput: Codable, Equatable, Sendable {
+    nonisolated struct TrafficMarksInput: Codable, Equatable, Sendable {
         /// Own ship's height above mean sea level, ft, as the phone's GNSS gives it (iOS CLLocation altitude, Android's MSL altitude).
         var ownFt: Double?
         var planes: [EngineContract.TrafficMarksInputPlanesItem]
@@ -12475,12 +13621,12 @@ enum EngineContract {
         }
     }
 
-    struct TrafficMarksInputOwn: Codable, Equatable, Sendable {
+    nonisolated struct TrafficMarksInputOwn: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
-    struct TrafficMarksInputPlanesItem: Codable, Equatable, Sendable {
+    nonisolated struct TrafficMarksInputPlanesItem: Codable, Equatable, Sendable {
         var altitudeFt: Double?
         var verticalFpm: Double?
         var lat: Double?
@@ -12497,7 +13643,7 @@ enum EngineContract {
         }
     }
 
-    struct TrafficPatternInput: Codable, Equatable, Sendable {
+    nonisolated struct TrafficPatternInput: Codable, Equatable, Sendable {
         var ident: String?
         var runway: EngineContract.CircuitRunwayIn
         var endIdent: String
@@ -12511,7 +13657,7 @@ enum EngineContract {
         }
     }
 
-    struct TrafficPatternOut: Codable, Equatable, Sendable {
+    nonisolated struct TrafficPatternOut: Codable, Equatable, Sendable {
         var kind: String
         var ident: String
         var runway: String
@@ -12531,20 +13677,20 @@ enum EngineContract {
         }
     }
 
-    struct TrafficPatternOutEntry: Codable, Equatable, Sendable {
+    nonisolated struct TrafficPatternOutEntry: Codable, Equatable, Sendable {
         var from: EngineContract.PatternLegPoint
         var to: EngineContract.PatternLegPoint
         var name: String
     }
 
-    struct TrafficPatternOutLegsItem: Codable, Equatable, Sendable {
+    nonisolated struct TrafficPatternOutLegsItem: Codable, Equatable, Sendable {
         var name: String
         var from: EngineContract.PatternLegPoint
         var to: EngineContract.PatternLegPoint
     }
 
     /// An airplane as the traffic feed sends it: what the rules read of it.
-    struct TrafficPlane: Codable, Equatable, Sendable {
+    nonisolated struct TrafficPlane: Codable, Equatable, Sendable {
         var hex: String?
         var lat: Double
         var lon: Double
@@ -12567,7 +13713,7 @@ enum EngineContract {
         }
     }
 
-    struct TurbulenceCategoryInput: Codable, Equatable, Sendable {
+    nonisolated struct TurbulenceCategoryInput: Codable, Equatable, Sendable {
         var edr: Double
         var weightClass: String
 
@@ -12577,7 +13723,7 @@ enum EngineContract {
         }
     }
 
-    struct UnderwayInput: Codable, Equatable, Sendable {
+    nonisolated struct UnderwayInput: Codable, Equatable, Sendable {
         var speedKt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -12585,7 +13731,7 @@ enum EngineContract {
         }
     }
 
-    struct UsualBaseAnswer: Codable, Equatable, Sendable {
+    nonisolated struct UsualBaseAnswer: Codable, Equatable, Sendable {
         /// The base; null where the flights do not show one clearly.
         var ident: String?
         /// The field most of the ends are at (the first to reach the count, ties too); null with no ends.
@@ -12609,12 +13755,12 @@ enum EngineContract {
         }
     }
 
-    struct UsualBaseInput: Codable, Equatable, Sendable {
+    nonisolated struct UsualBaseInput: Codable, Equatable, Sendable {
         /// The airplane's past flights, any order; each field one identifier, as the host names it.
         var flights: [EngineContract.UsualBaseInputFlightsItem]
     }
 
-    struct UsualBaseInputFlightsItem: Codable, Equatable, Sendable {
+    nonisolated struct UsualBaseInputFlightsItem: Codable, Equatable, Sendable {
         /// The field it took off from; null where not known.
         var origin: String?
         /// The field it landed at; null where not known.
@@ -12623,7 +13769,7 @@ enum EngineContract {
         var landed: Bool?
     }
 
-    struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {
         var trackDeg: Double?
         var speed: Double
 
@@ -12633,17 +13779,17 @@ enum EngineContract {
         }
     }
 
-    struct VelocityTrackInput: Codable, Equatable, Sendable {
+    nonisolated struct VelocityTrackInput: Codable, Equatable, Sendable {
         var velocities: [EngineContract.VelocityTrackInputVelocitiesItem]
     }
 
-    struct VelocityTrackInputVelocitiesItem: Codable, Equatable, Sendable {
+    nonisolated struct VelocityTrackInputVelocitiesItem: Codable, Equatable, Sendable {
         var east: Double
         var north: Double
     }
 
     /// The web's VerdictInput: each tab's say, and the risk assessment's level and line (null while the briefing is awaited).
-    struct VerdictInput: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInput: Codable, Equatable, Sendable {
         var weather: EngineContract.VerdictInputWeather
         var airspace: EngineContract.VerdictInputAirspace
         var altitude: EngineContract.VerdictInputAltitude
@@ -12653,7 +13799,7 @@ enum EngineContract {
         var risk: EngineContract.VerdictInputRisk?
     }
 
-    struct VerdictInputAirspace: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputAirspace: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var pending: Bool?
         /// tfr.faa.gov did not answer.
@@ -12673,13 +13819,13 @@ enum EngineContract {
         }
     }
 
-    struct VerdictInputAirspaceSpecialUseItem: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputAirspaceSpecialUseItem: Codable, Equatable, Sendable {
         var name: String
         /// gonogo_sua_when's answer, or SFDPS's status now: active-now, cold-now.
         var when: String
     }
 
-    struct VerdictInputAltitude: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputAltitude: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var pending: Bool?
         /// No VFR altitude fits, in a line.
@@ -12702,7 +13848,7 @@ enum EngineContract {
         }
     }
 
-    struct VerdictInputBalance: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputBalance: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var pending: Bool?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -12711,7 +13857,7 @@ enum EngineContract {
         var takeoff: String?
     }
 
-    struct VerdictInputFuel: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputFuel: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var pending: Bool?
         /// The least the tanks hold over the fuel and its reserve; null where usable fuel is not known.
@@ -12730,13 +13876,13 @@ enum EngineContract {
         }
     }
 
-    struct VerdictInputRisk: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputRisk: Codable, Equatable, Sendable {
         /// "low", "caution" or "high".
         var level: String
         var line: String
     }
 
-    struct VerdictInputRunways: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputRunways: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var pending: Bool?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -12749,7 +13895,7 @@ enum EngineContract {
         var unchecked: [String]?
     }
 
-    struct VerdictInputWeather: Codable, Equatable, Sendable {
+    nonisolated struct VerdictInputWeather: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var pending: Bool?
         /// The briefing failed, in words.
@@ -12788,11 +13934,11 @@ enum EngineContract {
         }
     }
 
-    struct VerticalSpeedInput: Codable, Equatable, Sendable {
+    nonisolated struct VerticalSpeedInput: Codable, Equatable, Sendable {
         var samples: [EngineContract.VerticalSpeedInputSamplesItem]
     }
 
-    struct VerticalSpeedInputSamplesItem: Codable, Equatable, Sendable {
+    nonisolated struct VerticalSpeedInputSamplesItem: Codable, Equatable, Sendable {
         var tS: Double
         var altitudeFt: Double?
 
@@ -12802,7 +13948,7 @@ enum EngineContract {
         }
     }
 
-    struct VfrAltitudesInput: Codable, Equatable, Sendable {
+    nonisolated struct VfrAltitudesInput: Codable, Equatable, Sendable {
         var fromFt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -12810,10 +13956,10 @@ enum EngineContract {
         }
     }
 
-    struct VfrAtHoursInput: Codable, Equatable, Sendable {
+    nonisolated struct VfrAtHoursInput: Codable, Equatable, Sendable {
     }
 
-    struct VfrBasicMinimumsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct VfrBasicMinimumsAnswer: Codable, Equatable, Sendable {
         var ceilingFt: Double
         var visibilitySm: Double
 
@@ -12823,10 +13969,50 @@ enum EngineContract {
         }
     }
 
-    struct VfrBasicMinimumsInput: Codable, Equatable, Sendable {
+    nonisolated struct VfrBasicMinimumsInput: Codable, Equatable, Sendable {
     }
 
-    struct VfrFloorsAnswerItem: Codable, Equatable, Sendable {
+    nonisolated struct VfrClassGNightPatternAnswer: Codable, Equatable, Sendable {
+        var applies: Bool
+        /// The least visibility it asks, 1 sm.
+        var visibilitySm: Double
+        /// It is for a visibility under this, 3 sm.
+        var underVisibilitySm: Double
+        /// 1,200 ft above the surface.
+        var belowAglFt: Double
+        var words: String
+        var source: String
+
+        enum CodingKeys: String, CodingKey {
+            case applies
+            case visibilitySm = "visibility_sm"
+            case underVisibilitySm = "under_visibility_sm"
+            case belowAglFt = "below_agl_ft"
+            case words
+            case source
+        }
+    }
+
+    nonisolated struct VfrClassGNightPatternInput: Codable, Equatable, Sendable {
+        var `class`: String
+        /// Feet above the surface.
+        var aglFt: Double
+        var night: Bool?
+        /// In an airport traffic pattern within 1/2 mile of the runway.
+        var inPattern: Bool?
+        /// Statute miles; null where not known.
+        var visibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case aglFt = "agl_ft"
+            case night
+            case inPattern = "in_pattern"
+            case visibilitySm = "visibility_sm"
+        }
+    }
+
+    nonisolated struct VfrFloorsAnswerItem: Codable, Equatable, Sendable {
         var floorFt: Double
         var lowestGroundFt: Double
         var highestFt: Double
@@ -12846,7 +14032,7 @@ enum EngineContract {
         }
     }
 
-    struct VfrFloorsInput: Codable, Equatable, Sendable {
+    nonisolated struct VfrFloorsInput: Codable, Equatable, Sendable {
         /// [lat, lon], degrees.
         var start: [Double]
         /// [lat, lon], degrees.
@@ -12866,7 +14052,7 @@ enum EngineContract {
     }
 
     /// The ground along the direct line, feet MSL; congested null where the towns could not be read.
-    struct VfrFloorsInputGround: Codable, Equatable, Sendable {
+    nonisolated struct VfrFloorsInputGround: Codable, Equatable, Sendable {
         var alongNm: [Double]
         var highFt: [Double]
         var lowFt: [Double]
@@ -12880,7 +14066,7 @@ enum EngineContract {
         }
     }
 
-    struct VfrFloorsInputObstaclesItem: Codable, Equatable, Sendable {
+    nonisolated struct VfrFloorsInputObstaclesItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
         var amslFt: Double
@@ -12896,12 +14082,12 @@ enum EngineContract {
         }
     }
 
-    struct VfrMinimumsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct VfrMinimumsAnswer: Codable, Equatable, Sendable {
         var day: EngineContract.VfrMinimumsRule
         var night: EngineContract.VfrMinimumsRule
     }
 
-    struct VfrMinimumsInput: Codable, Equatable, Sendable {
+    nonisolated struct VfrMinimumsInput: Codable, Equatable, Sendable {
         var `class`: String
         var altitudeFt: Double
         var aglFt: Double?
@@ -12914,7 +14100,7 @@ enum EngineContract {
     }
 
     /// A row of 14 CFR 91.155(a)'s table: the flight visibility in statute miles and the distance from clouds in feet (all three null: clear of clouds), and the row as the drill words it.
-    struct VfrMinimumsRule: Codable, Equatable, Sendable {
+    nonisolated struct VfrMinimumsRule: Codable, Equatable, Sendable {
         var visibilitySm: Double
         var belowFt: Double?
         var aboveFt: Double?
@@ -12930,17 +14116,17 @@ enum EngineContract {
         }
     }
 
-    struct VfrNotRecommendedReasonsInput: Codable, Equatable, Sendable {
+    nonisolated struct VfrNotRecommendedReasonsInput: Codable, Equatable, Sendable {
         var idents: [String]?
         var metars: [String: OpenAPIValueContainer]?
         var forecast: [String: OpenAPIValueContainer]?
     }
 
-    struct VorCheckLimitDegInput: Codable, Equatable, Sendable {
+    nonisolated struct VorCheckLimitDegInput: Codable, Equatable, Sendable {
         var kind: String
     }
 
-    struct WeatherExpiresAtInput: Codable, Equatable, Sendable {
+    nonisolated struct WeatherExpiresAtInput: Codable, Equatable, Sendable {
         var product: String
         /// When a METAR or SPECI was observed, Unix seconds.
         var observed: Double?
@@ -12957,13 +14143,13 @@ enum EngineContract {
         }
     }
 
-    struct WeatherHeldUntilInput: Codable, Equatable, Sendable {
+    nonisolated struct WeatherHeldUntilInput: Codable, Equatable, Sendable {
         var product: String
         var data: OpenAPIValueContainer?
         var fetched: Double
     }
 
-    struct WeatherInForceInput: Codable, Equatable, Sendable {
+    nonisolated struct WeatherInForceInput: Codable, Equatable, Sendable {
         var product: String
         /// The instant asked about, Unix seconds.
         var now: Double
@@ -12987,23 +14173,23 @@ enum EngineContract {
     }
 
     /// One reading of a route's weather: the METARs of its fields, the advisories near it and the TAFs for the flight's time at each field.
-    struct WeatherReading: Codable, Equatable, Sendable {
+    nonisolated struct WeatherReading: Codable, Equatable, Sendable {
         var metars: [EngineContract.WorseField]?
         var advisories: [EngineContract.WorseAdvisory]?
         var tafs: [EngineContract.WorseField]?
     }
 
-    struct WeatherWorseAnswer: Codable, Equatable, Sendable {
+    nonisolated struct WeatherWorseAnswer: Codable, Equatable, Sendable {
         var worse: [EngineContract.WeatherWorseItem]
     }
 
-    struct WeatherWorseInput: Codable, Equatable, Sendable {
+    nonisolated struct WeatherWorseInput: Codable, Equatable, Sendable {
         var then: EngineContract.WeatherReading
         var now: EngineContract.WeatherReading
     }
 
     /// One way the weather got worse.
-    struct WeatherWorseItem: Codable, Equatable, Sendable {
+    nonisolated struct WeatherWorseItem: Codable, Equatable, Sendable {
         /// The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR", "metar:KMSN:ceiling-unknown"): an app tells a key once.
         var key: String
         var kind: String
@@ -13016,7 +14202,7 @@ enum EngineContract {
     }
 
     /// The worst a TAF forecasts in a window, TEMPO and PROB groups included, and whether the TAF covers the whole window.
-    struct WeatherWorst: Codable, Equatable, Sendable {
+    nonisolated struct WeatherWorst: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
@@ -13031,7 +14217,7 @@ enum EngineContract {
         }
     }
 
-    struct WindAloftAtInput: Codable, Equatable, Sendable {
+    nonisolated struct WindAloftAtInput: Codable, Equatable, Sendable {
         var hours: [EngineContract.WindAloftAtInputHoursItem]
         /// The time read at, UNIX seconds.
         var atS: Double
@@ -13046,7 +14232,7 @@ enum EngineContract {
         }
     }
 
-    struct WindAloftAtInputHoursItem: Codable, Equatable, Sendable {
+    nonisolated struct WindAloftAtInputHoursItem: Codable, Equatable, Sendable {
         /// The hour the column is valid at, UNIX seconds.
         var validS: Double
         var levels: [EngineContract.WindAloftAtInputHoursItemLevelsItem]
@@ -13057,7 +14243,7 @@ enum EngineContract {
         }
     }
 
-    struct WindAloftAtInputHoursItemLevelsItem: Codable, Equatable, Sendable {
+    nonisolated struct WindAloftAtInputHoursItemLevelsItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
         /// The wind's east part, toward where it blows.
         var uKt: Double?
@@ -13073,12 +14259,12 @@ enum EngineContract {
         }
     }
 
-    struct WindArrowAnswer: Codable, Equatable, Sendable {
+    nonisolated struct WindArrowAnswer: Codable, Equatable, Sendable {
         var shown: Bool
         var over: Bool
     }
 
-    struct WindArrowInput: Codable, Equatable, Sendable {
+    nonisolated struct WindArrowInput: Codable, Equatable, Sendable {
         var speedKt: Double?
         var gustKt: Double?
         /// The field's least crosswind (least_crosswind).
@@ -13094,7 +14280,7 @@ enum EngineContract {
         }
     }
 
-    struct WindAtAltitudeInput: Codable, Equatable, Sendable {
+    nonisolated struct WindAtAltitudeInput: Codable, Equatable, Sendable {
         /// A station's levels by altitude in feet, as the weather store keeps them.
         var levels: [String: EngineContract.WindAtAltitudeInputLevelsValue]
         var altitudeFt: Double?
@@ -13107,7 +14293,7 @@ enum EngineContract {
         }
     }
 
-    struct WindAtAltitudeInputLevelsValue: Codable, Equatable, Sendable {
+    nonisolated struct WindAtAltitudeInputLevelsValue: Codable, Equatable, Sendable {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var tempC: Double?
@@ -13119,7 +14305,7 @@ enum EngineContract {
         }
     }
 
-    struct WindBarbAnswer: Codable, Equatable, Sendable {
+    nonisolated struct WindBarbAnswer: Codable, Equatable, Sendable {
         var calm: Bool
         var flags: Int
         var barbs: Int
@@ -13133,7 +14319,7 @@ enum EngineContract {
         }
     }
 
-    struct WindBarbInput: Codable, Equatable, Sendable {
+    nonisolated struct WindBarbInput: Codable, Equatable, Sendable {
         var speedKt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -13141,7 +14327,7 @@ enum EngineContract {
         }
     }
 
-    struct WindCalmInput: Codable, Equatable, Sendable {
+    nonisolated struct WindCalmInput: Codable, Equatable, Sendable {
         var speedKt: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -13149,7 +14335,7 @@ enum EngineContract {
         }
     }
 
-    struct WindComponentsAnswer: Codable, Equatable, Sendable {
+    nonisolated struct WindComponentsAnswer: Codable, Equatable, Sendable {
         var headwindKt: Double
         var crosswindKt: Double
 
@@ -13159,7 +14345,7 @@ enum EngineContract {
         }
     }
 
-    struct WindComponentsInput: Codable, Equatable, Sendable {
+    nonisolated struct WindComponentsInput: Codable, Equatable, Sendable {
         var fromDeg: Double
         var kt: Double
         var headingDeg: Double
@@ -13171,7 +14357,7 @@ enum EngineContract {
         }
     }
 
-    struct WindPickAnswer: Codable, Equatable, Sendable {
+    nonisolated struct WindPickAnswer: Codable, Equatable, Sendable {
         /// The end as painted, "" where none is.
         var ident: String
         var headwindKt: Double
@@ -13200,12 +14386,12 @@ enum EngineContract {
     }
 
     /// Where the wind was reported when not at the field.
-    struct WindPickAnswerFrom: Codable, Equatable, Sendable {
+    nonisolated struct WindPickAnswerFrom: Codable, Equatable, Sendable {
         var ident: String
         var nm: Double
     }
 
-    struct WindPickInput: Codable, Equatable, Sendable {
+    nonisolated struct WindPickInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.Runway]?
         /// The nearest report's wind, for a field that reports none (a TAF's, with forecast_at).
         var nearby: EngineContract.WindPickInputNearby?
@@ -13220,7 +14406,7 @@ enum EngineContract {
     }
 
     /// The nearest report's wind, for a field that reports none (a TAF's, with forecast_at).
-    struct WindPickInputNearby: Codable, Equatable, Sendable {
+    nonisolated struct WindPickInputNearby: Codable, Equatable, Sendable {
         var station: String?
         var distanceNm: Double?
         var dirTrueDeg: Double?
@@ -13236,7 +14422,7 @@ enum EngineContract {
         }
     }
 
-    struct WindSteadyOrGustInput: Codable, Equatable, Sendable {
+    nonisolated struct WindSteadyOrGustInput: Codable, Equatable, Sendable {
         var steadyKt: Double
         var gustKt: Double?
 
@@ -13246,13 +14432,13 @@ enum EngineContract {
         }
     }
 
-    struct WindTriangleAnswer: Codable, Equatable, Sendable {
+    nonisolated struct WindTriangleAnswer: Codable, Equatable, Sendable {
         var wca: Double
         var th: Double
         var gs: Double
     }
 
-    struct WindTriangleInput: Codable, Equatable, Sendable {
+    nonisolated struct WindTriangleInput: Codable, Equatable, Sendable {
         var tc: Double
         var tas: Double
         var windFromDeg: Double
@@ -13266,13 +14452,13 @@ enum EngineContract {
         }
     }
 
-    struct WordingLatLon: Codable, Equatable, Sendable {
+    nonisolated struct WordingLatLon: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
     }
 
     /// A VOR as the planner sends one; with no mag_var it gives no radials.
-    struct WordingStation: Codable, Equatable, Sendable {
+    nonisolated struct WordingStation: Codable, Equatable, Sendable {
         var ident: String?
         var lat: Double
         var lon: Double
@@ -13287,11 +14473,11 @@ enum EngineContract {
         }
     }
 
-    struct WordsAltFtInput: Codable, Equatable, Sendable {
+    nonisolated struct WordsAltFtInput: Codable, Equatable, Sendable {
         var ft: Double?
     }
 
-    struct WordsCeilingAndVisibilityInput: Codable, Equatable, Sendable {
+    nonisolated struct WordsCeilingAndVisibilityInput: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var visibilitySm: Double?
 
@@ -13301,32 +14487,32 @@ enum EngineContract {
         }
     }
 
-    struct WordsFlightLevelInput: Codable, Equatable, Sendable {
+    nonisolated struct WordsFlightLevelInput: Codable, Equatable, Sendable {
         var ft: Double?
     }
 
-    struct WordsGroupedInput: Codable, Equatable, Sendable {
+    nonisolated struct WordsGroupedInput: Codable, Equatable, Sendable {
         var n: Double
     }
 
-    struct WordsNumInput: Codable, Equatable, Sendable {
+    nonisolated struct WordsNumInput: Codable, Equatable, Sendable {
         var n: Double?
     }
 
-    struct WordsToFixedInput: Codable, Equatable, Sendable {
+    nonisolated struct WordsToFixedInput: Codable, Equatable, Sendable {
         var n: Double
         /// 0 to 20; 1 where missing.
         var digits: Double?
     }
 
-    struct WorkingsRightInput: Codable, Equatable, Sendable {
+    nonisolated struct WorkingsRightInput: Codable, Equatable, Sendable {
         var key: String
         var typed: Double
         var answer: Double
     }
 
     /// A SIGMET, AIRMET or G-AIRMET in one reading (AIM 7-1-6).
-    struct WorseAdvisory: Codable, Equatable, Sendable {
+    nonisolated struct WorseAdvisory: Codable, Equatable, Sendable {
         /// What names the advisory from one reading to the next: its text as sent, or its hazard, severity and altitudes.
         var key: String
         /// "SIGMET", "Convective SIGMET", "AIRMET" or "G-AIRMET", as the app words it.
@@ -13345,7 +14531,7 @@ enum EngineContract {
     }
 
     /// A field's ceiling and visibility in one reading: its METAR's, or its TAF's for the flight's time there. The engine reads the flight category (AIM 7-1-7).
-    struct WorseField: Codable, Equatable, Sendable {
+    nonisolated struct WorseField: Codable, Equatable, Sendable {
         var ident: String
         var ceilingFt: Double?
         var visibilitySm: Double?

@@ -13,7 +13,7 @@ export type { BriefingPart } from "./briefSections";
 export { briefingLegs } from "./briefingLegs";
 export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./dryRun";
 export { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "./fieldLists";
-export { figuresLine, nextLanding, shortFlights, tripFigures } from "./figures";
+export { figuresLine, nextLanding, tripFigures } from "./figures";
 export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./flyingTo";
 export {
   PLAN_NAME,
@@ -42,6 +42,8 @@ export {
   windText,
   windsOutOfDate,
 } from "./format";
+export { type RouteAdiz, routeAdiz } from "./adiz";
+export { type RouteJurisdiction, routeJurisdiction, rowCautions } from "./jurisdiction";
 export {
   type NavLogRow,
   type RouteEnds,
@@ -104,7 +106,9 @@ export {
   suggestedStopAt,
 } from "./planAddress";
 export type { PlanAnswer, PlanCourse } from "./planTypes";
+export { type FirstWindPicks, askedRunways, firstWindPicks, windPickedEnds } from "./windRunways";
 export type { Landing, ProcedureAirport, ProcedureKind } from "./procedureTypes";
+export { landingRunway } from "./landingRunway";
 export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./radio";
 export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./routeHolds";
 export { gridScale, sameStops, wayTime } from "./routeWays";

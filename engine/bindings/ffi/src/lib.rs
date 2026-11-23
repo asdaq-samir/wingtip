@@ -8,8 +8,11 @@
 //! as the web app and the planner ask it; and the readers of the cycle
 //! packs kept on the phone, which take the packs by their files' paths and
 //! map each for the one call, so a pan reads only the pages it needs and
-//! nothing is copied across. Every one comes back an error, never a
+//! nothing is copied across; and a receiver's picture held between reads
+//! (`receiver::ReceiverSession`). Every one comes back an error, never a
 //! crash, where the engine panics (`guarded`).
+
+mod receiver;
 
 use std::fs::File;
 use wingtip_engine::{ahead, clearance::Route, pack::Pack, pack_query, spoken, view, view_marks};
@@ -51,8 +54,9 @@ pub fn call(name: &str, input: &str) -> Result<String, EngineError> {
 /// build with `panic = "abort"` would end the process before here.
 ///
 /// AssertUnwindSafe: each closure only reads its inputs and the packs it
-/// maps for the one call; the engine keeps no state between calls that a
-/// half-done one could leave broken.
+/// maps for the one call; the one state kept between calls, a receiver's
+/// held picture, is behind a lock its panic poisons, and a poisoned one is
+/// started again empty (ReceiverSession::held).
 fn guarded<T>(what: &str, f: impl FnOnce() -> T) -> Result<T, EngineError> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).map_err(|panic| {
         let why = panic

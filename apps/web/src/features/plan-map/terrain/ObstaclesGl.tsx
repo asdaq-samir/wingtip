@@ -1,27 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDrawnStretch } from "./heightStretch";
-import type { Map as MlMap } from "maplibre-gl";
 import { useEffect } from "react";
 import { api } from "../../../lib/api/client";
 import { EMPTY, useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { obstacleFeatures } from "./geometry";
+import { obstacleBox, obstaclesKey } from "./obstacleBox";
 import { setExtrusionData, useExtrusion } from "./useExtrusion";
 import { CHART } from "../../../lib/tokens";
-
-type Box = { south: number; west: number; north: number; east: number };
-
-/** The half-degree box round the view's middle, a degree each way at most,
- *  that the obstacles are asked for; null further out than zoom 9, where
- *  a post would be a pixel. */
-function obstacleBox(map: MlMap): Box | null {
-  if (map.getZoom() < glZoom(9)) return null;
-  // In -180 to 180: past the antimeridian the world's copy's centre is not.
-  const c = map.getCenter().wrap();
-  const out = (v: number, up: boolean) => (up ? Math.ceil(v * 2) : Math.floor(v * 2)) / 2;
-  return { south: out(c.lat - 0.5, false), north: out(c.lat + 0.5, true), west: out(c.lng - 0.5, false), east: out(c.lng + 0.5, true) };
-}
 
 /**
  * The FAA's Digital Obstacle File's obstacles round the view, 200 ft and
@@ -45,7 +32,7 @@ export default function ObstaclesGl() {
   const { box } = useGlView(obstacleBox, "rest");
   const stretch = useDrawnStretch();
   const { data } = useQuery({
-    queryKey: ["obstacles", box],
+    queryKey: obstaclesKey(box),
     queryFn: () => api.obstacles(box!),
     enabled: !!box,
     staleTime: 60 * 60 * 1000,

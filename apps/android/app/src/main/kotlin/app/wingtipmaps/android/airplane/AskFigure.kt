@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -19,7 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -59,35 +60,36 @@ private fun AskFigure(airplane: AirplaneNow, key: FigureKey) {
     val context = LocalContext.current
     val own = remember(context) { OwnAirplanes.of(context) }
     val scope = rememberCoroutineScope()
-    var text by rememberSaveable(key) { mutableStateOf("") }
-    var saving by remember { mutableStateOf(false) }
-    var problem by remember { mutableStateOf<String?>(null) }
+    // The field's own text, the figure's alone: a new figure asked starts empty.
+    val field = rememberSaveable(key, saver = TextFieldState.Saver) { TextFieldState() }
+    // Held as states, read and set by .value where the save's coroutine sets them.
+    val saving = remember { mutableStateOf(false) }
+    val problem = remember { mutableStateOf<String?>(null) }
     val name = airplane.name ?: stringResource(R.string.this_airplane)
-    val value = FigureKey.parse(key, text)
+    val value = FigureKey.parse(key, field.text.toString())
     val couldNot = stringResource(R.string.profile_problem, "%s")
     Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
             Text(stringResource(key.question, name), style = MaterialTheme.typography.bodyMedium)
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                state = field,
                 label = { Text(stringResource(key.label)) },
                 suffix = { Text(key.unit) },
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(),
             )
-            ProblemLine(problem)
+            ProblemLine(problem.value)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { ProfileOpen.open(airplane.tail, key.key) }) { Text(stringResource(R.string.ask_edit, name)) }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = { NotNow.hide(key.key) }) { Text(stringResource(R.string.not_now)) }
+                TextButton(onClick = { NotNow.hide(key.key) }) { Text(stringResource(R.string.wording_not_now)) }
                 Button(
-                    enabled = value != null && !saving,
+                    enabled = value != null && !saving.value,
                     onClick = {
                         scope.launch {
-                            saving = true
-                            problem = try {
+                            saving.value = true
+                            problem.value = try {
                                 own.save(airplane.base(), mapOf(key.key to value))
                                 null
                             } catch (e: CancellationException) {
@@ -95,7 +97,7 @@ private fun AskFigure(airplane: AirplaneNow, key: FigureKey) {
                             } catch (e: Exception) {
                                 couldNot.replace("%s", (e as? Gateway.Refusal)?.words ?: e.message.orEmpty())
                             }
-                            saving = false
+                            saving.value = false
                         }
                     },
                 ) { Text(stringResource(R.string.save)) }

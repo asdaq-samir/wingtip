@@ -9,7 +9,7 @@ import SwiftUI
 struct WordsSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The header: "The weather in words", "The flight in words".
-    var title: LocalizedStringKey = "In words"
+    var title: LocalizedStringKey = "In Words"
     let said: SaidWords?
     /// Shown while the words are being written, where there is nothing yet.
     var writing = false
@@ -43,7 +43,9 @@ struct WordsSection: View {
             }
         }
         .animation(reduceMotion ? nil : .default, value: said)
-        .sheet(item: $opened) { source in
+        // A popover by the section on an iPad (HIG Popovers: regular
+        // widths), the sheet it was on the iPhone.
+        .popover(item: $opened) { source in
             NavigationStack {
                 ScrollView {
                     Text(source.text)
@@ -56,6 +58,7 @@ struct WordsSection: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .closeButton { opened = nil }
             }
+            .frame(minWidth: 320, idealWidth: 480, minHeight: 240, idealHeight: 360)
             .presentationDetents([.medium, .large])
         }
     }

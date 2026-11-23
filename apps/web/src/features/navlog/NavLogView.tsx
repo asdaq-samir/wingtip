@@ -19,6 +19,7 @@ import { NavLogNote } from "./NavLogNote";
 import { NavLogSummary } from "./NavLogSummary";
 import { NavLogTable } from "./NavLogTable";
 import { navLogColumns } from "./navLogColumns";
+import { railOf } from "./navLogRail";
 import type { NavLogViewProps } from "./NavLogViewProps";
 import { useIsDesktop } from "../../hooks/use-desktop";
 import { hoverLeg } from "../../lib/map/marks/mapHover";
@@ -120,7 +121,10 @@ export default function NavLogView({
   // not, the nav log's summary says so once.
   const segments = nav?.altitude_selection.segments ?? [];
   const perLeg = segments.length > 0 && segments.length === data.filter((r) => !isLegPoint(r)).length - 1;
-  const shownColumns = navLogColumns({ nav, depart, numbers, metarColourOf, onDesk, airplane: !!airplane });
+  // Under IFR the airway each row's leg joins and its published altitudes,
+  // as the phone's list says them on its rail (navLogRail).
+  const airways = useMemo(() => new Map(railOf(data).flatMap((r, i) => (r.airway ? [[data[i]!.key, r.airway] as const] : []))), [data]);
+  const shownColumns = navLogColumns({ nav, depart, numbers, airways, metarColourOf, onDesk, airplane: !!airplane });
   useAnnounce(totals && data.length ? `Nav log ready, ${nm(totals.distance_nm)}` : null); // to VoiceOver, once (WEB-16)
   // The selected row as it is put in the page: the rows are drawn a moment
   // after the panel (PanelTabs' deferred draw), and on a busy page after
@@ -191,7 +195,7 @@ export default function NavLogView({
   const checkpointCount = data.filter((r) => r.kind === "checkpoint").length;
   const navLogList =
     data.length === 0 ? (
-      <p className={cn("py-3", TEXT.detail)}>No route planned yet</p>
+      <p className={cn("py-3", TEXT.detail)}>Plan a route on FPL; its legs are listed here.</p>
     ) : (
       <>
         <div className="flex items-center justify-between pt-2 pl-1.5 empty:hidden" data-testid="navlog-head">

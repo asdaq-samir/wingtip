@@ -134,10 +134,13 @@ def route_totals(per_hop: list[dict], hops: list) -> dict:
         "procedure_nm": round(sum(t.get("procedure_nm", 0.0) for t in per_hop), 1),
         "ete_min": total("ete_min"),
         "fuel_gal": total("fuel_gal"),
+        # The fuel on board at engine start, the departure's: its loading.
+        "on_board_gal": per_hop[0].get("on_board_gal"),
         "unflyable_legs": sum(t["unflyable_legs"] for t in per_hop),
         "legs_without_wind": sum(t["legs_without_wind"] for t in per_hop),
         "night": _either(t.get("night") for t in per_hop),
         "night_passengers": _either(t.get("night_passengers") for t in per_hop),
+        "lights": _either(t.get("lights") for t in per_hop),
         "rules": per_hop[0].get("rules", "vfr"),
         "alternate": per_hop[-1].get("alternate"),
         "planned_at": per_hop[0].get("planned_at"),

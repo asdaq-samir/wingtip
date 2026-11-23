@@ -87,6 +87,9 @@ services:
       # Nor the FAA's aircraft registry (73 MB a run): the suite stubs a
       # tracked airplane's card.
       REGISTRY_REFRESH: "0"
+      # Nor the documents library's books (wingtip.library, some 300 MB):
+      # the suite's specs stub the shelf.
+      FAA_LIBRARY_REFRESH: "0"
       # Nor the cycle pack (wingtip.cycle_pack): the suite's planner reads the FAA
       # files themselves, and the pack is 400 MB written a run.
       CYCLE_PACK: "0"

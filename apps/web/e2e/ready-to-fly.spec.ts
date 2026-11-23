@@ -4,39 +4,52 @@ import { pickAirplane } from "./startState";
 
 /**
  * Ready to fly (the engine's ready_to_fly, features/readyToFly): the
- * Brief's last part, after its cards, says in one line whether the device has what the
- * flight needs while there is a signal, then at most three actions that
- * fix in place. With no airplane picked none is assumed: "Pick the
- * airplane" is one of them and opens the existing picker. Starting a dry
- * run with something missing shows it once, and the pilot may fly anyway.
+ * Brief's Before You Go row says how many things are left to do on the
+ * device while there is a signal, and opens Preflight, where Ready to Fly
+ * is a grouped list (option A, the owner 2026-11-19): the engine's line,
+ * at most three actions that fix in place, every check and the next FAA
+ * cycle. With no airplane picked none is assumed: "Pick the airplane" is
+ * one of the actions and opens the existing picker. Starting a dry run
+ * with something missing shows it once, and the pilot may fly anyway.
  */
 
-test("the Brief ends on Ready to fly, its actions fixing in place", async ({ page }) => {
+test("the Brief's Before You Go says what is left to do, and opens Ready to Fly on Preflight, its actions fixing in place", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   // The plan in, with no airplane: its distance, never a fuel figure.
   await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/DIST/i, { timeout: slow(120_000) });
   await openBrief(page);
-  const ready = sideDrawer(page).getByTestId("ready-to-fly");
-  await expect(ready).toBeVisible({ timeout: slow(30_000) });
-  // After the verdict, the Ask and the cards: the checks left before
-  // departure (docs/design/web.md §5; decision 0012, the verdict first).
+  // Before You Go's value, the count of the engine's checks not done.
   const glance = sideDrawer(page).getByTestId("brief-glance");
-  await expect(glance.locator("> *").first()).not.toHaveAttribute("data-testid", "ready-to-fly");
-  const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
-  expect(await top("brief-glance-preflight")).toBeLessThan(await top("ready-to-fly"));
-  await expect(ready.getByTestId("ready-line")).toHaveText(/things? left to do before you go|Ready to fly/);
-  // One row, folded: its actions and every check under its tap (the owner, 2026-11-16).
-  await expect(ready.locator("[data-testid^='ready-action-']")).toHaveCount(0);
-  // Under the Brief's edge as it opens half way: pulled up to, as a finger would (inSheet).
-  await inSheet(page, ready.getByTestId("ready-all"));
-  await ready.getByTestId("ready-all").click();
+  const before = glance.getByTestId("brief-glance-preflight");
+  await expect(before.getByTestId("ready-todo")).toHaveText(/^(\d+ to do|Ready)$/, { timeout: slow(30_000) });
+  // No airplane picked: one thing at least is left (asked for, never a 172).
+  await expect(before.getByTestId("ready-todo")).toHaveText(/^\d+ to do$/);
+  // Not on the overview any more: on Preflight, which the row opens.
+  await expect(glance.getByTestId("ready-to-fly")).toHaveCount(0);
+  await inSheet(page, before);
+  await before.click();
+  const ready = sideDrawer(page).locator('[data-tab="preflight"]').getByTestId("ready-to-fly");
+  await expect(ready).toBeVisible({ timeout: slow(30_000) });
+  await expect(ready.getByTestId("ready-line")).toHaveText(/^\d+ things? left to do before you go$/);
+  // As many checks not done as the line says, read together: a check can
+  // finish while the Brief comes in (5 of 6 done between the two reads).
+  await expect
+    .poll(async () => {
+      const said = Number((await ready.getByTestId("ready-line").textContent())!.split(" ")[0]);
+      const marked = await ready.locator("[data-testid^='ready-item-'] [data-finding=caution]").count();
+      return said === marked;
+    })
+    .toBe(true);
+  // At most three actions, laid open: no fold to open first.
   const actions = ready.locator("[data-testid^='ready-action-']");
+  expect(await actions.count()).toBeGreaterThanOrEqual(1);
   expect(await actions.count()).toBeLessThanOrEqual(3);
-  // No airplane picked: asked for, never a 172.
   const pick = ready.getByTestId("ready-action-airplane");
   await expect(pick).toHaveText("Pick the airplane");
-  // Every check with them, and the next FAA cycle.
+  // And the next FAA cycle.
   await expect(ready.getByTestId("ready-next-cycle")).toContainText(/Next FAA data cycle \d{4}/);
   // The fix in place: FPL's own airplane field, focused.
   await inSheet(page, pick);

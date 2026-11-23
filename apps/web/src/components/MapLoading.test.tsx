@@ -10,7 +10,7 @@ const insets = { top: 10, bottom: 300, left: 0 };
 describe("MapLoading", () => {
   it("shows the spinner in the middle of what the sheet leaves", () => {
     render(<MapLoading shown insets={insets} />);
-    const mark = screen.getByRole("status", { name: "Loading the map" });
+    const mark = screen.getByRole("status", { name: "Fetching the map…" });
     expect(mark.className).toContain("opacity-100");
     expect(mark.style.bottom).toBe("300px");
     expect(mark.style.top).toBe("10px");

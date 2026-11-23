@@ -50,7 +50,7 @@ const excused = (row: CardRow, check: Check) => row.not?.[check];
 for (const row of CARDS) {
   test.describe(`${row.name}`, () => {
     test.beforeEach(({ page }) => {
-      test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; the desktop's side panel has no detents");
+      test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; the desktop's side panel has no detents");
     });
 
     test("scrolled to its end, its name and ✕ are still in sight and take a tap", async ({ page }) => {
@@ -189,7 +189,7 @@ for (const row of CARDS) {
  */
 for (const edge of ["bottom", "top"] as const) {
   test(`opened from the pill (${edge} layout), scrolled to its end, its pinned head is at the sheet's content top`, async ({ page }) => {
-    test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+    test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
     if (edge === "top") {
       await page.addInitScript(() => {
         const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
@@ -225,12 +225,15 @@ for (const edge of ["bottom", "top"] as const) {
  * The airport card's tabs with the bar pinned (the owner's recording,
  * 2026-11-11): Weather scrolled down, a tap on Info opened Info part way
  * down, at its foot, and a tap on Runways, short, threw the card back to
- * its top with the bar dropped below the photos. Now a tab not yet seen
- * opens at its own top under the pinned bar, a short one keeps the bar
- * where it pinned, and a tab seen before is where it was.
+ * its top with the bar dropped below the photos. Now every tab picked opens
+ * at its own top under the card's head, a short one too, and the bar,
+ * floating at the card's foot since C1 (the owner, 2026-11-14), stays where
+ * it rests. A tab seen before opens at its top too: useTabScroll keeps no
+ * place a tab, by C1's "a tab picked opens at its own top" (rules.md §2.1),
+ * where this once asked for the place it was left at.
  */
 test("the airport card's tabs, the bar pinned, open each at its top and keep the bar in place", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   const row = CARDS.find((r) => r.name === "airport")!;
   await open(page, row);
   await grabberTo(page, "full");
@@ -239,20 +242,25 @@ test("the airport card's tabs, the bar pinned, open each at its top and keep the
   await card.getByTestId("place-tab-weather").click();
   const { max } = await scrollOf(page, row.card);
   test.skip(max < 200, "too short to pin the bar at this size");
-  const deep = (await scrollOf(page, row.card, max)).top;
+  await scrollOf(page, row.card, max);
   const pinnedY = (await bar.boundingBox())!.y;
+  const head = card.getByTestId("card-head-pinned");
   const underBar = async (testId: string) => {
     const panel = (await card.getByRole("tabpanel").boundingBox())!;
     const b = (await bar.boundingBox())!;
     expect(Math.abs(b.y - pinnedY), `the bar stays pinned on ${testId}`).toBeLessThanOrEqual(2);
-    // Under the bar (the field's report line it once had is gone).
-    expect(Math.abs(panel.y - (b.y + b.height)), `${testId} opens at its top, under the bar`).toBeLessThanOrEqual(16);
+    // At its top under the card's pinned head: the tabs float at the
+    // card's foot since C1 (the owner, 2026-11-14; rules.md §2.1, "a tab
+    // picked opens at its own top"), so a page starts under the head, not
+    // under the bar it once started under.
+    const h = (await head.boundingBox())!;
+    expect(Math.abs(panel.y - (h.y + h.height)), `${testId} opens at its top, under the head`).toBeLessThanOrEqual(16);
   };
   await card.getByTestId("place-tab-radio").click();
   await expect(async () => underBar("Info")).toPass({ timeout: slow(5_000) });
   await card.getByTestId("place-tab-runways").click();
   await expect(async () => underBar("Runways")).toPass({ timeout: slow(5_000) });
-  // Weather, seen before: where it was.
+  // Weather, seen before and left scrolled to its end: at its top as well.
   await card.getByTestId("place-tab-weather").click();
-  await expect.poll(async () => (await scrollOf(page, row.card)).top, { timeout: slow(5_000) }).toBeGreaterThanOrEqual(deep - 2);
+  await expect(async () => underBar("Weather")).toPass({ timeout: slow(5_000) });
 });

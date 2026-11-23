@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Radio } from "lucide-react";
 import { cn } from "cn";
+import { useShallow } from "zustand/react/shallow";
 import CloseButton from "./CloseButton";
 import { bannerGlass } from "./bannerGlass";
 import Waveform from "./Waveform";
@@ -8,12 +9,13 @@ import { Timer } from "./RadioTimer";
 import { Button } from "./ui/button";
 import { CallActions } from "./RadioCallActions";
 import { load } from "../lib/radioListeningLoad";
-import { useAtcListen } from "../lib/atc/listenSetting";
+import { useAtcListenOn } from "../lib/atc/listenSetting";
 import { callToUs, chosenOutside, heardThrough, lostWords, useAtcRadio, type Transmission } from "../lib/atcRadio";
 import { heardAny, readClearance } from "../lib/clearance";
 import { readbackCheck } from "../lib/readback";
 import { useAnnounce } from "../lib/announce";
 import { TEXT } from "../lib/text";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /** A clearance's readback checked against it (lib/readback): what was
  *  missed or said differently as a warning line, never a stop. */
@@ -55,7 +57,7 @@ export function RadioPill() {
       ? `Listening to the radio through ${name}…`
       : chosen
         ? `Listening to the radio with ${chosen} chosen…`
-        : "Listening to the radio…";
+        : WORDING.listeningToTheRadio;
   return (
     <div className="min-w-0 py-1 px-1" data-testid="radio-pill">
       <div className="flex items-center gap-2">
@@ -126,7 +128,10 @@ function RadioCall({ call }: { call: Transmission }) {
  * under them. A tap opens the log.
  */
 function RadioCaptions() {
-  const { listening, error, heard, input } = useAtcRadio();
+  // Only what the captions show, not the listen-once pill's words as they come.
+  const { listening, error, heard, input } = useAtcRadio(
+    useShallow(({ listening, error, heard, input }) => ({ listening, error, heard, input })),
+  );
   const lines = heard.slice(-2);
   const name = heardThrough(input);
   const chosen = chosenOutside(input);
@@ -163,7 +168,7 @@ function RadioCaptions() {
               ? `Listening to the radio through ${name}…`
               : chosen
                 ? `Listening to the radio with ${chosen} chosen…`
-                : "Listening to the radio…"}
+                : WORDING.listeningToTheRadio}
           </span>
         )}
         {lines.map((t) => (
@@ -185,7 +190,7 @@ function RadioCaptions() {
 export default function RadioLayer() {
   const call = useAtcRadio(callToUs);
   // With the ATC copilot on, a call to us is its card (features/atc).
-  const atc = useAtcListen((s) => s.value !== "off");
+  const atc = useAtcListenOn() !== "off";
   const captions = useAtcRadio((s) => s.mode === "radio" || (!!s.error && s.mode !== "once" && s.pill === null));
   // Comms assist's pill is the radio button's own circle grown (RadioPill, in
   // MapControls), not a line here.

@@ -22,23 +22,23 @@ const today = () => localDay();
 /** The kinds of flight a 91.213(d) determination can be made for, in the
  *  rule's order (91.205(b)-(d)). */
 const REACHES: { value: NonNullable<SquawkRequest["deferredFor"]> | "none"; label: string }[] = [
-  { value: "none", label: "Not deferred" },
-  { value: "VFR_DAY", label: "Deferred for VFR by day" },
-  { value: "VFR", label: "Deferred for VFR, day and night" },
-  { value: "ALL", label: "Deferred for every kind" },
+  { value: "none", label: "Not Deferred" },
+  { value: "VFR_DAY", label: "Deferred for VFR by Day" },
+  { value: "VFR", label: "Deferred for VFR, Day and Night" },
+  { value: "ALL", label: "Deferred for Every Kind" },
 ];
 
 // As the server checks a squawk (SquawkRequest.java): what was found said,
 // at most 500 characters, on a day not ahead of today; the fix's note at
 // most 500 too.
 const squawkSchema = z.object({
-  text: z.string().trim().min(1, "Say what was found").max(500, "At most 500 characters"),
-  reportedOn: requiredPastDay("The day is required"),
+  text: z.string().trim().min(1, "Say what was found.").max(500, "At most 500 characters."),
+  reportedOn: requiredPastDay("The day is required."),
   inoperative: z.boolean(),
   deferredFor: z.enum(["none", "VFR_DAY", "VFR", "ALL"]),
 });
 type SquawkValues = z.infer<typeof squawkSchema>;
-const fixSchema = z.object({ note: z.string().trim().max(500, "At most 500 characters") });
+const fixSchema = z.object({ note: z.string().trim().max(500, "At most 500 characters.") });
 type FixValues = z.infer<typeof fixSchema>;
 
 const asRequest = (s: Squawk): SquawkRequest => ({
@@ -144,20 +144,19 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
       {fixing && (
         <ListGroup title={`Fix: ${fixing.text}`}>
           <div className="p-2">
-            <RowField id={fixId} error={fixForm.formState.errors.note?.message} wide>
+            <RowField id={fixId} error={fixForm.formState.errors.note?.message} wide label="The Fix">
               <Textarea
                 id={fixId}
                 {...fixForm.register("note")}
                 rows={3}
                 {...invalidProps(fixId, fixForm.formState.errors.note?.message)}
                 placeholder="What was done, and by whom"
-                aria-label="The fix"
                 data-testid="squawk-fix-note"
               />
             </RowField>
           </div>
           <ListRow
-            title={<span className="font-medium text-tint">Fixed today</span>}
+            title={<span className="font-medium text-tint">Fixed Today</span>}
             disabled={save.isPending}
             data-testid="squawk-fix"
             onClick={() => void onFix()}
@@ -170,22 +169,21 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
           required for (91.205, the equipment list, the kinds of operations
           list, an AD), removed or deactivated and placarded INOPERATIVE, by a
           pilot or a mechanic who finds it no hazard (14 CFR 91.213(d)). */}
-      <ListGroup title="Write a squawk">
+      <ListGroup title="Write a Squawk">
         <div className="p-2">
-          <RowField id={textId} error={errors.text?.message} wide>
+          <RowField id={textId} error={errors.text?.message} wide label="What Was Found">
             <Textarea
               id={textId}
               {...register("text")}
               rows={2}
               maxLength={500}
               {...invalidProps(textId, errors.text?.message)}
-              placeholder="What was found"
-              aria-label="What was found"
+              placeholder="A flap actuator that sticks, say"
               data-testid="squawk-text"
             />
           </RowField>
         </div>
-        <ListRow id={foundId} title="Found on">
+        <ListRow id={foundId} title="Found On">
           <RowField id={foundId} error={errors.reportedOn?.message}>
             <Controller
               control={control}
@@ -205,7 +203,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
             />
           </RowField>
         </ListRow>
-        <ListRow title="Inoperative equipment">
+        <ListRow title="Inoperative Equipment">
           <Controller
             control={control}
             name="inoperative"
@@ -226,7 +224,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
           </ListRow>
         )}
         <ListRow
-          title={<span className="font-medium text-tint">Write it</span>}
+          title={<span className="font-medium text-tint">Write It</span>}
           onClick={() => void onAdd()}
           disabled={add.isPending}
           data-testid="squawk-add"

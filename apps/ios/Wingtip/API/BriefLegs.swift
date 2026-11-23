@@ -83,12 +83,8 @@ enum BriefLegs {
 
     /// "14:20", the hours and minutes in `zone`, as the web app's
     /// clockTime gives the device's own.
-    static func clock(_ iso: String?, zone: TimeZone = .current) -> String? {
-        guard let at = AirportWords.date(iso) else { return nil }
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = zone
-        let parts = calendar.dateComponents([.hour, .minute], from: at)
-        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
+    nonisolated static func clock(_ iso: String?, zone: TimeZone = .current) -> String? {
+        AirportWords.date(iso).map { Format.clock($0, in: zone) }
     }
 
     /// "Legs 2–3 · 14:20–14:45, valid till 15:00": the legs, when the
@@ -132,18 +128,15 @@ enum BriefLegs {
         return out
     }
 
-    /// How long ago `at` was: "just now" under a minute, "4 min ago",
-    /// "2 h 5 min ago".
+    /// How long ago `at` was: "just now" under a minute, "4m ago",
+    /// "2h 5m ago" (Format.ago, the engine's).
     static func age(_ at: Date?, now: Date = Date()) -> String? {
-        guard let at else { return nil }
-        let minutes = max(0, Int(now.timeIntervalSince(at) / 60))
-        if minutes < 1 { return "just now" }
-        return minutes < 60 ? "\(minutes) min ago" : "\(minutes / 60) h \(minutes % 60) min ago"
+        at.flatMap { Format.ago($0, now: now) }
     }
 
     /// What is said of a source that has stopped coming in past its usual
     /// cadence (the planner's feed watch, a source's `stale`): "Not
-    /// updating: last updated 3 h 0 min ago", for a pilot to tell a feed
+    /// updating: last updated 3h ago", for a pilot to tell a feed
     /// gone quiet from a sky with nothing in it.
     static func staleWords(_ at: Date?, now: Date = Date()) -> String {
         age(at, now: now).map { "Not updating: last updated \($0)" } ?? "Not updating"
@@ -157,10 +150,13 @@ enum BriefLegs {
 
 extension Planner {
     /// The briefing, its hazards placed on the nav log's legs where they
-    /// are given (/api/briefing's fixes, leg_min, ground_min).
-    static func briefing(dep: String, dest: String, stops: [String], eteMin: Double?, legs: BriefLegs.Query?) async throws -> Briefing {
+    /// are given (/api/briefing's fixes, leg_min, ground_min), its forecast
+    /// read from `depart`, the time picked on FPL's departure line, to an
+    /// hour past arrival; nil is the planner's now, as the web's
+    /// usePlan asks it.
+    static func briefing(dep: String, dest: String, stops: [String], depart: Date? = nil, eteMin: Double?, legs: BriefLegs.Query?) async throws -> Briefing {
         try await call {
-            try await $0.briefing(query: .init(dep: dep, dest: dest, stops: Self.stops(stops), eteMin: eteMin?.rounded(),
+            try await $0.briefing(query: .init(dep: dep, dest: dest, stops: Self.stops(stops), depart: depart.map { $0.formatted(.iso8601) }, eteMin: eteMin?.rounded(),
                                                fixes: legs?.fixes, legMin: legs?.legMin, groundMin: legs?.groundMin)).ok.body.json
         }
     }

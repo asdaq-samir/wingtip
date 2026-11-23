@@ -5,13 +5,16 @@
 #
 #   changes_since.sh last-green   a push since main's last green CI run
 #                                 (REPO, EVENT): sha=<it>; anything else,
-#                                 or a history it is not behind, all=true
+#                                 or a history it is not behind, all=true;
+#                                 a wave's validation, validation.py's
+#                                 (everything, or a rerun's or a check's base)
 #
 # GH_TOKEN reads the API; nothing here writes to GitHub.
 set -euo pipefail
 
 case "${1:-}" in
   last-green)
+    if [ "$EVENT" = wave ]; then exec python3 "$(dirname "$0")/validation.py" github; fi
     sha=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
     status=""
     [ -n "$sha" ] && status=$(gh api "repos/$REPO/compare/$sha...$GITHUB_SHA" --jq .status || true)

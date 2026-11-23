@@ -19,7 +19,7 @@ test("with an airplane the log is a table with a sticky heading, the desk's colu
   // The suite's C172 (auth.setup), so the airplane's columns are there.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel").first()).toBeVisible({ timeout: slow(120_000) });
+  await expect(page.getByTestId("navlog-ete").first()).toBeVisible({ timeout: slow(120_000) });
   await openPanel(page);
 
   await openNavLog(page);

@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { settle, slow } from "./helpers";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * Ask by voice (features/voice), apart from the radio (the owner,
@@ -11,7 +14,8 @@ import { settle, slow } from "./helpers";
  */
 test("the search's mic types what is said into the field, with nothing of the radio's", { tag: "@smoke" }, async ({ page }) => {
   // A recognizer that hears the pilot a word at a time, then the whole
-  // settled, and ends when stopped (the pause after the words).
+  // settled, as the test says them, and ends when stopped (the pause
+  // after the words).
   await page.addInitScript(() => {
     class Heard {
       lang = "";
@@ -21,10 +25,14 @@ test("the search's mic types what is said into the field, with nothing of the ra
       onerror: ((e: unknown) => void) | null = null;
       onend: (() => void) | null = null;
       start() {
-        const say = (transcript: string, isFinal: boolean, at: number) =>
-          setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript }], { isFinal })] }), at);
-        say("Duluth", false, 600);
-        say("Duluth weather", true, 1400);
+        // Each word heard when the test says it (`__hear`), not on a
+        // clock: at 600 and 1400 ms a loaded runner's own steps (the tap
+        // tried again, the placeholder read) found the whole already in
+        // the field (CI run 44582598916, shard 10), and the whole held
+        // back to 4600 ms came after the app's 1.8 s pause had ended the
+        // listening (voiceInput's PAUSE_MS), the field left at "Duluth".
+        (window as unknown as { __hear: (transcript: string, isFinal: boolean) => void }).__hear = (transcript, isFinal) =>
+          this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript }], { isFinal })] });
       }
       stop() {
         setTimeout(() => this.onend?.(), 50);
@@ -49,8 +57,16 @@ test("the search's mic types what is said into the field, with nothing of the ra
     await expect(mic).toHaveAttribute("aria-pressed", "true", { timeout: 1000 });
   }).toPass({ timeout: slow(20_000) });
   await expect(field).toHaveAttribute("placeholder", "Speak your question");
-  // The words in the field as they are said, then the whole.
+  // The words in the field as they are said, then the whole, the second
+  // well inside the pause after the first.
+  const hear = (transcript: string, isFinal: boolean) =>
+    page.evaluate(([t, f]) => (window as unknown as { __hear: (t: string, f: boolean) => void }).__hear(t, f), [
+      transcript,
+      isFinal,
+    ] as const);
+  await hear("Duluth", false);
   await expect(field).toHaveValue("Duluth", { timeout: slow(5000) });
+  await hear("Duluth weather", true);
   await expect(field).toHaveValue("Duluth weather", { timeout: slow(5000) });
   // The pause ends it: the toggle let go, the words kept in the field.
   await expect(mic).toHaveAttribute("aria-pressed", "false", { timeout: slow(10_000) });

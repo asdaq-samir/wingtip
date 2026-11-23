@@ -4,7 +4,7 @@ import { SHEET_SECONDS } from "../../../mapChrome";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
 import { usePreferences } from "../../../preferences";
-import { drawOwnShip, ownShipMarker } from "./ownShipMarker";
+import { drawOwnShip, ownShipMarker, placeOwnShip } from "./ownShipMarker";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
@@ -75,9 +75,7 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     // `data-own-ship` the specs find), turned by the marker to the heading.
     const heading = enabled ? fix.headingDeg : null;
     drawOwnShip(m, drawn, ownShipHtml(heading == null ? null : 0, !enabled, look, enabled && (simulated || underway(fix))));
-    m.setLngLat([fix.lon, fix.lat])
-      .setRotation(heading ?? 0)
-      .addTo(map);
+    placeOwnShip(m, map, [fix.lon, fix.lat], heading ?? 0);
   }, [map, fix, enabled, simulated, look]);
   useEffect(() => {
     if (!fix || !enabled) return;
@@ -85,6 +83,14 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     const intent = simulated ? "dry-run" : "own-ship";
     if (flown.current !== recentred) {
       flown.current = flownRecentre = recentred;
+      // A recentre still waiting on its first fix is let go once the
+      // follow it started has ended, as a drag lets it go: a route opened
+      // by link, fitted while a desktop's Wi-Fi fix took seconds to come,
+      // was left for own ship at the open's zoom when the fix came (the
+      // owner's desktop, 2026-11-21, Wisconsin for a route to KPWK;
+      // desk-route-link.spec). The fit ended the follow (camera's
+      // endFollows); the recentre had asked for it before the route came.
+      if (!follow) return;
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
       camera.pick([fix.lon, fix.lat], { zoom, duration: SHEET_SECONDS * 2000, keeps: intent });
       return;

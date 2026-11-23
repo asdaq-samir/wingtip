@@ -27,7 +27,7 @@ struct ContactView: View {
                 LabeledContent("Phone") {
                     TextField("218 555 0100", text: $phone).multilineTextAlignment(.trailing).keyboardType(.phonePad).textContentType(.telephoneNumber)
                 }
-                LabeledContent("Home base") {
+                LabeledContent("Home Base") {
                     TextField("KDLH", text: $homeBase).multilineTextAlignment(.trailing).font(.body.monospaced())
                         .textInputAutocapitalization(.characters).autocorrectionDisabled()
                 }
@@ -42,7 +42,7 @@ struct ContactView: View {
                     Task {
                         let p = phone.trimmingCharacters(in: .whitespaces), h = homeBase.trimmingCharacters(in: .whitespaces).uppercased()
                         do { try await session.setContact(phone: p.isEmpty ? nil : p, homeBase: h.isEmpty ? nil : h); dismiss() }
-                        catch { problem = error.localizedDescription }
+                        catch { problem = Problems.say("The change could not be saved", error) }
                         saving = false
                     }
                 }
@@ -66,10 +66,10 @@ struct DeleteAccountButton: View {
     @State private var problem: String?
 
     var body: some View {
-        Button(deleting ? "Deleting…" : "Delete Account", role: .destructive) { asking = true }
+        Button(deleting ? String(localized: "Deleting…") : Wording.deleteAccount, role: .destructive) { asking = true }
             .disabled(deleting)
-            .confirmationDialog("Delete your account?", isPresented: $asking, titleVisibility: .visible) {
-                Button("Delete Account", role: .destructive) {
+            .confirmationDialog(Wording.deleteAccountQuestion, isPresented: $asking, titleVisibility: .visible) {
+                Button(Wording.deleteAccount, role: .destructive) {
                     deleting = true
                     Task {
                         do {
@@ -78,13 +78,13 @@ struct DeleteAccountButton: View {
                             plan.forgetPilot()
                             problem = nil
                         } catch {
-                            problem = "Your account was not deleted: \(error.localizedDescription)"
+                            problem = Problems.say("Your account could not be deleted", error)
                         }
                         deleting = false
                     }
                 }
             } message: {
-                Text("Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can't be undone.")
+                Text("Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This cannot be undone.")
             }
         ProblemLine(problem)
     }
@@ -100,7 +100,7 @@ struct ExportDataButton: View {
     var body: some View {
         ShareLink(item: SharedFile(name: nil, type: .json) { [export] in try await export.fetch() },
                   preview: SharePreview("Your Wingtip Maps data")) {
-            Text("Export My Data")
+            Text(Wording.exportMyData)
         }
         ProblemLine(export.problem)
     }
@@ -118,7 +118,7 @@ final class DataExportState {
             problem = nil
             return file
         } catch {
-            problem = "Your data could not be exported: \(error.localizedDescription)"
+            problem = Problems.say("Your data could not be exported", error)
             throw error
         }
     }

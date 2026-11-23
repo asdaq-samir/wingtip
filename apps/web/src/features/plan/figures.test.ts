@@ -110,7 +110,7 @@ describe("shortFlights", () => {
         { departure: "KMSN", destination: "KDLH", totals: hop(-3.5) },
       ],
     } as unknown as Totals;
-    expect(shortFlights(route)).toEqual([{ name: "KMSN → KDLH", shortGal: 3.5 }]);
+    expect(shortFlights(route)).toEqual([{ name: "KMSN → KDLH", shortGal: 3.5, noStop: true }]);
     // And the fuel figure red for it, though the next landing's flight is not short.
     expect(tripFigures({ ...input, totals: route })[3]!.alert).toBe(true);
     expect(shortFlights({ ...totals, fuel_margin_gal: 4 } as Totals)).toEqual([]);
@@ -119,7 +119,24 @@ describe("shortFlights", () => {
     const hop = (margin: number) => ({ ...totals, fuel_margin_gal: margin, hops: [] });
     const route = { ...totals, hops: [{ departure: "C81", destination: "VPBNG/090/30", totals: hop(-2) }] } as unknown as Totals;
     nameOwnPoints(["C81", "VPBNG/090/30", "KDLH"]);
-    expect(shortFlights(route)).toEqual([{ name: "C81 → POS1", shortGal: 2 }]);
+    expect(shortFlights(route)).toEqual([{ name: "C81 → POS1", shortGal: 2, noStop: true }]);
+  });
+
+  it("says a short flight has no fuel stop in reach only where the planner suggests none for it", () => {
+    const hop = (margin: number) => ({ ...totals, fuel_margin_gal: margin, hops: [] });
+    const stop = { departure: "KMSN", destination: "KDLH", reason: "fuel", usable_gal: 36, stops: [], choices: [] };
+    const route = {
+      ...totals,
+      hops: [
+        { departure: "C81", destination: "KMSN", totals: hop(-1) },
+        { departure: "KMSN", destination: "KDLH", totals: hop(-3.5) },
+      ],
+      fuel_stops: [stop],
+    } as unknown as Totals;
+    expect(shortFlights(route).map((f) => [f.name, f.noStop])).toEqual([
+      ["C81 → KMSN", true],
+      ["KMSN → KDLH", false],
+    ]);
   });
 
   it("says the same figures from where a dry run is: the hop it is on, what is left to it, and the fuel required less what is burnt", () => {

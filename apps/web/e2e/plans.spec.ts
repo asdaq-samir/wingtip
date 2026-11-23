@@ -46,7 +46,7 @@ test(
     const input = page.getByTestId("altitude-input");
     await expect(why).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
     // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
-    await expect(input).toHaveValue(/^FL-\d{3}$/);
+    await expect(input).toHaveValue(/^\d{3}$/);
     await openProfile(page);
     // The Profile card: the side view with its slider, the Altitude Advisor
     // under it (Fastest marked), the flight rules, and how it was chosen, folded.
@@ -108,7 +108,7 @@ test(
     // ceiling once each, with their reasons (the owner's pick of the
     // redesign): there is no list over the steps that said them again.
     const drawer = sideDrawer(page);
-    await openTab(page, "En route"); // the Brief pulled up first: half way, its pages' cards are under its foot
+    await openTab(page, "En Route"); // the Brief pulled up first: half way, its pages' cards are under its foot
     await openSection(page, "Cruise Altitude");
     const cruise = drawer.locator('[data-title="Cruise Altitude"]');
     await expect(cruise).toBeVisible();
@@ -159,9 +159,8 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   // itself.
   await openNavLog(page);
   await expect(times.first()).toHaveText("15:00");
-  // The route's figures say where it lands, the time en route and the
-  // fuel required (the owner's "To, Dist, ETE, Fuel").
-  await expect(page.getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/, { timeout: slow(60000) });
+  // The route's figures say where it lands, the time en route
+  // (the owner's "To, Dist, ETE"; its fuel is the timeline's gauges' and the nav log's).
   await expect(page.getByTestId("navlog-to")).toHaveText("KDLH");
   await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
   // Every later row has a time once its leg is in.
@@ -172,25 +171,15 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await expect(page.getByTestId("navlog-eta")).toHaveText(/^\d\d:\d\d$/);
   await page.getByTestId("ete-eta-toggle").click();
   await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
-  // The fuel tapped, what it is made of, summing to it.
-  await page.getByTestId("fuel-breakdown-open").click();
-  const breakdown = page.getByTestId("fuel-breakdown");
-  await expect(breakdown).toContainText("Flying the legs");
-  await expect(breakdown).toContainText("Start, taxi and takeoff");
-  await expect(breakdown).toContainText(/Reserve, (30|45) min/);
-  await expect(breakdown).toContainText(/Fuel required\s*\d+\.\d gal/);
-  await page.keyboard.press("Escape");
-  await expect(breakdown).toHaveCount(0);
   // And the fuel check, against the stock C172's 40 usable gallons, with
   // the day reserve for a mid-afternoon flight: the figure's alone now,
   // no line under the route (the owner's "Remove fuel required at the
   // bottom of arrival"), and in full in the Brief.
   await expect(page.getByTestId("fuel-check")).toHaveCount(0);
-  await expect(page.getByTestId("fuel-breakdown-open")).not.toHaveAttribute("data-alert");
   await openTab(page, "Preflight"); // the Brief pulled up first, as above
   await openSection(page, "Fuel");
   const detail = page.getByTestId("fuel-detail");
-  await expect(detail.locator("[data-slot=item]", { hasText: "Usable fuel" })).toContainText("40 gal");
+  await expect(detail.locator("[data-slot=item]", { hasText: "Usable Fuel" })).toContainText("40 gal");
   await expect(detail).toContainText("30 min day reserve");
 });
 
@@ -210,7 +199,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // owner, 2026-10-27 and 2026-11-04); the N kept in the text once a number
   // is typed.
   await expect(picker).toHaveValue("");
-  await expect(picker).toHaveAttribute("placeholder", "N-_____");
+  await expect(picker).toHaveAttribute("placeholder", "_____");
   await expect(picker).toHaveAccessibleName("Airplane, N-number: none picked; pick one for times and fuel");
   // An N-number typed is added at once, its type looked up behind it (the
   // owner's "You can do the lookup in the background") -- here a made-up
@@ -222,7 +211,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   );
   await picker.fill("N181PA");
   await picker.press("Enter");
-  await expect(picker).toHaveValue("N-181PA");
+  await expect(picker).toHaveValue("181PA");
   // No card button at its end since the owner's "we don't need the info
   // for n number" (2026-10-27).
   await expect(page.getByTestId("aircraft-card-button")).toHaveCount(0);
@@ -235,7 +224,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   await settle(page);
   await expectDrawerOpen(page);
   await controlsInSight(page);
-  await expect(page.getByTestId("aircraft-input")).toHaveValue("N-181PA");
+  await expect(page.getByTestId("aircraft-input")).toHaveValue("181PA");
 });
 
 test("plan page: no legal altitude is the route's own problem: its chip says so at rest, and a mark beside the Nav Log opens to why and the two ways on", async ({
@@ -310,7 +299,7 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
     "The first westbound VFR altitude above that is 12,500 ft.",
     "The aircraft's service ceiling stops at 11,700 ft.",
   ]);
-  await expect(problem.getByRole("button", { name: "Try again" })).toHaveCount(0);
+  await expect(problem.getByRole("button", { name: "Try Again" })).toHaveCount(0);
   await expect(navLog).toBeAttached();
   await expect(sideDrawer(page).getByTestId("brief-card")).toHaveCount(0);
 
@@ -332,5 +321,5 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   }).toPass({ timeout: slow(30000) });
   const search = page.getByTestId("search-airports");
   await expect(search).toBeFocused();
-  await expect(search).toHaveAttribute("placeholder", "Search airports and waypoints");
+  await expect(search).toHaveAccessibleName("Search airports and waypoints");
 });

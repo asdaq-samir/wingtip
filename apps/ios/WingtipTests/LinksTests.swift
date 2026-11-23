@@ -6,14 +6,17 @@ import Testing
 /// app writes the links it shares: ShareMenu's route, AirportCard's place,
 /// AirplaneCard's flight, and a track file from Files.
 struct LinksTests {
-    @Test func aSharedRouteIsPlannedAsItWas() throws {
+    @Test func aRouteLinkIsPreviewedNotPlanned() throws {
+        // Any page or app can open a link, so it never replaces the pilot's
+        // plan: the shared flight's preview first (N3, 2026-11-21).
         let url = URL(string: "https://wingtipmaps.app/app/plan?dep=c81&stops=KJVL,KRHI&dest=kdlh&altitude_ft=4500")!
-        #expect(Links.command(for: url) == .planRoute(dep: "C81", stops: ["KJVL", "KRHI"], dest: "KDLH"))
+        #expect(Links.command(for: url) == .sharedFlight(.plan(SharedPlan(dep: "C81", dest: "KDLH", stops: ["KJVL", "KRHI"], altitudeFt: 4500))))
+        #expect(Links.command(for: URL(string: "wingtipmaps://plan?dep=C81&dest=KDLH")!) == .sharedFlight(.plan(SharedPlan(dep: "C81", dest: "KDLH"))))
     }
 
-    @Test func aDestinationAloneIsPlannedFromWhereTheAirplaneIs() throws {
+    @Test func aDestinationAloneOpensItsCardAndPlansNothing() throws {
         let url = URL(string: "https://wingtipmaps.app/app/plan?dest=KLAS")!
-        #expect(Links.command(for: url) == .planTo(ident: "KLAS"))
+        #expect(Links.command(for: url) == .weather(ident: "KLAS"))
     }
 
     @Test func aPlaceOpensItsCardAndAFlightItsAirplane() throws {
@@ -36,10 +39,10 @@ struct LinksTests {
         #expect(Links.command(for: URL(string: "https://wingtipmaps.app/app/plan?open=nowhere")!) == nil)
     }
 
-    @Test func aScreenBesideARouteOpensOnceTheRouteIsIn() throws {
+    @Test func aScreenBesideARouteWaitsForThePreview() throws {
+        // The route previewed; the named screen is not opened over it.
         let url = URL(string: "https://wingtipmaps.app/app/plan?dep=C81&dest=KDLH&open=brief")!
-        #expect(Links.command(for: url) == .planRoute(dep: "C81", stops: [], dest: "KDLH"))
-        #expect(Links.screen(for: url) == .brief)
+        #expect(Links.command(for: url) == .sharedFlight(.plan(SharedPlan(dep: "C81", dest: "KDLH"))))
     }
 
     @Test @MainActor func everyScreenTheStripHasIsOneOfItsWords() throws {

@@ -2,31 +2,26 @@ import type { ExpressionSpecification, LayerSpecification, Map as MlMap, SourceS
 import type { OverlayTiles } from "../../api/types";
 import { usePreferences } from "../../preferences";
 import { stationPictures } from "../marks/stationModel";
-import {
-  AIRPORT_IDENT_INK,
-  AIRPORT_IDENT_SIZE,
-  AIRPORT_WEATHER,
-  TILE_AIRPORT_ICON,
-  airportIconSize,
-  airportPictures,
-} from "./airportIcons";
+import { AIRPORT_IDENT_INK, AIRPORT_WEATHER, TILE_AIRPORT_ICON, airportIconSize, airportPictures } from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, slotId, type Slot } from "./glLayer";
 import { drawSvg, type DrawnImage } from "./drawSvg";
 import { OVERLAY_SOURCE, SUA_LAYERS, airspaceLayers, glZoom, specialUseLayers } from "./glStyle";
-import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, labelByZoom } from "./layers/common";
+import { GL_FONT_BOLD, LABEL_HALO, labelHalo, labelInk, labelText } from "./layers/common";
 import { specialUseLabelLayer } from "./glSuaLabels";
 import { OVERLAY_PICTURES } from "./glOverlayPictures";
-import { CHART } from "../../tokens";
+import { CHART, MAP_ZOOM } from "../../tokens";
 
 export { OVERLAY_SOURCE };
 
 /** The chart's own ink for a fix's ident. */
 const FIX_INK = CHART.fixInk;
-/** A VFR waypoint's ink on the WebGL map: ForeFlight's green triangle, at
- *  the owner's ask (2026-11-07, from its screenshots), where the
- *  sectional prints a magenta flag (Chart User's Guide, VFR waypoints). */
-const VFR_GREEN = CHART.vfrGreen;
+/** A VFR waypoint's ident on the WebGL map: in the green of ForeFlight's
+ *  triangle, at the owner's ask (2026-11-07, from its screenshots), where
+ *  the sectional prints a magenta flag (Chart User's Guide, VFR
+ *  waypoints); a step deeper for words, as the triangle's green on the
+ *  white halo was 4.4:1, under the 4.5:1 small words need. */
+const VFR_GREEN = CHART.vfrGreenText;
 
 /**
  * The cycle's FAA overlays from its vector tiles (lib/map/sources/overlayTiles,
@@ -57,12 +52,30 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 // ---- The layers -----------------------------------------------------------
 
-/** The airports' zooms, in the app's levels: the farthest out any
- *  is drawn. Within it each field is in the tiles from its own zoom by
- *  its tier (AIRPORT_MIN_ZOOM in services/jobs/charts/overlay_layers.py):
- *  towered, then the long hard runways, other public fields, private
- *  ones, heliports. */
-const AIRPORTS_FARTHEST_ZOOM = 4;
+/** The airports' zooms, in the app's levels (design/tokens.json's
+ *  map.zoom): the farthest out any is drawn. Within it each field is in
+ *  the tiles from its own tier's zoom (the charts job's AIRPORT_MIN_ZOOM
+ *  reads the same tokens): towered, then the long hard runways, other
+ *  public fields, private ones, heliports. */
+const AIRPORTS_FARTHEST_ZOOM = MAP_ZOOM.airportsFarthest;
+/** A field's ident beside its mark, the labels capped by zoom: a
+ *  towered field's (the tiles' `towered`, NASR's TWR_TYPE_CODE, or a
+ *  Class B's, which field_mark_rank sizes largest) named wherever it is
+ *  drawn, from zoom 5 (the owner, 2026-11-21: the towered fields and the
+ *  Class B and C rings from 5, decision 0052); every other field named
+ *  from map.zoom.airport-public, where the other public fields come in.
+ *  The long hard runways' fields, drawn from 7, some 2,400 across the
+ *  country, are named a zoom later: each was an ident to shape and place
+ *  where nearly all gave way to their marks, and a wheel notch out from 7
+ *  was about a second of the main thread's long tasks at 4x (the speed
+ *  audit of 2026-11-21, finding 8). The cap thins only those names. */
+const AIRPORT_IDENT_FAR: ExpressionSpecification = [
+  "step",
+  ["zoom"],
+  ["case", ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]], ["get", "ident"], ""],
+  glZoom(MAP_ZOOM.airportPublic),
+  ["get", "ident"],
+];
 
 /** The airports' one symbol layer, from either source: the mark (airportIcons), its ident beside it in bold in the field's
  *  ink (the sectional sets an airport's name in its symbol's colour, Chart User's Guide, Airports), kept apart by MapLibre's
@@ -88,19 +101,19 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       // Each field at its own size step, the biggest largest (airportIconSize).
       "icon-size": airportIconSize(glZoom(AIRPORTS_FARTHEST_ZOOM), glZoom(10), glZoom(13)),
       "icon-allow-overlap": false,
-      // Out at a few states, a mark keeps some 80 px from the next; closer in, its own: every field at a field's own scale.
-      "icon-padding": ["step", ["zoom"], 27, glZoom(7), 2],
+      // Two px round each mark at every zoom: out at a few states the towered fields then stand side by side in rank
+      // order, as ForeFlight's do, where 27 px round each (to the app's zoom 7) left one field a metro (2026-11-21).
+      "icon-padding": 2,
       "symbol-sort-key": ["get", "rank"],
-      "text-field": ["get", "ident"],
-      "text-font": GL_FONT_BOLD,
-      "text-size": AIRPORT_IDENT_SIZE,
+      "text-field": AIRPORT_IDENT_FAR,
+      ...labelText("airportIdent"),
       "text-anchor": "left",
       "text-offset": [1.15, 0],
       // The ident gives way, the mark stays: a busy area keeps its fields.
       "text-optional": true,
       "text-padding": 1,
     },
-    paint: { "text-color": AIRPORT_IDENT_INK, ...LABEL_HALO, "text-opacity": SELECTED_HIDDEN },
+    paint: { "text-color": labelInk(AIRPORT_IDENT_INK), ...labelHalo("airportIdent"), "text-opacity": SELECTED_HIDDEN },
   };
 }
 
@@ -135,11 +148,8 @@ function navaidMarks(
       ...extra,
       layout: {
         "text-field": ["case", ["has", "freq"], ["concat", ["get", "ident"], " (", ["get", "freq"], ")"], ["get", "ident"]],
-        "text-font": GL_FONT_BOLD,
-        "text-size": labelByZoom([
-          [6, LABEL_SIZE.small],
-          [10, LABEL_SIZE.normal],
-        ]),
+        // A VOR's on its tag and a fix's on the halo, one size (map.label.kind's navaid-ident and fix-ident).
+        ...labelText("fixIdent"),
         "text-variable-anchor": ["left", "right"],
         "text-radial-offset": 1.1,
         "text-justify": "auto",
@@ -148,7 +158,10 @@ function navaidMarks(
         "icon-text-fit-padding": [1, 4, 1, 4],
       },
       paint: {
-        "text-color": ["match", kind, "vor", CHART.casing, "vfr", VFR_GREEN, FIX_INK] as ExpressionSpecification,
+        // A VOR's white on its tag stays white after dark (casing is no
+        // day ink in map.label.night-ink); a fix's and a VFR waypoint's
+        // turn light on the night's dark halo (labelInk).
+        "text-color": labelInk(["match", kind, "vor", CHART.casing, "vfr", VFR_GREEN, FIX_INK] as ExpressionSpecification),
         "text-halo-color": ["match", kind, "vor", "transparent", LABEL_HALO["text-halo-color"]] as ExpressionSpecification,
         "text-halo-width": LABEL_HALO["text-halo-width"],
       },
@@ -156,10 +169,11 @@ function navaidMarks(
   ];
 }
 
-/** The navaids' zooms, in the app's levels: the VORs from a region's, the fixes
- *  and the VFR waypoints from 10 (NavaidCards, WaypointCard). */
-const VOR_ZOOM = 8;
-const FIX_ZOOM = 10;
+/** The navaids' zooms, in the app's levels (design/tokens.json's map.zoom,
+ *  every app's): the VORs from a region's, the fixes and the VFR waypoints
+ *  closer in (NavaidCards, WaypointCard). */
+const VOR_ZOOM = MAP_ZOOM.vor;
+const FIX_ZOOM = MAP_ZOOM.fix;
 /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE). */
 const VOR_KINDS = ["VORTAC", "VOR/DME", "VOR"];
 
@@ -205,18 +219,14 @@ function runwayLayers(): LayerSpecification[] {
       filter: ["==", ["get", "part"], "end"],
       layout: {
         "text-field": ["get", "end_id"],
-        "text-font": GL_FONT_BOLD,
-        "text-size": labelByZoom([
-          [12.5, LABEL_SIZE.small],
-          [16, LABEL_SIZE.runway],
-        ]),
+        ...labelText("runwayNumber"),
         "text-rotation-alignment": "map",
         "text-rotate": ["get", "heading"],
         // Up the number's own page, which is down the runway from its end.
         "text-offset": [0, -1.1],
         "text-allow-overlap": true,
       },
-      paint: { "text-color": CHART.casing, "text-halo-color": CHART.fixInk, "text-halo-width": 1.75 },
+      paint: { "text-color": CHART.casing, ...labelHalo("runwayNumber") },
     },
   ];
 }
@@ -247,11 +257,13 @@ export function overlayStyle(
     ...airspaceLayers(GL_FONT_BOLD),
     specialUseLabelLayer(GL_FONT_BOLD),
   ];
+  // Bottom to top, and MapLibre places the top first, so where words
+  // collide the higher keeps its place: the fields, then the VORs a pilot
+  // tunes and steers by, then the VFR waypoints, then the enroute fixes,
+  // the order the sectional gives them weight (Chart User's Guide). The
+  // VORs were under the fixes, so an intersection's ident took a VOR's
+  // place.
   const marks: LayerSpecification[] = [
-    ...navaidMarks("navaids", from("navaids"), "vor", {
-      filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]],
-      minzoom: glZoom(VOR_ZOOM),
-    }),
     ...navaidMarks("fixes", from("fixes"), "fix", {
       filter: ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
       minzoom: glZoom(FIX_ZOOM),
@@ -259,6 +271,10 @@ export function overlayStyle(
     ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", {
       filter: ["all", ["==", ["get", "vfr"], true], notOwn(ROUTE_WAYPOINTS)],
       minzoom: glZoom(FIX_ZOOM),
+    }),
+    ...navaidMarks("navaids", from("navaids"), "vor", {
+      filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]],
+      minzoom: glZoom(VOR_ZOOM),
     }),
     airportMarksLayer(from("airports")),
   ];

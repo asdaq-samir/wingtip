@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { ProcedureList } from "./api/types";
+import { callEngine } from "./engine/engine";
+import routeProcedures from "./fixtures/routeProcedures.json";
 import {
   altitudeLines,
   approachRunway,
+  flownPicks,
   proceduresOf,
   proceduresParam,
   sameField,
   speedWords,
-  TYPED_PROCEDURE,
   typedProcedure,
 } from "./procedures";
 
@@ -17,6 +19,19 @@ describe("speedWords", () => {
     expect(speedWords({ speed_kt: 120, speed_limit: "min" })).toBe("120 kt min");
     expect(speedWords({ speed_kt: 150, speed_limit: "at" })).toBe("150 kt");
     expect(speedWords({ speed_kt: null, speed_limit: null })).toBeNull();
+  });
+});
+
+describe("an approach loaded or flown into its missed approach, in the address", () => {
+  it("keeps its state through the address, and a loaded one out of the route flown", () => {
+    const picks = proceduresOf("KDLH:I27:::L,KMSN:I36:ANDOE::M,KOSH:R36");
+    expect(picks).toEqual([
+      { ident: "KDLH", id: "I27", transition: null, loaded: true },
+      { ident: "KMSN", id: "I36", transition: "ANDOE", missed: true },
+      { ident: "KOSH", id: "R36", transition: null },
+    ]);
+    expect(proceduresParam(picks)).toBe("KDLH:I27:::L,KMSN:I36:ANDOE::M,KOSH:R36");
+    expect(flownPicks(picks).map((p) => p.ident)).toEqual(["KMSN", "KOSH"]);
   });
 });
 
@@ -110,9 +125,8 @@ describe("a SID or a STAR typed in the route", () => {
   const list = async (ident: string) => lists[ident] ?? Promise.reject(new Error("none"));
   const route = { dep: "C81", dest: "KATW" };
 
-  it("is told from an airport and a fix by its shape", () => {
-    expect(["BAEE1", "OSHH2", "KAYYS3"].every((w) => TYPED_PROCEDURE.test(w))).toBe(true);
-    expect(["C81", "KATW", "CORIR", "V191", "1C5"].some((w) => TYPED_PROCEDURE.test(w))).toBe(false);
+  it.each(routeProcedures.cases)("is told from an airport and a fix by the engine, as the iPhone tells it: $why", (c) => {
+    expect(callEngine("route_procedures", c.input)).toEqual(c.expected);
   });
 
   it("is the departure's, by the fix after it, or the destination's, by the fix before it", async () => {

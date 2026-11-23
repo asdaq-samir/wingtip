@@ -1,7 +1,7 @@
 //! An airplane's emitter category and squawk in words, and the registry's
-//! airplanes (wingtip_engine::aircraft), held to the cases the web's
-//! lib/aircraftChoice tests and the iPhone's RegisteredTests hold their
-//! copies to.
+//! airplanes (wingtip_engine::aircraft): the rule's cases, tested here
+//! once; the web's lib/aircraftChoice and the iPhone's RegisteredTests
+//! keep a case or two each, for their wire.
 
 use serde_json::{json, Value};
 use wingtip_engine::aircraft::registry::{is_n_number, profile_of};

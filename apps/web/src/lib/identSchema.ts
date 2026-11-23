@@ -1,5 +1,5 @@
 import { degreesMinutes } from "./coords";
-import { callEngine } from "./engine/engine";
+import { callEngine, engineLoaded } from "./engine/engine";
 
 /** An airport ident, normalized (trimmed, uppercased) and shape-checked
  *  -- the same 3-4 alphanumeric character rule services/gateway's own
@@ -137,8 +137,10 @@ export function stopsOf(value: string | null | undefined): string[] {
 export const MAX_STOPS = 16;
 
 /** A route the planner can plan, or null: both ends valid idents, and no
- *  airport straight after itself -- a route from an airport to itself is
- *  a round trip once it lands somewhere between. Plan's and Train's forms
+ *  airport straight after itself, by any of its idents (the engine's
+ *  same_field: KOSH after OSH is one field, a hop of no length the planner
+ *  refuses) -- a route from an airport to itself is a round trip once it
+ *  lands somewhere between. Plan's and Train's forms
  *  and hooks each used to decide this for themselves, three different
  *  ways -- Train's form let a same-airport route through, and its chart
  *  read then asked for that corridor. */
@@ -151,7 +153,10 @@ export function routeOf(
     a = identOf(dest);
   if (!d || !a) return null;
   const idents = [d, ...stops, a];
-  return idents.every((ident, i) => i === 0 || ident !== idents[i - 1]) ? { dep: d, dest: a } : null;
+  // Before the engine is in (the page's first draw reads the address's
+  // route), the idents alike as written; never a throw that takes the page down.
+  const same = (x: string, y: string) => (engineLoaded() ? callEngine("same_field", { a: x, b: y }) : x === y);
+  return idents.every((ident, i) => i === 0 || !same(ident, idents[i - 1]!)) ? { dep: d, dest: a } : null;
 }
 
 const ARROW = " → ";
@@ -205,6 +210,26 @@ export function groundOf(value: string | null | undefined): Record<string, numbe
     const point = stopOf(ident),
       min = Number(minutes);
     if (point && minutes !== "" && Number.isInteger(min) && min >= 0 && min <= 24 * 60) out[point] = min;
+  }
+  return out;
+}
+
+/** The fuel the pilot set in the tanks as the airplane leaves a field
+ *  ("KOSH:30,KJVL:0", the address's `tanks`), whole gallons by its
+ *  ident: at the departure on board at engine start, at a stop what it is
+ *  fuelled to, 0 none bought (the engine's fuel_in_tanks). Up to five
+ *  figures, as the planner reads a point's figure; more than the tanks
+ *  hold is the pilot's word, kept with a warning (warn, never limit).
+ *  `pointOf` reads an ident: the engine's stopOf, or a shared link's own
+ *  shape check, read before the engine has loaded (lib/sharedFlight). */
+export function tanksOf(value: string | null | undefined, pointOf: (ident: string | undefined) => string = stopOf): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of (value ?? "").split(",")) {
+    // Whole gallons, 0 to 9,999, and nothing after them, as the phones'
+    // SharedPlan reads a link's: a part that is not one is left out.
+    const [ident, gallons, extra] = part.split(":");
+    const point = pointOf(ident);
+    if (point && extra === undefined && /^\d{1,4}$/.test(gallons ?? "")) out[point] = Number(gallons);
   }
   return out;
 }

@@ -81,25 +81,27 @@ class UpstreamRoutesTest {
             Map.entry("GET /api/weather/flow/{frame}/{field}.png", "public csrf"),
             // An approach plate's page as a picture, public as the plates are.
             Map.entry("GET /api/approach-plate-page/{cycle}/{ident}/{procedure}.png", "public csrf"),
-            // The Studio's tracks, history and drafts: the developer's for
-            // now (the owner, 2026-11-12: "You only for now").
-            Map.entry("GET /api/studio/track", "developer csrf"),
-            Map.entry("GET /api/studio/watched", "developer csrf"),
-            Map.entry("POST /api/studio/ground", "developer csrf"),
-            Map.entry("POST /api/studio/weather", "developer csrf"),
-            Map.entry("GET /api/studio/notams", "developer csrf"),
-            Map.entry("GET /api/studio/ntsb", "developer csrf"),
-            Map.entry("GET /api/studio/drafts", "developer csrf"),
-            Map.entry("GET /api/studio/drafts/{draft_id}", "developer csrf"),
-            Map.entry("GET /api/studio/drafts/{draft_id}/track", "developer csrf"),
-            Map.entry("POST /api/studio/drafts/{draft_id}/identity", "developer csrf"),
-            Map.entry("POST /api/studio/drafts/{draft_id}/rendered", "developer csrf"),
-            Map.entry("POST /api/studio/drafts/{draft_id}/dismiss", "developer csrf"),
             // An airplane's FAA registration record and its photo, by its
             // N-number, for its card: public, as the traffic it is found in is.
             Map.entry("GET /api/airplanes/{n_number}", "public csrf"),
             Map.entry("GET /api/airplanes/{n_number}/photo", "public csrf"),
-            Map.entry("GET /api/traffic/registered", "public csrf"));
+            Map.entry("GET /api/traffic/registered", "public csrf"),
+            // The documents library: its shelf, a document's PDF (ranges, for
+            // pdf.js's pages) and its text, public as the FAA's own are (decision 0057).
+            Map.entry("GET /api/library", "public csrf"),
+            Map.entry("GET /api/library/{doc}/{edition}.pdf", "public csrf"),
+            Map.entry("GET /api/library/{doc}/{edition}/text", "public csrf"),
+            // The profile's weather along the route (TAF ceilings, the GFS
+            // freezing level, G-AIRMET icing), public as the map's is.
+            Map.entry("GET /api/route-profile/weather", "public csrf"),
+            // The plates kept for the air: a flight's and a state's, by cycle,
+            // public as the plates are.
+            Map.entry("GET /api/plates/flight", "public csrf"),
+            Map.entry("GET /api/plates/states", "public csrf"),
+            Map.entry("GET /api/plates/states/{cycle}/{state}", "public csrf"),
+            // One of the FAA's charts in force as its own PDF, public as the
+            // FAA's own is.
+            Map.entry("GET /api/faa-chart/pdf/{source}/{edition}/{pdf}", "public csrf"));
 
     /** Routes whose passed headers changed on purpose since the hand list
      *  was recorded: what each passes now. */

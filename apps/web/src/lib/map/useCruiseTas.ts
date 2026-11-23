@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { cruiseTasOf } from "../aircraftChoice";
 import { usePreferences } from "../preferences";
-import { aircraftListQuery, aircraftProfilesQuery } from "../queryClient";
+import { aircraftListQuery, aircraftProfilesQuery } from "../queryClientRecords";
 
 /** The airplane's cruise speed, for the ruler's time en route: the pilot's
  *  own airplane's, else its type's. */

@@ -3,15 +3,20 @@ package app.wingtipmaps.android.aircraft
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.allCaps
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.aircraft.AircraftForm.Field
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * The "Your Airplane" form's fields: the one form both Your Airplanes
@@ -25,12 +30,14 @@ fun AircraftFormFields(form: AircraftForm, problems: Map<Field, String>, onChang
     fun field(@StringRes label: Int, which: Field, value: String, kind: Kind, set: AircraftForm.(String) -> AircraftForm) {
         val problem = problems[which]
         OutlinedTextField(
-            value = value,
-            onValueChange = { v -> onChange { it.set(v) } },
+            state = rememberFieldText(value) { v -> onChange { it.set(v) } },
             label = { Text(stringResource(label)) },
             isError = problem != null,
             supportingText = problem?.let { { Text(it) } },
-            singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
+            // A code is upper-cased as it is typed, as the form keeps it,
+            // so the cursor stays where the pilot is typing.
+            inputTransformation = if (kind == Kind.CODE) InputTransformation.allCaps(LocalLocale.current) else null,
             keyboardOptions = when (kind) {
                 Kind.CODE -> KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false)
                 Kind.WORDS -> KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)

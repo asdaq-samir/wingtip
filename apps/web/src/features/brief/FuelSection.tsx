@@ -4,6 +4,7 @@ import type { Totals } from "../../lib/api/types";
 import { routeName } from "../../lib/identSchema";
 import { wholeNm } from "../../lib/format";
 import { one } from "../plan";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The fuel check in full, the Brief's (Preflight's Before you go, opened by
@@ -13,7 +14,7 @@ import { one } from "../plan";
  * night (14 CFR 91.151), 45 whatever the hour under IFR (91.167) --
  * against the tanks' usable fuel, red where they do not hold it. With
  * stops, the tanks filled at each, a row for each flight between two
- * landings (app.planning.route_totals). FPL says the fuel required alone,
+ * landings (wingtip.route_join.route_totals). FPL says the fuel required alone,
  * in a line (NavLogView).
  */
 export default function FuelSection({ totals }: { totals: Totals | null }) {
@@ -25,7 +26,7 @@ export default function FuelSection({ totals }: { totals: Totals | null }) {
           Working out the fuel…
         </p>
       ) : totals.hops.length > 0 ? (
-        <ListGroup title="Tanks filled at each stop">
+        <ListGroup title="Tanks Filled at Each Stop">
           {totals.hops.map(({ departure, destination, totals: hop }) => {
             const out = short(hop.fuel_margin_gal);
             return (
@@ -51,7 +52,7 @@ export default function FuelSection({ totals }: { totals: Totals | null }) {
       ) : (
         <ListGroup>
           <ListRow
-            title="Fuel required"
+            title={WORDING.fuelRequired}
             description={`${
               totals.taxi_gal != null
                 ? `With ${one(totals.taxi_gal)} gal to start, taxi and take off`
@@ -73,7 +74,7 @@ export default function FuelSection({ totals }: { totals: Totals | null }) {
           />
           {totals.usable_fuel_gal != null && (
             <ListRow
-              title="Usable fuel"
+              title={WORDING.usableFuel}
               value={
                 short(totals.fuel_margin_gal) === null ? (
                   `${totals.usable_fuel_gal} gal`

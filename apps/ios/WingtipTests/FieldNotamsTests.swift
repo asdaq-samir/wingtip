@@ -57,10 +57,10 @@ import Testing
         #expect(lines == [.init(label: "Since", value: "01/01 00:00 local"), .init(label: "Ends", value: "Permanent")])
     }
 
-    @Test func theNumberLosesTheFieldsOwnName() {
-        #expect(FieldNotamWords.idents("KORD") == ["KORD", "ORD"])
-        #expect(FieldNotamWords.number(notam("x", id: "ORD 11/439"), ident: "KORD") == "11/439")
-        #expect(FieldNotamWords.number(notam("x", id: "FDC 6/2478"), ident: "KSJT") == "FDC 6/2478")
+    @Test func theNumberLosesTheFieldsOwnName() throws {
+        #expect(try FieldNotamWords.idents("KORD") == ["KORD", "ORD"])
+        #expect(FieldNotamWords.number(notam("x", id: "ORD 11/439"), idents: try FieldNotamWords.idents("KORD")) == "11/439")
+        #expect(FieldNotamWords.number(notam("x", id: "FDC 6/2478"), idents: try FieldNotamWords.idents("KSJT")) == "FDC 6/2478")
     }
 
     @Test func onlyClosedAndOutOfServiceAreRed() {
@@ -79,17 +79,29 @@ import Testing
         #expect(AirportRunwaysTab.longest([runway("10L/28R", 13000), runway("04L/22R", 7500, closed: true)]) == nil)
     }
 
-    @Test func aClosureInForceMarksItsRunwayAndOneToComeNothing() {
+    @Test func aClosureInForceMarksItsRunwayAndOneToComeNothing() throws {
         let place = AirportPlace(frequencies: [], ident: "KORD", kind: "large_airport", lat: 41.98, lon: -87.9, name: "Chicago O'Hare Intl",
                                  runways: [Runway(closed: false, ends: "04L/22R", lengthFt: 7500, lighted: true),
                                            Runway(closed: false, ends: "10L/28R", lengthFt: 13000, lighted: true)],
                                  towered: true)
         let closed = notam("!ORD 11/439 ORD RWY 04L/22R CLSD 2611100600-2611301200")
-        let marks = FieldNotamWords.marks([closed], ident: "KORD", place: place)
+        let marks = FieldNotamWords.marks([closed], idents: try FieldNotamWords.idents("KORD"), place: place)
         #expect(marks.runway[0]?.unusable == true)
         #expect(marks.runway[0]?.notams.map(\.id) == ["ORD 11/439"])
         #expect(marks.runway[1] == nil)
         let later = notam("!ORD 11/440 ORD RWY 04L/22R CLSD 2612100600-2612301200", id: "ORD 11/440", inForce: false)
-        #expect(FieldNotamWords.marks([later], ident: "KORD", place: place).runway.isEmpty)
+        #expect(FieldNotamWords.marks([later], idents: try FieldNotamWords.idents("KORD"), place: place).runway.isEmpty)
+    }
+
+    /// The web's notamCoverage cases (decision 0059): from when, and that the
+    /// list is not the full set, until the planner holds every NOTAM in force.
+    @Test func theCoverageSaysTheListIsNotTheFullSet() {
+        #expect(NotamCoverage.line(since: "2026-10-19", full: false) == "NOTAMs heard since 19 Oct 2026, not a full set")
+        #expect(NotamCoverage.line(since: "2026-11-10T06:00:00Z", full: false) == "NOTAMs heard since 10 Nov 2026, not a full set")
+        #expect(NotamCoverage.line(since: nil, full: false) == "Recent NOTAMs only, not a full set")
+        #expect(NotamCoverage.line(since: "2026-10-19", full: true) == "FAA NOTAM System, every NOTAM in force")
+        #expect(NotamCoverage.none(since: "2026-10-19", full: false) == "None heard since 19 Oct")
+        #expect(NotamCoverage.none(since: nil, full: false) == "None heard")
+        #expect(NotamCoverage.none(since: "2026-10-19", full: true) == "None in force")
     }
 }

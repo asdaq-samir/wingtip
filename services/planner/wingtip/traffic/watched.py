@@ -8,11 +8,10 @@ import math
 
 from .. import tracing
 from ..geo import distance_nm
-from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _sleep, _wall
-from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
+from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _wall
+from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced, _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
-from .adsbfi import ADSBFI_MIN_GAP_S, ADSBFI_SOURCE, _ADSBFI, _adsbfi
-from .recorded import _record, _recorded, followed
+from .recorded import _last_recorded, _record, _recorded, followed
 from .radar import _heard_elsewhere_now
 
 log = logging.getLogger(__name__)
@@ -43,50 +42,88 @@ _WATCH_SOURCE: dict[str, str] = {}
 #: How often each followed airplane is asked for in the background, s:
 #: its flights recorded as FlightAware records them, card open or not
 #: (the owner's screenshots of N3429J's day, 2026-10-19, of which the
-#: planner had nothing). Of adsb.fi alone, which costs nothing, at its
-#: one request a second; adsb.lol's map and ADS-B Exchange's paid month
-#: are left to the map and an open card.
+#: planner had nothing). Of adsb.lol (ODbL, credited with the map's
+#: traffic): its globe's recent trace first, which costs none of the
+#: API's day, then its API by the address, which paces itself
+#: (adsb_lol.MIN_GAP_S). ADS-B Exchange's paid month is left to an open
+#: card. adsb.fi, which heard some UAT airplanes adsb.lol does not, was
+#: cut: its terms are personal and non-commercial
+#: (docs/store/feature-review.md).
 FOLLOW_EVERY_S = 30.0
+#: A followed airplane nothing has heard for this long, s, is on the
+#: ground or out of every feeder's reach: it is asked for every
+#: FOLLOW_QUIET_EVERY_S instead of each round. Followed for 30 days
+#: (FOLLOW_KEEP_S), most are quiet most of the time, and asking each one
+#: every 30 s was 2,880 asks a day an airplane, a round of 21 taking 23 s
+#: of its 30 at adsb.fi's second a request (2026-11-06's profile). The
+#: FAA's radar still hears a followed one wherever a terminal does
+#: (radar_wanted), so a departure is recorded from there at once.
+FOLLOW_QUIET_AFTER_S = 600.0
+FOLLOW_QUIET_EVERY_S = 120.0
+#: When each followed airplane was last asked for (_clock).
+_FOLLOW_ASKED: dict[str, float] = {}
+
+
+def _follow_due(hex_id: str) -> bool:
+    """Whether a followed airplane is asked for this round: each round
+    while heard lately, every FOLLOW_QUIET_EVERY_S while quiet."""
+    last = _last_recorded(hex_id)
+    quiet = last is None or _wall() - last["t"] > FOLLOW_QUIET_AFTER_S
+    now = _clock()
+    with _LOCK:
+        if quiet and now - _FOLLOW_ASKED.get(hex_id, -math.inf) < FOLLOW_QUIET_EVERY_S:
+            return False
+        _FOLLOW_ASKED[hex_id] = now
+    return True
+
+
+def _lol_by_hex(hex_id: str) -> list[dict]:
+    """adsb.lol's API's airplanes by this address, as `_aircraft` gives
+    them. Raises TrafficUnavailable where it turns the planner away."""
+    answer = _paced(FIND_URL.format(by="hex", value=hex_id))
+    entries = answer.get("ac") if isinstance(answer, dict) else None
+    return [a for a in (_aircraft(e) for e in entries if isinstance(e, dict)) if a is not None] if isinstance(entries, list) else []
 
 
 def follow_round() -> int:
     """Each followed airplane not heard elsewhere just now (the FAA's
-    radar records it, heard_elsewhere) asked of adsb.fi by its address,
-    a request a second at most, and what it hears recorded. How many
-    were heard."""
+    radar records it, heard_elsewhere) and due (_follow_due) asked of adsb.lol by its address
+    -- the recent trace, else the API -- and what it hears recorded. The
+    round ends where adsb.lol is turning the planner away: the next
+    round tries again. How many were heard."""
     heard = 0
     for hex_id in sorted(followed()):
-        if _heard_elsewhere_now(hex_id) is not None:
+        if _heard_elsewhere_now(hex_id) is not None or not _follow_due(hex_id):
             continue
-        # adsb.fi's pace, a little over a second, between asks.
-        with _LOCK:
-            wait = _ADSBFI["last"] + ADSBFI_MIN_GAP_S - _clock()
-        if wait > 0:
-            _sleep(wait)
-        for plane in _adsbfi(hex_id):
+        planes = _recent(hex_id)
+        if planes is None:
+            try:
+                planes = _lol_by_hex(hex_id)
+            except TrafficUnavailable:
+                break
+        for plane in planes:
             if plane["hex"].lower().lstrip("~") == hex_id:
                 _record(hex_id, plane)
                 with _LOCK:
-                    _WATCH_SOURCE[hex_id] = ADSBFI_SOURCE["source"]
+                    _WATCH_SOURCE[hex_id] = ADSB_LOL_SOURCE["source"]
                 heard += 1
     return heard
 
 
 def follow_job() -> None:
     """One round of asking for the followed airplanes, the job ingest runs
-    every FOLLOW_EVERY_S on wingtip.schedule (not registered where adsb.fi
-    is off, ADSBFI_OPEN_DATA=0). A round that fails is logged by the
-    scheduler and tried at the next turn."""
+    every FOLLOW_EVERY_S on wingtip.schedule. A round that fails is logged
+    by the scheduler and tried at the next turn."""
     # A trace of its own where tracing is on (ingest's): the round's asks
-    # of adsb.fi under it.
+    # of adsb.lol under it.
     with tracing.span("follow round", root=True):
         follow_round()
 
 
 def _watch(hex_id: str) -> None:
     """The airplane asked for now, where it is due (WATCH_GAP_S): adsb.lol's
-    API by its address, then adsb.fi's, which costs nothing, then ADS-B
-    Exchange where neither has it or answers; what is heard in the air
+    API by its address, then ADS-B Exchange where it has nothing or does
+    not answer; what is heard in the air
     recorded, and whose it was. Quiet where none may be asked or answers:
     the next ask tries again."""
     # The FAA's radar has it now (ingest): recorded from there, nothing
@@ -98,16 +135,11 @@ def _watch(hex_id: str) -> None:
         if now - _WATCH_ASKED.get(hex_id, -math.inf) < WATCH_GAP_S:
             return
         _WATCH_ASKED[hex_id] = now
-    planes: list[dict] = []
     try:
-        answer = _paced(FIND_URL.format(by="hex", value=hex_id))
-        entries = answer.get("ac") if isinstance(answer, dict) else None
-        planes = [a for a in (_aircraft(e) for e in entries if isinstance(e, dict)) if a is not None] if isinstance(entries, list) else []
+        planes = _lol_by_hex(hex_id)
     except TrafficUnavailable:
         planes = []
     source = ADSB_LOL_SOURCE["source"]
-    if not planes:
-        planes, source = _adsbfi(hex_id), ADSBFI_SOURCE["source"]
     if not planes:
         try:
             planes, source = _adsbx(f"icao/{hex_id}", search=True), ADSBX_SOURCE["source"]

@@ -61,14 +61,14 @@ def test_the_resource_metadata_names_the_gateway_and_both_scopes():
     assert body["resource"] == RESOURCE
     assert body["authorization_servers"] == [ISSUER]
     # Both asked for at once, so saving a flight is approved when connecting.
-    assert body["scopes_supported"] == ["wingtip:read", "wingtip:write"]
+    assert body["scopes_supported"] == ["wingtip:read", "wingtip:flights"]
     assert body["bearer_methods_supported"] == ["header"]
 
 
 def test_a_connection_allowed_only_to_read_cannot_save_a_flight():
     result = call("save_flight", {"departure": "C81", "destination": "KDLH"}, token="read-7")
     assert result.is_error
-    assert "not allowed wingtip:write" in text(result)
+    assert "not allowed wingtip:flights" in text(result)
 
 
 def test_a_pilot_past_the_limit_is_told_so_and_another_pilot_is_not(monkeypatch):
@@ -91,9 +91,14 @@ def test_every_tool_says_whether_it_writes_and_needs_the_scope_it_says():
         assert hints.open_world_hint is False, name
         assert len(name) <= 64
     writes = {name for name, t in tools.items() if not t.annotations.read_only_hint}
-    assert writes == {"save_flight"}
-    assert tools["save_flight"].annotations.destructive_hint is False
-    assert tools["save_flight"].meta["securitySchemes"][0]["scopes"] == ["wingtip:read", "wingtip:write"]
+    assert writes == {"save_flight", "save_flight_plan", "update_saved_flight", "update_saved_flight_from_view", "delete_saved_flight"}
+    # Saving adds; replacing and deleting are what the host always asks about.
+    overwrites = {"update_saved_flight", "update_saved_flight_from_view", "delete_saved_flight"}
+    assert {n for n in writes if tools[n].annotations.destructive_hint} == overwrites
+    for name in writes:
+        assert tools[name].meta["securitySchemes"][0]["scopes"] == ["wingtip:read", "wingtip:flights"], name
+    # The edits change only the flight handed in: read-only, the read scope.
+    assert tools["add_stop"].annotations.read_only_hint and tools["add_stop"].meta["securitySchemes"][0]["scopes"] == ["wingtip:read"]
 
 
 def test_the_tool_list_is_the_snapshot():
@@ -111,17 +116,22 @@ KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 def signed(**over) -> str:
     now = int(time.time())
-    claims = {"iss": ISSUER, "aud": RESOURCE, "sub": "42", "scope": "wingtip:read wingtip:write", "client_id": "c1"}
+    claims = {"iss": ISSUER, "aud": RESOURCE, "sub": "42", "scope": "wingtip:read wingtip:flights", "client_id": "c1"}
     claims |= {"iat": now, "exp": now + 900, **over}
     return jwt.encode(claims, KEY, algorithm="RS256", headers={"kid": "k1"})
 
 
 #: The connections that still stand, as the gateway would say (pilot, client).
 LIVE = {("42", "c1")}
+#: The tokens the gateway has revoked, though their connection stands.
+REVOKED: set[str] = set()
+#: Each token the gateway was asked about.
+ASKED_ABOUT: list[str] = []
 
 
-async def _live(pilot: str, client: str) -> bool:
-    return (pilot, client) in LIVE
+async def _live(pilot: str, client: str, token: str) -> bool:
+    ASKED_ABOUT.append(token)
+    return (pilot, client) in LIVE and token not in REVOKED
 
 
 @pytest.fixture
@@ -137,7 +147,7 @@ def _jwk() -> dict:
 
 def test_a_gateway_token_for_this_connector_is_read_as_its_pilot(tokens):
     read = anyio.run(tokens.verify_token, signed())
-    assert read.subject == "42" and read.scopes == ["wingtip:read", "wingtip:write"] and read.client_id == "c1"
+    assert read.subject == "42" and read.scopes == ["wingtip:read", "wingtip:flights"] and read.client_id == "c1"
     assert read.resource == RESOURCE
 
 
@@ -158,6 +168,22 @@ def test_a_token_whose_connection_is_gone_is_refused_at_once(tokens):
     token is refused though it has not run out (L4)."""
     assert anyio.run(tokens.verify_token, signed(sub="43")) is None
     assert anyio.run(tokens.verify_token, signed(client_id="another")) is None
+
+
+def test_the_gateway_is_asked_about_the_very_token_and_a_revoked_one_is_refused(tokens):
+    """The deep security review of 2026-11-21: a token revoked at
+    /oauth2/revoke while its connection's refresh token stood read as
+    live, since only the pilot and client were asked about. The token
+    itself is asked about now, and one revoked is refused though another
+    of the same connection is not."""
+    kept, revoked = signed(), signed(jti="revoked")
+    REVOKED.add(revoked)
+    try:
+        assert anyio.run(tokens.verify_token, kept) is not None
+        assert ASKED_ABOUT[-1] == kept
+        assert anyio.run(tokens.verify_token, revoked) is None
+    finally:
+        REVOKED.discard(revoked)
 
 
 def test_a_token_signed_by_another_key_is_refused(tokens):

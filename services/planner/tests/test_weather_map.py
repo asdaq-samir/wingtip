@@ -17,6 +17,8 @@ SQUARE = [(42.0, -90.0), (44.0, -90.0), (44.0, -87.0), (42.0, -87.0)]
 
 def _datasets(monkeypatch):
     held = {
+        # Alaska's AIRMETs, read beside the SIGMETs (weather.advisories): none here.
+        "airmets": [],
         "airsigmets": [
             {
                 "hazard": "CONVECTIVE",

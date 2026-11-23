@@ -12,8 +12,15 @@ a reader sees the old copy or the new one and never half of either:
      validity), "meta" ({...}), "data" (the product, parsed)}
 
 Beside it `<name>.attempt.json` says when the service last tried for a
-newer copy and whether that failed, for the Status page and the
-service's health; a grid too large for JSON (GLMP's) is a .npy array
+newer copy, whether that failed, and when a try last confirmed the copy
+held ("confirmed"), for the Status page and the service's health. A copy
+the source sends again unchanged is not written again (write_if_changed):
+its record keeps the time it was written, which is what a reader keys a
+cache on, and its age is from the confirmation (confirmed_at), so a quiet
+TFR list or an unchanged SIGMET set is neither rewritten, re-read by the
+planner, nor reported stale. The source's validators for a conditional
+GET (an ETag, a Last-Modified) are kept in `<name>.validators.json`, so
+they can move without the record being written. A grid too large for JSON (GLMP's) is a .npy array
 beside its record, and a picture made whole (the flow layer's PNGs,
 write_blob) a file of its own, opened by the planner without reading it all in
 (np.load's mmap_mode). And `asked`, a file the planner touches at most
@@ -30,6 +37,7 @@ What each product's `data` holds is the service's to say
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import os
 import threading
@@ -80,9 +88,44 @@ def write(name: str, data, fetched_at: float, until: float | None, meta: dict | 
     _write_atomic(_path(name), gzip.compress(json.dumps(record, separators=(",", ":")).encode(), compresslevel=5))
 
 
+def body_hash(body: bytes) -> str:
+    """A short digest of a source's body as sent, kept in a record's meta
+    ("body") so the same body is neither parsed nor written again."""
+    return hashlib.blake2b(body, digest_size=16).hexdigest()
+
+
+def write_if_changed(name: str, data, fetched_at: float, until: float | None, meta: dict | None = None) -> bool:
+    """`name` written as write does, unless the copy held already has the
+    same meta (its "body" digest among it) and the same `until`: then
+    nothing is written, and the try's attempt (write_attempt, after it)
+    confirms the copy held. Whether it was written."""
+    held = read(name)
+    if held is not None and held.until == until and held.meta == (meta or {}):
+        return False
+    write(name, data, fetched_at, until, meta)
+    return True
+
+
 def write_attempt(name: str, attempted: float, error: str | None) -> None:
-    """When the service last tried for `name`, and the failure, if it failed."""
-    _write_atomic(_path(name, ".attempt.json"), json.dumps({"attempted": attempted, "error": error}).encode())
+    """When the service last tried for `name`, and the failure, if it
+    failed. A try that did not fail confirms the copy held as of when it
+    began ("confirmed"); a failed one carries the last confirmation on."""
+    confirmed = attempted if error is None else (attempt(name) or {}).get("confirmed")
+    body = {"attempted": attempted, "error": error, "confirmed": confirmed}
+    _write_atomic(_path(name, ".attempt.json"), json.dumps(body).encode())
+
+
+def write_validators(name: str, validators: dict | None) -> None:
+    """A source's validators for its next conditional GET (fetch.validators_of)."""
+    _write_atomic(_path(name, ".validators.json"), json.dumps(validators or {}).encode())
+
+
+def validators(name: str) -> dict | None:
+    """The validators write_validators kept; None before the first."""
+    try:
+        return json.loads(_path(name, ".validators.json").read_bytes()) or None
+    except (FileNotFoundError, ValueError):
+        return None
 
 
 def write_array(name: str, array) -> Path:
@@ -182,12 +225,33 @@ def _read(name: str) -> Record | None:
 
 
 def attempt(name: str) -> dict | None:
-    """{"attempted", "error"} of the service's last try for `name`; None
-    before its first."""
+    """{"attempted", "error", "confirmed"} of the service's last try for
+    `name`; None before its first."""
     try:
         return json.loads(_path(name, ".attempt.json").read_bytes())
     except (FileNotFoundError, ValueError):
         return None
+
+
+def confirmed_at(name: str, record: Record | None) -> float | None:
+    """When the copy held was last known to be the source's newest (UNIX s):
+    when it was written, or a later try that found it unchanged. The age
+    the Status page, the map and the service's health say. None where no
+    copy is held."""
+    if record is None:
+        return None
+    confirmed = (attempt(name) or {}).get("confirmed")
+    return max(record.fetched_at, float(confirmed)) if confirmed is not None else record.fetched_at
+
+
+def failing(name: str, record: Record | None) -> bool:
+    """Whether the service's last try for a newer copy than the one held
+    failed: a failure since the copy was last confirmed."""
+    tried = attempt(name)
+    if not tried or not tried.get("error"):
+        return False
+    confirmed = confirmed_at(name, record)
+    return confirmed is None or tried["attempted"] >= confirmed
 
 
 def servable(record: Record | None, now: float | None = None) -> bool:

@@ -37,7 +37,7 @@ describe("the risk page's labels", () => {
     const words = {
       low: "Go, with the usual care.",
       caution: "Bring it down where you can (a later time, a shorter leg, an instructor along), or talk it over.",
-      high: "Don't go as planned.",
+      high: "Do not go as planned.",
     };
     for (const [level, ticked] of [
       ["low", {}],

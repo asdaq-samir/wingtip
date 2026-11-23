@@ -1,67 +1,67 @@
 import AppIntents
+import Testing
 @testable import Wingtip
-import XCTest
 
 /// Siri's and Shortcuts' intents: what each leaves for the app to do
 /// (AppCommand, BriefAsk), the radio's switch, the airport as
 /// Spotlight indexes it, and the shortcuts within Apple's ten.
 @MainActor
-final class IntentsTests: XCTestCase {
+struct IntentsTests {
     private let oshkosh = AirportEntity(id: "kosh", name: "Wittman Rgnl", city: "Oshkosh")
 
     // What each intent asks of the app is read from the intent's own
     // command (the scene's, CommandHost), and the run itself only
     // has to go through.
-    func testBriefMyFlightAsksForTheBriefOfARouteThere() async throws {
-        XCTAssertEqual(BriefFlightIntent.command(oshkosh), .brief(ident: "KOSH"))
+    @Test func briefMyFlightAsksForTheBriefOfARouteThere() async throws {
+        #expect(BriefFlightIntent.command(oshkosh) == .brief(ident: "KOSH"))
         let intent = BriefFlightIntent()
         intent.airport = oshkosh
         _ = try await intent.perform()
     }
 
-    func testAnAirportFromSpotlightOpensItsCard() async throws {
-        XCTAssertEqual(OpenAirportIntent.command(oshkosh), .weather(ident: "KOSH"))
+    @Test func anAirportFromSpotlightOpensItsCard() async throws {
+        #expect(OpenAirportIntent.command(oshkosh) == .weather(ident: "KOSH"))
         let intent = OpenAirportIntent()
         intent.target = oshkosh
         _ = try await intent.perform()
     }
 
-    func testDirectToTheNearestOpensOnItsFieldElseTheList() {
-        XCTAssertEqual(OpenWingtipIntent(directTo: "KFCM").appCommand(), .directTo(place: "KFCM"))
-        XCTAssertEqual(OpenWingtipIntent(directTo: nil).appCommand(), .nearest)
-        XCTAssertEqual(NearestAirportsIntent().appCommand(), .nearest)
-        XCTAssertEqual(EmergencyIntent().appCommand(), .open(.emergency))
+    @Test func directToTheNearestOpensOnItsFieldElseTheList() {
+        #expect(OpenWingtipIntent(directTo: "KFCM").appCommand() == .directTo(place: "KFCM"))
+        #expect(OpenWingtipIntent(directTo: nil).appCommand() == .nearest)
+        #expect(NearestAirportsIntent().appCommand() == .nearest)
+        #expect(EmergencyIntent().appCommand() == .open(.emergency))
     }
 
-    func testTheBriefIsTakenOnce() {
+    @Test func theBriefIsTakenOnce() {
         let ask = BriefAsk()
-        XCTAssertFalse(ask.take())
+        #expect(!ask.take())
         ask.ask()
-        XCTAssertTrue(ask.wanted)
-        XCTAssertTrue(ask.take())
-        XCTAssertFalse(ask.take())
+        #expect(ask.wanted)
+        #expect(ask.take())
+        #expect(!ask.take())
     }
 
-    func testStoppingTheRadioWhenNotListening() async throws {
-        XCTAssertFalse(ClearanceListener.shared.listening)
-        XCTAssertFalse(RadioSwitch.stop())
+    @Test func stoppingTheRadioWhenNotListening() async throws {
+        #expect(!ClearanceListener.shared.listening)
+        #expect(!RadioSwitch.stop())
         _ = try await StopListeningIntent().perform()
-        XCTAssertFalse(ClearanceListener.shared.listening)
+        #expect(!ClearanceListener.shared.listening)
     }
 
-    func testSpotlightFindsAFieldByIdentNameAndTown() {
+    @Test func spotlightFindsAFieldByIdentNameAndTown() {
         let set = oshkosh.attributeSet
-        XCTAssertEqual(set.displayName, "KOSH · Wittman Rgnl")
-        XCTAssertEqual(set.contentDescription, "Oshkosh")
-        XCTAssertEqual(set.keywords, ["KOSH", "Wittman Rgnl", "Oshkosh"])
+        #expect(set.displayName == "KOSH · Wittman Rgnl")
+        #expect(set.contentDescription == "Oshkosh")
+        #expect(set.keywords == ["KOSH", "Wittman Rgnl", "Oshkosh"])
         let bare = AirportEntity(id: "3ck", name: "").attributeSet
-        XCTAssertEqual(bare.displayName, "3CK")
-        XCTAssertEqual(bare.keywords, ["3CK"])
+        #expect(bare.displayName == "3CK")
+        #expect(bare.keywords == ["3CK"])
     }
 
-    func testShortcutsWithinApplesTen() {
+    @Test func shortcutsWithinApplesTen() {
         let shortcuts = WingtipShortcuts.appShortcuts
-        XCTAssertEqual(shortcuts.count, 10)
-        XCTAssertLessThanOrEqual(shortcuts.count, 10)
+        #expect(shortcuts.count == 10)
+        #expect(shortcuts.count <= 10)
     }
 }

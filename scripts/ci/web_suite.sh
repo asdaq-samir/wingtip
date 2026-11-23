@@ -7,7 +7,11 @@
 #               the package or Vite's config runs them all), elsewhere every test
 #   build       `vite build` and the JavaScript a phone loads before the
 #               planner draws, against its budget (scripts/first-load.mjs;
-#               raise it only with the reason)
+#               raise it only with the reason). That is the first load's
+#               static graph alone, 0.97 of the 4.2 MB a route link loads
+#               (the speed audit of 2026-11-21); the whole of it, the lazy
+#               chunks too, is apps/web/e2e/route-load.spec.ts's budget,
+#               measured in a browser after the merge (@smoke)
 #   generated   the generated files are the committed ones
 #               (scripts/ci/web_generated.sh)
 #

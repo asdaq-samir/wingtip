@@ -5,7 +5,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
 /* The design tokens: every colour, the corners, the motion, by theme and
    look, generated from design/tokens.json (scripts/build/design-tokens.sh). */
 @import "./styles/tokens.css";
@@ -13,6 +12,18 @@
 @import "./styles/feel.css";
 
 @custom-variant dark (&:is(.dark *));
+/* A hover's look only under a mouse or a trackpad, as usePointerHover's
+   previews are: Tailwind's own hover asks only (hover: hover), which a
+   touch screen that also reports hover (an Android tablet, a touch
+   Chromebook) matches, and a row tapped there kept its hover fill until
+   the next tap elsewhere. A finger's feedback is the press (:active). */
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
 /* Reduce Transparency, or Increase Contrast, asked for on the device
    (Safari reports iOS's Increase Contrast as prefers-contrast: more; Chrome
    reports Reduce Transparency): every frosted surface solid, as iOS's own
@@ -57,7 +68,19 @@
    here, from the first frame, rather than after a render has measured
    the screen. */
 @custom-variant nav-bottom {
-  @media (width < 48rem) {
+  @media (width < 41.25rem) {
+    @slot;
+  }
+}
+
+/* A tablet on a kneeboard or a yoke mount, read at arm's length (about
+   twice a phone's distance): a touch screen at the regular width both
+   ways (design/tokens.json size.regular), an iPad in either orientation
+   and not a phone on its side, whose height is compact. The figures the
+   pilot glances at take a larger size there (lib/text's GROW_FIGURE; the
+   owner, 2026-11-21: "Yes do it all for iPad", the kneeboard type scale). */
+@custom-variant kneeboard {
+  @media (pointer: coarse) and (width >= 41.25rem) and (height >= 41.25rem) {
     @slot;
   }
 }
@@ -88,12 +111,28 @@
    long, still touch would select by mistake are kept from it -- a
    button (the sheet's grabber and its page tabs are buttons too), a
    tab, and the map with its markers -- so the touch starts what the
-   control does, not the selection loupe or the "copy/share" callout. */
+   control does, not the selection loupe or the "copy/share" callout.
+   A menu's, a list's and a picker's rows are controls too (Base UI's
+   menu items, select options, switches, checkboxes and radios are
+   elements with a role, not buttons), and a long press on one started
+   a selection of its words. Safari has long read user-select only with
+   its prefix, so both are said. */
 button,
-[role="button"],
-[role="tab"],
+:is(
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="menuitemcheckbox"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="slider"]
+),
 .maplibregl-map {
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -124,6 +163,24 @@ button,
 .maplibregl-map .maplibregl-ctrl-attrib a {
   color: var(--foreground);
 }
+/* Google's logo in its credit (lib/map/gl/googleCredit): 16 px high, the
+   least the Map Tiles API's policies allow, aspect kept, with the clear
+   space they set round it (10 left, right and top, 5 under, less the
+   credit's own padding); the dark grey by day, the white in a dark look. */
+.maplibregl-map .google-maps-logo {
+  display: inline-block;
+  height: 1rem;
+  width: auto;
+  margin: 0.5rem 0.125rem 0.1875rem 0.125rem;
+  vertical-align: middle;
+}
+.maplibregl-map .google-maps-logo-night,
+.dark .maplibregl-map .google-maps-logo-day {
+  display: none;
+}
+.dark .maplibregl-map .google-maps-logo-night {
+  display: inline-block;
+}
 
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
@@ -139,6 +196,12 @@ button,
   top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
   transition: top var(--motion-drawer) var(--motion-drawer-ease);
 }
+/* And the chart's credit at the right clear of the inspector's card
+   (MapPanel, a touch screen from size.inspector wide). */
+.maplibregl-map .maplibregl-ctrl-bottom-right,
+.maplibregl-map .maplibregl-ctrl-top-right {
+  right: var(--map-inset-right, 0px);
+}
 
 /* With the phone's sheet all the way up, the map's buttons give way,
    as Maps' do: only a sliver of them showed past its edge. The panel's
@@ -151,6 +214,12 @@ button,
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
   pointer-events: none;
+  /* Gone for the keyboard and VoiceOver too: at nought opacity, ridden
+     past the screen's top, the account button still took a Tab and was
+     read out, and was a button "in sight" no finger could reach
+     (tab-consistency.spec's openConsole, the night of 2026-11-19). Shown
+     again at once as the sheet comes down, the opacity fading it in. */
+  visibility: hidden;
   /* Gone at once, back with the fade: riding a card that rises all the way
      (Settings from the Map card's gear opens there), they went past the
      screen's top while still fading, 200 px over a card moving faster than
@@ -165,13 +234,18 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   pointer-events: none;
 }
 
-/* iOS's leading on a touch screen: each text style's line is its size
-   and five points -- 13/18, 15/20, 16/21, 17/22, 20/25, within a point
-   of Apple's own table from 12 to 28 -- where Tailwind's ratios gave a
-   17-point row 24.3 and a 15-point line 21.4. Every text-* class reads
-   its line height from these, so a touch size set beside one (lib/text.ts,
-   the stock controls) takes its leading with it. An explicit leading-*
-   still wins. Not in the Native look, which keeps Tailwind's own. */
+/* iOS's leading on a touch screen, for the stock controls' touch sizes
+   (ui/button's text-sm with the row's 17 beside it, and the like): a
+   line is its size and five points -- 13/18, 15/20, 16/21, 17/22, 20/25,
+   within a point of Apple's own table from 12 to 28 -- where Tailwind's
+   ratios gave a 17-point row 24.3 and a 15-point line 21.4. Every text-*
+   class reads its line height from these. The text roles carry their own
+   leading in rem instead (design/tokens.json type, `touchLeading`: a
+   row's 1.375rem, a line's 1.25rem), which an explicit leading-* wins
+   over these with: at 19.65 px a row leads 27, as iOS's xxLarge Body
+   does, where the five points held stayed 25.9 (the scale audit's Q7,
+   the owner, 2026-11-21). Not in the Native look, which keeps
+   Tailwind's own. */
 @media (pointer: coarse) {
   :root:not([data-brand="native"]) {
     --text-xs--line-height: calc(1em + 5px);
@@ -234,6 +308,16 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
     size: landscape;
     margin: 10mm;
   }
+}
+
+/* Tailwind's md, the one width the phone's sheet gives way to the side
+   panel at: design/tokens.json's size.regular (660, iPadOS's regular
+   width: an iPad mini upright, a 13-inch iPad's half), which useIsMobile
+   reads, so a class and the layout never disagree between 660 and 768
+   (the owner, 2026-11-21: "Yes do it all for iPad"). A breakpoint takes
+   no variable, hence the number. */
+@theme {
+  --breakpoint-md: 41.25rem;
 }
 
 @theme inline {
@@ -362,6 +446,32 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* A tap is the control's at once, and two quick taps are two presses:
+     the page may be pinch-zoomed (index.html's viewport), and once it
+     has been, Safari waits after each tap to see whether a second comes
+     to zoom by, and two quick taps on a stepper's + or the map's zoom
+     button can zoom the page instead (WebKit, "More Responsive Tapping
+     on iOS"). Pans and pinches stay the browser's. In the base layer, so a
+     control's own touch-none or touch-pan-y (a drag handle, a slider,
+     the route pill) still wins. */
+  :is(
+    a,
+    button,
+    summary,
+    label,
+    [role="button"],
+    [role="tab"],
+    [role="option"],
+    [role="menuitem"],
+    [role="menuitemradio"],
+    [role="menuitemcheckbox"],
+    [role="switch"],
+    [role="checkbox"],
+    [role="radio"]
+  ) {
+    touch-action: manipulation;
+  }
+
   * {
     @apply border-border outline-ring;
   }
@@ -414,13 +524,14 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
    squares read as a different app. So on a coarse pointer nothing
    grows. Every button reaches 44 through a pseudo-element hit area
    around it instead, the way a toolbar glyph does on iOS: `min(0, …)`
-   so a control already that size is not shrunk. Not for a tab, whose
+   so a control already that size is not shrunk (--tap-target, 44, from
+   design/tokens.json). Not for a tab, whose
    own ::after is the line variant's underline. A calendar's days are 44
    to a finger (calendar.tsx), so theirs is the cell itself, square, its
    rounded corners included; its month buttons get the 44 round them. A
    desktop keeps the tighter targets. The map's markers are placed by
    their own size and are left alone. In the base layer, under Tailwind's
-   utilities, so a control's own area (`after:-inset-1.5`, a chip's six
+   utilities, so a control's own area (`hit-1.5`, a chip's six
    round it to meet its neighbours') wins over the default: outside any
    layer it beat every utility, and each control's own was ignored on a
    phone (the hand-built audit's row 6, 2026-11-12). The button is
@@ -432,7 +543,7 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
     a[data-slot="button"]::after {
       content: "";
       position: absolute;
-      inset: min(0px, calc(50% - 22px));
+      inset: min(0px, calc(50% - var(--tap-target) / 2));
     }
     button,
     a[data-slot="button"] {
@@ -660,6 +771,50 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
   inherits: false;
 }
 
+/* A control's own hit area, the one home for the `::after` the base layer
+   above gives every button, for a control that is not 44 round it by that
+   rule: a label, a link, a chip, a glyph that sits close to its
+   neighbours. `hit-y-3` is a band 12 (3 x 4) above and below, `hit-x-2
+   hit-y-3` adds 8 each side, `hit-3` is the same on all four; the number
+   is Tailwind's spacing, or `[11px]`, so the area is the control's size
+   plus twice it (a 20 tall line and `hit-y-3` is 44, the area
+   docs/decisions/0030 asks). Written once here so no fragment of
+   `after:-inset-…` is typed by hand (the simplicity ratchet counts what is left);
+   the amount is each control's own because the controls differ in size
+   and nothing grows to reach 44. Place the control `relative`. */
+@utility hit-* {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--hit-x, 0px);
+    inset-block: var(--hit-y, 0px);
+  }
+  --hit-x: calc(var(--spacing) * --value(number) * -1);
+  --hit-x: calc(--value([length]) * -1);
+  --hit-y: calc(var(--spacing) * --value(number) * -1);
+  --hit-y: calc(--value([length]) * -1);
+}
+@utility hit-x-* {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--hit-x, 0px);
+    inset-block: var(--hit-y, 0px);
+  }
+  --hit-x: calc(var(--spacing) * --value(number) * -1);
+  --hit-x: calc(--value([length]) * -1);
+}
+@utility hit-y-* {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--hit-x, 0px);
+    inset-block: var(--hit-y, 0px);
+  }
+  --hit-y: calc(var(--spacing) * --value(number) * -1);
+  --hit-y: calc(--value([length]) * -1);
+}
+
 /* A row of a long list drawn only once it nears the screen (a logbook of
    hundreds of flights rendered every row: the web audit's WEB-27), its
    room held at about one two-line row's height until then so the scroll
@@ -750,14 +905,4 @@ body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"])
       background-color: var(--popover) !important;
     }
   }
-}
-
-/* A digit's width in the figures' face, in ems, at their semibold
-   (FigureStrip's FIT, components/figureRoom): Barlow's in the looks that
-   set it, Inter's in the Native look (measured 2026-11-17). */
-:root {
-  --figure-digit: 0.54;
-}
-:root[data-brand="native"] {
-  --figure-digit: 0.65;
 }

@@ -42,7 +42,7 @@ The long-running ones restart with Docker (`restart: unless-stopped`).
 |---|---|---|
 | `gateway` | Spring Boot: accounts, sign-in, records, the public API, mail; serves the web app and proxies `/api/planner/*` to the planner | 8080, 8443 (HTTPS) |
 | `planner` | FastAPI: the course, checkpoints, nav log, briefing, chart and overlay tiles, traffic, the live SWIM answers and feed health; the engine inside it | 8084 |
-| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.fi rounds, written into the live store | none |
+| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.lol rounds, written into the live store | none |
 | `weather` | Fetches the weather on a schedule (METAR, TAF, PIREP, SIGMET, G-AIRMET, GFS winds aloft, GLMP, TFRs, the radar's time) into the weather store | none |
 | `db` | PostgreSQL 18 (`postgres:18-trixie`): the gateway's records | not published |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) | 8025 |
@@ -54,7 +54,7 @@ On request only, behind a compose profile:
 |---|---|---|
 | `retrain` | `jobs` | The training run (`python -m wingtip.pipeline run`) |
 | `charts`, `charts-overlays`, `charts-next` | `jobs` | The chart cycle: the FAA's sheets rendered into one PMTiles archive per kind; the map's overlay vector tiles; the next cycle staged before its date and swapped in at 0901Z on it. [services/jobs/README.md](../services/jobs/README.md) |
-| `ml` | `notebooks` | Jupyter on 8888 (token `wingtip`) |
+| `ml` | `notebooks` | Jupyter on 8888 (its token in `docker compose logs ml`) |
 | `web-build` | `web-dev` | `vite build --watch` into `apps/web/dist`, which the gateway serves in place of its own bundle |
 | `jaeger` | `tracing` | Traces of a request, gateway to planner to each engine rule and source, on 16686 ([LOCAL-DEV.md](LOCAL-DEV.md#tracing)) |
 | `base` | (never runs) | Builds `services/Dockerfile.base`, the Python base with wingtip and the engine that every Python image starts from |
@@ -69,7 +69,7 @@ app (web, iOS, Android)   draws; asks the engine (WebAssembly, UniFFI) what it d
 ```
 
 The browser never reaches the planner directly: the gateway checks the
-session (and, for the debrief, the subscription), then forwards. Which
+session, then forwards. Which
 planner routes a browser may reach, and what each needs, the gateway
 learns from the planner's own OpenAPI document (`x-gateway`).
 
@@ -104,7 +104,8 @@ a restart of the planner drops no feed (issue #535):
   otherwise; the planner reads it. [services/weather/README.md](../services/weather/README.md)
 - **The chart tiles** (`data/raw/chart_tiles.nosync/<cycle>/`): one
   PMTiles archive per chart kind and density (`@2x` for sharp tiles on a
-  phone), written by the charts job and served by the planner.
+  phone), its tiles lossless WebP, written by the charts job and served
+  by the planner.
 
 ### Feed health
 
@@ -130,11 +131,11 @@ Each service fetches its own; the engine never fetches.
 | FAA aeronav | Chart sheets (sectional, TAC, IFR low and high), each 56-day cycle | the charts job |
 | FAA NASR, CIFP, DOF, d-TPP | Airports, runways, navaids, fixes, airspace (NASR: the National Airspace System Resources data); published procedures (CIFP: the Coded Instrument Flight Procedures); obstacles; plates | planner |
 | FAA SWIM | Live feeds over the FAA's System Wide Information Management service: STDDS (terminal radar, RVR, D-ATIS, departures), FNS (NOTAMs), TFMS (flight plans, ground stops and delay programs), ITWS (wind shear and microburst alerts), SFDPS (special activity airspace status) | ingest |
+| FAA NMS-API | The NOTAM Management Service API: every NOTAM in force (its initial load), then its changes, where the FAA's credentials are set (decision 0059) | ingest |
 | aviationweather.gov | METAR, TAF, PIREP, SIGMET, G-AIRMET | weather |
 | NOAA NOMADS | GFS winds and temperatures aloft, GLMP | weather |
 | tfr.faa.gov | TFRs | weather |
-| adsb.lol, ADS-B Exchange | The map's traffic, by region | planner |
-| adsb.fi | The followed airplanes | ingest |
+| adsb.lol, ADS-B Exchange | The map's traffic, by region; the followed airplanes (adsb.lol) | planner; ingest |
 
 ## Tech stack
 

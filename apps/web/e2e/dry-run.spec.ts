@@ -126,9 +126,10 @@ test("the dry run waits for the legs: no way to it until the plan is in, and the
 
 test("the dry run keeps the flight's own figures at the foot, counting down from where the airplane is", async ({ page }) => {
   // The owner's "Dry run should keep the calculations as in the profile":
-  // Dist, ETE and Fuel, their taps the same, where the run had its own
-  // (Dist left, Time left, ETA, To burn); no To, which the flying head
-  // over the map names (the owner, 2026-11-17).
+  // Dist, ETE and Track (Track in Fuel's place, the owner 2026-11-21:
+  // "replace Fuel with Track at the bottom figures"), their taps the same,
+  // where the run had its own (Dist left, Time left, ETA, To burn); no To,
+  // which the flying head over the map names (the owner, 2026-11-17).
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -147,8 +148,12 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
         return (shown.textContent ?? "").trim();
       }),
     );
+  // FPL's pinned strip at half, thin, its names in the FAA's short forms
+  // (TripFigures' SHORT; the owner, 2026-11-22: "Show the labels even for
+  // thin strip"), and on the ground the leg's magnetic Course where the
+  // Track is once the airplane flies (TripFigures' legCourseDeg).
   const planned = await names(line);
-  expect(planned).toEqual(["Dest", "Distance", "Time", "Fuel"]);
+  expect(planned).toEqual(["Dest", "Dist", "ETE", "Crs"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.
@@ -169,10 +174,10 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
 
   await pressDryRunStart(page, start);
   const figures = sideDrawer(page).getByTestId("dry-run-figures");
-  await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(planned.slice(1));
+  // The same figures from where the airplane is, flying: its Track.
+  await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(["Distance", "ETE", "Track"]);
   await expect(figures.getByTestId("navlog-to")).toHaveCount(0);
   await expect(figures.getByTestId("ete-eta-toggle")).toBeVisible();
-  await expect(figures.getByTestId("fuel-breakdown-open")).toBeVisible();
   const leftNm = async () => parseFloat((await figures.locator("dd").nth(0).innerText()).replace(/,/g, ""));
   expect(await leftNm()).toBeLessThanOrEqual(Math.ceil(plannedNm));
   await expect.poll(leftNm, { timeout: slow(15_000) }).toBeLessThan(plannedNm - 1);
@@ -208,7 +213,7 @@ test("the dry run's airplane is kept in the middle of what the panel leaves as t
   await inTheMiddle();
   // Panned by hand, off the middle: the map no longer follows it, and the arrow offers to again.
   const viewport = page.viewportSize()!;
-  const from = { x: viewport.width < 768 ? viewport.width / 2 : viewport.width * 0.75, y: 150 };
+  const from = { x: viewport.width < 660 ? viewport.width / 2 : viewport.width * 0.75, y: 150 };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x - 90, from.y - 60, { steps: 8 });
@@ -223,7 +228,7 @@ test("the dry run's airplane is kept in the middle of what the panel leaves as t
 });
 
 test("half way a dry run started from the profile's card plays in the card, in on its airplane", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   // The owner's asks: "Let's make the half card this tall. This way we
   // won't have to hide the buttons for dry run"; "the dry run drags up
   // instead of staying still like the profile".

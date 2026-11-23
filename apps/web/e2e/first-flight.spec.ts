@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { frontSheet, grabberTo, searchAirports, settle, slow } from "./helpers";
-import { expectPage, expectSearchInUse, toggle } from "./sheetPages";
+import { expectPage, expectSearchInUse, showPage, toggle } from "./sheetPages";
 
 /**
  * The first flight (FirstFlight, useFirstFlight; the owner's option A,
@@ -62,7 +62,7 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   const welcome = page.getByTestId("first-flight");
   await expect(welcome).toBeVisible({ timeout: slow(15_000) });
   await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
-  for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
+  for (const row of ["Search, Like Maps", "FPL, Like Your EFB", "FAA Charts That Move Like Maps"])
     await expect(welcome.getByText(row)).toBeVisible();
   // Its search row in the search field's own words (UI audit C17).
   await expect(welcome).toContainText("Search airports and airplanes the way you would in Apple or Google Maps.");
@@ -81,21 +81,28 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   // without asking.
   await expect(welcome.getByTestId("first-flight-location")).toBeVisible();
 
-  // Later: the sheet gone, Search up and its field asking for
-  // the destination -- not focused, so no keyboard jumps up.
+  // Later: the sheet gone, Search up and its field asking for the
+  // destination -- not focused, so no keyboard jumps up. The field says
+  // the one word Search, what it asks for its name to a screen reader
+  // (the owner, 2026-11-21, 07b501762).
   await welcome.getByTestId("first-flight-later").click();
   await expect(welcome).toHaveCount(0);
-  // The field in use, asking: its Cancel where the toggle rides at rest.
-  await expectSearchInUse(page);
   // Risen from the pill to half, so the search's page is seen (rule 11).
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const search = page.getByTestId("search-airports");
   await expect(search).not.toBeFocused();
-  await expect(search).toHaveAttribute("placeholder", /destination/i);
+  await expect(search).toHaveAttribute("placeholder", "Search");
+  await expect(search).toHaveAccessibleName(/destination/i);
+  // At rest until it is tapped: the page toggle, no Cancel (the owner,
+  // 2026-11-19: "I see cancel on fresh load").
+  await expect(page.getByTestId("one-search-cancel")).toHaveCount(0);
+  await expect(toggle(page)).toBeVisible();
 
   // Oshkosh picked: planned from the nearest field to the fix (Campbell),
   // FPL up with the route; the tip on the toggle once it shows FPL.
   await search.click();
+  // Tapped, the field in use: its Cancel where the toggle rode.
+  await expectSearchInUse(page);
   await search.fill("KOSH");
   await searchAirports(page)
     .filter({ hasText: "KOSH" })
@@ -103,18 +110,22 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
     .click({ timeout: slow(15_000) });
   await expect(page).toHaveURL(/dest=KOSH/, { timeout: slow(30_000) });
   await expectPage(page, 1);
-  // The tip waits for the toggle to show FPL: on FPL it shows the magnifier.
+  // The tip waits for the toggle, which Search alone has: none on FPL. Search
+  // at rest again by its deep link (FPL's Search button goes there too).
   const tip = page.getByTestId("fpl-tip");
   await expect(tip).toHaveCount(0);
-  await toggle(page).click();
+  await page.goto(`${page.url()}&open=search`);
+  await settle(page);
   await expectPage(page, 0);
   await expect(tip).toBeVisible();
-  await expect(tip).toContainText("Your flight plan is one tap away");
-  await expect(tip).toContainText("Tap here any time");
-  // Over the toggle, its arrow at it: at the search's row's end (the owner,
-  // 2026-11-14), the tip's edge reaches over it, on the screen.
+  await expect(tip).toContainText("Your Flight Plan Is One Tap Away");
+  await expect(tip).toContainText("Tap FPL any time");
+  // Over the toggle on a phone, its arrow at it, the tip's edge reaching
+  // over it, on the screen. In a desktop's side panel the toggle is at the
+  // window's top, with no room over it: the tip hangs under it (FplTip).
   const [tipBox, toggleBox] = [await tip.boundingBox(), await toggle(page).boundingBox()];
-  expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
+  if (page.viewportSize()!.width >= 768) expect(tipBox!.y).toBeGreaterThanOrEqual(toggleBox!.y + toggleBox!.height);
+  else expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
   expect(tipBox!.x).toBeLessThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
   expect(tipBox!.x + tipBox!.width).toBeGreaterThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
   expect(tipBox!.x).toBeGreaterThanOrEqual(0);
@@ -138,13 +149,12 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
 }) => {
   // The welcome seen, the tip not (lib/firstRunTips' store).
   await page.addInitScript(() => localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["first-flight"] }, version: 0 })));
-  await page.goto("/app/plan?dep=C81&dest=KMSN");
+  await page.goto("/app/plan?dep=C81&dest=KMSN&open=search");
   await settle(page);
   const tip = page.getByTestId("fpl-tip");
   // A route's link opens at the pill, FPL's figures in its row: half way
   // the first row, and the toggle at its end, are in sight.
   await grabberTo(page, "half");
-  if ((await toggle(page).getAttribute("data-shows")) === "0") await toggle(page).click();
   await expectPage(page, 0);
   await expect(tip).toBeVisible({ timeout: slow(15_000) });
   // All the way up the toggle is at the screen's top, with no room over it:
@@ -156,8 +166,32 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   // The toggle tapped to FPL: the tip has done its work.
   await toggle(page).click();
   await expectPage(page, 1);
-  await toggle(page).click();
+  await showPage(page, 0);
   await expectPage(page, 0);
   await page.waitForTimeout(1000);
   await expect(tip).toHaveCount(0);
+});
+
+test("on the first flight a Nearest airport tapped is the destination, the ask held till the route is made, never its card", async ({
+  page,
+}) => {
+  // The owner, 2026-11-22: "When I select a nearest airport, it shows
+  // destination search the first time but then selecting again shows the
+  // airport card." The ask was let go at the first tap while the fix was
+  // waited for, so the next tap opened the card.
+  test.setTimeout(slow(90_000));
+  await page.goto("/app/plan");
+  await settle(page);
+  await page.getByTestId("first-flight-later").click();
+  // Fields off where the airplane is (C81, the departure).
+  const fields = page.getByTestId("nearest-strip-field").filter({ hasNotText: /C81/ });
+  await expect(fields.nth(1)).toBeVisible({ timeout: slow(30_000) });
+  // Tapped, the ask held while the fix is waited for: the search still
+  // asks for the destination, so a second tap would pick again.
+  await fields.first().click();
+  const search = page.getByTestId("search-airports");
+  if (!/dest=/.test(page.url())) await expect(search).toHaveAccessibleName(/destination/i);
+  // Planned to it, from C81, where the airplane is: no card.
+  await expect(page).toHaveURL(/dest=(?!C81)[A-Z0-9]+/, { timeout: slow(30_000) });
+  await expect(page.getByTestId("place-card")).toHaveCount(0);
 });

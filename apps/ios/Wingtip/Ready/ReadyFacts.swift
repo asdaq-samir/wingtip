@@ -23,32 +23,32 @@ enum ReadyFacts {
     /// each METAR was observed and whether a TAF is among the forecast's
     /// stations. None before a briefing has come, where the briefing's own
     /// item already asks for one.
-    static func fields(dep: String, dest: String, briefing: Briefing?) -> [EngineContract.ReadyToFlyInputFieldsItem]? {
+    static func fields(dep: String, dest: String, briefing: Briefing?) throws -> [EngineContract.ReadyToFlyInputFieldsItem]? {
         guard let briefing, !dep.isEmpty, !dest.isEmpty else { return nil }
         let tafs = Set(briefing.forecast.stations.filter { $0.raw != nil }.map { $0.icaoId.uppercased() })
-        return [(dep, "departure"), (dest, "destination")].map { ident, role in
-            let station = station(ident, in: briefing)
+        return try [(dep, "departure"), (dest, "destination")].map { ident, role in
+            let station = try station(ident, in: briefing)
             let observed = station.flatMap { briefing.metars.additionalProperties[$0] ?? nil }?.observedAt.flatMap { AirportWords.date($0) }
             return EngineContract.ReadyToFlyInputFieldsItem(ident: ident, role: role, metarObserved: observed?.timeIntervalSince1970,
-                                                            taf: candidates(ident).contains { tafs.contains($0) })
+                                                            taf: try candidates(ident).contains { tafs.contains($0) })
         }
     }
 
-    /// The briefing's key for a field: as typed, else with the K a
-    /// three-letter US identifier takes in ICAO form ("OSH" is "KOSH").
-    static func station(_ ident: String, in briefing: Briefing) -> String? {
-        candidates(ident).first { briefing.metars.additionalProperties.keys.contains($0) }
+    /// The briefing's key for a field: any name the engine's field_names
+    /// gives it, the K a three-letter US identifier takes in ICAO form
+    /// first ("OSH" is "KOSH", FAA JO 7350.9GG 4-1).
+    static func station(_ ident: String, in briefing: Briefing) throws -> String? {
+        try candidates(ident).first { briefing.metars.additionalProperties.keys.contains($0) }
     }
 
-    private static func candidates(_ ident: String) -> [String] {
-        let up = ident.uppercased()
-        return up.count == 3 && up.allSatisfy(\.isLetter) ? [up, "K" + up] : [up]
+    private static func candidates(_ ident: String) throws -> [String] {
+        try Engine.fieldNames(ident: ident)
     }
 
     /// A chart cycle as the engine takes it, YYYY-MM-DD: the planner names
     /// the chart's edition as the FAA's page does, MM-DD-YYYY
     /// (wingtip.charts current_cycle). Nil where it is neither.
-    static func isoDay(_ cycle: String?) -> String? {
+    nonisolated static func isoDay(_ cycle: String?) -> String? {
         guard let cycle else { return nil }
         let parts = cycle.split(separator: "-").map(String.init)
         guard parts.count == 3, parts.allSatisfy({ Int($0) != nil }) else { return nil }
@@ -123,34 +123,33 @@ enum ReadyFacts {
 
 /// Where the chart and the packs for a route stand on the phone: worked
 /// out off the main thread, as it reads a few hundred files.
-struct ReadyStore: Equatable, Sendable {
+nonisolated struct ReadyStore: Equatable, Sendable {
     var chartsKept: Bool
     var chartEdition: String?
     var packEdition: String?
 
     /// The tiles KeepForAir keeps for the route, and the packs of
     /// the regions it crosses, looked for on disk.
+    @concurrent
     static func look(tiles: Set<KeepRoute.Tile>, template: TileTemplate?, regions: Set<String>) async -> ReadyStore {
-        await Task.detached(priority: .utility) {
-            var kept = false
-            if let template, !tiles.isEmpty {
-                let store = TileStore.shared
-                kept = tiles.allSatisfy { tile in
-                    FileManager.default.fileExists(atPath: store.path(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale).path)
-                        || store.read(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale) != nil
-                }
+        var kept = false
+        if let template, !tiles.isEmpty {
+            let store = TileStore.shared
+            kept = tiles.allSatisfy { tile in
+                FileManager.default.fileExists(atPath: store.path(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale).path)
+                    || store.read(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale) != nil
             }
-            let packs = CyclePacks.shared
-            var edition: String?
-            if let index = packs.index {
-                // The cycle's packs held where every region of the route
-                // the planner has a pack of is on disk; with no route, the
-                // cycle the phone holds at all.
-                let listed = Set(index.regions.map(\.name))
-                let whole = regions.intersection(listed).allSatisfy { FileManager.default.fileExists(atPath: packs.path(cycle: index.cycle, region: $0).path) }
-                edition = whole ? index.cycle : nil
-            }
-            return ReadyStore(chartsKept: kept, chartEdition: kept ? ReadyFacts.isoDay(template?.cycle) : nil, packEdition: edition)
-        }.value
+        }
+        let packs = CyclePacks.shared
+        var edition: String?
+        if let index = packs.index {
+            // The cycle's packs held where every region of the route
+            // the planner has a pack of is on disk; with no route, the
+            // cycle the phone holds at all.
+            let listed = Set(index.regions.map(\.name))
+            let whole = regions.intersection(listed).allSatisfy { FileManager.default.fileExists(atPath: packs.path(cycle: index.cycle, region: $0).path) }
+            edition = whole ? index.cycle : nil
+        }
+        return ReadyStore(chartsKept: kept, chartEdition: kept ? ReadyFacts.isoDay(template?.cycle) : nil, packEdition: edition)
     }
 }

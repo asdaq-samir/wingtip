@@ -18,7 +18,9 @@ test("plan page: Class B is always planned through, said with its clearance, wit
     },
   );
   await page.route(
-    (url) => url.pathname.includes("/planner/route-profile"),
+    // The side view's own answer, not its weather's (/route-profile/weather,
+    // which has no airspace to add to).
+    (url) => url.pathname.endsWith("/planner/route-profile"),
     async (route) => {
       const response = await route.fetch();
       const profile = await response.json();
@@ -89,7 +91,7 @@ test("plan page: an altitude of the pilot's own that breaks a rule is flown as s
   await controlsInSight(page);
   const chip = page.getByTestId("altitude-why");
   await expect(chip).toHaveAccessibleName(/5,500 feet.*caution/, { timeout: slow(60000) });
-  await expect(page.getByTestId("route-profile-count")).toBeVisible(); // on the Profile's button (FplTabBar)
+  await expect(page.getByTestId("route-profile-count")).toBeVisible(); // on the Profile's button, the altitude pill's end (ProfilePillButton)
   await openProfile(page);
   const cautions = page.getByTestId("own-altitude-cautions");
   await expect(cautions).toContainText("5,500 ft C81 → KDLH");
@@ -112,7 +114,7 @@ test("an altitude typed is the field's at once: with no route, kept for the rout
   await field.fill("55");
   await field.press("Enter");
   await expect(page).toHaveURL(/[?&]altitude_ft=5500/);
-  await expect(field).toHaveValue("FL-055");
+  await expect(field).toHaveValue("055");
 
   // A route planned, then another altitude: the planner held three seconds
   // over it, the field at it all the while, and nothing said to wait on.
@@ -129,12 +131,14 @@ test("an altitude typed is the field's at once: with no route, kept for the rout
   );
   await field.fill("75");
   await field.press("Enter");
-  await expect(field).toHaveValue("FL-075", { timeout: 1000 });
+  await expect(field).toHaveValue("075", { timeout: 1000 });
   await expect(page.locator("[data-slot=toast][data-type=loading]")).toHaveCount(0);
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/7,500 feet/);
 });
 
-test("the altitude's figures are taken whole as it is tapped, and its Done flies what is typed", async ({ page }) => {
+test("the altitude's figures are taken whole as it is tapped, typed after the pill's own FL-, and flown as the field is left", async ({
+  page,
+}) => {
   // The FPL audit's A6 (2026-11-08): the caret fell between "FL" and "-",
   // and iOS's number pad has no Return, so a new altitude was a tap, three
   // deletes, three figures and a tap elsewhere.
@@ -143,15 +147,17 @@ test("the altitude's figures are taken whole as it is tapped, and its Done flies
   await openPanel(page);
   await controlsInSight(page);
   const input = page.getByTestId("altitude-input");
-  await expect(input).toHaveValue(/^FL-\d{3}$/, { timeout: slow(60000) });
+  await expect(input).toHaveValue(/^\d{3}$/, { timeout: slow(60000) });
+  // "FL-" the pill's own black letters before the field (the owner, 2026-11-19).
+  await expect(page.getByTestId("altitude-group")).toContainText("FL-");
   await input.click();
   await expect
     .poll(() => input.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd, el.value.length]))
-    .toEqual([3, 6, 6]);
+    .toEqual([0, 3, 3]);
   await page.keyboard.type("075");
-  await expect(input).toHaveValue("FL-075");
-  await page.getByTestId("altitude-done").click();
+  await expect(input).toHaveValue("075");
+  // Left by the keyboard's own ✓ (no Done of ours since 2026-11-19).
+  await input.blur();
   await expect(page).toHaveURL(/[?&]altitude_ft=7500(&|$)/, { timeout: slow(10000) });
   await expect(input).not.toBeFocused();
-  await expect(page.getByTestId("altitude-done")).toHaveCount(0);
 });

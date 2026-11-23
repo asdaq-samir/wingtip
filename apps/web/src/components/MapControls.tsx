@@ -9,13 +9,11 @@ import MyPositionButton from "./MyPositionButton";
 import MapSettingsButton, { MapSettingsCard } from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
 import ThreeDButton from "./ThreeDButton";
-import { AccountButton } from "../features/pilot";
-import { usePageToggle } from "./sheet/pageToggle";
 import ClearanceKey from "./ClearanceKey";
 import { useAtcRadio } from "../lib/atcRadio";
-import { useCommsAssist } from "../lib/atc/commsAssist";
+import { useCommsAssistOn } from "../lib/atc/commsAssist";
 import { useIsMobile } from "../hooks/use-mobile";
-import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
+import { FLYING_BUTTON, FLYING_STACK, GLASS, MAP_BUTTON_GLYPH, MAP_BUTTON_SIZE, useFlying } from "../lib/mapChrome";
 import { EngineGate } from "../lib/engine/engineGate";
 import { OnSheetTop } from "./sheet/sheetTop";
 import { TEXT } from "../lib/text";
@@ -32,11 +30,10 @@ import { TEXT } from "../lib/text";
  * on the right"); over a top sheet at the bottom right, riding its edge;
  * beside a desktop's side panel at the bottom right. Over them, a circle
  * of its own, the radio's button, on a phone as on a desktop. On a phone
- * the account button (AccountButton) is at the left under the 3D; from md
- * up, a circle of its own under the group: where the toggle that turns
- * the sheet's pages was, the two swapped at the owner's ask (2026-11-14:
- * "Swap the fpl toggle and account buttons"; the toggle is at the end of
- * the sheet's first row, PageToggle).
+ * the account button is not over the map: it is at the end of the
+ * search's row, the page toggle at its start (the owner, 2026-11-20:
+ * "move the fpl button on the left side of search and avatar to the
+ * right side"; OneSearchField).
  *
  * Ghost buttons on the group's glass, eight apart inside it, so
  * each one's 44-point hit area (index.css) meets the next one's rather
@@ -69,7 +66,8 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
   const flying = useFlying((s) => s.flying);
   const nearest = useFlying((s) => s.nearest);
   const direct = useFlying((s) => s.direct);
-  const comms = useCommsAssist((s) => s.value);
+  // Off while the ATC Copilot is parked (Settings' Extras), whatever was saved.
+  const comms = useCommsAssistOn();
   const pill = useAtcRadio((s) => s.pill !== null);
   // The pill heard and done (its words or why not, its ✕ there): the mic
   // beside its close put away, at the owner's ask ("No mic button needed
@@ -102,7 +100,13 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
     >
       {/* In flight the mic alone grows to 60 points (FLYING_BUTTON), not
           the pill's chips. */}
-      <span className={cn("flex shrink-0 [&_button]:rounded-full", flying && "[&_button]:size-[60px]", pillDone && !flying && "hidden")}>
+      <span
+        className={cn(
+          "flex shrink-0 [&_button]:rounded-full",
+          flying ? "[&_button]:size-[60px]" : MAP_BUTTON_SIZE,
+          pillDone && !flying && "hidden",
+        )}
+      >
         <RadioButton />
       </span>
       <div
@@ -122,13 +126,23 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
   // The group of buttons, one soft card of glass.
   const group = (
     <div
+      // The group's own mark, for the browser tests: the compass and the 3D
+      // button stand over it in the same column from md up.
+      data-map-group=""
       className={cn(
         // One soft rounded card of glass round them, as Apple Maps on
         // the web groups its map button over its location arrow (the
         // owner's screenshot, 2026-11-10); a button pressed or open a
         // rounded square in it.
-        "flex flex-col gap-2 rounded-2xl p-1 [&_button]:rounded-xl",
-        flying && FLYING_STACK,
+        // At rest a capsule of 44-point buttons, as Apple Maps' map buttons
+        // are (the owner, 2026-11-20: "make all buttons same size as Apple
+        // Maps"), 52 across with the glass's 4 round them; 44 px and their
+        // glyphs 20 whatever the text size, as Maps' do not grow with
+        // Dynamic Type (MAP_BUTTON_SIZE, MAP_BUTTON_GLYPH).
+        "flex flex-col gap-2 p-1",
+        flying
+          ? cn("rounded-2xl [&_button]:rounded-xl", FLYING_STACK)
+          : cn("rounded-full [&_button]:rounded-full", MAP_BUTTON_SIZE, MAP_BUTTON_GLYPH),
         GLASS,
       )}
     >
@@ -138,7 +152,8 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
             <Button
               type="button"
               variant="ghost"
-              aria-label="Nearest airports"
+              // Its visible "NRST" first in its name, as a voice-control user says it (WCAG 2.5.3).
+              aria-label="NRST, nearest airports"
               data-testid="flying-nearest"
               className={cn(FLYING_BUTTON, "text-(length:--type-note)")}
               onClick={nearest}
@@ -150,7 +165,8 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
             <Button
               type="button"
               variant="ghost"
-              aria-label={`Direct to ${direct.to}`}
+              // "D→" is read "D arrow" by a reader; voice control is told "Direct to" (WCAG 2.5.3).
+              aria-label={`D→, direct to ${direct.to}`}
               data-testid="flying-direct"
               className={cn(FLYING_BUTTON, TEXT.row)}
               onClick={direct.go}
@@ -207,7 +223,7 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
               "pointer-events-none z-[1000] flex flex-col items-end gap-2 [&>*]:pointer-events-auto",
               riding
                 ? "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-6"
-                : "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto",
+                : "absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto",
             )}
           >
             {/* In flight the mic's grown circle (FLYING_BUTTON's 60) over
@@ -227,18 +243,14 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
               </div>
             )}
             {group}
-            {/* From md up the account button, a circle of its own under the
-                group; on a phone it is at the left. */}
-            {!onPhone && !flying && <AccountCircle />}
           </div>
         )}
       </OnSheetTop>
       {/* On a phone at the left, riding the sheet's top: the 3D button, a
         circle of its own (ThreeDButton), on the ground only, as the map's
-        settings are, and under it, nearest the sheet, the account button,
-        where the page toggle was until the owner swapped the two
-        (2026-11-14: "Swap the fpl toggle and account buttons"). Two circles
-        8 apart, each tap its own 44 points. Over a bottom
+        settings are; the account button is in the search's row since
+        2026-11-20 (OneSearchField). Circles 8 apart, each tap its own 44
+        points. Over a bottom
         sheet drawn in the Drawer's popup (OnSheetTop), so they follow a
         finger's drag as Apple Maps' buttons do. In flight neither is drawn. */}
       {onPhone && (
@@ -264,26 +276,10 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
                   <ClearanceKey />
                 </div>
               )}
-              {!flying && <AccountCircle />}
             </div>
           )}
         </OnSheetTop>
       )}
     </>
-  );
-}
-
-/** The account button over the map, on the glass circle the 3D's is the
- *  size of, its own 36-point disc in it (accountLook); on the ground only,
- *  as the search's row it was in is put away in flight. Only where the
- *  sheet has its two pages (the planner's, sheet/pageToggle): the
- *  developer's and the studio's pages keep theirs in their own bar. */
-function AccountCircle() {
-  const paged = usePageToggle((s) => s.pages != null);
-  if (!paged) return null;
-  return (
-    <div data-map-food="" className={cn("flex rounded-full p-1 print:hidden", GLASS)}>
-      <AccountButton />
-    </div>
   );
 }

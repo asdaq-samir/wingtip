@@ -25,7 +25,6 @@ from .atomic import atomic_path
 from .config import FAA_HEADERS as HEADERS
 from .single_flight import one_at_a_time
 from . import publications
-from .publications import dtpp_cycle
 
 log = logging.getLogger(__name__)
 
@@ -67,10 +66,10 @@ def airport_diagram_png(ident: str, cycle: str, on: date | None = None) -> Path 
     None where the field has none, the cycle is not the one in force, or
     the FAA cannot be reached (nothing is kept then, so the next ask
     tries again)."""
-    if cycle != dtpp_cycle(on):
-        return None
-    url = publications.airport_diagram_url(ident, on)
-    if not url:
+    # The cycle in force, or the kept one the card shows while the FAA
+    # cannot give it (publications.serves); its own diagram, not another's.
+    url = publications.airport_diagram_url(ident, on) if publications.serves("dtpp", cycle, on) else None
+    if not url or not url.startswith(f"{publications.DTPP_BASE}/{cycle}/"):
         return None
     # By the PDF's own name: KDLH's and DLH's are one picture.
     path = publications.CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}.png"
@@ -197,10 +196,10 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
     first time and kept for the cycle, as the whole diagram is
     (`airport_diagram_png`); None where it has none, or its runways cannot
     be found on it."""
-    if cycle != dtpp_cycle(on):
-        return None
-    url = publications.airport_diagram_url(ident, on)
-    if not url:
+    # The cycle in force, or the kept one the card shows while the FAA
+    # cannot give it (publications.serves); its own diagram, not another's.
+    url = publications.airport_diagram_url(ident, on) if publications.serves("dtpp", cycle, on) else None
+    if not url or not url.startswith(f"{publications.DTPP_BASE}/{cycle}/"):
         return None
     path = diagram_crops.runways_path(publications.CACHE_DIR, url, cycle, bool(ends))
     none = path.with_suffix(".none")

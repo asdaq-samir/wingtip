@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import {
   slow,
   settle,
@@ -42,16 +42,23 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // FPL's figure strip has its fuel once they are in, under the Nav Log's
   // card now (95f9e953b: a card of its own over FPL), so in the page, not
   // in sight.
-  await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeAttached({ timeout: slow(120000) });
   const selectedRow = table.locator('[role="row"][data-selected]');
   await expect(selectedRow).toHaveCount(0);
 
   // Each row led by its point's mark as the map draws it: the fields'
   // symbols at the ends, the checkpoints' dots numbered as the map's are,
   // from 1 in the order flown, and a top of climb's tag.
-  const marks = await table
-    .locator('[role="row"][tabindex="0"] [data-mark]')
-    .evaluateAll((els) => els.map((e) => [e.getAttribute("data-mark") ?? "", (e.textContent ?? "").trim()] as const));
+  // The whole list once the card has come up: as it rises the card draws
+  // its first screen of rows alone, the rest after its ease (NavLogList's
+  // FIRST_ROWS, useCardUp; the speed audit of 2026-11-21), so a list read
+  // mid-ease ended at its twelfth row, a checkpoint.
+  const readMarks = () =>
+    table
+      .locator('[role="row"][tabindex="0"] [data-mark]')
+      .evaluateAll((els) => els.map((e) => [e.getAttribute("data-mark") ?? "", (e.textContent ?? "").trim()] as const));
+  await expect.poll(async () => (await readMarks()).at(-1)?.[0], { timeout: slow(5000) }).toBe("airport");
+  const marks = await readMarks();
   expect(marks[0]![0]).toBe("airport");
   expect(marks.at(-1)![0]).toBe("airport");
   const numbered = marks.filter(([kind]) => kind === "checkpoint").map(([, n]) => Number(n));
@@ -65,6 +72,11 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // warning when the altitude streams in, after the rows, and a name
   // read before that was compared with one read after.
   const rows = table.locator('[role="row"][tabindex="0"]');
+  // Reached as a finger would: the card opens half way, its rows under
+  // its edge reached by pulling it up, not by scrolling (6d7eba6d7), and
+  // the click had landed on the page under the cut-off body.
+  await grabberTo(page, "full");
+  await settled(page.locator("[data-sheet-card][data-open]").last());
   await rows.nth(2).click();
   await expect(selectedRow).toHaveCount(1);
   await expect(rows.nth(2)).toHaveAttribute("data-selected");
@@ -85,12 +97,26 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // Its page cards past the half card's foot: all the way up, as a finger
   // takes it (as briefing.spec does).
   await grabberTo(page, "full");
-  await briefPage(page, "En route");
+  await briefPage(page, "En Route");
   const tabs = panelTabs(page).getByRole("tab");
-  await panelTabs(page).getByRole("tab", { name: "En route" }).focus();
+  const enRoute = panelTabs(page).getByRole("tab", { name: "En Route" });
+  // Pressed once the tabs know it is the one with the focus: the stock
+  // roving tabindex, 0 on that tab. Focused in the moment the tab list
+  // mounts, before it has its tabs, the focus went unnoticed and an arrow
+  // went from the first tab, to Depart (traced 3 of 8, the night of
+  // 2026-11-19), which no key from a person comes fast enough to meet: so
+  // focused again until the list has taken it.
+  await expect(async () => {
+    await enRoute.focus();
+    await expect(enRoute).toHaveAttribute("tabindex", "0", { timeout: 500 });
+  }).toPass({ timeout: slow(10_000) });
   await page.keyboard.press("ArrowRight");
   await expect(tabs.filter({ hasText: "Arrive" })).toBeFocused();
 });
+
+/** A nav log row's name: a phone's list's row header, a desktop table's
+ *  Waypoint cell. */
+const nameOf = (row: Locator) => row.getByRole("rowheader").or(row.getByTestId("navlog-row-waypoint"));
 
 test(
   "plan page: a checkpoint picked on the map is brought to the middle of the nav log, and a row clicked in view stays put",
@@ -114,13 +140,16 @@ test(
     await expect(table.locator('[role="row"][data-kind="checkpoint"]').first()).toBeVisible({ timeout: slow(60_000) });
     await grabberTo(page, "half");
     const logCard = page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) });
-    const edge = (await logCard.boundingBox())!.y;
+    const card = (await logCard.boundingBox())!;
     // A checkpoint late on the route, so the log has rows above it: one
-    // the map shows above the card, as its badges give way to each other
-    // and a phone's view leaves some out until closer in (MapLibre's
-    // collision).
+    // the map shows clear of the card -- above a phone's, beside a
+    // desktop's side panel, which runs the window's height -- as its
+    // badges give way to each other and a phone's view leaves some out
+    // until closer in (MapLibre's collision).
     const late = async () =>
-      (await drawnMarks(page, "route-marks")).find((m) => m.kind === "checkpoint" && Number(m.text) >= 8 && m.y < edge - 16) ?? null;
+      (await drawnMarks(page, "route-marks")).find(
+        (m) => m.kind === "checkpoint" && Number(m.text) >= 8 && (m.y < card.y - 16 || m.x > card.x + card.width + 16),
+      ) ?? null;
     await mapStill(page);
     await expect.poll(late, { timeout: slow(30_000) }).not.toBeNull();
     const mark = (await late())!;
@@ -142,7 +171,8 @@ test(
     await expect.poll(middle, { timeout: slow(10000) }).toBeLessThan(0.25);
     const rows = table.locator('[role="row"][tabindex="0"]');
     const index = await selectedRow.evaluate((row) =>
-      Array.from(row.closest('[role="table"]')!.querySelectorAll('[role="row"][tabindex="0"]')).indexOf(row),
+      // A phone's list is a role="table"; a desktop's log a native <table>.
+      Array.from(row.closest('table, [role="table"]')!.querySelectorAll('[role="row"][tabindex="0"]')).indexOf(row),
     );
     // The card's close: the pick put away, its row's selection with it.
     await pickCard.getByTestId("sheet-card-close").click();
@@ -172,10 +202,10 @@ test(
     const before = await onScreen();
     // Its name before the click: `neighbour` is a place in the list, read
     // again at each use.
-    const name = (await neighbour.getByRole("rowheader").textContent()) ?? "";
-    await neighbour.getByRole("rowheader").click();
+    const name = (await nameOf(neighbour).textContent()) ?? "";
+    await nameOf(neighbour).click();
     // By its name.
-    await expect(selectedRow.first().getByRole("rowheader")).toHaveText(name);
+    await expect(nameOf(selectedRow.first())).toHaveText(name);
     await page.waitForTimeout(400);
     expect(Math.abs((await onScreen()) - before)).toBeLessThan(2);
 
@@ -193,7 +223,7 @@ test(
 
     // The selected row clicked again: deselected, and its note closed.
     await expect(selectedRow).toHaveAttribute("data-expanded", "true");
-    await neighbour.getByRole("rowheader").click();
+    await nameOf(neighbour).click();
     await expect(selectedRow).toHaveCount(0);
     await expect(table.locator('[role="row"][data-expanded="true"]')).toHaveCount(0);
   },
@@ -230,7 +260,7 @@ test("plan page: iOS never zooms the page in on a phone's field: every field but
   // itself, over every field the page can show: the route form, and
   // the nav log's altitude box and description boxes.
   const viewport = page.viewportSize();
-  if (!viewport || viewport.width >= 768) return; // `md` and up keep the small type
+  if (!viewport || viewport.width >= 660) return; // `md` and up keep the small type
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);

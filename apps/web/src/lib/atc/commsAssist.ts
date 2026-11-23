@@ -1,3 +1,4 @@
+import { useExtra } from "../extras";
 import { keptStore } from "../storage";
 
 /**
@@ -11,4 +12,13 @@ export const useCommsAssist = keptStore<boolean>("wingtip.commsAssist", false);
 
 export function setCommsAssist(value: boolean) {
   useCommsAssist.setState({ value });
+}
+
+/** Whether Comms Assist is on as the app reads it: off while the ATC
+ *  Copilot's switch in Settings' Extras is off (lib/extras), whatever was
+ *  saved here before. */
+export function useCommsAssistOn(): boolean {
+  const parked = !useExtra("atcCopilot");
+  const on = useCommsAssist((s) => s.value);
+  return on && !parked;
 }

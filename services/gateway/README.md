@@ -28,7 +28,19 @@ fall due (91.409, 91.207, 91.411, 91.413, 91.171: POST
 /api/aircraft/inspections), and AC 61-65K's endorsements, their words and
 the fields they take (GET /api/pilot/endorsement-kinds, POST
 /api/pilot/endorsement-fill: the engine's endorsement_kinds and
-endorsement_fill). Add no rule here.
+endorsement_fill), and which of a student's flights landed at a lesson's
+field (POST /api/pilot/same-field: the engine's field_names over NASR's
+record of each ident, so BUR is KBUR and ANC is PANC). Add no rule here.
+
+A page of records asks the planner once, after its reads: the
+Checkride page and an instructor's page gather every student's
+experience and every endorsements ask while they read (`RecordsAsks`)
+and send them together (POST /api/pilot/records-batch), and the
+aircraft list, the Coming up list and the daily reminders ask every
+airplane at once (POST /api/aircraft/inspections-batch). The reads run
+in a short read-only transaction of their own (`ReadOnly`), and the
+planner is asked after it ends, so no pooled connection waits on the
+planner.
 
 ## Contents
 
@@ -167,7 +179,7 @@ One job per class.
 | Package | What lives there |
 |---|---|
 | `controller/` | HTTP endpoints. `PlannerProxyController` forwards `/api/planner/*` to `planner`; `GlobalExceptionHandler` turns exceptions into JSON; `MagicLinkController` is the email sign-in flow's own two steps (request, verify). |
-| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `InstructorService` (a student's instructors, their reviews and an instructor's page) beside `EndorsementSigning` (an instructor's signature and its voiding) and `InstructorMail` (the mail between them); `ReminderService` and `FlightWatchService`, the scheduled mail. |
+| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `InstructorService` (a student's instructors and their reviews) and `InstructorPage` (an instructor's page, read then asked of the planner in one call) beside `EndorsementSigning` (an instructor's signature and its voiding) and `InstructorMail` (the mail between them); `ReminderService` and `FlightWatchService`, the scheduled mail. |
 | `repository/` | Spring Data interfaces. No implementations — Spring writes them. |
 | `domain/` | JPA entities: `Pilot`, `Aircraft`, `Flight`, `FlightCheckpoint`, `MagicLink`, `LogbookEntry`, `Endorsement` and the rest. |
 | `dto/` | Request and response shapes, kept separate from entities so the API and the schema can change independently. |
@@ -185,6 +197,17 @@ once `planner` owned scoring and nothing here read them.
 match your entities, which is convenient right up to the moment it drops
 a column in production. Flyway owns the schema; Hibernate is only allowed
 to check that it matches and refuse to start if not.
+
+**The avatar's photo is kept apart from the pilot.** `PUT /api/me/avatar`
+(multipart, the form's `photo`: a JPEG, PNG or WebP of at most 512 KB,
+its first bytes checked against the type it says, `AvatarService`) keeps
+one photo a pilot in `pilot_avatars` (V45), `GET /api/me/avatar` serves
+it to that pilot alone, private and kept a year by the browser, and
+`DELETE /api/me/avatar` takes it out. `GET /api/me` gives its address as
+`avatarUrl` with its version (`?v=`, when it was set), read with the
+pilot by a `@Formula` subquery, so the pilot's row never carries the
+bytes and a new photo is never a cached one. It goes with the account
+by the table's cascade, and comes with the export as a data: URL.
 
 **Settings are one record.** application.yml's `app` block is bound to
 `AppProperties` and checked at start (`@Validated`), so a class takes the
@@ -275,7 +298,17 @@ tests cannot start their Postgres.
 `client.ts` echoes back; no filter of this app's forces it any more (the
 `CsrfCookieFilter` that once did is gone). A refused token is answered
 401 by Spring Security's own `HttpStatusEntryPoint`, as the caller is
-anonymous.
+anonymous. The map's tiles (a public GET of `chart-tile`, `terrain-tile`
+or `overlay-tiles`) are the exception: they go through a chain of their
+own (`TileSecurityConfig`) with no cookie and no page headers but nosniff,
+about 1.2 KB less a tile, and nothing that keeps a CDN from storing them.
+
+**Nightly housekeeping.** `Housekeeping` (03:30 UTC) lets go of the speed
+samples past 400 days, sign-in links a day past expiry, reminders' records
+whose day has passed and deletions noted over 60 days ago, then deletes
+again any deleted account a restore brought back (`DeletionsReapplied`,
+which also runs as the gateway starts; docs/README-AWS.md, "Backups and
+restore").
 
 **The planner proxy pins HTTP/1.1.** The JDK `HttpClient` defaults to
 attempting an HTTP/2 upgrade, which uvicorn (HTTP/1.1 only) rejects with

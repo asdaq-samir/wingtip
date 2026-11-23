@@ -22,11 +22,11 @@ function slices({ hasPoints = false, routed = false, boxOpen = false } = {}) {
 }
 
 describe("the empty route", () => {
-  test("is the timeline's card: the two ends in a placeholder's words, then Type or Paste a Route", () => {
+  test("is the timeline's card: the two ends in a placeholder's words, then Type or Paste a Route and Open a Route File", () => {
     const { vm } = slices();
     render(<EmptyRoute vm={vm} />);
     const card = screen.getByRole("group", { name: "The route" });
-    expect(card.textContent).toBe("DepartureDestinationType or Paste a Route");
+    expect(card.textContent).toBe("DepartureDestinationType or Paste a RouteOpen a Route File");
     expect(screen.getByRole("button", { name: "Pick the departure" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Pick the destination" })).toBeTruthy();
   });
@@ -50,6 +50,15 @@ describe("the empty route", () => {
 });
 
 describe("Type or Paste a Route", () => {
+  test("has the route box's toggle at its end, even on an empty route, opening the field", () => {
+    const { vm, routeList } = slices();
+    render(<EmptyRoute vm={vm} />);
+    const toggle = screen.getByRole("button", { name: "Type the route" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(toggle);
+    expect(routeList.setRouteOpen).toHaveBeenCalledWith(true);
+  });
+
   test("opens the route's field and puts the focus in it", () => {
     const { vm, routeList } = slices();
     const field = document.createElement("input");

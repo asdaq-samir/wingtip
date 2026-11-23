@@ -1,5 +1,5 @@
 import { test, expect, type Route } from "@playwright/test";
-import { library, openConsole, showTabs } from "./helpers";
+import { frontSheet, inSheet, library, openConsole, settled, showTabs } from "./helpers";
 
 /**
  * The pilot console's Logbook: where the pilot stands first, then the
@@ -51,7 +51,16 @@ test("the logbook says where the pilot stands, and a flight logged is posted as 
   await expect(console.getByTestId("currency-review")).toHaveText("To 30 Jun 2027");
 
   await console.getByTestId("logbook-add").click();
+  await page.getByTestId("logbook-totalHours").waitFor();
+  // At rest before inSheet measures: a card opened over the You card at
+  // full is drawn at the top and eases down to half for about 450 ms, so
+  // measured on the way its foot looked in sight, it was not pulled up, and
+  // the click waited on a button under the screen's foot to the timeout.
+  await settled(frontSheet(page));
   await page.getByTestId("logbook-totalHours").fill("3.4");
+  // Add Entry is a card opened half way on a phone (docs/design/rules.md,
+  // the cards and detents), its Save under the edge: pulled up to it.
+  await inSheet(page, page.getByTestId("logbook-save"));
   await page.getByTestId("logbook-save").click();
   await expect.poll(() => posted.length).toBe(1);
   expect(posted[0]).toMatchObject({ totalHours: 3.4, dayLandings: 1 });
@@ -126,11 +135,16 @@ test("a logged flight is changed in its own row, and one taken out comes back fr
   const console = page.getByTestId("console-sheet");
   await library(console, "Logbook");
 
-  // A tap on the row: its form in the row's place, no popover over the list.
+  // A tap on the row: its form in the row's place, no popover over the
+  // list -- no dialog but the map's sheet, which is the stock Drawer's own
+  // (data-slot map-panel), and no card over the Logbook's.
+  const cards = page.locator("[data-sheet-card][data-open]");
+  const cardsBefore = await cards.count();
   await console.getByTestId("logbook-entry").click();
   const form = console.getByTestId("logbook-entry-form");
   await expect(form).toBeVisible();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator('[role="dialog"]:not([data-slot="map-panel"])')).toHaveCount(0);
+  await expect(cards).toHaveCount(cardsBefore);
   // Escape leaves it as it was.
   await form.getByTestId("logbook-remarks").press("Escape");
   await expect(form).toHaveCount(0);

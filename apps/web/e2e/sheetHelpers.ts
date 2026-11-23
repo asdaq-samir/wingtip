@@ -43,6 +43,10 @@ export async function settle(page: Page) {
  *  Its `data-panel` is its own size, under a card too (a card's is on its
  *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
+/** Where the cards open: over the side panel, or, on a touch screen as
+ *  wide as an iPad on its side, in the inspector at the map's right
+ *  (MapPanel, useInspector), the plan staying in the side panel. */
+export const cardHost = (page: Page) => page.locator('[data-slot="map-panel"], [data-slot="map-inspector"]');
 /** The sheet in front: the top card's own drawer (CardStack), else the map's. */
 export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"], [data-sheet-card][data-open]').last();
 
@@ -112,6 +116,12 @@ export async function sheetUpToType(page: Page) {
 export async function inSheet(page: Page, locator: Locator) {
   const panel = frontSheet(page);
   await locator.waitFor();
+  // Measured once the card is at rest: a card opened over one at full is
+  // drawn at the top and eases down to half over about 450 ms, already
+  // marked half, and a row measured on the way down read as on screen and
+  // was left under the edge (instrument-currency.spec, the night of
+  // 2026-11-19).
+  await settled(panel);
   const under = await locator.evaluate((el) => {
     const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;

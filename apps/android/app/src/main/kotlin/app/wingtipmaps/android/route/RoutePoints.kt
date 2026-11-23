@@ -2,7 +2,14 @@ package app.wingtipmaps.android.route
 
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.api.Leg
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.sameField
 import java.util.Locale
+
+/** Whether two idents name one field: the engine's `same_field`
+ *  (RoutePoints.same). A parameter where a pure edit asks it, as the
+ *  engine does not load in the JVM's unit tests, which give its answers. */
+typealias SameField = (String, String) -> Boolean
 
 /** A point the route goes through: a field by its ident, or a place
  *  ("@41.8800,-87.6300") as the planner reads one. */
@@ -37,9 +44,5 @@ object RoutePoints {
 
     /** A field's ident as the log and the course may write it: KORD and
      *  ORD are one field. */
-    fun same(a: String, b: String): Boolean {
-        val x = a.trim().uppercase()
-        val y = b.trim().uppercase()
-        return x == y || (x.length == 4 && x.startsWith("K") && x.drop(1) == y) || (y.length == 4 && y.startsWith("K") && y.drop(1) == x)
-    }
+    fun same(a: String, b: String): Boolean = Engine.sameField(a, b).getOrNull() ?: a.trim().equals(b.trim(), ignoreCase = true)
 }

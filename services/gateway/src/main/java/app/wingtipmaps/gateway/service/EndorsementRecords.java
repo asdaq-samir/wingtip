@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -20,8 +21,10 @@ import java.util.stream.Stream;
  * own Checkride page and for their instructor: the endorsements held --
  * recorded from paper (Endorsement) or signed in the app
  * (SignedEndorsement), a voided one not held -- sent to the engine
- * through the planner (PlannerClient#endorsements), which says the day
- * each runs out and what a solo cross-country's review can tell from them.
+ * through the planner (RecordsAsks, PlannerClient#records), which says the
+ * day each runs out and what a solo cross-country's review can tell from
+ * them: 14 CFR 61.93(d)(4) and (5) for a solo cross-country's day, the
+ * rest of (d) being the instructor's own to determine.
  */
 final class EndorsementRecords {
 
@@ -31,40 +34,24 @@ final class EndorsementRecords {
     private EndorsementRecords() {}
 
     /** The endorsements a student holds, recorded from paper and signed in
-     *  the app, a voided one not held, as the engine reads them. */
+     *  the app, a voided one or one whose instructor was not verified not
+     *  held, as the engine reads them. */
     static List<PlannerHeldEndorsement> held(List<Endorsement> recorded, List<SignedEndorsement> signed) {
         return Stream.concat(
-                        recorded.stream().map(e -> PlannerClient.held(e.getKey().code(), e.getEndorsedOn(), null)),
+                        recorded.stream().map(e -> PlannerAsks.held(e.getKey().code(), e.getEndorsedOn(), null)),
                         signed.stream()
-                                .filter(e -> !e.isVoided())
-                                .map(e -> PlannerClient.held(
+                                // The engine's verdicts kept: voided, or its instructor
+                                // not borne out by the FAA registry, it is not held.
+                                .filter(e -> !e.isVoided() && e.isInstructorVerified())
+                                .map(e -> PlannerAsks.held(
                                         e.getCode(),
                                         e.getSignedOn(),
                                         e.getFields().get("mm"))))
                 .toList();
     }
 
-    /** Each signed endorsement's last good day, in order, the engine's
-     *  (null for one that does not run out); none asked of none. */
-    static List<LocalDate> untilOf(PlannerClient planner, List<SignedEndorsement> signed) {
-        return signed.isEmpty()
-                ? List.of()
-                : planner.endorsements(
-                                signed.stream()
-                                        .map(e -> PlannerClient.held(e.getCode(), e.getSignedOn(), null))
-                                        .toList(),
-                                null)
-                        .getUntil();
-    }
-
-    /** The signed endorsements as they are sent, each with its last good day. */
-    static List<SignedEndorsementDto> dtos(PlannerClient planner, List<SignedEndorsement> signed) {
-        List<LocalDate> until = untilOf(planner, signed);
-        return java.util.stream.IntStream.range(0, signed.size())
-                .mapToObj(i -> dto(signed.get(i), until.get(i)))
-                .toList();
-    }
-
+    /** A signed endorsement as sent, with its last good day (null until
+     *  the planner is asked, or where it does not run out). */
     static SignedEndorsementDto dto(SignedEndorsement e, LocalDate until) {
         return new SignedEndorsementDto(
                 e.getId(),
@@ -76,22 +63,9 @@ final class EndorsementRecords {
                 e.getSignedOn(),
                 until,
                 e.isVoided(),
-                e.getDigest());
-    }
-
-    /**
-     * What the student's record answers of 14 CFR 61.93(d) for a solo
-     * cross-country on {@code flightOn} -- (4) a solo cross-country
-     * endorsement and (5) a solo endorsement current on the day -- the
-     * engine's (endorsement_records). The rest of (d) -- the planning
-     * correct, the weather flyable under VFR, the student proficient -- is
-     * the instructor's own to determine, and the sheet asks it of them.
-     */
-    static List<ReviewCheckDto> checks(
-            PlannerClient planner, LocalDate flightOn, List<Endorsement> recorded, List<SignedEndorsement> signed) {
-        return planner.endorsements(held(recorded, signed), flightOn).getChecks().stream()
-                .map(PlannerClient::checkOf)
-                .toList();
+                e.getDigest(),
+                e.isInstructorVerified(),
+                e.getVerification());
     }
 
     /** The name an endorsement gives a pilot: theirs as their certificate
@@ -102,7 +76,13 @@ final class EndorsementRecords {
                 : pilot.getFullName();
     }
 
-    static CrossCountryReviewDto dto(PlannerClient planner, CrossCountryReview r, List<ReviewCheckDto> checks) {
+    /** A review as sent, its endorsement as {@code signedDto} gives it.
+     *  The pages read it with no checks and no last good day, and fill
+     *  both in from the planner's one answer after (RecordsAsks). */
+    static CrossCountryReviewDto dto(
+            CrossCountryReview r,
+            List<ReviewCheckDto> checks,
+            Function<SignedEndorsement, SignedEndorsementDto> signedDto) {
         SignedEndorsement e = r.getEndorsement();
         return new CrossCountryReviewDto(
                 r.getId(),
@@ -115,7 +95,7 @@ final class EndorsementRecords {
                 r.getNote(),
                 r.getAskedAt(),
                 checks,
-                e == null ? null : dtos(planner, List.of(e)).get(0),
+                e == null ? null : signedDto.apply(e),
                 r.getDeclinedNote(),
                 r.getAnsweredAt());
     }

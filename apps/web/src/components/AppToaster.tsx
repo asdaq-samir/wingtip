@@ -1,7 +1,7 @@
-import { Suspense, useEffect, type CSSProperties } from "react";
+import { Suspense, useEffect, useState, type CSSProperties } from "react";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { fromChunk } from "../lib/fromChunk";
-import { loadToasts, useToastsWanted } from "../lib/toast";
+import { backOnline, loadToasts, useToastsWanted } from "../lib/toast";
 
 // Base UI's Toast on a chunk of its own, with the Toaster round it:
 // mounted once a toast is asked for or the page is idle, not in the first
@@ -10,6 +10,36 @@ const { Part: Toaster } = fromChunk(
   () => import("./ui/toast"),
   (m) => m.Toaster,
 );
+
+/**
+ * Whether the Toaster's chunk is in hand, so it is drawn only then: asked
+ * for once toasts are wanted, and again as the connection comes back where
+ * it could not be had. Drawn before, lazy() threw a chunk that would not
+ * load, and this Toaster stands outside every error boundary, so a page
+ * gone offline before it was idle lost the whole app, the open console
+ * with it (airplane-mode.spec on CI's runner, validate-wave2 run
+ * 44968065738: "Failed to fetch dynamically imported module" and the
+ * console's rows detached from the page).
+ */
+function useToasterLoaded(wanted: boolean): boolean {
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!wanted || loaded) return;
+    let live = true;
+    const ask = (): Promise<void> =>
+      import("./ui/toast").then(
+        () => {
+          if (live) setLoaded(true);
+        },
+        () => (live ? backOnline().then(ask) : undefined),
+      );
+    void ask();
+    return () => {
+      live = false;
+    };
+  }, [wanted, loaded]);
+  return loaded;
+}
 
 /**
  * The app's one Toaster -- PageStatus's progress line (across every page
@@ -32,6 +62,7 @@ const { Part: Toaster } = fromChunk(
 export default function AppToaster() {
   const edge = useNavEdge();
   const wanted = useToastsWanted();
+  const loaded = useToasterLoaded(wanted);
   // Fetched once the page is idle, so the first toast does not wait on it.
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((go: () => void) => window.setTimeout(go, 2000));
@@ -39,18 +70,27 @@ export default function AppToaster() {
     const handle = idle(() => void loadToasts());
     return () => cancel(handle);
   }, []);
-  if (!wanted) return null;
+  if (!loaded) return null;
   return (
     <Suspense fallback={null}>
       <Toaster
         position={edge === "bottom" ? "top" : "bottom"}
         style={
           {
-            // With the sheet at the top the toast comes up from the foot,
-            // where the map's buttons stand on both sides: between them,
-            // not over them (a check of the Top layout on the phone,
-            // 2026-10-27). 44 points of button, its margin and a little air.
-            "--width": edge === "top" ? "min(34rem, calc(100vw - 8.5rem))" : "min(34rem, calc(100vw - 2rem))",
+            // From md up the panel stands at the left the screen's whole
+            // height, so the toast comes up from the foot in the map's room
+            // beside it, centred between the panel's edge and the map's
+            // buttons at the right, a rem of air from each: centred on the
+            // window it lay over the panel's foot (problems.spec, the
+            // nightly run of 2026-11-20). The buttons' glass card is their
+            // margin, a 44-point button and the glass's 4 either side
+            // (MapControls' group); 4.25rem had left out the glass since it
+            // came in, the toast 8 nearer it than the panel.
+            "--toast-left": edge === "top" ? "calc(max(1rem, env(safe-area-inset-left)) + var(--panel-room) + 1rem)" : "0px",
+            "--toast-right":
+              edge === "top" ? "calc(max(0.5rem, env(safe-area-inset-right)) + var(--size-map-button) + 0.5rem + 1rem)" : "0px",
+            "--width":
+              edge === "top" ? "min(34rem, calc(100vw - var(--toast-left) - var(--toast-right)))" : "min(34rem, calc(100vw - 2rem))",
             // Under the notch or the Dynamic Island, or over the home
             // indicator, where there is one.
             "--offset-top": "max(0.5rem, env(safe-area-inset-top))",
@@ -59,7 +99,8 @@ export default function AppToaster() {
         }
         // A toast still on screen was printing over the briefing's table;
         // the paper is the briefing alone.
-        className="print:hidden"
+        // The panel's width beside the map, as MapPanel sizes it.
+        className="[--panel-room:var(--size-panel)] print:hidden lg:[--panel-room:var(--size-panel-wide)]"
       />
     </Suspense>
   );

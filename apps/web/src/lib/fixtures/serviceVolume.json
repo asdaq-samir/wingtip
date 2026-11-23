@@ -1,5 +1,5 @@
 {
-  "_note": "A station's standard service volume by its class, as AIM 1-1-8's TBL 1-1-1 (VOR/DME/TACAN Standard Service Volumes; AIM Change 3, effective 9 July 2026) gives each, written as the card says it. The engine's service_volume (engine/crates/wording/src/wording/navaid.rs) and the web's lib/navaid are held to these; each answer was written from the table, not from the code.",
+  "_note": "A station's standard service volume by its class, as AIM 1-1-8's TBL 1-1-1 (VOR/DME/TACAN Standard Service Volumes; AIM Change 3, effective 9 July 2026) gives each, written as the card says it. The engine's service_volume (engine/crates/wording/src/wording/navaid.rs) is held to every one, the web's lib/navaid to the first, as its wire; each answer was written from the table, not from the code.",
   "cases": [
     { "code": "T", "answer": "Terminal · 25 nm, 1,000–12,000 ft above it" },
     { "code": "L", "answer": "Low · 40 nm, 1,000–18,000 ft above it" },

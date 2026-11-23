@@ -141,6 +141,7 @@ pub fn judge(input: &Input, hour: &Hour) -> Judged {
     let minutes = if input.airplane { hour.ete_min.map_or(0.0, |e| e + hour.ground_min) } else { 0.0 };
     let night = sun::night_on_the_way(input.start, input.end, hour.depart_s, minutes);
     let night_passengers = sun::passenger_night_on_the_way(input.start, input.end, hour.depart_s, minutes);
+    let lights = sun::lights_on_the_way(input.start, input.end, hour.depart_s, minutes, None);
     let mut v = hour.verdict.clone();
     // The risk assessment as the Go / No-Go makes it (app.routers.gonogo),
     // its briefing and nav log members this hour's.
@@ -153,6 +154,7 @@ pub fn judge(input: &Input, hour: &Hour) -> Judged {
             hazards: w.hazards.len() as i64,
             night,
             night_passengers: Some(night_passengers),
+            lights: Some(lights),
             fuel_margin_gal: if input.airplane { v.fuel.margin_gal } else { None },
             ..shared.clone()
         };

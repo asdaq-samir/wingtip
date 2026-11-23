@@ -6,5 +6,5 @@ export const routeLine = (r: PlannedRoute) => [r.dep, ...r.stops, r.dest].filter
 /** The microphone beside a row, in the tint, its 44-point hit area a
  *  pseudo-element round the stock 36; and the small button's round its
  *  32. */
-export const ROW_MIC = "relative shrink-0 after:absolute after:-inset-1 after:content-['']";
-export const ROW_BUTTON = "relative shrink-0 after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']";
+export const ROW_MIC = "relative shrink-0 hit-1";
+export const ROW_BUTTON = "relative shrink-0 hit-y-1.5";

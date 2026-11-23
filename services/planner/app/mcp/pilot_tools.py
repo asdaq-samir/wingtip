@@ -11,7 +11,7 @@ from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 
 from . import records
-from .calls import WRITE, pilot
+from .calls import WRITE, paged, pilot
 from .airport_tools import Ident
 from .flight_tools import Altitude, Depart, Rules, Stops, Tail, app_link, planned, route_fields
 from .tool_meta import READS, WRITES, additive, read_only
@@ -76,6 +76,24 @@ def checkpoints(p, distance_nm: float) -> list[dict]:
     ]
 
 
+def save_request(p: dict, flown: dict | None, planned_for: str | None, picks: str | None) -> dict:
+    """A planned flight (/api/plan's answer) as the gateway's SaveFlightRequest."""
+    totals = p["totals"]
+    return {
+        "aircraftId": flown["id"] if flown else None,
+        "departureIdent": p["departure"]["ident"],
+        "destinationIdent": p["destination"]["ident"],
+        "stops": [s["ident"] for s in p.get("stops", [])],
+        "cruiseAltitudeFt": round(p["altitude_ft"]),
+        "totalDistanceNm": totals["distance_nm"],
+        "totalEteMin": totals.get("ete_min"),
+        "totalFuelGal": totals.get("fuel_gal"),
+        "plannedFor": planned_for,
+        "checkpoints": checkpoints(p, totals["distance_nm"]),
+        "picks": picks,
+    }
+
+
 def register(server: MCPServer) -> None:
     @server.tool(
         name="my_airplanes",
@@ -98,16 +116,22 @@ def register(server: MCPServer) -> None:
         annotations=read_only("My saved flights"),
         meta=READS,
     )
-    async def my_flights(limit: Annotated[int, Field(ge=1, le=50, description="How many, newest first, 1 to 50.")] = 10) -> dict[str, Any]:
+    async def my_flights(
+        limit: Annotated[int, Field(ge=1, le=50, description="How many, newest first, 1 to 50.")] = 10,
+        offset: Annotated[int, Field(ge=0, description="How many to skip, for the next page: the last answer's next_offset.")] = 0,
+    ) -> dict[str, Any]:
         who = pilot()
-        theirs = (await records.flights(who))[:limit]
-        return {"flights": [{k: f[k] for k in FLIGHT_FIELDS if f.get(k) is not None} for f in theirs], "sources": [ACCOUNT_SOURCE]}
+        theirs = await records.flights(who)
+        flights = [{k: f[k] for k in FLIGHT_FIELDS if f.get(k) is not None} for f in theirs[offset : offset + limit]]
+        return {"flights": flights, **paged(theirs, offset, limit), "sources": [ACCOUNT_SOURCE]}
 
     @server.tool(
         name="save_flight",
-        description="Saves a planned flight to the signed-in pilot's Wingtip account, so it is in the app's Flights "
-        "to open, brief and fly. It plans the route first, as plan_route does, and saves that plan. Adds a new flight; "
-        "changes nothing already saved.",
+        description="Saves a route, given by its airports, altitude, airplane and time, to the signed-in pilot's "
+        "Wingtip account, so it is in the app's Flights to open, brief and fly. It plans the route first, as "
+        "plan_route does, and saves that plan. Adds a new flight; changes nothing already saved. A flight shown or "
+        "changed with show_flight and the edit tools (its fuel stops, approaches, fuel on board) is saved whole by "
+        "save_flight_plan instead.",
         title="Save flight to Wingtip",
         annotations=additive("Save flight to Wingtip"),
         meta=WRITES,
@@ -124,24 +148,14 @@ def register(server: MCPServer) -> None:
         who = pilot(WRITE)
         fields, flown = await route_fields(who, departure, destination, stops, cruise_altitude_ft, airplane_tail, depart_at, rules)
         p = await planned(fields)
-        totals = p["totals"]
-        request = {
-            "aircraftId": flown["id"] if flown else None,
-            "departureIdent": p["departure"]["ident"],
-            "destinationIdent": p["destination"]["ident"],
-            "stops": [s["ident"] for s in p.get("stops", [])],
-            "cruiseAltitudeFt": round(p["altitude_ft"]),
-            "totalDistanceNm": totals["distance_nm"],
-            "totalEteMin": totals.get("ete_min"),
-            "totalFuelGal": totals.get("fuel_gal"),
-            "plannedFor": depart_at.isoformat() if depart_at else None,
-            "checkpoints": checkpoints(p, totals["distance_nm"]),
-            # The altitude asked, kept as the app's own address keeps it
-            # (lib/flightLink PICK_KEYS), so it opens at that altitude.
-            "picks": f"altitude_ft={cruise_altitude_ft}"
+        # The altitude asked, kept as the app's own address keeps it
+        # (lib/flightLink PICK_KEYS), so it opens at that altitude.
+        picks = (
+            f"altitude_ft={cruise_altitude_ft}"
             if cruise_altitude_ft is not None
-            else (f"altitude_choice={p['altitude_choice']}" if p.get("altitude_choice") else None),
-        }
+            else (f"altitude_choice={p['altitude_choice']}" if p.get("altitude_choice") else None)
+        )
+        request = save_request(p, flown, depart_at.isoformat() if depart_at else None, picks)
         saved = await records.save_flight(who, request)
         return {
             "saved": {k: v for k, v in saved.items() if v is not None},

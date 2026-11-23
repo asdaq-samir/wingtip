@@ -1,0 +1,698 @@
+{
+  "_note": "Independent worked examples for weight and balance, from the FAA's Pilot's Handbook and Weight & Balance Handbook (fetched from faa.gov on 2026-11-21), never from the code, each asked of gonogo_balance as the hosts ask it. Where a figure leaves out a limit the engine needs, the case says what stands in for it and checks only what the figure gives. Shape and checks as reference/atmosphere.json says, with length and contains (a substring of one of the strings) for a list.",
+  "cases": [
+    {
+      "name": "The computational method: 3,320 lb at 84.8 in, within 3,400 lb and 78 to 86 in",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 3400,
+          "max_takeoff_lb": 3400,
+          "max_landing_lb": 3400,
+          "sample_empty_weight_lb": 2100,
+          "sample_empty_moment_lb_in": 164430.0,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 121
+            },
+            {
+              "name": "Baggage area 1",
+              "arm_in": 150
+            }
+          ],
+          "fuel_arm_in": 75,
+          "fuel_max_gal": 75,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 0,
+          "envelope": [
+            [
+              78,
+              0
+            ],
+            [
+              86,
+              0
+            ],
+            [
+              86,
+              3400
+            ],
+            [
+              78,
+              3400
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 2100,
+          "empty_arm_in": 78.3,
+          "stations_lb": [
+            340,
+            350,
+            80
+          ],
+          "fuel_gal": 75
+        },
+        "trip_fuel_gal": null
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 3320,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 84.8,
+          "tolerance": 0.05
+        },
+        {
+          "path": "problems",
+          "equals": []
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 10, p. 10-7, Figure 10-5: empty 2,100 lb at 78.3, front 340 at 85.0, rear 350 at 121.0, fuel 450 (75 gal at 6 lb) at 75.0, baggage 80 at 150.0; \"281,430 ÷ 3,320 = 84.8\" ... \"does not exceed the maximum gross weight of 3,400 pounds, and the CG of 84.8 is within the 78–86 inch range\".",
+      "method": "Tenths of an inch: within 0.05. The source gives one CG range at every weight, so the envelope is that range from 0 to 3,400 lb; it gives no tank capacity, so the 75 gal loaded is the most."
+    },
+    {
+      "name": "A loading schedule placard: 2,799 lb and 2,278 moment/100, within limits",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 2950,
+          "max_takeoff_lb": 2950,
+          "max_landing_lb": 2950,
+          "sample_empty_weight_lb": 2015,
+          "sample_empty_moment_lb_in": 155400.0,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 121
+            },
+            {
+              "name": "Baggage or 5th seat",
+              "arm_in": 140
+            }
+          ],
+          "fuel_arm_in": 75,
+          "fuel_max_gal": 44,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 0,
+          "envelope": [
+            [
+              77.0,
+              2100
+            ],
+            [
+              77.0,
+              2475
+            ],
+            [
+              77.5,
+              2525
+            ],
+            [
+              82.1,
+              2950
+            ],
+            [
+              84.7,
+              2950
+            ],
+            [
+              85.7,
+              2525
+            ],
+            [
+              85.7,
+              2100
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 2015,
+          "empty_arm_in": 77.12158808933002,
+          "stations_lb": [
+            300,
+            190,
+            30
+          ],
+          "fuel_gal": 44
+        },
+        "trip_fuel_gal": null
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 2799,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 81.38620936048589,
+          "tolerance": 0.05
+        },
+        {
+          "path": "problems",
+          "equals": []
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 10, pp. 10-9 to 10-10, Figure 10-9: empty 2,015 lb at moment/100 1,554, main tanks 44 gal (264 lb) at arm 75, front seats 300 at 85, rear 190 at 121, baggage 30 at 140; \"the total weight of 2,799 pounds and moment of 2,278/100 are within the limits of the table\"; moment limits: 2,950 lb 82.1 to 84.7, 2,525 lb 77.5 to 85.7, 2,475 lb or less 77.0 to 85.7.",
+      "method": "The placard adds rounded moments/100 (300 lb in front as 254, where 300 × 85 is 25,500): its CG is 81.39 in, the engine's exact sum 81.42, within 0.05. The envelope is the table's limits from its lightest row, 2,100 lb."
+    },
+    {
+      "name": "Computations with a negative arm: 1,648.9 lb at 74.0 in",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 1648.9,
+          "max_takeoff_lb": 1648.9,
+          "max_landing_lb": 1648.9,
+          "sample_empty_weight_lb": 1011.9,
+          "sample_empty_moment_lb_in": 69416.34,
+          "stations": [
+            {
+              "name": "Oil",
+              "arm_in": -31
+            },
+            {
+              "name": "Pilot",
+              "arm_in": 81
+            },
+            {
+              "name": "Passenger",
+              "arm_in": 81
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 105
+            }
+          ],
+          "fuel_arm_in": 84,
+          "fuel_max_gal": 36,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 0,
+          "envelope": [
+            [
+              0,
+              0
+            ],
+            [
+              200,
+              0
+            ],
+            [
+              200,
+              1648.9
+            ],
+            [
+              0,
+              1648.9
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 1011.9,
+          "empty_arm_in": 68.6,
+          "stations_lb": [
+            11,
+            170,
+            170,
+            70
+          ],
+          "fuel_gal": 36
+        },
+        "trip_fuel_gal": null
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 1648.9,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 74.0,
+          "tolerance": 0.1
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 10, p. 10-10, Figure 10-10: licensed empty weight 1,011.9 lb at 68.6, oil 11.0 at −31.0, fuel 108.0 and auxiliary 108.0 (18 gal each) at 84.0, pilot and passenger 170.0 each at 81.0, baggage 70.0 at 105.0; total 1,648.9 lb, CG 74.0.",
+      "method": "The figure gives no limits, so only the weight and the arm are checked (the limits here are the loaded weight and a wide arm, so none is said). Its empty moment, 69,393.0, is not 1,011.9 × 68.6 (69,416.3): the arm was rounded to a tenth, so the engine's 74.05 is held to the figure's 74.0 within 0.1."
+    },
+    {
+      "name": "Computations with zero fuel weight: takeoff 5,038 lb at 97.9 in, landing 4,588 lb at 96.5 in",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 5224,
+          "max_takeoff_lb": 5224,
+          "max_landing_lb": 4940,
+          "sample_empty_weight_lb": 3230,
+          "sample_empty_moment_lb_in": 292315.0,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 89
+            },
+            {
+              "name": "3rd and 4th seats",
+              "arm_in": 126
+            },
+            {
+              "name": "5th and 6th seats",
+              "arm_in": 157
+            },
+            {
+              "name": "Baggage, nose",
+              "arm_in": 10
+            },
+            {
+              "name": "Baggage, aft",
+              "arm_in": 183
+            }
+          ],
+          "fuel_arm_in": 113,
+          "fuel_max_gal": 137,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 24,
+          "envelope": [
+            [
+              0,
+              0
+            ],
+            [
+              200,
+              0
+            ],
+            [
+              200,
+              5224
+            ],
+            [
+              0,
+              5224
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 3230,
+          "empty_arm_in": 90.5,
+          "stations_lb": [
+            335,
+            350,
+            200,
+            100,
+            25
+          ],
+          "fuel_gal": 137
+        },
+        "trip_fuel_gal": 75
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 5038,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 97.9,
+          "tolerance": 0.05
+        },
+        {
+          "path": "landing.weight_lb",
+          "value": 4588,
+          "tolerance": 0.01
+        },
+        {
+          "path": "landing.arm_in",
+          "value": 96.5,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 10, p. 10-10, Figure 10-11: basic empty 3,230 lb at 90.5, front 335 at 89.0, 3rd and 4th 350 at 126.0, 5th and 6th 200 at 157.0, nose baggage 100 at 10.0, aft baggage 25 at 183.0, fuel 822 lb at 113.0, less 24 lb for start, taxi and takeoff, takeoff 5,038 at 97.9, less 450 lb of fuel to destination, landing 4,588 at 96.5; ramp max 5,224 lb, landing max 4,940.",
+      "method": "822 lb and 450 lb at 6 lb a gallon are 137 and 75 gal. The figure gives no takeoff maximum or envelope, so only the weights and arms are checked (the ramp's maximum stands for the takeoff's, a wide arm for the envelope). Its zero-fuel maximum, 4,400 lb, the engine does not hold."
+    },
+    {
+      "name": "Adding 140 lb at station 150 to 6,860 lb at 80.0 in moves the CG to 81.4 in",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 7000,
+          "max_takeoff_lb": 7000,
+          "max_landing_lb": 7000,
+          "sample_empty_weight_lb": 6860,
+          "sample_empty_moment_lb_in": 548800,
+          "stations": [
+            {
+              "name": "Baggage",
+              "arm_in": 150
+            }
+          ],
+          "fuel_arm_in": 80,
+          "fuel_max_gal": 0,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 0,
+          "envelope": [
+            [
+              0,
+              0
+            ],
+            [
+              200,
+              0
+            ],
+            [
+              200,
+              7000
+            ],
+            [
+              0,
+              7000
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 6860,
+          "empty_arm_in": 80,
+          "stations_lb": [
+            140
+          ],
+          "fuel_gal": 0
+        },
+        "trip_fuel_gal": null
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 7000,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 81.4,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 10, p. 10-11, \"Weight Addition or Removal\", its example: \"Aircraft total weight 6,860 lb, CG station 80.0 in. Determine the location of the CG if 140 pounds of baggage is added to station 150 ... New CG = 80 in + 1.4 in = 81.4 in\".",
+      "method": "The handbook's proportion, ΔCG = added weight × distance / new total weight, is the moments' sum by another road. The airplane as loaded is given as the empty weight; no limits are given or checked."
+    },
+    {
+      "name": "A small airplane: 3,027 lb at 43.54 in, loaded properly for takeoff but 77 lb over for landing",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 3100,
+          "max_takeoff_lb": 3100,
+          "max_landing_lb": 2950,
+          "sample_empty_weight_lb": 1874,
+          "sample_empty_moment_lb_in": 67651.4,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 37
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 74
+            },
+            {
+              "name": "Baggage A",
+              "arm_in": 97,
+              "max_lb": 100
+            },
+            {
+              "name": "Baggage B",
+              "arm_in": 116,
+              "max_lb": 60
+            }
+          ],
+          "fuel_arm_in": 46.6,
+          "fuel_max_gal": 88,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 0,
+          "envelope": [
+            [
+              33.0,
+              1800
+            ],
+            [
+              33.0,
+              2250
+            ],
+            [
+              40.9,
+              3100
+            ],
+            [
+              46.0,
+              3100
+            ],
+            [
+              46.0,
+              1800
+            ]
+          ],
+          "baggage_combined_max_lb": 160
+        },
+        "load": {
+          "empty_weight_lb": 1874,
+          "empty_arm_in": 36.1,
+          "stations_lb": [
+            300,
+            175,
+            100,
+            50
+          ],
+          "fuel_gal": 88
+        },
+        "trip_fuel_gal": null
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 3027,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 43.54,
+          "tolerance": 0.005
+        },
+        {
+          "path": "problems",
+          "length": 1
+        },
+        {
+          "path": "problems",
+          "contains": "77 lb over"
+        }
+      ],
+      "source": "FAA-H-8083-1B (Aircraft Weight and Balance Handbook, 2016), ch. 5, pp. 5-2 to 5-3, Figures 5-1 to 5-3: empty 1,874 lb at +36.1, seats 2 at +37.0 and 2 at +74.0, baggage A 100 lb at +97.0 and B 60 lb at +116.0 (160 lb in all), 88 gal usable at +46.6; CG range +40.9 to +46.0 at 3,100 lb and +33.0 to +46.0 at 2,250 lb or less, straight between; 3,100 lb takeoff, 2,950 landing. \"the total weight is 3,027 pounds and the CG is 43.54 inches aft of the datum ... properly loaded for takeoff, but 77 pounds overweight for landing.\"",
+      "method": "Hundredths of an inch: within 0.005. With no trip fuel, landing at once is landing at the takeoff weight, the handbook's case. The envelope's floor is the chart's, 1,800 lb, below the empty weight."
+    },
+    {
+      "name": "A light twin: 5,064 lb at 42.47 in, within the CG range",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 5200,
+          "max_takeoff_lb": 5200,
+          "max_landing_lb": 5200,
+          "sample_empty_weight_lb": 3404,
+          "sample_empty_moment_lb_in": 120093.12,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 37
+            },
+            {
+              "name": "Row 2 seats",
+              "arm_in": 75
+            },
+            {
+              "name": "Forward baggage",
+              "arm_in": -15,
+              "max_lb": 100
+            },
+            {
+              "name": "Aft baggage",
+              "arm_in": 113,
+              "max_lb": 200
+            }
+          ],
+          "fuel_arm_in": 61,
+          "fuel_max_gal": 206,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 0,
+          "envelope": [
+            [
+              32,
+              4000
+            ],
+            [
+              32,
+              4300
+            ],
+            [
+              38,
+              5200
+            ],
+            [
+              43.1,
+              5200
+            ],
+            [
+              43.6,
+              4800
+            ],
+            [
+              43.6,
+              4000
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 3404,
+          "empty_arm_in": 35.28,
+          "stations_lb": [
+            320,
+            310,
+            100,
+            90
+          ],
+          "fuel_gal": 140
+        },
+        "trip_fuel_gal": null
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 5064,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 42.47,
+          "tolerance": 0.005
+        },
+        {
+          "path": "problems",
+          "equals": []
+        }
+      ],
+      "source": "FAA-H-8083-1B (Aircraft Weight and Balance Handbook, 2016), ch. 6, pp. 6-2 to 6-3, Figures 6-1 to 6-4: empty 3,404 lb at 35.28, fuel 140 gal (840 lb) at +61, front seats 320 at 37, row 2 310 at 75, forward baggage 100 at −15 (100 lb limit), aft 90 at 113 (200 lb limit); CG range +38 to +43.1 at 5,200 lb, +43.6 at 4,800, +32 to +43.6 at 4,300 or less. \"The loaded weight for this flight is 5,064 pounds, and the CG is located at 42.47 inches ... the airplane is properly loaded.\"",
+      "method": "Hundredths: within 0.005. Usable fuel 2 × 103 gal. The handbook gives 5,200 lb as the envelope's top and no other maximum; the chart's floor is 4,000 lb."
+    },
+    {
+      "name": "A loading form: takeoff 3,781 lb at 113.6 in, landing 3,571 lb at 113.4 in",
+      "rule": "gonogo_balance",
+      "input": {
+        "loading": {
+          "max_ramp_lb": 3900,
+          "max_takeoff_lb": 3900,
+          "max_landing_lb": 3900,
+          "sample_empty_weight_lb": 2625,
+          "sample_empty_moment_lb_in": 286400.0,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 105
+            },
+            {
+              "name": "Row 2 seats",
+              "arm_in": 142
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 167,
+              "max_lb": 200
+            }
+          ],
+          "fuel_arm_in": 117,
+          "fuel_max_gal": 100,
+          "fuel_lb_per_gal": 6,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 24,
+          "envelope": [
+            [
+              106.6,
+              2400
+            ],
+            [
+              106.6,
+              3250
+            ],
+            [
+              110.6,
+              3900
+            ],
+            [
+              117.5,
+              3900
+            ],
+            [
+              117.5,
+              2400
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 2625,
+          "empty_arm_in": 109.1047619047619,
+          "stations_lb": [
+            320,
+            290,
+            90
+          ],
+          "fuel_gal": 80
+        },
+        "trip_fuel_gal": 35
+      },
+      "expect": [
+        {
+          "path": "takeoff.weight_lb",
+          "value": 3781,
+          "tolerance": 0.01
+        },
+        {
+          "path": "takeoff.arm_in",
+          "value": 113.6,
+          "tolerance": 0.05
+        },
+        {
+          "path": "landing.weight_lb",
+          "value": 3571,
+          "tolerance": 0.01
+        },
+        {
+          "path": "landing.arm_in",
+          "value": 113.4,
+          "tolerance": 0.05
+        },
+        {
+          "path": "problems",
+          "equals": []
+        }
+      ],
+      "source": "FAA-H-8083-1B (Aircraft Weight and Balance Handbook, 2016), ch. 6, pp. 6-3 to 6-6, Figures 6-6 to 6-10: empty 2,625 lb at moment/100 2,864, front 320 (arm +105), row 2 290 (+142), baggage 90 (+167), fuel 80 gal, 480 lb (+117), less 24 lb for start, taxi and takeoff, takeoff 3,781 lb and 4,296; less 35 gal, 210 lb, landing 3,571 and 4,050. \"These lines cross inside the envelope at ... 114 (113.6) inches ... The CG limits for 3,781 pounds are 109.8 to 117.5.\" Envelope: 3,900 lb 110.6 to 117.5, 3,250 lb or less 106.6 to 117.5.",
+      "method": "The form adds moments/100 from tables rounded to the unit; the engine's exact sums (113.61 and 113.41 in) are within 0.05. The form's only maximum is 3,900 lb; the chart's floor is 2,400 lb."
+    }
+  ]
+}

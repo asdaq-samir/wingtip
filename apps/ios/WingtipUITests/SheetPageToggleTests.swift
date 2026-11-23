@@ -9,8 +9,8 @@ import XCTest
 /// over Search closes back to Search, leaving Search puts the keyboard
 /// away, the toggle over a card closes it, an up or down drag still sizes
 /// the sheet on either page, and the
-/// first launch's welcome goes on to Search asking for the destination.
-/// Offline, but for Fly Here, whose card needs the planner (PlannerHost).
+/// first launch's welcome goes on to Search, and the route's ✕ asks
+/// "Clear Route?" before it clears. Offline, but for Fly Here, whose card needs the planner (PlannerHost).
 final class SheetPageToggleTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -39,7 +39,13 @@ final class SheetPageToggleTests: XCTestCase {
         toggle.tap()
         XCTAssertTrue(app.textFields["To"].waitForExistence(timeout: 10), "the toggle did not go to FPL")
         XCTAssertEqual(toggle.label, "Show search")
-        XCTAssertFalse(search.exists && search.isHittable, "the search's row is still on the FPL page")
+        if CardTests.split {
+            // The iPad's sidebar has the height for both: the one search
+            // stays at its top over FPL (PlanSheet; docs/design/ios.md §16).
+            XCTAssertTrue(search.isHittable, "the sidebar's search left the FPL page")
+        } else {
+            XCTAssertFalse(search.exists && search.isHittable, "the search's row is still on the FPL page")
+        }
 
         toggle.tap()
         XCTAssertTrue(search.waitForExistence(timeout: 10) && search.isHittable, "the toggle did not come back to Search")
@@ -48,7 +54,13 @@ final class SheetPageToggleTests: XCTestCase {
         let threeD = app.buttons["map-3d"]
         XCTAssertTrue(threeD.exists, "no 3D button")
         XCTAssertLessThan(threeD.frame.maxY, toggle.frame.minY, "the toggle is not under the 3D")
-        XCTAssertLessThan(toggle.frame.midX, app.frame.width / 2, "the toggle is not at the left")
+        if CardTests.split {
+            // Beside the iPad's sidebar, under the map's buttons at the top
+            // right (docs/design/rules.md §7).
+            XCTAssertGreaterThan(toggle.frame.midX, app.frame.width / 2, "the toggle is not at the right")
+        } else {
+            XCTAssertLessThan(toggle.frame.midX, app.frame.width / 2, "the toggle is not at the left")
+        }
     }
 
     @MainActor
@@ -87,9 +99,10 @@ final class SheetPageToggleTests: XCTestCase {
             let flyHere = app.descendants(matching: .any)["fly-here"]
             XCTAssertTrue(flyHere.waitForExistence(timeout: 30), "no Fly Here the \(time) time")
             flyHere.tap()
-            XCTAssertTrue(app.textFields["To"].waitForExistence(timeout: 20), "Fly Here did not show FPL the \(time) time")
+            // KOSH the destination: its line on the timeline once the
+            // route is whole and planned, else the To field's word.
+            XCTAssertTrue(CardTests.routeEnds(app, at: "KOSH", timeout: 20), "Fly Here did not show FPL with KOSH the \(time) time")
             XCTAssertEqual(toggle.label, "Show search", "Fly Here left the sheet on Search the \(time) time")
-            XCTAssertEqual(app.textFields["To"].value as? String, "KOSH")
             if time == "first" {
                 // Back to Search and the same field's card again.
                 toggle.tap()
@@ -110,8 +123,12 @@ final class SheetPageToggleTests: XCTestCase {
         let fuel = app.buttons["find-nearby-fuel"]
         CardTests.scrollTo(fuel, in: app)
         fuel.tap()
-        let close = CardTests.close(app)
-        XCTAssertTrue(close.waitForExistence(timeout: 10), "the Stops did not open")
+        // A list is a page on the iPad's sidebar stack, its way back its
+        // Back (CardTests.away), where the iPhone's card has its close.
+        let stops = CardTests.card(app, "card-list")
+        XCTAssertTrue(stops.waitForExistence(timeout: 10), "the Stops did not open")
+        let close = CardTests.away(app, from: stops)
+        XCTAssertTrue(close.waitForExistence(timeout: 10), "the Stops have no way back")
         close.tap()
         XCTAssertEqual(toggle(app).label, "Show flight plan", "the Stops' close did not come back to Search")
     }
@@ -144,7 +161,25 @@ final class SheetPageToggleTests: XCTestCase {
         // the toggle is reached once the keyboard is down again.
         search.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "the search field is not focused")
-        app.buttons["Cancel"].firstMatch.tap()
+        // On the iPad the toggle stays at the map's top right beside the
+        // sidebar, in reach with the keyboard up: the pilot turns the page
+        // straight from the focused field. On the iPhone the sheet is up
+        // over the faded buttons until the field is left.
+        if !CardTests.split {
+            // The focused field's own button, no identifier of its own:
+            // Cancel up to iOS 26, Close (an ✕) on iOS 27.
+            app.buttons.matching(NSPredicate(format: "identifier == '' AND (label == 'Cancel' OR label == 'Close')")).firstMatch.tap()
+            // The keyboard down and the sheet at rest before the toggle:
+            // iOS 27 brings the sheet down from full after the field's
+            // Close, and until it has the map's buttons, the toggle with
+            // them, are faded.
+            XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Close left the keyboard up")
+            CardTests.settled(toggle(app))
+            if !toggle(app).isHittable {
+                CardTests.drag(CardTests.grabber(app), in: app, to: CGVector(dx: 0.5, dy: 0.55))
+                CardTests.settled(toggle(app))
+            }
+        }
         toggle(app).tap()
         XCTAssertEqual(toggle(app).label, "Show search")
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "the keyboard stayed up on FPL")
@@ -162,12 +197,16 @@ final class SheetPageToggleTests: XCTestCase {
         XCTAssertTrue(later.exists || go.exists, "no way on from the welcome")
         (later.exists ? later : go).tap()
         XCTAssertTrue(welcome.waitForNonExistence(timeout: 5), "the welcome stayed up")
-        XCTAssertTrue(app.searchFields["Where are you flying to?"].waitForExistence(timeout: 10), "the search did not ask for the destination")
+        XCTAssertTrue(app.searchFields["Search"].waitForExistence(timeout: 10), "the welcome did not go on to Search")
         XCTAssertFalse(app.keyboards.firstMatch.exists, "the keyboard came up before a tap")
     }
 
     @MainActor
     func testAnUpOrDownDragStillSizesTheSheetOnBothPages() throws {
+        // The sheet is the iPhone's: the iPad's plan is in the sidebar, with
+        // no sheet to size (docs/design/ios.md §16: "Avoid: a sheet over
+        // the map on regular width").
+        if CardTests.split { throw XCTSkip("Not on an iPad, whose sidebar holds the plan with no sheet") }
         let app = launch()
         let grabber = CardTests.grabber(app)
         let toggle = toggle(app)
@@ -188,5 +227,67 @@ final class SheetPageToggleTests: XCTestCase {
             XCTAssertEqual(toggle.frame.minY, half, accuracy: 8, "the sheet did not go back up on \(page)")
             toggle.tap()
         }
+    }
+
+    /// Add a Stop asks the one search to pick, titled as Maps' Add Stop
+    /// sheet, and the field's Cancel goes back to the plan unchanged.
+    @MainActor
+    func testAddAStopAsksTheSearchToPickAndCancelGoesBack() throws {
+        let app = launch()
+        toggle(app).tap()
+        let from = app.textFields["From"], to = app.textFields["To"]
+        XCTAssertTrue(to.waitForExistence(timeout: 10), "the toggle did not go to FPL")
+        from.tap()
+        from.typeText("KMSN")
+        to.tap()
+        to.typeText("KOSH")
+        // Planned, the fields put away: the route is its timeline.
+        app.buttons["plan-button"].tap()
+        // The timeline's last row: on the iPhone's sheet it is below the
+        // fold, and the list makes a row only once it is scrolled to, so
+        // it is scrolled to first, as a pilot would.
+        let add = app.buttons["timeline-add-stop"]
+        CardTests.scrollTo(add, in: app)
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "no Add Stop on the timeline")
+        add.tap()
+        let title = app.staticTexts["point-ask-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "Add Stop did not ask the search")
+        XCTAssertEqual(title.label, "Add Stop")
+        XCTAssertEqual(toggle(app).label, "Show flight plan", "the ask is not on the Search page")
+        // The field's own button on the iPhone, Cancel up to iOS 26 and
+        // Close (an ✕) on iOS 27, as testLeavingSearchPutsTheKeyboardAway
+        // finds it; the ask's own Cancel on the iPad (PointAskHead).
+        app.buttons.matching(NSPredicate(format: "label == 'Cancel' OR (identifier == '' AND label == 'Close')")).firstMatch.tap()
+        XCTAssertTrue(title.waitForNonExistence(timeout: 10), "Cancel left the ask up")
+        XCTAssertEqual(toggle(app).label, "Show search", "Cancel did not go back to the plan")
+    }
+
+    @MainActor
+    func testTheRoutesCloseAsksBeforeClearing() throws {
+        let app = launch()
+        toggle(app).tap()
+        let from = app.textFields["From"], to = app.textFields["To"]
+        XCTAssertTrue(to.waitForExistence(timeout: 10), "the toggle did not go to FPL")
+        from.tap()
+        from.typeText("KMSN")
+        to.tap()
+        to.typeText("KOSH")
+        let clear = app.buttons["route-clear"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 10), "no ✕ on the route card")
+        clear.tap()
+        let alert = app.alerts["Clear Route?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5), "the ✕ did not ask first")
+        alert.buttons["Cancel"].tap()
+        XCTAssertEqual(to.value as? String, "KOSH", "Cancel cleared the route")
+        clear.tap()
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Clear Route"].tap()
+        XCTAssertTrue(app.buttons["route-close"].waitForExistence(timeout: 5), "the route was not cleared")
+        // The undo bar offers it back for a moment, as the web's toast does.
+        let undo = app.buttons["undo-bar-undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "no undo bar after Clear Route")
+        undo.tap()
+        XCTAssertTrue(clear.waitForExistence(timeout: 10), "Undo did not bring the route back")
+        XCTAssertFalse(undo.exists, "the undo bar stayed after Undo")
     }
 }

@@ -1,7 +1,7 @@
 """aviationweather.gov's national cache files, fetched on the schedule
 (app.main) and stored parsed (wingtip.weather_store) for the planner to
-read (wingtip.weather): the METARs, TAFs, SIGMETs and AIRMETs, PIREPs and
-G-AIRMETs, each the complete current national set, gzipped, regenerated
+read (wingtip.weather): the METARs, TAFs, SIGMETs, PIREPs and G-AIRMETs
+(the AIRMETs over the CONUS), each the complete current national set, gzipped, regenerated
 every minute (TAFs every ten). Moved from the planner's wingtip.weather
 (#535), which fetched them on its own requests' way.
 
@@ -10,8 +10,15 @@ site's API terms ask heavy users to do -- a bounding-box query per route
 is exactly the "large query" the rate limit and the results cap exist
 for, and one download every few minutes replaces all of them. Each is
 asked for only if it has changed since the copy held (its ETag and
-Last-Modified): an unchanged one (the SIGMETs and G-AIRMETs most of the
-time) is a 304, neither downloaded nor parsed again.
+Last-Modified, kept beside the record: weather_store.write_validators).
+A 304 is neither downloaded nor parsed again. The site's ETags are
+nginx's mtime-size and its Last-Modified moves every minute as the file
+is regenerated, so 304s are rare (measured 2026-11-21): a body that comes
+back the same as the copy held (its digest in the record's meta, "body")
+is not parsed by the engine again either. Either way an unchanged copy
+is not written again unless the time it may be held to moves
+(weather_store.write_if_changed), so the planner does not decode it
+again; the try's attempt file confirms it, which is the age said.
 
 Each copy is stored with the time to which it may be served when a
 later fetch fails, by its product's own validity: a TAF to the end of
@@ -20,6 +27,16 @@ long as it is the latest heard. A fetch that fails leaves the stored
 copy in place and says so beside it (weather_store.write_attempt); only a
 parsed product is ever stored, so a body that does not parse is a
 failed fetch.
+
+Alaska's AIRMETs are the one product here not in a cache file: the
+data API's /api/data/airmet ("Decoded domestic AIRMETs (Alaska only)",
+its OpenAPI document read 2026-11-21), every one in a single answer of
+about 28 KB, which the API's terms allow (aviationweather.gov/data/api,
+"Using the API": a custom User-Agent, at most 100 requests a minute,
+asked no more often than the product changes). The answer says it may
+be cached three minutes (Cache-Control max-age=180), which is its pace
+here (app.settings, airmets_every_s); an unchanged answer is not read
+again, as with the files (its weak ETag, then its digest).
 
 The reading of each file and how long its copy is held are the engine's
 (engine/crates/weather/src/forecast/awc.rs, #482 phase 2), the same rules
@@ -42,6 +59,9 @@ from . import fetch
 log = logging.getLogger(__name__)
 
 CACHE_BASE_URL = "https://aviationweather.gov/data/cache"
+#: Alaska's AIRMETs as GeoJSON, the one format with each zone's polygon
+#: (engine/crates/weather/src/forecast/awc/airmets.rs).
+AIRMET_URL = "https://aviationweather.gov/api/data/airmet?format=geojson"
 
 
 def _reader(product: str):
@@ -66,33 +86,50 @@ SOURCES = {
     for name, file in (
         ("metars", "metars"),
         ("tafs", "tafs"),
-        ("airsigmets", "airsigmets"),
+        # The combined SIGMET file, the US convective and non-convective
+        # SIGMETs and the international ones; the airsigmets file it
+        # replaced was deprecated in the data API's v4.34 (2026-10-08). The
+        # store keeps the name its readers know.
+        ("airsigmets", "sigmets"),
         ("pireps", "aircraftreports"),
         ("gairmets", "gairmets"),
     )
 }
 
 
+# Alaska's AIRMETs (above): kept apart from the SIGMETs, so either can
+# fail alone, and read beside them by the planner (wingtip.weather.advisories).
+SOURCES["airmets"] = (AIRMET_URL, _reader("airmets"), _held_until("airmets"))
+
+
 def fetch_source(name: str) -> None:
     """Source `name` fetched and stored, if it has changed since the copy
-    stored (its validators, kept in the record's meta); an unchanged one is
-    stored again as fetched now, so its age is when it was last confirmed.
+    stored (its validators; then its body's digest); an unchanged one is
+    left as written and confirmed by the try's attempt file
+    (weather_store.confirmed_at), so its age is when it was last confirmed.
     The METARs also update each station's last wind (recent-winds). Raises
     fetch.FetchFailed, ValueError (a body the engine cannot read) or
     OSError where the copy could not be had, the stored one left in place."""
     url, parse, held_until = SOURCES[name]
     held = weather_store.read(name)
-    validators = (held.meta.get("validators") if held else None) or None
+    validators = weather_store.validators(name) if held else None
     now = time.time()
     resp = fetch.get(url, validators=validators)
     if held is not None and getattr(resp, "status_code", None) == 304:
-        data = held.data
+        data, digest = held.data, held.meta.get("body")
     else:
-        data = parse(gzip.decompress(resp.content))
-        validators = fetch.validators_of(resp)
+        # The cache files are gzipped files (their first two bytes gzip's
+        # magic number, RFC 1952); the API's answer is not.
+        body = gzip.decompress(resp.content) if resp.content[:2] == b"\x1f\x8b" else resp.content
+        digest = weather_store.body_hash(body)
+        same = held is not None and held.meta.get("body") == digest
+        data = held.data if same else parse(body)
+        fresh = fetch.validators_of(resp)
+        if fresh != validators:
+            weather_store.write_validators(name, fresh)
     until = held_until(data, now)
-    weather_store.write(name, data, fetched_at=now, until=until, meta={"validators": validators})
-    if name == "metars":
+    written = weather_store.write_if_changed(name, data, fetched_at=now, until=until, meta={"body": digest})
+    if name == "metars" and written:
         keep_recent_winds(data, now)
 
 
@@ -114,4 +151,7 @@ def keep_recent_winds(metars: dict, now: float) -> None:
             winds[ident] = {"wind_dir_true_deg": direction, "wind_speed_kt": speed, "observed": observed}
     oldest = now - RECENT_WIND_HOURS * 3600
     winds = {ident: w for ident, w in winds.items() if w["observed"] >= oldest}
-    weather_store.write("recent-winds", winds, fetched_at=now, until=None)
+    # Written only when a wind came or went: this runs at each new METAR
+    # set, and the 385 KB record is otherwise the same as the one held.
+    if held is None or winds != held.data:
+        weather_store.write("recent-winds", winds, fetched_at=now, until=None)

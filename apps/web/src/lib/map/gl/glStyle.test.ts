@@ -6,6 +6,8 @@ import {
   airspaceLayers,
   OVERLAY_SOURCE,
   chartPaint,
+  chartRole,
+  chartSource,
   chartStyle,
   DAY_CONTRAST,
   DAY_SATURATION,
@@ -13,7 +15,7 @@ import {
   specialUseLayers,
 } from "./glStyle";
 import { legPiece, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
-import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryForExport, imageryFrom, useCloseImageryDrawn } from "./closeZoom";
+import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryFrom } from "./closeZoom";
 
 const chart = {
   chart_cycle: "10-29-2026",
@@ -38,14 +40,14 @@ const chart = {
 describe("chartStyle", () => {
   it("asks for the chart's tiles at the chart's own zooms", () => {
     const style = chartStyle(chart, "sec", false, "https://wingtip.test")!;
-    expect(style.sources.chart!.tiles).toEqual(["https://wingtip.test/api/planner/chart-tile/sec/{z}/{x}/{y}.png?c=10-29-2026&r=6"]);
-    expect(style.sources.chart).toMatchObject({ minzoom: 3, maxzoom: 12, tileSize: 256 });
+    expect(style.sources["chart:sec"]!.tiles).toEqual(["https://wingtip.test/api/planner/chart-tile/sec/{z}/{x}/{y}.png?c=10-29-2026&r=6"]);
+    expect(style.sources["chart:sec"]).toMatchObject({ minzoom: 3, maxzoom: 12, tileSize: 256 });
     // The region's level under it, while the chart's own tiles come in.
-    expect(style.sources["chart-under"]).toMatchObject({ minzoom: 5, maxzoom: 5 });
+    expect(style.sources["chart-under:sec"]).toMatchObject({ minzoom: 5, maxzoom: 5 });
     // Two levels past the chart's last, in MapLibre's zoom (the app's less
     // one), where there is no imagery to fade into.
     expect(style.maxZoom).toBe(13);
-    expect(style.layers.map((l) => l.id)).toEqual(["chart-under", "chart"]);
+    expect(style.layers.map((l) => l.id)).toEqual(["chart-under:sec", "chart:sec"]);
   });
 
   it("fades the chart out over one level past its own last zoom, into the imagery under it", () => {
@@ -60,20 +62,18 @@ describe("chartStyle", () => {
     expect(CLOSE_MAX_ZOOM).toBe(17);
   });
 
-  it("lets the USGS's public-domain imagery, or none, go out in an export, and never Google's", () => {
-    useCloseImageryDrawn.setState({ drawn: null });
-    expect(imageryForExport()).toBe(true);
-    useCloseImageryDrawn.setState({ drawn: "usgs" });
-    expect(imageryForExport()).toBe(true);
-    useCloseImageryDrawn.setState({ drawn: "google" });
-    expect(imageryForExport()).toBe(false);
-    useCloseImageryDrawn.setState({ drawn: null });
-  });
-
   it("puts the terminal sheet over the chart only while pinned", () => {
     const style = chartStyle(chart, "sec", true, "https://wingtip.test")!;
-    expect(style.layers.map((l) => l.id)).toEqual(["chart-under", "chart", "chart-terminal"]);
+    expect(style.layers.map((l) => l.id)).toEqual(["chart-under:sec", "chart:sec", "chart-terminal:tac"]);
     expect(style.layers[2]!.minzoom).toBe(glZoom(10));
+  });
+
+  it("names each base's layers apart, so the last base can stay on the map beside the next", () => {
+    const sec = chartStyle(chart, "sec", true, "https://wingtip.test")!;
+    expect(sec.layers.map((l) => chartRole(l.id))).toEqual(["chart-under", "chart", "chart-terminal"]);
+    expect(chartSource(sec, "chart")).toBe(sec.sources["chart:sec"]);
+    expect(chartRole("close-imagery")).toBeNull();
+    expect(chartRole(undefined)).toBeNull();
   });
 
   it("lifts the chart's contrast and colour by day, leaving the night and the sunlight as they were", () => {
@@ -130,16 +130,23 @@ describe("airspaceLayers", () => {
     expect(band!["source-layer"]).toBe("special_use");
   });
 
-  it("draws each class from its own zoom, the labels from 8", () => {
+  it("draws each class from its own zoom, the bands from 7 and the labels from 9", () => {
     const layers = airspaceLayers(["Inter"]);
     const from = Object.fromEntries(layers.map((l) => [l.id, l.minzoom]));
     expect(from).toMatchObject({
-      "airspace-B": glZoom(6),
-      "airspace-B-band": glZoom(6),
-      "airspace-C": glZoom(7),
-      "airspace-D": glZoom(8),
-      "airspace-labels": glZoom(8),
+      "airspace-B": glZoom(5),
+      "airspace-B-band": glZoom(7),
+      "airspace-C": glZoom(5),
+      "airspace-C-band": glZoom(7),
+      "airspace-D": glZoom(7),
+      "airspace-D-band": glZoom(7),
+      "airspace-labels": glZoom(9),
     });
+  });
+
+  it("draws a ring half its width out at a few states, its full width from 7", () => {
+    const line = airspaceLayers(["Inter"]).find((l) => l.id === "airspace-C") as LineLayerSpecification;
+    expect(line.paint!["line-width"]).toEqual(["interpolate", ["linear"], ["zoom"], glZoom(5), 2, glZoom(7), 4]);
   });
 });
 

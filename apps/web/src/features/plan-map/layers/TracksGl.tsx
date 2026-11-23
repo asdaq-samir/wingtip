@@ -3,7 +3,7 @@ import type { GeoJSONSource } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
 import { pastFlightQuery } from "../../../lib/airplane/pastFlightsQuery";
 import type { Course } from "../../../lib/api/types";
-import { flightQuery } from "../../../lib/queryClient";
+import { flightQuery } from "../../../lib/queryClientTraffic";
 import { altFt } from "../../../lib/format";
 import { useFlownTrack } from "../../../lib/map/position/flownTrack";
 import { useLegHighlight } from "../../../lib/legHighlight";

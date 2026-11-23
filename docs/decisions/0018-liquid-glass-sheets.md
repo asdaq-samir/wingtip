@@ -56,3 +56,13 @@ light grey of Apple Maps' web sheet in Wingtip), as it is now; it is not
 Liquid Glass at the pill or anywhere else. Glass on the web is only what
 floats over the map, the map's buttons (`liquid-glass`, `MapControls`).
 The iPhone's sheet keeps the system's glass as it comes.
+
+## Amended 2026-11-21 (the iPhone's sheet is solid too)
+
+On the iPhone the plan's sheet and every card are solid at every detent,
+the look's own sheet colour (`presentationBackground` with
+`WingtipInk.sheet`), as the web's is: iOS 26's glass sheet at half took
+the yellow chart under it and the accessibility audit found the Nav Log's
+"No Legs Yet" under 4.5:1 there (WCAG 2.2 1.4.3; 2eb9143d4). Glass stays
+on what floats over the map. The owner's own word on this is not recorded
+in the commit; he confirms it when he next sees the iPhone.

@@ -46,9 +46,12 @@ import app.wingtipmaps.android.search.nothingTyped
  * layout, whose field and timeline are its search and its plan) Home is
  * the Search page alone.
  *
- * `scenes` lays the stack out: one page at a time (none given), or on a tablet or an
- * unfolded phone Material's list-detail scene (WidePanes), Home in the
- * list pane and the cards in the detail pane beside it.
+ * `scenes` lays the stack out: one page at a time (none given), or on a
+ * medium-width window Material's list-detail scene (WidePanes), a card in
+ * the panel's place. `stack` is the part of the sheet's stack drawn here:
+ * all of it, or on an expanded window the panel's pages or the things'
+ * cards in the supporting pane beside the map (PaneRoom); Back pops the
+ * whole stack's top either way.
  * `backEnabled` false hands Back to what comes first (the expanded sheet
  * lowering under the search, MapSheet) through a child of the system's
  * navigation event dispatcher, turned off.
@@ -67,6 +70,7 @@ internal fun SheetPagesHost(
     head: @Composable () -> Unit = {},
     carousel: Boolean = true,
     scenes: SceneStrategy<SheetPage>? = null,
+    stack: List<SheetPage> = sheet.stack,
     home: @Composable () -> Unit,
     plan: @Composable () -> Unit,
     card: @Composable (SheetPage) -> Unit,
@@ -75,12 +79,14 @@ internal fun SheetPagesHost(
     val single = remember { SinglePaneSceneStrategy<SheetPage>() }
     CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
         NavDisplay(
-            backStack = sheet.stack,
+            backStack = stack,
             modifier = modifier.fillMaxWidth(),
             onBack = sheet::back,
             sceneStrategies = listOf(scenes ?: single),
         ) { page ->
-            if (page.covers) {
+            if (page.listsBeside) {
+                NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.listPane()) { card(page) }
+            } else if (page.covers) {
                 NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.detailPane()) { card(page) }
             } else {
                 NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.listPane()) {

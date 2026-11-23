@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Plane, Route, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BookOpen, Plane, PlugZap, Route, ShieldCheck, UserRound } from "lucide-react";
 import { cn } from "cn";
 import type { ReactNode } from "react";
 import AboutPanel from "../../components/AboutPanel";
@@ -14,27 +14,28 @@ import { ListGroup } from "../../components/GroupedList";
 import { RowBadge } from "../../components/RowBadge";
 import { SETTING_BADGE } from "../../lib/rowBadges";
 import type { Pilot } from "../../lib/api/types";
-import { api } from "../../lib/api/client";
 import { feet, miles } from "../../lib/format";
-import { flightsQuery, pilotQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { flightsQuery, logbookQuery } from "../../lib/queryClientRecords";
 import { shortName } from "../../lib/aircraftChoice";
 import { usePreferences } from "../../lib/preferences";
 import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
 import { SettingsPage, type HelpPages } from "../settings";
+import { DocumentsPage, DocumentsRow } from "../documents/lazy";
+import { ScratchpadPage, ScratchpadRow } from "../scratchpad";
 import { FlightsPanel } from "./AccountPanels";
-import { AccountFace } from "./AccountFace";
+import { LargeFace } from "./AccountFace";
 import { LogbookPanel } from "./LogbookPanel";
 import MinimumsPanel from "./MinimumsPanel";
-import SubscriptionPanel from "./SubscriptionPanel";
-import { standing, subscriptionQuery, useSold } from "../../lib/subscription";
 import PilotGuide from "./PilotGuide";
 import PilotPage from "./PilotPage";
+import ConnectedAppsPage from "./ConnectedAppsPage";
 import { AirplanesPage, EmergencyRow, TrainingPage, TrainingRow } from "./YouRows";
 import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
-// Loaded when it is drawn, as PaidPrompt does: imported here it put the
+// Loaded when it is drawn: imported here it put the
 // sign-in sheet in the first load for every pilot already signed in.
 const SignInModal = lazy(() => import("../../components/SignInModal"));
 
@@ -77,12 +78,11 @@ function Personal({
         Your sign-in status could not be checked.
       </EmptyState>
     ) : null;
-  const sold = useSold();
   // Each of the pilot's things with where it stands at its row's end, at
   // the owner's pick (T3): asked for only signed in, as the rows open to
   // nothing otherwise.
   const { data: flights } = useQuery({ ...flightsQuery, enabled: signedIn });
-  const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, enabled: signedIn, meta: { silent: true } });
+  const { data: entries } = useQuery({ ...logbookQuery, enabled: signedIn });
   const hours = entries?.reduce((sum, e) => sum + (e.totalHours ?? 0), 0);
   const settings = minimumsWords(minimums);
   // Settings' Help & About: how old the plan's data is, and what is kept
@@ -111,10 +111,12 @@ function Personal({
     flights: { title: "Flights", content: <FlightsPanel /> },
     logbook: { title: "Logbook", content: <LogbookPanel aircraft={shortName(aircraft.label)} /> },
     minimums: { title: "Minimums", content: <MinimumsPanel /> },
+    documents: { title: "Documents", content: <DocumentsPage /> },
+    scratchpad: { title: "Scratchpad", content: <ScratchpadPage /> },
     training: { title: "Training", content: <TrainingPage signedIn={signedIn} /> },
     settings: { title: "Settings", content: <SettingsPage help={help} /> },
-    subscription: { title: "Subscription", content: <SubscriptionPanel /> },
     pilot: { title: "Pilot Details", content: <PilotPage /> },
+    connections: { title: "Connected Apps", content: <ConnectedAppsPage /> },
   };
   return (
     <>
@@ -130,7 +132,7 @@ function Personal({
               screenshot of iOS 27, 2026-11-13): the avatar, the name and
               the address over a single inset group, each row a round
               badge, its name, where it stands at its end and the chevron. */}
-          <YouHead pilot={signedIn ? pilot : null} />
+          <YouHead pilot={signedIn ? pilot : null} opens={signedIn || devAllowed} />
           {account}
           {/* The account's rows greyed until there is one, with no word of
               their own: the head's one Sign In says it (the owner,
@@ -139,21 +141,6 @@ function Personal({
               device's. */}
           <div data-testid="library-section">
             <ListGroup glass>
-              {/* Pilot Details, with the role's menu in it (sign out,
-                  export, delete), where it sat beside the name: the
-                  developer's switch too, signed out. */}
-              <PageRow
-                page="pilot"
-                title="Pilot Details"
-                testId="pilot-row"
-                disabled={!signedIn && !devAllowed}
-                value={signedIn ? (pilot.homeBase ?? undefined) : undefined}
-                media={
-                  <RowBadge colour={SETTING_BADGE.pilot} round>
-                    <UserRound />
-                  </RowBadge>
-                }
-              />
               <PageRow
                 page="aircraft"
                 title="Airplanes"
@@ -196,9 +183,26 @@ function Personal({
                   </RowBadge>
                 }
               />
+              {/* The documents library (features/documents): the FAA's and the pilot's own, on this device. */}
+              <DocumentsRow />
+              {/* The scratchpad (features/scratchpad): clearances, the ATIS and figures by hand or typed, on this device. */}
+              <ScratchpadRow />
               <TrainingRow />
               <EmergencyRow />
-              {signedIn && sold && <SubscriptionRow />}
+              {/* The AI apps connected through the connector, each ended
+                  from here (the deep security review, N2): the account's,
+                  greyed signed out as the others are. */}
+              <PageRow
+                page="connections"
+                title="Connected Apps"
+                disabled={!signedIn}
+                testId="connected-apps-row"
+                media={
+                  <RowBadge colour={SETTING_BADGE.connections} round>
+                    <PlugZap />
+                  </RowBadge>
+                }
+              />
             </ListGroup>
           </div>
         </div>
@@ -215,36 +219,68 @@ function minimumsWords(m: Minimums): string | null {
 }
 
 /** Who is signed in, at You's top, as Apple Maps' account card heads
- *  itself (the owner's screenshot, 2026-11-13): their initials in a large
- *  round avatar, their name in large bold under it and the address
- *  smaller in grey under that, as Apple Maps' card has it (the owner,
- *  2026-11-13: "the name bigger and then below it smaller email"). An
- *  address is never the name: an email sign-in's display name is the
+ *  itself (the owner's screenshot, 2026-11-13): their photo (Pilot
+ *  Details' Choose Photo) or their initials in a large round avatar
+ *  (LargeFace), their name in large bold under it and the address
+ *  smaller in grey under that ("the name bigger and then below it
+ *  smaller email"). The avatar and the name are Pilot Details' way in, a tap on
+ *  them, not a row of the list (the owner, 2026-11-20: "Pilot details
+ *  should not be a separate list item but just a tap on the avatar/name");
+ *  signed out with dev mode, the avatar alone (its developer's switch).
+ *  An address is never the name: an email sign-in's display name is the
  *  address itself, and where there is no name the large line asks for
- *  one, opening Pilot Details at its Name. Signed out, the avatar's glyph
- *  and, in the name's place, Sign In. */
-function YouHead({ pilot }: { pilot: Pilot | null }) {
+ *  one. Signed out, the avatar's glyph and, in the name's place, Sign In. */
+function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
   const given = pilot ? pilot.fullName || pilot.displayName : null;
   const name = given && given !== pilot?.email && !given.includes("@") ? given : null;
   const address = pilot?.email ?? (given !== name ? given : null);
-  // Pilot Details as its row opens it, its close back to You.
+  // Pilot Details, its close back to You.
   const openPage = useOpenPage();
+  const avatar = <LargeFace name={name} photo={pilot?.avatarUrl} />;
+  const who = pilot && (
+    <>
+      {name ? (
+        <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
+          {name}
+        </span>
+      ) : (
+        <span className={cn("max-w-full truncate font-bold tracking-tight text-tint", TEXT.hero)} data-testid="you-name">
+          Add Your Name
+        </span>
+      )}
+      {/* A space between the two in the words read out, where the column
+          drew them apart but the text ran "Add Your Namepilot@…" (axe). */}{" "}
+      {address && (
+        <span className={cn("max-w-full truncate font-normal text-muted-foreground", TEXT.detail)} data-testid="you-address">
+          {address}
+        </span>
+      )}
+    </>
+  );
   return (
     // Up beside the card's gear and close, which float over it (ConsoleLayer),
     // the avatar large: Apple Maps' account card, the owner's screenshot of
     // 2026-11-14 ("So much space between buttons and avatar and list").
     <div role="group" aria-label="Account" className="-mt-11 flex flex-col items-center gap-1" data-testid="setup-pill-account">
-      <span
-        aria-hidden="true"
-        className={cn(
-          "mb-2 grid size-22 place-items-center rounded-full font-bold [&_svg]:size-10",
-          name ? "bg-tint text-white" : "bg-foreground/8 text-tint",
-          TEXT.hero,
-        )}
-      >
-        <AccountFace name={name} />
-      </span>
-      {!pilot ? (
+      {opens ? (
+        <Button
+          variant="plain"
+          size="inline"
+          onClick={() => openPage("pilot")}
+          // Its visible words first, the name and the address under it, as
+          // voice control says them (WCAG 2.5.3; axe's
+          // label-content-name-mismatch read the address left out).
+          aria-label={`${name ?? "Add Your Name"}${address ? `, ${address}` : ""}, Pilot Details`}
+          data-testid="pilot-row"
+          className="flex h-auto max-w-full flex-col items-center gap-1 whitespace-normal"
+        >
+          {avatar}
+          {who}
+        </Button>
+      ) : (
+        avatar
+      )}
+      {!pilot && (
         // Signed out, the large line is the way in, said once: no "You"
         // over a link of its own (the owner, 2026-11-13).
         <div className="flex min-h-11 items-center">
@@ -252,54 +288,15 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
             <SignInModal hero />
           </Suspense>
         </div>
-      ) : name ? (
-        <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
-          {name}
-        </span>
-      ) : (
-        <Button
-          variant="link"
-          className={cn(
-            "relative h-auto max-w-full truncate p-0 font-bold tracking-tight after:absolute after:-inset-y-2 after:inset-x-0",
-            TEXT.hero,
-          )}
-          onClick={() => openPage("pilot")}
-          data-testid="you-name"
-        >
-          Add Your Name
-        </Button>
-      )}
-      {address && (
-        <span className={cn("max-w-full truncate text-muted-foreground", TEXT.detail)} data-testid="you-address">
-          {address}
-        </span>
       )}
     </div>
-  );
-}
-
-/** The Subscription page's row, with what the pilot has in a few words. */
-function SubscriptionRow() {
-  const { data: subscription } = useQuery(subscriptionQuery);
-  return (
-    <PageRow
-      page="subscription"
-      title="Subscription"
-      value={subscription ? standing(subscription) : undefined}
-      media={
-        <RowBadge colour={SETTING_BADGE.subscription} round>
-          <Sparkles />
-        </RowBadge>
-      }
-    />
   );
 }
 
 /**
  * You, the pilot's console, opened from the avatar on the planner
  * (AccountButton): who they are, their airplanes, flights, logbook,
- * minimums, training and the emergency assistant, then Settings and the
- * subscription. Shared with the developer's console. Not the nav log or
+ * minimums, training and the emergency assistant, then Settings. Shared with the developer's console. Not the nav log or
  * the briefing: those are the panel over the map.
  */
 export function PilotPanel({

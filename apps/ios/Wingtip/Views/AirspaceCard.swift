@@ -19,6 +19,9 @@ struct AirspaceCard: View {
     @State private var problem: String?
     /// SFDPS's word on each special-use area now, by its name (/api/live/saa).
     @State private var saa: [String: SaaStatus] = [:]
+    /// Special VFR for a B, C or D band from the surface here, or why the
+    /// engine could not say (SpecialVfrRead); none with no such band.
+    @State private var svfr: Result<SpecialVfrRead, any Error>?
 
     var body: some View {
         List {
@@ -73,18 +76,24 @@ struct AirspaceCard: View {
                 Section("Airspace Here") {
                     ForEach(here.bands) { band in BandRow(band: band, ground: here.groundFt) }
                 }
+                // Special VFR in the surface area here (14 CFR 91.157), the
+                // engine's answer for the band's primary airport, as the
+                // web's and Android's airspace cards say it.
+                if let svfr {
+                    SpecialVfrSection(read: svfr)
+                }
                 if let veil = here.modeCVeil {
                     Section {
                         // 14 CFR 91.215(b)(2) and 91.225(d)(2): within 30 nm
                         // of an airport in part 91's appendix D, section 1,
                         // from the surface to 10,000 ft MSL.
-                        CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.rule), title: "In a Mode C veil",
+                        CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.rule), title: "In a Mode C Veil",
                                 detail: "\(Format.distance(veil.distanceNm)) from \(veil.ident): a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).")
                     }
                 }
                 Section("Special Use") {
                     if here.specialUseUnavailable == true {
-                        ProblemLine("The FAA's special-use airspace did not answer. Check the chart.")
+                        ProblemLine(Wording.specialUseNoAnswer)
                     } else if (here.specialUse ?? []).isEmpty {
                         Text("None here").foregroundStyle(.secondary)
                     } else {
@@ -119,7 +128,7 @@ struct AirspaceCard: View {
             } else if let problem {
                 Section {
                     ProblemLine(problem)
-                    Button("Try Again") { Task { await load() } }
+                    Button(Wording.tryAgain) { Task { await load() } }
                 }
             } else {
                 Section { ProgressView("Fetching the airspace here…") }
@@ -148,14 +157,41 @@ struct AirspaceCard: View {
             if let kept = CyclePacks.shared.airspaceAt(lat: lat, lon: lon) {
                 here = kept
             } else {
-                problem = "The planner could not read the airspace here. Try again in a moment."
+                // Nothing kept and no network: said as that (the offline audit).
+                problem = (error as? URLError).map(ErrorWords.offline) == true ? Wording.noConnection + "." : Wording.airspaceNotRead
             }
         }
+        svfr = here.flatMap { SpecialVfrRead.surfaceBand($0.bands, ground: $0.groundFt) }.map { band in Result { try SpecialVfrRead.ask(band) } }
     }
 
     /// The TFR's page on tfr.faa.gov.
     static func tfrPage(_ notamId: String) -> URL {
         URL(string: "https://tfr.faa.gov/tfr3/?page=detail_\(notamId.replacingOccurrences(of: "/", with: "_"))")!
+    }
+}
+
+/// Special VFR's group: its title ("Special VFR", "No Special VFR") and
+/// each line the engine gave with its rule, the rule a tap to its
+/// paragraph (CitedText); where the engine could not answer, why.
+private struct SpecialVfrSection: View {
+    let read: Result<SpecialVfrRead, any Error>
+
+    var body: some View {
+        switch read {
+        case .success(let svfr):
+            Section(svfr.title) {
+                ForEach(svfr.lines, id: \.self) { line in
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                        Text(line.words)
+                        CitedText(line.source).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .accessibilityIdentifier("airspace-special-vfr")
+        case .failure(let error):
+            Section("Special VFR") { ProblemLine(Problems.say("Special VFR could not be checked", error)) }
+        }
     }
 }
 
@@ -208,12 +244,17 @@ struct BandRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text("\(Text("Class \(band.airspaceClass)").fontWeight(.semibold))\(Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary))")
                 Text(AirportWords.bandRange(band, ground: ground)).fontWeight(.semibold).monospacedDigit()
+                // Each cited rule in its lines a tap to its paragraph in the
+                // library (CitedText), as the web's entry rules are.
                 ForEach(Array(Self.rules(band).enumerated()), id: \.offset) { _, rule in
-                    Label(rule.text, systemImage: rule.symbol).font(.subheadline).foregroundStyle(.secondary)
+                    Label { CitedText(rule.text) } icon: { Image(systemName: rule.symbol) }
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
         }
         .accessibilityElement(children: .combine)
+        // Its cites the row's actions, where the combined row hides the links.
+        .citeActions(Self.rules(band).map(\.text))
     }
 }
 

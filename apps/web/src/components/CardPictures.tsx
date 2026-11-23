@@ -1,6 +1,7 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { useState, type ReactNode } from "react";
 import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
+import { safeHref } from "../lib/safeHref";
 
 /** One picture of a card's strip: what it shows, and a click's lightbox
  *  (`open`, the card's own Base UI Dialog viewer) or its source's page
@@ -13,6 +14,11 @@ export type CardSlide = {
   /** The click's name, for VoiceOver. */
   label: string;
   testId?: string;
+  /** What lies over the picture and takes a tap of its own (a photo's
+   *  credit linked to its page, PhotoCredit): drawn beside the tile's
+   *  button, not in it, where a link inside a button is two controls in
+   *  one (axe's nested-interactive). */
+  credit?: ReactNode;
 };
 
 // A tile 70% of the card's width, so the next one shows at the edge and
@@ -67,7 +73,14 @@ export function CardPictures({
             <CarouselItem key={slide.key} className={shown.length > 1 ? SLIDE : SLIDE_ALONE}>
               <div className={`relative ${STRIP_HEIGHT} overflow-hidden rounded-(--radius-card) bg-foreground/8`}>
                 {slide.href ? (
-                  <a href={slide.href} target="_blank" rel="noopener" aria-label={slide.label} className={TILE} data-testid={slide.testId}>
+                  <a
+                    href={safeHref(slide.href)}
+                    target="_blank"
+                    rel="noopener"
+                    aria-label={slide.label}
+                    className={TILE}
+                    data-testid={slide.testId}
+                  >
                     {slide.picture}
                   </a>
                 ) : slide.open ? (
@@ -79,6 +92,7 @@ export function CardPictures({
                     {slide.picture}
                   </div>
                 )}
+                {slide.credit}
               </div>
             </CarouselItem>
           ))}

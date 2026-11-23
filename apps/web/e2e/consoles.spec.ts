@@ -9,6 +9,7 @@ import {
   openAccount,
   openSidebar,
   openMapSettings,
+  mapLook,
   pickControl,
   settle,
   settled,
@@ -60,7 +61,11 @@ test(
     // Opened as the one search alone on a phone, at the owner's ask
     // (MapPanel); a desktop's side panel out from the start, the search
     // and the plan in it (the one-search design's Desktop, 2026-11-09).
-    const opened = page.viewportSize()!.width < 768 ? "peek" : "half";
+    // An iPad, touch alone at any width, starts as the pill too: only a
+    // desktop (1024 and up, with a mouse or a trackpad) opens it at half
+    // (MapPage, isDesktopNow).
+    const desktop = await page.evaluate(() => matchMedia("(min-width: 1024px) and (pointer: fine)").matches);
+    const opened = desktop ? "half" : "peek";
     await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", opened);
     expect(await consoleSheet(page).count()).toBe(0);
 
@@ -86,9 +91,9 @@ test(
     await pilot.getByTestId("role-menu").click();
     await expect(page.getByRole("menuitemradio", { name: "Pilot" })).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("menuitemradio", { name: "Developer" })).toHaveAttribute("aria-checked", "false");
-    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Sign Out" })).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("menuitem", { name: "Sign out" })).toHaveCount(0);
+    await expect(page.getByRole("menuitem", { name: "Sign Out" })).toHaveCount(0);
     // One page, no tabs over it: the account first, then the rest as rows
     // (Setup, the owner's pick of the redesign).
     await expect(pilot.getByTestId("setup-page")).toBeVisible();
@@ -103,6 +108,9 @@ test(
     // (the owner's option A, 2026-11-13).
     await consolePage(pilot, "Account");
     await pilot.getByTestId("settings-row").click();
+    // The parked features' switches, Settings' Extras, each off until turned on (src/lib/extras).
+    for (const key of ["atcCopilot", "otherAirplanes", "modelWeather", "threeD", "trainingTools"])
+      await expect(pilot.getByTestId(`extras-${key}`)).not.toBeChecked();
     await pilot.getByTestId("help-row").click();
     for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId(link)).toBeVisible();
     // The personal minimums are Personal's, with no sign-in needed.
@@ -140,7 +148,7 @@ test("You is a card over the map's sheet as every card is: its nested drawer, ha
   await expect(card).toHaveCount(1);
   expect(await card.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
   const viewport = page.viewportSize()!;
-  if (viewport.width < 768) await expect(card).toHaveAttribute("data-panel", "half");
+  if (viewport.width < 660) await expect(card).toHaveAttribute("data-panel", "half");
   // The sheet under it where it was.
   await expect(panel).toHaveAttribute("data-panel", "half");
   const now = (await panel.boundingBox())!;
@@ -199,7 +207,10 @@ test("The Map card's Look is four tiles in the layers' grid, each its value unde
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  const look = page.getByTestId("map-look");
+  // The Map card opens at half as every card does, its Look under the
+  // half's edge, where a card's body does not scroll (rules.md, "Detents"
+  // and "Grow, then scroll"): pulled up into sight, as pickControl does.
+  const look = await mapLook(page);
   await expect(look.getByTestId("brand-select")).toHaveAccessibleName(/^Theme: /);
   await expect(look.getByTestId("theme-select")).toHaveAccessibleName(/^Appearance: /);
   await expect(look.getByTestId("sunlight-select")).toHaveAccessibleName(/^Sunlight: /);
@@ -211,5 +222,5 @@ test("The Map card's Look is four tiles in the layers' grid, each its value unde
   await page.reload();
   await settle(page);
   await openMapSettings(page);
-  await expect(page.getByTestId("map-look").getByTestId("own-ship-select")).toHaveAccessibleName("Own Ship: Jet");
+  await expect((await mapLook(page)).getByTestId("own-ship-select")).toHaveAccessibleName("Own Ship: Jet");
 });

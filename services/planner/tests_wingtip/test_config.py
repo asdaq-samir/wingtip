@@ -45,3 +45,16 @@ def test_a_blank_is_unset_and_a_url_loses_its_slash(monkeypatch):
     assert settings.chart_tiles_bucket is None and settings.chart_landmarks_dir is None
     assert settings.chart_tiles_url == "https://tiles.example/x"
     assert settings.dev_services_url is None
+
+
+def test_a_short_connector_secret_stops_the_planner_without_saying_it(monkeypatch):
+    """MCP_INTERNAL_TOKEN opens every pilot's records on the gateway's
+    internal port: 32 characters at the least, as the gateway asks, and
+    the refusal names the variable but never its value."""
+    monkeypatch.setenv("MCP_INTERNAL_TOKEN", "short-secret")
+    with pytest.raises(SettingsError, match="MCP_INTERNAL_TOKEN=<hidden>: .*shorter than 32") as raised:
+        get_settings()
+    assert "short-secret" not in str(raised.value)
+    monkeypatch.setenv("MCP_INTERNAL_TOKEN", "x" * 32)
+    get_settings.cache_clear()
+    assert get_settings().mcp_internal_token == "x" * 32

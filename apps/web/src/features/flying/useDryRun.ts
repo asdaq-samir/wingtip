@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAddressKey } from "../../lib/address";
+import { proceduresOf } from "../../lib/procedures";
 import type { Candidate, Leg } from "../../lib/api/types";
 import { DRY_RUN, clearPastFlight, usePastFlight, dryRunOf, type DryRun, legOf, navLogRows, type RouteEnds } from "../plan";
 
@@ -44,7 +46,11 @@ export function useDryRun({
   "use no memo";
   const [runFrom, setRunFrom] = useState<number | null>(null);
   // Whether the approach picked has gone missed (the run's Go missed).
-  const [goMissed, setGoMissed] = useState(false);
+  const [wentMissed, setGoMissed] = useState(false);
+  // An approach activated with its missed approach unsuspended on FPL's
+  // timeline flies it from the start, as the plan does (AIM 5-4-21).
+  const [procs] = useAddressKey("procs");
+  const goMissed = wentMissed || proceduresOf(procs).some((p) => p.missed && !p.loaded);
   // The rows it is flown along, the procedures picked flown as the legs are
   // planned by them: out by a departure, in by an arrival and an approach.
   const runRows = useMemo(() => (course ? navLogRows(course, selected, legs) : null), [course, selected, legs]);
@@ -74,7 +80,7 @@ export function useDryRun({
   const start = () => {
     if (!course || !runRows) return;
     const from = Math.round((depart ? Date.parse(depart) : Date.now()) / 1000);
-    const run = dryRunOf(runRows, from, course.course_line);
+    const run = dryRunOf(runRows, from, course.course_line, goMissed);
     if (run.points.length < 2) return;
     setGoMissed(false);
     setRunFrom(from);

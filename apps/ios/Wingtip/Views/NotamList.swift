@@ -20,7 +20,7 @@ struct NotamListView: View {
             if let ranked {
                 let shown = NotamRows.inOrder(ranked.notams)
                 if ranked.unchecked?.contains("tfrs") == true {
-                    Section { ProblemLine("TFRs couldn't be checked just now.") }
+                    Section { ProblemLine(Wording.tfrsNotChecked) }
                 }
                 ForEach(NotamRows.places(shown, source: source), id: \.title) { place in
                     Section {
@@ -34,8 +34,10 @@ struct NotamListView: View {
                 if shown.isEmpty {
                     ContentUnavailableView("No NOTAMs", systemImage: "checkmark.bubble", description: Text(source.noneWords))
                 }
-                if let since = ranked.coverageSince {
-                    Section { Text("NOTAMs issued before \(since) and unchanged since aren't held.").font(WingtipType.note).foregroundStyle(.secondary) }
+                // Not the full set until the planner holds it (decision 0059).
+                Section {
+                    Text(NotamCoverage.line(since: ranked.coverageSince, full: ranked.fullSet ?? false))
+                        .font(WingtipType.note).foregroundStyle(ranked.fullSet == true ? .secondary : WingtipInk.caution)
                 }
             } else if let problem {
                 Section { ProblemLine(problem) }
@@ -46,7 +48,7 @@ struct NotamListView: View {
                             Text("The NOTAM's subject").font(.headline)
                             Text("What it says and until when, in plain words").font(.subheadline).foregroundStyle(.secondary)
                         }
-                        .loading("Fetching NOTAMs")
+                        .loading(Wording.fetchingNotams)
                     }
                 }
             }
@@ -69,7 +71,7 @@ struct NotamListView: View {
                 ranked = try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
                 problem = nil
             } catch {
-                problem = "\(ident)'s NOTAMs couldn't be fetched: \(error.localizedDescription)"
+                problem = Problems.say("\(ident)'s NOTAMs could not be fetched", error)
             }
         }
     }
@@ -214,6 +216,39 @@ struct NotamDetailView: View {
             ToolbarItem(placement: .topBarLeading) {
                 ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }
             }
+        }
+    }
+}
+
+/// A TFR's own sections under its lines: its place's name (tfr_read, its
+/// dates off, as the time lines say them; the owner, 2026-11-12: "dates
+/// are twice"), its instructions as the FAA gives them a line each in
+/// sentence case with their codes kept (faa_words), and whom it names to
+/// call, each telephone a link that dials.
+struct TfrDetailsSections: View {
+    let notam: APIRankedNotam
+    let read: EngineContract.TfrReadAnswer?
+
+    var body: some View {
+        let t = notam.tfr
+        if let place = read?.place { Section { Text(place) } }
+        if let lines = t?.instructions, !lines.isEmpty {
+            Section("Instructions") {
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in Text(AirportWords.faaWords(line)) }
+            }
+        }
+        if let facility = t?.facility { contact("Coordination Facility", facility) }
+        if let contact = t?.contact { self.contact("Point of Contact", contact) }
+    }
+
+    private func contact(_ title: String, _ c: APITfrContact) -> some View {
+        Section(title) {
+            Text(c.name)
+            if let phone = c.phone, let dial = URL(string: "tel:+1" + phone.filter(\.isNumber)) {
+                Link(destination: dial) { Label(phone, systemImage: WingtipIcon.call).monospacedDigit() }
+                    .accessibilityLabel("Call \(phone)")
+            }
+            if let frequency = c.frequency { LabeledContent("Frequency", value: frequency).monospacedDigit() }
         }
     }
 }

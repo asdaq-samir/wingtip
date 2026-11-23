@@ -13,7 +13,7 @@ import { compassPoint } from "../../lib/compass";
 import { useGeo } from "../../lib/geo";
 import { callEngine } from "../../lib/engine/engine";
 import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../plan";
-import { usePreferences } from "../../lib/preferences";
+import { useThreeD } from "../../lib/extras";
 import { CameraMenu, ReplayTimeline } from "../replay";
 import { setReplayCamera } from "../../lib/replay/camera/cameraStore";
 import { BADGE } from "../../lib/rowBadges";
@@ -145,7 +145,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
                 <Gauge />
               </RowBadge>
             }
-            title="Average ground speed"
+            title="Average Ground Speed"
             value={value(speed != null ? knots(speed) : "—")}
           />
         </>
@@ -157,10 +157,10 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
 /** The replay's controls: the timeline every replay plays on
  *  (features/replay's ReplayTimeline) -- play or pause, stop, how fast,
  *  and its time scrubbed in Zulu and local -- with the camera's menu
- *  where the map is in 3D (features/replay/camera), the Studio's own. */
+ *  where the map is in 3D (features/replay/camera). */
 function Replay() {
   const points = usePastFlight((s) => s.points);
-  const threeD = usePreferences((s) => s.threeD);
+  const threeD = useThreeD();
   // The camera let go with the card: the map the pilot's again.
   useEffect(() => () => setReplayCamera(null), []);
   return (
@@ -295,7 +295,7 @@ function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
  *  pilot uses (feet, knots, degrees, feet a minute). */
 function TrackLog({ points }: { points: PastFlightPoint[] }) {
   return (
-    <ListGroup title="Track log">
+    <ListGroup title="Track Log">
       <LogTable points={points} />
     </ListGroup>
   );

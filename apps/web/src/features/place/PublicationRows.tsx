@@ -4,6 +4,7 @@ import { ItemSeparator } from "../../components/ui/item";
 import type { Runway } from "../../lib/api/types";
 import { ChartRow, DiagramRow } from "../../components/AirportDiagram";
 import { ChartBadge } from "../../components/RowBadge";
+import { AdvisedDiagram } from "../runway-advisor";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
 
@@ -15,7 +16,9 @@ const SketchViewer = lazy(() => import("./SketchViewer"));
  * Chart Supplement's takes a line. A field the FAA draws no diagram for
  * (most small fields) has the row all the same, showing the card's own
  * sketch of its runways full screen (`sketch`), where it said there was
- * none; nothing where there is no sketch either.
+ * none; nothing where there is no sketch either. The diagram full screen
+ * has own ship on it and the runway proximity advisor over it
+ * (features/runway-advisor).
  */
 export function PublicationRows({
   ident,
@@ -39,14 +42,21 @@ export function PublicationRows({
   return (
     <>
       {diagramCycle ? (
-        <DiagramRow media={<ChartBadge />} ident={ident} cycle={diagramCycle} url={diagram} testId="airport-diagram" />
+        <DiagramRow
+          media={<ChartBadge />}
+          ident={ident}
+          cycle={diagramCycle}
+          url={diagram}
+          testId="airport-diagram"
+          viewer={AdvisedDiagram}
+        />
       ) : diagram ? (
-        <ChartRow media={<ChartBadge />} title="Airport diagram" url={diagram} airport={ident} testId="airport-diagram" />
+        <ChartRow media={<ChartBadge />} title="Airport Diagram" url={diagram} airport={ident} testId="airport-diagram" />
       ) : (
         sketched && (
           <ListRow
             media={<ChartBadge />}
-            title="Airport diagram"
+            title="Airport Diagram"
             description="A sketch of the runways: the FAA publishes none"
             onClick={() => setSketchOpen(true)}
             chevron

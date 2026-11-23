@@ -8,7 +8,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import { SkeletonLine, SkeletonRows } from "../../components/QueryState";
 import { api } from "../../lib/api/client";
 import type { AirspaceBand, SaaStatus } from "../../lib/api/types";
-import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../lib/airspace";
+import { degreesMinutes, fromSurface, minimumsLine, shortAirspaceName } from "../../lib/airspace";
 import type { LatLon } from "../../lib/geo";
 import { altFt, feet } from "../../lib/format";
 import { TEXT } from "../../lib/text";
@@ -19,6 +19,7 @@ import { CardAction } from "../../components/CardAction";
 import { RowBadge } from "../../components/RowBadge";
 import { BADGE } from "../../lib/rowBadges";
 import { FINDING_TONE } from "../../lib/findings";
+import { NO_CONNECTION, noConnection } from "../../lib/problems";
 import { faaWords, suaAltitudes, tfrPage } from "../../lib/advisories";
 import { saaQuery, saaWords } from "../../lib/liveReports";
 import StatusBadge from "../../components/StatusBadge";
@@ -26,6 +27,8 @@ import { useClock } from "../../lib/useMinuteClock";
 import { suaWhen } from "../plan/lazy";
 import { pointLink } from "../../lib/address";
 import { shareOrCopy } from "../../lib/share";
+import { WORDING } from "../../lib/wording/generated/wording";
+import { BandSpecialVfr } from "./BandSpecialVfr";
 
 /** One of a band's rules on a line of its own, its glyph before it: the
  *  weather minimums, what it takes to go in, what the airplane carries,
@@ -54,7 +57,7 @@ const CLASS_STYLE: Record<AirspaceBand["class"], string> = {
 };
 
 function range(band: AirspaceBand, ground: number | null): string {
-  const bottom = ground !== null && band.floor_ft <= ground ? "Surface" : feet(band.floor_ft);
+  const bottom = fromSurface(band, ground) ? "Surface" : feet(band.floor_ft);
   const top = band.ceiling_ft >= 60000 ? "FL600" : `${altFt(band.ceiling_ft)} ft MSL`;
   return `${bottom} to ${top}`;
 }
@@ -139,11 +142,15 @@ export default function AirspaceCard({
   // Its own drawer, sized from here: all the way up for the rest of its layers.
   const cardId = useId();
   const card = useCardSize(cardId);
-  const { data, isLoading, isError } = useQuery({
+  const asked = useQuery({
     queryKey: ["airspaceAt", point.lat, point.lon],
     queryFn: () => api.airspaceAt(point.lat, point.lon),
     staleTime: 10 * 60_000,
   });
+  const { data, isLoading, isError } = asked;
+  // With no connection and nothing kept for the point, its ask waits
+  // paused: said so in place, not a skeleton for good (lib/problems).
+  const offline = !data && noConnection(asked);
   // Whether each special-use area here is active or cold now, as SFDPS says.
   const { data: saa } = useQuery(saaQuery(data?.special_use.map((a) => a.name) ?? []));
   const ground = data?.ground_ft ?? null;
@@ -178,7 +185,11 @@ export default function AirspaceCard({
             {ground !== null && ` · ground ${altFt(ground)} ft`}
           </span>
         }
-        line={naming ? named ? named.name : <SkeletonLine className="w-32" /> : undefined}
+        // A point no fix is near (frd_near's None) keeps the line's room,
+        // empty: taken away as it answered, everything under it rose 18
+        // points (the nightly of 2026-11-21, airspace.spec:104 on the
+        // desktop, whose click fell outside CI's fixes round Chicago).
+        line={named ? named.name : isLoading ? <SkeletonLine className="w-32" /> : <span aria-hidden="true">{"\u00a0"}</span>}
         lineTestId="airspace-named"
         onClose={onClose}
         // Its link (`at`), which opens this card, as every card with one
@@ -215,7 +226,7 @@ export default function AirspaceCard({
           stays as it was (the owner's ask). */}
       {(data || isLoading) && (
         <div className="pt-3">
-          <PillSection title="Airspace here" onMore={summary ? () => card?.setSize("full") : undefined}>
+          <PillSection title="Airspace Here" onMore={summary ? () => card?.setSize("full") : undefined}>
             {/* Feet MSL (each range says so), from the FAA's airspace file
                 and the ground's height there: the chart is the authority. */}
             <ListGroup>
@@ -223,9 +234,11 @@ export default function AirspaceCard({
                 (summary ? data.bands.slice(0, 2) : data.bands).map((band) => (
                   <BandRow key={`${band.floor_ft}-${band.class}`} band={band} ground={ground} />
                 ))
+              ) : // The lowest two while they come, each a band's height: its
+              // class, its range and its minimums.
+              offline ? (
+                <ListRow muted title={NO_CONNECTION} />
               ) : (
-                // The lowest two while they come, each a band's height: its
-                // class, its range and its minimums.
                 <SkeletonRows rows={2} lines={2} fetching="Fetching the airspace here…" />
               )}
             </ListGroup>
@@ -234,11 +247,11 @@ export default function AirspaceCard({
       )}
       {!summary && (
         <div className="space-y-5 pt-4">
-          {isError && (
-            <p className={cn("text-destructive", TEXT.prose)}>The planner could not read the airspace here. Try again in a moment.</p>
-          )}
+          {isError && <p className={cn("text-destructive", TEXT.prose)}>{WORDING.airspaceNotRead}</p>}
           {data && (
             <>
+              {/* Special VFR in the surface area here, as the volume's card says it. */}
+              <BandSpecialVfr bands={data.bands} ground={ground} />
               {data.mode_c_veil && (
                 <ListGroup>
                   <ListRow
@@ -247,17 +260,15 @@ export default function AirspaceCard({
                         <Radio />
                       </RowBadge>
                     }
-                    title="In a Mode C veil"
+                    title="In a Mode C Veil"
                     description={`${data.mode_c_veil.distance_nm} nm from ${data.mode_c_veil.ident}: a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).`}
                     data-testid="airspace-veil"
                   />
                 </ListGroup>
               )}
-              <ListGroup title="Special use">
+              <ListGroup title="Special Use">
                 {data.special_use_unavailable ? (
-                  <ListRow
-                    title={<span className="text-caution-ink">The FAA's special-use airspace did not answer. Check the chart.</span>}
-                  />
+                  <ListRow title={<span className="text-caution-ink">{WORDING.specialUseNoAnswer}</span>} />
                 ) : data.special_use.length === 0 ? (
                   <ListRow muted title="None here" />
                 ) : (

@@ -16,6 +16,9 @@ final class FlightUI {
     var fixFrom: String?
     /// A procedure's fix whose crossing altitude is asked for.
     var crossAt: String?
+    /// An approach on FPL's line opened on its brief or its dry run
+    /// (ApproachLessonSheet, from ApproachMenuItems).
+    var lesson: ApproachLessonAsk?
     /// What the engine refused of a figure typed into one of the alerts,
     /// said in an alert of its own rather than the figure dropped unsaid.
     var problem: String?
@@ -36,7 +39,7 @@ struct PointAlerts: ViewModifier {
     func body(content: Content) -> some View {
         let ui = flightUI
         content
-            .alert(ui.fixFrom.map { "A fix from \($0)" } ?? "A fix", isPresented: shown(\.fixFrom), presenting: ui.fixFrom) { from in
+            .alert(ui.fixFrom.map { "A Fix from \($0)" } ?? "A Fix", isPresented: shown(\.fixFrom), presenting: ui.fixFrom) { from in
                 TextField("Course, as 090", text: $course).keyboardType(.numberPad)
                 TextField("Distance, nm", text: $distance).keyboardType(.decimalPad)
                 Button("Add") {
@@ -47,7 +50,7 @@ struct PointAlerts: ViewModifier {
             } message: { from in
                 Text("Its magnetic course from \(from), a VOR's radial, and how far. Flown over next.")
             }
-            .alert(ui.crossAt.map { "Cross \($0) at" } ?? "Cross at", isPresented: shown(\.crossAt), presenting: ui.crossAt) { fix in
+            .alert(ui.crossAt.map { "Cross \($0) At" } ?? "Cross At", isPresented: shown(\.crossAt), presenting: ui.crossAt) { fix in
                 TextField("Feet", text: $typed).keyboardType(.numberPad)
                 Button("Set") {
                     if let feet = refused({ try PointAltitude.feet(typed, waypoint: false) }) { plan.setCrossing(at: fix, feet: feet) }
@@ -60,7 +63,7 @@ struct PointAlerts: ViewModifier {
             } message: { _ in
                 Text("The altitude ATC gave you to cross it at, in feet above sea level.")
             }
-            .alert("Couldn't Read That", isPresented: shown(\.problem), presenting: ui.problem) { _ in
+            .alert("Could Not Read That", isPresented: shown(\.problem), presenting: ui.problem) { _ in
                 Button("OK", role: .cancel) {}
             } message: { problem in
                 Text(problem)
@@ -71,7 +74,7 @@ struct PointAlerts: ViewModifier {
     /// in FlightUI.problem.
     private func refused<T>(_ body: () throws -> T?) -> T? {
         do { return try body() } catch {
-            flightUI.problem = error.localizedDescription
+            flightUI.problem = Problems.refusal(error, otherwise: "What was typed could not be read")
             return nil
         }
     }
@@ -90,7 +93,7 @@ struct DirectStrip: View {
     var body: some View {
         if let direct = plan.extras.direct {
             HStack {
-                Label("Direct to \(direct)", systemImage: "arrow.up.right").font(.body.weight(.semibold))
+                Label("Direct To \(direct)", systemImage: "arrow.up.right").font(.body.weight(.semibold))
                 Spacer()
                 Button("Cancel") { plan.cancelDirect() }
             }
@@ -100,9 +103,10 @@ struct DirectStrip: View {
     }
 }
 
-/// FPL's section for the route's own edits: the Direct to, its ends'
-/// menus, the holds set, the procedures' fixes, and the pages of the
-/// flight in the air.
+/// FPL's section for the route's own edits: the Direct to, the
+/// alternate, the holds set, and the pages of the flight in the air. The
+/// points' own menus are their marks on the timeline and the procedures'
+/// fixes are rows on its line (RouteTimelineSection).
 struct RouteExtrasSection: View {
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
@@ -112,8 +116,6 @@ struct RouteExtrasSection: View {
         if plan.routed {
             Section {
                 DirectStrip()
-                RoutePointMenu(ident: plan.dep, role: .departure)
-                RoutePointMenu(ident: plan.dest, role: .destination)
                 // Under IFR, the alternate after the destination, as the
                 // web files it (14 CFR 91.169).
                 if rules == .ifr { AlternateRow() }
@@ -126,11 +128,6 @@ struct RouteExtrasSection: View {
                     }
                 }
                 .onDelete { at in at.map { plan.extras.holds[$0].fix }.forEach { plan.setHold(at: $0, nil) } }
-                ForEach(plan.procedures) { pick in
-                    NavigationLink(value: SheetPage.flight("fixes:\(pick.ident):\(pick.id)")) {
-                        LabeledContent("\(pick.name) fixes", value: plan.extras.procedureDirect["\(pick.ident):\(pick.id)"].map { "Direct \($0)" } ?? pick.ident)
-                    }
-                }
             } header: {
                 Text("Route")
             }
@@ -138,7 +135,6 @@ struct RouteExtrasSection: View {
                 // The one Nearest list, with Divert (NearestView).
                 NavigationLink(value: SheetPage.screen(.nearest)) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
                 NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
-                NavigationLink(value: SheetPage.flight("file")) { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
         }
     }
@@ -229,11 +225,11 @@ struct HoldSheet: View {
                 }
                 .pickerStyle(.segmented)
                 if timed {
-                    Picker("Leg time", selection: $legMin) {
+                    Picker("Leg Time", selection: $legMin) {
                         ForEach(Self.legMinutes, id: \.self) { Text("\(String(format: "%g", $0)) min").tag($0) }
                     }
                 } else {
-                    Picker("Leg distance", selection: $legNm) {
+                    Picker("Leg Distance", selection: $legNm) {
                         ForEach(Self.legMiles, id: \.self) { Text("\(String(format: "%g", $0)) nm").tag($0) }
                     }
                 }
@@ -241,7 +237,7 @@ struct HoldSheet: View {
                     ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
                 }
                 if let problem {
-                    Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
+                    Text("The leg time for this altitude could not be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
                 }
             }
             if was != nil {
@@ -290,12 +286,13 @@ struct HoldSheet: View {
             legNm = was.legNm ?? 4
             length = was.turns.map { "\($0)T" } ?? "\(was.minutes ?? 10)M"
         } else if let leg = legIn {
-            let magnetic = ((leg.trueCourseDeg - leg.magneticVariationDeg).truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
-            let rounded = Int(magnetic.rounded()) % 360
+            // The leg's own magnetic course (the nav log's, the engine's),
+            // as the web's and Android's holds start on, not a copy of it.
+            let rounded = Int(leg.magneticCourseDeg.rounded()) % 360
             course = String(format: "%03d", rounded == 0 ? 360 : rounded)
             // Where the engine refuses, the minute the form starts on
             // stands and the reason shows under it.
-            do { legMin = try Hold.legMinutes(altitudeFt: leg.altitudeFt); problem = nil } catch { problem = error.localizedDescription }
+            do { legMin = try Hold.legMinutes(altitudeFt: leg.altitudeFt); problem = nil } catch { problem = Problems.refusal(error, otherwise: "The leg could not be worked out") }
         }
     }
 
@@ -350,7 +347,7 @@ struct ProcedureFixesView: View {
                                     plan.setProcedureDirect(pick, fix: direct == fix.ident ? nil : fix.ident)
                                 }
                                 .glassButton()
-                                Button("Cross at…") { flightUI.crossAt = fix.ident }
+                                Button("Cross At…") { flightUI.crossAt = fix.ident }
                                     .glassButton()
                             }
                         }
@@ -363,7 +360,7 @@ struct ProcedureFixesView: View {
         .navigationTitle(pick?.name ?? id)
         .task {
             guard let pick else { return }
-            do { drawing = try await Planner.procedure(ident, id: id, transition: pick.transition) } catch { problem = error.localizedDescription }
+            do { drawing = try await Planner.procedure(ident, id: id, transition: pick.transition) } catch { problem = Problems.say("The procedure could not be fetched", error) }
         }
     }
 }

@@ -53,7 +53,7 @@ describe("an N-number's two answers", () => {
 
   it("says a failed find as a problem, and no connection as that", () => {
     expect(inAirWords(inAirOf({ isError: true, error: new Error("500") })).text).toBe(
-      "Couldn't check whether it's in the air. Try again in a moment.",
+      "Whether it is in the air could not be checked. Try again in a moment.",
     );
     expect(inAirWords(inAirOf({ isError: false, fetchStatus: "paused" }))).toEqual({ text: "No connection", problem: true });
   });

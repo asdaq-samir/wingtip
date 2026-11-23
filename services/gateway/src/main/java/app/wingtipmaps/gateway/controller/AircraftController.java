@@ -18,6 +18,7 @@ import app.wingtipmaps.gateway.service.AircraftLimits;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PilotService;
+import app.wingtipmaps.gateway.service.PlannerAsks;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.SquawkService;
 import jakarta.validation.Valid;
@@ -214,7 +215,7 @@ public class AircraftController {
                 due.getAnnualUntil(),
                 a.getHundredHourAtHours(),
                 a.getHoursNow(),
-                PlannerClient.number(due.getHundredHourDueAtHours()),
+                PlannerAsks.number(due.getHundredHourDueAtHours()),
                 a.getStaticCheckOn(),
                 due.getStaticCheckUntil(),
                 a.getTransponderCheckOn(),

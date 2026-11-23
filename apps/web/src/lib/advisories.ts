@@ -1,6 +1,6 @@
 import type { Briefing } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { altFt, clockTime, dayMonth, dayMonthYear, feet, weekdayShort, zoneName, zuluTime } from "./format";
+import { altFt, clockAndZulu, dayMonth, dayMonthYear, feet, weekdayShort } from "./format";
 
 type GAirmet = Briefing["gairmets"][number];
 type Pirep = Briefing["pireps"][number];
@@ -96,7 +96,7 @@ export function tfrTimes(t: Pick<RouteTfr, "effective" | "expires">, now: Date =
   const to = t.expires ? new Date(t.expires) : null;
   const year = now.getFullYear();
   const withYear = [from, to].some((d) => d && d.getFullYear() !== year);
-  const clock = (d: Date) => `${clockTime(d)} ${zoneName(d)} (${zuluTime(d)})`;
+  const clock = clockAndZulu;
   const day = (d: Date) => `${weekdayShort(d)} ${withYear ? dayMonthYear(d) : dayMonth(d)}, ${clock(d)}`;
   if (from && to) return `${day(from)} – ${from.toDateString() === to.toDateString() ? clock(to) : day(to)}`;
   if (from) return `From ${day(from)} until further notice`;

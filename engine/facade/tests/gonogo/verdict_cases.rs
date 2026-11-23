@@ -23,7 +23,7 @@ fn finds_nothing_against_a_quiet_day_every_row_saying_what_it_checked() {
     let items = verdict::verdict_items(&quiet());
     assert!(items.iter().all(|i| i.finding == "ok"));
     assert_eq!(items.len(), 7);
-    assert_eq!(finding(&quiet(), "fuel").detail, "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare");
+    assert_eq!(finding(&quiet(), "fuel").detail, "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve");
     assert_eq!(verdict::verdict_line(&items), ("ok", s("Nothing found against this flight")));
 }
 
@@ -36,7 +36,7 @@ fn is_no_go_on_vfr_not_recommended_a_tfr_in_force_too_little_fuel_or_no_altitude
     v.altitude.problem = Some(s("Ceiling 11,700 ft: terrain 40 nm past KDLH needs 12,500"));
     assert_eq!(finding(&v, "weather").detail, "VFR not recommended: KDLH currently reporting IFR");
     assert_eq!(finding(&v, "fuel").detail, "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)");
-    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "No-go as planned: Weather, TFRs & special use, Altitude, Fuel");
+    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "No-go as planned: weather, TFRs & special use, altitude, fuel");
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn asks_for_another_look_at_hazards_an_area_in_use_a_pilots_own_altitude_and_a_c
     v.altitude.cautions = strings(&["Westbound above 3,000 ft flies even thousands plus 500 (14 CFR 91.159)"]);
     v.runways.crosswind = strings(&["C81"]);
     assert_eq!(finding(&v, "airspace").detail, "VOLK EAST MOA scheduled in use when you pass");
-    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "Look again at Weather, TFRs & special use, Altitude, Runways");
+    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "Look again at weather, TFRs & special use, altitude, runways");
 }
 
 #[test]
@@ -113,11 +113,11 @@ fn says_what_was_not_worked_out_and_what_is_still_coming() {
     let mut v = quiet();
     v.runways.worked = false;
     v.balance = verdict::Balance::default();
-    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "No problems found; not checked: Runways, Weight & balance");
+    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "No problems found; not checked: runways, weight & balance");
     let mut coming = quiet();
     coming.weather.pending = true;
     coming.risk = None;
-    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&coming)), ("pending", s("Still checking: Weather, Risk")));
+    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&coming)), ("pending", s("Still checking: weather, risk")));
 }
 
 #[test]

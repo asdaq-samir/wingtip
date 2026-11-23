@@ -15,6 +15,13 @@ export async function openBrief(page: Page) {
   await expect(card).toBeVisible();
 }
 
+/** The Brief's Share menu open, where Save and the review are (the owner,
+ *  2026-11-21: More keeps Route Options, Share link and Open in ForeFlight). */
+export async function openBriefMenu(page: Page) {
+  await openBrief(page);
+  await sideDrawer(page).getByTestId("card-share").click();
+}
+
 /** The panel all the way out, as a finger takes it: a drag on its
  *  grabber to the screen's far edge from half; from the pill, the
  *  grabber's arrow keys. */
@@ -40,8 +47,8 @@ export async function openBriefing(page: Page) {
  *  go / no-go is Preflight's, the weather on the way En route's, the
  *  takeoff Depart's -- the Brief's pages now, a card over FPL. The nav log
  *  is FPL's own (Nav Log, Local): all the way up, the Brief put away. */
-const PHASE_OF = { Brief: "Preflight", Weather: "En route", Performance: "Depart" } as const;
-type PhaseTab = "Preflight" | "Depart" | "En route" | "Arrive";
+const PHASE_OF = { Brief: "Preflight", Weather: "En Route", Performance: "Depart" } as const;
+type PhaseTab = "Preflight" | "Depart" | "En Route" | "Arrive";
 
 /** One of the planning panel's tabs: Nav Log (Local, for one airport to
  *  itself), or one of the Brief's pages. */
@@ -82,9 +89,16 @@ export async function openNavLog(page: Page) {
 }
 
 /** The nav log's card over FPL (the owner's "make Navlog open like brief
- *  does"), and what scrolls in it. */
+ *  does"), and what scrolls in it: the card's one scroller (SheetScroller's
+ *  data-sheet-scroll), the innermost holding the log. The log's own box
+ *  (navlog-card-scroller) is laid out whole in it, as tall as its rows, so
+ *  a row's place measured against that box was its place in the whole log. */
 export const navLogSheet = (page: Page) => page.getByTestId("navlog-sheet");
-export const navLogScroller = (page: Page) => page.getByTestId("navlog-card-scroller");
+export const navLogScroller = (page: Page) =>
+  page
+    .locator("[data-sheet-scroll]")
+    .filter({ has: page.getByTestId("navlog-card-scroller") })
+    .last();
 
 /** The nav log's card put away, FPL under it again: its close, kept for a
  *  keyboard and a screen reader (CardClose), the tab bar's Back's twin. */
@@ -100,7 +114,7 @@ export async function closeNavLog(page: Page) {
 /** The planning panel's own tabs. */
 export const panelTabs = (page: Page) => sideDrawer(page).getByTestId("panel-tabs");
 
-const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En route": "enroute", Arrive: "arrive" };
+const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En Route": "enroute", Arrive: "arrive" };
 
 /** The Brief open on its cards (BriefGlance, the owner's D′), one of its
  *  pages opened by its card; the tabs are over a page once one is open. */
@@ -111,7 +125,7 @@ export async function briefPage(page: Page, phase: PhaseTab) {
   await expect(panelTabs(page)).toBeVisible();
 }
 
-const PHASES: PhaseTab[] = ["Preflight", "Depart", "En route", "Arrive"];
+const PHASES: PhaseTab[] = ["Preflight", "Depart", "En Route", "Arrive"];
 
 /** A section by its title, brought into sight: on the tab up, or on
  *  whichever of the phases' tabs holds it (an airport's on Depart or
@@ -180,3 +194,9 @@ export async function airportSearch(page: Page) {
   await sheetUpToType(page);
   return search;
 }
+
+/** Past planHistory's SETTLE_MS (1500 ms, hooks/planHistory): changes
+ *  within it are one step to undo, as the page's own settling after a load
+ *  is, so a test's edit that must be a step of its own comes after it, as
+ *  a pilot's does. A window of time is the rule here, so a wait is right. */
+export const pastSettling = (page: Page) => page.waitForTimeout(1600);

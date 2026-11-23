@@ -1,14 +1,13 @@
 import { memo } from "react";
-import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, XAxis, YAxis } from "recharts";
+import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, XAxis, YAxis } from "recharts";
 import { ChartContainer, type ChartConfig } from "../../components/ui/chart";
 import ChartTick from "../../components/chartTick";
 import type { RouteProfile } from "../../lib/api/types";
 import { altFt } from "../../lib/format";
 import { AIRSPACE, airspaceArea, ceilings, type planProfile } from "./profile";
 
-/** A line over the ground: the plan's altitudes (planProfile), or a
- *  flown track's (the Studio's), a null height a break in it -- a gap in
- *  a recording, which is not drawn across. */
+/** A line over the ground: the plan's altitudes (planProfile), a null
+ *  height a break in it, which is not drawn across. */
 type Line = Omit<ReturnType<typeof planProfile>, "points"> & { points: { along_nm: number; plan_ft: number | null }[] };
 import { CHART } from "../../lib/tokens";
 
@@ -27,21 +26,7 @@ const config = {
  */
 // Drawn again only when its profile or its plan is new (memo): recharts
 // measures a line's whole length at every draw.
-export default memo(function ProfileChart({
-  profile,
-  plan,
-  now = null,
-  label = "Plan",
-  className,
-}: {
-  profile: RouteProfile;
-  plan: Line;
-  /** Where a replay is along it, nm: a mark up the chart (the Studio's). */
-  now?: number | null;
-  /** What the line is: the plan, or a flight flown. */
-  label?: string;
-  className?: string;
-}) {
+export default memo(function ProfileChart({ profile, plan, className }: { profile: RouteProfile; plan: Line; className?: string }) {
   const scale = plan.length_nm > 0 ? profile.length_nm / plan.length_nm : 1;
   // The line in pieces, a null height ending one: each piece its own
   // series, joined over the ground's rows between its points, never
@@ -68,7 +53,7 @@ export default memo(function ProfileChart({
     // Its labels on SVG's own leading; its axes' figures are ChartTick's,
     // in the text's colour (recharts' own #666 was 2.8:1 on dark glass).
     <ChartContainer
-      config={label === "Plan" ? config : { ...config, plan: { ...config.plan, label } }}
+      config={config}
       data-testid="profile-chart"
       className={className ?? "aspect-auto h-48 w-full [&_text]:[line-height:normal]"}
     >
@@ -147,7 +132,6 @@ export default memo(function ProfileChart({
             label={{ value: `${m.kind} ${altFt(m.plan_ft)}`, position: "top", fontSize: 11, fill: "currentColor" }}
           />
         ))}
-        {now !== null && <ReferenceLine x={now * scale} stroke="var(--color-plan)" strokeDasharray="3 3" ifOverflow="hidden" />}
       </ComposedChart>
     </ChartContainer>
   );

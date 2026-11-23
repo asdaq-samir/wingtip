@@ -18,6 +18,14 @@ settings:
     # owner's ask, 2026-11-03, made so once a run was clean, 2026-11-09).
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
+    # Approachable Concurrency (Swift 6.2; write-swift's first setting):
+    # a nonisolated async function runs on its caller's actor
+    # (NonisolatedNonsendingByDefault), and work meant for the pool says
+    # so with @concurrent; conformances take their type's isolation
+    # (InferIsolatedConformances). Here, never on xcodebuild's command
+    # line, so the Swift packages build as they ship (swift-openapi-runtime
+    # 1.13.4 does not compile with it, the rev-swift probe, 2026-11-22).
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
     # No warnings anywhere: every target's warning is an error (the owner,
     # 2026-11-09), Swift's and clang's alike, so none piles up unread.
     SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
@@ -107,10 +115,11 @@ targets:
       # The Live Activity's widget extension, embedded in the app.
       - target: WingtipWidgets
         embed: true
-      # The Apple Watch app (WingtipWatch), embedded in the app's Watch
-      # folder as a companion is; it is installed with the phone's app.
-      - target: WingtipWatch
-        embed: true
+      # No Apple Watch app in the iPhone's build: parked, left out of the
+      # first submission (the feature review, docs/store/feature-review.md,
+      # 2026-11-21: a screenshot set, a 2.5.16 question and a target on every
+      # build, for three screens). WingtipWatch stays below and builds on its
+      # own scheme; to bring it back, depend on it here with `embed: true`.
     info:
       path: Wingtip/Info.plist
       properties:
@@ -135,6 +144,11 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        # More than one window on an iPad (MainWindow, and a chart's own,
+        # PictureWindow): HIG Multitasking, "every app needs to work well
+        # with multitasking". SwiftUI's scenes, no scene delegate of ours.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
         # Read by Config at run time: the host the build was made for.
         WingtipHost: $(WINGTIP_HOST)
         # Honest about the background (the store audit's S1, App Review
@@ -144,21 +158,29 @@ targets:
         # A clearance read on the radio, heard by Apple's recognizer on the
         # iPhone only (ClearanceListener's requiresOnDeviceRecognition); where
         # it cannot be, voice is not offered and neither is asked for.
-        NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check, and hears the questions you ask it by voice. The sound is never recorded or sent.
-        NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio, and the questions you ask it by voice, into words on your iPhone. Speech is recognised on the device and its sound never leaves it; a question you send goes where a typed one would.
+        # Voice first: the radio is parked behind Settings' Extras (ATC
+        # Copilot, the feature review of 2026-11-21), so the first ask a
+        # pilot or App Review sees comes from the search's microphone.
+        NSMicrophoneUsageDescription: Wingtip Maps hears the questions you ask it by voice and, with ATC Copilot turned on in Settings, listens to the radio to show what ATC says and enter a clearance's route for you to check. The sound is never recorded or sent.
+        NSSpeechRecognitionUsageDescription: Wingtip Maps turns the questions you ask it by voice, and with ATC Copilot on what ATC says on the radio, into words on your iPhone. Speech is recognised on the device and its sound never leaves it; a question you send goes where a typed one would.
         # A page photographed with the document camera (Documents/
         # DocumentScanner): a handbook's performance or weight and balance
         # page, a paper logbook page or a clearance copied down, read for
         # the pilot to confirm item by item. The photo library is reached
         # through the system's picker, which needs no permission.
         NSCameraUsageDescription: Wingtip Maps photographs a handbook page, a logbook page or a clearance you wrote down, to read its figures for you to check.
-        # The radio heard on with the phone locked, as the owner asked
-        # (2026-11-02): the microphone kept open (ClearanceListener); and
-        # the position read on while the airplane is flying (OwnShip),
-        # for the alerts ahead and the path flown (OwnTrail); and CloudKit's
-        # silent pushes, so another device's records (Records) sync before
-        # the app is opened; and iOS's background refresh, for the route's
-        # weather watched after the Brief (WeatherWatch, its one task).
+        # The alerts said aloud with the phone locked (SpokenAlerts,
+        # CopilotVoice: iOS starts sound in the background only for an app
+        # with `audio`), and the radio heard on with the phone locked, as
+        # the owner asked (2026-11-02), once the parked ATC Copilot is on
+        # (ClearanceListener, behind Settings' Extras); the position read on
+        # while the airplane is flying (OwnShip), for the alerts ahead and
+        # the path flown (OwnTrail); CloudKit's silent pushes, so another
+        # device's records (Records) sync before the app is opened; and
+        # iOS's background refresh, for the route's weather watched after
+        # the Brief (WeatherWatch, its one task). `audio` stays for the
+        # spoken alerts, a safety feature, though the review (2026-11-21)
+        # had thought it the radio's alone.
         UIBackgroundModes: [audio, location, remote-notification, fetch]
         BGTaskSchedulerPermittedIdentifiers: [app.wingtipmaps.weather-watch]
         # Apple's Private Cloud Compute as the AI's fallback after the
@@ -168,7 +190,14 @@ targets:
         # the Small Business Program, under 2 million first-time
         # downloads); then YES, with the entitlement in Wingtip.entitlements.
         WingtipPrivateCloudCompute: false
-        NSLocalNetworkUsageDescription: With Traffic on, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
+        # The cockpit ADS-B receiver (Receiver.enabled), parked: NO until
+        # Apple grants the multicast networking entitlement
+        # (com.apple.developer.networking.multicast), without which a
+        # receiver that broadcasts its GDL 90 is never heard. The day it
+        # is granted: the entitlement in Wingtip.entitlements, this YES
+        # (docs/store/launch-checklist.md, docs/receivers.md).
+        WingtipReceiver: false
+        NSLocalNetworkUsageDescription: With ADS-B Receiver turned on in Settings, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
         # A flight in progress on the Lock Screen and in the Dynamic Island
         # (FlightActivity, the WingtipWidgets extension): the next
         # checkpoint, the ETA and the fuel, as Apple has ongoing things shown.
@@ -196,6 +225,13 @@ targets:
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
             LSItemContentTypes: [com.google.earth.kml]
+          # A PDF from Files, Mail or Safari's share sheet: a copy taken
+          # in as the pilot's own document (DocumentLibrary), on this
+          # device; never the system's owner of PDFs.
+          - CFBundleTypeName: PDF Document
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [com.adobe.pdf]
           # The app's own flight file (FlightFile, Save as File): opened
           # from Files, AirDrop or Mail into the Shared Flight preview,
           # never planned without the pilot's Use This Plan.
@@ -264,6 +300,16 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID)
         TARGETED_DEVICE_FAMILY: "1,2"
+        # Main actor by default (Swift 6.2, write-swift's setting for an
+        # app module): what is not marked runs on the main actor, as the
+        # screens and their models do, and the code meant for other
+        # threads says so -- the engine's calls, the API's middleware and
+        # decoding, the map's tile loads, the file writers and the
+        # receiver's listener are `nonisolated`, their pool work
+        # `@concurrent`. The widgets, the watch and the unit tests are set
+        # so too; the libraries (WingtipEngine, PlannerAPI, GatewayAPI)
+        # stay nonisolated for their callers.
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # No global accent colour: the system's own (systemBlue) is the
@@ -321,9 +367,19 @@ targets:
       # The gateway's host, for the weather and currency widgets' own asks
       # (WidgetFetch), read from this extension's Info.plist (WingtipHost).
       - path: Wingtip/Config.swift
-    # The Keychain the session's cookies are read from (SessionCookies).
+    # The Keychain the session's cookies are read from (SessionCookies), and
+    # the servers' generated clients the weather and currency are asked
+    # through (WidgetFetch), as the app asks them.
     dependencies:
       - package: Valet
+      - target: PlannerAPI
+      - target: GatewayAPI
+      - package: swift-openapi-runtime
+        product: OpenAPIRuntime
+      - package: swift-http-types
+        product: HTTPTypes
+      - package: swift-openapi-urlsession
+        product: OpenAPIURLSession
     entitlements:
       path: WingtipWidgets/WingtipWidgets.entitlements
       properties:
@@ -340,6 +396,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID).widgets
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
   # The Apple Watch app (WingtipWatch/, the owner's ask of 2026-11-03):
@@ -373,6 +430,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID).watchkitapp
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         GENERATE_INFOPLIST_FILE: NO
         # The small master on the chart's green (WingtipWatch/Assets.xcassets,
         # scripts/build/app-icons.sh): the watch draws its icon small and
@@ -390,6 +448,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
   WingtipTests:
     type: bundle.unit-test
     platform: iOS
@@ -401,6 +460,11 @@ targets:
       # drifts from the other fails CI.
       - path: ../web/src/lib/fixtures
         buildPhase: resources
+        # The engine's reference cases (the handbooks' figures) are its own
+        # tests', not the phones', and one shares a name with a fixture here,
+        # which a flat bundle cannot hold twice.
+        excludes:
+          - "reference/**"
       # The engine's: the Chicago phone packs and the planner's answers at
       # each tap (services/planner/tests_wingtip/test_native.py holds them to the planner's code).
       - path: ../../services/planner/tests_wingtip/fixtures/native/phone
@@ -410,6 +474,9 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+        # On the app's main actor, as the code they test is (the app's
+        # SWIFT_DEFAULT_ACTOR_ISOLATION).
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
   # One launch smoke test driven through the app as a pilot would be,
   # XCUITest (WingtipUITests/LaunchTests): a build that compiles but
   # cannot show its first screen fails on the runner.
@@ -424,6 +491,9 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: Wingtip
+        # Not main actor by default: every class here is an XCTestCase,
+        # whose initialisers and setUp are XCTest's nonisolated ones, and
+        # the tests that drive the app already say @MainActor.
 schemes:
   Wingtip:
     build:

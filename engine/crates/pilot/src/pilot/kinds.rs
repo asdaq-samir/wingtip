@@ -26,25 +26,25 @@ pub struct Field {
     pub required: bool,
 }
 
-const MM: Field = Field { key: "mm", label: "Make and model", example: "Cessna 172", required: true };
-const CATEGORY: Field = Field { key: "category", label: "Aircraft category", example: "airplane", required: true };
+const MM: Field = Field { key: "mm", label: "Make and Model", example: "Cessna 172", required: true };
+const CATEGORY: Field = Field { key: "category", label: "Aircraft Category", example: "airplane", required: true };
 const AIRPORT: Field = Field { key: "airport", label: "Airport", example: "Waukegan National (KUGN)", required: true };
-const AIRPORTS: Field = Field { key: "airports", label: "Both airports", example: "KUGN and KENW", required: true };
-const CLASS_B: Field = Field { key: "classB", label: "Class B airspace", example: "Chicago", required: true };
-const TEST: Field = Field { key: "test", label: "Knowledge test", example: "Private Pilot Airplane", required: true };
+const AIRPORTS: Field = Field { key: "airports", label: "Both Airports", example: "KUGN and KENW", required: true };
+const CLASS_B: Field = Field { key: "classB", label: "Class B Airspace", example: "Chicago", required: true };
+const TEST: Field = Field { key: "test", label: "Knowledge Test", example: "Private Pilot Airplane", required: true };
 const CERTIFICATE: Field = Field { key: "certificate", label: "Certificate", example: "a private pilot", required: true };
 const PRACTICAL: Field =
-    Field { key: "practical", label: "Practical test", example: "Private Pilot Airplane Single-Engine Land", required: true };
+    Field { key: "practical", label: "Practical Test", example: "Private Pilot Airplane Single-Engine Land", required: true };
 const FROM: Field = Field { key: "from", label: "From", example: "KUGN", required: true };
 const TO: Field = Field { key: "to", label: "To", example: "KUGN", required: true };
 const VIA: Field = Field { key: "via", label: "Via", example: "KRFD, KJVL", required: true };
-const LANDINGS: Field = Field { key: "landings", label: "Landings at", example: "KRFD, KJVL and KUGN", required: true };
-const DATE: Field = Field { key: "date", label: "Date of the flight", example: "10-14-2026", required: true };
+const LANDINGS: Field = Field { key: "landings", label: "Landings At", example: "KRFD, KJVL and KUGN", required: true };
+const DATE: Field = Field { key: "date", label: "Date of the Flight", example: "10-14-2026", required: true };
 // "[List any applicable conditions or limitations.]": nothing where there
 // are none, except where the sample's own words lead into them ("subject
 // to the following conditions:"), where they must be given.
 const CONDITIONS: Field =
-    Field { key: "conditions", label: "Conditions or limitations", example: "Winds 10 knots or less", required: false };
+    Field { key: "conditions", label: "Conditions or Limitations", example: "Winds 10 knots or less", required: false };
 const CONDITIONS_LISTED: Field = Field { key: "conditions", label: "Conditions", example: "Winds 10 knots or less", required: true };
 
 /// One of the endorsements: its code (the gateway's records keep it), AC
@@ -65,7 +65,7 @@ pub const KINDS: [Kind; 15] = [
         code: "pre-solo-knowledge",
         paragraph: "A.3",
         rule: "61.87(b)",
-        label: "Pre-solo aeronautical knowledge",
+        label: "Pre-Solo Aeronautical Knowledge",
         template: "I certify that {student} has satisfactorily completed the pre-solo knowledge test of 14 CFR § 61.87(b) for the {mm} aircraft.",
         fields: &[MM],
     },
@@ -73,7 +73,7 @@ pub const KINDS: [Kind; 15] = [
         code: "pre-solo-flight",
         paragraph: "A.4",
         rule: "61.87(c)(1) and (2)",
-        label: "Pre-solo flight training",
+        label: "Pre-Solo Flight Training",
         template: "I certify that {student} has received and logged pre-solo flight training for the maneuvers and procedures that are appropriate to the {mm} aircraft. I have determined they have demonstrated satisfactory proficiency and safety on the maneuvers and procedures required by 14 CFR § 61.87 in this or similar make and model of aircraft to be flown.",
         fields: &[MM],
     },
@@ -83,7 +83,7 @@ pub const KINDS: [Kind; 15] = [
         code: "solo-first",
         paragraph: "A.6",
         rule: "61.87(n)",
-        label: "Solo flight (first 90 days)",
+        label: "Solo Flight (First 90 Days)",
         template: "I certify that {student} has received the required training to qualify for solo flying. I have determined they meet the applicable requirements of 14 CFR § 61.87(n) and are proficient to make solo flights in {mm}.",
         fields: &[MM],
     },
@@ -94,7 +94,7 @@ pub const KINDS: [Kind; 15] = [
         code: "solo-90",
         paragraph: "A.7",
         rule: "61.87(p)",
-        label: "Solo flight (each further 90 days)",
+        label: "Solo Flight (Each Further 90 Days)",
         template: "I certify that {student} has received the required training to qualify for solo flying. I have determined that they meet the applicable requirements of 14 CFR § 61.87(p) and are proficient to make solo flights in {mm}.",
         fields: &[MM],
     },
@@ -104,7 +104,7 @@ pub const KINDS: [Kind; 15] = [
         code: "solo-night",
         paragraph: "A.5",
         rule: "61.87(o)",
-        label: "Solo flight at night",
+        label: "Solo Flight at Night",
         template: "I certify that {student} has received flight training at night on night flying procedures that include takeoffs, approaches, landings, and go-arounds at night at the {airport} airport where the solo flight will be conducted; navigation training at night in the vicinity of the {airport} airport where the solo flight will be conducted. This endorsement expires 90 calendar days from the date the flight training at night was received.",
         fields: &[AIRPORT],
     },
@@ -112,7 +112,7 @@ pub const KINDS: [Kind; 15] = [
         code: "solo-25nm",
         paragraph: "A.8",
         rule: "61.93(b)(1)",
-        label: "Solo takeoffs and landings at another airport within 25 nm",
+        label: "Solo Takeoffs and Landings at Another Airport Within 25 nm",
         template: "I certify that {student} has received the required training of 14 CFR § 61.93(b)(1). I have determined that they are proficient to practice solo takeoffs and landings at {airport}. The takeoffs and landings at {airport} are subject to the following conditions: {conditions}",
         fields: &[AIRPORT, CONDITIONS_LISTED],
     },
@@ -120,7 +120,7 @@ pub const KINDS: [Kind; 15] = [
         code: "solo-xc-training",
         paragraph: "A.9",
         rule: "61.93(c)(1) and (2)",
-        label: "Solo cross-country training",
+        label: "Solo Cross-Country Training",
         template: "I certify that {student} has received the required solo cross-country training. I find they have met the applicable requirements of 14 CFR § 61.93 and are proficient to make solo cross-country flights in a {mm} aircraft, {category}.",
         fields: &[MM, CATEGORY],
     },
@@ -132,7 +132,7 @@ pub const KINDS: [Kind; 15] = [
         code: "solo-xc-flight",
         paragraph: "A.10",
         rule: "61.93(c)(3)",
-        label: "A solo cross-country's planning",
+        label: "A Solo Cross-Country's Planning",
         template: "I have reviewed the cross-country planning of {student}. I find the planning and preparation to be correct to make the solo flight from {from} to {to} via {via} with landings at {landings} in a {mm} aircraft on {date}. {conditions}",
         fields: &[FROM, TO, VIA, LANDINGS, MM, DATE, CONDITIONS],
     },
@@ -140,7 +140,7 @@ pub const KINDS: [Kind; 15] = [
         code: "solo-xc-50nm",
         paragraph: "A.11",
         rule: "61.93(b)(2)",
-        label: "Repeated solo cross-country within 50 nm",
+        label: "Repeated Solo Cross-Country Within 50 nm",
         template: "I certify that {student} has received the required training in both directions between and at both {airports}. I have determined that they are proficient of 14 CFR § 61.93(b)(2) to conduct repeated solo cross-country flights over that route, subject to the following conditions: {conditions}",
         fields: &[AIRPORTS, CONDITIONS_LISTED],
     },
@@ -150,7 +150,7 @@ pub const KINDS: [Kind; 15] = [
         code: "class-b",
         paragraph: "A.12",
         rule: "61.95(a)",
-        label: "Solo flight in Class B airspace",
+        label: "Solo Flight in Class B Airspace",
         template: "I certify that {student} has received the required training of 14 CFR § 61.95(a). I have determined they are proficient to conduct solo flights in {classB} airspace. {conditions}",
         fields: &[CLASS_B, CONDITIONS],
     },
@@ -158,7 +158,7 @@ pub const KINDS: [Kind; 15] = [
         code: "class-b-airport",
         paragraph: "A.13",
         rule: "61.95(b) and 91.131(b)(1)",
-        label: "Solo at an airport in Class B airspace",
+        label: "Solo at an Airport in Class B Airspace",
         template: "I certify that {student} has received the required training of 14 CFR § 61.95(b)(1). I have determined that they are proficient to conduct solo flight operations at {airport}. {conditions}",
         fields: &[AIRPORT, CONDITIONS],
     },
@@ -166,7 +166,7 @@ pub const KINDS: [Kind; 15] = [
         code: "knowledge-test",
         paragraph: "A.36",
         rule: "61.35(a)(1), 61.103(d) and 61.105",
-        label: "Aeronautical knowledge test",
+        label: "Aeronautical Knowledge Test",
         template: "I certify that {student} has received the required training in accordance with 14 CFR § 61.105. I have determined they are prepared for the {test} knowledge test.",
         fields: &[TEST],
     },
@@ -174,7 +174,7 @@ pub const KINDS: [Kind; 15] = [
         code: "knowledge-test-review",
         paragraph: "A.2",
         rule: "61.39(a)(6)(iii)",
-        label: "Review of the knowledge test's deficient areas",
+        label: "Review of the Knowledge Test's Deficient Areas",
         template: "I certify that {student} has demonstrated satisfactory knowledge of the subject areas in which they were deficient on the {test} airman knowledge test.",
         fields: &[TEST],
     },
@@ -182,7 +182,7 @@ pub const KINDS: [Kind; 15] = [
         code: "practical-test-prereq",
         paragraph: "A.1",
         rule: "61.39(a)(6)(i) and (ii)",
-        label: "Prerequisites for the practical test",
+        label: "Prerequisites for the Practical Test",
         template: "I certify that {student} has received and logged training time within 2 calendar months preceding the month of application in preparation for the practical test and they are prepared for the required practical test for the issuance of {certificate} certificate.",
         fields: &[CERTIFICATE],
     },
@@ -192,7 +192,7 @@ pub const KINDS: [Kind; 15] = [
         code: "practical-test",
         paragraph: "A.37",
         rule: "61.103(f), 61.107(b) and 61.109",
-        label: "Flight proficiency and practical test",
+        label: "Flight Proficiency and Practical Test",
         template: "I certify that {student} has received the required training in accordance with 14 CFR §§ 61.107 and 61.109. I have determined they are prepared for the {practical} practical test.",
         fields: &[PRACTICAL],
     },

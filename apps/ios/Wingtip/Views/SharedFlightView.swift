@@ -18,7 +18,7 @@ struct SharedFlightView: View {
                 if let totals = model.totals {
                     Section("Totals") {
                         LabeledContent("Distance", value: Format.distance(totals.distanceNm))
-                        LabeledContent("Time En Route", value: totals.eteMin.map(Format.duration) ?? "—")
+                        LabeledContent(Wording.timeEnRoute, value: totals.eteMin.map(Format.duration) ?? "—")
                         LabeledContent("Fuel", value: Format.fuel(totals.fuelGal))
                     }
                 }
@@ -34,7 +34,7 @@ struct SharedFlightView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(model.gone ? "Close" : "Not Now") { model.notNow() }
+                Button(model.gone ? String(localized: "Close") : Wording.notNow) { model.notNow() }
             }
             if !model.gone {
                 ToolbarItem(placement: .confirmationAction) {
@@ -52,6 +52,9 @@ struct SharedFlightView: View {
         if let type = plan.type { LabeledContent("Airplane Type", value: type) }
         if let rules = plan.rules { LabeledContent("Flight Rules", value: rules.label) }
         if let tail = plan.tail { LabeledContent("N-Number", value: tail) }
+        if !plan.tanks.isEmpty {
+            LabeledContent("Fuel Set", value: plan.tanks.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value) gal" }.joined(separator: " · "))
+        }
         // The sender's airplane is said, never flown: the pilot's own is.
         LabeledContent("Planned With", value: route.tail ?? "Your airplane")
     }

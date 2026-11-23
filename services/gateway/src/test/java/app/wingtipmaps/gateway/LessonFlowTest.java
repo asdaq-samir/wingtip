@@ -18,9 +18,6 @@ import app.wingtipmaps.gateway.dto.ReviewCheckDto;
 import app.wingtipmaps.gateway.dto.SaveFlightRequest;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
-import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
-import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
-import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.InstructorRefusedException;
@@ -107,28 +104,13 @@ class LessonFlowTest {
         // instructor_records_since, held in the engine to shellFigures.json).
         org.mockito.BDDMockito.given(planner.instructorRecordsSince(any()))
                 .willAnswer(ask -> ((LocalDate) ask.getArgument(0)).minusYears(3));
-        org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
-            List<PlannerHeldEndorsement> held = ask.getArgument(0);
-            LocalDate flightOn = ask.getArgument(1);
-            return new PlannerEndorsements()
-                    .until(java.util.Collections.nCopies(held.size(), (LocalDate) null))
-                    .soloUntil(
-                            held.stream()
-                                            .anyMatch(h -> List.of("solo-first", "solo-90")
-                                                    .contains(h.getCode()))
-                                    ? SOLO_UNTIL
-                                    : null)
-                    .checks(
-                            flightOn == null
-                                    ? List.of()
-                                    : CHECKS.stream()
-                                            .map(c -> new PlannerReviewCheck()
-                                                    .rule(c.rule())
-                                                    .label(c.label())
-                                                    .met(c.met())
-                                                    .detail(c.detail()))
-                                            .toList());
-        });
+        RecordsStandIn.answer(planner, SOLO_UNTIL, CHECKS);
+        // Which idents are Duluth, the lesson's field, as the planner
+        // answers it (field_names over NASR, tested there): DLH and KDLH.
+        org.mockito.BDDMockito.given(planner.sameField(any(), any()))
+                .willAnswer(ask -> ask.<List<String>>getArgument(1).stream()
+                        .map(ident -> List.of("DLH", "KDLH").contains(ident))
+                        .toList());
     }
 
     private static final Instant NOW = Instant.parse("2026-10-31T18:00:00Z");
@@ -268,7 +250,7 @@ class LessonFlowTest {
         assertThat(lessons.remove(p[1], stranger.getId(), id)).isFalse();
         assertThat(theirLesson(p[0]).status()).isEqualTo("not-started");
         // Not theirs to read: a stranger's view of the student shows none of it.
-        assertThat(lessons.lessonsOf(student, stranger)).isEmpty();
+        assertThat(lessons.lessonsOf(lessons.read(student, stranger))).isEmpty();
         assertThat(lessons.remove(p[1], p[0].getId(), id)).isTrue();
         assertThat(training.training(p[0], List.of(), TODAY).lessons()).isEmpty();
     }
@@ -308,7 +290,7 @@ class LessonFlowTest {
                 .getId();
         flights.saveTrack(p[0], kept, track);
 
-        assertThat(lessons.lessonsOf(student, p[1]).get(0).flights())
+        assertThat(lessons.lessonsOf(lessons.read(student, p[1])).get(0).flights())
                 .extracting(f -> f.id())
                 .containsExactly(duluth);
         assertThat(theirLesson(p[0]).flights()).isEmpty();

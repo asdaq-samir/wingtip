@@ -14,6 +14,11 @@ final class Traffic {
     /// seconds (wingtip.traffic), so no sooner than that; twice that with the
     /// app put away (Repeating).
     static let everyS: TimeInterval = 5
+    /// The cockpit's receiver, whose airplanes are merged in (merge).
+    @ObservationIgnored private let receiver: Receiver
+
+    init(receiver: Receiver) { self.receiver = receiver }
+
     var on: Bool = UserDefaults.standard.object(forKey: "traffic") as? Bool ?? true {
         didSet { UserDefaults.standard.set(on, forKey: "traffic"); if !on { planes = [] } }
     }
@@ -50,16 +55,29 @@ final class Traffic {
     /// airplanes are near), else about the middle of the map.
     func run(near ownShip: @escaping @MainActor () -> OwnShip.Fix?) async {
         // The receiver's airplanes merged as each second's bytes are read.
-        Receiver.shared.onRead = { [weak self] in self?.merge() }
+        receiver.onRead = { [weak self] in self?.merge() }
         await Repeating.every(Self.everyS) { [weak self] in
-            await self?.ask(near: ownShip())
+            guard let self else { return }
+            let fix = ownShip()
+            guard Self.wanted(covered: covered, fix: fix) else { return }
+            await ask(near: fix)
         }
+    }
+
+    /// The iPhone's sheet at full height over the map (PlanSheetPresentation).
+    var covered = false
+
+    /// Whether the clock asks: not under a full-height sheet on the
+    /// ground, where nothing of it is seen; flying, always, for the near
+    /// ones told (tellNear). The engine's underway.
+    static func wanted(covered: Bool, fix: OwnShip.Fix?) -> Bool {
+        !covered || (try? Flight.underway(fix?.groundspeedKt)) == true
     }
 
     /// One answer about a point, where traffic is on and there is one: on
     /// the clock, and when a traffic list is pulled down (TrafficFindView).
     func ask(near fix: OwnShip.Fix?) async {
-        ownFt = fix?.altitudeFt
+        ownFt = Self.markedFt(fix?.altitudeFt)
         guard on, let at = fix?.coordinate ?? mapCentre else { return }
         let radius = min(60, max(10, mapRadiusNm))
         let answer: TrafficAnswer
@@ -95,14 +113,14 @@ final class Traffic {
             freshProblem = nil
             return zip(answer.aircraft, keep).filter(\.1).map(\.0)
         } catch {
-            freshProblem = "Traffic unavailable: \(error.localizedDescription)"
+            freshProblem = Problems.say("The traffic could not be fetched", error)
             return []
         }
     }
 
     /// The internet's airplanes and the receiver's, as drawn.
     private func merge() {
-        planes = on ? Receiver.shared.traffic(internet, ownFt: ownFt) : []
+        planes = on ? receiver.traffic(internet, ownFt: ownFt) : []
     }
 
     /// The airplanes the engine's `traffic_marks` says to tell (`tell`:
@@ -169,6 +187,19 @@ final class Traffic {
             own: own.map { .init(lat: $0.latitude, lon: $0.longitude) })
     }
 
+    /// Own ship's height as the traffic is marked against it: to the
+    /// nearest 10 ft, as the web's TrafficGl reads it, so the map's marks
+    /// are not asked again at every fix for a GPS height that wanders by
+    /// tens of feet from one to the next. A 5 ft change of own height
+    /// moves the engine's 1,000 ft near band (2,000 ft for a pressure
+    /// altitude, traffic_marks after 14 CFR 91.159's spacing) and its
+    /// hundreds, cut toward own ship, only for an airplane within 5 ft of
+    /// a boundary: far inside the error of a phone's GNSS height and of
+    /// the airplane's own report, so no answer a pilot could act on moves.
+    nonisolated static func markedFt(_ ft: Double?) -> Double? {
+        ft.map { ($0 / 10).rounded() * 10 }
+    }
+
     /// The marks to draw: none where the engine cannot answer, and why in
     /// `marksProblem`, which the map's traffic credit shows.
     func drawn(_ planes: [TrafficAircraft], ownFt: Double?, own: CLLocationCoordinate2D? = nil) -> [Mark] {
@@ -177,7 +208,7 @@ final class Traffic {
             heightsProblem = nil
             return marks
         } catch {
-            heightsProblem = "Traffic heights unavailable: \(error.localizedDescription)"
+            heightsProblem = Problems.say("The traffic's heights could not be fetched", error)
             return []
         }
     }
@@ -194,7 +225,7 @@ final class Traffic {
     /// data: its source and the licence, named (the web app's
     /// trafficCredit).
     static func credit(_ source: String?) -> String {
-        let credits = ["adsb.lol": "Traffic adsb.lol, ODbL", "ADS-B Exchange": "ADS-B Exchange", "adsb.fi": "adsb.fi"]
+        let credits = ["adsb.lol": "Traffic adsb.lol, ODbL", "ADS-B Exchange": "ADS-B Exchange"]
         let named = (source ?? "adsb.lol").components(separatedBy: " and ").compactMap { credits[$0] }
         guard let first = named.first else { return "Traffic adsb.lol, ODbL" }
         return first == "Traffic adsb.lol, ODbL" ? ([first] + named.dropFirst()).joined(separator: " · ") : "Traffic \(named.joined(separator: " · "))"

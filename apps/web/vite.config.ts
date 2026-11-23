@@ -8,11 +8,13 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { compression, defineAlgorithm } from "vite-plugin-compression2";
 import { constants as zlib } from "node:zlib";
-import { IN_FLIGHT_READS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
+import { CHART_TILES, IN_FLIGHT_READS, LIBRARY_BOOKS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 import { STAGING, publish, publishDir } from "./vite-plugins/publishBuild.ts";
+import { licences } from "./vite-plugins/licences.ts";
+import { claudeView } from "./vite-plugins/claudeView.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
@@ -44,7 +46,11 @@ export default defineConfig({
   plugins: [
     warningsFail,
     publish,
+    // The open-source licences, /app/licences.txt (About's Open-Source Licences).
+    licences,
     tesseractFiles,
+    // The connector's live view, one self-contained page (claude-view.html).
+    claudeView,
     preloadEngine,
     themeColor,
     react(),
@@ -66,9 +72,8 @@ export default defineConfig({
     // WebAssembly (397,838 bytes to 492,654, 2026-11-14), which iPhone Safari
     // takes (Accept-Encoding: gzip, deflate, br). The service worker's
     // globPatterns name no .br or .gz, so it keeps only the files themselves.
-    // CI's build check reads the JavaScript's own bytes (scripts/first-load.mjs)
-    // and serves nothing, so it asks for none (WINGTIP_PRECOMPRESS=0): they
-    // took the build from about 30 s to 89 (run 43735121847).
+    // CI's build check serves nothing, so asks for none (WINGTIP_PRECOMPRESS=0:
+    // they took the build from about 30 s to 89, run 43735121847).
     process.env.WINGTIP_PRECOMPRESS !== "0" &&
       compression({
         include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
@@ -95,15 +100,15 @@ export default defineConfig({
       registerType: "prompt",
       manifest: MANIFEST,
       workbox: {
-        // The first worker claims its page: an uncontrolled page's keep for
-        // the air cached nothing. A new build still waits (no skipWaiting).
+        // The first worker claims its page (an uncontrolled page's keep
+        // cached nothing); a new build still waits (no skipWaiting).
         clientsClaim: true,
         navigateFallback: "/app/index.html",
         navigateFallbackAllowlist: [/^\/app\//],
         // The legal pages are files, not routes of the app: a miss in
         // the precache (the first load after a deploy) must reach the
         // server, not fall back to the app shell.
-        navigateFallbackDenylist: [/\/(privacy|terms|support)\.html$/],
+        navigateFallbackDenylist: [/\/(privacy|terms|support|claude-view)\.html$/],
         // wasm: the shared engine (lib/engine), which the page waits for
         // before it draws, so it must be there with no network.
         // mjs: MapLibre's worker (lib/map/gl/worker), without which the map
@@ -112,14 +117,14 @@ export default defineConfig({
         // Not kept ahead for every pilot, at the first load and after each
         // deploy: Inter's non-Latin subsets (170 KB), fetched by the browser
         // only for a glyph they hold, the developer's pages (77 KB), and the
-        // page reader's 15 MB (tesseract/), kept by tesseract.js itself,
-        // and the Studio's speech to words (its worker and ONNX Runtime's
-        // 27 MB, features/replay/captions). Asked for when needed.
+        // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
+        // Asked for when needed.
         globIgnores: [
           "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
           "**/{DevPanel,TrainWorkspace}-*.js",
           "tesseract/**",
-          "**/{ort-wasm-*,transcribe.worker-*}",
+          // The connector's live view, which Claude shows, not this app.
+          "claude-view.html",
         ],
         runtimeCaching: [
           {
@@ -130,31 +135,26 @@ export default defineConfig({
             urlPattern: ({ url }) => url.hostname === "tile.googleapis.com",
             handler: "NetworkOnly",
           },
+          // The chart tiles, cache first, older editions dropped (vite-plugins/workboxRules).
+          CHART_TILES,
           {
-            // The chart tiles, served by the planner (…/chart-tile/…) or
-            // from the CDN (…/tiles/<cycle>/…): cache first, they are
-            // the same for the whole 56-day cycle, and a miss offline
-            // is simply a blank tile.
-            urlPattern: ({ url }) => url.pathname.includes("/chart-tile/") || url.pathname.includes("/tiles/"),
-            handler: "CacheFirst",
-            options: {
-              cacheName: "chart-tiles",
-              expiration: { maxEntries: 20000, maxAgeSeconds: 60 * 24 * 3600, purgeOnQuotaError: true },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // The airport diagrams' pictures, cache first as the tiles
-            // are: an address names its 28-day d-TPP cycle, so what is
-            // kept is right for the whole of it, and a card opened again
-            // in the air, with no network, still shows its field's.
-            // The FAA's other charts' pages and their lists too, the
-            // edition in each address (/faa-chart).
-            urlPattern: ({ url }) => url.pathname.includes("/airport-diagram/") || url.pathname.includes("/faa-chart"),
+            // The airport diagrams' pictures, cache first as the tiles are:
+            // an address names its 28-day d-TPP cycle, right for all of it.
+            urlPattern: ({ url }) => url.pathname.includes("/airport-diagram/"),
             handler: "CacheFirst",
             options: {
               cacheName: "airport-diagrams",
               expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 3600, purgeOnQuotaError: true },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // The plates' pages and lists, as many as a state's (lib/kept/keepChart).
+            urlPattern: ({ url }) => url.pathname.includes("/faa-chart"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "faa-plates",
+              expiration: { maxEntries: 20000, maxAgeSeconds: 30 * 24 * 3600, purgeOnQuotaError: true },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
@@ -295,7 +295,8 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // In flight, a shorter wait on the network (vite-plugins/workboxRules).
+          // The library's books never through the caches; in flight, a shorter wait (vite-plugins/workboxRules).
+          LIBRARY_BOOKS,
           IN_FLIGHT_READS,
           {
             // The planner's answers: the network when there is one

@@ -2,13 +2,24 @@ import { useQueries } from "@tanstack/react-query";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
+import { clockElsewhere, clockIn } from "../../../lib/format";
+import { TEXT } from "../../../lib/text";
 import { identOf, isPosition } from "../../../lib/identSchema";
 import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
-import { etaAt } from "../../plan";
+import {
+  FuelStopsChip,
+  NoFuelStopNote,
+  TimelineRoute,
+  TypeRouteButton,
+  visitAt,
+  visitRow,
+  type TimelinePoint,
+} from "../../procedures/lazy";
+import { keepTimelineHeight } from "./routeEditing";
+import { etaAt, rowCautions } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
 import { MissingEnd, TypeRow } from "./RouteStart";
@@ -39,7 +50,7 @@ export default function RouteTimeline({
   vm,
   props,
 }: {
-  vm: PlanSlices<"brief" | "flight" | "leg" | "plan" | "route" | "routeList" | "view">;
+  vm: PlanSlices<"brief" | "flight" | "leg" | "plan" | "route" | "routeList" | "stops" | "view">;
   /** The route's fields and points as the procedures draw them (useRouteListProps). */
   props: ProceduresRouteProps;
 }) {
@@ -48,6 +59,8 @@ export default function RouteTimeline({
   const { routeRows } = vm.leg;
   const { metarCategory } = vm.brief;
   const { waypointStops } = vm.routeList;
+  const { setStops } = vm.route;
+  const { fuelToAdd, noFuelStop } = vm.stops;
   const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
   // From md up the side panel is the window's height at half as at full
@@ -75,13 +88,78 @@ export default function RouteTimeline({
       };
     return { closed: null, checking: true, failed: null };
   };
-  const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
-    if (role === "Departure")
-      return read ? depart ? leaveWhen(new Date(depart)) : "Now" : <DepartPicker value={depart} onChange={changeDepart} look="time" />;
-    if (aircraft.none) return "—";
+  // The departure's own zone, from its card; none at My Location, where
+  // this device's stands in for it.
+  const departZone = planned.dep && fields.includes(planned.dep) ? cardOf(planned.dep)?.data?.time_zone : null;
+  // When the airplane is at a point flown to: from the departure's time,
+  // on this device's clock; none with no airplane or no nav log row yet.
+  const from = depart || new Date().toISOString();
+  const arrivalAt = (ident: string, role: TimelinePoint["role"], seen: number) => {
+    if (role === "Departure" || aircraft.none) return null;
     const row = visitRow(routeRows, role, ident, seen);
-    return row ? etaAt(depart || new Date().toISOString(), row.minutesFlown) : "—";
+    if (!row || row.minutesFlown === null) return null;
+    return { at: new Date(new Date(from).getTime() + row.minutesFlown * 60_000), minutes: row.minutesFlown };
   };
+  // Whether any point keeps another clock than the departure's: then every
+  // point says its zone, the departure's too (the owner, 2026-11-20: "When
+  // the time zone changes then show it on all the stops"); else none does.
+  // And where this device keeps another clock than the departure's (a
+  // pilot in Chicago planning Denver to Aspen): its unlabelled times read
+  // as Denver's, an hour out, so every point says its zone then too.
+  const deviceElsewhere = !!departZone && !!clockElsewhere(new Date(from), departZone, null);
+  const zoned =
+    deviceElsewhere ||
+    routePoints.some((ident, index) => {
+      const role =
+        index === 0 && ident === planned.dep
+          ? "Departure"
+          : index === routePoints.length - 1 && ident === planned.dest
+            ? "Destination"
+            : "Stop";
+      const arrival = arrivalAt(ident, role, visitAt(routePoints, index).seen);
+      return !!arrival && !!clockElsewhere(arrival.at, cardOf(ident)?.data?.time_zone, departZone);
+    });
+  const zoneOf = (at: Date, ident: string) => clockIn(at, fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone);
+  const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
+    if (role === "Departure") {
+      const leave = read ? (
+        depart ? (
+          leaveWhen(new Date(depart))
+        ) : (
+          "Now"
+        )
+      ) : (
+        <DepartPicker value={depart} onChange={changeDepart} look="time" />
+      );
+      // Read, the departure's own clock and zone, as the stops'. Picked,
+      // the picker keeps this device's clock, so it says this device's
+      // zone: it said the departure's beside the device's time, two hours
+      // out for a phone in New York leaving Denver.
+      if (zoned && read && depart) {
+        const there = zoneOf(new Date(depart), ident);
+        if (there) return <ZonedTime {...there} />;
+      }
+      const here = zoned ? clockIn(new Date(from), null) : null;
+      return here ? (
+        <span className="inline-flex items-baseline">
+          {leave}
+          <span className={`ml-1 font-normal ${TEXT.caption}`}>{here.zone}</span>
+        </span>
+      ) : (
+        leave
+      );
+    }
+    const arrival = arrivalAt(ident, role, seen);
+    if (!arrival) return "—";
+    // On this device's clock, as the departure's; each in its own zone, its
+    // zone said, once any point keeps another than the departure's.
+    const there = zoned ? zoneOf(arrival.at, ident) : null;
+    return there ? <ZonedTime {...there} /> : etaAt(from, arrival.minutes);
+  };
+  // Each point's warning where it, or a leg since the point before, lies
+  // outside the United States (the engine's route_jurisdiction, decision
+  // 0053): the nav log's rows from the point before's to its own.
+  const cautions = rowCautions(routeRows);
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
       index === 0 && ident === planned.dep
@@ -102,14 +180,58 @@ export default function RouteTimeline({
       time: timeOf(ident, role, seen),
       category: unknown || !field ? null : metarCategory(ident),
       problem: unknown ?? (status.closed ? `${status.closed}. Pick another field.` : status.failed),
+      caution: null,
       checking: status.checking,
       fuelStop: role === "Stop" && fuel.some((f) => sameField(f, ident)),
       field,
     };
   });
+  // In route order, each point said from the row after the point before's.
+  let fromRow = -1;
+  for (const point of points) {
+    const row = visitRow(routeRows, point.role, point.ident, point.seen);
+    const at = row ? routeRows.indexOf(row) : -1;
+    if (at < 0) continue;
+    point.caution = cautions.slice(fromRow + 1, at + 1).find(Boolean) ?? null;
+    fromRow = at;
+  }
   // Half a route, open to edit: the end it lacks in its place, and the
   // route typed or pasted where Add a Stop is on a whole one (RouteStart).
   const half = !read && !wholeRoute;
+  // The fuel stops' pill at Add a Stop's end: the planner's suggested ones
+  // put in, every flight's, or, once the route has fuel stops and needs no
+  // more, taken out again (the owner, 2026-11-20); none where there are
+  // neither. Add while any flight still has stops suggested, though some are
+  // in: the owner's trip read 21 gal short after the tap, its last flight's
+  // stops never offered.
+  const fuelIn = planned.stops.some((stop) => fuel.some((f) => sameField(f, stop)));
+  const fuelPill = fuelToAdd ? (
+    <FuelStopsChip added={false} onClick={fuelToAdd.add} />
+  ) : fuelIn ? (
+    <FuelStopsChip added onClick={() => setStops(planned.stops.filter((stop) => !fuel.some((f) => sameField(f, stop))))} />
+  ) : noFuelStop[0] ? (
+    <NoFuelStopNote flight={noFuelStop[0]} />
+  ) : null;
+  // Type the Route, where More's item was (the owner, 2026-11-21: More keeps
+  // three items): a keyboard glyph at Add a Stop's end on a whole route
+  // whose field is folded, opening the route's field to type or paste it in
+  // whole (RouteEditor), as Type or Paste a Route does before it is whole.
+  const typeFuel =
+    wholeRoute && vm.routeList.routeFolded ? (
+      <>
+        {fuelPill}
+        <TypeRouteButton
+          pressed={false}
+          onToggle={() => {
+            // The grouped box's height, kept for the field it turns into.
+            keepTimelineHeight(document.querySelector('[data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0);
+            vm.routeList.setRouteOpen(true);
+          }}
+        />
+      </>
+    ) : (
+      fuelPill
+    );
   return (
     <TimelineRoute
       {...props}
@@ -117,8 +239,19 @@ export default function RouteTimeline({
       head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
       tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
       foot={half ? <TypeRow vm={vm} /> : undefined}
+      addTrailing={read ? undefined : typeFuel}
       allStops={read || tall || panel === "full"}
       onAllStops={() => setPanel("full")}
     />
+  );
+}
+
+/** A time at a field in another zone, its zone smaller after it, "18:24 MST". */
+function ZonedTime({ time, zone }: { time: string; zone: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      {time}
+      <span className={`ml-1 font-normal ${TEXT.caption}`}>{zone}</span>
+    </span>
   );
 }

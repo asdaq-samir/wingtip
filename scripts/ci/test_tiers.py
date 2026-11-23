@@ -68,8 +68,10 @@ META = {"passed", "budget", "halt"}
 # The script ci.yml's test-web runs the tests and the build through.
 WEB_SUITE = "scripts/ci/web_suite.sh"
 # The apps a pull request must still build when it touches their inputs
-# (#499), each by the reusable workflow ci.yml calls.
-PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: true"}
+# (#499), each by the reusable workflow ci.yml calls: iOS's UI smoke stays
+# after merge, but for a wave's validation and a rerun whose iOS failed
+# (decisions 0058 and 0062: plan.py's ios-full).
+PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: ${{ needs.changes.outputs.ios-full != 'true' }}"}
 # The script native-ios.yml's test job builds and tests through, and the
 # job's three steps in their order: the string catalog's check reads the
 # build and fails before a test runs (run 43732738720 found a stale
@@ -154,6 +156,17 @@ def ios() -> list[str]:
     for cls in sorted(pr):
         if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
             errors.append(f"{IOS_TEST}: -only-testing names {cls}, which no file holds")
+    # A wave's first three iPad legs run IPAD_LEG_1 to 3 and the fourth skips
+    # them: a name no file holds would run nowhere, and a class in two legs
+    # would run twice.
+    named: list[str] = []
+    for leg, classes in re.findall(r'^(IPAD_LEG_\d)="([^"]*)"', script, re.M):
+        for cls in classes.split():
+            if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
+                errors.append(f"{IOS_TEST}: {leg} names {cls}, which no file holds")
+            if cls in named:
+                errors.append(f"{IOS_TEST}: {leg} names {cls}, which another leg runs")
+            named.append(cls)
     # A pull request's run (unit_only) adds no UI test class.
     if not re.search(r'\[ "\$UNIT_ONLY" = true \] \|\| only\+=\(-only-testing:WingtipUITests/', script):
         errors.append(f"{IOS_TEST}: unit_only must leave out every UI test (`[ \"$UNIT_ONLY\" = true ] || only+=(...)`)")
@@ -224,7 +237,9 @@ def tiers() -> list[str]:
         if i not in jobs or i not in gate or jobs[i].tier != 1
     ]
     e2e = "\n".join(jobs["e2e"].body) if "e2e" in jobs else ""
-    if "PROJECTS: ${{ needs.specs.outputs.args }}" not in e2e or "needs.specs.outputs.shards" not in e2e:
+    # PROJECTS: a pull request's shard its own specs (groups, dealt by time), else the set (args) over --shard.
+    chose = "fromJSON(needs.specs.outputs.groups)[matrix.shard] || needs.specs.outputs.args" in e2e
+    if not chose or "needs.specs.outputs.shards" not in e2e:
         errors.append("ci.yml: e2e runs what the specs job chose (PROJECTS and the shards from needs.specs.outputs; decision 0048)")
     errors += [
         f"ci.yml: {i} runs after merge (the owner, 2026-11-10): `if: github.event_name != 'pull_request'`"

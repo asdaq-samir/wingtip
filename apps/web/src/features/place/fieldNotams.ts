@@ -1,32 +1,17 @@
 import { useState } from "react";
-import { queryOptions, useQuery } from "@tanstack/react-query";
-import { data, planner } from "../../lib/api/client";
-import type { components } from "../../lib/api/schema";
+import { useQuery } from "@tanstack/react-query";
+import { fieldNotamsQuery, type FieldNotams } from "../../lib/queryClient";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
-import { twoFigures, zuluTime } from "../../lib/format";
+import { instantOf, twoFigures, zuluTime } from "../../lib/format";
 
-export type FieldNotams = components["schemas"]["NotamsRanked"];
+// The field's NOTAMs and their query are lib/queryClient's, which Keep
+// for the Air asks for each of the route's fields too.
+export type { FieldNotams };
 export type FieldNotam = FieldNotams["notams"][number];
 /** A NOTAM as the engine reads it for a pilot (notam_read). */
 export type NotamReading = EngineAnswer<"notam_read">;
 /** A TFR as the engine reads it for a pilot (tfr_read). */
 export type TfrReading = EngineAnswer<"tfr_read">;
-
-/**
- * A field's own NOTAMs (the FAA's feed, by any ident it goes by) and the
- * TFRs within 5 nm of it, best first, as the engine ranks a route's: the
- * planner's GET /api/airport/{ident}/notams, which the iPhone's and
- * Android's cards read too. 14 CFR 91.103 asks for the NOTAMs of every
- * field a flight uses; a card is where a pilot looks at one field.
- */
-export const fieldNotamsQuery = (ident: string) =>
-  queryOptions({
-    queryKey: ["airport-notams", ident],
-    queryFn: () => planner.GET("/api/airport/{ident}/notams", { params: { path: { ident } } }).then(data<FieldNotams>),
-    staleTime: 5 * 60_000,
-    meta: { silent: true },
-  });
-
 /** How many NOTAMs the card's section shows, the engine's first three
  *  (its ranking says its top three first, notams_ranked), the title the
  *  way to the rest, as every list on the card shows three (FirstFew). */
@@ -41,13 +26,20 @@ const FIRST = 3;
  * of its own (the owner, 2026-11-13: "I don't want search notams").
  */
 export function useFieldNotams(ident: string) {
-  const { data, isError } = useQuery(fieldNotamsQuery(ident));
+  const query = useQuery(fieldNotamsQuery(ident));
+  const { data, isError, dataUpdatedAt, errorUpdatedAt } = query;
   const [all, setAll] = useState(false);
   const notams = data?.notams ?? [];
   const long = notams.length > FIRST;
   return {
     data,
     isError,
+    /** The query itself, for the list's Try again where it failed (QueryState). */
+    query,
+    // When the list came, and whether asking again since failed: its age
+    // where it is the one kept (PlaceNotamsSection's KeptAge).
+    atMs: dataUpdatedAt || null,
+    failed: errorUpdatedAt > dataUpdatedAt,
     total: notams.length,
     shown: all || !long ? notams : notams.slice(0, FIRST),
     long,
@@ -63,10 +55,9 @@ export function useFieldZone(ident: string): string | null {
 }
 
 /** The field's idents as a NOTAM may write them ("OSH", "KOSH"), kept as
- *  written in its words. */
+ *  written in its words: the engine's field_names (FAA JO 7350.9GG 4-1). */
 export function identsOf(ident: string): string[] {
-  const bare = ident.length === 4 && ident.startsWith("K") ? ident.slice(1) : ident;
-  return [...new Set([ident, bare, `K${bare}`])];
+  return callEngine("field_names", { ident });
 }
 
 /** The NOTAM read by the engine (notam_read): its heading, its words
@@ -132,8 +123,8 @@ export function numberOf(n: FieldNotam, ident: string): string {
 /** A feed's time as a date, one with no zone read as UTC; null where it
  *  is none. */
 export function dateOf(iso: string | null | undefined): Date | null {
-  const at = iso ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`) : null;
-  return at && !Number.isNaN(at.getTime()) ? at : null;
+  const at = instantOf(iso);
+  return at === null ? null : new Date(at);
 }
 
 /** The feed's times, or where it gave none the NOTAM's own (its

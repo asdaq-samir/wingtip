@@ -19,5 +19,6 @@ pub mod endurance;
 pub mod glide;
 pub mod holding;
 pub mod lost_comms;
+pub mod plates_kept;
 pub mod strip;
 pub mod words;

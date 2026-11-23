@@ -322,7 +322,7 @@ def test_the_airspace_carries_the_shapefiles_fields_and_its_shape_unchanged(sour
     assert drawn.equals(held)
     assert all(p.exterior.is_ccw for p in getattr(drawn, "geoms", [drawn]))
     zooms = {(f["properties"]["class"], f["properties"]["local_type"]): f["tippecanoe"]["minzoom"] for f in features}
-    assert zooms == {("B", "CLASS_B"): 4, ("C", "CLASS_C"): 5, ("D", "CLASS_D"): 6, ("E", "CLASS_E2"): 7, ("E", "CLASS_E5"): 8}
+    assert zooms == {("B", "CLASS_B"): 4, ("C", "CLASS_C"): 4, ("D", "CLASS_D"): 6, ("E", "CLASS_E2"): 7, ("E", "CLASS_E5"): 8}
 
 
 def test_each_class_b_c_and_d_shelf_has_one_label_on_its_ring(sources):
@@ -388,7 +388,7 @@ def test_the_special_use_area_keeps_its_hole_and_fields(sources):
         "controlling_agency": "CHICAGO TRACON",
     }
     assert {k: area["properties"].get(k) for k in expected} == expected
-    assert area["tippecanoe"] == {"minzoom": 5}
+    assert area["tippecanoe"] == {"minzoom": 6}
     geometry = shapely.from_geojson(json.dumps(area["geometry"]))
     assert len(geometry.interiors) == 1 and geometry.exterior.is_ccw and not geometry.interiors[0].is_ccw
 
@@ -422,7 +422,7 @@ def test_the_airports_as_nasr_files_them(sources):
     assert tuple(found["LL22"]["properties"][k] for k in ("use", "longest_ft", "hard_ft", "rank")) == ("private", 2813, 2813, 597_186)
     # A helipad is no runway.
     assert found["7IL4"]["properties"]["type"] == "heliport" and "longest_ft" not in found["7IL4"]["properties"]
-    assert {k: f["tippecanoe"]["minzoom"] for k, f in found.items()} == {"ORD": 5, "06C": 6, "LL22": 9, "7IL4": 10}
+    assert {k: f["tippecanoe"]["minzoom"] for k, f in found.items()} == {"ORD": 4, "06C": 6, "LL22": 9, "7IL4": 10}
 
 
 def test_the_runways_from_their_surveyed_ends(sources):
@@ -614,7 +614,7 @@ def test_each_feature_starts_at_its_zoom(built, sources):
     def first(layer: str, ident: str, key: str, lon: float, lat: float, z: int) -> None:
         assert ident not in at(z - 1, layer, key, lon, lat) and ident in at(z, layer, key, lon, lat), ident
 
-    first("airports", "ORD", "faa_id", -87.90814972, 41.97694027, 5)
+    first("airports", "ORD", "faa_id", -87.90814972, 41.97694027, 4)
     first("airports", "06C", "faa_id", -88.10124277, 41.98934083, 6)
     first("airports", "LL22", "faa_id", -87.99941666, 41.73277777, 9)
     first("airports", "7IL4", "faa_id", -87.99348888, 42.06774722, 10)

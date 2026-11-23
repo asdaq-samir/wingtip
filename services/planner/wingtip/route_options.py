@@ -43,6 +43,7 @@ import numpy as np
 
 from . import fixes, fuelstops, terrain_detour, water, weather, winds_aloft
 from .engine import ask as engine
+from .geo_boxes import split_box
 
 logger = logging.getLogger(__name__)
 
@@ -70,19 +71,8 @@ def _samples(frame: dict) -> tuple[np.ndarray, np.ndarray]:
     return np.meshgrid(lats, lons, indexing="ij")
 
 
-def _boxes(box) -> list[tuple]:
-    """A (south, west, north, east) box as the one or two boxes it is
-    between -180 and 180: a frame past the antimeridian is split there."""
-    s, w, n, e = (float(v) for v in box)
-    if w < -180.0:
-        return [(s, w + 360.0, n, 180.0), (s, -180.0, n, e)]
-    if e > 180.0:
-        return [(s, w, n, 180.0), (s, -180.0, n, e - 360.0)]
-    return [(s, w, n, e)]
-
-
 def _in(box, lat, lon) -> bool:
-    return lat is not None and lon is not None and any(s <= lat <= n and w <= lon <= e for s, w, n, e in _boxes(box))
+    return lat is not None and lon is not None and any(s <= lat <= n and w <= lon <= e for s, w, n, e in split_box(box))
 
 
 def _tafs(frame: dict) -> list[dict]:
@@ -127,7 +117,7 @@ def _metars(frame: dict) -> list[dict]:
     ]
 
 
-def _advisories(name: str) -> list[dict]:
+def _advisories(held: list[dict]) -> list[dict]:
     return [
         {
             "hazard": a.get("hazard") or "",
@@ -138,7 +128,7 @@ def _advisories(name: str) -> list[dict]:
             "valid": a.get("valid"),
             "raw": a.get("raw") or "",
         }
-        for a in weather._dataset(name)
+        for a in held
     ]
 
 
@@ -147,7 +137,7 @@ def _special_use(frame: dict) -> list[dict]:
 
     return [
         {"type": area.get("type") or "", "name": str(area.get("name") or ""), "rings": _rings(geometry)}
-        for box in _boxes(frame["bbox"])
+        for box in split_box(frame["bbox"])
         for area, geometry in sua.areas_in(box)
     ]
 
@@ -174,7 +164,7 @@ def _winds(frame: dict, fcst_hr: str) -> list[dict]:
     holds it, the GFS stations past it (wingtip.winds_aloft.wind_points)."""
     try:
         altitudes = [float(a) for a in frame["altitudes_ft"]]
-        return [p for box in _boxes(frame["data_box"]) for p in winds_aloft.wind_points(box, fcst_hr, altitudes)]
+        return [p for box in split_box(frame["data_box"]) for p in winds_aloft.wind_points(box, fcst_hr, altitudes)]
     except weather.WeatherServiceError:
         return []
 
@@ -183,7 +173,7 @@ def _fields(frame: dict, table, food) -> list[dict]:
     """The fields with fuel in the frame's reach, their longest paved
     runway (wingtip.fuelstops) and whether there is somewhere to eat."""
     out = []
-    for s, w, n, e in _boxes(frame["data_box"]):
+    for s, w, n, e in split_box(frame["data_box"]):
         near = table[(table["lat"] >= s) & (table["lat"] <= n) & (table["lon"] >= w) & (table["lon"] <= e)]
         out += [{**row, "food": food(row["ident"]) if food else None} for row in fuelstops._table(near)]
     return out
@@ -200,7 +190,7 @@ def _fixes(box) -> list[dict]:
             "kind": f.get("kind") or "",
             "mag_var": f.get("mag_var"),
         }
-        for s, w, n, e in _boxes(box)
+        for s, w, n, e in split_box(box)
         for f in fixes.within(s, w, n, e)
     ]
 
@@ -280,8 +270,8 @@ def options(
     for key, read in (
         ("tafs", lambda: _tafs(frame)),
         ("metars", lambda: _metars(frame)),
-        ("sigmets", lambda: _advisories("airsigmets")),
-        ("gairmets", lambda: _advisories("gairmets")),
+        ("sigmets", lambda: _advisories(weather.advisories())),
+        ("gairmets", lambda: _advisories(weather._dataset("gairmets"))),
     ):
         try:
             asked[key] = read()

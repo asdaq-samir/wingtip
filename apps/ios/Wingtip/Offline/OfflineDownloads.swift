@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Synchronization
 import UIKit
 
 /// How far each file of a download has come, for the Downloads list:
@@ -11,9 +12,18 @@ final class OfflineProgress {
     private(set) var files: [String: (written: Int64, expected: Int64)] = [:]
     /// Bumped as a file lands, so the list reads the store again.
     private(set) var landed = 0
+    /// The session's tasks that have ended: a progress update of one that
+    /// arrives after its end (unstructured tasks keep no order) is dropped,
+    /// so no stale row is left behind.
+    @ObservationIgnored private var ended: Set<Int> = []
 
-    func set(_ key: String, written: Int64, expected: Int64) { files[key] = (written, expected) }
-    func done(_ key: String) {
+    func set(_ key: String, task: Int, written: Int64, expected: Int64) {
+        guard !ended.contains(task) else { return }
+        files[key] = (written, expected)
+    }
+
+    func done(_ key: String, task: Int) {
+        ended.insert(task)
         files[key] = nil
         landed += 1
     }
@@ -31,39 +41,40 @@ final class OfflineProgress {
 /// task carries "cycle/region/archive" as its description; a file that
 /// lands is moved into the store (OfflineStore.finish) before the
 /// delegate returns, as the system deletes it after.
-final class OfflineDownloads: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+///
+/// The session is made once, here in `init`: two sessions with the same
+/// background identifier are undefined (Apple's URLSessionConfiguration
+/// .background), events going to one and the other's tasks lost.
+final nonisolated class OfflineDownloads: Sendable {
     static let shared = OfflineDownloads()
     static let identifier = "app.wingtipmaps.ios.offline-charts"
 
     private let store: OfflineStore
+    let session: URLSession
     /// The system's handler, held from the app delegate until the events
     /// of a session woken in the background are all delivered.
     @MainActor static var backgroundCompletion: (() -> Void)?
 
     init(store: OfflineStore = .shared) {
         self.store = store
-        super.init()
-    }
-
-    private(set) lazy var session: URLSession = {
         let config = URLSessionConfiguration.background(withIdentifier: Self.identifier)
         config.sessionSendsLaunchEvents = true
         // Started by the pilot, so not left for the system to pick a time.
         config.isDiscretionary = false
         config.allowsExpensiveNetworkAccess = true
-        return URLSession(configuration: config, delegate: self, delegateQueue: nil)
-    }()
+        session = URLSession(configuration: config, delegate: Delegate(store: store), delegateQueue: nil)
+    }
 
-    /// The session made again at launch, so the files finished while the
-    /// app was closed are delivered; and the cycles gone by swept.
+    /// Called at launch, so the files finished while the app was closed
+    /// are delivered (the session, made at `shared`'s first use, is what
+    /// they are delivered to); and the cycles gone by swept.
     func start() {
-        _ = session
         store.sweep()
     }
 
     /// Each archive of a region not yet on disk, fetched.
     func fetch(_ kept: OfflineKept, urls: [String: URL]) {
-        session.getAllTasks { [self] tasks in
+        session.getAllTasks { [session] tasks in
             let running = Set(tasks.compactMap(\.taskDescription))
             for (archive, url) in urls where !kept.done.contains(archive) {
                 let key = "\(kept.id)/\(archive)"
@@ -88,50 +99,74 @@ final class OfflineDownloads: NSObject, URLSessionDownloadDelegate, @unchecked S
         return (parts[0], parts[1], parts[2])
     }
 
-    // MARK: - URLSessionDownloadDelegate
+    /// The session's delegate: lands each file in the store and passes
+    /// progress to the list, at most every `every` per task (a fast link
+    /// calls back hundreds of times a second).
+    private final nonisolated class Delegate: NSObject, URLSessionDownloadDelegate, Sendable {
+        private let store: OfflineStore
+        private let told = Mutex<[Int: ContinuousClock.Instant]>([:])
+        static let every: Duration = .milliseconds(250)
 
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData _: Int64,
-                    totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        guard let key = downloadTask.taskDescription else { return }
-        let expected = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : downloadTask.countOfBytesClientExpectsToReceive
-        Task { @MainActor in OfflineProgress.shared.set(key, written: totalBytesWritten, expected: expected) }
-    }
+        init(store: OfflineStore) { self.store = store }
 
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        guard let key = downloadTask.taskDescription, let (cycle, region, archive) = Self.parts(key) else { return }
-        let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
-        do {
-            guard status == 200 else { throw Planner.Failure(status: status, detail: nil) }
-            try store.finish(cycle: cycle, region: region, archive: archive, file: location)
-            Log.map.info("offline \(key, privacy: .public) kept")
-        } catch {
-            store.update("\(cycle)/\(region)") { $0?.failed = error.localizedDescription }
+        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData _: Int64,
+                        totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+            guard let key = downloadTask.taskDescription else { return }
+            let id = downloadTask.taskIdentifier
+            let now = ContinuousClock.now
+            let due = told.withLock { told in
+                if let last = told[id], now - last < Self.every { return false }
+                told[id] = now
+                return true
+            }
+            guard due else { return }
+            let expected = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : downloadTask.countOfBytesClientExpectsToReceive
+            Task { @MainActor in OfflineProgress.shared.set(key, task: id, written: totalBytesWritten, expected: expected) }
         }
-        Task { @MainActor in OfflineProgress.shared.done(key) }
-    }
 
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let error, let key = task.taskDescription, let (cycle, region, _) = Self.parts(key) else { return }
-        if (error as? URLError)?.code != .cancelled {
-            store.update("\(cycle)/\(region)") { $0?.failed = error.localizedDescription }
+        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+            guard let key = downloadTask.taskDescription, let (cycle, region, archive) = OfflineDownloads.parts(key) else { return }
+            let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
+            do {
+                guard status == 200 else { throw Planner.Failure(status: status, detail: nil) }
+                try store.finish(cycle: cycle, region: region, archive: archive, file: location)
+                Log.map.info("offline \(key, privacy: .public) kept")
+            } catch {
+                store.update("\(cycle)/\(region)") { $0?.failed = Problems.say("The region could not be kept", error) }
+            }
+            ended(downloadTask, key)
         }
-        Task { @MainActor in OfflineProgress.shared.done(key) }
-    }
 
-    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        Task { @MainActor in
-            let completion = Self.backgroundCompletion
-            Self.backgroundCompletion = nil
-            completion?()
+        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+            guard let error, let key = task.taskDescription, let (cycle, region, _) = OfflineDownloads.parts(key) else { return }
+            if (error as? URLError)?.code != .cancelled {
+                store.update("\(cycle)/\(region)") { $0?.failed = Problems.say("The region could not be fetched", error) }
+            }
+            ended(task, key)
+        }
+
+        private func ended(_ task: URLSessionTask, _ key: String) {
+            let id = task.taskIdentifier
+            _ = told.withLock { $0.removeValue(forKey: id) }
+            Task { @MainActor in OfflineProgress.shared.done(key, task: id) }
+        }
+
+        func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+            Task { @MainActor in
+                let completion = OfflineDownloads.backgroundCompletion
+                OfflineDownloads.backgroundCompletion = nil
+                completion?()
+            }
         }
     }
 }
 
-/// The app's delegate for the one thing SwiftUI's App has no hook for:
-/// iOS waking the app to hand over the downloads that finished while it
-/// was in the background.
+/// The app's delegate for what SwiftUI's App has no hook for: iOS waking
+/// the app to hand over the downloads that finished while it was in the
+/// background, and, as the responder chain's last link, the menu bar's
+/// Find (WingtipCommands).
 @MainActor
-final class OfflineAppDelegate: NSObject, UIApplicationDelegate {
+final class OfflineAppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String,
                      completionHandler: @escaping () -> Void) {
         guard identifier == OfflineDownloads.identifier else { return completionHandler() }

@@ -21,8 +21,12 @@ final class Navigator {
     }
 
     /// The iPad's layout (SplitLayout): a thing opens in the inspector,
-    /// a page on the sidebar's stack.
-    var split = false
+    /// a page on the sidebar's stack. Set as the window's size classes
+    /// change (RootView), and what is open moves to where the new layout
+    /// keeps it (relayout).
+    var split = false {
+        didSet { if split != oldValue { relayout() } }
+    }
     /// The screens' models a card going away lets go of (left); the app
     /// gives them (WingtipApp), a preview's navigator has none.
     @ObservationIgnored var screens: ScreenModels?
@@ -33,11 +37,15 @@ final class Navigator {
     private(set) var card: Card?
     /// The pages pushed inside the card.
     var cardPath: [SheetPage] = []
+    /// The chart beside the map on the iPad (SplitLayout's BesidePane): a
+    /// plate with own ship on it, the diagram, any FAA chart, standing in
+    /// its own column while cards come and go in the inspector. Nil, none.
+    var beside: PictureRequest?
     /// The plan's sheet's page, Search or FPL (SheetPager): kept here so a
     /// link, Siri and every "show the plan" turn it.
     var sheetPage: PlanPage = .search
     /// The field's card the plan was shown from (Fly Here, Depart From,
-    /// Add as Stop): where the empty route box's close goes back to, a
+    /// Add Stop): where the empty route box's close goes back to, a
     /// level back, as the web's clearRoute goes back to the airport flown
     /// to (`under`).
     private(set) var planFrom: SheetPage?
@@ -45,6 +53,9 @@ final class Navigator {
     /// 2026-11-14: the airplanes' Adds go to the one search), which the
     /// root hands the search and clears.
     var airplaneAsked: OneSearchModel.Keeping?
+    /// The document open in the reader over this window, and where in it
+    /// (ReaderCover): a cite tapped, a library row, a link's `doc=`.
+    var reading: DocPlace?
 
     /// The cards put away and the one search up for an airplane to fly as
     /// the pilot's or to keep, its placeholder saying which.
@@ -108,6 +119,14 @@ final class Navigator {
         }
     }
 
+    /// A plan's page from the menu bar (View > Search, FPL): the card put
+    /// away so the page is in sight, as the toggle on the map turns it.
+    func showPage(_ page: PlanPage) {
+        close()
+        planPath = []
+        sheetPage = page
+    }
+
     /// The card put away (its close, a swipe down, Escape).
     func close() {
         cardPath = []
@@ -154,6 +173,32 @@ final class Navigator {
         } else if let first = pages.first {
             open(first)
             cardPath = Array(pages.dropFirst())
+        }
+    }
+
+    /// The window crossed the size classes with something open (an iPad
+    /// window resized in Stage Manager or Split View, iPhone Duo folded):
+    /// what the pilot had open stays in sight, moved to where the new
+    /// layout keeps it, as HIG Layout asks ("Keep functionality the same
+    /// as size classes change"). To the iPad's layout, a page that is not
+    /// a thing leaves the card for the sidebar's stack, its own stack with
+    /// it; to the sheet, where the plan has no page pushed, the sidebar's
+    /// pages become the card and its stack, unless a card is up, which is
+    /// what was in front. Moved, not closed: nothing a card held is let go
+    /// of (left), so a flight logged or the emergency assistant stays open.
+    private func relayout() {
+        if split {
+            guard let page = card?.page, !page.inspects else { return }
+            planPath = [page] + cardPath
+            cardPath = []
+            card = nil
+        } else {
+            if card == nil, let first = planPath.first {
+                cardDetent = first.opensFull ? .large : .half
+                card = Card(page: first)
+                cardPath = Array(planPath.dropFirst())
+            }
+            planPath = []
         }
     }
 

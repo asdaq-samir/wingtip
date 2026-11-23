@@ -10,7 +10,7 @@ import { SheetCard } from "../../../components/SheetCard";
 import { TfrCard, TfrGone } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, TAP } from "../../../lib/map/gl/layers/common";
+import { TAP, labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
@@ -60,15 +60,8 @@ const LABEL: SymbolLayerSpecification = {
   id: "tfrs-label",
   type: "symbol",
   source: SOURCE,
-  layout: {
-    "symbol-placement": "line",
-    "symbol-spacing": 320,
-    "text-field": ["get", "id"],
-    "text-font": GL_FONT_BOLD,
-    "text-size": LABEL_SIZE.small,
-    "text-max-angle": 30,
-  },
-  paint: { "text-color": TFR_RED, ...LABEL_HALO },
+  layout: { "symbol-placement": "line", "symbol-spacing": 320, "text-field": ["get", "id"], ...labelText("hazard"), "text-max-angle": 30 },
+  paint: { "text-color": labelInk(TFR_RED), ...labelHalo("hazard") },
 };
 const ALL = [...LAYERS, LINE, LINE_LATER, LABEL];
 

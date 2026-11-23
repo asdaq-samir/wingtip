@@ -67,9 +67,9 @@ TAFS = _cache_file(
 def _sigmet(name: str, valid_to: str, points: list) -> str:
     area = "".join(f"<point><longitude>{lon}</longitude><latitude>{lat}</latitude></point>" for lat, lon in points)
     return (
-        f'<AIRSIGMET><raw_text>{name}</raw_text><valid_time_from>2026-09-20T00:55:00.000Z</valid_time_from>'
-        f'<valid_time_to>{valid_to}</valid_time_to><altitude max_ft_msl="43000"/><hazard type="CONVECTIVE" severity="SEV"/>'
-        f'<airsigmet_type>SIGMET</airsigmet_type><area num_points="{len(points)}">{area}</area></AIRSIGMET>'
+        f'<SIGMET><raw_text>{name}</raw_text><valid_time_from>2026-09-20T00:55:00.000Z</valid_time_from>'
+        f'<valid_time_to>{valid_to}</valid_time_to><altitude top_ft_msl="43000"/><hazard type="CONV" qualifier="SEV"/>'
+        f'<area num_points="{len(points)}">{area}</area></SIGMET>'
     )
 
 
@@ -172,8 +172,7 @@ def test_the_forecast_along_the_route_reads_each_nearby_stations_current_period(
     _serve("tafs", TAFS)
     with patch("wingtip.weather.time.time", return_value=T0200Z):
         forecast = ceiling_visibility_along_route(C81, KDLH)
-    # Where each station is and how high its field: a ceiling is above
-    # the field, and wingtip.altitude keeps a leg under the clouds in MSL.
+    # Each station, its field's height (wingtip.altitude's MSL) and its TAF's issue.
     assert forecast["stations"] == [
         {
             "icaoId": "KDLH",
@@ -183,6 +182,7 @@ def test_the_forecast_along_the_route_reads_each_nearby_stations_current_period(
             "ceiling_ft": 1500,
             "ceiling_unknown": False,
             "visibility_sm": 3.0,
+            "issued": "2026-09-20T00:00:00.000Z",
         }
     ]
     assert forecast["min_ceiling_ft"] == 1500 and forecast["min_visibility_sm"] == 3.0
@@ -209,7 +209,7 @@ def test_a_sigmets_issue_time_is_its_wmo_headings_day_hour_and_minute():
 
     def issued(raw, valid):
         xml = (
-            f"<response><data><AIRSIGMET><raw_text>{raw}</raw_text><valid_time_from>{valid}</valid_time_from></AIRSIGMET></data></response>"
+            f"<response><data><SIGMET><raw_text>{raw}</raw_text><valid_time_from>{valid}</valid_time_from></SIGMET></data></response>"
         ).encode()
         return aviationweather.SOURCES["airsigmets"][1](xml)[0]["issued"]
 
@@ -258,7 +258,7 @@ def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
 
 def test_an_unchanged_product_is_not_downloaded_or_parsed_again(monkeypatch):
     """The stored copy's ETag asks whether it has changed: a 304 keeps it,
-    stored again as fetched now."""
+    and the engine does not read it again (tests/test_unchanged.py)."""
     first = MagicMock(
         status_code=200, content=gzip.compress(b"<response/>"), headers={"ETag": '"abc"', "Last-Modified": "Wed, 07 Oct 2026 16:11:35 GMT"}
     )

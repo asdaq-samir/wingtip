@@ -104,21 +104,15 @@ test(
   "Nearest is from a place typed -- a town, an address, an airport -- and back from the position at its clear",
   { tag: "@smoke" },
   async ({ page }) => {
+    // The planner's own nearest fields, from NASR, as the journey is end
+    // to end: only what was asked is watched. The town is stubbed, since
+    // the places search's geocoder is not the journey.
     const asked: string[] = [];
-    await page.route(
-      (url) => url.pathname.endsWith("/api/planner/airports/nearest"),
-      (route) => {
-        const at = new URL(route.request().url()).searchParams;
-        asked.push(`${at.get("lat")},${at.get("lon")}`);
-        return route.fulfill({
-          json: {
-            airports: [
-              { ...FIELD, ident: "KMSN", name: "Dane County Regional", lat: 43.14, lon: -89.34, distance_nm: 4.1, bearing_deg: 40 },
-            ],
-          },
-        });
-      },
-    );
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.pathname.endsWith("/api/planner/airports/nearest"))
+        asked.push(`${url.searchParams.get("lat")},${url.searchParams.get("lon")}`);
+    });
     await page.route(
       (url) => url.pathname.endsWith("/api/planner/places/search"),
       (route) =>
@@ -142,7 +136,9 @@ test(
     await card.getByTestId("nearest-from-option").filter({ hasText: "Madison, WI" }).click();
     await expect(card).toContainText("Near Madison, WI");
     await expect(page).toHaveURL(/[?&]nearAt=43\.0849(%2C|,)-89\.3888/);
-    await expect(card.getByTestId("nearest-airport")).toContainText("KMSN");
+    // Dane County Regional, about 4 NM north-east of the middle of
+    // Madison (NASR's APT_BASE), is among the fields listed from it.
+    await expect(card.getByTestId("nearest-airport").filter({ hasText: "KMSN" })).toBeVisible();
     expect(asked).toContain("43.1,-89.4");
 
     // Its clear: from the position again.

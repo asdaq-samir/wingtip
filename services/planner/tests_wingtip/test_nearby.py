@@ -154,6 +154,12 @@ def test_the_airports_own_website_is_its_listing_on_the_field(monkeypatch):
     assert nearby._read(42.1142, -87.9015, "r")["website"] == "https://www.chiexec.com"
     rows.pop(0)
     assert nearby._read(42.1142, -87.9015, "r")["website"] is None
+    # A listing's "website" that is no web page's address is none.
+    food = {**row("airport", 42.115, -87.90, "data:text/html,x"), "names": {"primary": "Pilot Pete's"}}
+    rows[:] = [row("airport", 42.115, -87.90, "javascript:alert(1)"), {**food, "taxonomy": RESTAURANT, "basic_category": "restaurant"}]
+    read = nearby._read(42.1142, -87.9015, "r")
+    assert read["website"] is None
+    assert [place["website"] for place in read["food"]] == [None]
 
 
 def test_the_places_stand_when_the_outline_read_beside_them_fails(monkeypatch):

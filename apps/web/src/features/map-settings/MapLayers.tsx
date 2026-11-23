@@ -3,6 +3,8 @@ import { CircleDashed, CloudSun, Plane, Shield } from "lucide-react";
 import { LayerSubmenu, LayerToggle, LayerToggleMenu } from "../../components/LayerTile";
 import { DropdownMenuCheckboxItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "../../components/ui/dropdown-menu";
 import SectionTitle from "../../components/SectionTitle";
+import { ListGroup } from "../../components/GroupedList";
+import SwitchRow from "../../components/SwitchRow";
 import { usePreferences } from "../../lib/preferences";
 import { useWeatherLayers, type WindsAt } from "../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED_LABEL } from "../../lib/windsAloft";
@@ -14,7 +16,7 @@ import { FlowMenu } from "../weather-flow";
  *  writes every altitude, the owner's pick (lib/format mapLevel). */
 const WINDS: { value: WindsAt; label: string }[] = [
   { value: "off", label: "Off" },
-  { value: "plan", label: "The plan's" },
+  { value: "plan", label: "The Plan's" },
   { value: 3000, label: "FL030" },
   { value: 6000, label: "FL060" },
   { value: 9000, label: "FL090" },
@@ -29,8 +31,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
  * layers aeronautical, weather, traffic, private/military in the map
  * settings?"), where there were eleven; two by two since 2026-11-14. The public fields, the route and
  * the plan's points, own ship and the TFRs have no switch: always drawn;
- * the route's checkpoints and the Class B chips are the route's ••• menu's
- * (RouteMapChoices). Which weather the Weather layer draws is its tile's own
+ * the route's checkpoints are a switch under them. Which weather the Weather layer draws is its tile's own
  * menu, the ••• in its corner.
  */
 export default function MapLayers() {
@@ -59,7 +60,7 @@ export default function MapLayers() {
           glyph={CloudSun}
           on={prefs.weather}
           onChange={prefs.setWeather}
-          menuLabel="Weather to show"
+          menuLabel="Weather to Show"
           menuTestId="weather-more"
         >
           <WeatherPicks />
@@ -79,6 +80,25 @@ export default function MapLayers() {
           onChange={prefs.setPrivateMilitary}
           testId="private-military-toggle"
         />
+      </div>
+      {/* The route's VFR checkpoints with the landmarks they were chosen
+          from, off unless turned on (the owner's "Let's not enable waypoints
+          for a pilot"); it was the route's ••• menu's Checkpoints until
+          2026-11-21, when More kept three items. */}
+      <div className="pt-2">
+        <ListGroup>
+          <SwitchRow title="Route Checkpoints" on={prefs.waypoints} onChange={prefs.setWaypoints} testId="waypoints-toggle" />
+          {/* The map's words grown with the pilot's text size, at most
+              1.2x, for a pilot who reads larger text (the owner,
+              2026-11-21); off by default, the chart's own lettering, as
+              Apple Maps and ForeFlight keep theirs. */}
+          <SwitchRow
+            title="Larger Map Labels"
+            on={prefs.largerMapLabels}
+            onChange={prefs.setLargerMapLabels}
+            testId="larger-map-labels-toggle"
+          />
+        </ListGroup>
       </div>
     </section>
   );

@@ -49,7 +49,8 @@ class CardExit(val back: () -> Unit, val close: () -> Unit) {
  * one row (LocalSheetFull; the owner, 2026-11-10), so the title, ← and ✕
  * never scroll away; the card's own actions, then ✕ at the
  * end, which closes every card back to the search. The plan, under the
- * search, has the same bar with no ← (`showBack`). Back, with the system's predictive gesture, is Navigation
+ * search, has the same bar with Search at its start in the ←'s place
+ * (`navigationIcon`) and its ✕ the route's Clear. Back, with the system's predictive gesture, is Navigation
  * 3's own (SheetPagesHost): one level, then the search.
  *
  * @param content the card, given the Scaffold's padding; a scrolling
@@ -68,6 +69,7 @@ fun CardPage(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     showBack: Boolean = true,
+    navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
@@ -98,7 +100,7 @@ fun CardPage(
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            val navigation = if (showBack) back else ({})
+            val navigation = navigationIcon ?: if (showBack) back else ({})
             val barModifier = Modifier.testTag(CardPageTags.BAR)
             when {
                 full -> LargeFlexibleTopAppBar(

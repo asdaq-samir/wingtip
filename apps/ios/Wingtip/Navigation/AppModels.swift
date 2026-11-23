@@ -56,11 +56,13 @@ private struct ReachedModels: ViewModifier {
             .environment(screens.autoLogbook)
             .environment(screens.sharedFlight)
             .environment(ClearanceListener.shared)
-            .environment(Receiver.shared)
+            .environment(screens.flight.receiver)
             .environment(AirportShelf.shared)
             .environment(Airplanes.shared)
             .environment(ReadyToFly.shared)
             .environment(KeepForAir.shared)
+            .environment(screens.statePlates)
+            .environment(screens.library)
             .environment(KeptShown.shared)
             .environment(VoiceInput.shared)
             .environment(ModelWeather.shared)
@@ -95,6 +97,12 @@ final class ScreenModels {
     let briefAsk = BriefAsk()
     let autoLogbook: AutoLogbook
     let sharedFlight = SharedFlightModel()
+    /// The states' plates kept (Downloads), kept current with the app active.
+    let statePlates = StatePlates()
+    /// The documents library (DocumentsPage, the reader, CitedText).
+    let library = DocumentLibrary.device()
+    /// Which window runs the app's loops (MainWindow).
+    let windows = WindowLead()
 
     init() {
         let flight = FlightSession()

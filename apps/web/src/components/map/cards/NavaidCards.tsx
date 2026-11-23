@@ -85,8 +85,8 @@ export function VorCard({ vor }: { vor: VorPin }) {
             </span>
           }
         />
-        {vor.channel && <ListRow title="DME channel" value={<span className="text-foreground">{vor.channel}</span>} />}
-        {volume && <ListRow title="Service volume" description={volume} data-testid="vor-service-volume" />}
+        {vor.channel && <ListRow title="DME Channel" value={<span className="text-foreground">{vor.channel}</span>} />}
+        {volume && <ListRow title="Service Volume" description={volume} data-testid="vor-service-volume" />}
         {vor.elevation_ft != null && (
           <ListRow title="Elevation" value={<span className="text-foreground">{feet(vor.elevation_ft)}</span>} />
         )}

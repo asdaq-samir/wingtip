@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { OverlayTiles } from "../../api/types";
-import { OVERLAY_LAYERS, overlaySource, registerOverlayProtocol, ringAround, tileRange } from "./overlayTiles";
+import { OVERLAY_LAYERS, overlaySource, prefetchRing, registerOverlayProtocol, ringAround, tileRange } from "./overlayTiles";
 
 const TILES: OverlayTiles = {
   cycle: "2026-10-29",
@@ -50,5 +50,16 @@ describe("the overlay tiles", () => {
       [1, 0],
       [1, 1],
     ]);
+  });
+
+  it("fetch no ring ahead farther out than the archive's first zoom, where the source asks for no tile", () => {
+    // The country's first view (app zoom 4, MapLibre's 3) is under the
+    // archive's 4: the ring was the archive's zoom 4 round the country.
+    const fetched = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
+    prefetchRing(TILES, { west: -125, south: 25, east: -67, north: 49 }, 3.4, "https://wingtip.example");
+    expect(fetched).not.toHaveBeenCalled();
+    prefetchRing(TILES, { west: -88, south: 41.8, east: -87.6, north: 42.1 }, 8.2, "https://wingtip.example");
+    expect(fetched).toHaveBeenCalled();
+    fetched.mockRestore();
   });
 });

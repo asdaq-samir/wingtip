@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from . import field_status, field_use, geo, nasr_fields
-from .airport_tables import DEFAULT_CACHE_PATH, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table
+from .airport_tables import DEFAULT_CACHE_PATH, FAA_COUNTRIES, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table, countries_of
 from .single_flight import once
 
 #: One build of the US table at a time. lru_cache keeps a built one, but
@@ -44,7 +44,7 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     df = _read_table(path, _mtime)
     # FAA charts and aviationweather.gov alone: a non-US field would be a
     # dead end once picked, not a suggestion.
-    us = df[df["iso_country"] == "US"]
+    us = df[countries_of(df).isin(FAA_COUNTRIES)]
     # Only the fields the FAA lists (the owner, 2026-10-27: "I would take
     # it out if it's not showing with FAA"): OurAirports keeps some 3,300
     # strips and airports the FAA no longer lists -- closed, or never
@@ -149,8 +149,8 @@ def search_index(cache_path: Path = DEFAULT_CACHE_PATH) -> bytes:
     JSON: `{"airports": [[ident, name, town, state, size, lat, lon, *other
     idents]]}` -- the ident pilots use, the name and town every word of
     which is searched, the state without "US-", the size rank the answers
-    are ordered by (0 large to 3 other), where it is (to a hundredth of a
-    degree), and OurAirports' ident and the local code where either is not
+    are ordered by (0 large to 3 other), where it is (to a ten-thousandth
+    of a degree), and OurAirports' ident and the local code where either is not
     the ident shown (KC81 for C81). 32,600 rows. Made once per file. `closed`:
     each closed field's ident and label, never offered to land (decision 0043)."""
     path = _ensure_cached(OURAIRPORTS_URL, cache_path)
@@ -182,10 +182,14 @@ def _search_index_bytes(path: str, _mtime: float, faa_path: str = "", _faa_mtime
                 town if isinstance(town, str) else "",
                 region.removeprefix("US-") if isinstance(region, str) else "",
                 int(size),
-                # Where it is, to a hundredth of a degree, for the nearest of a
-                # name first (searchIndex's `near`).
-                round(float(lat), 2) if lat == lat else 0.0,
-                round(float(lon), 2) if lon == lon else 0.0,
+                # Where it is, to a ten-thousandth of a degree (steps of 11 m),
+                # for the nearest of a name first (searchIndex's `near`) and
+                # for the map brought to a card's field before the planner's
+                # answer (web useMapPins), whose ring then sits on the tiles'
+                # mark: a hundredth, 1.1 km, put C81's 2 px off it at zoom 9
+                # (places-chart.spec). Some 58 KB more of the gzipped 480.
+                round(float(lat), 4) if lat == lat else 0.0,
+                round(float(lon), 4) if lon == lon else 0.0,
                 *others,
             ]
         )

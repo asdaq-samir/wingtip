@@ -1,5 +1,6 @@
 import { runwayNumber, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
 import { dayMonthYear, feet } from "../../lib/format";
+import { fixRoles, type BranchFix } from "../../lib/procedures";
 
 // The words FPL's route list (ProceduresRoute) says of a field's
 // procedures and pattern, apart from the parts that draw them.
@@ -33,4 +34,12 @@ export function patternNote(a: ProcedureAirport, chosen: string | null, landing:
 export function cycleDate(cycle: string): string {
   const at = new Date(2000 + Number(cycle.slice(0, 2)), Number(cycle.slice(2, 4)) - 1, Number(cycle.slice(4, 6)));
   return Number.isNaN(at.getTime()) ? cycle : dayMonthYear(at);
+}
+
+/** A fix's line under its name: the parts it plays, and sent direct to it
+ *  or past it, "direct to" or "skipped" after them. */
+export function fixSub(fix: BranchFix, isDirect: boolean, skipped: boolean): string {
+  const roles = fixRoles(fix).join(" · ");
+  const lead = roles ? `${roles} · ` : "";
+  return isDirect ? `${lead}direct to` : skipped ? `${lead}skipped` : roles;
 }

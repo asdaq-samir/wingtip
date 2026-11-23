@@ -4,7 +4,7 @@
  * 2026-10-22: "that new D looks fine for Brief") -- before you go (the
  * fuel to spare, the loading), the departure (its weather, the
  * runway, the takeoff over 50 ft, the frequency first called), en route
- * (the lowest ceiling and visibility forecast, the wind aloft) and the
+ * (the lowest ceiling and visibility forecast, the strongest headwind) and the
  * arrival (as the departure, with the landing). Worked out where the
  * briefing works out the pages' own (FlightBriefingView, the instance
  * that publishes), and published here, as the Go / No-Go is (lib/verdict).
@@ -13,6 +13,8 @@ import { create } from "zustand";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import type { Finding } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
+import type { RouteAdiz, RouteJurisdiction } from "../plan";
+import type { Adverse } from "./adverse";
 
 /** A field's: the departure's, or the destination's. */
 export interface FieldGlance {
@@ -49,17 +51,35 @@ export interface BriefGlance {
   };
   depart: FieldGlance | null;
   enroute: {
-    /** The lowest ceiling and visibility forecast along the route. */
+    /** The lowest ceiling and visibility forecast along the route: the
+     *  worst any TAF near it gives over the flight's time (the planner's
+     *  ceiling_visibility_along_route, the engine's tafs_along_route). */
     ceilingFt: number | null;
     visibilitySm: number | null;
-    /** The first stretch's wind aloft, in words ("350°T 8 kt"). */
-    wind: string | null;
+    /** The route's strongest headwind, kt, a tailwind negative, and the leg
+     *  it is on (the engine's route_headwind): the first stretch's wind
+     *  alone said nothing of a later leg flown into a strong one. */
+    headwind: { kt: number; from: string; to: string } | null;
     eteMin: number | null;
     /** Its finding, in a line (the weather's on the Go / No-Go). */
     line: string | null;
     finding: Finding;
   };
   arrive: FieldGlance | null;
+  /** The route's one line where any of it lies outside the United States
+   *  (the engine's route_jurisdiction, decision 0053): its figures are by
+   *  US rules. Null where it is all in the United States. */
+  outside: RouteJurisdiction["brief"];
+  /** The route's one line where it meets an Air Defense Identification
+   *  Zone (the engine's route_adiz, 14 CFR part 99): what part 99 asks of
+   *  the flight there. Null where it meets none. */
+  adiz: RouteAdiz["brief"];
+  /** The adverse conditions on the route, at most three (the engine's
+   *  gonogo_adverse_rows, AIM 7-1-5(b)(1)), drawn under the findings. */
+  adverse: Adverse;
+  /** What the briefing could not check, in words ("SIGMETs", "current
+   *  METARs"), said in the findings' caution row. */
+  unchecked: string[];
   /** The reports the briefing holds as sent, for a finding's sources: the
    *  METARs and TAFs at the fields, and the TFRs by their NOTAM. */
   raw: { metars: { ident: string; raw: string }[]; tafs: { ident: string; raw: string }[]; tfrs: string[] };

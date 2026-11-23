@@ -54,7 +54,7 @@ struct PassengerBriefingView: View {
                 }
             }
         }
-        .navigationTitle("Passengers")
+        .navigationTitle(Screen.passengers.title)
     }
 }
 

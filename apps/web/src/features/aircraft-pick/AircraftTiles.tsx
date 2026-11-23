@@ -6,6 +6,7 @@ import { RemovableRow } from "../../components/RemovableRow";
 import { keptKind } from "../../lib/aircraftKind";
 import { planeLink } from "../../lib/flightLink";
 import { usePreferences, type KeptAircraft } from "../../lib/preferences";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The airplanes kept, on the one search's page and in its lists in full:
@@ -42,7 +43,7 @@ export function AircraftFavoriteStrip({
         mark={<SmallMark icon={<HomePlane kind={mine ? keptKind(mine) : "high"} />} className={PLANE_TILE} />}
         title="Airplane"
         detail={mine?.name ?? "Add"}
-        label={mine ? `Airplane, ${mine.name}` : "Add your Airplane"}
+        label={mine ? `Airplane, ${mine.name}` : WORDING.addAirplane}
         onClick={mine ? () => onOpen(mine) : onAddMine}
       />
       {favorites.map((a) => (

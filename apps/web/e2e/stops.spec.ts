@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import {
   openRoute,
+  typeRoute,
+  foldRoute,
   clearTheRoute,
   closeNavLog,
   emptyPlan,
@@ -45,7 +47,7 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
 
   // The arrow between the two asks the one search for the stop (the one
   // card rule, 2026-11-10), the airports that answer offered under it.
@@ -62,7 +64,9 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   const landing = navLogSheet(page).locator('[role="row"][data-kind]', { hasText: "KMSN" });
   await expect(landing).toBeVisible({ timeout: slow(30000) });
   await closeNavLog(page);
-  // And FPL's route lists it as a step of its own, with its procedures.
+  // And FPL's route, the box turned back to its timeline, lists it as a
+  // step of its own, with its procedures.
+  await foldRoute(page);
   // Landed at and left again, each with its own runway (the owner's
   // "arrival first with a runway and a separate departure with a runway").
   const arrive = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KMSN · Arrive" });
@@ -79,17 +83,20 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   const folded = leave.locator("[data-folded]");
   await expect(async () => {
     if (await folded.count()) await folded.click();
-    await takeoff
+    const chip = takeoff
       .getByTestId("procedure-pattern")
       .filter({ hasText: new RegExp(`^${name}$`) })
-      .first()
-      .click({ timeout: 2000 });
+      .first();
+    // Under the half sheet's edge, below FPL's pinned figures, the card
+    // pulled up to it first, as a finger does: at half its body does not
+    // scroll (rules.md's "Grow, then scroll").
+    await inSheet(page, chip);
+    await chip.click({ timeout: 2000 });
     await expect(page).toHaveURL(new RegExp(`[?&]takeoff=[^&]*KMSN(%3A|:)${name}(%2C|,|&|$)`), { timeout: 2000 });
   }).toPass({ timeout: slow(20000) });
-  // The figures to the next landing, KMSN, its fuel the tanks' for that
-  // flight; a tap on To, the destination and the whole route's distance.
+  // The figures to the next landing, KMSN, its time that flight's; a tap on To, the destination and the whole route's distance.
   await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KMSN", { timeout: slow(30000) });
-  await expect(sideDrawer(page).getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/);
+  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
   await expect(sideDrawer(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Leg, /);
   await sideDrawer(page).getByTestId("to-toggle").click();
   await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KDLH");
@@ -104,7 +111,7 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   // and hold on a phone: the route as it was, opened again to edit (at half
   // it folds).
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   // The route's field, still open from the stop's adding at half, runs
   // on past the sheet's edge there: the sheet raised to its pill.
   await inSheet(page, stop);
@@ -124,7 +131,7 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   // In that order, each a token of the route's field, no cross on any pill.
   const order = await lines.evaluate((el) =>
@@ -189,11 +196,16 @@ test("a cleared route's box takes the departure first, then asks for the destina
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   // Taken after the destination, the field has an arrow on from it: what
   // is typed there is the new destination.
   await expect(sideDrawer(page).getByTestId("route-arrow-on")).toHaveCount(0);
-  await sideDrawer(page).getByTestId("route-type").click();
+  // Tapped past the last point, as a pilot taps after a field's words: with
+  // a suggested fuel stop's pill on the line the field's middle is the
+  // arrow into the destination, Add a Stop's, and that tap asks for a stop.
+  const typeHere = sideDrawer(page).getByTestId("route-type");
+  const fieldBox = (await typeHere.boundingBox())!;
+  await typeHere.click({ position: { x: fieldBox.width - 8, y: fieldBox.height / 2 } });
   await expect(sideDrawer(page).getByTestId("route-arrow-on")).toBeVisible();
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dep=/);
@@ -227,7 +239,7 @@ test("a link with a stop opens on the route through it", { tag: "@smoke" }, asyn
   await recordedStops(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await expect(sideDrawer(page).getByRole("group", { name: "Stop 1 KMSN" })).toBeVisible({ timeout: slow(15000) });
   // Its airport on the map, as the route's two ends are.
   await expect.poll(markWith(page, "route-marks", "KMSN"), { timeout: slow(15000) }).not.toBeNull();
@@ -249,15 +261,16 @@ test("a stop is left again at the time picked on its Depart step, 30 minutes aft
   const leaves = sideDrawer(page).getByTestId("depart-date-KMSN");
   await expect(leaves).toBeVisible({ timeout: slow(30_000) });
   await expect(sideDrawer(page).getByTestId("ground-menu")).toHaveCount(0);
+  // The time it leaves, in minutes; none while the nav log is being worked
+  // out again after an edit (the row is drawn then without its time), so a
+  // poll waits for it rather than failing on the gap.
   const at = async () => {
-    const [h, m] = (await leaves.innerText())
-      .match(/(\d\d):(\d\d)/)!
-      .slice(1)
-      .map(Number);
-    return h! * 60 + m!;
+    const time = (await leaves.innerText()).match(/(\d\d):(\d\d)/);
+    return time ? Number(time[1]) * 60 + Number(time[2]) : null;
   };
   const hhmm = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-  const planned = await at();
+  await expect.poll(at).not.toBeNull();
+  const planned = (await at())!;
   // A quarter of an hour later: 45 minutes on the ground in the address.
   await inSheet(page, leaves);
   await leaves.click();

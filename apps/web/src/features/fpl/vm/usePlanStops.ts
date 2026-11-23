@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useEffectEvent } from "react";
-import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
+import { useEffect, useEffectEvent } from "react";
+import { airportQuery, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { navlogQuery, suggestedStopAt } from "../../plan";
-import { useSuggestedStops, withStopsAfter } from "../../stops";
+import { useSuggestedStops } from "../../stops";
 import { useMapActions } from "../../route";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
@@ -19,30 +19,14 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
   const { s, course, aircraft, planParams, directToChartPoint } = answer;
   // The stops the planner suggests, and keeping them (useSuggestedStops).
   const suggested = useSuggestedStops({ totals: s.totals, local: s.local, planned, setStops });
-  const { fuelStops, keepFuelStops } = suggested;
-  // The first flight's suggested fuel stops, offered where the route's fuel
-  // says it is short (TripFigures), as the route box offers them.
-  const firstFuelStop = useMemo(() => {
-    const first = fuelStops[0];
-    if (!first || !first.stops.length) return null;
-    const idents = first.stops.map((stop) => stop.ident);
-    return { idents, add: () => keepFuelStops(first.departure, idents) };
-  }, [fuelStops, keepFuelStops]);
-  // The route through the first flight's suggested stops planned as they
-  // are suggested, as Fly Here's is at its tap: Add fuel stop then draws it
+  const { fuelStops, fuelToAdd } = suggested;
+  // The route through every flight's suggested stops planned as they are
+  // suggested, as Fly Here's is at its tap: Add Fuel Stops then draws it
   // at once from what is in, where the owner watched four and a half
   // seconds of dashes and "Planning altitudes…" after the tap (the video,
-  // 2026-10-22). The same plan the page asks for once they are stops.
-  const suggestedFirst = fuelStops[0];
-  const nextStops =
-    suggestedFirst && !s.local
-      ? (withStopsAfter(
-          planned.dep,
-          planned.stops,
-          suggestedFirst.departure,
-          suggestedFirst.stops.map((f) => f.ident),
-        )?.stops ?? null)
-      : null;
+  // 2026-10-22). The same plan the page asks for once they are stops, which
+  // the planner made already to check them (wingtip.fuel_rounds).
+  const nextStops = !s.local ? (fuelToAdd?.stops ?? null) : null;
   const aheadKey = nextStops
     ? JSON.stringify([nextStops, planParams.altitudeFt, planParams.altitudeChoice, planParams.depart, aircraft.profile, load])
     : "";
@@ -52,6 +36,9 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
     void queryClient.prefetchQuery(courseQuery(ahead.dep, ahead.dest, nextStops));
     if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(ahead.dep, ahead.dest, nextStops));
     void queryClient.prefetchQuery(navlogQuery(ahead, showWaypoints));
+    // And the new stops' cards, whose reports their runways are picked into
+    // the wind from as they land in the route: in by then, not asked after.
+    for (const ident of nextStops) void queryClient.prefetchQuery(airportQuery(ident));
   });
   useEffect(() => prefetchAhead(), [aheadKey]); // keyed on the route and the plan's choices
   // The map's cards' and the radio's actions on the route (useMapActions).
@@ -62,6 +49,5 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
     // figures at the card's top, and Add Stop keeps it at its place
     // (PlaceCard's `stop`).
     suggestedAt: suggestedStopAt(place, fuelStops),
-    firstFuelStop,
   };
 }

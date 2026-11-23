@@ -107,7 +107,7 @@ target "weather" {
 # Chromium itself and Firefox; the suite's headless Chromium is the
 # headless shell -- as one layer, so they are not pulled, unpacked and
 # written on every shard. WebKit stays: main's push runs the webkit-phone
-# smoke in it (sheet-webkit.spec.ts), and the iPhone's bugs are WebKit's;
+# and webkit-ipad smoke in it, and the iPhone's and iPad's bugs are WebKit's;
 # deleting it failed that test in 2 ms on every push (run 43552072818).
 # Its tag is keyed on this target's text too (scripts/ci/playwright_slim_key.sh). Every other file is the
 # image's own, byte for byte; the same page drawn in both came out the

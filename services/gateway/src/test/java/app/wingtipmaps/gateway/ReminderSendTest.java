@@ -77,7 +77,7 @@ class ReminderSendTest {
                         .map(on -> List.of(new PlannerPaperworkDue(
                                 null,
                                 null,
-                                "Medical certificate",
+                                "Medical Certificate",
                                 "Your medical certificate runs out",
                                 "14 CFR 61.23",
                                 on,

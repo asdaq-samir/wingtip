@@ -68,7 +68,7 @@ export default function DepartureWindowStrip() {
         <>
           {!m.best && (
             <p className={cn(TEXT.detail, "text-muted-foreground")}>
-              No hour with nothing against it before {clock(m.hours.at(-1)!.depart)}.
+              None of the hours to {clock(m.hours.at(-1)!.depart)} is a {HOUR_WORD.go}.
             </p>
           )}
           {/* Across, as far as the forecasts reach: the strip slides, the
@@ -111,7 +111,7 @@ export default function DepartureWindowStrip() {
                         data-verdict={h.verdict}
                         className={cn(
                           "relative h-auto w-12 flex-col gap-0.5 rounded-xl py-1.5",
-                          "after:absolute after:-inset-1 data-pressed:ring-2 data-pressed:ring-tint",
+                          " hit-1 data-pressed:ring-2 data-pressed:ring-tint",
                           TILE_TINT[finding],
                         )}
                       >

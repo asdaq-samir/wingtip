@@ -1,0 +1,571 @@
+{
+  "$description": "The words Wingtip Maps says the same on the web, the iPhone and Android: the names of the controls, the figures and the sections a pilot meets on all three, and the messages they share (progress, errors, empty states). scripts/build/wording.sh generates apps/web/src/lib/wording/generated/wording.ts (WORDING), apps/ios/Wingtip/Design/Generated/Wording.swift (Wording, each a String(localized:) so the string catalog keeps it) and apps/android/app/src/main/res/values/wording_strings.xml (R.string.wording_<key>), and the table in docs/design/rules.md, section 18; CI generates them again and fails on a difference. Change a word here, never in a generated file or a copy in an app. Each word's kind is checked as it is generated (docs/design/rules.md, section 18, decision 0021): a label (a title, a heading, a button, a menu item, a tab, a row's or a figure's name) is in Title Case, the FAA's codes kept; a sentence (a message, an error, an empty state's line) begins with a capital and ends with a full stop or a question mark; progress is a sentence that ends with one ellipsis character; a value (what a figure reads) is in sentence case with no full stop. Screen titles are design/screens.json's, not here.",
+  "words": {
+    "planning_aid_title": {
+      "kind": "label",
+      "text": "A Planning Aid",
+      "about": "About's heading over the planning aid's words."
+    },
+    "planning_aid_notice_title": {
+      "kind": "label",
+      "text": "A Planning Aid, Not for Navigation",
+      "about": "The planning aid's notice, where an app shows it on its own."
+    },
+    "planning_aid": {
+      "kind": "sentence",
+      "text": "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgment and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).",
+      "faa": "\"aircraft performance\" is 14 CFR 91.103's own subject, kept as the rule says it.",
+      "about": "What the app is and is not, in About and at the briefing's foot (14 CFR 91.3, 91.103; docs/legal/credits.md, \"A planning aid\")."
+    },
+    "planning_aid_kneeboard": {
+      "kind": "sentence",
+      "text": "Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.",
+      "about": "The printed kneeboard's foot."
+    },
+    "try_again": {
+      "kind": "label",
+      "text": "Try Again",
+      "about": "The button that asks again after an error."
+    },
+    "sign_in": {
+      "kind": "label",
+      "text": "Sign In",
+      "about": "The button that starts signing in."
+    },
+    "add_stop": {
+      "kind": "label",
+      "text": "Add Stop",
+      "about": "Adds the place shown as a stop on the route (decision 0021's own example)."
+    },
+    "add_to_route": {
+      "kind": "label",
+      "text": "Add to Route",
+      "about": "Adds the place shown to the route."
+    },
+    "add_to_favorites": {
+      "kind": "label",
+      "text": "Add to Favorites",
+      "about": "Keeps the airport or airplane shown among the favorites."
+    },
+    "add_airplane": {
+      "kind": "label",
+      "text": "Add Airplane",
+      "about": "Adds one of the pilot's own airplanes."
+    },
+    "edit_airplane": {
+      "kind": "label",
+      "text": "Edit Airplane",
+      "about": "Opens the pilot's airplane's figures to change."
+    },
+    "delete_airplane": {
+      "kind": "label",
+      "text": "Delete Airplane",
+      "about": "Deletes one of the pilot's airplanes."
+    },
+    "pick_an_airplane": {
+      "kind": "label",
+      "text": "Pick an Airplane",
+      "about": "Where the times and the fuel need an airplane."
+    },
+    "fly_this_airplane": {
+      "kind": "label",
+      "text": "Fly This Airplane",
+      "about": "Makes the airplane shown the one the plan flies."
+    },
+    "clear_route": {
+      "kind": "label",
+      "text": "Clear Route",
+      "about": "The menu item that clears the route."
+    },
+    "clear_route_question": {
+      "kind": "label",
+      "text": "Clear Route?",
+      "about": "The question before the route is cleared."
+    },
+    "direct_to": {
+      "kind": "label",
+      "text": "Direct To",
+      "about": "Flies straight to the point picked, the avionics' own name."
+    },
+    "enter_route": {
+      "kind": "label",
+      "text": "Enter Route",
+      "about": "Puts a clearance's route into the plan."
+    },
+    "read_back": {
+      "kind": "label",
+      "text": "Read Back",
+      "about": "Starts the pilot's read back of a clearance."
+    },
+    "read_back_again": {
+      "kind": "label",
+      "text": "Read Back Again",
+      "about": "Reads the clearance back once more."
+    },
+    "print_nav_log": {
+      "kind": "label",
+      "text": "Print Nav Log",
+      "about": "Prints the nav log, in the share menu."
+    },
+    "share_link": {
+      "kind": "label",
+      "text": "Share Link",
+      "about": "Shares the plan as a link."
+    },
+    "show_on_map": {
+      "kind": "label",
+      "text": "Show on Map",
+      "about": "Shows the thing in the row on the map."
+    },
+    "start_over": {
+      "kind": "label",
+      "text": "Start Over",
+      "about": "Starts a drill or a form again from its beginning."
+    },
+    "save_to_account": {
+      "kind": "label",
+      "text": "Save to Account",
+      "about": "Keeps the thing shown in the pilot's account."
+    },
+    "ask_about_the_flight": {
+      "kind": "label",
+      "text": "Ask About the Flight",
+      "about": "Opens Ask on the flight planned."
+    },
+    "file_with_flight_service": {
+      "kind": "label",
+      "text": "File with Flight Service",
+      "about": "Files the flight plan with Leidos Flight Service."
+    },
+    "delete_account": {
+      "kind": "label",
+      "text": "Delete Account",
+      "about": "Deletes the pilot's account."
+    },
+    "delete_account_question": {
+      "kind": "sentence",
+      "text": "Delete your account?",
+      "about": "The question before the account is deleted."
+    },
+    "discard": {
+      "kind": "label",
+      "text": "Discard",
+      "about": "Throws away what was typed."
+    },
+    "discard_changes_question": {
+      "kind": "sentence",
+      "text": "Discard your changes?",
+      "about": "The question when a form with changes is closed."
+    },
+    "weight_and_balance": {
+      "kind": "label",
+      "text": "Weight & Balance",
+      "about": "The weight and balance's section and row."
+    },
+    "forecast_icing": {
+      "kind": "label",
+      "text": "Forecast Icing",
+      "about": "The forecast icing along the route (aviationweather.gov's CIP/FIP)."
+    },
+    "along_the_route": {
+      "kind": "label",
+      "text": "Along the Route",
+      "about": "What lies along the route, a section's heading."
+    },
+    "airport_weather": {
+      "kind": "label",
+      "text": "Airport Weather",
+      "about": "The map's airport weather marks, as a setting."
+    },
+    "flight_category": {
+      "kind": "label",
+      "text": "Flight Category",
+      "about": "A report's flight category, VFR, MVFR, IFR or LIFR (the FAA's names)."
+    },
+    "time_en_route": {
+      "kind": "label",
+      "text": "Time En Route",
+      "about": "ETE written out."
+    },
+    "top_of_climb": {
+      "kind": "label",
+      "text": "Top of Climb",
+      "about": "The nav log's TOC written out."
+    },
+    "top_of_descent": {
+      "kind": "label",
+      "text": "Top of Descent",
+      "about": "The nav log's TOD written out."
+    },
+    "true_airspeed": {
+      "kind": "label",
+      "text": "True Airspeed",
+      "about": "TAS, a figure's name."
+    },
+    "indicated_airspeed": {
+      "kind": "label",
+      "text": "Indicated Airspeed",
+      "about": "IAS, a figure's name."
+    },
+    "ground_speed": {
+      "kind": "label",
+      "text": "Ground Speed",
+      "about": "GS, a figure's name."
+    },
+    "true_course": {
+      "kind": "label",
+      "text": "True Course",
+      "about": "TC, a figure's name."
+    },
+    "magnetic_course": {
+      "kind": "label",
+      "text": "Magnetic Course",
+      "about": "MC, a figure's name."
+    },
+    "magnetic_heading": {
+      "kind": "label",
+      "text": "Magnetic Heading",
+      "about": "MH, a figure's name."
+    },
+    "cruise_altitude": {
+      "kind": "label",
+      "text": "Cruise Altitude",
+      "about": "The plan's cruise altitude."
+    },
+    "cruise_power": {
+      "kind": "label",
+      "text": "Cruise Power",
+      "about": "An airplane's cruise power setting, a percentage."
+    },
+    "density_altitude": {
+      "kind": "label",
+      "text": "Density Altitude",
+      "about": "A field's density altitude."
+    },
+    "usable_fuel": {
+      "kind": "label",
+      "text": "Usable Fuel",
+      "about": "An airplane's usable fuel."
+    },
+    "fuel_burn": {
+      "kind": "label",
+      "text": "Fuel Burn",
+      "about": "An airplane's fuel burn an hour."
+    },
+    "start_and_taxi_fuel": {
+      "kind": "label",
+      "text": "Start and Taxi Fuel",
+      "about": "The fuel an airplane burns before takeoff."
+    },
+    "empty_weight": {
+      "kind": "label",
+      "text": "Empty Weight",
+      "about": "An airplane's basic empty weight."
+    },
+    "empty_moment": {
+      "kind": "label",
+      "text": "Empty Moment",
+      "about": "An airplane's basic empty moment."
+    },
+    "service_ceiling": {
+      "kind": "label",
+      "text": "Service Ceiling",
+      "about": "An airplane's service ceiling."
+    },
+    "glide_ratio": {
+      "kind": "label",
+      "text": "Glide Ratio",
+      "about": "An airplane's best glide ratio."
+    },
+    "climb_rate_at_sea_level": {
+      "kind": "label",
+      "text": "Climb Rate at Sea Level",
+      "about": "An airplane's climb rate at sea level."
+    },
+    "fetching_nearest_fields": {
+      "kind": "progress",
+      "text": "Fetching the nearest fields…",
+      "about": "Nearest, while it is asked for."
+    },
+    "fetching_notams": {
+      "kind": "progress",
+      "text": "Fetching the NOTAMs…",
+      "about": "A field's or the route's NOTAMs, while they are asked for."
+    },
+    "fetching_model_weather": {
+      "kind": "progress",
+      "text": "Fetching model weather…",
+      "about": "Model Weather's picture, while it is asked for."
+    },
+    "fetching_logbook": {
+      "kind": "progress",
+      "text": "Fetching your logbook…",
+      "about": "The logbook, while it is asked for."
+    },
+    "fetching_services": {
+      "kind": "progress",
+      "text": "Fetching the services…",
+      "about": "A stop's services, while they are asked for."
+    },
+    "reading_the_page": {
+      "kind": "progress",
+      "text": "Reading the page…",
+      "about": "A photographed page, while it is read."
+    },
+    "listening_to_the_radio": {
+      "kind": "progress",
+      "text": "Listening to the radio…",
+      "about": "The radio's words, while they are heard."
+    },
+    "planner_not_reached": {
+      "kind": "sentence",
+      "text": "The planner could not be reached.",
+      "about": "Where the planner did not answer."
+    },
+    "notams_not_fetched": {
+      "kind": "sentence",
+      "text": "The NOTAMs could not be fetched.",
+      "about": "Where the NOTAMs did not come."
+    },
+    "tfrs_not_checked": {
+      "kind": "sentence",
+      "text": "TFRs could not be checked just now.",
+      "about": "The route's NOTAMs where the TFR list did not come."
+    },
+    "tfr_list_not_read": {
+      "kind": "sentence",
+      "text": "The TFR list could not be read: check the FAA's TFRs before flying.",
+      "about": "A field's NOTAMs where the TFR list did not come."
+    },
+    "tfrs_not_loaded": {
+      "kind": "sentence",
+      "text": "The TFRs did not load. Check tfr.faa.gov before flight.",
+      "about": "The map's TFR card where tfr.faa.gov did not answer."
+    },
+    "special_use_no_answer": {
+      "kind": "sentence",
+      "text": "The FAA's special-use airspace did not answer. Check the chart.",
+      "about": "The airspace card where the SUA feed did not answer."
+    },
+    "airspace_not_read": {
+      "kind": "sentence",
+      "text": "The planner could not read the airspace here. Try again in a moment.",
+      "about": "The airspace card where the planner did not answer."
+    },
+    "weather_not_reached": {
+      "kind": "sentence",
+      "text": "The weather service could not be reached.",
+      "about": "An airport's weather where aviationweather.gov did not answer."
+    },
+    "services_not_fetched": {
+      "kind": "sentence",
+      "text": "The services could not be fetched.",
+      "about": "A stop's services where they did not come."
+    },
+    "places_not_looked_up": {
+      "kind": "sentence",
+      "text": "Places near the field could not be looked up.",
+      "about": "A stop's places where they did not come."
+    },
+    "logbook_not_fetched": {
+      "kind": "sentence",
+      "text": "Your logbook could not be fetched.",
+      "about": "The logbook where it did not come."
+    },
+    "nearest_not_found": {
+      "kind": "sentence",
+      "text": "The nearest fields could not be found.",
+      "about": "Nearest where it did not come."
+    },
+    "page_not_read": {
+      "kind": "sentence",
+      "text": "The page could not be read.",
+      "about": "A photographed page that could not be read."
+    },
+    "read_back_not_checked": {
+      "kind": "sentence",
+      "text": "The read back could not be checked.",
+      "about": "A clearance's read back that could not be checked."
+    },
+    "forecast_icing_not_checked": {
+      "kind": "sentence",
+      "text": "The forecast icing could not be checked: aviationweather.gov did not answer. Verify it separately before flight.",
+      "about": "The Brief's icing where aviationweather.gov did not answer."
+    },
+    "history_not_fetched": {
+      "kind": "sentence",
+      "text": "Its history could not be fetched. Try again in a moment.",
+      "about": "An airplane's registry history where it did not come."
+    },
+    "past_flights_not_fetched": {
+      "kind": "sentence",
+      "text": "Its past flights could not be fetched. Try again in a moment.",
+      "about": "An airplane's past flights where they did not come."
+    },
+    "coming_up_not_fetched": {
+      "kind": "sentence",
+      "text": "What falls due could not be fetched.",
+      "about": "Coming Up where it did not come."
+    },
+    "plan_a_route_first": {
+      "kind": "sentence",
+      "text": "Plan a route first.",
+      "about": "What needs a route, where there is none."
+    },
+    "no_connection": {
+      "kind": "value",
+      "text": "No connection",
+      "about": "What a list, a card or a figure says in place where its answer could not be had for want of a network (the web's lib/problems NO_CONNECTION)."
+    },
+    "no_answer_in_time": {
+      "kind": "sentence",
+      "text": "No answer in time. Try again in a moment.",
+      "about": "A request that timed out (the web's describeError)."
+    },
+    "answer_garbled": {
+      "kind": "sentence",
+      "text": "The planner's answer came back garbled. Try again in a moment.",
+      "about": "An answer that was not the JSON asked for (the web's describeError)."
+    },
+    "planner_not_answering": {
+      "kind": "sentence",
+      "text": "The planner is not answering. Try again in a moment.",
+      "about": "The planner refused with a server error and no words of its own (the web's describeError)."
+    },
+    "nav_log_empty": {
+      "kind": "sentence",
+      "text": "Plan a route on FPL; its legs are listed here.",
+      "about": "The Nav Log with no route (owner rec 4)."
+    },
+    "no_ceiling": {
+      "kind": "value",
+      "text": "No ceiling",
+      "about": "A report with no broken or overcast layer, a figure's value (14 CFR 1.1, \"ceiling\")."
+    },
+    "remove_from_favorites": {
+      "kind": "label",
+      "text": "Remove from Favorites",
+      "about": "Takes the airport or airplane shown out of the favorites."
+    },
+    "remove_from_account": {
+      "kind": "label",
+      "text": "Remove from Account",
+      "about": "Takes the thing shown out of the pilot's account."
+    },
+    "hide_from_map": {
+      "kind": "label",
+      "text": "Hide from Map",
+      "about": "Takes the thing shown off the map."
+    },
+    "sign_out": {
+      "kind": "label",
+      "text": "Sign Out",
+      "about": "Signs the pilot out."
+    },
+    "not_now": {
+      "kind": "label",
+      "text": "Not Now",
+      "about": "Puts an offer off (the owner's word, a shared flight's)."
+    },
+    "new_airplane": {
+      "kind": "label",
+      "text": "New Airplane",
+      "about": "The title over a new airplane's figures."
+    },
+    "export_my_data": {
+      "kind": "label",
+      "text": "Export My Data",
+      "about": "Saves the pilot's account as a file."
+    },
+    "dry_run": {
+      "kind": "label",
+      "text": "Dry Run",
+      "about": "Flies the route on the map before the flight."
+    },
+    "wind_correction": {
+      "kind": "label",
+      "text": "Wind Correction",
+      "about": "WCA, a figure's name."
+    },
+    "true_heading": {
+      "kind": "label",
+      "text": "True Heading",
+      "about": "TH, a figure's name."
+    },
+    "compass_heading": {
+      "kind": "label",
+      "text": "Compass Heading",
+      "about": "CH, a figure's name."
+    },
+    "fuel_required": {
+      "kind": "label",
+      "text": "Fuel Required",
+      "about": "The fuel a leg or the flight needs."
+    },
+    "pattern_altitude": {
+      "kind": "label",
+      "text": "Pattern Altitude",
+      "about": "A field's traffic pattern altitude."
+    },
+    "fetching_the_map": {
+      "kind": "progress",
+      "text": "Fetching the map…",
+      "about": "The map, while its chart is asked for."
+    },
+    "adverse_conditions": {
+      "kind": "label",
+      "text": "Adverse Conditions",
+      "about": "The Brief's group of what the flight meets on the route, a briefer's first element (AIM 7-1-5(b)(1))."
+    },
+    "before_you_go": {
+      "kind": "label",
+      "text": "Before You Go",
+      "about": "The Brief's row for what is left to do and the fuel beyond the reserve."
+    },
+    "en_route": {
+      "kind": "label",
+      "text": "En Route",
+      "about": "The Brief's row for the flight between its fields."
+    },
+    "beyond_reserve": {
+      "kind": "label",
+      "text": "Beyond Reserve",
+      "about": "The fuel over what the flight needs and its reserve (14 CFR 91.151(a), 91.167(a)), a figure's name."
+    },
+    "lowest_ceiling": {
+      "kind": "label",
+      "text": "Lowest Ceiling",
+      "about": "The lowest ceiling a TAF near the route forecasts over the flight, a figure's name."
+    },
+    "visibility": {
+      "kind": "label",
+      "text": "Visibility",
+      "about": "A visibility, a figure's name."
+    },
+    "most_headwind": {
+      "kind": "label",
+      "text": "Most Headwind",
+      "about": "The strongest headwind on any leg (the engine's route_headwind), a figure's name."
+    },
+    "finding_where_you_are": {
+      "kind": "progress",
+      "text": "Finding where you are…",
+      "about": "The first route's wait for the phone's position."
+    },
+    "nav_log_empty": {
+      "kind": "sentence",
+      "text": "Plan a route on FPL; its legs are listed here.",
+      "about": "The Nav Log with no route."
+    },
+    "done_flying": {
+      "kind": "label",
+      "text": "Done Flying",
+      "about": "Flying mode's way out for this flight."
+    },
+    "larger_map_labels": {
+      "kind": "label",
+      "text": "Larger Map Labels",
+      "about": "The Map card's switch that lets the map's words follow the text size, up to 1.2 times."
+    }
+  }
+}

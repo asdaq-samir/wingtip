@@ -55,8 +55,12 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await page.reload();
   await settle(page);
   const search = page.getByTestId("search-airports");
-  // The pill, as a fresh load opens; out on the one search.
-  await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
+  // As a fresh load opens: a phone's sheet as its pill, a desktop's side
+  // panel out at half, the search in it (MapPage, the one-search design's
+  // Desktop, 2026-11-09); out on the one search.
+  const desk = (page.viewportSize()?.width ?? 0) >= 1024;
+  if (desk) await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  else await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await grabberTo(page, "full");
   await showTabs(page);
   await expect(search).toBeVisible();
@@ -69,7 +73,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   // the favorites filter to stay when it's full").
   await expect(page.getByTestId("pill-home")).toContainText("Add");
   await page.getByTestId("pill-home").click();
-  await expect(search).toHaveAttribute("placeholder", "Search for your home airport");
+  await expect(search).toHaveAccessibleName("Search for your home airport");
   await search.fill("C81");
   await searchAirports(page).filter({ hasText: "C81" }).first().click();
   await expect(page.getByTestId("pill-home")).not.toContainText("Add");

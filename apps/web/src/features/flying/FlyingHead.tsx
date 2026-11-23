@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import { GLASS } from "../../lib/mapChrome";
 import { Button } from "../../components/ui/button";
@@ -51,7 +51,7 @@ const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).
 export default function FlyingHead({ run, rows, line }: { run: DryRun | null; rows: NavLogRow[]; line: CourseLine }) {
   const key = usePastFlight((s) => {
     if (!run || s.hex !== DRY_RUN || s.at === null) return "";
-    const index = dryRunNext(run, rows, s.at);
+    const index = dryRunNext(run, s.at);
     const at = dryRunAt(run, s.at);
     if (index === null || !at || !run.bends[index] || run.rowT[index] == null) return "";
     const along = run.alongNm.at(-1)! - at.leftNm;
@@ -83,10 +83,12 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
     );
   const [i, nm, min, at] = words.split(" ");
   const index = Number(i);
+  // The dry run's index is into its own rows (DryRun.rows), the GPS's into the page's.
+  const list = key && run ? run.rows : rows;
   const next: Next = {
     index,
-    number: numberOf(rows, index),
-    name: rowPoint(rows[index]!).name,
+    number: numberOf(list, index),
+    name: rowPoint(list[index]!).name,
     nm: Number(nm),
     min: min === "" ? null : Number(min),
     at: at === "" ? null : Number(at),
@@ -126,8 +128,25 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
 /** The head's glass at the map's top. Off the route (`off`) it is
  *  Emergency alone, at the right, as wide as it. */
 function Head({ off = false, children }: { off?: boolean; children: ReactNode }) {
+  // Its height for the map's banners (MapBanners), which stand under it
+  // at a phone's top: in the same place, the copilot's message was drawn
+  // under the head, its words and its OK covered (copilot.spec). Measured,
+  // as the pilot's text size sets it.
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    const root = document.documentElement.style;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(() => root.setProperty("--flying-head-h", `${el.offsetHeight}px`));
+    watch.observe(el);
+    return () => {
+      watch.disconnect();
+      root.removeProperty("--flying-head-h");
+    };
+  }, []);
   return (
     <div
+      ref={box}
       data-testid="flying-head"
       data-off-route={off || undefined}
       className={cn(
@@ -147,7 +166,9 @@ function Head({ off = false, children }: { off?: boolean; children: ReactNode })
   );
 }
 
-/** "Emergency", labelled in the system red, a 44-point target. */
+/** "Emergency", labelled in the system red: a 32-point button whose
+ *  target is flying mode's 60 points (FLYING_STACK's size, a hand in
+ *  turbulence), a pseudo-element 14 out round it, the button not grown. */
 function EmergencyEntry() {
   return (
     <Button
@@ -155,7 +176,7 @@ function EmergencyEntry() {
       variant="ghost"
       size="sm"
       data-testid="flying-emergency"
-      className="pointer-events-auto relative -mr-2 font-semibold text-destructive after:absolute after:-inset-1.5"
+      className="pointer-events-auto relative -mr-2 font-semibold text-destructive hit-3.5"
       onClick={() => openEmergency("flying")}
     >
       Emergency

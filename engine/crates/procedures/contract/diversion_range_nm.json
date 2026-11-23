@@ -1,0 +1,68 @@
+{
+  "x-call": "wingtip_procedures::figures::plates_kept::call",
+  "description": "How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiversionRangeInput",
+      "type": "object",
+      "properties": {
+        "tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked."
+        },
+        "usable_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Its usable fuel, gallons; null or missing for none."
+        },
+        "burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Its cruise burn, gallons an hour; null or missing for none."
+        }
+      }
+    },
+    "answer": {
+      "title": "DiversionRangeAnswer",
+      "type": "object",
+      "properties": {
+        "range_nm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The range, nm; null with no cruise speed."
+        },
+        "reserve_min": {
+          "type": "number"
+        },
+        "basis": {
+          "type": "string",
+          "enum": [
+            "reserve",
+            "tanks",
+            "no_airplane"
+          ]
+        }
+      },
+      "required": [
+        "range_nm",
+        "reserve_min",
+        "basis"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

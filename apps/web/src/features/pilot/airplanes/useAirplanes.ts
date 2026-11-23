@@ -4,7 +4,7 @@ import { api, describeError } from "../../../lib/api/client";
 import type { Aircraft, AircraftRequest } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { unsavedId, useOptimisticList } from "../../../lib/optimisticList";
-import { aircraftListQuery } from "../../../lib/queryClient";
+import { aircraftListQuery } from "../../../lib/queryClientRecords";
 
 /** One save: which airplane (null, a new one) and its figures. */
 export interface AirplaneSave {
@@ -54,7 +54,7 @@ export function useAirplanes(onRefused: (save: AirplaneSave, problem: string) =>
           // row quietly changing below the form.
           done(asked.id ? "Airplane Saved" : "Airplane Added");
         } catch (err) {
-          onRefused(asked, describeError(err, asked.id ? "The airplane could not be saved" : "The airplane could not be added"));
+          onRefused(asked, describeError(err, asked.id ? "The airplane could not be saved." : "The airplane could not be added."));
         }
         await refresh();
       }),

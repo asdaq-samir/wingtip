@@ -29,6 +29,11 @@ impl<'a> Obj<'a> {
     fn num(&mut self, k: &str, v: f64) {
         json::number(self.key(k), v);
     }
+    /// A count, written as a whole number (no ".0"), as the contract's
+    /// integers are read on the phones.
+    fn int(&mut self, k: &str, v: u64) {
+        self.key(k).push_str(&v.to_string());
+    }
     fn opt(&mut self, k: &str, v: Option<f64>) {
         json::opt_number(self.key(k), v);
     }
@@ -80,11 +85,9 @@ fn list<T>(out: &mut String, items: &[T], each: impl Fn(&mut Obj, &T)) {
     out.push(']');
 }
 
-/// The picture as the contract's ReceiverPicture, `at` deciding whether
-/// the receiver is heard.
-pub fn write(p: &Picture, at: f64) -> String {
-    let mut out = String::new();
-    let mut o = Obj::new(&mut out);
+/// The receiver, own ship and traffic: the picture's small part, which
+/// both ReceiverPicture and ReceiverDelta carry whole.
+fn head(o: &mut Obj, p: &Picture, at: f64) {
     {
         let r = &p.receiver;
         let mut x = Obj::new(o.key("receiver"));
@@ -113,10 +116,19 @@ pub fn write(p: &Picture, at: f64) -> String {
             report(&mut x, &own.heard.report, own.heard.at);
             x.opt("geometric_ft", own.geometric_ft);
             x.opt("vfom_m", own.vfom_m);
+            x.bool("vertical_warning", own.vertical_warning);
             x.end();
         }
     }
     list(o.key("targets"), &p.targets, |x, t| report(x, &t.report, t.at));
+}
+
+/// The picture as the contract's ReceiverPicture, `at` deciding whether
+/// the receiver is heard.
+pub fn write(p: &Picture, at: f64) -> String {
+    let mut out = String::new();
+    let mut o = Obj::new(&mut out);
+    head(&mut o, p, at);
     list(o.key("texts"), &p.texts, |x, k| {
         let t = &k.text;
         x.num("product", t.product as f64);
@@ -140,6 +152,23 @@ pub fn write(p: &Picture, at: f64) -> String {
         x.str("time", Some(&k.time));
         x.num("at", k.at);
     });
+    o.end();
+    out
+}
+
+/// A read by a held picture as the contract's ReceiverDelta: the small
+/// part whole, and for the FIS-B texts and NEXRAD only how many and their
+/// revisions (held::Revisions), which the host asks for again only when
+/// they change.
+pub fn write_delta(p: &Picture, at: f64, revisions: &crate::held::Revisions) -> String {
+    let mut out = String::new();
+    let mut o = Obj::new(&mut out);
+    head(&mut o, p, at);
+    o.int("texts", p.texts.len() as u64);
+    o.int("blocks", p.blocks.len() as u64);
+    o.int("traffic_revision", revisions.traffic);
+    o.int("texts_revision", revisions.texts);
+    o.int("nexrad_revision", revisions.nexrad);
     o.end();
     out
 }
@@ -204,9 +233,14 @@ pub fn read(v: Option<&Value>) -> Picture {
         station: num(r, "station_lat").zip(num(r, "station_lon")),
         station_at: num(r, "station_at"),
     };
-    let ownship = v
-        .get("ownship")
-        .and_then(|o| Some(Ownship { heard: read_report(o)?, geometric_ft: num(o, "geometric_ft"), vfom_m: num(o, "vfom_m") }));
+    let ownship = v.get("ownship").and_then(|o| {
+        Some(Ownship {
+            heard: read_report(o)?,
+            geometric_ft: num(o, "geometric_ft"),
+            vfom_m: num(o, "vfom_m"),
+            vertical_warning: flag(o, "vertical_warning"),
+        })
+    });
     let targets = items(v, "targets").iter().filter_map(read_report).collect();
     let texts = items(v, "texts")
         .iter()

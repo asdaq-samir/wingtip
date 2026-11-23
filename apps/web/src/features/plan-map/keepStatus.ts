@@ -5,8 +5,9 @@ import type { Course } from "../../lib/api/types";
 import { usePreferences } from "../../lib/preferences";
 import { keepKey, keepingAvailable, keptAlready, stopKeeping, useKeepJob } from "../../lib/map/route/keepRoute";
 import { keepForAir, keptRecordStore } from "../keptForAir";
+import { useStatePlatesFresh } from "../statePlates";
 import { chartPair } from "../../lib/map/sources/tiles";
-import { grouped } from "../../lib/format";
+import { grouped, megabytes } from "../../lib/format";
 
 /**
  * Keep for the Air, a setting under Map: while it is on, each route
@@ -33,6 +34,8 @@ export function useKeepOffline(course: Course | null) {
     void keepForAir(course, layer);
   }, [on, course, base]);
   useKeepRouteToast();
+  // The plates kept by state, gone on with and updated at the cycle's 0901Z.
+  useStatePlatesFresh();
 }
 
 const TOAST_ID = "keep-route";
@@ -60,7 +63,7 @@ export function useKeepRouteToast() {
       const { total, failed } = job.progress;
       if (failed >= total) {
         toast.close(TOAST_ID);
-        raiseProblem({ id: TOAST_ID, title: "Charts not kept: none of the tiles could be fetched" });
+        raiseProblem({ id: TOAST_ID, title: "Charts not kept: none of the tiles could be fetched." });
       } else {
         // The route's answers kept with them, and their size (keptForAir).
         const answers = keptRecordStore().getState().value;
@@ -69,7 +72,9 @@ export function useKeepRouteToast() {
           title: "Charts Saved Offline",
           type: "success",
           timeout: 2000,
-          description: answers ? `With the briefing, NOTAMs and plates: ${megabytes(answers.bytes)}` : undefined,
+          // The plates come after the tiles (keepForAir's keepRoutePlates),
+          // said on Ready to fly's row once they are in.
+          description: answers ? `With the briefing and NOTAMs: ${megabytes(answers.bytes)}` : undefined,
         });
         // The tiles that could not be fetched are a problem, said where
         // problems are (lib/problems) and kept until the next keep, not a
@@ -86,10 +91,4 @@ export function useKeepRouteToast() {
       clearProblem(TOAST_ID);
     }
   }, [job]);
-}
-
-/** A size as the toast says it: "3 MB", "0.4 MB". */
-function megabytes(bytes: number): string {
-  const mb = bytes / 1e6;
-  return `${mb >= 1 ? Math.round(mb) : Math.max(0.1, Math.round(mb * 10) / 10)} MB`;
 }

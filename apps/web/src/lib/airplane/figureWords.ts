@@ -1,5 +1,6 @@
 import type { FigureKey } from "./figures";
 import { andList } from "../listWords";
+import { WORDING } from "../wording/generated/wording";
 
 /**
  * How each airplane figure is named, asked for and bounded on screen. The
@@ -21,20 +22,20 @@ interface FigureWords {
 }
 
 export const FIGURE_WORDS: Record<FigureKey, FigureWords> = {
-  cruise_tas_kt: { label: "Cruise speed (TAS)", unit: "kt", ask: (t) => `How fast does ${t} cruise (true airspeed)?`, min: 30, max: 400 },
-  fuel_burn_gph: { label: "Fuel burn", unit: "gal/h", ask: (t) => `How much fuel does ${t} burn in cruise?`, min: 1, max: 100 },
-  cruise_power_pct: { label: "At power", unit: "%", ask: (t) => `At what power does ${t} cruise?`, min: 40, max: 100 },
-  usable_fuel_gal: { label: "Usable fuel", unit: "gal", ask: (t) => `How much usable fuel does ${t} hold?`, min: 5, max: 500 },
-  climb_tas_kt: { label: "Climb speed (TAS)", unit: "kt", ask: (t) => `How fast does ${t} climb (true airspeed)?`, min: 30, max: 300 },
+  cruise_tas_kt: { label: "Cruise Speed (TAS)", unit: "kt", ask: (t) => `How fast does ${t} cruise (true airspeed)?`, min: 30, max: 400 },
+  fuel_burn_gph: { label: WORDING.fuelBurn, unit: "gal/h", ask: (t) => `How much fuel does ${t} burn in cruise?`, min: 1, max: 100 },
+  cruise_power_pct: { label: "At Power", unit: "%", ask: (t) => `At what power does ${t} cruise?`, min: 40, max: 100 },
+  usable_fuel_gal: { label: WORDING.usableFuel, unit: "gal", ask: (t) => `How much usable fuel does ${t} hold?`, min: 5, max: 500 },
+  climb_tas_kt: { label: "Climb Speed (TAS)", unit: "kt", ask: (t) => `How fast does ${t} climb (true airspeed)?`, min: 30, max: 300 },
   climb_fuel_burn_gph: {
-    label: "Climb fuel burn",
+    label: "Climb Fuel Burn",
     unit: "gal/h",
     ask: (t) => `How much fuel does ${t} burn in the climb?`,
     min: 1,
     max: 150,
   },
   climb_rate_fpm: {
-    label: "Climb rate at sea level",
+    label: WORDING.climbRateAtSeaLevel,
     unit: "fpm",
     ask: (t) => `How fast does ${t} climb at sea level?`,
     min: 0,
@@ -44,31 +45,38 @@ export const FIGURE_WORDS: Record<FigureKey, FigureWords> = {
   // A descent's speed as its handbook gives it, indicated (the engine
   // flies it as a true airspeed at the descent's altitude).
   descent_ias_kt: {
-    label: "Descent speed (IAS)",
+    label: "Descent Speed (IAS)",
     unit: "kt",
     ask: (t) => `How fast does ${t} descend (indicated airspeed, as its handbook gives it)?`,
     min: 30,
     max: 300,
   },
   descent_fuel_burn_gph: {
-    label: "Descent fuel burn",
+    label: "Descent Fuel Burn",
     unit: "gal/h",
     ask: (t) => `How much fuel does ${t} burn in the descent?`,
     min: 1,
     max: 150,
   },
-  service_ceiling_ft: { label: "Service ceiling", unit: "ft", ask: (t) => `What is ${t}'s service ceiling?`, min: 1000, max: 30000 },
+  service_ceiling_ft: { label: WORDING.serviceCeiling, unit: "ft", ask: (t) => `What is ${t}'s service ceiling?`, min: 1000, max: 30000 },
   taxi_fuel_gal: {
-    label: "Start and taxi fuel",
+    label: WORDING.startAndTaxiFuel,
     unit: "gal",
     ask: (t) => `How much fuel does ${t} use to start and taxi?`,
     min: 0,
     max: 50,
   },
-  glide_ratio: { label: "Glide ratio", unit: ": 1", ask: (t) => `What is ${t}'s glide ratio?`, min: 1, max: 80, minExcluded: true },
-  empty_weight_lb: { label: "Empty weight", unit: "lb", ask: (t) => `What is ${t}'s empty weight?`, min: 0, max: 20000, minExcluded: true },
+  glide_ratio: { label: WORDING.glideRatio, unit: ": 1", ask: (t) => `What is ${t}'s glide ratio?`, min: 1, max: 80, minExcluded: true },
+  empty_weight_lb: {
+    label: WORDING.emptyWeight,
+    unit: "lb",
+    ask: (t) => `What is ${t}'s empty weight?`,
+    min: 0,
+    max: 20000,
+    minExcluded: true,
+  },
   empty_moment_lb_in: {
-    label: "Empty moment",
+    label: WORDING.emptyMoment,
     unit: "lb-in",
     ask: (t) => `What is ${t}'s empty moment?`,
     min: 0,

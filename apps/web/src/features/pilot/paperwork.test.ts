@@ -25,7 +25,7 @@ describe("the paperwork list's words", () => {
   });
 
   it("puts the airplane's tail before its own items", () => {
-    expect(dueTitle({ title: "Annual inspection", tailNumber: "N12345" })).toBe("N12345 · Annual inspection");
-    expect(dueTitle({ title: "Flight review", tailNumber: null })).toBe("Flight review");
+    expect(dueTitle({ title: "Annual Inspection", tailNumber: "N12345" })).toBe("N12345 · Annual Inspection");
+    expect(dueTitle({ title: "Flight Review", tailNumber: null })).toBe("Flight Review");
   });
 });

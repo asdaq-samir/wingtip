@@ -1,16 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { useWindPicks, holdsOf, holdsParam, type PlanParams, departureRunways, landingRunways, namesRoute } from "../../plan";
+import {
+  askedRunways,
+  firstWindPicks,
+  holdsOf,
+  holdsParam,
+  type FirstWindPicks,
+  type PlanParams,
+  departureRunways,
+  landingRunways,
+  namesRoute,
+  windPickedEnds,
+} from "../../plan";
 import type { PlannedRoute, PlanCourse } from "../../plan";
-import { altitudesOf, altitudesParam, departureOf, groundOf, identOf, nameOwnPoints, routeOf, stopsOf } from "../../../lib/identSchema";
+import {
+  altitudesOf,
+  altitudesParam,
+  departureOf,
+  groundOf,
+  identOf,
+  nameOwnPoints,
+  routeOf,
+  stopsOf,
+  tanksOf,
+} from "../../../lib/identSchema";
 import { useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { usePreferences } from "../../../lib/preferences";
 import { addressParams, useAddress } from "../../../lib/address";
 import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { picksOf } from "../../../lib/flightLink";
-import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
-import { airportQuery, procedureQuery } from "../../../lib/queryClient";
+import { flownPicks, proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
+import { procedureQuery } from "../../../lib/queryClient";
 import { drawnOnly } from "../../procedures";
+import { patternsOf } from "../../../lib/trafficPattern";
 import { useRouteEdits } from "../../route";
 
 /**
@@ -26,7 +48,10 @@ export function usePlanRoute() {
   const [address, setAddress] = useAddress();
   // A route in the address is read by the engine, so waited for behind
   // MapPage's boot map; with none (a fresh open) the page draws at once.
-  const engine = useEngineWhen(namesRoute(address));
+  // The altitude, tanks, pattern and takeoff are read by its rules too
+  // (flightLevel, tanksOf, patternsOf), so a link with one waits as well.
+  const readsEngine = namesRoute(address) || [address.altitude_ft, address.tanks, address.pattern, address.takeoff].some((v) => v != null);
+  const engine = useEngineWhen(readsEngine);
   // Every change of the plan can be taken back (Undo, Cmd-Z), whichever
   // button made it, in place of asking first.
   usePlanHistory(address, setAddress);
@@ -84,47 +109,31 @@ export function usePlanRoute() {
   const routeFields = `${planned.dep},${planned.stops},${planned.dest}`;
   const picksParam = address.procs;
   const routePicks = useMemo(
-    () => proceduresOf(picksParam).filter((p) => routeFields.split(",").includes(p.ident)),
+    // An approach only loaded is not flown (flownPicks): the route goes on
+    // to the field as though none were picked, until it is activated.
+    () => flownPicks(proceduresOf(picksParam)).filter((p) => routeFields.split(",").includes(p.ident)),
     [picksParam, routeFields],
   );
   const pickQueries = useMemo(() => routePicks.map(procedureQuery), [routePicks]);
   const drawnPickList = useQueries({ queries: pickQueries, combine: drawnOnly });
-  // Each picked procedure's drawing in or given up on, and no runway into
-  // the wind still to be picked (useWindPicks): only then is the nav log
-  // asked for (usePlan's `settling`), once, not again for each as it came.
+  // Each picked procedure's drawing in or given up on: only then is the nav
+  // log asked for (usePlan's `settling`), once, not again for each as it
+  // came. Not the runways into the wind: the planner picks those itself
+  // (askedRunways, below), so the nav log no longer waits on the fields'
+  // cards and the page's picks, about a second on each new route (the speed
+  // audit of 2026-11-21).
   const picksComing = useQueries({ queries: pickQueries, combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle") });
-  const windPending = useWindPicks((w) => w.pending);
-  // Settled for this route only once a commit has gone by with nothing
-  // coming: the route list's wind picks are set in its effects, which run
-  // after the render that would otherwise have asked for the nav log
-  // without them (the store read here, after them). A route not settled
-  // yet -- each new one -- waits that one commit.
-  // The route's fields' cards too, whose reports the runways are picked
-  // into the wind from: the route list that picks them may be drawn after
-  // the plan is first asked for, and the cards are asked for with the
-  // route in any case.
-  const fieldIdents = routeFields.split(",").filter(Boolean);
-  const cardsComing = useQueries({
-    queries: fieldIdents.map((ident) => airportQuery(ident)),
-    combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle"),
-  });
-  const settlingNow = picksComing || windPending || cardsComing;
-  const settledFor = useWindPicks((w) => w.settledFor);
-  useEffect(() => {
-    useWindPicks.setState({ settledFor: !settlingNow && !useWindPicks.getState().pending ? routeFields : null });
-  }, [settlingNow, routeFields]);
   // Those the CIFP has, once drawn, each with the fix ATC sent the airplane
   // direct to where there is one: one string, so the plan's key changes
   // only as a procedure does.
   const procedures = useMemo(
     () =>
       proceduresParam(
-        drawnPickList.map((d) => ({
-          ident: d.airport,
-          id: d.id,
-          transition: d.transition ?? null,
-          direct: routePicks.find((p) => sameField(p.ident, d.airport) && p.id === d.id)?.direct ?? null,
-        })),
+        drawnPickList.map((d) => {
+          const own = routePicks.find((p) => sameField(p.ident, d.airport) && p.id === d.id);
+          // Unsuspended, its missed approach flown on (AIM 5-4-21).
+          return { ident: d.airport, id: d.id, transition: d.transition ?? null, direct: own?.direct ?? null, missed: !!own?.missed };
+        }),
       ),
     [drawnPickList, routePicks],
   );
@@ -141,13 +150,17 @@ export function usePlanRoute() {
   // its point (plan.with_holds), set from a point's menu in FPL's list.
   const holdsParamText = address.holds;
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);
+  // The fuel the pilot set in the tanks leaving a field (`tanks`,
+  // "KOSH:30,KJVL:0"), from FPL's gauges (FuelSet); one not named, full.
+  const tanksParamText = address.tanks;
+  const tanks = useMemo(() => tanksOf(tanksParamText), [tanksParamText]);
   // The runway each departure picked is left from ("KSTL:30R"): the
   // departure field's runway picked, a stop's to leave from -- flown by its
   // runway transition for it (wingtip.procedure_paths), where St. Louis's
   // BERYY6 went out by its first, runway 11's, off 30R (the audit of
-  // 2026-10-21). A runway picked into the wind as the route comes in asks
-  // for the log again, which the planner answers from its cache: the legs
-  // are planned without the runways, their paths laid on after
+  // 2026-10-21). A runway the wind turns, or the pilot picks, asks for the
+  // log again, which the planner answers from its cache: the legs are
+  // planned without the runways, their paths laid on after
   // (with_procedures).
   const patternText = address.pattern,
     takeoffText = address.takeoff;
@@ -159,9 +172,26 @@ export function usePlanRoute() {
   // 2026-10-27: "is it not flying that and landing?"). The departure's own
   // runway is the one in `pattern` (ProceduresRoute's departChips), a
   // round trip's in `takeoff`.
-  const runwaysText = useMemo(() => departureRunways(patternText, takeoffText, routeFields), [patternText, takeoffText, routeFields]);
-  const landingsText = useMemo(() => landingRunways(patternText, routeFields), [patternText, routeFields]);
-  const local = !!planned.dep && planned.dep === planned.dest && planned.stops.length === 0;
+  // Less those picked into the wind and still as first picked for the
+  // route, which the planner picks itself (features/plan/windRunways): the
+  // nav log asked at once, and not again as the page's own picks come in.
+  const autoText = address.auto;
+  const windEnds = useMemo(() => windPickedEnds(autoText, patternText, takeoffText), [autoText, patternText, takeoffText]);
+  const [firstWind, setFirstWind] = useState<FirstWindPicks>({ route: "", ends: {} });
+  const firstNow = firstWindPicks(firstWind, routeFields, windEnds);
+  if (firstNow !== firstWind) setFirstWind(firstNow);
+  const firstEnds = firstNow.ends;
+  const runwaysText = useMemo(() => {
+    const takeoffs = patternsOf(takeoffText);
+    const all = departureRunways(patternText, takeoffText, routeFields);
+    return askedRunways(all, (ident) => (takeoffs.has(ident) ? "takeoff" : "land"), windEnds, firstEnds);
+  }, [patternText, takeoffText, routeFields, windEnds, firstEnds]);
+  const landingsText = useMemo(
+    () => askedRunways(landingRunways(patternText, routeFields), () => "land", windEnds, firstEnds),
+    [patternText, routeFields, windEnds, firstEnds],
+  );
+  // One field by either of its idents (KOSH, OSH): the engine's same_field.
+  const local = !!planned.dep && !!planned.dest && sameField(planned.dep, planned.dest) && planned.stops.length === 0;
   // A route on screen: one the planner plans, or a local flight -- an
   // airport to itself with no stop (usePlan's `local`).
   const routed = routeOf(planned.dep, planned.dest, planned.stops) !== null || local;
@@ -182,10 +212,11 @@ export function usePlanRoute() {
     procedures,
     runways: runwaysText,
     patterns: landingsText,
-    settling: settlingNow || settledFor !== routeFields,
+    settling: picksComing,
     crossings: altitudesParam(crossings),
     ground: altitudesParam(ground),
     holds: holdsParam(holds),
+    tanks: altitudesParam(tanks),
     localMin,
     rules: flightRules,
     // Under IFR, the alternate filed in the Weather tab (AlternateSection).
@@ -222,6 +253,7 @@ export function usePlanRoute() {
     crossings,
     ground,
     holds,
+    tanks,
     directParam: address.direct,
     planInputs,
     ...edits,

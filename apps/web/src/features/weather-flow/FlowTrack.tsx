@@ -96,7 +96,7 @@ export function FlowTrack({
               onClick={() => (i === now ? onNow() : seek(i))}
               data-testid={i === now ? testIdNow : undefined}
               className={cn(
-                "absolute top-0 -translate-x-1/2 font-semibold whitespace-nowrap outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']",
+                "absolute top-0 -translate-x-1/2 font-semibold whitespace-nowrap outline-none hit-x-1 hit-y-3",
                 TEXT.caption,
                 i === shown ? "text-foreground" : "text-muted-foreground",
               )}

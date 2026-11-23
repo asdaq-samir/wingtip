@@ -3,8 +3,10 @@ asks of a resource server (modelcontextprotocol.io, 2026-07-28,
 "Access Token Usage"): the signature against the gateway's published
 keys, the issuer, the expiry, and the audience -- this connector's own
 address (RFC 8707), so a token the gateway issued for anything else is
-refused. Nothing here passes the token on: the pilot's records are asked
-of the gateway with the planner's own credential (app.mcp.records)."""
+refused. The token goes nowhere but back to the gateway that issued it,
+on its internal port, to ask whether it still stands; the pilot's records
+are asked of the gateway with the planner's own credential
+(app.mcp.records)."""
 
 from __future__ import annotations
 
@@ -19,8 +21,8 @@ from . import records
 
 log = logging.getLogger(__name__)
 
-#: Whether a pilot's connection through a client still stands.
-Live = Callable[[str, str], Awaitable[bool]]
+#: Whether an access token, the pilot's through a client, still stands.
+Live = Callable[[str, str, str], Awaitable[bool]]
 
 #: Seconds between two fetches of the gateway's keys for a key id not seen.
 KEY_REFETCH_S = 60
@@ -43,10 +45,10 @@ class GatewayTokens(TokenVerifier):
         self._keys = jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=3600, timeout=5, cooldown_duration=KEY_REFETCH_S)
         self.issuer = issuer
         self.resource = resource
-        # Whether the connection a token was issued on still stands
+        # Whether the token itself still stands
         # (app.mcp.records.connection_live): asked on every call, so a
-        # pilot who disconnects or deletes their account is cut off at
-        # once, not when the token runs out.
+        # token revoked, a connection removed or an account deleted is cut
+        # off at once, not when the token runs out.
         self.live = live or records.connection_live
 
     def claims(self, token: str) -> dict:
@@ -68,7 +70,7 @@ class GatewayTokens(TokenVerifier):
         except jwt.PyJWTError as err:
             log.info("connector token refused: %s", err)
             return None
-        if not await self.live(str(claims["sub"]), str(claims.get("client_id", ""))):
+        if not await self.live(str(claims["sub"]), str(claims.get("client_id", "")), token):
             log.info("connector token refused: its connection was revoked or its account deleted")
             return None
         return AccessToken(

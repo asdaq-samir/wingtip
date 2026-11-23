@@ -121,7 +121,7 @@ def test_a_quiet_flight_with_the_sample_load_and_a_pilot_is_nothing_found_agains
     assert body["line"] == {"finding": "ok", "words": "Nothing found against this flight"}
     assert items["weather"]["detail"] == "No hazards; at worst 3,500 ft · 6 sm"
     assert items["altitude"]["detail"] == "5,500 ft · Lowest plan"
-    assert items["fuel"]["detail"] == "Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal spare"
+    assert items["fuel"]["detail"] == "Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal beyond reserve"
     assert (items["fuel"]["tab"], items["fuel"]["section"]) == ("preflight", "Fuel")
     # The POH's sample airplane, a pilot of 170 lb and the usable fuel.
     assert body["balance"]["load"]["stations_lb"] == [170, 0, 0, 0]
@@ -152,7 +152,7 @@ def test_what_the_pilot_sends_decides_the_minimums_the_loading_and_the_risk(stub
     assert items["balance"]["finding"] == "stop"
     assert "The baggage, 170 lb in all, is over its 120 lb" in body["balance"]["problems"]
     assert body["risk"]["level"] == "high"
-    assert body["line"]["words"] == "No-go as planned: Weather, Weight & balance, Risk"
+    assert body["line"]["words"] == "No-go as planned: weather, weight & balance, risk"
 
 
 def test_a_tfr_crossed_while_in_force_and_one_passed_before_it_starts(stubbed):

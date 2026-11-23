@@ -5,7 +5,20 @@ description: Find and prove speed problems in the planner the way they show up o
 
 # Measure speed
 
-Profile before guessing. Every speed claim needs a before number, an after number and the method behind both.
+Every speed claim needs a before number, an after number and the method behind both.
+
+The general method is in user-level skills in `~/.claude/skills`, so it is not repeated here:
+- `animation-performance`: when an animation drops frames. It covers composite-only properties, keeping motion off the main thread and finding the cause of a dropped frame.
+- `performance-optimization` (Addy Osmani): the measure, identify, fix, re-measure loop. It also covers Core Web Vitals and backend latency, and why a neutral result is a revert.
+
+This skill keeps what is Wingtip's own:
+- the CPU-throttled before and after method on the production build;
+- the bundle gate;
+- tap-to-route timing;
+- the planner's latency;
+- the costs already found here.
+
+Where those skills differ from this one, this skill wins. For example, its 1.10 MB first-load gate, not their generic budgets.
 
 ## Method
 - **Measure the production build,** not vite's dev server. The web-dev setup (`WEB_DIST_MOUNT`, docker-compose.yml) serves `apps/web/dist`, which `web-build` keeps current.
@@ -17,7 +30,7 @@ Profile before guessing. Every speed claim needs a before number, an after numbe
 - **The trend:** the developer console's Speed page (System, then Speed) charts pilots' Core Web Vitals (75th percentile, by device) beside the nightly lab run, for 400 days (SpeedController). Look there first for when something got slower and at which commit. The lab is `e2e/speed-lab.spec.ts` (`SPEED_LAB=1`, phone project); run it the same way to compare a change locally.
 - **Bundle:**
   - Build into a throwaway directory, never into the `dist` the phone is being served: `docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim npx vite build --outDir /tmp/out`. It prints the chunk table.
-  - The first load was 959,581 bytes on 2026-11-18 (claude/simp-web; 1,086,893 that morning); CI's budget is 1,100,000 (ci.yml, first-load.mjs). What a module brings in: a vite build with a plugin that writes each chunk's modules (`renderedLength`) and each module's `importers` (`this.getModuleIds()`, `this.getModuleInfo`), then the modules no longer reachable from `src/main.tsx` with one taken out. Re-measure after anything that adds an import to `MapPage`, `PlanWorkspace` or what they reach.
+  - The first load was 959,581 bytes on 2026-11-18 (claude/simp-web; 1,086,893 that morning) and 1,009,569 on 2026-11-22 (claude/rev-perf, from 1,042,596: two barrels' page parts moved to their lazy.ts); CI's budget is 1,100,000 (ci.yml, first-load.mjs). A lazily drawn part exported from a feature's index.ts loads with the page: it goes in lazy.ts. What a module brings in: a vite build with a plugin that writes each chunk's modules (`renderedLength`) and each module's `importers` (`this.getModuleIds()`, `this.getModuleInfo`), then the modules no longer reachable from `src/main.tsx` with one taken out. Re-measure after anything that adds an import to `MapPage`, `PlanWorkspace` or what they reach.
   - The engine's WebAssembly: `python3 scripts/ci/wasm_size.py` gives raw, gzip (budgeted) and Brotli (said only; it needs the brotli CLI or node, so run it in `node:26-slim` on the Mac). On 2026-11-14 it was 1,099,029 bytes, 492,654 gzipped, 397,838 in Brotli. For what is in it, build unstripped (`CARGO_PROFILE_WASM_STRIP=none`, a scratch `CARGO_TARGET_DIR`, `cargo build -p wingtip-wasm --target wasm32-unknown-unknown --profile wasm` in engine/) and read `twiggy top`. A crate function answering several rules that the web reaches without the wasm-only `inline(always)` carries every arm (engine/README.md); that was 195 KB on 2026-11-14.
   - Bytes on the wire: every build writes a `.br` (Brotli at 11) and a `.gz` beside each file, and the gateway sends the `.br` to Safari, which asks for it. Sum the `.br` of what index.html names: 713,841 bytes on 2026-11-14, against 950,599 in gzip at 9 for the same files before the engine was trimmed.
   - To find what pulls a module in, walk the static imports (`from"./x.js"`) from `dist/index.html` and `MapPage`. For bytes per source module, decode a `--sourcemap` build's mappings (source-map-explorer fails on it).

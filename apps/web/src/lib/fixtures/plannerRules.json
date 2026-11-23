@@ -44,6 +44,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -69,6 +70,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -94,6 +96,7 @@
       }
      },
      "name": "CHICAGO CLASS B",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -119,6 +122,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -129,6 +133,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -169,6 +174,7 @@
       }
      },
      "name": "ADDISON CLASS D",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -194,6 +200,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -219,6 +226,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -244,6 +252,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -254,6 +263,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -294,6 +304,7 @@
       }
      },
      "name": "ADDISON CLASS D",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -319,6 +330,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -344,6 +356,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -369,6 +382,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -379,6 +393,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -411,6 +426,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -436,6 +452,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -461,6 +478,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -486,6 +504,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -511,6 +530,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -521,6 +541,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -553,6 +574,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -578,6 +600,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -603,6 +626,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -628,6 +652,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -638,6 +663,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -670,6 +696,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -695,6 +722,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -720,6 +748,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -745,6 +774,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -755,6 +785,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -809,6 +840,7 @@
       }
      },
      "name": "X CLASS C",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -834,6 +866,7 @@
       }
      },
      "name": "X CLASS C",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -859,6 +892,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -884,6 +918,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -894,6 +929,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -955,6 +991,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -980,6 +1017,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1005,6 +1043,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1015,6 +1054,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -1055,6 +1095,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1080,6 +1121,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1105,6 +1147,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1130,6 +1173,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1155,6 +1199,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1180,6 +1225,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1190,6 +1236,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -1244,6 +1291,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -1269,6 +1317,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1294,6 +1343,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1304,6 +1354,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -1365,6 +1416,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -1390,6 +1442,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1415,6 +1468,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1440,6 +1494,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1450,6 +1505,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -1497,6 +1553,7 @@
       }
      },
      "name": "C AREA",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1522,6 +1579,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1547,6 +1605,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1572,6 +1631,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1582,6 +1642,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -1622,6 +1683,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -1647,6 +1709,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -1672,6 +1735,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1697,6 +1761,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1722,6 +1787,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1747,6 +1813,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1757,6 +1824,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -1818,6 +1886,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -1843,6 +1912,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1868,6 +1938,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1893,6 +1964,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -1903,6 +1975,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -1943,6 +2016,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1968,6 +2042,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -1993,6 +2068,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2018,6 +2094,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2043,6 +2120,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2053,6 +2131,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -2114,6 +2193,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2139,6 +2219,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2164,6 +2245,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2189,6 +2271,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2199,6 +2282,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -2260,6 +2344,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2285,6 +2370,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2310,6 +2396,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2335,6 +2422,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2345,6 +2433,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -2385,6 +2474,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -2410,6 +2500,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -2435,6 +2526,7 @@
       }
      },
      "name": "B AREA",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2460,6 +2552,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2485,6 +2578,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2495,6 +2589,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -2563,6 +2658,7 @@
       }
      },
      "name": "C AREA",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -2588,6 +2684,7 @@
       }
      },
      "name": "C AREA",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2613,6 +2710,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2638,6 +2736,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2648,6 +2747,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -2716,6 +2816,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2741,6 +2842,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2766,6 +2868,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2791,6 +2894,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2801,6 +2905,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -2848,6 +2953,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2873,6 +2979,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2898,6 +3005,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2923,6 +3031,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -2948,6 +3057,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2973,6 +3083,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -2983,6 +3094,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -3030,6 +3142,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3055,6 +3168,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3080,6 +3194,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3105,6 +3220,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3115,6 +3231,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -3155,6 +3272,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -3180,6 +3298,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -3205,6 +3324,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3230,6 +3350,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3240,6 +3361,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -3301,6 +3423,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -3326,6 +3449,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -3351,6 +3475,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -3376,6 +3501,7 @@
       }
      },
      "name": "B AREA",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3386,6 +3512,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -3426,6 +3553,7 @@
       }
      },
      "name": "D AREA",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -3451,6 +3579,7 @@
       }
      },
      "name": "D AREA",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3476,6 +3605,7 @@
       }
      },
      "name": "D AREA",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3501,6 +3631,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3526,6 +3657,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3536,6 +3668,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -3604,6 +3737,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -3629,6 +3763,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -3654,6 +3789,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -3679,6 +3815,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3704,6 +3841,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3714,6 +3852,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -3746,6 +3885,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -3771,6 +3911,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -3796,6 +3937,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3821,6 +3963,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3831,6 +3974,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -3892,6 +4036,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -3917,6 +4062,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3942,6 +4088,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3967,6 +4114,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -3977,6 +4125,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -4024,6 +4173,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4049,6 +4199,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4074,6 +4225,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4084,6 +4236,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -4138,6 +4291,7 @@
       }
      },
      "name": "D AREA",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -4163,6 +4317,7 @@
       }
      },
      "name": "D AREA",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -4188,6 +4343,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -4213,6 +4369,7 @@
       }
      },
      "name": "D AREA",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -4238,6 +4395,7 @@
       }
      },
      "name": "D AREA",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4263,6 +4421,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4288,6 +4447,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4298,6 +4458,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -4345,6 +4506,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -4370,6 +4532,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4395,6 +4558,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4420,6 +4584,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4430,6 +4595,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -4484,6 +4650,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4509,6 +4676,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4534,6 +4702,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4559,6 +4728,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4569,6 +4739,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -4630,6 +4801,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -4655,6 +4827,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -4680,6 +4853,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -4705,6 +4879,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4730,6 +4905,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4740,6 +4916,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -4808,6 +4985,7 @@
       }
      },
      "name": "C AREA",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -4833,6 +5011,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4858,6 +5037,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4883,6 +5063,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4893,6 +5074,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -4947,6 +5129,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4972,6 +5155,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -4982,6 +5166,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -5029,6 +5214,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5054,6 +5240,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5079,6 +5266,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5104,6 +5292,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5129,6 +5318,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5154,6 +5344,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5164,6 +5355,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -5196,6 +5388,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5221,6 +5414,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5246,6 +5440,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5271,6 +5466,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5296,6 +5492,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5306,6 +5503,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -5367,6 +5565,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -5392,6 +5591,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -5417,6 +5617,7 @@
       }
      },
      "name": "B AREA",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5442,6 +5643,7 @@
       }
      },
      "name": "B AREA",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5452,6 +5654,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -5484,6 +5687,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5509,6 +5713,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5534,6 +5739,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5559,6 +5765,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5569,6 +5776,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -5609,6 +5817,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5634,6 +5843,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5659,6 +5869,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5684,6 +5895,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5694,6 +5906,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -5748,6 +5961,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -5773,6 +5987,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5798,6 +6013,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5823,6 +6039,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5848,6 +6065,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5858,6 +6076,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -5912,6 +6131,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -5937,6 +6157,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -5947,6 +6168,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6001,6 +6223,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6026,6 +6249,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -6051,6 +6275,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6076,6 +6301,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6086,6 +6312,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6140,6 +6367,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6165,6 +6393,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6190,6 +6419,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6215,6 +6445,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6225,6 +6456,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6265,6 +6497,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6290,6 +6523,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6300,6 +6534,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6340,6 +6575,7 @@
       }
      },
      "name": "C AREA",
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -6365,6 +6601,7 @@
       }
      },
      "name": "C AREA",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6390,6 +6627,7 @@
       }
      },
      "name": "C AREA",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6400,6 +6638,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6468,6 +6707,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6493,6 +6733,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6518,6 +6759,7 @@
       }
      },
      "name": "",
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6528,6 +6770,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6582,6 +6825,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -6607,6 +6851,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 200
     },
     {
@@ -6632,6 +6877,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6657,6 +6903,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6682,6 +6929,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6692,6 +6940,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6732,6 +6981,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6757,6 +7007,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6782,6 +7033,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6807,6 +7059,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6832,6 +7085,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6857,6 +7111,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6867,6 +7122,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -6899,6 +7155,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6924,6 +7181,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -6949,6 +7207,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6974,6 +7233,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -6984,6 +7244,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -7024,6 +7285,7 @@
       }
      },
      "name": "SAME NAME",
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7049,6 +7311,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7074,6 +7337,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7099,6 +7363,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7109,6 +7374,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -7156,6 +7422,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7181,6 +7448,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7206,6 +7474,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7231,6 +7500,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7241,6 +7511,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -7273,6 +7544,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7298,6 +7570,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7323,6 +7596,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7348,6 +7622,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7358,6 +7633,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -7398,6 +7674,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7423,6 +7700,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7448,6 +7726,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7473,6 +7752,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7483,6 +7763,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -7523,6 +7804,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7548,6 +7830,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7573,6 +7856,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7598,6 +7882,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7623,6 +7908,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7633,6 +7919,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -7694,6 +7981,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7719,6 +8007,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7744,6 +8033,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7769,6 +8059,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7779,6 +8070,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -7811,6 +8103,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7836,6 +8129,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": 250
     },
     {
@@ -7861,6 +8155,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7886,6 +8181,7 @@
       }
      },
      "name": null,
+     "ident": null,
      "speed_kt": null
     },
     {
@@ -7896,6 +8192,7 @@
      "floor_ft": 18000.0,
      "minimums": null,
      "name": null,
+     "ident": null,
      "speed_kt": null
     }
    ]
@@ -12514,7 +12811,7 @@
    "to_fixed0": null,
    "to_fixed2": null,
    "grouped": null,
-   "alt_ft": "\u2014",
+   "alt_ft": "—",
    "flight_level": "FL----"
   },
   {
@@ -13002,8 +13299,11 @@
     "fuel_per_nm": 0.07742851022292518,
     "min_per_nm": 0.5324480230552859,
     "usable_gal": 40.0,
+    "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 4.5
+    "reserve_gal": 4.5,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   },
   {
@@ -13049,8 +13349,11 @@
     "fuel_per_nm": 0.07742851022292518,
     "min_per_nm": 0.5324480230552859,
     "usable_gal": 40.0,
+    "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 6.8
+    "reserve_gal": 6.8,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   },
   {
@@ -13154,8 +13457,11 @@
     "fuel_per_nm": 0.07236842105263158,
     "min_per_nm": 0.5,
     "usable_gal": 40.0,
+    "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 4.5
+    "reserve_gal": 4.5,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   },
   {
@@ -13193,8 +13499,62 @@
     "fuel_per_nm": 0.07236842105263158,
     "min_per_nm": 0.5,
     "usable_gal": 40.0,
+    "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 6.75
+    "reserve_gal": 6.75,
+    "alternate_gal": 0.0,
+    "on_board_short": false
+   }
+  },
+  {
+   "totals": {
+    "fuel_margin_gal": -6.4,
+    "usable_fuel_gal": 40.0,
+    "on_board_gal": 30.0,
+    "distance_nm": 510.0,
+    "fuel_gal": 38.1,
+    "ete_min": 262.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5,
+    "rules": "vfr",
+    "night": true
+   },
+   "legs": [
+    {
+     "distance_nm": 120.0,
+     "fuel_gal": 8.6
+    },
+    {
+     "distance_nm": 140.0,
+     "fuel_gal": 11.2
+    },
+    {
+     "distance_nm": 160.0,
+     "fuel_gal": 10.9
+    },
+    {
+     "distance_nm": 90.0,
+     "fuel_gal": 7.4
+    }
+   ],
+   "start": {
+    "lat": 46.8421,
+    "lon": -92.1936
+   },
+   "end": {
+    "lat": 38.7487,
+    "lon": -90.37
+   },
+   "depart_s": 1790000000.0,
+   "need": {
+    "fuel_per_nm": 0.07742851022292518,
+    "min_per_nm": 0.5324480230552859,
+    "usable_gal": 40.0,
+    "start_gal": 30.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   }
  ],

@@ -5,9 +5,9 @@ import Foundation
 /// question is matched to the figures it asks for by its words, and each
 /// figure is said as the engine's own sentence, citing itself. Plain, but
 /// every word of it is a figure the engine or a report gave.
-enum EngineWords {
+nonisolated enum EngineWords {
     /// What a question asks for, by the words a pilot uses.
-    enum Topic: String, CaseIterable, Sendable {
+    nonisolated enum Topic: String, CaseIterable, Sendable {
         case wind, density, weather, fuel, glide, nearest, route
     }
 
@@ -34,9 +34,9 @@ enum EngineWords {
 
     /// The field a question names: a held field's ident, with or without
     /// its K ("MSN", "KMSN"); nil for the destination.
-    static func ident(_ question: String, facts: OnDeviceFacts) -> String? {
+    static func ident(_ question: String, facts: OnDeviceFacts) throws -> String? {
         let tokens = question.uppercased().split { !$0.isLetter && !$0.isNumber }.map(String.init)
-        return tokens.first { facts.fields[$0] != nil || (($0.count == 3) && facts.fields["K" + $0] != nil) }
+        return try tokens.first { try facts.field($0) != nil }
     }
 
     /// The runway a question names: "runway 36", "rwy 18L".
@@ -49,7 +49,7 @@ enum EngineWords {
 
     /// The figures for a topic, or why there are none.
     static func figures(_ topic: Topic, question: String, facts: OnDeviceFacts, pins: FlightFigures.Pins) throws -> [AskFigure] {
-        let ident = ident(question, facts: facts)
+        let ident = try ident(question, facts: facts)
         switch topic {
         case .wind: return try FieldFigures.crosswind(ident, runway: runway(question), facts: facts)
         case .density: return try FieldFigures.densityAltitude(ident, facts: facts)
@@ -79,7 +79,7 @@ enum EngineWords {
             do {
                 figures += try Self.figures(topic, question: question, facts: facts, pins: pins).filter { f in !figures.contains { $0.id == f.id } }
             } catch {
-                why = why ?? ((error as? AskRefused)?.why ?? error.localizedDescription)
+                why = why ?? Problems.refusal(error, otherwise: "The figures could not be worked out")
             }
         }
         guard !figures.isEmpty else { return .none("engine", why ?? "This iPhone holds nothing to answer that with.") }

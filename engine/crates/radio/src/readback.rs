@@ -64,9 +64,11 @@ pub fn altitude_words(ft: i64) -> String {
     }
 }
 
-/// A heading as said, three figures (AIM 4-2-10: "heading one zero zero").
+/// A heading as said, three figures (AIM 4-2-10: "heading one zero zero"),
+/// north as 360, never 000 (FAA Order JO 7110.65, 2-4-17).
 pub fn heading_words(deg: i64) -> String {
-    format!("heading {deg:03}")
+    let whole = deg.rem_euclid(360);
+    format!("heading {:03}", if whole == 0 { 360 } else { whole })
 }
 
 /// A place's words as they are compared: lower case, "the" and "airport"
@@ -352,4 +354,18 @@ pub fn check_json(cleared_text: &str, said: &str, tail: Option<&str>) -> String 
     json::string(&mut o, &words(&items));
     o.push('}');
     o
+}
+
+#[cfg(test)]
+mod north_tests {
+    use super::heading_words;
+
+    // North is said 360, never 000 (FAA Order JO 7110.65, 2-4-17).
+    #[test]
+    fn north_is_360() {
+        assert_eq!(heading_words(0), "heading 360");
+        assert_eq!(heading_words(360), "heading 360");
+        assert_eq!(heading_words(90), "heading 090");
+        assert_eq!(heading_words(359), "heading 359");
+    }
 }

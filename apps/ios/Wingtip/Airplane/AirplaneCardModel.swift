@@ -24,22 +24,53 @@ final class AirplaneCardModel {
     /// The scheduled route's or the tower's failure, under Now.
     private(set) var nowProblem: String?
 
-    /// Its details, its flights and its base, asked together.
-    func load(_ hex: String) async {
-        async let detailAsk = Planner.flight(hex)
+    /// Its details, and its flights and its base where `offered` says they
+    /// are (Extra.airplaneHistory): with Other Airplanes on, asked beside
+    /// its details; else only once its details show it is the pilot's own,
+    /// and never for another's.
+    func load(_ hex: String, offered: @MainActor (FlightDetail?) -> Bool) async {
+        let detailFailed: Bool
+        var basedFailed = false
+        if offered(nil) {
+            async let historyAsk = loadHistory(hex)
+            detailFailed = await loadDetail(hex)
+            basedFailed = await historyAsk
+        } else {
+            detailFailed = await loadDetail(hex)
+            if offered(detail) { basedFailed = await loadHistory(hex) }
+        }
+        let failed = [detailFailed ? "its details" : nil, basedFailed ? "where it is based" : nil].compactMap { $0 }
+        detailProblem = failed.isEmpty ? nil : "Not all of it could be had: \(failed.joined(separator: " and ")) missing."
+    }
+
+    /// Its details; whether they could not be had.
+    private func loadDetail(_ hex: String) async -> Bool {
+        do {
+            detail = try await Planner.flight(hex)
+            return false
+        } catch {
+            return true
+        }
+    }
+
+    /// Its flights before and where it is based, asked together; whether
+    /// the base could not be had.
+    private func loadHistory(_ hex: String) async -> Bool {
         async let pastAsk = Planner.pastFlights(hex)
         async let basedAsk = Planner.based([hex])
-        var failed: [String] = []
-        do { detail = try await detailAsk } catch { failed.append("its details") }
         do {
             history = try await pastAsk
             flights = history?.flights ?? []
             problem = nil
         } catch {
-            problem = "Its past flights could not be had. Try again in a moment."
+            problem = Wording.pastFlightsNotFetched
         }
-        do { based = try await basedAsk.based.additionalProperties[hex.lowercased()] ?? nil } catch { failed.append("where it is based") }
-        detailProblem = failed.isEmpty ? nil : "Not all of it could be had: \(failed.joined(separator: " and ")) missing."
+        do {
+            based = try await basedAsk.based.additionalProperties[hex.lowercased()] ?? nil
+            return false
+        } catch {
+            return true
+        }
     }
 
     /// Ten more, before the last listed, as far back as the archive goes.
@@ -52,7 +83,7 @@ final class AirplaneCardModel {
             history = page
             flights += page.flights.filter { f in !flights.contains { $0.id == f.id } }
         } catch {
-            problem = "Earlier flights could not be had: \(error.localizedDescription)"
+            problem = Problems.say("Earlier flights could not be fetched", error)
         }
     }
 
@@ -63,7 +94,7 @@ final class AirplaneCardModel {
             towerLine = LiveWords.departureLine(try await Planner.liveDepartures(ident).first)
         } catch {
             towerLine = nil
-            nowProblem = "Its tower departures could not be had."
+            nowProblem = "Its tower departures could not be fetched."
         }
     }
 
@@ -72,7 +103,7 @@ final class AirplaneCardModel {
         do {
             route = try await Planner.flightRoute(callsign: callsign, lat: lat, lon: lon)
         } catch {
-            nowProblem = "Its scheduled route could not be had."
+            nowProblem = "Its scheduled route could not be fetched."
         }
     }
 }

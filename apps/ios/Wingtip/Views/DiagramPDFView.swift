@@ -24,6 +24,9 @@ struct DiagramPDFView: UIViewRepresentable {
     let disc: CGFloat
     /// The view, for VoiceOver's zoom (DiagramOwnShipView).
     let handle: DiagramPDFHandle
+    /// The diagram's hot spots, ringed where their labels are drawn, in
+    /// PDFKit's page space (DiagramPage.pagePoint).
+    var hotSpots: [CGPoint] = []
 
     func makeUIView(context: Context) -> PDFView {
         let view = PDFView()
@@ -34,6 +37,7 @@ struct DiagramPDFView: UIViewRepresentable {
         view.document = document
         handle.view = view
         context.coordinator.watch(view)
+        context.coordinator.ring(hotSpots, on: view)
         return view
     }
 
@@ -53,6 +57,24 @@ struct DiagramPDFView: UIViewRepresentable {
         private var mark: DiagramOwnShipMark?
 
         init(disc: CGFloat) { self.disc = disc }
+
+        /// Each hot spot's label ringed in the system's orange, PDFKit's
+        /// own circle annotation, drawn and zoomed with the page: the
+        /// diagram's own circle is beside the label, so the ring points
+        /// the pilot's eye at the name the Chart Supplement describes.
+        func ring(_ spots: [CGPoint], on view: PDFView) {
+            guard let page = view.document?.page(at: 0) else { return }
+            let side: CGFloat = 30
+            for at in spots {
+                let ring = PDFAnnotation(bounds: CGRect(x: at.x - side / 2, y: at.y - side / 2, width: side, height: side),
+                                         forType: .circle, withProperties: nil)
+                ring.color = .systemOrange
+                let border = PDFBorder()
+                border.lineWidth = 2.5
+                ring.border = border
+                page.addAnnotation(ring)
+            }
+        }
 
         /// The zoom the page may take: from the page fitted to the room up
         /// to eight times that, as the picture viewer allows (PagesScrollView);
@@ -117,7 +139,7 @@ final class DiagramPDFHandle {
 /// the system's symbol in the map's blue, a circle where there is no track
 /// or the north arrow turned to it (AC 120-76D 11.17.2.2), as the map's
 /// own ship is drawn. Nothing in it is tapped.
-final class OwnShipAnnotation: PDFAnnotation {
+final nonisolated class OwnShipAnnotation: PDFAnnotation {
     private let turnDeg: Double
     /// Made on the main actor as it is put on the page; PDFKit may draw
     /// the page off it.

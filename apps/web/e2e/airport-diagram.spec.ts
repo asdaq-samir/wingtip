@@ -86,7 +86,7 @@ test("an airport's card has its diagram as a row, and a tap shows it full screen
   // A row, as the Chart Supplement's is, not the sheet itself in the tab.
   const row = card(page).getByTestId("airport-diagram");
   await row.scrollIntoViewIfNeeded();
-  await expect(row).toHaveText(/^Airport diagram/);
+  await expect(row).toHaveText(/^Airport Diagram/);
   await expect(card(page).getByTestId("chart-supplement")).toBeVisible();
   await expect(card(page).locator("img[src*='/airport-diagram/2610/KDLH.png']")).toHaveCount(0);
 
@@ -171,7 +171,7 @@ test("where the picture cannot be had and the FAA gives no PDF, the row says the
   const row = card(page).getByTestId("airport-diagram");
   await row.scrollIntoViewIfNeeded();
   await row.click();
-  await expect(row).toContainText("The airport diagram could not be loaded");
+  await expect(row).toContainText("The airport diagram could not be fetched.");
   await expect(page.getByTestId("airport-diagram-viewer")).toHaveCount(0);
 });
 
@@ -286,7 +286,7 @@ test("a field the FAA draws no diagram for has the row all the same, showing the
   await settle(page);
   await toCharts(page);
   const row = card(page).getByTestId("airport-diagram-sketch");
-  await expect(row).toContainText("Airport diagram");
+  await expect(row).toContainText("Airport Diagram");
   await expect(row).toContainText("A sketch of the runways");
   await row.click();
   const viewer = page.getByTestId("airport-sketch-viewer");
@@ -299,7 +299,9 @@ test("a field the FAA draws no diagram for has the row all the same, showing the
   await settled(viewer);
   const box = (await sketch.boundingBox())!;
   expect(box.width).toBeGreaterThan(page.viewportSize()!.width - 2);
-  await expect(viewer).toContainText("Not an FAA airport diagram");
+  // Marked as ours, the app's mark faint in its corner, and one line under it (the owner, 2026-11-20).
+  await expect(viewer.getByTestId("airport-sketch-watermark")).toBeVisible();
+  await expect(viewer).toContainText("Not an FAA diagram.");
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);
 });
@@ -327,4 +329,26 @@ test("a tap on the card's sketch of a field the FAA draws no diagram for shows t
   await expect(card(page).getByTestId("place-tab-runways")).not.toHaveAttribute("data-active");
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);
+});
+
+test("where the FAA could not give the plates, the Charts tab says so, not that the field has none", async ({ page }) => {
+  // An outage on the d-TPP's index, the Chart Supplement's kept from the cycle before (the data-cycles audit's 13).
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
+    async (route) => {
+      const answer = await route.fetch();
+      const publications = { plates: { state: "unavailable", edition: null }, supplement: { state: "kept", edition: "03Sep2026" } };
+      await route.fulfill({
+        response: answer,
+        json: { ...(await answer.json()), airport_diagram_url: null, procedures: [], publications },
+      });
+    },
+  );
+  await page.goto("/app/plan?place=KDLH");
+  await settle(page);
+  await toCharts(page);
+  const notes = card(page).getByTestId("place-charts");
+  await expect(notes.getByText("Plates couldn't be fetched from the FAA")).toBeVisible();
+  await expect(notes.getByText("Chart Supplement from kept cycle 03Sep2026")).toBeVisible();
+  await expect(notes.getByText("The FAA publishes no airport diagram for this field")).toHaveCount(0);
 });

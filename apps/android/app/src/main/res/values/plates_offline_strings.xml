@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The FAA's plates kept for flying with no signal: the flight's by Keep for the Air (KeepForAirModel), a state's by Setup → Downloads (StatePlates); the web's words. -->
+<resources>
+    <plurals name="plates_flight_size">
+        <item quantity="one">This flight\'s plates: about %1$s MB, %2$d field, within %3$d nm of the route.</item>
+        <item quantity="other">This flight\'s plates: about %1$s MB, %2$d fields, within %3$d nm of the route.</item>
+    </plurals>
+    <plurals name="plates_flight_size_no_airplane">
+        <item quantity="one">This flight\'s plates: about %1$s MB, %2$d field. Pick an airplane to keep the fields within diversion range too.</item>
+        <item quantity="other">This flight\'s plates: about %1$s MB, %2$d fields. Pick an airplane to keep the fields within diversion range too.</item>
+    </plurals>
+    <string name="plates_section">Plates</string>
+    <string name="plates_cycle_until">Cycle %1$s, until %2$s</string>
+    <string name="plates_unlisted">The plates couldn\'t be listed. Try again with a connection.</string>
+    <string name="plates_about_mb">about %1$s MB</string>
+    <string name="plates_download_named">Download %1$s\'s plates?</string>
+    <string name="plates_download_what">%1$s at %2$s, about %3$s MB, cycle %4$s</string>
+    <plurals name="plates_charts">
+        <item quantity="one">%d chart</item>
+        <item quantity="other">%d charts</item>
+    </plurals>
+    <plurals name="plates_fields">
+        <item quantity="one">%d field</item>
+        <item quantity="other">%d fields</item>
+    </plurals>
+    <string name="plates_download">Download</string>
+    <string name="plates_kept_line">Cycle %1$s · %2$d of %3$s</string>
+    <plurals name="plates_failed">
+        <item quantity="one">%d chart couldn\'t be kept.</item>
+        <item quantity="other">%d charts couldn\'t be kept.</item>
+    </plurals>
+</resources>

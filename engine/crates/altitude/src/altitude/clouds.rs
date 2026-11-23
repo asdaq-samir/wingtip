@@ -1,7 +1,8 @@
 //! 14 CFR 91.155's distance under the clouds, as the band keeps it.
 
-use super::track::{track_nm, Point};
-use crate::geo::distance_nm;
+use super::track::{surely_off_nm, track_from, track_nm, Point};
+use crate::geo::{bearing_deg, distance_nm, sphere_nm, SPHERE_WITHIN};
+use wingtip_core::sort::StableSort;
 
 /// 14 CFR 91.155(a), VFR under a cloud layer: 500 ft below it under
 /// 10,000 ft MSL (wingtip_flight::vfr, the one copy) ...
@@ -65,10 +66,25 @@ pub fn leg_bases(legs: &[(Point, Point)], stations: &[Station]) -> Vec<Option<(f
     legs.iter()
         .map(|&(a, b)| {
             let length = distance_nm(a.0, a.1, b.0, b.1);
+            // The leg's course solved once for every station (track_from
+            // is track_nm with it given).
+            let course = bearing_deg(a.0, a.1, b.0, b.1);
             let mut lowest: Option<(f64, String)> = None;
             for s in stations {
                 let (Some(ceiling), Some(elevation)) = (s.ceiling_ft, s.elevation_ft) else { continue };
-                let (cross, along) = track_nm(s.at, a, b);
+                // A station surely more than the radius off the leg's line
+                // is more than it from the line and from `a` (core's
+                // surely_off_nm), and one the sphere puts more than the
+                // radius and its 1% from `b` is more than it from `b` on the
+                // ellipsoid (SPHERE_WITHIN): its `off` below, either way it
+                // is taken, is past the radius, so it is let go after one
+                // inverse solve and a haversine, not track_nm's several.
+                if surely_off_nm(s.at, a, course, CLOUD_STATION_RADIUS_NM)
+                    && sphere_nm(s.at.0, s.at.1, b.0, b.1) * (1.0 - SPHERE_WITHIN) > CLOUD_STATION_RADIUS_NM
+                {
+                    continue;
+                }
+                let (cross, along) = track_from(s.at, a, course);
                 let off = if (0.0..=length).contains(&along) {
                     cross.abs()
                 } else {
@@ -84,9 +100,77 @@ pub fn leg_bases(legs: &[(Point, Point)], stations: &[Station]) -> Vec<Option<(f
         .collect()
 }
 
+/// Each station's forecast cloud base along a route through `path`, for
+/// the profile: (ident, nm along the route from its start, base MSL), in
+/// order along it, each station whose ceiling is known and which is within
+/// CLOUD_STATION_RADIUS_NM of some leg -- the leg's own stations, as
+/// leg_bases takes them -- placed at its foot on the nearest such leg (at
+/// the leg's end where it is past one). The base is the ceiling, above the
+/// field, plus the field's elevation, as leg_bases has it.
+pub fn along_route(path: &[Point], stations: &[Station]) -> Vec<(String, f64, f64)> {
+    let mut out = Vec::new();
+    for s in stations {
+        let (Some(ceiling), Some(elevation)) = (s.ceiling_ft, s.elevation_ft) else { continue };
+        let mut start = 0.0;
+        let mut best: Option<(f64, f64)> = None;
+        for leg in path.windows(2) {
+            let (a, b) = (leg[0], leg[1]);
+            let length = distance_nm(a.0, a.1, b.0, b.1);
+            let (cross, along) = track_nm(s.at, a, b);
+            let (off, at) = if (0.0..=length).contains(&along) {
+                (cross.abs(), along)
+            } else {
+                let (to_a, to_b) = (distance_nm(s.at.0, s.at.1, a.0, a.1), distance_nm(s.at.0, s.at.1, b.0, b.1));
+                if to_a <= to_b {
+                    (to_a, 0.0)
+                } else {
+                    (to_b, length)
+                }
+            };
+            if off <= CLOUD_STATION_RADIUS_NM && best.is_none_or(|(o, _)| off < o) {
+                best = Some((off, start + at));
+            }
+            start += length;
+        }
+        if let Some((_, along)) = best {
+            out.push((s.ident.clone(), along, ceiling + elevation));
+        }
+    }
+    out.stable_sort_by(|a, b| a.1.total_cmp(&b.1));
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::geo::destination;
+
+    #[test]
+    fn a_stations_base_is_placed_along_the_route_and_one_too_far_off_left_out() {
+        // North along -88 from 42 to 43 (60 nm) and on to 44: KAAA beside
+        // the first leg at 42.5, KBBB on the second at 43.5, KFAR 1.5
+        // degrees of longitude east (some 66 nm off), no ceiling at KNIL.
+        let path = [(42.0, -88.0), (43.0, -88.0), (44.0, -88.0)];
+        let st = |ident: &str, at: Point, ceiling: Option<f64>| Station {
+            ident: ident.to_owned(),
+            at,
+            ceiling_ft: ceiling,
+            elevation_ft: Some(800.0),
+        };
+        let found = along_route(
+            &path,
+            &[
+                st("KBBB", (43.5, -88.0), Some(2500.0)),
+                st("KAAA", (42.5, -88.05), Some(3000.0)),
+                st("KFAR", (42.5, -86.5), Some(1000.0)),
+                st("KNIL", (42.5, -88.0), None),
+            ],
+        );
+        assert_eq!(found.iter().map(|f| f.0.as_str()).collect::<Vec<_>>(), ["KAAA", "KBBB"]);
+        // 3,000 ft above an 800 ft field is 3,800 MSL.
+        assert_eq!(found[0].2, 3800.0);
+        assert!((found[0].1 - 30.0).abs() < 0.5 && (found[1].1 - 90.0).abs() < 0.5, "{found:?}");
+    }
 
     #[test]
     fn under_the_clouds_by_500_ft_below_10000_and_1000_above() {
@@ -96,5 +180,25 @@ mod tests {
         assert!(between > 9500.0 && between < 10000.0);
         assert_eq!(clearance_at_ft(9999.0), 500.0);
         assert_eq!(clearance_at_ft(10000.0), 1000.0);
+    }
+
+    #[test]
+    fn a_station_past_the_legs_end_still_caps_it_and_a_far_one_never() {
+        // A leg due east along 40 N, a station just past its end (its `off`
+        // the distance to `b`, not the cross-track) and one far to the
+        // north: the near one's ceiling is the leg's base after the first
+        // cut as before it, the far one never is.
+        let (a, b) = ((40.0, -90.0), (40.0, -89.0));
+        let station = |ident: &str, at: Point, ceiling: f64| Station {
+            ident: ident.into(),
+            at,
+            ceiling_ft: Some(ceiling),
+            elevation_ft: Some(600.0),
+        };
+        let past = destination(b.0, b.1, 90.0, CLOUD_STATION_RADIUS_NM * 0.8);
+        let far = destination(a.0, a.1, 0.0, CLOUD_STATION_RADIUS_NM * 3.0);
+        let bases = leg_bases(&[(a, b)], &[station("FAR", far, 500.0), station("PAST", past, 2000.0)]);
+        assert_eq!(bases, vec![Some((2600.0, "PAST".to_string()))]);
+        assert_eq!(leg_bases(&[(a, b)], &[station("FAR", far, 500.0)]), vec![None]);
     }
 }

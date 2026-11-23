@@ -13,26 +13,33 @@ import Foundation
 ///
 /// The public FAA and weather data stay at sign-out; the Go / No-Go, made
 /// with the pilot's minimums, loading and currency, and the routes kept
-/// are the pilot's own and go with them (`forgetPilotOwn`).
-enum KeptForAir {
+/// are the pilot's own and go with them (`forgetPilotOwn`). Nonisolated:
+/// its files are read from the map's tile loads and the plates' sweep as
+/// well as the screens; `answer`, which tells the screens, is the main
+/// actor's.
+nonisolated enum KeptForAir {
     /// The kinds, as the engine's `kept_age` and `ready_to_fly` name them.
-    enum Kind: String, CaseIterable, Sendable {
+    nonisolated enum Kind: String, CaseIterable, Sendable {
         case briefing, weather, notams, airports, plates, plan
         case goNoGo = "go_no_go"
         case weatherLoop = "weather_loop"
     }
 
-    struct Entry<T: Codable>: Codable {
+    nonisolated struct Entry<T: Codable>: Codable {
         var value: T
         var fetchedAt: Date
     }
 
     /// What Keep for the Air holds for a route: the kinds it kept and the
     /// bytes they come to, the chart's tiles included.
-    struct Manifest: Codable, Equatable, Sendable {
+    nonisolated struct Manifest: Codable, Equatable, Sendable {
         var kinds: [String]
         var bytes: Int
         var at: Date
+        /// The files its answers are kept in, by their path in the kept
+        /// folder (the app's container moves with an update, so never a
+        /// whole one): what a state's plates deleted leave (StatePlates).
+        var files: [String]?
     }
 
     static let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -101,6 +108,23 @@ enum KeptForAir {
     static func manifest(route: String, in folder: URL = folder) -> Manifest? {
         guard let data = try? Data(contentsOf: file("routes", route, in: folder)) else { return nil }
         return try? decoder.decode(Manifest.self, from: data)
+    }
+
+    /// A kept file's path in the kept folder, as a manifest names it.
+    static func relative(_ file: URL, in folder: URL = folder) -> String {
+        let root = folder.standardizedFileURL.path + "/"
+        let path = file.standardizedFileURL.path
+        return path.hasPrefix(root) ? String(path.dropFirst(root.count)) : path
+    }
+
+    /// Every file a route kept for the air holds, by its manifest.
+    static func manifestFiles(in folder: URL = folder) -> Set<URL> {
+        let routes = folder.appending(path: "routes", directoryHint: .isDirectory)
+        let names = (try? FileManager.default.contentsOfDirectory(at: routes, includingPropertiesForKeys: nil)) ?? []
+        return Set(names.flatMap { name -> [URL] in
+            guard let data = try? Data(contentsOf: name), let manifest = try? decoder.decode(Manifest.self, from: data) else { return [] }
+            return (manifest.files ?? []).map { folder.appending(path: $0).standardizedFileURL }
+        })
     }
 
     /// A file's bytes on disk; 0 where there is none.

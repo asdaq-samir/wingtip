@@ -39,7 +39,8 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * The Profile card (the owner's spec of 2026-11-10, after ForeFlight's
  * profile view): the route from the side (ProfileChart) with the altitude
  * slider beside it (AltitudeSlider), the previewed altitude's clearance in
- * the engine's words under it, and a waypoint's altitude, Start At or
+ * the engine's words under it, the weather's key (whose each line is and
+ * for when, ProfileWeatherKey), and a waypoint's altitude, Start At or
  * Cross At, in a sheet from a tap on it (LegAltitudeSheet). A card on the
  * sheet's stack like every page (the card rule), opened from the plan's
  * Profile row or by typing "profile" in the search.
@@ -51,7 +52,7 @@ fun ProfileCard(plan: Plan, exit: CardExit, flight: FlightModel = hiltViewModel(
     val model: ProfileModel = hiltViewModel()
     val shown by model.state.collectAsStateWithLifecycle()
     val inFlight by flight.state.collectAsStateWithLifecycle()
-    LaunchedEffect(state.dep, state.dest, state.stops) { model.load(state) }
+    LaunchedEffect(state.dep, state.dest, state.stops, state.depart, state.totals?.eteMin) { model.load(state) }
     var tapped by remember { mutableStateOf<ProfileModel.Waypoint?>(null) }
     val flown = ProfileModel.flown(state, altitudes)
     val steps = remember(altitudes.line, flown) { ProfileModel.steps(altitudes, flown) }
@@ -62,16 +63,18 @@ fun ProfileCard(plan: Plan, exit: CardExit, flight: FlightModel = hiltViewModel(
             item(key = "side") {
                 val profile = shown.profile
                 if (profile == null) {
-                    ProblemLine(shown.problem ?: stringResource(R.string.profile_needs_route).takeIf { !state.routed }, Modifier.padding(horizontal = WingtipSpace.Lg))
+                    ProblemLine(shown.problem ?: stringResource(R.string.wording_plan_a_route_first).takeIf { !state.routed }, Modifier.padding(horizontal = WingtipSpace.Lg))
                     return@item
                 }
                 val line = remember(state.course, state.legs, profile) { ProfileModel.line(state, profile.lengthNm) }
                 val waypoints = remember(state.legs, profile) { ProfileModel.waypoints(state, profile.lengthNm) }
                 val at = shown.previewFt ?: flown
                 val clearance = remember(profile, at, waypoints) { at?.let { AltitudeEngine.clearance(profile, it, waypoints) } }
+                // The DOF's obstacles against the same altitude, the tallest named (ProfileHazards).
+                val obstacles = remember(profile, at) { AltitudeEngine.obstacles(profile, at) }
                 Row(Modifier.fillMaxWidth().height(WingtipSize.TapTarget * 6).padding(horizontal = WingtipSpace.Lg), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                     ProfileChart(
-                        profile, line, waypoints, shown.previewFt, clearance?.getOrNull(), steps.maxOrNull() ?: 0.0,
+                        profile, line, waypoints, shown.previewFt, clearance?.getOrNull(), obstacles, shown.weather, steps.maxOrNull() ?: 0.0,
                         onWaypoint = { tapped = it },
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
@@ -106,6 +109,8 @@ fun ProfileCard(plan: Plan, exit: CardExit, flight: FlightModel = hiltViewModel(
                     },
                     { why -> ProblemLine(why.message, Modifier.padding(horizontal = WingtipSpace.Lg)) },
                 )
+                // Whose the weather drawn is and for when, or that it could not be read.
+                ProfileWeatherKey(shown.weather, Modifier.padding(horizontal = WingtipSpace.Lg))
             }
         }
     }

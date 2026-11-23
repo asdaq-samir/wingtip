@@ -8,14 +8,15 @@ import { TRAY_HEAD } from "./RunwayChips";
 import { setRunwayLine, type ProceduresRouteModel } from "./useProceduresRoute";
 import type { FieldPart } from "./fieldParts";
 
-/** The tray's head: "RWY", the FAA's contraction (FAA Order JO 7340.2), in
- *  place of the landing's or the takeoff's glyph, at the owner's ask
- *  (2026-11-17: "instead of the landing glyph, just use RWY"); a reader
- *  hears which it is, a landing's or a takeoff's. */
+/** The tray's head: what the runway is for and "RWY", the FAA's
+ *  contraction (FAA Order JO 7340.2), "Land RWY" or "Takeoff RWY", so the
+ *  tray reads "Land RWY 24" (the owner's option D, 2026-11-21; it was
+ *  "RWY" alone, 2026-11-17: "instead of the landing glyph, just use RWY");
+ *  a reader hears which it is, a landing's or a takeoff's. */
 function RunwayWord({ role }: { role: "Arrive" | "Depart" }) {
   return (
-    <span role="img" aria-label={role === "Arrive" ? "landing" : "takeoff"} className={cn(TEXT.detail, "font-semibold")}>
-      RWY
+    <span role="img" aria-label={role === "Arrive" ? "landing" : "takeoff"} className={cn(TEXT.detail, "font-semibold whitespace-nowrap")}>
+      {role === "Arrive" ? "Land" : "Takeoff"} RWY
     </span>
   );
 }
@@ -38,6 +39,7 @@ function RunwayTray({
   /** The runway chips, with the pull-downs after them as their trailing part. */
   chips: ReactNode;
 }) {
+  const folded = foldable && !lineOpen && !!a.runways?.length;
   // The head and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
   //  JMQabZH2W33kzmvUuahbad): "RWY" at its head (RunwayWord; it was the landing's or the takeoff's glyph), the runway picked after it
   //  with its arrow while it is folded, every runway in it while it is open. The head is the line's button
@@ -53,7 +55,11 @@ function RunwayTray({
     <Collapsible
       open={foldable && lineOpen}
       onOpenChange={(next) => setRunwayLine(lineKey, next)}
-      render={<div className="flex min-w-0 flex-1 items-start" />}
+      // As wide as its chips, sharing its line with a stop's leaving time
+      // where both fit (PartTray). Folded, the runway picked and the
+      // pull-downs are laid out in this row itself (PatternChips' folded
+      // line, `contents`), wrapping from its leading edge.
+      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3")} />}
     >
       {foldable ? (
         <CollapsibleTrigger
@@ -64,9 +70,9 @@ function RunwayTray({
               type="button"
               data-testid="runway-line-toggle"
               data-disclosure=""
-              // Its name starts with the "RWY" it shows (WCAG 2.5.3, Label in Name: a
+              // Its name starts with the "Land RWY" it shows (WCAG 2.5.3, Label in Name: a
               // voice user says what they see), then the field and what a tap does.
-              aria-label={`RWY, ${a.ident} ${role === "Arrive" ? "landing" : "takeoff"}: ${lineOpen ? "fold the runways" : "all the runways"}`}
+              aria-label={`${role === "Arrive" ? "Land" : "Takeoff"} RWY, ${a.ident}: ${lineOpen ? "fold the runways" : "all the runways"}`}
               className={cn("justify-start text-inherit", TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
             />
           }
@@ -78,7 +84,7 @@ function RunwayTray({
           <RunwayWord role={role} />
         </span>
       )}
-      <div className={cn("min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
+      <div className={cn(folded ? "contents" : "min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
     </Collapsible>
   );
 }
@@ -106,7 +112,11 @@ export function PartTray({
     // runways and pull-downs it ran past the card, and a slide on the open
     // tray panned the whole sheet sideways (the owner's screenshot,
     // 2026-11-17), where they are to slide inside the tray's own scroller.
-    <div className="flex w-full min-w-0 items-center gap-2" data-testid="field-part" data-role={part.role}>
+    // The leaving time on a line of its own, at the right, where it does
+    // not fit beside the tray: at the owner's 19.65 px on a 375-point
+    // phone KMSN's "22:11" ran past the card's edge, cut to "22:1" (the HIG
+    // review, 2026-11-21).
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2" data-testid="field-part" data-role={part.role}>
       <RunwayTray
         a={a}
         role={part.role}
@@ -115,7 +125,9 @@ export function PartTray({
         lineOpen={vm.openLines.includes(part.line.key)}
         chips={part.chips(trailing.length > 0 ? trailing : null)}
       />
-      {part.leaves && <span className="shrink-0">{part.leaves}</span>}
+      {/* When it leaves again at the line's right, under the landing's time
+          (the owner, 2026-11-20: "11:33 can be right aligned"). */}
+      {part.leaves && <span className="ml-auto shrink-0">{part.leaves}</span>}
     </div>
   );
 }

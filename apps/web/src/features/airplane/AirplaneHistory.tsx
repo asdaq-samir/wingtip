@@ -1,6 +1,7 @@
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import type { AirplaneDetails } from "../../lib/api/types";
 import { day } from "./infoDay";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 const joined = (...parts: (string | number | null | undefined)[]) =>
   parts.filter((p) => p !== null && p !== undefined && p !== "").join(" · ");
@@ -24,7 +25,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
   if (!details)
     return (
       <ListGroup title="History">
-        <None text={failed ? "Its history couldn't be fetched. Try again in a moment." : "Fetching its history…"} />
+        <None text={failed ? WORDING.historyNotFetched : "Fetching its history…"} />
       </ListGroup>
     );
   const { based, ntsb, documents, reservation } = details;
@@ -33,7 +34,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
     <div className="space-y-5">
       {(based?.field || details.based_pending) && (
         <div data-testid="airplane-based">
-          <ListGroup title="Usually based at">
+          <ListGroup title="Usually Based At">
             {based?.field ? (
               <ListRow
                 title={joined(based.field.ident, based.field.name)}
@@ -47,7 +48,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
         </div>
       )}
       <div>
-        <ListGroup title="Safety history">
+        <ListGroup title="Safety History">
           {ntsb.length === 0 && <None text="No NTSB accident or incident on record since 2008." />}
           {ntsb.map((c) => (
             <ListRow
@@ -66,7 +67,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
         </ListGroup>
       </div>
       <div data-testid="airplane-ownership">
-        <ListGroup title="Ownership history">
+        <ListGroup title="Ownership History">
           {past.length === 0 && <None text="No past registrations." />}
           {past.map((p, i) => (
             <ListRow
@@ -86,7 +87,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
         </ListGroup>
       </div>
       <div data-testid="airplane-documents">
-        <ListGroup title="Documents filed">
+        <ListGroup title="Documents Filed">
           {documents.length === 0 && !reservation && <None text="None filed in the last month." />}
           {documents.map((d, i) => (
             <ListRow
@@ -97,7 +98,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
           ))}
           {reservation && (
             <ListRow
-              title="N-number reserved"
+              title="N-Number Reserved"
               description={joined(
                 reservation.registrant,
                 town(reservation.city, reservation.state),

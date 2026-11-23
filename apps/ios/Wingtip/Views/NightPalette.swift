@@ -7,7 +7,7 @@ import UIKit
 /// marks, the chart's dimming. Everything else is the system's, which
 /// follows dark appearance by itself; the tint is the look's (Look), set
 /// at the root.
-enum NightPalette {
+nonisolated enum NightPalette {
     /// The night's ground and surface (web --background, --card).
     static let ground = WingtipPalette.dark.background
     static let surface = WingtipPalette.dark.card
@@ -118,11 +118,18 @@ extension UILabel {
     }
 }
 
-extension UIColor {
+nonisolated extension UIColor {
     /// A colour from its 0xRRGGBB, opaque.
     convenience init(hex: UInt32) {
         self.init(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
                   blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+    }
+
+    /// A colour from a token's "#rrggbb" (design/tokens.json's form); nil
+    /// for a value that is not one.
+    convenience init?(token hex: String) {
+        guard hex.hasPrefix("#"), hex.count == 7, let value = UInt32(hex.dropFirst(), radix: 16) else { return nil }
+        self.init(hex: value)
     }
 
     /// One colour by day and another in dark appearance, resolved by the

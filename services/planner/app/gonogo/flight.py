@@ -22,7 +22,7 @@ from .pass_times import pass_time, sua_when, tfr_when
 from .runways import runway_checks
 from .schemas import GoNoGoAsk
 from .weight_balance import balance, default_load
-from .words import PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, grouped, sigmet_hazard, to_fixed
+from .words import PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, sigmet_hazard
 from .. import route_briefing
 from ..plan_query import PlanQuery, named_checkpoints
 
@@ -277,6 +277,7 @@ def findings_for(
             "hazards": 0 if unchecked("hazards") and unchecked("gairmets") else len(hazard_names),
             "night": (totals or {}).get("night") is True,
             "night_passengers": (totals or {}).get("night_passengers"),
+            "lights": (totals or {}).get("lights"),
             "fuel_margin_gal": route_figures["least_margin_gal"],
             "ifr": ifr,
             "currency": ask.currency.model_dump() if ask.currency else None,
@@ -290,18 +291,24 @@ def findings_for(
             risk_in["squawks"] = [s.model_dump() for s in own.squawks]
 
     # The loading (lib/weightBalance): the pilot's, else the POH's sample
-    # airplane with the usable fuel aboard.
+    # airplane with the fuel aboard at engine start -- the pilot's own on
+    # FPL's gauge (the totals' on_board_gal), else the usable fuel.
     # With no airplane (no `aircraft` asked) there is no loading to balance.
     airplane = q.profile()
     profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")
-    usable = profile.get("usable_fuel_gal")
+    # A pilot's 0 is their figure, not "unset": `or` took it for full tanks.
+    on_board = (totals or {}).get("on_board_gal")
+    usable = on_board if on_board is not None else profile.get("usable_fuel_gal")
     load = (
         ask.load.model_dump()
         if ask.load
         else (default_load(loading, usable if usable is not None else loading["fuel_max_gal"]) if loading else None)
     )
     loaded = balance(loading, load, (totals or {}).get("fuel_gal")) if loading and load else None
+    # The row's "2,407 lb at 41.2 in" is the engine's words (takeoff_words),
+    # not written again here; the loading's answer goes on without them.
+    takeoff_words = loaded.pop("takeoff_words") if loaded else None
     # The verdict's balance and runways as the web's, which wait on the nav log.
     nav_loaded = loaded if nav else None
     checks = runway_checks(
@@ -372,9 +379,7 @@ def findings_for(
             "pending": not nav,
             "worked": bool(nav_loaded),
             "problems": nav_loaded["problems"] if nav_loaded else [],
-            "takeoff": f"{grouped(nav_loaded['takeoff']['weight_lb'])} lb at {to_fixed(nav_loaded['takeoff']['arm_in'])} in"
-            if nav_loaded
-            else None,
+            "takeoff": takeoff_words if nav_loaded else None,
         },
     }
     return Findings(verdict=verdict, risk_in=risk_in, loading=loading, load=load, loaded=loaded)

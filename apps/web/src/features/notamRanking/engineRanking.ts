@@ -37,6 +37,9 @@ export interface RankedNotams {
   top: number;
   /** The day (ISO date) the planner first heard the FAA's NOTAM feed. */
   coverage_since: string | null;
+  /** Whether these are from every NOTAM in force (NMS's full set,
+   *  decision 0059); false, only those heard since `coverage_since`. */
+  full_set: boolean;
   /** What could not be checked just now ("tfrs"). */
   unchecked: string[];
 }
@@ -65,6 +68,7 @@ export function engineRanking(found: EngineRanked): RankedNotams {
     }),
     top: found.top ?? 0,
     coverage_since: found.coverage_since ?? null,
+    full_set: found.full_set ?? false,
     unchecked: found.unchecked ?? [],
   };
 }

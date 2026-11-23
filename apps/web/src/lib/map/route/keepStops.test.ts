@@ -11,7 +11,7 @@ vi.mock("../../api/client", () => ({
   },
 }));
 
-import { routeStopsKept } from "./keepRoute";
+import { routeStopsKept } from "./keepFetch";
 
 describe("a route kept for the air keeps its stops", () => {
   it("asks for the route's own fields and its Stops' fields once each: their services and pictures", async () => {

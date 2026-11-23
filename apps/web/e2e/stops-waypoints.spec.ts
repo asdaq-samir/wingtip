@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks, openRoute } from "./helpers";
+import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks, typeRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { drawnMarks, markWith } from "./marks";
 import { pickAirplane } from "./startState";
@@ -25,7 +25,8 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  // The route box's arrows are in its field (typeRoute), not the timeline.
+  await typeRoute(page);
 
   await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
   await page.getByTestId("search-airports").fill("VPBNG");

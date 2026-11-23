@@ -101,7 +101,13 @@ public class Flight {
     @Column(length = 2000)
     private String riskFactors;
 
-    @OneToMany(mappedBy = "flight", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    // Lazy: the nav log is read only where a finder names it
+    // (FlightRepository's findByIdAndPilotId and findWithNavLogById, by
+    // their entity graphs). Eager, every other load of a flight read its
+    // 20-60 checkpoints for nothing: the flight watch's 50 each half hour,
+    // each cross-country review's flight on every training and instructor
+    // page, each lesson's.
+    @OneToMany(mappedBy = "flight", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sequenceNo ASC")
     private List<FlightCheckpoint> checkpoints = new ArrayList<>();
 
@@ -134,6 +140,20 @@ public class Flight {
         this.totalDistanceNm = totalDistanceNm;
         this.totalEteMin = totalEteMin;
         this.totalFuelGal = totalFuelGal;
+        return this;
+    }
+
+    /** The same flight planned again with another route or airplane (the
+     *  connector's update_saved_flight): its name, notes, share link and
+     *  track are kept; the nav log is filed again after. */
+    public Flight replanned(Aircraft flownIn, String newDeparture, String newDestination) {
+        this.aircraft = flownIn;
+        this.departureIdent = newDeparture;
+        this.destinationIdent = newDestination;
+        this.plannedFor = null;
+        this.riskScore = null;
+        this.riskLevel = null;
+        this.riskFactors = null;
         return this;
     }
 

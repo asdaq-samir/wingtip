@@ -7,7 +7,7 @@ import UIKit
 
 /// A point of a flown path: when (s since 1970), where, how high (feet;
 /// nil on the ground or where it was not sent).
-struct PathPoint: Codable, Equatable, Sendable {
+nonisolated struct PathPoint: Codable, Equatable, Sendable {
     let t: Double
     let lat: Double
     let lon: Double
@@ -69,6 +69,11 @@ final class Tracking {
     private(set) var watchProblem: String?
     /// Whether each watched airplane was in the air, where known.
     private var airborne: [String: Bool] = [:]
+    /// The pilot's own N-numbers, their records' and the one flown
+    /// (AirplaneHost): another airplane's watches wait, kept, while Other
+    /// Airplanes is off in Settings' Extras (Extra.airplaneHistory); the
+    /// pilot's own are asked.
+    @ObservationIgnored var ownTails: [String] = []
 
     /// At most this many points of a tracked flight's path, as the web
     /// app's PATH_POINTS.
@@ -161,7 +166,7 @@ final class Tracking {
         let record = self.record(kept)
         record.favorite.toggle()
         if record.favorite { record.addedAt = Date() }
-        let name = record.favorite ? "Add Favorite" : "Remove Favorite"
+        let name = record.favorite ? Wording.addToFavorites : Wording.removeFromFavorites
         prune(record)
         saved()
         undo?.register(self, named: name) { $0.toggleFavorite(kept, undo: undo) }
@@ -302,12 +307,14 @@ final class Tracking {
 
     /// Each watched airplane's state, and any watch that goes off on it.
     private func askWatched() async {
-        for hex in Set(watches.map(\.hex)) {
+        let others = Extra.otherAirplanes.on()
+        let asked = watches.filter { Extra.airplaneHistory($0.name, own: ownTails, others: others) }
+        for hex in Set(asked.map(\.hex)) {
             let status: FlightStatus
             do {
                 status = try await Planner.flightStatus(hex)
             } catch {
-                Log.records.notice("the watched airplane \(hex, privacy: .public) could not be asked about: \(error.localizedDescription, privacy: .public)")
+                Log.records.notice("the watched airplane \(hex, privacy: .private) could not be asked about: \(error.localizedDescription, privacy: .public)")
                 continue
             }
             let before = airborne[hex]
@@ -318,17 +325,17 @@ final class Tracking {
             } catch {
                 // The engine could not say: shown over the map, and no
                 // watch goes off on a guess.
-                watchProblem = "Couldn't tell whether \(hex) is flying: \(error.localizedDescription)"
+                watchProblem = Problems.say("Whether \(hex) is flying could not be checked", error)
                 continue
             }
-            for watch in watches where watch.hex == hex {
+            for watch in asked where watch.hex == hex {
                 let words: String?
                 do { words = try Self.fired(watch, before: before, now: now, status: status) } catch {
-                    watchProblem = "Couldn't check the watch on \(watch.name): \(error.localizedDescription)"
+                    watchProblem = Problems.say("The watch on \(watch.name) could not be checked", error)
                     continue
                 }
                 if let words {
-                    Log.records.notice("watch went off: \(words, privacy: .public)")
+                    Log.records.notice("watch went off: \(words, privacy: .private)")
                     // The banner over the map and the voice in the app; a
                     // time-sensitive notification with the app put away.
                     fired = words

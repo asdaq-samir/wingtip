@@ -117,8 +117,8 @@ export function FeedsPage({ status, failed }: Snapshot) {
                 key={f.name}
                 title={DATASET_NAMES[f.name] ?? f.name}
                 description={`${f.kind === "swim" ? `${f.what} · ` : ""}${f.detail ?? ""}${
-                  f.stale_since ? ` · stale since ${agoOrDate(f.stale_since)}` : ""
-                }`}
+                  f.last_at ? ` · last ${agoOrDate(f.last_at)}` : ""
+                }${f.stale_since ? ` · stale since ${agoOrDate(f.stale_since)}` : ""}`}
                 value={
                   <StatusBadge tone={f.state === "ok" ? "up" : f.state === "stale" ? "down" : "checking"}>
                     {f.alerting ? "alert" : f.state}

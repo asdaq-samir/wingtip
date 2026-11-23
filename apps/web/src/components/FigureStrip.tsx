@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { FIT, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE } from "../lib/text";
-import { figureRoom } from "./figureRoom";
+import { FIGURE_SIZE, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, PIN_FIGURE } from "../lib/text";
 import Explain from "./Explain";
 import FigureWait from "./FigureWait";
 import type { ExplainedTerm } from "../lib/explain";
@@ -15,8 +14,7 @@ export interface StripFigure {
   unit?: string;
   testId?: string;
   /** Short of what it must be (the fuel past the tanks), or wrong (a
-   *  destination not known): a warning mark before it, which figureRoom
-   *  leaves room for, and red where it is not a button. */
+   *  destination not known): a warning mark before it, red where it is not a button. */
   alert?: boolean;
   /** The figure as a screen reader says it, name and all ("Distance, one
    *  hundred two point four nautical miles"), the shorthand hidden from
@@ -34,13 +32,24 @@ export interface StripFigure {
  *  (GROW_FIGURE: MapPanel's --sheet-progress, small at half, full at the
  *  pill and all the way up; the owner, 2026-11-05), `flying` one large
  *  size whatever the sheet's (FLYING_FIGURE, useFlyingMode). */
-export type StripSize = "fixed" | "grow" | "flying";
+export type StripSize = "fixed" | "grow" | "flying" | "pin";
 
 const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unitScale: number }> = {
   fixed: FIXED_FIGURE,
   grow: GROW_FIGURE,
   flying: FLYING_FIGURE,
+  pin: PIN_FIGURE,
 };
+
+/** Where the strip's size follows the sheet a frame at a time (`pin`,
+ *  usePinAtFoot's --pin-p), nothing in it eases its size of its own: a
+ *  figure that is a button (Dist, ETE) is a stock Button, which eases every
+ *  property (transition-all), so its type trailed the sheet by 150 ms and
+ *  went on shrinking after the sheet had stopped, 37 to 32 points over the
+ *  last 100 ms of a tap down to half (the motion review of 2026-11-22,
+ *  sampled each frame), and ran a transition per figure every frame of a
+ *  pull. Its colours and its press's fade still ease as they come. */
+const SIZE_FOLLOWS = "[&_*]:transition-[color,background-color,border-color,opacity]";
 
 /**
  * The one strip of figures pinned at a sheet's foot, in every state:
@@ -52,15 +61,13 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
  * owner's ask ("Can the calculations be center aligned?"); two by two
  * where the strip is under 16 rem wide, which with every rem grown is an
  * accessibility text size (24 px a rem and up on a phone; the owner's
- * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack:
- * four columns then cut the figures. Fitted as iOS fits a label to its
- * width: all of them set smaller together where the widest does not fit
- * its column, down to 0.7 of their size, and past that cut short with
- * "…" -- the figures always exact, never a rounded form in their place
- * (lib/text's FIT, each column a container; the trial of 2026-11-17,
- * where they were measured in the page and the one too wide rounded,
- * "13h 38m" read "13.6h"). It was two components, FlightLine and this,
- * each with its own grid and type.
+ * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack.
+ * Every figure at its full size, never shrunk to fit (the owner,
+ * 2026-11-21, at 19.65 px: "1,320 nm" and "⚠ 111.3 gal" read smaller than
+ * "262 nm" and "23.1 gal"): the columns are as wide as their content, the
+ * first flush left and the last flush right with the rest spread between,
+ * and only where even that is too wide is a figure cut short with "…",
+ * the figures always exact, never a rounded form in their place.
  *
  * `tap` makes a figure a button: given the figure and its face (the mark,
  * the value and the unit, sized to fit), it returns the button round the
@@ -74,25 +81,42 @@ export default function FigureStrip({
   size = "grow",
   testId,
   tap,
+  still = false,
 }: {
   figures: StripFigure[];
   size?: StripSize;
   testId?: string;
   tap?: (figure: StripFigure, face: ReactNode) => ReactNode;
+  /** No roll as a figure changes: in flight the GPS's figures change every
+   *  second, and a roll on each blurred them all the time (the motion
+   *  review of 2026-11-22). */
+  still?: boolean;
 }) {
   const type = TYPE[size];
+  const roll = still ? undefined : "figure-roll";
   // As many columns as figures, so none ever wraps onto a row of its own
   // (in flight the GPS altitude, a fifth figure in four columns, went under
   // the rest, and the pill showed that row alone).
-  const room = { "--fit-room": figureRoom(figures, type.unitScale), "--cols": figures.length } as CSSProperties;
+  const cols = { "--cols": figures.length } as CSSProperties;
   return (
-    <div className="@container/figures relative" data-slot="section-summary">
+    <div className={cn("@container/figures relative", size === "pin" && SIZE_FOLLOWS)} data-slot="section-summary">
       <dl
-        className={cn("grid gap-3", "grid-cols-[repeat(var(--cols),minmax(0,1fr))]", "@max-[16rem]/figures:grid-cols-2")}
-        style={room}
+        className={cn(
+          "grid justify-between gap-x-2 gap-y-3",
+          "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
+          "@max-[16rem]/figures:grid-cols-2",
+        )}
+        style={cols}
         data-testid={testId}
       >
-        {figures.map((f) => {
+        {figures.map((f, i) => {
+          // The first figure flush with the strip's leading edge and the
+          // last with its trailing one, the rest centred in their columns,
+          // so the figures span the sheet's whole width (the owner,
+          // 2026-11-20: "Why aren't we using the full width for the figures
+          // at the bottom?"), where each centred in its fifth left the ends
+          // inset. Not in the two-column stack of a narrow strip.
+          const edge = figures.length > 2 && (i === 0 ? "start" : i === figures.length - 1 ? "end" : null);
           const button = tap?.(
             f,
             <>
@@ -102,7 +126,7 @@ export default function FigureStrip({
                   a label ("114.2 g…"), the figure kept whole the longest,
                   where the value alone was cut before its unit ("11… gal"). */}
               <span className="min-w-0 truncate">
-                <span key={f.value} className="figure-roll" data-fitted="">
+                <span key={f.value} className={roll} data-figure="" data-fitted="">
                   {f.waiting ? <FigureWait /> : f.value}
                 </span>
                 {/* Its space a no-break one: a flex item drops a leading
@@ -118,9 +142,15 @@ export default function FigureStrip({
             </>,
           );
           return (
-            // Each column a container, so the figure's size is worked out
-            // from its own width (FIT's 100cqi), the same in every column.
-            <div key={f.name} className="@container min-w-0 text-center">
+            // Each column as wide as its widest of name and figure.
+            <div
+              key={f.name}
+              className={cn(
+                "min-w-0 text-center",
+                edge === "start" && "@min-[16rem]/figures:text-left",
+                edge === "end" && "@min-[16rem]/figures:text-right",
+              )}
+            >
               {/* Its names and units a grey that reads on the pill's glass
                   over any chart (WCAG's 4.5:1), where the muted one did not;
                   its names in sentence case, short words ("Distance"), not a
@@ -140,12 +170,14 @@ export default function FigureStrip({
               <dd
                 className={cn(
                   type.value,
-                  FIT,
+                  FIGURE_SIZE,
                   "truncate font-semibold tabular-nums",
                   button && "overflow-visible",
                   // A figure that is not a button said wrong in red, its
                   // mark before it (a destination not known, TripFigures).
                   !button && f.alert && "inline-flex w-full items-baseline justify-center text-destructive",
+                  !button && f.alert && edge === "start" && "@min-[16rem]/figures:justify-start",
+                  !button && f.alert && edge === "end" && "@min-[16rem]/figures:justify-end",
                 )}
                 data-testid={f.testId}
                 data-alert={(!button && f.alert) || undefined}
@@ -156,7 +188,7 @@ export default function FigureStrip({
                       <TriangleAlert className="mr-0.5 size-[0.8em] shrink-0 self-center" aria-hidden data-testid="figure-alert-mark" />
                     )}
                     <span className={cn(f.alert && "min-w-0 truncate")}>
-                      <span key={f.value} aria-hidden={f.said ? true : undefined} className="figure-roll" data-fitted="">
+                      <span key={f.value} aria-hidden={f.said ? true : undefined} className={roll} data-figure="" data-fitted="">
                         {f.waiting ? <FigureWait /> : f.value}
                       </span>
                       {f.unit && (

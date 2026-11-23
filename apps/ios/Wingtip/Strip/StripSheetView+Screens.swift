@@ -8,7 +8,7 @@ extension StripSheetView {
         switch screen {
         case .airplane, .checklists, .airplanes: .airplane
         case .logbook, .coach: .logbook
-        case .setup, .minimums, .guide, .downloads, .about, .passengers: .setup
+        case .setup, .minimums, .documents, .guide, .downloads, .about, .passengers: .setup
         case .brief: .brief
         case .navlog: .navlog
         case .profile: .profile
@@ -16,7 +16,8 @@ extension StripSheetView {
         case .favorites: .favorites
         case .nearest: .nearest
         case .emergency: .emergency
-        case .fpl, .airport, .ask, .shared: nil
+        // Cards over the strip, as over the plan (StripSheetView.openScreen).
+        case .fpl, .airport, .ask, .shared, .scratchpad, .balance: nil
         }
     }
 

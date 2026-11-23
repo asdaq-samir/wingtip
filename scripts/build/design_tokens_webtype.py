@@ -8,6 +8,14 @@ def rem(px):
     return ("%.4f" % (px / 16)).rstrip("0").rstrip(".") + "rem"
 
 
+def size_css(token):
+    """A size token as the web's --size-*: rem where it grows with the
+    pilot's text size (a row's mark, a glyph beside words), px where it is
+    pinned (a map button, a panel's width), as `web.grows` says."""
+    grows = token.get("$extensions", {}).get(EXT, {}).get("web", {}).get("grows")
+    return rem(token["$value"]) if grows else "%gpx" % token["$value"]
+
+
 TAILWIND_SIZES = {12: "text-xs", 14: "text-sm", 16: "text-base", 18: "text-lg", 20: "text-xl"}
 
 
@@ -60,3 +68,9 @@ def web_class(name, role):
     if v.get("tabular"):
         out.append("tabular-nums")
     return " ".join(out)
+
+
+def web_value(t):
+    """A token's value on the web: its `web` override where it has one
+    ($extensions["app.wingtipmaps"].web), else the one every app reads."""
+    return t.get("$extensions", {}).get("app.wingtipmaps", {}).get("web", t["$value"])

@@ -63,6 +63,7 @@ describe("one", () => {
 
 describe("legsWithoutWind", () => {
   const base: Totals = {
+    lights: null,
     distance_nm: 210,
     procedure_nm: 0,
     ete_min: 125,
@@ -75,12 +76,14 @@ describe("legsWithoutWind", () => {
     fuel_required_gal: null,
     usable_fuel_gal: null,
     fuel_margin_gal: null,
+    on_board_gal: null,
     night: null,
     night_passengers: null,
     rules: "vfr",
     alternate: null,
     hops: [],
     fuel_stops: [],
+    no_fuel_stop: [],
     planned_at: null,
     winds: null,
     ground_min: 0,

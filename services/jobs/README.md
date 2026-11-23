@@ -9,7 +9,6 @@ starts none of them.
 | Job | What it does | Its code |
 |---|---|---|
 | [`retrain/`](retrain) | The training run: `python -m wingtip.pipeline run` retrains, evaluates and promotes the chart model (and the landmark model where the ratings are enough), each promoted only if it beats the one serving | `wingtip.pipeline`, `wingtip.chartmodel`, `wingtip.model_registry` (shared with the planner, which loads the promoted model) |
-| [`crash/`](crash) | The Studio's crash leads ([docs/STUDIO-PIPELINE.md](../../docs/STUDIO-PIPELINE.md)): the FAA's statements and notices read into leads, each lead's identity checked by the engine's `occurrence_identity` against the FAA's registry and an ADS-B track, and a kit made for each confirmed one; it keeps its own schedule, a run every half hour (`python -m crash every`, the compose service `crash-leads`) | `crash/cli.py`; `wingtip.crash_drafts` (shared with the planner, which serves the drafts) |
 | [`charts/`](charts) | A new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density; the map's overlay tiles (tippecanoe) from the planner's cycle pack; publishing to S3 | `charts/cli.py` (the commands), `charts/overlays.py` (the vector tiles, its layers in `overlay_layers.py` and `nasr_layers.py`); wingtip's chart modules (`wingtip.charts` maps them) and `wingtip.tile_archive` (shared with the planner, which serves the tiles) |
 
 Chart vision (`wingtip.chartvision`) stays in the planner: it reads the
@@ -34,6 +33,8 @@ docker compose run --rm charts                     # overlays where due, then th
 docker compose run --rm charts overlays            # the overlay tiles alone
 docker compose run --rm charts refresh --workers 2 # the chart cycle alone
 docker compose run --rm charts pack                # loose tiles of finished kinds into archives
+docker compose run --rm charts check              # seams, and cuts a new cycle made that the served one did not (fails, with previews)
+docker compose run --rm charts accept-cuts 12-24-2026  # the cuts looked at: the refresh goes on
 docker compose run --rm charts pyramid --kind sec  # prepare, pyramid, check, unmask, publish: as before
 ```
 
@@ -82,6 +83,47 @@ archive); a tile not in a finished archive is no tile, as a `.none`
 marker said. Tiles drawn on request for a kind with no archive yet stay
 loose files with their `.none` markers, as before.
 
+In the archive a tile is lossless WebP of the loose palette PNG's own
+pixels (`wingtip.chart_render.to_webp`: method 4, effort 25), and its
+header says so (tile type WebP). The planner sends each tile with its own
+Content-Type (`wingtip.tile_archive.media_type`), so an archive packed
+before, still PNG, is served as it is; the address keeps its `.png`.
+Measured on 48 tiles of the 10-29-2026 cycle (z6, 9 and 11, or 10 to 12
+for the TAC, over Chicago and Los Angeles; 2026-11-21, Pillow in the
+planner's image, one core):
+
+| Archive | Tiles | Palette PNG (today) | PNG, optimised | WebP lossless, m6 q100 | WebP q90 | WebP q80 |
+|---|---|---|---|---|---|---|
+| sec | 12 | 395 KB | 99.2% | 85.9% | 96.6%, 24.5 dB | 71.0%, 24.2 dB |
+| sec@2x | 12 | 1,300 KB | 98.9% | 87.4% | 100.7%, 24.0 dB | 73.5%, 23.6 dB |
+| tac@2x | 12 | 887 KB | 97.8% | 85.5% | 117.4%, 25.5 dB | 88.0%, 25.2 dB |
+| ifr_low@2x | 12 | 556 KB | 96.4% | 83.5% | 120.4%, 34.0 dB | 87.4%, 32.6 dB |
+
+Over all 48, lossless WebP's settings (bytes against the PNGs, time a
+tile on one core): method 6 at effort 100, 86.0% but 2.5 s; method 4 at
+effort 25, the one kept, 88.6% at 9 ms; method 2, 91.2% at 8 ms; method
+0, 105%. Lossless keeps every drawn pixel. Lossy WebP was ruled out for a chart:
+on the VFR charts 13 to 16% of the pixels on a letter's or a line's edge
+were off by more than 48 in a channel (its 4:2:0 colour blurs magenta and
+blue type on the tints), and at q90 it was larger than the PNG for three
+of the four. A cycle's archives come to about 89% of their PNG size,
+some 3.4 GB less of the 30 (sec@2x about 16 GB for 18). Measured with a short Pillow
+script (the tiles audit's) in the planner's image, the archives mounted
+read-only.
+
+A cycle packed before the WebP is written again once, the same pixels
+and no tile drawn again (no revision bumped), by `transcode`, which takes
+the refresh lock and needs room for the largest archive again beside it:
+
+```
+scripts/dev/one-at-a-time.sh "charts transcode" docker compose run --rm charts transcode --cycle 10-29-2026 --workers 4
+```
+
+then `charts publish --cycle 10-29-2026` where the cycle is published (on
+AWS the next refresh packs new cycles as WebP by itself). About 1.4
+million tiles at some 9 ms each, twice (once for each tile's length, once
+to write it), so about 7 CPU-hours: under two hours on four workers.
+
 A cycle drawn before the archives is converted once with
 `docker compose run --rm charts pack` (every cycle on disk; `--cycle
 MM-DD-YYYY` for one). It needs free space for the largest archive beside
@@ -101,13 +143,18 @@ nothing dropped for size. A sample of the 29 Oct 2026 cycle (92 to 84 W,
 on the Mac mini, so the whole cycle is some 85 to 95 MB and 15 minutes,
 once a cycle.
 
+Each airspace and airport layer's first zoom is in the tiles' own
+(MapLibre's) levels, a zoom less than the app's zoom every app draws it
+from: design/tokens.json's `map.zoom`, which `scripts/build/design-tokens.sh`
+writes into `charts/map_zoom.py` for the build to read.
+
 | Layer | From | Fields | First zoom |
 |---|---|---|---|
-| `airspace` | NASR Class_Airspace.shp, Class B–E | `class`, `local_type`, `name`, `ident`, `floor_ft`, `floor_ref` (SFC/AGL/MSL), `ceiling_ft` (MSL), `ceiling_excluded`, `number`, `hours_code`, `hours_remark` | B 4, C 5, D 6, E2–E4 7, E5–E7 8 |
-| `airspace_labels` | the same file, Class B–D: one point a volume on its ring's outer edge, where the map writes its altitudes | `tab` ("100\n30", "T\nSFC", "-30": the sectional's ceiling over floor in hundreds, the engine's `airspace_shelf_label` words the map draws, `wingtip.airspace_tabs`), `class`, `floor_ft`, `ceiling_ft`, `ceiling_excluded`, `number`, `angle` (the text's clockwise turn along the ring, −90 to 90) | B 4, C 5, D 6 |
-| `special_use` | FAA special use airspace (ADDS) | `type` (P/R/MOA/W/A/D), `kind`, `name`, `floor_ft`, `floor_ref`, `ceiling_ft`, `ceiling_ref`, `times_of_use`, `time_zone`, `controlling_agency` | 5 |
-| `special_use_labels` | the same, one point an area (not the pieces it excludes, EXCLUSION 1) on its longest side, where the map writes its tab (`sua_labels.py`) | `tab` ("M-BRADY NOR*:\n3600-17999", the engine's words the map draws), `label` ("M-BRADY NOR*"), `type`, `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (SFC/AGL/MSL/FL/UNL, "to but not including" FL180 as 17999 MSL, as the FAA's CIFP writes it), `angle`, `side` (1 the area below the text, −1 above) | 5 |
-| `airports` (`charts/airports.py`) | NASR APT_BASE, APT_RWY, APT_RWY_END (operational only), and Class_Airspace.shp for the class at each field's surface | `ident`, `faa_id`, `name`, `type`, `use`, `military`, `towered`, `airspace` (B, C, D, E or G at the surface: the mark's ring), `elevation_ft`, `longest_ft`, `hard_ft` (the longest runway the engine's `runway_hard_surface` calls hard), `runway_true`, `fuel`, `rank` (the engine's `field_mark_rank` order, lower kept first where marks overlap: a Class B's field, a Class C's, then each tier by its longest hard runway), `size` (the rule's step the mark is drawn at: largest, larger, regular, small) | by the rule's tier (towered, public with 3,000 ft hard, other public, private, heliports): 5, 6, 7, 9, 10 |
+| `airspace` | NASR Class_Airspace.shp, Class B–E | `class`, `local_type`, `name`, `ident`, `floor_ft`, `floor_ref` (SFC/AGL/MSL), `ceiling_ft` (MSL), `ceiling_excluded`, `number`, `hours_code`, `hours_remark` | B 4, C 4, D 6, E2–E4 7, E5–E7 8 |
+| `airspace_labels` | the same file, Class B–D: one point a volume on its ring's outer edge, where the map writes its altitudes | `tab` ("100\n30", "T\nSFC", "-30": the sectional's ceiling over floor in hundreds, the engine's `airspace_shelf_label` words the map draws, `wingtip.airspace_tabs`), `class`, `floor_ft`, `ceiling_ft`, `ceiling_excluded`, `number`, `angle` (the text's clockwise turn along the ring, −90 to 90) | B 4, C 4, D 6 |
+| `special_use` | FAA special use airspace (ADDS) | `type` (P/R/MOA/W/A/D), `kind`, `name`, `floor_ft`, `floor_ref`, `ceiling_ft`, `ceiling_ref`, `times_of_use`, `time_zone`, `controlling_agency` | 6 |
+| `special_use_labels` | the same, one point an area (not the pieces it excludes, EXCLUSION 1) on its longest side, where the map writes its tab (`sua_labels.py`) | `tab` ("M-BRADY NOR*:\n3600-17999", the engine's words the map draws), `label` ("M-BRADY NOR*"), `type`, `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (SFC/AGL/MSL/FL/UNL, "to but not including" FL180 as 17999 MSL, as the FAA's CIFP writes it), `angle`, `side` (1 the area below the text, −1 above) | 6 |
+| `airports` (`charts/airports.py`) | NASR APT_BASE, APT_RWY, APT_RWY_END (operational only), and Class_Airspace.shp for the class at each field's surface | `ident`, `faa_id`, `name`, `type`, `use`, `military`, `towered`, `airspace` (B, C, D, E or G at the surface: the mark's ring), `elevation_ft`, `longest_ft`, `hard_ft` (the longest runway the engine's `runway_hard_surface` calls hard), `runway_true`, `fuel`, `rank` (the engine's `field_mark_rank` order, lower kept first where marks overlap: a Class B's field, a Class C's, then each tier by its longest hard runway), `size` (the rule's step the mark is drawn at: largest, larger, regular, small) | by the rule's tier (towered, public with 3,000 ft hard, other public, private, heliports): 4, 6, 7, 9, 10 |
 | `navaids` | NASR NAV_BASE (in service) | `ident`, `name`, `kind`, `freq`, `channel`, `service_volume`, `mag_var`, `elevation_ft`, `hours`, `restricted` | VORs 5, others 7 |
 | `fixes` | NASR FIX_BASE, every row | `ident`, `kind`, `vfr`, `enroute_low` | charted 8, others 10 |
 
@@ -120,9 +167,12 @@ browser suite's own archive is rebuilt with
 - **charts**: the chart cycle is a Fargate Spot task that EventBridge
   starts daily at 08:30 UTC (`infra/cloudformation/template.yaml`,
   `ChartRefreshTaskDefinition`), the `wingtip/charts` image running
-  `refresh --workers 2`: a no-op until the FAA publishes a cycle, then it
-  draws it, packs it and publishes the archives and `serving.json` to the
-  tiles bucket. The planner reads tiles from those archives through
+  `refresh --workers 2`: the cycle in force published where it is not
+  yet, then, in the week before the next cycle's date and once the FAA
+  has it up, that one drawn, packed and published ahead under `next.json`
+  (`next_cycle.stage_to_bucket`), which every planner takes at 0901Z on
+  the date; the next run makes it `serving.json`'s. A failed run exits 1,
+  which the stack mails. The planner reads tiles from those archives through
   CloudFront by range requests, and CloudFront caches what it answers.
   The overlay tiles are built on the server, beside the cycle pack the
   planner writes there: cron runs `docker compose -f
@@ -139,7 +189,7 @@ From this directory, over wingtip's requirements
 (`requirements-dev-jobs.txt`):
 
 ```bash
-ruff check charts crash && pytest charts/tests crash/tests
+ruff check charts && pytest charts/tests
 ```
 
 or `scripts/dev/check.sh jobs` on the Mac mini. CI runs them in its

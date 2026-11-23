@@ -7,9 +7,13 @@ import { contrastFindings } from "./metricsContrast";
 import { emulateSafeArea, horizontalOverflow, keyboardFindings, outsideSafeArea, type Insets } from "./metricsInsets";
 import {} from "../helpers";
 import { pickAirplane } from "../startState";
+import { extrasOn } from "../extras";
 
 // An airplane picked: these read its figures (the setup picks none).
 test.beforeEach(({ page }) => pickAirplane(page));
+// The parked features its screens show, on: Practice's drills and another airplane's alerts
+// (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "trainingTools", "otherAirplanes"));
 
 /**
  * The iOS audit, one test per screen on each iOS project

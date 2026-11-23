@@ -88,10 +88,14 @@ pub fn along(line: &[(f64, f64)], lengths: &[f64], lat: f64, lon: f64, from: usi
     let mut best: Option<Along> = None;
     let mut cursor: f64 = lengths[..from.min(lengths.len())].iter().sum();
     for i in from.min(lengths.len() - 1)..lengths.len() {
+        // The segment's end and the airplane each written near its start
+        // (geo::lon_near): across the antimeridian the segment is the short
+        // way, not a line the long way round the world.
         let (a, b) = (line[i], line[i + 1]);
+        let b = (b.0, wingtip_core::geo::lon_near(b.1, a.1));
         let scale = a.0.to_radians().cos();
         let (ax, ay, bx, by) = (a.1 * scale, a.0, b.1 * scale, b.0);
-        let (px, py) = (lon * scale, lat);
+        let (px, py) = (wingtip_core::geo::lon_near(lon, a.1) * scale, lat);
         let (dx, dy) = (bx - ax, by - ay);
         let t = if dx == 0.0 && dy == 0.0 { 0.0 } else { (((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)).clamp(0.0, 1.0) };
         let near = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);

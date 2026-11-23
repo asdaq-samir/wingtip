@@ -27,6 +27,21 @@ struct WatchMessagesTests {
         #expect(request.limit == 8)
     }
 
+    /// North is 360, never 000 (FAA Order JO 7110.65, 2-4-17), including
+    /// a bearing that rounds to it from either side.
+    @Test func aBearingNorthIs360() {
+        func words(_ deg: Double) -> String {
+            WatchAirport(ident: "C81", name: "Campbell", lat: 0, lon: 0, distanceNm: 1, bearingDeg: deg, flightCategory: nil).bearingWords
+        }
+        #expect(words(0) == "360°")
+        #expect(words(0.4) == "360°")
+        #expect(words(359.6) == "360°")
+        #expect(words(360) == "360°")
+        #expect(words(5) == "005°")
+        #expect(words(93) == "093°")
+        #expect(words(359.4) == "359°")
+    }
+
     @Test func theGatewaysChecklistJSONReadsAsTheWatchs() throws {
         let json = #"{"sections":[{"title":"Checklist","items":[{"challenge":"Mixture","response":"Rich"},{"challenge":"Lights","response":null}]}]}"#
         let checklist = try JSONDecoder().decode(WatchChecklist.self, from: Data(json.utf8))

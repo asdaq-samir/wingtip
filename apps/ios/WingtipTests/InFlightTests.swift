@@ -40,6 +40,15 @@ struct InFlightTests {
         #expect(try ask(lat: 42.5, lon: -88.2, kt: 120).onRoute == false)
     }
 
+    @Test func parkedOnTheLineIsNeverOnTheRouteSoTheGroundAsksNothing() throws {
+        // InFlight.took asks in_flight only once underway: what it skips on
+        // the ground is an answer that is never on the route, at a stop on
+        // the line or anywhere along it, so the strip's planned totals stand.
+        #expect(try ask(lat: 42.0, lon: -88.0, kt: 0).onRoute == false)
+        #expect(try ask(lat: 42.5, lon: -88.0, kt: 0).onRoute == false)
+        #expect(try Flight.underway(0) == false)
+    }
+
     @Test func theVerticalSpeedAndTheRing() throws {
         let samples = (0...10).map { ["t_s": Double($0), "altitude_ft": 3000.0 + 5 * Double($0)] }
         let fpm: Double = try Engine.call("vertical_speed", json: ["samples": samples])

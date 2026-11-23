@@ -11,6 +11,83 @@ for the builds. From the privacy and store audit of 2026-11-10 (its
 owner steps O1 to O6, and the owner's half of B4 to B6, S4 to S6, S12 and
 S13). Tick each as it is done.
 
+## Urgent: the multicast networking entitlement
+
+- [ ] **Request it now: Apple takes days to weeks.** On a Wi-Fi-only iPad,
+      which has no GPS, the cockpit ADS-B receiver is the only position
+      in flight. The receiver is built and parked behind `WingtipReceiver`
+      in `apps/ios/project.yml` until the entitlement arrives
+      ([../receivers.md](../receivers.md), "The switch", says what to do
+      that day). Until then, qualify the listing's receiver line
+      (listing.md).
+
+      Sign in as the Account Holder at
+      developer.apple.com/contact/request/networking-multicast and
+      choose the App ID `app.wingtipmaps.ios`. The form's fields could
+      not be read without signing in (2026-11-21), so fit the text below
+      to them:
+
+      > **App:** Wingtip Maps, `app.wingtipmaps.ios`, a flight planner
+      > and in-flight moving map for general aviation pilots on iPhone
+      > and iPad.
+      >
+      > **Why it needs multicast and broadcast:** Pilots carry a portable
+      > ADS-B receiver in the cockpit (Stratux, uAvionix SkyEcho,
+      > ForeFlight Sentry). The receiver makes its own Wi-Fi network and
+      > sends the aviation industry's GDL 90 protocol (Garmin
+      > 560-1058-00) as UDP datagrams to port 4000: the airplane's own
+      > GPS position, the traffic around it, and FAA FIS-B weather.
+      > Several of these receivers send the datagrams to the network's
+      > broadcast address (for example 192.168.10.255), not to each
+      > device, so an app without this entitlement never hears them. On
+      > a Wi-Fi-only iPad, which has no GPS of its own, the receiver's
+      > position is the pilot's only position in flight.
+      >
+      > **What the app does:** It only listens, on UDP port 4000, on the
+      > Wi-Fi network the pilot joined. It never sends multicast or
+      > broadcast traffic, opens no other port, and browses no Bonjour
+      > services. The bytes are read on the device into the airplane's
+      > position, traffic and weather. Nothing heard is sent off the
+      > device. Listening starts only when the pilot leaves the setting
+      > on, and the Local Network prompt
+      > (`NSLocalNetworkUsageDescription`) says why.
+      >
+      > **Who uses it:** Pilots flying with a receiver in the cockpit
+      > with no internet, on every flight. Every major EFB on the App
+      > Store works with these receivers.
+
+## The order
+
+Each step needs the one before it:
+
+1. **The backend.** The AWS stack (docs/README-AWS.md, "The first
+   deploy"; issue #115) and the domain below. Every build, the beta's
+   too, talks to `WINGTIP_URL`'s host, and both stores' reviewers sign
+   in there.
+2. **The organization accounts.** The D-U-N-S number takes days, and
+   Apple's and Play's organization enrolments wait on it (below).
+3. **The pilot beta** ([beta.md](beta.md)): TestFlight external testing
+   and Play internal testing, about four weeks.
+4. **The listings and forms** below, then the review account switched
+   on, then submit.
+
+## The backend
+
+- [ ] The stack, its images, mail and first chart cycle, as
+      docs/README-AWS.md's "The first deploy" (its owner's steps are
+      issue #115's: the AWS account with MFA, the Route 53 zone, the
+      GitHub `production` environment, the AppSecret).
+- [ ] SES production access (README-AWS, "Mail", step 4). Until Amazon
+      grants it, the emailed sign-in link reaches only verified
+      addresses: no tester or reviewer could sign in by email.
+- [ ] The server's size: `InstanceType` t3a.large, not the template's
+      t3a.medium default. The services take about 3.5 GB of the
+      medium's 4 GB (the prelaunch audit of 2026-11-21).
+- [ ] A restore rehearsed once (README-AWS, "Backups and restore"). Then
+      delete again any account deleted since the backup restored: a
+      restore brings deleted accounts back, and nothing yet does it by
+      itself (the prelaunch audit's P3).
+
 ## The domain and the contact
 
 - [ ] Register `wingtipmaps.app` (and `wingtipmaps.com`), point it at the
@@ -25,27 +102,65 @@ S13). Tick each as it is done.
 - [ ] Put the same support address in App Store Connect's and Play
       Console's contact fields.
 
+## The FAA's full NOTAM set (NMS-API)
+
+- [ ] Ask the FAA for NOTAM Management Service API access now: it is
+      granted by mail, not at once (decision 0059). Write to the NOTAM
+      Service Center, **7-AWA-NAIMES@faa.gov**, copying
+      **NOTAMS@faa.gov**, from the support address. The text to send,
+      what it asks for (staging and production credentials, the API's
+      document and rate limits, the terms for showing NOTAMs in a public
+      app, FNS's retirement date) and what to do with the answer are in
+      [../partners/faa-nms-api.md](../partners/faa-nms-api.md).
+- [ ] When the credentials come, put `NMS_API_CLIENT_ID` and
+      `NMS_API_CLIENT_SECRET` in the server's secret. Until then the app
+      says "NOTAMs heard since <date>, not a full set", Ready to Fly
+      counts that as a caution, and the listing says "recent NOTAMs".
+
 ## Apple Developer
 
+- [ ] Enroll as an organization (a legal entity with a D-U-N-S number),
+      not as an individual, and use the same entity on Google Play.
+      App Review 5.1.1(ix) asks that apps in highly regulated fields,
+      "air travel" among them, be submitted by a legal entity, and the
+      seller name both stores show is the one the policy and terms name
+      as who offers the app (docs/legal/privacy.md's and terms.md's
+      notes). An individual account can be migrated to an organization
+      later, but not quickly: start it first (the store-review audit,
+      2026-11-21).
 - [ ] The App ID `app.wingtipmaps.ios` with its capabilities: Sign in with
       Apple; iCloud with the CloudKit container `iCloud.app.wingtipmaps.ios`;
       Push Notifications; the App Group `group.app.wingtipmaps` (on the
       app and on `app.wingtipmaps.ios.widgets`); Associated Domains;
       Time-Sensitive Notifications.
-- [ ] Request the multicast networking entitlement
-      (`com.apple.developer.networking.multicast`) for the cockpit ADS-B
-      receiver: Stratux and SkyEcho broadcast GDL 90, which the app hears
-      only with it (`Receiver/ReceiverListener.swift`). Until Apple grants
-      it, qualify the listing's receiver line (listing.md).
+- [ ] The multicast networking entitlement: **urgent**, see
+      [the first section](#urgent-the-multicast-networking-entitlement).
+- [ ] Sign in with Apple for Email Communication (Certificates,
+      Identifiers & Profiles, Services): register `wingtipmaps.app` and
+      the sending address (`MAIL_FROM`, `no-reply@wingtipmaps.app`), with
+      the domain's SPF and DKIM passing. A pilot who signs in with Hide My
+      Email has a `privaterelay.appleid.com` address, and Apple's relay
+      drops mail from an unregistered sender: their sign-in links,
+      reminders and instructor mail would never arrive (the store-review
+      audit, 2026-11-21).
 - [ ] Optional: request the Private Cloud Compute entitlement
       (`apps/ios/project.yml`, `WingtipPrivateCloudCompute`).
-- [ ] A distribution certificate, and App Store profiles for the app,
-      the widgets and the watch app; check the archived app's
+- [ ] A distribution certificate, and App Store profiles for the app
+      and the widgets (no watch app: it is parked and not embedded,
+      `apps/ios/project.yml`); check the archived app's
       `aps-environment` is `production`
       (`codesign -d --entitlements - <app>`).
 - [ ] A Sign in with Apple key, for the gateway to revoke a deleted
-      pilot's Apple sign-in (`APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`,
-      `AppleRevocation`).
+      pilot's Apple sign-in (`APPLE_TEAM_ID`, `APPLE_KEY_ID`,
+      `APPLE_PRIVATE_KEY`, `AppleRevocation`), with `app.wingtipmaps.ios`
+      as its primary App ID and the web's Services ID grouped under it:
+      the same key signs the iPhone's client secret, which trades the
+      app's authorization code for the token deleting the account
+      revokes (`AppleAppTokens`, docs/NATIVE.md, "Sign in with Apple:
+      revoked when the account goes"). Set `APP_IOS_BUNDLE_ID` on the
+      gateway too. After the first review build, sign in on an iPhone,
+      delete the account, and check the app has left Settings, Apple
+      Account, Sign in with Apple.
 
 ## App Store Connect
 
@@ -65,9 +180,25 @@ S13). Tick each as it is done.
       and CryptoKit hashing only); nothing to upload.
 - [ ] App Review information: the notes in listing.md, the demo account
       (the review account's address and code, below), and the screen
-      recording of the copilot listening with the phone locked.
+      recording of an alert ahead said aloud with the phone locked, for
+      the `audio` background mode (listing.md).
 - [ ] Screenshots: iPhone 6.9" ×5 and iPad 13" ×2 from
-      `docs/store/screenshots/`.
+      `docs/store/screenshots/`. No Apple Watch screenshot: the build
+      embeds no Watch app.
+
+## Data the apps show under someone else's terms
+
+App Review 5.2.2 asks that an app showing a third-party service's
+content be "specifically permitted to do so under the service's terms of
+use", with the authorization given on request; Play's Intellectual
+Property policy asks the same. adsb.fi, whose terms are personal and
+non-commercial, was cut as a source on 2026-11-21 (feature-review.md);
+one traffic source credited in About (docs/legal/credits.md) is left to
+check:
+
+- [ ] ADS-B Exchange (RapidAPI): check that the plan the key is on allows
+      a published app, or ask ADS-B Exchange for a licence.
+- [ ] Keep each answer where a reviewer's request can be met at once.
 
 ## The review account (both stores)
 
@@ -95,23 +226,42 @@ S13). Tick each as it is done.
 - [ ] Data safety: the answers in privacy-labels.md, with the deletion
       URL `https://wingtipmaps.app/delete-account`; check each Google
       SDK's entry in Play's SDK Index (`play-services-location`, ML Kit's
-      document scanner and text recognition) first.
-- [ ] Foreground services: a declaration for each of `location`,
-      `microphone` and `connectedDevice` (the description, the impact if
-      deferred, the use case and a video). preview-video.md's shot list
-      covers the copilot and the flight recorder; film the ADS-B
-      receiver's setup too.
+      document scanner and text recognition) first. The store build has
+      no ML Kit GenAI (`-Pwingtip.genai=true` only).
+- [ ] Foreground services: the declaration for `location`, the one type
+      this build declares (the description, the impact if deferred, the
+      use case and a video; foreground-services.md, preview-video.md).
+      The microphone and connected-device types left with the parked
+      copilot and receiver.
 - [ ] App access: the review account's instructions from listing.md.
+- [ ] Phone screenshots, at least two (Play needs two to publish):
+      `screenshots/android-phone/`, not yet captured (screenshots/README.md,
+      "Still to take").
 - [ ] Content rating (IARC), target audience 18 and over, no ads, and
       the rest of App content as listing.md says.
 - [ ] `APP_ANDROID_CERT_SHA256` in the AppSecret with Play's app signing
       certificate and the upload key's, so sign-in links open in the app.
 
+## Not yet anyone's step
+
+Found missing in the launch path on 2026-11-21. Each is code or a
+decision, not a console step:
+
+- [ ] A re-deletion after a restore (the prelaunch audit's P3): a
+      `deleted_accounts` log kept outside the dump, read after any
+      restore.
+- [ ] An open-source licence screen in the phones' About (Apache-2.0
+      notices; the store-review audit's 14). No store rule asks for it,
+      but the licences do.
+- [ ] A privacy contact address named in the policy, once the domain's
+      mailbox exists (the prelaunch audit, "For the owner").
+- [ ] The beta's outcome folded into the feature review
+      ([feature-review.md](feature-review.md)) before the listing's
+      words are final: a feature cut or parked leaves the listing and
+      the screenshots too. Its first round is applied (2026-11-21).
+
 ## Google Cloud
 
-- [ ] Restrict the Android Maps key to the package name and the SHA-256
-      of Play's **app signing** certificate (not only the upload key):
-      the close-in map sends both (`map/CloseMap.kt`), and a key
-      restricted to the upload key fails for every installed copy.
-- [ ] Map Tiles API billing and a quota for Android's close-in map, which
-      now loads by itself whenever the map is zoomed close in.
+Nothing for Android: its close-in map is the USGS's imagery
+(`map/CloseMap.kt`), and the app carries no Maps key. The web's Google
+overlay keeps the planner's browser key (docs/GOOGLE-MAPS.md).

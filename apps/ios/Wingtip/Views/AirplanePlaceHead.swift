@@ -15,6 +15,9 @@ struct AirplanePlaceHead: View {
     @Environment(\.undoManager) private var undoManager
     let model: AirplaneProfileModel
     let lookup: AirplaneLookup
+    /// Whether Follow is offered (AirplaneProfileView.offersHistory): the
+    /// pilot's own always, another's while Other Airplanes is on.
+    let follow: Bool
     let fly: () -> Void
     @Environment(Plan.self) private var plan
     @Environment(\.cardExpanded) private var expanded
@@ -59,28 +62,24 @@ struct AirplanePlaceHead: View {
             }
             .glassProminentButton()
             .disabled(flying)
-            .accessibilityLabel(flying ? "Flying this airplane" : "Fly this airplane")
+            .accessibilityLabel(flying ? String(localized: "Flying This Airplane") : Wording.flyThisAirplane)
             .accessibilityIdentifier("fly-this-airplane")
-            Menu {
-                if let hex {
-                    Toggle("Tell me when it takes off", isOn: watch(hex, .takeoff))
-                    Toggle("Tell me when it lands", isOn: watch(hex, .land))
+            if follow {
+                Menu {
+                    if let hex {
+                        Toggle("Tell Me When It Takes Off", isOn: watch(hex, .takeoff))
+                        Toggle("Tell Me When It Lands", isOn: watch(hex, .land))
+                    }
+                } label: {
+                    ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
                 }
-            } label: {
-                ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
+                .glassButton()
+                .disabled(hex == nil)
+                .accessibilityIdentifier("airplane-follow")
             }
-            .glassButton()
-            .disabled(hex == nil)
-            .accessibilityIdentifier("airplane-follow")
-            Toggle(isOn: Binding(get: { starred }, set: { _ in if let kept { tracking.toggleFavorite(kept, undo: undoManager) } })) {
-                ActionFace(systemImage: starred ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: "Favorite",
-                           symbolColour: starred ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
-            }
-            .toggleStyle(.button)
-            .glassButton()
-            .disabled(kept == nil)
-            .accessibilityLabel(starred ? "Remove from Favorites" : "Add to Favorites")
-            .accessibilityIdentifier("airplane-favorite")
+            FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
+                .disabled(kept == nil)
+                .accessibilityIdentifier("airplane-favorite")
             ShareLink(item: Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "airplane", value: model.tail)]),
                       subject: Text(model.tail)) {
                 ActionFace(systemImage: "square.and.arrow.up", title: "Share")

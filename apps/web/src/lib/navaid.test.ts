@@ -6,6 +6,10 @@ import serviceVolumes from "./fixtures/serviceVolume.json";
 // Joliet's VOR/DME as NASR files it (NAV_BASE, 2026-10-29): 2° E.
 const JOT = { ident: "JOT", lat: 41.54641852, lon: -88.31841055, mag_var: 2 };
 
+// The radials, the Morse, the hours and AIM 1-1-8's service volumes are the
+// engine's, each case tested there (engine/facade/tests/wording.rs, over the
+// shared fixtures/serviceVolume.json): here, that the card's station and
+// point reach it and its answer is read back; the printing is the web's.
 describe("navaid", () => {
   it("says a radial in three figures, north 360", () => {
     expect(threeFigures(0)).toBe("360");
@@ -18,24 +22,21 @@ describe("navaid", () => {
     expect(threeFigures(off.radial)).toBe("358");
     expect(threeFigures(off.toCourse)).toBe("178");
     expect(off.nm).toBeCloseTo(30, 0);
-    // A west declination the other way: 4° W puts due east on its 094.
-    expect(threeFigures(radialOf({ ...JOT, mag_var: -4 }, { lat: JOT.lat, lon: JOT.lon + 0.5 })!.radial)).toBe("094");
     expect(radialOf({ ...JOT, mag_var: null }, JOT)).toBeNull();
   });
 
   it("puts a fix off the nearest VOR", () => {
     const far = { ident: "XXX", lat: 45, lon: -90, mag_var: 0 };
     expect(fixRadialDistance({ lat: JOT.lat + 0.2, lon: JOT.lon }, [far, JOT])).toBe("JOT 358° 12 nm");
-    expect(fixRadialDistance(JOT, [])).toBeNull();
   });
 
   it("sends the ident in Morse, letters apart", () => {
     expect(morseOf("JOT")).toBe("·−−−  −−−  −");
   });
 
-  it("says every band of each service volume as AIM 1-1-8's TBL 1-1-1 bounds it", () => {
-    // The shared cases the engine's own test holds it to too.
-    for (const { code, answer } of serviceVolumes.cases) expect(serviceVolume(code), String(code)).toBe(answer);
+  it("says a service volume, the hours and the declination", () => {
+    const [terminal] = serviceVolumes.cases;
+    expect(serviceVolume(terminal!.code)).toBe(terminal!.answer);
     expect(hoursOf("24")).toBe("Continuous");
     expect(declinationOf(-4)).toBe("4° W");
   });

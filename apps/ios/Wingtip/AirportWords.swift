@@ -6,7 +6,7 @@ import Foundation
 /// worked out here, only written. The FAA's wording and the runway rules
 /// are the shared engine's (crate::wording, crate::runway), one copy with
 /// the web app; the formatting is the app's.
-enum AirportWords {
+nonisolated enum AirportWords {
     /// A figure as sent, without a ".0" it does not have: 3 and 1.5.
     static func plain(_ x: Double) -> String {
         x == x.rounded() && abs(x) < 1e9 ? String(Int(x)) : String(x)
@@ -100,7 +100,7 @@ enum AirportWords {
     /// out when not reported; the time UTC, as the report gives it. The
     /// web's weatherLineOf.
     static func weatherLine(_ metar: Metar) -> String {
-        let ceiling: String? = metar.ceilingUnknown == true ? nil : metar.ceilingFt.map { "Ceiling \(Format.altitude($0))" } ?? "No ceiling"
+        let ceiling: String? = metar.ceilingUnknown == true ? nil : metar.ceilingFt.map { "Ceiling \(Format.altitude($0))" } ?? Wording.noCeiling
         let wind = shortWind(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt)
         let time = date(metar.observedAt).map(Format.zulu)
         return [ceiling, wind, time].compactMap { $0 }.joined(separator: " · ")
@@ -118,12 +118,15 @@ enum AirportWords {
         return (try? Self.iso.parse(iso)) ?? (try? isoFraction.parse(iso))
     }
 
-    /// When a report was made and how long ago: "1255Z · 14 min ago",
-    /// the age a pilot weighs a report by.
+    /// When a report was made and how long ago: "1255Z · 14m ago",
+    /// the age a pilot weighs a report by (Format.ago, the engine's).
     static func observed(_ iso: String, now: Date = Date()) -> String? {
-        guard let when = date(iso) else { return nil }
-        let minutes = max(0, Int((now.timeIntervalSince(when) / 60).rounded()))
-        let ago = minutes < 1 ? "just now" : minutes < 90 ? "\(minutes) min ago" : "\(Int((Double(minutes) / 60).rounded())) h ago"
+        date(iso).map { observed($0, now: now) }
+    }
+
+    /// The same of a time already read: a receiver's report heard at.
+    static func observed(_ when: Date, now: Date = Date()) -> String {
+        guard let ago = Format.ago(when, now: now) else { return Format.zulu(when) }
         return "\(Format.zulu(when)) · \(ago)"
     }
 
@@ -139,7 +142,7 @@ enum AirportWords {
                                           observed: when.timeIntervalSince1970.rounded(.down))
     }
 
-    /// "1255Z · 3 h ago — an old report" where the report no longer counts
+    /// "1255Z · 3h ago — an old report" where the report no longer counts
     /// (reportInForce), the web's words (IOS-2); as observed() otherwise.
     static func observedSaid(_ iso: String, now: Date = Date()) -> String? {
         guard let said = observed(iso, now: now) else { return nil }
@@ -154,6 +157,20 @@ enum AirportWords {
     /// Nil where the engine refuses (logged by Engine.rule): no runway is
     /// then badged Best Wind, never a guessed one.
     static func bestWind(_ runways: [Runway]) -> Int? {
+        inUse(runways).map(\.runway)
+    }
+
+    /// The runway end most nearly into the reported wind, as its number
+    /// ("24"), the same engine answer as bestWind: what FPL's line lands
+    /// on and leaves from where the pilot picks none, as the planner flies
+    /// it (wind_runways). Nil where the wind picks none.
+    static func windEnd(_ runways: [Runway]) -> String? {
+        guard let flown = inUse(runways), let end = runways[safe: flown.runway]?.runwayEnds?[safe: flown.end] else { return nil }
+        return runwayNumber(end.ident)
+    }
+
+    /// The engine's runway in use, where the wind chose it.
+    private static func inUse(_ runways: [Runway]) -> EngineContract.GonogoFlown? {
         let asked = runways.map { r in
             EngineContract.Runway(closed: r.closed, surface: r.surface, lengthFt: r.lengthFt.map(Double.init),
                                   runwayEnds: r.runwayEnds?.map { .init(ident: $0.ident, headingTrueDeg: $0.headingTrueDeg) },
@@ -161,7 +178,7 @@ enum AirportWords {
                                                            gustCrosswindKt: $0.gustCrosswindKt, inUse: $0.inUse) })
         }
         guard !asked.isEmpty, let flown = try? Engine.gonogoRunwayInUse(runways: asked), flown.byWind else { return nil }
-        return flown.runway
+        return flown
     }
 
     /// A runway's surface in words: OurAirports' "ASPH-G" is asphalt.
@@ -214,7 +231,7 @@ enum AirportWords {
 
     // MARK: Radio
 
-    enum FrequencyKind: String, Decodable { case tower, ground, weather, approach, traffic, other }
+    nonisolated enum FrequencyKind: String, Decodable { case tower, ground, weather, approach, traffic, other }
 
     /// A frequency named in words (TWR is "Tower"), its kind for the
     /// row's glyph, and what OurAirports says of it in sentence case where
@@ -274,6 +291,7 @@ enum AirportWords {
     static func minimumsLine(_ m: VfrMinimums) -> String {
         if m.clearOfClouds { return "\(plain(m.visibilitySm)) sm, clear of clouds" }
         func ft(_ x: Double?) -> String { x.map(Format.grouped) ?? Format.none }
+        // 91.155(a)'s "1 statute mile" from clouds, sent in feet, said as it is written.
         let horizontal = m.horizontalFt == Units.ftPerSm ? "1 sm" : ft(m.horizontalFt)
         return "\(plain(m.visibilitySm)) sm, \(ft(m.belowFt)) below, \(ft(m.aboveFt)) above, \(horizontal) horizontal"
     }
@@ -307,7 +325,7 @@ enum AirportWords {
     /// Where the engine refuses, its problem in their place, so a code is
     /// never passed off as the fuel's name.
     static func fuelNames(_ types: [String]) -> String {
-        do { return try Engine.fuelNames(types: types) } catch { return "the fuels couldn't be worked out: \(error.localizedDescription)" }
+        do { return try Engine.fuelNames(types: types) } catch { return Problems.words("The fuels could not be worked out", error) }
     }
 
     /// How far a place is from the field: the minutes' walk where it is a

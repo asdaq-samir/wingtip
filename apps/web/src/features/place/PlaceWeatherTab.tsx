@@ -9,6 +9,7 @@ import { zuluTime } from "../../lib/format";
 import Observed from "../../components/Observed";
 import { compassPoint } from "../../lib/compass";
 import type { Hour } from "./hourly";
+import { tafLine, type TafValidity } from "./tafValidity";
 import { BADGE } from "../../lib/rowBadges";
 import { TEXT } from "../../lib/text";
 import { feet, miles, nm } from "../../lib/format";
@@ -16,6 +17,7 @@ import { placeWind } from "./placeWind";
 import { AtisRows } from "./AtisRows";
 import { HourlyForecast } from "./HourlyForecast";
 import { DigitalAtisRows } from "./LiveAirportRows";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * An airport's card's Weather tab (PlaceCard): the weather there hour by
@@ -40,8 +42,9 @@ export function PlaceWeatherTab({
   known: unknown;
   /** Its category's chip, in the FAA's colour (PlaceCard). */
   chip: ReactNode;
-  /** Hour by hour, and a sentence of what the hours say (features/place/hourly). */
-  hourly: { hours: Hour[]; sentence: string | null };
+  /** Hour by hour, a sentence of what the hours say (features/place/hourly),
+   *  and the TAF's own valid period (features/place/tafValidity). */
+  hourly: { hours: Hour[]; sentence: string | null; taf: TafValidity | null };
   /** The weather in a line where there is no forecast to say. */
   weatherLine: string;
   /** When its report (or the nearest station's) was observed, for its age. */
@@ -81,8 +84,11 @@ export function PlaceWeatherTab({
           >
             {/* Refresh at the row's right, after the report's age: what
                 the card shows asked again now (the owner, 2026-11-11,
-                "refresh can go in the weather tab itself"). */}
-            {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} className="size-8" />}
+                "refresh can go in the weather tab itself"), the round glass
+                button at its own 44 as every one is (IconButton's `round`,
+                the owner's "make all buttons same size as Apple Maps",
+                2026-11-20), where it was held to 32 (the iOS audit's P18). */}
+            {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} />}
           </ListRow>
           {/* The hours only where there is a forecast to show (a TAF): Now
               alone was a column of the summary's own figures in a mostly
@@ -92,6 +98,11 @@ export function PlaceWeatherTab({
               <HourlyForecast hours={hourly.hours} arrival={arrival} />
             </div>
           )}
+          {/* The TAF's issue time and valid period, as a report's age is
+              said: amber once it has run out (FAA-H-8083-28B 27.4.1), so a
+              TAF kept from before the signal was lost is not read as
+              today's forecast. */}
+          {hourly.taf && <TafRow taf={hourly.taf} />}
         </ListGroup>
       )}
       {place && (
@@ -168,11 +179,7 @@ export function PlaceWeatherTab({
                 <ListRow title={<span className="font-mono break-words">{metar.raw}</span>} />
               </>
             ) : (
-              <ListRow
-                title={
-                  place.weather_unavailable ? "The weather service could not be reached" : "No weather station reports from this field"
-                }
-              />
+              <ListRow title={place.weather_unavailable ? WORDING.weatherNotReached : "No weather station reports from this field"} />
             )}
           </ListGroup>
           {/* For one with no report of its own, the weather modelled at
@@ -189,7 +196,7 @@ export function PlaceWeatherTab({
                       <CloudSun />
                     </RowBadge>
                   }
-                  title="Flight category"
+                  title={WORDING.flightCategory}
                   value={<span className="font-semibold text-foreground">{modelled.flight_category}</span>}
                 />
                 <ListRow
@@ -245,5 +252,23 @@ export function PlaceWeatherTab({
       {/* The tower's D-ATIS, where it sends one on SWIM. */}
       {place && <DigitalAtisRows ident={place.ident} />}
     </>
+  );
+}
+
+/** The TAF's line under the hours (tafLine). */
+function TafRow({ taf }: { taf: TafValidity }) {
+  const { line, caution } = tafLine(taf);
+  return (
+    <ListRow
+      title={
+        <span
+          className={caution ? "font-semibold text-caution-ink" : "text-muted-foreground"}
+          data-testid="place-taf-valid"
+          data-state={taf.state}
+        >
+          {line}
+        </span>
+      }
+    />
   );
 }

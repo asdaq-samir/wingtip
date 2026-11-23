@@ -6,7 +6,7 @@
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
 #                                    paths and checks): web py planner ingest weather
-#                                    jobs engine java ios android site sim xplane arch
+#                                    jobs engine java ios android site arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -52,14 +52,34 @@ worktree_hash() { echo "$here" | sha | cut -c1-8; }
 
 # A Python suite (a leg of scripts/ci/python_suite.sh, the table CI's
 # test-python reads too) in the image of its requirements: ruff, its import
-# contracts, then its tests, as CI runs them. The X-Plane driver needs the
-# standard library alone and runs in wingtip's image.
+# contracts, then its tests, as CI runs them.
+#
+# Each leg has a data/raw volume of its own (wingtip-check-raw-<leg>), since
+# all-changed runs the legs side by side and they share nothing else: the
+# suites fetch and refresh the FAA files in data/raw (airports.csv, faa_nasr,
+# the stores), so one leg could read a file another was replacing, and the
+# planner's navlog test once saw altitude 10500 where 4500 was expected while
+# the other legs ran beside it (2026-11-20; it passed alone and on a rerun).
+# CI is unaffected: each suite is its own job with its own cache. A leg's
+# first run copies the old shared volume, if there is one, so it starts warm.
+raw_volume() {
+  local vol=wingtip-check-raw-$1 old=wingtip-check-raw
+  if ! docker volume inspect "$vol" >/dev/null 2>&1; then
+    docker volume create "$vol" >/dev/null
+    if docker volume inspect "$old" >/dev/null 2>&1; then
+      docker run --rm -v "$old:/from:ro" -v "$vol:/to" busybox cp -a /from/. /to/ >/dev/null 2>&1 || true
+    fi
+  fi
+  echo "$vol"
+}
+
 run_py() {
-  local leg=$1 dir dev tag
+  local leg=$1 dir dev tag raw
   read -r dir dev < <("$here/scripts/ci/python_suite.sh" --where "$leg")
   [ -n "$dev" ] || { dir=services/planner dev=requirements-dev-wingtip.txt; }
   tag=$(py_image "$dir" "$dev")
-  docker run --rm -v "$here:/repo" -v wingtip-check-raw:/repo/data/raw -e PYTEST_ADDOPTS="-p no:cacheprovider" \
+  raw=$(raw_volume "$leg")
+  docker run --rm -v "$here:/repo" -v "$raw:/repo/data/raw" -e PYTEST_ADDOPTS="-p no:cacheprovider" \
     -w /repo "$tag" scripts/ci/python_suite.sh --local "$leg"
 }
 
@@ -75,10 +95,14 @@ run_area() {
       tag=$(web_image)
       # A worktree's own node_modules (macOS binaries, or an older lock's)
       # would come first in Node's walk up: hidden behind one of the
-      # container's own, links to the image's /node_modules, where knip
+      # container's own, a copy of the image's /node_modules, where knip
       # looks for the packages package.json names (it reads no further up).
-      docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
-        sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npm run -s format:check && npx knip --no-progress && npm run -s layers && npx vitest run'
+      # A copy, not links, so the packages sit inside the app as they do on
+      # CI (npm ci): Vite serves no file outside it, and a test importing a
+      # package's file by URL (makeMap's Inter, `?url`) failed here only
+      # ("Denied ID /node_modules/...", firstDraw.test, 2026-11-20).
+      docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules:exec -w /repo/apps/web "$tag" \
+        sh -c 'cp -a /node_modules/. node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npm run -s format:check && npx knip --no-progress && npm run -s layers && npx vitest run'
       ;;
     py) run_py wingtip ;;
     planner) run_py planner ;;
@@ -169,14 +193,12 @@ run_area() {
       python3 "$here/apps/site/check.py"
       ;;
     sim)
-      # The MSFS replay agent: built (without the SDK's SimConnect, which
-      # only the trial's instance has), its format checked and its tests
-      # run (scripts/ci/sim_suite.sh, which CI runs too); then the
-      # trial's template (cfn-lint) and scripts (shellcheck).
+      # The test flight's feed and report linted and tested
+      # (scripts/ci/sim_suite.sh, which CI runs too), then its runner
+      # (shellcheck). The MSFS agent and its trial left with the Studio
+      # (the feature review, 2026-11-21).
       "$here/scripts/ci/sim_suite.sh"
-      docker run --rm -v "$here/infra/sim-trial:/data" -w /data "python:$PYTHON-slim" \
-        sh -c 'pip install -q --root-user-action=ignore cfn-lint && cfn-lint template.yaml'
-      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable infra/sim-trial/trial.sh tools/msfs-agent/prepare-track.sh
+      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable scripts/dev/sim-flight.sh
       ;;
     # The X-Plane trial's plugin (tools/xplane-driver): its plain parts,
     # and the player against a stub of XPPython3 (seconds).

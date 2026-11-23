@@ -25,6 +25,9 @@ export interface MapInsets {
   top: number;
   bottom: number;
   left: number;
+  /** The inspector's column at the map's right while a card is in it
+   *  (MapPanel, a touch screen from size.inspector wide); none elsewhere. */
+  right?: number;
   /** Where the panel has settled: at rest (its capsule, or a desktop's
    *  corner) or out. The map follows a change of this (GlMapShell), not
    *  every change of the size -- a notice under the route, the head
@@ -56,6 +59,7 @@ export function setMapInsets(next: MapInsets) {
     prev.top === next.top &&
     prev.bottom === next.bottom &&
     prev.left === next.left &&
+    prev.right === next.right &&
     prev.out === next.out &&
     prev.up === next.up &&
     prev.card === next.card;
@@ -68,14 +72,29 @@ export function setMapInsets(next: MapInsets) {
  *  fitted to what half leaves). Null for a side panel, a top sheet, or with
  *  a card up, whose room the map takes as it settles. And `half`, what a
  *  phone's bottom sheet or a card covers at half, the detent a card opens
- *  at (cardOpening), for a place picked to be centred above its card as it
- *  opens (GlMapShell); 0 where there is none. */
+ *  at (cardOpening), and `side`, what the inspector's column covers at the
+ *  map's right with a card in it, for a place picked to be centred beside
+ *  its card as it opens (roomAsCardOpens); 0 where there is none. */
 export interface SlidingSheet {
   node: HTMLElement;
   least: number;
   most: number;
 }
-export const useSlidingSheet = create<{ sheet: SlidingSheet | null; half: number }>(() => ({ sheet: null, half: 0 }));
+export const useSlidingSheet = create<{ sheet: SlidingSheet | null; half: number; side: number }>(() => ({
+  sheet: null,
+  half: 0,
+  side: 0,
+}));
+
+/** The room `pad` leaves once the card a pick opens is up: above it at
+ *  half on a phone, beside the inspector's column on a wide iPad. Known as
+ *  the card opens, not once it is up: a field picked on a wide iPad with
+ *  You open was centred in the whole width while You went and its card
+ *  came, then eased again beside the card (card-once.spec's desktop run). */
+export function roomAsCardOpens<P extends { bottom: number; right: number }>(pad: P): P {
+  const { half, side } = useSlidingSheet.getState();
+  return { ...pad, ...(half ? { bottom: half } : {}), ...(side ? { right: side } : {}) };
+}
 
 /** The insets as the map's element's CSS variables, for the chart credit
  *  (index.css): a ref, written now and at each change, never by a render. */
@@ -85,6 +104,7 @@ export function insetVars(el: HTMLElement | null) {
     el.style.setProperty("--map-inset-top", `${insets.top}px`);
     el.style.setProperty("--map-inset-bottom", `${insets.bottom}px`);
     el.style.setProperty("--map-inset-left", `${insets.left}px`);
+    el.style.setProperty("--map-inset-right", `${insets.right ?? 0}px`);
   };
   write(useMapInsets.getState());
   return useMapInsets.subscribe(write);
@@ -195,7 +215,7 @@ export const GRABBER_BAR = "h-[5px] w-9 rounded-full bg-muted-foreground/40";
 /** A capsule whose 44-point hit area is a pseudo-element six points out
  *  round it (the app's rule: a control never grows to get there). The
  *  caller adds its height (h-8 for the 32-point ones) and fill. */
-export const CAPSULE_HIT = "relative rounded-full after:absolute after:-inset-1.5 after:content-['']";
+export const CAPSULE_HIT = "relative rounded-full hit-1.5";
 
 /** A tinted capsule that adds a field to the route -- the Stops' Add
  *  Stop and Direct To (StopsCard) -- one height, padding and hit area (the
@@ -223,6 +243,13 @@ export const usePanelDragging = create<{ dragging: boolean }>(() => ({ dragging:
  *  glyphs are a desk's. One size for the whole stack, the microphone's
  *  circle included, set on the stack rather than each button. */
 export const FLYING_STACK = "gap-3 [&_button]:size-[60px]";
+/** The map's buttons on the ground: 44 px (size.map-button) whatever the
+ *  pilot's text size, as Apple Maps' do not grow with Dynamic Type (the
+ *  scale audit's Q1, the owner, 2026-11-21; they were rem, 54 at 19.65 px),
+ *  their glyphs 20 px (size.glyph-map). Their 44-point hit area is the
+ *  button itself (index.css's --tap-target is px too). */
+export const MAP_BUTTON_SIZE = "[&_button]:size-(--size-map-button)";
+export const MAP_BUTTON_GLYPH = "[&_button>svg]:size-(--size-glyph-map)";
 export const FLYING_BUTTON = "rounded-full font-bold text-tint";
 
 /** Flying mode, as the planner sets it (useFlyingMode) for the map's

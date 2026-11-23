@@ -1,7 +1,7 @@
 # 0021. Labels are Title Case; the FAA's text is sentence case with codes kept
 
 - **Date:** 2026-10-23
-- **Status:** Accepted
+- **Status:** Accepted; made exact by [0056](0056-one-set-of-words.md) (which names are Title Case, and the shared words generated from `design/wording.json`)
 
 ## Context
 

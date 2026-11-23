@@ -2,6 +2,8 @@ import { Controller, type Control, type FieldValues, type Path } from "react-hoo
 import FieldHit from "../../components/FieldHit";
 import { ListRow } from "../../components/GroupedList";
 import { NumberField } from "../../components/ui/number-field";
+import { ariaInvalid } from "../../components/ui/ariaInvalid";
+import { errorIdOf } from "../../lib/fieldError";
 
 /** One of the aircraft form's figures: its label at the start, the
  *  number at the end with its unit inside the field, and what is wrong
@@ -29,7 +31,18 @@ export default function NumberRow<T extends FieldValues>({
   error?: string;
 }) {
   return (
-    <ListRow id={id} title={title} description={error ? <span className="text-destructive">{error}</span> : undefined}>
+    <ListRow
+      id={id}
+      title={title}
+      description={
+        error ? (
+          // The field described by it, so its problem is read with it (WCAG 3.3.1).
+          <span id={errorIdOf(id)} className="text-destructive">
+            {error}
+          </span>
+        ) : undefined
+      }
+    >
       <FieldHit htmlFor={id}>
         <Controller
           control={control}
@@ -42,7 +55,7 @@ export default function NumberRow<T extends FieldValues>({
               placeholder={placeholder}
               aria-label={name}
               unit={unit}
-              isInvalid={!!error}
+              {...ariaInvalid(id, error)}
               value={f.value === "" || f.value == null ? null : Number(f.value)}
               onChange={(v) => f.onChange(v == null ? "" : String(v))}
               onBlur={f.onBlur}

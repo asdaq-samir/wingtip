@@ -77,7 +77,10 @@ describe("the engine's question from the app's state", () => {
       startedAtMs: fix.at - 3_600_000,
       firstSeen: {},
     });
-    expect(input!.fuel_gal).toBe(11);
+    // The fuel at takeoff and the start go to the engine, which takes the
+    // hour's 9 gal off the 20 (copilot.json's started_s cases).
+    expect(input!.fuel_gal).toBe(20);
+    expect(input!.started_s).toBe((fix.at - 3_600_000) / 1000);
     // The miles to go are along the line, from route_position.
     expect(input!.remaining_nm).toBeGreaterThan(20);
     expect(input!.remaining_nm).toBeLessThan(30);
@@ -108,5 +111,18 @@ describe("the engine's question from the app's state", () => {
     expect(nightCurrent({ nightPassengersUntil: "2026-11-09" } as never, at)).toBe(true);
     expect(nightCurrent({ nightPassengersUntil: "2026-11-08" } as never, at)).toBe(false);
     expect(nightCurrent({ nightPassengersUntil: null } as never, at)).toBe(false);
+  });
+
+  test("night passenger currency on the evening of its last day, by the pilot's own day", () => {
+    const was = process.env.TZ;
+    process.env.TZ = "America/Chicago";
+    try {
+      // 19:30 CST on the 21st is 01:30 UTC on the 22nd: still the 21st for the pilot.
+      const evening = Date.UTC(2026, 10, 22, 1, 30) / 1000;
+      expect(nightCurrent({ nightPassengersUntil: "2026-11-21" } as never, evening)).toBe(true);
+    } finally {
+      if (was === undefined) delete process.env.TZ;
+      else process.env.TZ = was;
+    }
   });
 });

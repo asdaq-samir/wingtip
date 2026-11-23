@@ -19,6 +19,8 @@ describe("the account's export", () => {
     expect(exportFileName('attachment; filename="wingtip-maps-2026-11-09.json"')).toBe("wingtip-maps-2026-11-09.json");
     expect(exportFileName('attachment; filename="../../evil.json"')).toBe("evil.json");
     expect(exportFileName(null, new Date("2026-11-09T12:00:00Z"))).toBe("wingtip-maps-2026-11-09.json");
+    // This device's day, not UTC's: late in the evening is still today.
+    expect(exportFileName(null, new Date(2026, 10, 9, 23, 30))).toBe("wingtip-maps-2026-11-09.json");
   });
 });
 
@@ -46,7 +48,7 @@ describe("exporting the account", () => {
     get.mockRejectedValue(new Error("You are signed out."));
     const { result } = renderHook(() => useExportAccount(), { wrapper });
     act(() => result.current.mutate());
-    await waitFor(() => expect(shown).toHaveBeenCalledWith("Your data was not exported", "You are signed out."));
+    await waitFor(() => expect(shown).toHaveBeenCalledWith("Your Data Was Not Exported", "You are signed out."));
     expect(shared).not.toHaveBeenCalled();
   });
 });

@@ -10,7 +10,7 @@ from .altitude_plans import AltitudeFigure, AltitudeOption, AltitudeStep  # noqa
 from .common import AltitudeChoice, FlightRules, Loading
 from .plan_chart import ChartInfo, ChartLayer, ChartSheet  # noqa: F401  (the chart, its own file)
 from .plan_legs import AlternateLeg, Leg
-from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile  # noqa: F401  (the side view, its own file)
+from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile, RouteWeather  # noqa: F401  (the side view, its own file)
 from .winds_period import WindsPeriod
 
 
@@ -112,11 +112,18 @@ class Totals(BaseModel):
     fuel_required_gal: float | None = None
     usable_fuel_gal: float | None = None
     fuel_margin_gal: float | None = None
+    #: The fuel in the tanks as the flight leaves, the margin's measure:
+    #: the pilot's own where set (the query's `tanks`), else full.
+    on_board_gal: float | None = None
     night: bool | None = None
     #: Whether any of the flight is in 14 CFR 61.57(b)'s night-passenger
     #: period (1 hour after sunset to 1 hour before sunrise), its own
     #: window rather than 1.1's night, for the night-currency caution.
     night_passengers: bool | None = None
+    #: Whether any of the flight is in 14 CFR 91.209(a)'s period for
+    #: lighted position lights, sunset to sunrise, which begins before
+    #: 1.1's night: a squawk deferred for day flight grounds it.
+    lights: bool | None = None
     #: The rules the reserve is under: IFR's 45 minutes day or night
     #: (14 CFR 91.167(a)(3)), VFR's 30 by day and 45 at night (91.151).
     rules: FlightRules = "vfr"
@@ -125,12 +132,16 @@ class Totals(BaseModel):
     alternate: AlternateLeg | None = None
     #: A route with stops: each flight between two landings with its own
     #: fuel check, the tanks filled at each stop -- the route's own fuel
-    #: figures are None then (wingtip.planning.route_totals). Empty without.
+    #: figures are None then (wingtip.route_join.route_totals). Empty without.
     hops: list["HopTotals"] = []
     #: Where a flight the tanks do not hold could land for fuel
     #: (wingtip.fuelstops), one entry a flight short of fuel; empty where every
     #: flight's fuel check passes.
     fuel_stops: list["FuelStopSuggestion"] = []
+    #: The flights short of fuel with no stop offered (wingtip.flight_legs
+    #: fuel_stops_of): no field with fuel in reach, or the fuel on board at
+    #: the start already under its start, taxi and reserve (`on_board`).
+    no_fuel_stop: list["NoFuelStop"] = []
     #: Minutes on the ground at the route's stops (PlanQuery.ground), not in
     #: `ete_min`: the destination's arrival is `ete_min` and this after the
     #: departure. 0 without stops.
@@ -167,6 +178,24 @@ class FuelStop(BaseModel):
     elevation_ft: float | None = None
 
 
+class NoFuelStop(BaseModel):
+    """A flight short of fuel the planner offers no stop on, and why: the
+    fuel on board at the start under its start, taxi and reserve already
+    (`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in
+    reach of the tanks."""
+
+    departure: str
+    destination: str
+    on_board: bool = False
+
+
+class ShortFlight(BaseModel):
+    """A flight between two landings, by its two ends."""
+
+    departure: str
+    destination: str
+
+
 class FuelStopSuggestion(BaseModel):
     """The stops that take one flight short of fuel to its destination with
     the reserve left at every landing, the tanks filled at each, and other
@@ -178,8 +207,18 @@ class FuelStopSuggestion(BaseModel):
     #: The tanks' usable fuel, gallons, each stop's landing measured against.
     usable_gal: float
     reason: Literal["fuel", "break"] = "fuel"
+    #: Every stop the flight needs, in order: the route planned again with
+    #: them in (wingtip.fuel_rounds) till no flight through them is short.
     stops: list[FuelStop]
     choices: list[FuelStop] = []
+    #: Whether the last plan of the route with these stops in has every
+    #: flight through them hold its fuel and reserve (14 CFR 91.151(a),
+    #: 91.167(a)); false where one is still short (`short`) or the route
+    #: with them could not be planned to check.
+    passes: bool = False
+    #: The flight through the stops still short: no field with fuel in its
+    #: reach, or the planner's rounds run out.
+    short: ShortFlight | None = None
 
 
 class HopTotals(BaseModel):

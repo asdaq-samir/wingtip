@@ -20,13 +20,21 @@ The ground's height under each model's points, which the ceiling is
 measured above and the freezing level found at, is the same every hour:
 fetched once a model (0.3 MB the GFS's, 2.2 MB the HRRR's) and kept in
 the store (_terrain).
+
+Each model's file, once on the output grid, is kept in the store too
+(_grid): when only one model has a new run for a frame, the other's grid
+is read back rather than its file downloaded and decoded again (about
+1.9 MB of GFS each hour for the HRRR's frames, 4.6 MB of HRRR at each GFS
+run; waste-server.md E).
 """
 
 from __future__ import annotations
 
+import json
 import time
 from datetime import datetime, timedelta
 
+import numpy as np
 from wingtip import utc, weather_store
 
 from . import flow_grid, flow_store, nomads
@@ -47,6 +55,16 @@ FALLBACK_FIELDS = ("wind", "gust", "cloud")
 #: asked again for NOT_UP_RETRY_S.
 NOT_UP: dict = {}
 NOT_UP_RETRY_S = 300
+
+
+#: The grids kept (_grid) are named so; nothing else in the store is. Each
+#: is one float32 array, fields x ROWS x COLS (about 0.6 MB a field, 6 MB
+#: a grid with the fallback's), with its fields' names beside it, read
+#: mapped so none of it stays in the service's 768 MB. At most a GFS and
+#: an HRRR grid a frame of the timeline are kept, about 100 MB on the data
+#: volume, pruned by app.flow to those its record's parts name ("grids").
+GRIDS_PREFIX = "flowgrid-"
+GRID_FIELDS = ".fields.json"
 
 
 class NomadsUnavailable(RuntimeError):
@@ -131,6 +149,52 @@ def _model_grid(model: str, source: dict, body: bytes) -> dict:
     return flow_grid.on_grid(values, where, hrrr=model == "hrrr")
 
 
+def grid_name(model: str, source: dict, fallback: bool) -> str:
+    """The store's name of a model's file on the output grid: its model,
+    run, forecast hour, and whether it holds the fallback's fields too."""
+    return f"{GRIDS_PREFIX}{model}-{flow_store.tag(source['run'], source['forecast_hour'])}-{'fb' if fallback else 'n'}"
+
+
+def _held_grid(name: str) -> dict | None:
+    path = weather_store.blob_path(name, GRID_FIELDS)
+    if path is None:
+        return None
+    try:
+        fields = json.loads(path.read_bytes())
+        stack = weather_store.read_array(name)
+    except (OSError, ValueError):
+        return None
+    if stack.ndim != 3 or stack.shape[0] != len(fields):
+        return None
+    return {field: stack[i] for i, field in enumerate(fields)}
+
+
+def _keep_grid(name: str, grid: dict) -> None:
+    if not grid:
+        return
+    fields = sorted(grid)
+    weather_store.write_array(name, np.stack([grid[f] for f in fields]).astype(np.float32))
+    weather_store.write_blob(name, json.dumps(fields).encode(), GRID_FIELDS)
+
+
+def _grid(model: str, source: dict, body: bytes | None, fallback: bool) -> dict | None:
+    """A model's file on the output grid (_model_grid), from `body` where
+    it was just downloaded; else the grid kept from that run and hour, and
+    only where none is kept its file again. Kept for the next pass either
+    way. None where its file cannot be had."""
+    name = grid_name(model, source, fallback)
+    if body is None:
+        held = _held_grid(name)
+        if held is not None:
+            return held
+        body = GET[model](*back(source), _groups(model, fallback))
+        if body is None:
+            return None
+    grid = _model_grid(model, source, body)
+    _keep_grid(name, grid)
+    return grid
+
+
 def tries(valid: datetime, now: datetime) -> dict[str, list[tuple[datetime, int]]]:
     """The runs and forecast hours each model is tried at for a frame, the
     latest run posted first and the ones before it after; no HRRR for an
@@ -186,14 +250,15 @@ def part(valid: datetime, now: datetime, held: dict | None, fallback: bool = Fal
     key = {"gfs": gfs_source, "hrrr": hrrr_source, "fallback": fallback}
     if held and key == held_key:
         return held
-    # One model new, the other as held: the held one's file again.
-    gfs_body = gfs_body or GET["gfs"](*back(gfs_source), _groups("gfs", fallback))
-    hrrr_body = hrrr_body or (GET["hrrr"](*back(hrrr_source), _groups("hrrr", fallback)) if hrrr_source else None)
-    if gfs_body is None:
+    # One model new, the other as held: the held one's grid as kept.
+    grid = _grid("gfs", gfs_source, gfs_body, fallback)
+    if grid is None:
         return None
-    grid = _model_grid("gfs", gfs_source, gfs_body)
-    if hrrr_body is not None:
-        grid = flow_grid.blend(grid, _model_grid("hrrr", hrrr_source, hrrr_body))
+    grids = [grid_name("gfs", gfs_source, fallback)]
+    hrrr_grid = _grid("hrrr", hrrr_source, hrrr_body, fallback) if hrrr_source else None
+    if hrrr_grid is not None:
+        grid = flow_grid.blend(grid, hrrr_grid)
+        grids.append(grid_name("hrrr", hrrr_source, fallback))
     else:
         key["hrrr"] = None
     kept = flow_grid.in_units(grid)
@@ -203,7 +268,7 @@ def part(valid: datetime, now: datetime, held: dict | None, fallback: bool = Fal
         body = flow_grid.png(field, kept)
         if body is not None:
             files[field] = flow_store.store(valid, field, tag, body)
-    return {"key": key, "files": files, "tag": tag}
+    return {"key": key, "files": files, "tag": tag, "grids": grids}
 
 
 def back(source: dict) -> tuple[datetime, int]:

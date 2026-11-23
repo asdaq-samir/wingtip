@@ -227,6 +227,10 @@ pub fn tafs(text: &str) -> Result<String, String> {
         // the text what a pilot reads.
         s.push_str(",\"raw\":");
         opt_text(&mut s, el.text_at(&["raw_text"]));
+        // When it was issued, for a figure read from it to say how old
+        // its forecast is (the profile's cloud bases).
+        s.push_str(",\"issued\":");
+        opt_text(&mut s, Some(issued.as_str()).filter(|t| !t.is_empty()));
         s.push_str(",\"fcsts\":[");
         s.push_str(&periods.iter().map(|(_, _, p)| p.as_str()).collect::<Vec<_>>().join(","));
         s.push_str("]}");
@@ -240,6 +244,8 @@ pub fn tafs(text: &str) -> Result<String, String> {
 
 mod advisories;
 pub use advisories::*;
+mod airmets;
+pub use airmets::*;
 
 #[cfg(test)]
 mod tests;

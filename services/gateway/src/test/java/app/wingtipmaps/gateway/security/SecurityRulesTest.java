@@ -70,8 +70,23 @@ class SecurityRulesTest {
                         "img-src 'self' data:[^;]* https://basemap\\.nationalmap\\.gov https://tile\\.googleapis\\.com https://mesonet\\.agron\\.iastate\\.edu https://nowcoast\\.noaa\\.gov https://t\\.plnspttrs\\.net;");
         assertThat(policy)
                 .contains(
-                        "connect-src 'self' https://basemap.nationalmap.gov https://tile.googleapis.com https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov https://api.planespotters.net https://huggingface.co https://us.aws.cdn.hf.co https://eu.aws.cdn.hf.co;");
+                        "connect-src 'self' https://basemap.nationalmap.gov https://tile.googleapis.com https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov https://api.planespotters.net;");
         assertThat(policy).doesNotContain("*");
+    }
+
+    /** The deep security review of 2026-11-21: default-src does not cover
+     *  where a form may post, so an injected form could send a pilot's
+     *  typing to any site. The app's own forms post nowhere else. */
+    @Test
+    void thePolicyKeepsFormsAndTheBaseToThisSite() throws Exception {
+        String policy =
+                mockMvc.perform(get("/api/me")).andReturn().getResponse().getHeader("Content-Security-Policy");
+        assertThat(policy)
+                .contains("form-action 'self';")
+                .contains("base-uri 'self';")
+                .contains("object-src 'none';")
+                .contains("frame-ancestors 'none'")
+                .contains("script-src 'self' 'wasm-unsafe-eval';");
     }
 
     @Test

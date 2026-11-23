@@ -61,6 +61,22 @@ class ChartKind:
     # to be taken back out when a sheet is prepared (see
     # chart_faces.remove_masked_lines).
     masked_lines: bool = False
+    # How far in from each side of the raster, as a share of its width
+    # or height, the face's edge is looked for. A TAC prints its legend
+    # and its Class B notes down the sides, a third of the sheet across
+    # on Minneapolis-St Paul's east side: a quarter stopped short of its
+    # neatline, the collar guessed, and the notes drawn over Wisconsin as
+    # chart (the owner's screenshot, 2026-11-20).
+    edge_search: float = 0.25
+    # Whether the sheets print paper panels over the chart face, cut out
+    # of it when the face is found (wingtip.chart_panels): a TAC's route
+    # diagrams and notes laid over open water.
+    paper_panels: bool = False
+    # Whether the sheets lay framed insets over the face, tinted maps of
+    # a busy area at a larger scale (wingtip.chart_insets), cut out of
+    # it as the paper panels are: the sectional's Los Angeles basin over
+    # the Pacific.
+    framed_insets: bool = False
 
 
 SECTIONAL = ChartKind(
@@ -72,6 +88,7 @@ SECTIONAL = ChartKind(
     VFR_SECTIONAL_MAX_ZOOM,
     (1.1, 0.2, 0.35, 0.55),
     masked_lines=True,
+    framed_insets=True,
 )
 TAC = ChartKind(
     "tac",
@@ -83,6 +100,8 @@ TAC = ChartKind(
     (0.35, 0.02, 0.35, 0.08),
     base=False,
     over=("sec",),
+    edge_search=0.45,
+    paper_panels=True,
 )
 IFR_LOW = ChartKind(
     "ifr_low", "IFR low", FAA_ENROUTE_ZIP_URL, (".tif",), IFR_LOW_MIN_ZOOM, IFR_LOW_MAX_ZOOM, (0.3, 0.3, 0.3, 0.3), straight_border=True

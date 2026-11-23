@@ -23,6 +23,9 @@ enum class Screen(
     LOGBOOK("logbook", "Logbook"),
     COACH("coach", "Coach"),
     MINIMUMS("minimums", "Personal Minimums"),
+    DOCUMENTS("documents", "Documents"),
+    SCRATCHPAD("scratchpad", "Scratchpad"),
+    BALANCE("balance", "Weight & Balance"),
     DOWNLOADS("downloads", "Downloads"),
     PASSENGERS("passengers", "Passenger Briefing"),
     SHARED("shared", "Shared Flight"),
@@ -58,5 +61,8 @@ enum class LinkKey(
     TYPE("type"),
     RULES("rules"),
     TAIL("tail"),
+    TANKS("tanks"),
+    PROCS("procs"),
     SHARE("share"),
+    DOC("doc"),
 }

@@ -7,7 +7,8 @@ import Observation
 /// signal -- the briefing with its METARs and TAFs and the plan with its
 /// nav log and the route's profile (Kept), the ranked NOTAMs and each
 /// field's own, the route's airport cards, diagrams and diagram PDFs, the
-/// destination's approach plates, the Go / No-Go, the weather loop's
+/// plates the flight may need (KeepPlates: every field's on the route, the
+/// alternate's and those within diversion range), the Go / No-Go, the weather loop's
 /// frames and the newest radar frame's tiles along the route (KeptForAir,
 /// KeepRadar) -- and the size it all comes to,
 /// said on the button and to Ready to fly (its `kept` row).
@@ -21,6 +22,10 @@ final class KeepForAir {
     /// Megabytes the route's keep came to, once it is whole; nil while it
     /// is under way or none has run.
     private(set) var sizeMb: Double?
+    /// The flight's plates and their size as the planner names them, said
+    /// before the keep (KeepPlates.line); nil before an answer.
+    private(set) var flightPlates: APIFlightPlates?
+    private var platesAsked: KeepPlates.Ask?
     private var task: Task<Void, Never>?
 
     /// The tiles are in and the rest is being kept.
@@ -52,7 +57,8 @@ final class KeepForAir {
             let answers = await Self.keepAnswers(plan: plan, verdict: verdict, signedIn: signedIn, route: route)
             let tileBytes = await KeepRoute.bytes(tiles, template: template)
             guard !Task.isCancelled else { return }
-            let manifest = KeptForAir.Manifest(kinds: answers.kinds, bytes: answers.bytes + tileBytes, at: Date())
+            let manifest = KeptForAir.Manifest(kinds: answers.kinds, bytes: answers.bytes + tileBytes, at: Date(),
+                                               files: answers.files.map { KeptForAir.relative($0) }.sorted())
             KeptForAir.writeManifest(manifest, route: route)
             self.sizeMb = Double(manifest.bytes) / 1_000_000
             self.task = nil
@@ -60,9 +66,34 @@ final class KeepForAir {
         }
     }
 
+    /// The flight's plates sized for the plan as it is now, asked again
+    /// only where the question changed (its fields, line, alternate, ETA
+    /// or airplane); nothing without a route.
+    func sizePlates(plan: Plan) async {
+        guard plan.course != nil else {
+            flightPlates = nil
+            platesAsked = nil
+            return
+        }
+        let ask = KeepPlates.ask(for: plan)
+        guard ask != platesAsked else { return }
+        platesAsked = ask
+        flightPlates = nil
+        do {
+            let plates = try await KeepPlates.flightPlates(ask)
+            // Only the answer to the question still asked is said.
+            if platesAsked == ask { flightPlates = plates }
+        } catch {
+            // No size to say then, and asked again next time; the keep
+            // asks for itself.
+            if platesAsked == ask { platesAsked = nil }
+            Log.planner.notice("the flight's plates could not be sized: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     /// Everything but the chart, asked of the planner now so the answers
-    /// are kept: the kinds that are on the phone after, and their bytes.
-    static func keepAnswers(plan: Plan, verdict: Verdict?, signedIn: Bool, route: String) async -> (kinds: [String], bytes: Int) {
+    /// are kept: the kinds that are on the phone after, their bytes and files.
+    static func keepAnswers(plan: Plan, verdict: Verdict?, signedIn: Bool, route: String) async -> (kinds: [String], bytes: Int, files: Set<URL>) {
         var kinds: [String] = []
         var files: [URL] = []
         // The briefing, fresh, and the plan with its nav log, as Kept holds them.
@@ -79,8 +110,7 @@ final class KeepForAir {
             kinds.append(kind.rawValue)
             files.append(KeptForAir.file(kind.rawValue, route))
         }
-        // Each field's card and diagram; the destination's approach plates,
-        // every page of each.
+        // Each field's card and diagram.
         var cards = 0
         var pictures: [String] = []
         for ident in plan.idents {
@@ -103,20 +133,17 @@ final class KeepForAir {
                 // The runways' crop only where the planner has one to give.
                 if place.airportDiagramRunways != false { pictures.append(Planner.diagramPath(ident: ident, cycle: cycle, runwaysOnly: true)) }
             }
-            guard ident == plan.dest else { continue }
-            var plates = true
-            for chart in place.procedures ?? [] where chart.kind == "IAP" {
-                let key = "\(ident)|\(chart.url)"
-                guard let pages = try? await KeptForAir.answer(.plates, key: key, fetch: { try await Planner.faaChart(url: chart.url, airport: ident) }).value else {
-                    plates = false
-                    continue
-                }
-                files.append(KeptForAir.file(KeptForAir.Kind.plates.rawValue, key))
-                pictures += pages.map(\.path)
-            }
-            if plates { kinds.append(KeptForAir.Kind.plates.rawValue) }
         }
         if cards == plan.idents.count { kinds.append(KeptForAir.Kind.airports.rawValue) }
+        // The plates a flight may need, as the planner names them
+        // (KeepPlates), every chart kept; on board only when every one is.
+        if let wanted = try? await KeepPlates.flightPlates(KeepPlates.ask(for: plan)) {
+            var whole = true
+            await KeepPlates.keepAll(KeepPlates.jobs(wanted.fields.map { ($0.ident, $0.charts) })) { _, kept in
+                if let kept { files += kept } else { whole = false }
+            }
+            if whole { kinds.append(KeptForAir.Kind.plates.rawValue) }
+        }
         for path in pictures {
             // Kept by the address the pictures' loader asks (KeptPictureLoader).
             let address = Planner.address(of: path).absoluteString
@@ -136,6 +163,7 @@ final class KeepForAir {
         // The ground and airspace under the route, for the profile, where
         // the plan's own fetch of it had not come.
         if await plan.keepProfile() { files.append(Kept.file) }
-        return (kinds, Set(files).reduce(0) { $0 + KeptForAir.size(of: $1) })
+        let kept = Set(files)
+        return (kinds, kept.reduce(0) { $0 + KeptForAir.size(of: $1) }, kept)
     }
 }

@@ -39,8 +39,15 @@
 # How the documents are read (api-models-apps.mjs):
 # - Enums and consts become plain strings: a value the server adds later
 #   must not make a whole answer fail to decode on a phone that has not
-#   been updated. A string's format (a date) is dropped too, so a date
-#   stays the string the apps read.
+#   been updated, so a value the app does not know arrives as the string
+#   the server sent, the fallback each app's code reads it to (its
+#   `default:` / `else`). A string's format (a date) is dropped too, so a
+#   date stays the string the apps read.
+# - Every object is open: a key the app does not know is passed over
+#   (Swift's Codable does; an object marked additionalProperties: false,
+#   for which swift-openapi-generator would write a decoder that refuses
+#   one, is opened; Android's coder, Gateway.json, ignores unknown keys).
+#   ApiTolerance tests on each phone hold it to that.
 # - Tuples (a [lat, lon] pair) become arrays of their one type.
 # - A member a document leaves untyped is OpenAPIRuntime's
 #   OpenAPIValueContainer on the iPhone and kotlinx's JsonElement on Android.
@@ -127,7 +134,14 @@ for server in planner gateway; do
       # A number's default as Kotlin writes a Double (kotlin.Double("0") is
       # the generator's BigDecimal form, which does not compile).
       sed -E -e "s/[[:space:]]*$//" -e 's/kotlin\.Double\("(-?[0-9]+)"\)/\1.0/g' \
-        -e 's/kotlin\.Double\("(-?[0-9]+\.[0-9]+)"\)/\1/g' "$f"; } | cat -s >"$dest"
+        -e 's/kotlin\.Double\("(-?[0-9]+\.[0-9]+)"\)/\1/g' "$f"
+    } | awk '!(/^$/ && blank) { print } { blank = /^$/ }' >"$dest"
+    # Runs of blank lines squeezed to one by awk, a line at a time, not
+    # by `cat -s`: Ubuntu 26.04's cat (uutils 0.10.0, CI's runner) drops
+    # the one blank line where a read of the pipe starts on a line's end
+    # followed by it, so CI wrote a blank line fewer than the Mac wherever
+    # sed's output fell that way (after GatewayApi's recent and
+    # PlannerApi's weatherLoopFrames, validate-wave2 run 44968065738).
   done
 done
 

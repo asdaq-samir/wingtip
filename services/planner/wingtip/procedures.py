@@ -28,7 +28,7 @@ import logging
 import os
 import tempfile
 import threading
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from . import apra, data_cycles, geo
@@ -75,18 +75,21 @@ CIFP_FILE = "FAACIFP18"
 _LOCK = threading.Lock()
 
 
-def cifp_start(on: date | None = None) -> date:
-    """The date the AIRAC cycle in force on `on` (today, UTC) took
-    effect (from 0901Z, when it does): the CIFP is on the 28-day AIRAC cycle (the engine's
-    `data_cycle`)."""
-    return data_cycles.start_on("airac", on or data_cycles.in_force_day())
+def cifp_start(on: date | datetime | None = None) -> date:
+    """The date the AIRAC cycle in force at `on` (now, to the minute: from
+    0901Z on its date) took effect: the CIFP is on the 28-day AIRAC cycle
+    (the engine's `data_cycle`)."""
+    return data_cycles.start_on("airac", on)
 
 
-def cifp_path(on: date | None = None) -> Path:
+def cifp_path(on: date | datetime | None = None) -> Path:
     """The cycle's FAACIFP18, downloaded the first time it is asked for.
-    The newest one on disk while the cycle's own cannot be had: the FAA
-    posts it a few weeks ahead, so that is rare and short. Say which
-    cycle the answer is from with `cifp_cycle`."""
+    The newest one on disk of a cycle already begun while the cycle's own
+    cannot be had: the FAA posts it a few weeks ahead, and the next cycle
+    is fetched ahead too (`stage_next`), so that is rare and short. Never
+    one still to come: the next cycle's file staged beside it was taken as
+    "the newest" and read before its 0901Z. Say which cycle the answer is
+    from with `cifp_cycle`, and whether it is out of date with `cifp_stale`."""
     start = cifp_start(on)
     folder = CIFP_DIR / f"{start:%y%m%d}"
     path = folder / CIFP_FILE
@@ -97,12 +100,19 @@ def cifp_path(on: date | None = None) -> Path:
             try:
                 _fetch(apra.cifp_url(start) or CIFP_URL.format(start=start), folder)
             except RuntimeError:
-                held = sorted(CIFP_DIR.glob(f"*/{CIFP_FILE}"))
-                if not held:
+                held = held_before(start)
+                if held is None:
                     raise
-                log.warning("The CIFP for %s could not be had; using %s", start, held[-1].parent.name)
-                return held[-1]
+                log.warning("The CIFP for %s could not be had; using %s", start, held.parent.name)
+                return held
     return path
+
+
+def held_before(start: date) -> Path | None:
+    """The newest CIFP on disk of a cycle that started by `start`: the one
+    to fall back on, never a staged next cycle's."""
+    begun = [p for p in CIFP_DIR.glob(f"*/{CIFP_FILE}") if (data_cycles.cifp_effective(p.parent.name) or date.max) <= start]
+    return max(begun, key=lambda p: p.parent.name, default=None)
 
 
 def _fetch(url: str, folder: Path) -> None:
@@ -126,7 +136,7 @@ def cifp_cycle(path: Path) -> str:
     return path.parent.name
 
 
-def cifp_stale(path: Path, on: date | None = None) -> bool:
+def cifp_stale(path: Path, on: date | datetime | None = None) -> bool:
     """Whether `path` is of a cycle other than the one in force (the
     engine's `data_cycle`): its fixes, altitudes and whole procedures may
     have changed since."""
@@ -237,7 +247,15 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
                 engine("procedure_leg_nm", path=leg.path, distance_nm=leg.distance_nm, altitude_ft=leg.altitude1, known_ft=known_ft)
             )
 
-        for leg in runs[key]:
+        # Where the missed approach starts and ends among the run's legs,
+        # the engine's procedure_missed (AIM 5-4-21; the MAP by its
+        # waypoint description, ARINC 424-18 5.17): on from the MAP to its
+        # hold, none of what is coded past it.
+        split = engine("procedure_missed", legs=[{"path": leg.path, "map": leg.missed_approach_point} for leg in runs[key]])
+        last = max(split["missed"]) if kind == "approach" and split["missed"] else None
+        for at, leg in enumerate(runs[key]):
+            if last is not None and at > last:
+                break
             place = _fix_place(airport, leg.fix, leg.fix_icao, leg.fix_section, index)
             course = _course(leg, airport.variation)
             if kind == "approach" and missed:
@@ -318,7 +336,7 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
                     "lon": round(place[1], 6),
                     "ft": leg.altitude1,
                 }
-            if kind == "approach" and leg.missed_approach_point:
+            if kind == "approach" and at == split["suspend_at"]:
                 # The rest is the missed approach, drawn dashed from here,
                 # its climb from about the field's elevation.
                 flush()

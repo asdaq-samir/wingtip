@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CARD, CARD_WIDE, FLOAT_PX, insetsOf, letGo, shownPx, sizeAt, snapsOf } from "./insets";
+import { CARD, FLOAT_PX, insetsOf, letGo, shownPx, sizeAt, snapsOf } from "./insets";
 
 describe("insetsOf", () => {
   it("leaves a phone's map the strip the sheet in sight covers", () => {
@@ -11,8 +11,18 @@ describe("insetsOf", () => {
 
   it("leaves a wider screen's map all but the side panel's column while it is out", () => {
     expect(insetsOf("half", 0, false, true)).toEqual({ top: 0, bottom: 0, left: FLOAT_PX + CARD, out: true, up: false });
-    // A desktop's side panel is wider, and so is what it covers.
-    expect(insetsOf("full", 0, false, true, 0, true)).toEqual({ top: 0, bottom: 0, left: FLOAT_PX + CARD_WIDE, out: true, up: true });
+    // From 1024 wide the side panel is wider, measured, and so is what it covers.
+    expect(insetsOf("full", 0, false, true, 0, 448)).toEqual({ top: 0, bottom: 0, left: FLOAT_PX + 448, out: true, up: true });
+    // An inspector's card at the right: its column and its float at the
+    // window's edge, the room ending at its edge as it begins at the side panel's.
+    expect(insetsOf("half", 0, false, true, 0, 448, 375)).toEqual({
+      top: 0,
+      bottom: 0,
+      left: FLOAT_PX + 448,
+      right: 375 + FLOAT_PX,
+      out: true,
+      up: false,
+    });
     // At rest, its head in the top corner whichever edge the phone's sheet is on.
     expect(insetsOf("peek", 62, false, true)).toEqual({ top: 62 + 8 + FLOAT_PX, bottom: 0, left: 0, out: false, up: false });
     expect(insetsOf("peek", 62, false, false)).toEqual({ top: 62 + 8 + FLOAT_PX, bottom: 0, left: 0, out: false, up: false });

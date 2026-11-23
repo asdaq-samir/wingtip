@@ -19,6 +19,7 @@ import IconButton from "../../components/IconButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { DROPDOWN, useAfterMenu, type MenuKit } from "./pointMenu";
 import { TEXT } from "../../lib/text";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What a point's altitude is: a field's elevation, the plan's cruise to
  *  it, the chart's crossing at a procedure's fix, or the pilot's own. */
@@ -137,7 +138,7 @@ export function PointMenuItems({
       {a.onDirect && (
         <Item onClick={a.onDirect} data-testid={`${testId}-direct`}>
           <MoveUpRight aria-hidden="true" />
-          {a.direct ? "Fly as Planned" : "Direct To"}
+          {a.direct ? "Fly as Planned" : WORDING.directTo}
         </Item>
       )}
       {a.onAltitude && (
@@ -201,11 +202,9 @@ export function PointMenuItems({
  * A point's menu, at the owner's ask ("Each stop can have a menu (set
  * altitude, create a fix, hold here, More Info)", "And the menu can
  * include direct to"): shadcn's DropdownMenu, its items the route box's
- * pill's (PointMenuItems). Behind the point's own mark in FPL's list
- * (`face`), at the owner's ask ("Use the airport icon as the more button
- * instead of having one to the right", 2026-10-22): the mark a button,
- * its 44 points a pseudo-element round its 28; else the "⋯" (IconButton round,
- * 36 with a 20-point glyph, as every icon button is).
+ * pill's (PointMenuItems). Behind a face of its own (`face`), the mark a
+ * button, its 44 points a pseudo-element (`bare`, FPL's timeline's own
+ * filled mark); else the "⋯" in a round glass button (IconButton round).
  */
 export function PointMenu({
   testId = "point-menu",
@@ -231,7 +230,13 @@ export function PointMenu({
               aria-label={`${actions.ident}: more`}
               data-testid={testId}
               data-point-mark=""
-              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent after:absolute after:-inset-1.5 after:content-['']"
+              // Its area 8 past its 32 (the stock button's clear 1-point
+              // edge is inside its box and the after is laid from inside it,
+              // so 6 past made 42; the iOS audit's P1, "C81: more" 32×32),
+              // but 6 on the words' side (7 from inside that edge), where
+              // the name's area begins in the line's 16 (TimelineRows'
+              // TIMELINE_GAP).
+              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent hit-y-2 after:-left-2 after:-right-[7px]"
             >
               {face}
             </Button>
@@ -253,7 +258,7 @@ export function PointMenu({
               // lines"): its column centres it (ProceduresRoute).
               // The stock Button's glass at its icon size; the mark's picture
               // filling its own box (AirportMark's), not the stock 16 a glyph.
-              className="relative -mx-1 rounded-full after:absolute after:-inset-1 after:content-[''] [&_svg:not([class*='size-'])]:size-full"
+              className="relative -mx-1 rounded-full hit-1 [&_svg:not([class*='size-'])]:size-full"
             >
               {face}
             </Button>

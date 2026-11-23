@@ -63,7 +63,7 @@ struct LayerAgesRows: View {
             LabeledContent("METARs", value: words("aviationweather.gov", AirportWords.date(ages?.metarsAt)))
             LabeledContent("TFRs", value: words("tfr.faa.gov", AirportWords.date(ages?.tfrsAt)))
             if traffic.on {
-                LabeledContent("Traffic data", value: words("adsb.lol", traffic.heardAt))
+                LabeledContent("Traffic Data", value: words("adsb.lol", traffic.heardAt))
             }
             // A feed the planner's watch finds not updating -- the NOTAMs,
             // the radar or satellite frames, a weather report -- said here,
@@ -90,7 +90,7 @@ struct LayerAgesRows: View {
 
 /// The legs a hazard tapped in the Brief is on, drawn wide in amber with
 /// the course, told from it by its class.
-final class HazardPolyline: MKPolyline {}
+final nonisolated class HazardPolyline: MKPolyline {}
 
 extension ChartMap.Coordinator {
     /// The legs shown as `legs` says, brought into view clear of the
@@ -133,5 +133,5 @@ private enum PreviewData {
 
 #Preview("LayerAgesRows") {
     Form { LayerAgesRows() }
-        .environment(Traffic())
+        .environment(Traffic(receiver: Receiver()))
 }

@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent } from "react";
 import type { Course } from "../../lib/api/types";
 import { coursePoints } from "../../lib/course";
-import { useMapInsets, useSlidingSheet } from "../../lib/mapChrome";
+import { roomAsCardOpens, useMapInsets } from "../../lib/mapChrome";
 import { useRouteOnly } from "../../lib/map/routeOnly";
 import { useGlMap } from "../../lib/map/gl/glLayer";
 import { cameraOf } from "../../lib/map/gl/camera";
@@ -26,10 +26,9 @@ export function useLineFocus(course: Course | null) {
     if (!map || !course) return;
     const point = coursePoints(course).find((p) => sameField(p.ident, ident));
     if (!point) return;
-    const half = useSlidingSheet.getState().half;
     cameraOf(map).pick([point.lon, point.lat], {
       zoom: Math.max(map.getZoom(), glZoom(PICK_ZOOM)),
-      pad: { ...padOf(useMapInsets.getState()), ...(half ? { bottom: half } : {}) },
+      pad: roomAsCardOpens(padOf(useMapInsets.getState())),
       duration: DRAWER_MS,
       easing: drawerEasing,
     });

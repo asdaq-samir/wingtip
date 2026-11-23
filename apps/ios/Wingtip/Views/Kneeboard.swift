@@ -18,6 +18,8 @@ struct Kneeboard: View {
     /// speed), and the groundspeed, time and fuel are left blank, not
     /// assumed (docs/decisions/0011).
     var airplane = true
+    /// The page's foot, the planning aid in the words every app prints.
+    static let foot = Wording.planningAidKneeboard
 
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
@@ -36,8 +38,8 @@ struct Kneeboard: View {
                 ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
                     GridRow {
                         Text(leg.to).lineLimit(1)
-                        Text(Int(leg.altitudeFt).formatted())
-                        Text((airplane ? leg.magneticHeadingDeg : Optional(leg.magneticCourseDeg)).map { Format.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
+                        Text(Int(leg.altitudeFt).formatted(.number.locale(Format.locale)))
+                        Text((airplane ? leg.magneticHeadingDeg : Optional(leg.magneticCourseDeg)).map { String(Format.heading($0).dropLast()) } ?? "")
                         Text(Format.number(leg.distanceNm, decimals: 1))
                         Text(airplane ? leg.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "" : "")
                         Text(airplane ? leg.eteMin.map { Format.number($0, decimals: 1) } ?? "" : "")
@@ -52,7 +54,7 @@ struct Kneeboard: View {
             .font(.system(size: 8.5).monospacedDigit())
             Text("Squawk ______   Clearance ____________________   Hobbs out ______ in ______").font(.system(size: 9)).padding(.top, WingtipSpace.sm)
             Spacer(minLength: 0)
-            Text("Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.").font(.system(size: 6.5))
+            Text(Self.foot).font(.system(size: 6.5))
         }
         .padding(WingtipSpace.xl)
         .frame(width: 396, height: 612, alignment: .topLeading)

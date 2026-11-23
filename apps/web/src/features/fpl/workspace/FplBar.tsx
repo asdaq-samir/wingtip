@@ -1,40 +1,56 @@
 import type { ReactNode } from "react";
-import { cn } from "cn";
-import PageToggle from "../../../components/PageToggle";
-import { SHEET_BAR } from "../../../components/panelField";
+import { CardHeadMiddle } from "../../../components/CardHead";
+import { HeadGrid } from "../../../components/HeadGrid";
 
 /**
- * FPL's first row, the search's row's twin (the owner, 2026-11-14: "for
- * all three fpl layouts, keep the n-number strip with buttons in the same
- * size as search bar. So toggling between search and fpl keeps the
- * same-size component with a toggle replacing account"): the airplane's
- * strip -- its N-number and the altitude (RouteControls) -- in a bar the one search's field's look
- * (SHEET_BAR), and the page toggle at its end where the search's row has
- * it (PageToggle). The route, folded or open to edit, is the row under it
- * (RouteHead), never in it. The bar only as wide as its pills, the
- * suggested routes' button before it at the row's start and the page
- * toggle at its end (the owner, 2026-11-17: "make the n-number and altitude
- * container pill smaller and add the routes button on the top left").
+ * FPL's head under the grabber, as Apple Maps' Directions is (the owner,
+ * 2026-11-19: "Flight plan should be the title under the grabber just like
+ * Directions of Apple Maps"; "Maybe we can have similar buttons x and
+ * share"; "Make two rows between the close and share button"): Share at its
+ * start (the search's button, which goes back to Search with the route kept)
+ * and the ✕ at its end, which clears the route (ClearRouteButton: one tap
+ * asks first; the owner, 2026-11-20), and between them two rows: "Flight
+ * Plan" at a heading's 20 in bold, as Directions' headline is, and under it
+ * the airplane's pills (RouteControls; Route Options is More's, ShareMenu),
+ * as "Now · Avoid" is under "Directions". The head and the search's field
+ * are one height, so a turn of the page moves nothing (the owner,
+ * 2026-11-14): the title's line is the heading's own, iOS's Title 3 at 25
+ * points, and the pills 24; the field grows to match (SHEET_BAR).
  *
- * Three columns, the bar's in the middle (the owner, 2026-11-17: "Center
- * the n number and fl pills"): either side one share of what is left, at
- * least a round button's 36 points, so the bar stays in the row's middle
- * whether the routes' button is there or not (its slot kept, empty), and
- * gives way to them in a row too narrow for all of it -- a local flight's
- * date and time pills, a 320-point phone -- its airplane's pill first
- * (navlog's pillLook), where a bar that could not shrink pushed the page
- * toggle off the sheet.
+ * Three columns, the two rows in the middle: either side a round button's
+ * 44 points, so the title stays in the row's middle whether Search is there
+ * or not (its slot kept, empty). In a row too narrow for all the pills --
+ * a local flight's date and time, a 320-point phone -- the airplane's pill
+ * gives way first (navlog's pillLook).
  */
-export default function FplBar({ strip, routes }: { strip: ReactNode; routes?: ReactNode }) {
+export default function FplBar({ share, strip, clear }: { share?: ReactNode; strip?: ReactNode; clear?: ReactNode }) {
   return (
-    <div className="grid w-full grid-cols-[minmax(2.25rem,1fr)_auto_minmax(2.25rem,1fr)] items-center gap-2">
-      <div className="flex justify-start">{routes}</div>
-      <div className={cn("flex items-center pr-1 pl-1.5", SHEET_BAR)} data-testid="route-strip">
-        {strip}
-      </div>
-      <div className="flex justify-end">
-        <PageToggle page={1} />
-      </div>
-    </div>
+    <HeadGrid
+      start={share}
+      middle={
+        <div className="flex min-w-0 max-w-full flex-col items-center" data-testid="fpl-head">
+          <CardHeadMiddle
+            name="Flight Plan"
+            nameSize="heading"
+            nameTestId="fpl-title"
+            // On the heading's own 25 line (Title 3), not squeezed onto a
+            // 22 to keep the field's old 46: the HIG review's P3, the owner
+            // taking the rule over an exemption (2026-11-21); the search's
+            // field grows the 3 to match (SHEET_BAR, sheet-page-toggle.spec).
+            // Lifted 4 points (the owner, 2026-11-21: "a bit bigger and move
+            // up a bit").
+            nameClassName="-translate-y-1"
+          />
+          {strip && (
+            <div className="flex h-6 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">
+              {strip}
+            </div>
+          )}
+        </div>
+      }
+      // The ✕ 16 in from the edge, as Search is at the other end (HeadGrid
+      // pulls a card's close 4 out to its edge; FPL's head is symmetric).
+      end={clear && <span className="mr-1 flex">{clear}</span>}
+    />
   );
 }

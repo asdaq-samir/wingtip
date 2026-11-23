@@ -20,6 +20,13 @@ log = logging.getLogger(__name__)
 TIMEOUT_S = 10
 
 
+def _detail(resp: httpx2.Response) -> str:
+    try:
+        return str(resp.json().get("detail") or resp.text[:300])
+    except ValueError:
+        return resp.text[:300]
+
+
 async def _ask(method: str, path: str, pilot_id: str, body: dict | None = None):
     settings = get_settings()
     if not settings.mcp_internal_token:
@@ -34,9 +41,13 @@ async def _ask(method: str, path: str, pilot_id: str, body: dict | None = None):
         raise ToolError("Wingtip has no account for this sign-in any more: disconnect Wingtip and connect it again.")
     if resp.status_code == 400:
         raise ToolError(f"Wingtip refused the flight: {resp.text[:300]}")
+    if resp.status_code == 409:
+        # The gateway's refusal in its words (an RFC 9457 problem's
+        # detail): a flight put to an instructor keeps its route.
+        raise ToolError(f"Wingtip kept the flight as it was: {_detail(resp)}")
     if resp.status_code >= 400:
         raise ToolError(f"Wingtip's account service answered {resp.status_code}; try again in a minute.")
-    return resp.json()
+    return resp.json() if resp.content else None
 
 
 async def airplanes(pilot_id: str) -> list[dict]:
@@ -54,18 +65,41 @@ async def save_flight(pilot_id: str, request: dict) -> dict:
     return await _ask("POST", "/flights", pilot_id, request)
 
 
-async def connection_live(pilot_id: str, client_id: str) -> bool:
-    """Whether the pilot's connection through this client still stands: not
-    disconnected, not revoked, the account not deleted. The gateway's JWTs
-    are checked here by signature alone and last 15 minutes, which would
-    outlive all three (the security audit's L4); so every call asks, on the
-    internal port, a 204 or a 404. False, refusing the call, wherever the
-    gateway cannot say: no secret set, or no answer."""
+async def replan_flight(pilot_id: str, flight_id: int, request: dict, replace_route: bool = False) -> dict:
+    """Replaces a saved flight's route and nav log with a new plan (the
+    gateway's SaveFlightRequest), keeping its name, notes and share link.
+    The gateway refuses a plan between other airports than the saved
+    flight's unless `replace_route` (FlightService.replan)."""
+    path = f"/flights/{flight_id}" + ("?replaceRoute=true" if replace_route else "")
+    return await _ask("PUT", path, pilot_id, request)
+
+
+async def delete_flight(pilot_id: str, flight_id: int) -> None:
+    """Deletes one of the pilot's saved flights; a 404 where it is not theirs."""
+    await _ask("DELETE", f"/flights/{flight_id}", pilot_id)
+
+
+async def connection_live(pilot_id: str, client_id: str, token: str) -> bool:
+    """Whether this access token still stands: issued to the pilot through
+    this client, not revoked, its connection not removed, the account not
+    deleted. The gateway's JWTs are checked here by signature alone and last
+    15 minutes, which would outlive all of these (the security audit's L4);
+    so every call asks, on the internal port, a 204 or a 404. The token
+    itself goes back to the gateway that issued it, as an introspection
+    (RFC 7662) would: asking only whether the pilot had any live connection
+    through the client let a revoked token of a still-live connection go on
+    working (the deep security review of 2026-11-21). False, refusing the
+    call, wherever the gateway cannot say: no secret set, or no answer."""
     settings = get_settings()
     if not settings.mcp_internal_token:
         log.error("connector: MCP_INTERNAL_TOKEN is not set, so no connection can be checked; every call is refused")
         return False
-    headers = {"X-Internal-Token": settings.mcp_internal_token, "X-Pilot-Id": pilot_id, "X-Client-Id": client_id}
+    headers = {
+        "X-Internal-Token": settings.mcp_internal_token,
+        "X-Pilot-Id": pilot_id,
+        "X-Client-Id": client_id,
+        "X-Connector-Token": token,
+    }
     try:
         async with httpx2.AsyncClient(base_url=settings.gateway_internal_url, timeout=TIMEOUT_S) as client:
             resp = await client.get("/internal/mcp/connection", headers=headers)

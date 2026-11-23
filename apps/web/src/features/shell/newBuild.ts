@@ -101,7 +101,13 @@ export function takeNewBuildsWhenAway(
     immediate: false,
     onRegisteredSW(_url, registration) {
       if (!registration) return;
-      window.setInterval(() => void registration.update(), 60_000);
+      // A look for a new build each minute only while the page is in
+      // sight: hidden -- the phone locked in flight, three hours of it --
+      // the look was a request a minute for nothing, and the return below
+      // looks at once.
+      window.setInterval(() => {
+        if (document.visibilityState === "visible") void registration.update();
+      }, 60_000);
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") void registration.update();
       });

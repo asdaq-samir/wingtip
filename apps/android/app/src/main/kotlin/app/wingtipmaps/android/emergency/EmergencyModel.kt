@@ -9,6 +9,7 @@ import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Typed
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -103,7 +104,7 @@ class EmergencyModel(
         // own checklist could not be read, which is said (the audit's
         // AND-4): the one screen used in an emergency never goes blank.
         val guidance = if (this.aircraft == null || read.isFailure) rules.guidance() else emptyList()
-        val problem = if (read.isFailure) "Your checklist could not be read" else null
+        val problem = if (read.isFailure) "Your checklist could not be read." else null
         _state.update { it.copy(airplaneName = airplaneName, guidance = guidance, sections = sections, section = section, ticked = emptySet(), checklistProblem = problem) }
         refill()
     }
@@ -146,7 +147,7 @@ class EmergencyModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { it.copy(loading = false, problem = if (data == null) Problems.say("The fields could not be had", planner) else null) }
+            _state.update { it.copy(loading = false, problem = if (data == null) Problems.say("The fields could not be fetched", planner) else null) }
         }
     }
 
@@ -160,12 +161,12 @@ class EmergencyModel(
     fun tick(key: String) = _state.update { it.copy(ticked = if (key in it.ticked) it.ticked - key else it.ticked + key) }
 
     fun souls(text: String) {
-        _state.update { it.copy(souls = text.filter(Char::isDigit).take(3)) }
+        _state.update { it.copy(souls = soulsTyped(text)) }
         refill()
     }
 
     fun fuel(text: String) {
-        _state.update { it.copy(fuelMin = text.filter(Char::isDigit).take(4)) }
+        _state.update { it.copy(fuelMin = fuelTyped(text)) }
         refill()
     }
 
@@ -196,8 +197,8 @@ class EmergencyModel(
             position = s.fix?.let { position(data) },
             headingMagDeg = trackMagDeg,
             altitudeFt = s.fix?.altitudeFt?.let { (it / 100).roundToInt() * 100.0 },
-            fuelMin = s.fuelMin.toDoubleOrNull(),
-            souls = s.souls.toDoubleOrNull(),
+            fuelMin = Typed.number(s.fuelMin),
+            souls = Typed.number(s.souls),
         )
         _state.update { it.copy(mayday = rules.mayday(facts, data).getOrNull() ?: it.mayday) }
     }
@@ -218,5 +219,11 @@ class EmergencyModel(
         const val STEP_DEG = 0.01
 
         fun step(deg: Double): Double = Math.round(deg / STEP_DEG) * STEP_DEG
+
+        /** The souls and the fuel's minutes as kept: digits, three and
+         *  four at most; the fields keep their text to the same. */
+        fun soulsTyped(text: String): String = text.filter(Char::isDigit).take(3)
+
+        fun fuelTyped(text: String): String = text.filter(Char::isDigit).take(4)
     }
 }

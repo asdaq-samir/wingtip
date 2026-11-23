@@ -23,7 +23,7 @@ struct DepartureWindowSection: View {
                     Text("No TAF along the route reaches past the next hour.").foregroundStyle(.secondary)
                 } else {
                     if answer.windows.isEmpty, let last = answer.hours.last {
-                        Text("No hour with nothing against it before \(DepartureWindow.zoned(last.depart)).").foregroundStyle(.secondary)
+                        Text("None of the hours to \(DepartureWindow.zoned(last.depart)) is a Go.").foregroundStyle(.secondary)
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: WingtipSpace.sm) {

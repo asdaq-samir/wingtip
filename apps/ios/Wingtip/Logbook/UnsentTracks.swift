@@ -12,7 +12,7 @@ import Observation
 @Observable
 final class UnsentTracks {
     /// A track and the saved flight it goes to.
-    struct Unsent: Codable, Equatable, Sendable {
+    nonisolated struct Unsent: Codable, Equatable, Sendable {
         let flight: Int
         let track: SavedTrack
     }
@@ -49,7 +49,7 @@ final class UnsentTracks {
                 try await upload(unsent.flight, unsent.track)
                 tracks.removeAll { $0 == unsent }
             } catch {
-                problem = error.localizedDescription
+                problem = Problems.say("The track could not be sent", error)
             }
         }
         if tracks.isEmpty { problem = nil }

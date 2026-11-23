@@ -2,6 +2,9 @@ import { test, expect } from "@playwright/test";
 import { closeCard, drawn, findAirplane, grabberTo, inSheet, mapStill, settle, sideDrawer, slow, trafficOnMap } from "./helpers";
 import { FAA } from "./faaRecord";
 import { DETAIL, UAL, sky } from "./trackingSky";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "otherAirplanes"));
 
 /**
  * Tracking an airplane, as FlightAware and ForeFlight do, at the pilot's

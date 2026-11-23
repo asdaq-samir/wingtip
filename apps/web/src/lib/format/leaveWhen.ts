@@ -1,5 +1,5 @@
 import { monthSlashDay, weekdayShort } from "./days";
-import { clockTime } from "./time";
+import { clockTime, localDay } from "./time";
 
 // Its own module, off lib/format's index: only the route panel's chunk
 // (the departure picker, FPL's timeline) says it, and through the index it
@@ -19,4 +19,16 @@ export function leaveWhen(date: Date): string {
   const time = clockTime(date);
   if (days === 0) return time;
   return `${days > 0 && days < 7 ? weekdayShort(date) : monthSlashDay(date)} ${time}`;
+}
+
+/** A freshly picked day at the next whole hour, local, so picking a day
+ *  alone already means something (the departure picker). Today's after
+ *  23:00 is the next day's midnight: the hour wrapped to "00:00" on today,
+ *  some 23 hours past, which nothing caught. ISO. */
+export function dayAtNextHour(day: Date, now: Date = new Date()): string {
+  const next = new Date(now);
+  next.setMinutes(0, 0, 0);
+  next.setHours(next.getHours() + 1);
+  if (localDay(day) === localDay(now)) return next.toISOString();
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), next.getHours()).toISOString();
 }

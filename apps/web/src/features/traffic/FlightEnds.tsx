@@ -3,8 +3,9 @@ import { Button } from "../../components/ui/button";
 import { SkeletonLine } from "../../components/QueryState";
 import { TEXT } from "../../lib/text";
 
-/** One end of the flight in its summary: the field's ident, a tap that
- *  opens its card where there is one to open, and its town under it. */
+/** One end of the flight in its summary: the field's ident ("—" not
+ *  known), a tap that opens its card where there is one to open, and its
+ *  town under it. */
 export function End({
   ident,
   place,
@@ -32,14 +33,16 @@ export function End({
           onClick={onOpen}
           aria-label={`${ident}'s card`}
           data-testid={openTestId}
-          className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3"
+          className="relative max-w-full hit-x-2 hit-y-3"
         >
           {name}
         </Button>
       ) : (
         <span className="text-foreground">{name}</span>
       )}
-      {place && <span className={cn("max-w-full truncate text-muted-foreground", TEXT.note)}>{place}</span>}
+      {/* Its town's line kept where it is not known (yet): the row stays at
+          an EndPending's height, so nothing under it moves as it comes in. */}
+      <span className={cn("max-w-full truncate text-muted-foreground", TEXT.note)}>{place || "\u00a0"}</span>
       {at && <span className={cn("max-w-full truncate text-muted-foreground tabular-nums", TEXT.note)}>{at}</span>}
     </span>
   );

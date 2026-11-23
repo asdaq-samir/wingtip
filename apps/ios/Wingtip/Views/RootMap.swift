@@ -3,9 +3,11 @@ import SwiftUI
 
 /// The chart map with its buttons, banners and chips, under the iPhone's
 /// sheet or beside the iPad's sidebar (RootView). A view of its own, so
-/// what it reads at every fix -- own ship's height, the dry run, the
-/// traffic -- runs this body alone and leaves the root's, with its sheet,
-/// as it was.
+/// what it reads as the flight goes -- the dry run, the traffic -- runs
+/// this body alone and leaves the root's, with its sheet, as it was. Own
+/// ship's fix itself is not read here (its height is `markedFt`), so a
+/// fix on the ground or in cruise runs neither this body nor the map's
+/// update, with its route and checkpoint comparisons.
 struct RootMap: View {
     let layout: RootLayout
     /// The height of the map the sheet covers.
@@ -21,6 +23,9 @@ struct RootMap: View {
     /// The flight (FlightSession), its parts read where they are drawn.
     @Environment(FlightSession.self) private var flight
     @Environment(\.undoManager) private var undoManager
+    /// This window runs the flight's loops (WindowLead): a second window
+    /// on the iPad draws the same flight without running them again.
+    @Environment(\.leadsLoops) private var leadsLoops
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("layout") private var layoutName = "plan"
     @State private var following = false
@@ -34,6 +39,9 @@ struct RootMap: View {
     @AppStorage(PlateLook.Keys.opacity) private var plateOpacity = PlateLook.defaultOpacity
     @AppStorage(PlateLook.Keys.inverted) private var plateInverted = false
     @AppStorage(PlateLook.Keys.annotations) private var plateAnnotations = true
+    // The Map card's Terrain Hazards (HazardRows); no clearance kept is the engine's default.
+    @AppStorage(TerrainHazard.Keys.setting) private var hazardSetting = TerrainHazard.Setting.off
+    @AppStorage(TerrainHazard.Keys.clearanceFt) private var hazardClearanceFt: Double?
 
     private var plan: Plan { flight.plan }
     private var ownShip: OwnShip { flight.ownShip }
@@ -48,7 +56,9 @@ struct RootMap: View {
             trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
             path: tracking.path, past: tracking.past, flown: tracking.flown,
             glide: flight.inFlight.glide?.coordinates ?? [],
-            emergency: emergency.line(from: dryRun.fix ?? ownShip.fix),
+            // The fix read only while the assistant is open: read here at
+            // every fix, it ran this body and the map's update once a second.
+            emergency: emergency.open == nil ? [] : emergency.line(from: dryRun.fix ?? ownShip.fix),
             onTraffic: { plane in
                 tracking.track(plane.hex, plane: plane)
                 nav.open(.traffic(plane.hex.lowercased()))
@@ -64,7 +74,7 @@ struct RootMap: View {
             // A flown track's replay, else the dry run: the same airplane.
             simulated: replay.fix ?? dryRun.fix,
             traffic: traffic.on ? traffic.planes : [],
-            ownFt: (dryRun.fix ?? ownShip.fix)?.altitudeFt,
+            ownFt: dryRun.fix.map { Traffic.markedFt($0.altitudeFt) } ?? ownShip.markedFt,
             onRegion: { centre, radius in traffic.mapCentre = centre; traffic.mapRadiusNm = radius },
             // A field tapped on the chart opens its card, half way up, as
             // the web app does.
@@ -91,7 +101,11 @@ struct RootMap: View {
                     search.close()
                     nav.showPlan()
                 } : nil,
-                emergency: emergency.open != nil),
+                emergency: emergency.open != nil,
+                // Own ship's GPS in flight, the plan's cruise on the ground:
+                // the engine picks (TerrainHazard).
+                hazard: HazardInput(setting: hazardSetting, clearanceFt: hazardClearanceFt, speedKt: ownShip.fix?.groundspeedKt,
+                                    gpsFt: ownShip.fix?.altitudeFt, plannedFt: plan.altitudeFt)),
             // A tap on the course opens its nearest leg's card, that leg
             // cased in green while it is in sight (RouteLegView).
             routeLegs: RouteLegInput(
@@ -128,6 +142,16 @@ struct RootMap: View {
                 MapButtonsDock(overSheet: layout == .sheet, following: $following,
                                routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
                                ask: layoutName == "strip" ? nil : { ask(nil) })
+                    // After the chart in the accessibility order, as they lie
+                    // over it: the system's accessibility hit-test takes the
+                    // later element at a point as the one on top, and on the
+                    // iPad SwiftUI put these before MapKit's map, which then
+                    // answered for every point of the detail. VoiceOver's
+                    // finger, Voice Control and the UI tests reached the map
+                    // where the button was (MapButtonsTests and
+                    // SheetPageToggleTests on the iPad Pro, 2026-11-22: the
+                    // hit-test at the Map button's centre gave MapKit's Map).
+                    .accessibilitySortPriority(-1)
             }
             .overlay(alignment: .top) {
                 VStack(spacing: WingtipSpace.sm) {
@@ -165,12 +189,15 @@ struct RootMap: View {
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }
-            // The flight's own work while the map is up (FlightLoops).
-            .modifier(FlightLoops())
+            // The flight's own work while the map is up (FlightLoops), in
+            // the lead window alone (MainWindow), behind the map.
+            .background { if leadsLoops { Color.clear.modifier(FlightLoops()) } }
             // The window's UndoManager for the route's history: shake to undo
             // and the Edit menu (PlanHistory).
             .onAppear { plan.undoManager = undoManager }
             .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
+            // The GPS at its best while the map follows the airplane (OwnShip.precise).
+            .onChange(of: following, initial: true) { _, now in ownShip.mapFollows = now }
             // Siri listens for the fields the shortcuts' airport entity
             // suggests (the kept route's: AirportEntityQuery.suggestedEntities),
             // and Spotlight finds them, so both are told again when the route

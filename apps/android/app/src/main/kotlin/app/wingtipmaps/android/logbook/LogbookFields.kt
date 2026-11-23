@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,18 +16,20 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * A logbook line's fields, as the Flight Logged sheet labels them: the
  * date and airplane, the route, the total and night time, the day and
  * night landings, the remarks. One set for an entry edited in its row and
- * for a flight added by hand, so both read the same.
+ * for a flight added by hand, so both read the same; the date on
+ * Material's date picker (DateField).
  */
 @Composable
 fun LogbookFields(form: LogbookForm, onChange: (LogbookForm) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
         Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-            Field(R.string.flight_logged_date, form.date, Modifier.weight(1f)) { onChange(form.copy(date = it)) }
+            DateField(stringResource(R.string.flight_logged_date), form.date, { onChange(form.copy(date = it)) }, Modifier.weight(1f))
             Field(R.string.airplane, form.airplane, Modifier.weight(1f), letters = true) { onChange(form.copy(airplane = it)) }
         }
         Field(R.string.flight_logged_route, form.route, Modifier.fillMaxWidth(), letters = true) { onChange(form.copy(route = it)) }
@@ -56,7 +59,9 @@ private fun Field(
     onChange: (String) -> Unit,
 ) {
     OutlinedTextField(
-        value = value, onValueChange = onChange, modifier = modifier, singleLine = single,
+        // The form's value, which a draft from the flight fills from outside.
+        state = rememberFieldText(value, onChange), modifier = modifier,
+        lineLimits = if (single) TextFieldLineLimits.SingleLine else TextFieldLineLimits.Default,
         label = { Text(stringResource(label)) },
         keyboardOptions = KeyboardOptions(capitalization = if (letters) KeyboardCapitalization.Characters else KeyboardCapitalization.Sentences, keyboardType = keyboard),
     )

@@ -94,7 +94,7 @@ struct GoNoGoSection: View {
             BriefSummarySection(answer: answer)
         }
         if verdict.answer != nil {
-            WordsSection(title: "The flight in words", said: riskWords, writing: writingWords)
+            WordsSection(title: "The Flight in Words", said: riskWords, writing: writingWords)
         }
         Section {
             if let answer = verdict.answer {
@@ -115,6 +115,8 @@ struct GoNoGoSection: View {
                         FindingFold(item: item, words: line.words, open: open)
                     }
                 }
+                // The ADIZs the route meets (14 CFR part 99), the engine's one line.
+                AdizLine(result: RouteAdiz.brief(plan))
                 if let rest = Glance.restWords(answer) {
                     DisclosureGroup(isExpanded: $restOpen) {
                         ForEach(Glance.rest(answer)) { item in row(item) }
@@ -139,7 +141,7 @@ struct GoNoGoSection: View {
             }
             if let instructor {
                 Label {
-                    Text("Your instructor, \(instructor.name ?? instructor.email), reviews the flights you put to them from their phone.")
+                    Text("Your instructor, \(instructor.name ?? instructor.email), sees the flights you send them and can sign them off from their phone.")
                         .font(.subheadline)
                 } icon: {
                     Image(systemName: "person.crop.circle").foregroundStyle(accent)
@@ -162,7 +164,7 @@ struct GoNoGoSection: View {
                 instructor = (try await Gateway.training())?.instructors.first { $0.accepted }
                 instructorProblem = nil
             } catch {
-                instructorProblem = "Whether an instructor reviews your flights couldn't be fetched."
+                instructorProblem = "Whether an instructor reviews your flights could not be fetched."
             }
         }
         // The words for the answer on the page; the findings stay as they
@@ -232,11 +234,11 @@ struct FindingFold: View {
             }
             switch VerdictTarget.of(item) {
             case .section(let anchor)?:
-                Button("See the reports") { open(anchor) }
+                Button("See the Reports") { open(anchor) }
             case .loading?:
-                NavigationLink("See the loading") { LoadingView() }
+                NavigationLink("See the Loading") { LoadingView() }
             case .risk?:
-                NavigationLink("See the risk assessment") { RiskView() }
+                NavigationLink("See the Risk Assessment") { RiskView() }
             case .airplane?:
                 AirplaneFiguresLink { Text("See the Airplane's Figures") }
             case nil:
@@ -288,7 +290,8 @@ struct RiskView: View {
                                 Label {
                                     VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                         Text(factor.label)
-                                        if let why = factor.why { Text(why).font(.footnote).foregroundStyle(.secondary) }
+                                        // Each cited rule in it a tap to its paragraph (CitedText).
+                                        if let why = factor.why { CitedText(why).font(.footnote).foregroundStyle(.secondary) }
                                     }
                                 } icon: {
                                     Image(systemName: FindingStyle.symbol(factor.finding ?? "caution"))
@@ -297,6 +300,7 @@ struct RiskView: View {
                                 }
                             }
                             .accessibilityElement(children: .combine)
+                            .citeActions([factor.why].compactMap { $0 })
                         }
                     }
                 }
@@ -357,7 +361,7 @@ struct RiskView: View {
 
 #Preview("FindingFold") {
     List {
-        FindingFold(item: VerdictItem(detail: "The baggage, 170 lb in all, is over its 120 lb", finding: "stop", key: "balance", label: "Weight & balance", section: "Weight & Balance", tab: "preflight"),
+        FindingFold(item: VerdictItem(detail: "The baggage, 170 lb in all, is over its 120 lb", finding: "stop", key: "balance", label: "Weight & Balance", section: "Weight & Balance", tab: "preflight"),
                     words: "Weight & balance: The baggage, 170 lb in all, is over its 120 lb.") { _ in }
     }
 }

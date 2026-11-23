@@ -3,7 +3,8 @@ import type { Aircraft, AircraftProfileSummary } from "../../lib/api/types";
 import { N_NUMBER } from "../../lib/aircraftChoice";
 import { useTailLookup } from "../../lib/airplane/lookup";
 import { usePreferences, type KeptAircraft } from "../../lib/preferences";
-import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { aircraftListQuery, aircraftProfilesQuery } from "../../lib/queryClientRecords";
 
 /** What is typed found in a name, ignoring case. */
 const finds = (typed: string, name: string) => name.toLowerCase().includes(typed.toLowerCase());

@@ -11,6 +11,7 @@ import { MapCard } from "../../lib/map/cards/MapCard";
 import { shareOrCopy } from "../../lib/share";
 import { tfrLink } from "../../lib/address";
 import StatusBadge from "../../components/StatusBadge";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * A temporary flight restriction's card (the map draws them, in tfrMarks'
@@ -69,12 +70,7 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
         )}
         {from && <p>{from}</p>}
         {/* Its 44-point area from the link's own line, nothing grown. */}
-        <a
-          className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
-          href={tfrPage(tfr.notam_id)}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a className="relative block w-fit text-tint hit-y-3" href={tfrPage(tfr.notam_id)} target="_blank" rel="noreferrer">
           The NOTAM on tfr.faa.gov
         </a>
       </div>
@@ -89,13 +85,8 @@ export function TfrGone({ notamId, failed }: { notamId: string; failed: boolean 
   return (
     <MapCard title={notamId} subtitle="TFR">
       <div className="space-y-1 text-left">
-        <p>{failed ? "The TFRs didn't load. Check tfr.faa.gov before flight." : "Not on tfr.faa.gov's list now: ended or cancelled."}</p>
-        <a
-          className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
-          href={tfrPage(notamId)}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <p>{failed ? WORDING.tfrsNotLoaded : "Not on tfr.faa.gov's list now: ended or cancelled."}</p>
+        <a className="relative block w-fit text-tint hit-y-3" href={tfrPage(notamId)} target="_blank" rel="noreferrer">
           The NOTAM on tfr.faa.gov
         </a>
       </div>

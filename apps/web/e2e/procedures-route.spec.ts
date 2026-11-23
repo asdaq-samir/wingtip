@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, grabberTo, inSheet, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
+import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
 import { LIST, DRAWN } from "./procedureStubs";
@@ -62,24 +62,26 @@ test.describe("on the owner's phone's width, to a finger", () => {
     // Half way, then opened to edit, which raises the sheet all the way up
     // (the one layout: at half the route is folded, its box not drawn).
     await grabberTo(page, "half");
-    await openRoute(page);
+    await typeRoute(page);
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
-    // Its lines', the buttons over them in FPL's bar (the owner, 2026-11-14).
-    expect((await box.getByTestId("route-slide").boundingBox())!.height).toBeLessThanOrEqual(48);
+    // Turned from the grouped box, the route wraps over its lines (the
+    // owner, 2026-11-22: "Route box should be as tall as the grouped box,
+    // same shape"): the field past KRFD ends on KRFD's own line, not one
+    // of its own under it.
+    const end = (await box.getByTestId("route-type").boundingBox())!;
+    const last = (await box.getByRole("group", { name: "Destination KRFD" }).boundingBox())!;
+    expect(end.y + end.height).toBeLessThanOrEqual(last.y + last.height + 4);
   });
 });
 
-test("a procedure picked lengthens the plan by its path: the fuel and the time to the field are the flight flown", async ({ page }) => {
+test("a procedure picked lengthens the plan by its path: the time to the field is the flight flown", async ({ page }) => {
   // The owner's word ("Yes"), after the plan said 909 nm to Jacksonville
   // where the dry run flew 1053 by BENKY6 into O'Hare: the planner flies
   // the leg in by the approach picked, its miles more in the figures.
   const figures = async () => {
-    await expect(page.getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/, { timeout: slow(120_000) });
-    return {
-      fuel: parseFloat((await page.getByTestId("navlog-fuel").textContent())!),
-      ete: (await page.getByTestId("navlog-ete").textContent())!,
-    };
+    await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/, { timeout: slow(120_000) });
+    return { ete: (await page.getByTestId("navlog-ete").textContent())! };
   };
   const minutes = (ete: string) => {
     const [, h, m] = /^(?:(\d+)h)? ?(?:(\d+)m)?$/.exec(ete.trim())!;
@@ -91,17 +93,7 @@ test("a procedure picked lengthens the plan by its path: the fuel and the time t
   // Out to PLANE, south-east of the field, and round onto the final.
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:R27:PLANE");
   await settle(page);
-  await expect.poll(async () => (await figures()).fuel, { timeout: slow(120_000) }).toBeGreaterThan(straight.fuel);
-  const flown = await figures();
-  expect(minutes(flown.ete)).toBeGreaterThan(minutes(straight.ete));
-  // The breakdown says where the gallons more come from, the sheet raised
-  // to the figures first: at the pill they are the pill's, the panel's
-  // foot over them taking a tap to raise it (SheetParts), and at half,
-  // with the fields open, they run on under FPL's floating bar.
-  const fuel = page.getByTestId("fuel-breakdown-open");
-  await inSheet(page, fuel);
-  await fuel.click();
-  await expect(page.getByTestId("fuel-breakdown")).toContainText(/\d+\.\d nm more by the procedures picked/);
+  await expect.poll(async () => minutes((await figures()).ete), { timeout: slow(120_000) }).toBeGreaterThan(minutes(straight.ete));
 });
 
 test("an approach can be flown direct to one of its fixes, as ATC sends an airplane, and back as charted", async ({ page }) => {
@@ -123,32 +115,34 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await openTab(page, "Nav Log");
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  const approach = kdlh.locator("[data-testid=procedure-kind][data-kind=approach]");
-  await expect(approach).toContainText("ILS 09 · DLH", { timeout: slow(20000) });
-  await approach.click();
+  // A procedure picked, its fixes on the route's line before the field's, its head row the button to pick another (the owner's option D, 2026-11-21).
+  const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
+  await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
+  await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
+  await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   const menu = page.getByTestId("procedure-menu");
-  await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As charted");
+  await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As Charted");
   await menu.getByTestId("procedure-menu-direct").click();
   // The procedure's own fixes, the missed approach's and the runway's not.
-  await expect(menu.getByTestId("procedure-menu-direct-fix")).toHaveText(["As charted", "DLH", "OFOFO", "FAKER"]);
+  await expect(menu.getByTestId("procedure-menu-direct-fix")).toHaveText(["As Charted", "DLH", "OFOFO", "FAKER"]);
   await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "FAKER" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
   await openRoute(page);
-  await expect(approach).toContainText("ILS 09 · direct FAKER");
-  // Back as charted.
-  await approach.click();
+  await expect(approach.getByTestId("fix-branch-row").filter({ hasText: "FAKER" })).toContainText("direct to");
+  // Back as charted, from the procedure's head row.
+  await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   await menu.getByTestId("procedure-menu-direct").click();
-  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As charted" }).click();
+  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As Charted" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
 });
 
-test("a procedure picked is its short name's chip on its field's line, and its fixes are sent direct to or given an altitude from the map", async ({
+test("a procedure picked has its fixes on the route's line before its field's, and its fixes are sent direct to or given an altitude from the map", async ({
   page,
 }) => {
-  // The owner's two-row timeline (2026-11-17): a picked procedure is its
-  // short name's chip under its field's line, its menu ProcedureMenu's; its
+  // The owner's timeline (2026-11-17, boxed 2026-11-21): a picked procedure
+  // is a head row and its fixes on the route's line (option D, 2026-11-21), its menu ProcedureMenu's; its
   // fixes (the git-graph branch of option 4) are the list's read in flight,
   // and on the ground each fix's card from the map.
   await page.route(
@@ -166,9 +160,12 @@ test("a procedure picked is its short name's chip on its field's line, and its f
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  const chip = kdlh.locator("[data-testid=procedure-kind][data-look=chip]");
-  await expect(chip).toContainText("ILS 09", { timeout: slow(20000) });
-  // No branch of fixes on the ground: the chips are the line's all.
+  const box = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
+  await expect(box.getByTestId("procedure-name")).toHaveText("ILS · RWY 09", { timeout: slow(20000) });
+  // Shown, no pill to tap (the owner, 2026-11-21): its kind and field over
+  // its name, then a row a fix; no branch of FixBranch's on the timeline.
+  await expect(box).toContainText("Approach · KDLH");
+  await expect(box.getByTestId("fix-branch-row").first()).toBeVisible();
   await expect(kdlh.getByTestId("fix-branch")).toHaveCount(0);
   // FAKER's card from the map: direct to it, then as charted again.
   await grabberTo(page, "peek");
@@ -188,13 +185,14 @@ test("a procedure picked is its short name's chip on its field's line, and its f
   await expect(card).toHaveCount(0);
 });
 
-test('the destination\'s chips end with "+ HOLD", which opens the hold sheet asking for the leg, and then says the hold set', async ({
+test("the destination's hold is added from its menu, no \"+ HOLD\" chip, and its chip then says the hold set, last after the procedures'", async ({
   page,
 }) => {
   // The owner, 2026-11-18: a hold chip on the destination's line, after
-  // its procedures' ("+ ARR", "+ APCH"), the same chip; the sheet the
-  // point's menu's Hold opens; a leg by distance has no default (AIM
-  // 5-3-8: the controller or the chart gives it), so Add Hold waits for it.
+  // its procedures' ("+ ARR", "+ APCH"); 2026-11-19: "No need for +HOLD",
+  // so the chip shows once a hold is set, added from the point's menu's
+  // Hold. A leg by distance has no default (AIM 5-3-8: the controller or
+  // the chart gives it), so Add Hold waits for it.
   await page.route(
     (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
     (route) =>
@@ -207,16 +205,10 @@ test('the destination\'s chips end with "+ HOLD", which opens the hold sheet ask
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   const hold = kdlh.getByTestId("hold-chip");
-  await expect(hold).toHaveText("+ HOLD", { timeout: slow(20000) });
-  await expect(hold).toHaveAttribute("data-look", "add");
-  // Last, after the procedures' chips.
-  const order = await kdlh
-    .getByTestId("timeline-chips")
-    .locator("[data-testid=procedure-kind], [data-testid=hold-chip]")
-    .evaluateAll((chips) => chips.map((c) => c.getAttribute("data-testid")));
-  expect(order.at(-1)).toBe("hold-chip");
-  expect(order.length).toBeGreaterThan(1);
-  await hold.click();
+  await expect(kdlh.getByTestId("procedure-kind").first()).toBeVisible({ timeout: slow(20000) });
+  await expect(hold).toHaveCount(0);
+  await kdlh.getByTestId("point-menu").click();
+  await page.getByTestId("point-menu-hold").click();
   const sheet = page.getByTestId("hold-sheet");
   await expect(sheet).toContainText("Hold at KDLH");
   await sheet.getByTestId("hold-course").fill("270");
@@ -228,4 +220,11 @@ test('the destination\'s chips end with "+ HOLD", which opens the hold sheet ask
   await expect(page).toHaveURL(/[?&]holds=KDLH(%3A|:)270(%3A|:)R(%3A|:)5N(%3A|:)2T(&|$)/);
   await expect(hold).toHaveText("Hold 270° R");
   await expect(hold).toHaveAttribute("data-look", "chip");
+  // Last, after the procedures' chips.
+  const order = await kdlh
+    .getByTestId("timeline-chips")
+    .locator("[data-testid=procedure-kind], [data-testid=hold-chip]")
+    .evaluateAll((chips) => chips.map((c) => c.getAttribute("data-testid")));
+  expect(order.at(-1)).toBe("hold-chip");
+  expect(order.length).toBeGreaterThan(1);
 });

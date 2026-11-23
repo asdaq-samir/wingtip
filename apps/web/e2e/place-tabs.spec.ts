@@ -226,11 +226,31 @@ async function pinchOut(target: Locator) {
   });
 }
 
+/** The canvas's picture once it has stopped changing (drawn, or done
+ *  zooming): two shots alike, rather than a fixed wait for it. */
+async function drawnStill(canvas: Locator): Promise<Buffer> {
+  let last = await canvas.screenshot();
+  await expect
+    .poll(
+      async () => {
+        const now = await canvas.screenshot();
+        const same = now.equals(last);
+        last = now;
+        return same;
+      },
+      { timeout: slow(15000), intervals: [300] },
+    )
+    .toBe(true);
+  return last;
+}
+
 test("each picture opens full screen, where a pinch zooms it and the zoom stays, and its close goes back to the card", async ({ page }) => {
   // The owner, 2026-11-14: "When I tap on an image, why doesn't it let me
   // zoom in/out?" -- the viewer's map was laid out again at each draw of the
   // card (a new list of pages each time), the pinch lost within the minute.
-  test.slow(); // a minute's wait, for the card's minute clock to draw it again
+  // Playwright's clock, so the card's minute clock draws it again in a
+  // moment, not a minute's wait (test-quality audit, round 2).
+  await page.clock.install();
   // The FAA's own diagram, as the planner has it: not the stub's address.
   await kdlh(page, { metar: MVFR.metar });
   await page.route(
@@ -248,14 +268,19 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
     await expect.poll(async () => (await viewer.boundingBox())?.width).toBe(page.viewportSize()!.width);
     const canvas = viewer.locator("canvas");
     await expect(canvas).toBeVisible({ timeout: slow(15000) });
-    await page.waitForTimeout(1500); // its picture drawn
-    const whole = await canvas.screenshot();
+    // Its pages drawn (ChartPages' data-drawn), not only the paper they lie
+    // on: the diagram's page, drawn by the planner from the FAA's PDF, came
+    // after a still screenshot of the bare paper, and the pinch zoomed the
+    // paper alone, the same picture (PR #589's run on 36a311a4a).
+    await expect(viewer.locator("[data-drawn]")).toBeAttached({ timeout: slow(15000) });
+    const whole = await drawnStill(canvas);
     await pinchOut(canvas);
-    await page.waitForTimeout(800);
-    const zoomed = await canvas.screenshot();
+    const zoomed = await drawnStill(canvas);
     expect(zoomed.equals(whole), `${tile} zoomed`).toBe(false);
-    // A minute on, the card drawn again under it (its minute clock): still zoomed.
-    await page.waitForTimeout(61_000);
+    // A minute on, the card drawn again under it (its minute clock): still
+    // zoomed. The clock jumps the minute, each timer due in it fired once.
+    await page.clock.fastForward(61_000);
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
     expect((await canvas.screenshot()).equals(zoomed), `${tile} kept`).toBe(true);
     await page.getByTestId("airport-diagram-close").click();
     await expect(viewer).toHaveCount(0);
@@ -268,7 +293,7 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
 // closes it where it is: no drawer drawn anew, nothing shown and hidden and
 // shown, the map's buttons never off the screen.
 test("the airport's card opens once, its tabs turn in place, and its close closes it where it is", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's card");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's card");
   await installFrameRecorder(page);
   await page.goto("/app/plan");
   await settle(page);

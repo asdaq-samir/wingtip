@@ -75,6 +75,10 @@ struct WelcomeSheet: View {
         }
         .background(Color(.systemGroupedBackground))
         .safeAreaInset(edge: .bottom) { foot }
+        // A container of its own: the identifier on the stack alone would
+        // be given to every element in it, the buttons' welcome-go and
+        // welcome-later lost under it.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("welcome")
     }
 
@@ -140,7 +144,7 @@ struct FplTip: Tip {
     /// A route made: the tip may show.
     @Parameter static var routed: Bool = false
 
-    var title: Text { Text("Your flight plan is one tap away") }
+    var title: Text { Text("Your Flight Plan Is One Tap Away") }
     var message: Text? { Text("Route, nav log, profile and brief, like your EFB. Tap here any time.") }
     var rules: [Rule] { [#Rule(Self.$routed) { $0 }] }
     var options: [any TipOption] { [Tips.MaxDisplayCount(1)] }

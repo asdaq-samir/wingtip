@@ -43,7 +43,7 @@ const WHY: [(&str, &str, &str); 9] = [
     (
         // 91.211(a)(1)-(3), the three heights brief.rs's oxygen_item reads.
         "oxygen",
-        "In an airplane without a pressurised cabin, 14 CFR 91.211(a) asks for oxygen for the crew for any time past 30 minutes over 12,500 ft MSL, all the time over 14,000 ft, and for every occupant over 15,000 ft.",
+        "In an airplane without a pressurized cabin, 14 CFR 91.211(a) asks for oxygen for the crew for any time past 30 minutes over 12,500 ft MSL, all the time over 14,000 ft, and for every occupant over 15,000 ft.",
         "14 CFR 91.211(a)",
     ),
     (
@@ -92,7 +92,7 @@ const WHY: [(&str, &str, &str); 9] = [
 /// a look). Flight Service's number with non-breaking hyphens (U+2011):
 /// it broke after "(1-" on a phone (the web audit's WEB-43).
 const ACTION: [(&str, &str, &str); 9] = [
-    ("weather", "wait for it to lift, or plan another day", "read it on En route and plan around it"),
+    ("weather", "wait for it to lift, or plan another day", "read it on En Route and plan around it"),
     ("airspace", "route around it, or go later", "ask Flight Service (1\u{2011}800\u{2011}WX\u{2011}BRIEF) before you go"),
     ("altitude", "pick another altitude or route", "pick an altitude the profile offers"),
     ("oxygen", "carry oxygen, or plan lower", "carry oxygen, or plan lower"),
@@ -152,8 +152,9 @@ fn capital(s: &str) -> String {
 
 /// A section's name inside a sentence, in lower case but for a code's
 /// words -- "TFRs & special use", where it read "tfrs" (the FPL audit's
-/// A10; the FAA's codes are kept).
-fn in_sentence(label: &str) -> String {
+/// A10; the FAA's codes are kept). The verdict's line names its labels
+/// the same way (verdict/items.rs).
+pub(super) fn in_sentence(label: &str) -> String {
     let code = |w: &str| w.chars().take(2).filter(char::is_ascii_uppercase).count() == 2;
     label.split(' ').map(|w| if code(w) { w.to_owned() } else { w.to_lowercase() }).collect::<Vec<_>>().join(" ")
 }

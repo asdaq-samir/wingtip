@@ -53,7 +53,7 @@ export default function RouteProfileSection({ ends, rows }: { ends: RouteEnds; r
           </AfterPaint>
           {crossed.length > 0 && (
             <div className="pt-3">
-              <ListGroup title="Airspace on the route">
+              <ListGroup title="Airspace on the Route">
                 {crossed.map((a) => (
                   <ListRow
                     key={`${a.name}-${a.floor_ft}-${a.from_nm}`}

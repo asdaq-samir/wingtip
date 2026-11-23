@@ -3,13 +3,12 @@ before any planning, and the route's named checkpoints: shared by the
 routers that plan a route (plan, gonogo, figures, route_options) and the
 departure window, so no router imports another for them."""
 
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated
 
 from fastapi import HTTPException, Query
-from wingtip import airports, fixes, procedures
+from wingtip import airports, procedures
 from wingtip import flight_plan as fp
 
 # As vfr_holds: PlanQuery's own `holds` is the address's.
@@ -19,6 +18,7 @@ from wingtip.aircraft import aircraft_profile
 
 from . import foreflight
 from .checkpoint_scoring import route_checkpoints
+from .plan_query_read import figures_by_ident, point_figure, point_key, runway_picks, visit_of
 from .router_basics import Route
 from .schemas.common import AltitudeChoice, FlightRules
 
@@ -162,6 +162,11 @@ class PlanQuery:
     #: the flights after it leave that much later, for their winds, their
     #: night and their times.
     ground: str = ""
+    #: The fuel in the tanks as the airplane leaves a field, gallons, where
+    #: the pilot set it (FPL's fuel gauge): the departure's on board at
+    #: engine start, a stop's what it is fuelled to (0, none bought),
+    #: "KOSH:30,KJVL:0". A field not named, full (wingtip.flight_legs).
+    tanks: str = ""
     #: Checkpoints between the route's own points, as the planner picks
     #: them off the chart. False, the default, the legs run from point to
     #: point alone -- the departure, the stops, the destination -- and
@@ -227,18 +232,22 @@ class PlanQuery:
             out.add(point_key(ident) + visit)
         return frozenset(out)
 
-    def procedure_picks(self) -> list[tuple[str, str, str | None, str | None]]:
+    def procedure_picks(self) -> list[tuple[str, str, str | None, str | None, bool]]:
         """`procedures`, each the field, the procedure, its transition
-        (None, an approach from vectors) and the fix flown direct to (None,
-        as charted); a 422 for one that is not
-        "FIELD:PROCEDURE[:TRANSITION[:DIRECT]]" -- the engine's reading
-        (wingtip_engine::route::picks), the web app's lib/procedures too."""
+        (None, an approach from vectors), the fix flown direct to (None,
+        as charted) and whether its missed approach is flown on from the
+        missed approach point ("M", AIM 5-4-21); an approach only loaded
+        ("L") is not in the route flown and is left out. A 422 for one
+        that is not "FIELD:PROCEDURE[:TRANSITION[:DIRECT[:STATE]]]" -- the
+        engine's reading (wingtip_engine::route::picks), the web app's
+        lib/procedures too."""
         out = []
         for read in engine("procedures_read", text=self.procedures):
             if not read["exact"]:
                 raise HTTPException(422, f"{read['part']!r} is not a procedure: a field, a procedure and a transition, as KDLH:I09:ANDOE.")
             pick = read["pick"]
-            out.append((pick["ident"], pick["id"], pick["transition"], pick["direct"]))
+            if not pick["loaded"]:
+                out.append((pick["ident"], pick["id"], pick["transition"], pick["direct"], pick["missed"]))
         return out
 
     def own_crossings(self) -> dict[str, float]:
@@ -268,13 +277,13 @@ class PlanQuery:
     def own_ground(self) -> dict[str, float]:
         """`ground` by ident; a 422 for one that is not "IDENT:MINUTES", or
         a stop of more than a day."""
-        out = {}
-        for part in filter(None, (p.strip() for p in self.ground.split(","))):
-            ident, _, minutes = part.partition(":")
-            if not point_figure(part) or not 0 <= float(minutes) <= 24 * 60:
-                raise HTTPException(422, f"{part!r} is not a stop's time on the ground: an ident and minutes, as KJVL:45.")
-            out[point_key(ident)] = float(minutes)
-        return out
+        return figures_by_ident(self.ground, 24 * 60, "is not a stop's time on the ground: an ident and minutes, as KJVL:45.")
+
+    def own_tanks(self) -> dict[str, float]:
+        """`tanks` by ident; a 422 for one that is not "IDENT:GALLONS".
+        More than the tanks hold is the pilot's word, kept with the app's
+        warning (warn, never limit)."""
+        return figures_by_ident(self.tanks, float("inf"), "is not a field's fuel: an ident and whole gallons, as KJVL:30.")
 
     def departure_runways(self) -> dict[str, str]:
         """The runway each field is left from (`runways`), by its ident."""
@@ -293,7 +302,7 @@ class PlanQuery:
         the chart's window, for the descent and the path alike."""
         own = self.own_crossings()
         out = []
-        for ident, procedure, transition, direct in self.procedure_picks():
+        for ident, procedure, transition, direct, missed in self.procedure_picks():
             try:
                 drawn = procedures.procedure_drawing(ident, procedure, transition)
             except RuntimeError:
@@ -303,7 +312,9 @@ class PlanQuery:
                     {**f, "min_ft": own[f["ident"]], "max_ft": own[f["ident"]]} if f["ident"] in own and not f["missed"] else f
                     for f in drawn.get("fixes", [])
                 ]
-                drawn = {**drawn, "fixes": fixes_, **({"direct": direct} if direct else {})}
+                # Unsuspended, its missed approach flown on (procedure_paths.flown).
+                flies = {"fly_missed": True} if missed and drawn.get("kind") == "approach" else {}
+                drawn = {**drawn, "fixes": fixes_, **({"direct": direct} if direct else {}), **flies}
                 out.append((ident, drawn))
         return out
 
@@ -339,50 +350,11 @@ class PlanQuery:
             land_runways=self.landing_runways(),
             wind_runways=self.wind_runways,
             ground=self.own_ground(),
+            tanks=self.own_tanks(),
             holds=self.own_holds(),
             checkpoints=self.checkpoints,
             alternate=self.alternate_airport(),
         )
-
-
-def point_figure(part: str) -> bool:
-    """Whether `part` is a point of the route and a figure, "VPBNG:4500":
-    an ident, or the pilot's own point off a fix, "VPBNG/090/30" or packed
-    "DLH090030", by the engine's form of one (wingtip_engine::route::points,
-    which the web app's lib/identSchema asks too, either case here) -- as the
-    saved flight's SaveFlightRequest.POINT takes it, where an altitude set
-    on such a point was a 422 for the whole log -- and up to five figures."""
-    ident, _, figure = part.partition(":")
-    return ident.isascii() and engine("point_kind", text=ident.upper()) is not None and re.fullmatch(r"\d{1,5}", figure) is not None
-
-
-def visit_of(point: str) -> tuple[str, str | None]:
-    """ "VPBNG@2" as ("VPBNG", "@2"); a bare ident's visit "" (every visit),
-    None for one that is not a count from 1 (wingtip.own_altitude)."""
-    ident, at, visit = point.partition("@")
-    if not at:
-        return ident, ""
-    return ident, f"@{int(visit)}" if re.fullmatch(r"[1-9]\d{0,2}", visit) else None
-
-
-def point_key(ident: str) -> str:
-    """A point's ident as the route has it (Route.idents): a point off a
-    fix in its one written form (wingtip.fixes.frd_ident), packed or not."""
-    parts = fixes.parse_frd(ident)
-    return fixes.frd_ident(*parts) if parts else ident.upper()
-
-
-def runway_picks(text: str, not_one: str) -> dict[str, str]:
-    """The runways picked at fields, "KSTL:30R,KMSN:36", by the field's FAA
-    ident (_bare_field), as the engine reads them
-    (wingtip_engine::route::picks); a 422 for one that is not "IDENT:RUNWAY",
-    `not_one` saying what it is not."""
-    out = {}
-    for read in engine("runways_read", text=text):
-        if read["pick"] is None:
-            raise HTTPException(422, f"{read['part']!r} {not_one}")
-        out[read["pick"]["field"]] = read["pick"]["runway"]
-    return out
 
 
 def named_checkpoints(r: Route) -> tuple[list, list, list]:

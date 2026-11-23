@@ -39,7 +39,7 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   await expect(aloft.locator("[aria-hidden]")).toHaveText("Aloft");
   await expect(aloft.locator(".sr-only")).toHaveText("Time aloft, one hour");
   // Its fuel required among the figures.
-  await expect(page.getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/, { timeout: slow(30000) });
+  await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/, { timeout: slow(30000) });
 
   // Longer aloft: its chip in the pill, in the address, and more fuel.
   await controlsInSight(page);
@@ -156,9 +156,13 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   const zoomOfTiles = () => chartZoom(page);
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 2);
-  for (let i = 0; i < 3; i++) {
+  // A notch at a time till the tiles are a region's: a desktop's wider
+  // view opens a level closer in than a phone's, where three notches
+  // were all it took.
+  for (let i = 0; i < 8 && !((await zoomOfTiles()) <= 5); i++) {
     await page.mouse.wheel(0, 300);
     await page.waitForTimeout(400);
+    await mapStill(page);
   }
   await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeLessThanOrEqual(5);
   // So far out the route is a few points across: its numbered dots give
@@ -181,7 +185,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   expect(await numbered()).toBe(0);
   await expect.poll(async () => (await drawn(page, "candidate-marks")).length).toBe(0);
   await openPanel(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(60000) });
+  await expect(page.getByTestId("navlog-ete")).toBeAttached({ timeout: slow(60000) });
   await openNavLog(page);
   const rows = navLogSheet(page).locator('[role="row"][data-kind]');
   await expect(navLogSheet(page).locator('[role="row"][data-kind="checkpoint"]')).toHaveCount(0);
@@ -196,16 +200,18 @@ test("my position is the location arrow among the map's buttons, on both pages, 
   await settle(page);
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
   await expect(arrow).toHaveAccessibleName("Show my position");
-  await expect(arrow).toHaveAttribute("aria-pressed", "false");
+  // A plain button named by its tap, not a toggle whose name changes with
+  // its pressed state (WCAG 4.1.2, the accessibility audit of 2026-11-21).
+  await expect(arrow).not.toHaveAttribute("aria-pressed");
   if (!(await page.evaluate(() => window.isSecureContext))) {
     await arrow.click();
     // An alert, with OK: something the pilot just did.
     const alert = page.getByTestId("error-alert");
-    await expect(alert).toContainText("No position over this connection");
+    await expect(alert).toContainText("No Position over This Connection");
     // OK from md up; on a phone the sheet's close in its title row.
     await alert.getByRole("button", { name: /^(OK|Close)$/ }).click();
     await expect(alert).toHaveCount(0);
-    await expect(arrow).toHaveAttribute("aria-pressed", "false");
+    await expect(arrow).toHaveAccessibleName("Show my position");
   }
   // The training page's as well: its map is the same (GlMapShell).
   await page.goto("/app/dev?dep=C81&dest=KDLH");
@@ -233,7 +239,7 @@ test("the chart's airports keep coming in under a finger's pan, before it lets g
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   const panel = await sideDrawer(page).boundingBox();
   const left = panel && panel.width < map.width * 0.8 ? panel.x + panel.width + 20 : map.x + 20;
-  const y = viewport.width < 768 ? 160 : viewport.height / 3;
+  const y = viewport.width < 660 ? 160 : viewport.height / 3;
   const run = (map.x + map.width - 90 - left) * 0.9;
   await page.mouse.move(left, y);
   await page.mouse.down();

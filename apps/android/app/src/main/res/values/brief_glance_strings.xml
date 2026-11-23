@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Brief's glance under its findings (brief/BriefGlanceRows), the web's
+     words; the shared names are design/wording.json's (R.string.wording_*). -->
+<resources>
+    <string name="brief_none">None</string>
+    <string name="brief_unchecked">Could not check %1$s: verify separately before flight.</string>
+    <!-- The Depart and Arrive rows (BriefFields), the web's FieldRow words. -->
+    <string name="brief_depart">Depart</string>
+    <string name="brief_arrive">Arrive</string>
+    <string name="brief_runway">Runway</string>
+    <string name="brief_takeoff_50">Takeoff 50 ft</string>
+    <string name="brief_landing_50">Landing 50 ft</string>
+    <string name="brief_runway_long">%1$s long</string>
+    <plurals name="brief_adverse_more">
+        <item quantity="one">%1$d more on the route</item>
+        <item quantity="other">%1$d more on the route</item>
+    </plurals>
+</resources>

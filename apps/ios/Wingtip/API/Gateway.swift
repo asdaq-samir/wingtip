@@ -35,8 +35,9 @@ enum Gateway {
 
     static let session = URLSession(configuration: configuration())
 
-    /// The gateway's CSRF token, from the cookie it sets on every answer.
-    static var csrfToken: String? {
+    /// The gateway's CSRF token, from the cookie it sets on every answer;
+    /// read by the CSRF middleware on the network's threads.
+    nonisolated static var csrfToken: String? {
         SessionCookies.jar.cookies(for: Config.gateway)?.first { $0.name == "XSRF-TOKEN" }?.value
     }
 
@@ -51,9 +52,13 @@ enum Gateway {
     }
 
     /// Apple's identity token from the system's sheet, checked by the
-    /// gateway against this app's bundle id (AppleNativeSignInController).
-    static func signInWithApple(identityToken: String, nonce: String?) async throws {
-        _ = try await call { try await $0.signIn(body: .json(GWAppleToken(identityToken: identityToken, nonce: nonce))).ok }
+    /// gateway against this app's bundle id (AppleNativeSignInController),
+    /// and the sheet's authorization code, which only the gateway can trade
+    /// for the token that deleting the account revokes at Apple (App Review
+    /// 5.1.1(v); AppleAppTokens).
+    static func signInWithApple(identityToken: String, authorizationCode: String?, nonce: String?) async throws {
+        let token = GWAppleToken(authorizationCode: authorizationCode, identityToken: identityToken, nonce: nonce)
+        _ = try await call { try await $0.signIn(body: .json(token)).ok }
     }
 
     /// A nonce for one Sign in with Apple attempt, issued to this session
@@ -113,7 +118,7 @@ enum Gateway {
 /// where it has no detail. The old ErrorResponse's `error` and `details`
 /// are read too, until the planner's and the assistant's refusals are
 /// checked for the same shape.
-struct GatewayRefusal: Error, LocalizedError, Equatable {
+nonisolated struct GatewayRefusal: Error, LocalizedError, Equatable {
     let status: Int
     let words: String?
     var errorDescription: String? { words ?? "The server answered \(status)." }

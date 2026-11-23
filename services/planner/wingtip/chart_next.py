@@ -88,18 +88,20 @@ def cycle_name(day: date) -> str:
 
 
 def plan(now: datetime | None = None, lead_days: int = 7) -> Plan:
-    """The cycles as they stand at `now` (UTC). The day is the in-force
-    day (data_cycles.in_force_day: an edition counts from 0901Z on its
+    """The cycles as they stand at `now` (UTC; data_cycles.now by default).
+    The engine is asked at the minute (an edition counts from 0901Z on its
     date), so before 0901Z on a changeover day the cycle coming in is
     still the next one and the swap has not happened; at 0901Z it is the
-    one in force. Staging starts on `lead_days` before the next date, by
-    the same day, and `lead_days` is held between 0 and MAX_LEAD_DAYS."""
+    one in force. Staging starts `lead_days` before the next date at the
+    same 0901Z, and `lead_days` is held between 0 and MAX_LEAD_DAYS."""
     lead = max(0, min(int(lead_days), MAX_LEAD_DAYS))
-    day = data_cycles.in_force_day(now)
-    answer = data_cycles.cycle("chart", None, day)
+    at = now or data_cycles.now()
+    answer = data_cycles.cycle("chart", None, at)
     current, upcoming = date.fromisoformat(answer["current"]), date.fromisoformat(answer["next"])
     stage_from = upcoming - timedelta(days=lead)
-    return Plan(in_force=current, next=upcoming, stage_from=stage_from, lead_days=lead, staging=day >= stage_from)
+    utc_at = at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at.astimezone(timezone.utc)
+    begins = datetime(stage_from.year, stage_from.month, stage_from.day, 9, 1, tzinfo=timezone.utc)
+    return Plan(in_force=current, next=upcoming, stage_from=stage_from, lead_days=lead, staging=utc_at >= begins)
 
 
 # ---------------------------------------------------------------------------

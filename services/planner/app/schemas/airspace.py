@@ -27,13 +27,19 @@ class DayNightMinimums(BaseModel):
 class AirspaceBand(BaseModel):
     """One class of airspace over a point, from `floor_ft` to
     `ceiling_ft` MSL (wingtip.airspace_at): its name where it is a B, C or
-    D; the VFR minimums in it (None in A); what it takes to go in; the
+    D, and its primary airport (`ident`); the VFR minimums in it (None in
+    A); what it takes to go in; the
     equipment it asks for; and the 91.117 speed limit there."""
 
     floor_ft: float
     ceiling_ft: float
     class_: Literal["A", "B", "C", "D", "E", "G"] = Field(alias="class")
     name: str | None = None
+    #: A B, C or D band's primary airport (NASR's Class Airspace IDENT:
+    #: ORD, MSN), so the apps can ask the engine's special_vfr whether it
+    #: is one of the 33 airports of part 91 Appendix D, section 3, where
+    #: special VFR is not given to a fixed-wing airplane (91.157(a)).
+    ident: str | None = None
     minimums: DayNightMinimums | None = None
     entry: str
     equipment: str | None = None

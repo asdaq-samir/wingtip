@@ -1,35 +1,20 @@
 package app.wingtipmaps.android.airplane
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.PastFlightSummary
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.ago
 import kotlin.math.roundToInt
 
-/** How long since, in the largest unit: 5 min, 3 h, 2 days. */
-data class Ago(val unit: Unit, val n: Long) {
-    enum class Unit { MINUTES, HOURS, DAYS }
+/** How long since, in seconds: said by the engine's one "... ago" (Format.ago). */
+data class Ago(val seconds: Long) {
+    fun words(): String = Format.ago(seconds.toDouble())
 }
 
-fun ago(ms: Long): Ago {
-    val min = (ms / 60_000).coerceAtLeast(0)
-    return when {
-        min < 60 -> Ago(Ago.Unit.MINUTES, min)
-        min < 48 * 60 -> Ago(Ago.Unit.HOURS, min / 60)
-        else -> Ago(Ago.Unit.DAYS, min / (24 * 60))
-    }
-}
-
-/** An Ago as words, from the app's strings. */
-@Composable
-fun Ago.words(): String = when (unit) {
-    Ago.Unit.MINUTES -> stringResource(R.string.ago_minutes, n)
-    Ago.Unit.HOURS -> stringResource(R.string.ago_hours, n)
-    Ago.Unit.DAYS -> pluralStringResource(R.plurals.ago_days, n.toInt(), n)
-}
+fun ago(ms: Long): Ago = Ago((ms / 1000).coerceAtLeast(0))
 
 /**
  * What the airplane card's status line says, kept as what it means so the

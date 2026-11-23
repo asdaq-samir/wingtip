@@ -101,7 +101,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         log.debug("Unreadable request body: {}", ex.getMessage());
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, "The request's body could not be read");
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, "The request's body could not be read.");
         return handleExceptionInternal(ex, problem, headers, status, request);
     }
 

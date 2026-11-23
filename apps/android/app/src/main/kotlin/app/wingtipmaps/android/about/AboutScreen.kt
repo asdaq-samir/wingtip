@@ -3,6 +3,7 @@ package app.wingtipmaps.android.about
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +49,8 @@ import app.wingtipmaps.android.ui.ValueSettingRow
  * About, from the foot of Setup: the app and its build, the chart edition
  * and the cycle packs in use, the planning aid's words every app says
  * (docs/legal/credits.md), the credits, the privacy policy, terms and
- * support on the site, and the demo flight. A figure the phone does not
+ * support on the site, Send Feedback, the open-source licences
+ * (LicencesScreen), and the demo flight. A figure the phone does not
  * have is left out rather than guessed.
  *
  * @param onDemo after the demo flight is put on the plan: the sheets close
@@ -58,6 +63,7 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
     val packsCycle by model.packsCycle.collectAsStateWithLifecycle()
     // The activity's one plan, which the map draws.
     val plan: Plan = hiltViewModel()
+    var licences by rememberSaveable { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
@@ -83,8 +89,8 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
             figures.forEachIndexed { i, (name, value) -> ValueSettingRow(name, value, index = i, count = figures.size) }
         }
 
-        SectionTitle(stringResource(R.string.about_planning_aid))
-        Text(stringResource(R.string.about_planning_aid_text), style = MaterialTheme.typography.bodyMedium)
+        SectionTitle(stringResource(R.string.wording_planning_aid_title))
+        Text(stringResource(R.string.wording_planning_aid), style = MaterialTheme.typography.bodyMedium)
 
         SectionTitle(stringResource(R.string.about_credits))
         AboutCredits.data.forEach { Credit(it) }
@@ -92,9 +98,21 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
 
         SectionTitle(stringResource(R.string.about_legal))
         SettingsGroup {
-            ActionSettingRow(stringResource(R.string.about_privacy), index = 0, count = 3) { openSite(context, "/privacy") }
-            ActionSettingRow(stringResource(R.string.about_terms), index = 1, count = 3) { openSite(context, "/terms") }
-            ActionSettingRow(stringResource(R.string.about_support), index = 2, count = 3) { openSite(context, "/support") }
+            ActionSettingRow(stringResource(R.string.about_privacy), index = 0, count = 4) { openSite(context, "/privacy") }
+            ActionSettingRow(stringResource(R.string.about_terms), index = 1, count = 4) { openSite(context, "/terms") }
+            ActionSettingRow(stringResource(R.string.about_support), index = 2, count = 4) { openSite(context, "/support") }
+            // The open-source licences of every library the app ships with.
+            ActionSettingRow(stringResource(R.string.about_licences), index = 3, count = 4) { licences = true }
+        }
+        if (licences) LicencesScreen { licences = false }
+        // A tester's word to the owner, through Android's sharesheet to
+        // whoever they send it (docs/store/beta.md): the build and the
+        // system, which the fault reports already carry, and three
+        // questions; the app itself sends nothing.
+        val feedback = stringResource(R.string.about_feedback_text, model.version, model.build, Build.VERSION.RELEASE)
+        val subject = stringResource(R.string.about_feedback_subject)
+        SettingsGroup {
+            ActionSettingRow(stringResource(R.string.about_send_feedback), index = 0, count = 1) { sendFeedback(context, subject, feedback) }
         }
 
         Button(
@@ -113,6 +131,12 @@ private fun Credit(credit: AboutCredits.Credit) {
         Text(credit.what, style = MaterialTheme.typography.bodyMedium)
         Text(credit.terms, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/** The feedback in Android's sharesheet, for the tester's mail or messages. */
+private fun sendFeedback(context: Context, subject: String, text: String) {
+    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, subject).putExtra(Intent.EXTRA_TEXT, text)
+    context.startActivity(Intent.createChooser(send, null))
 }
 
 /** The site's page in the phone's browser: the policy and terms are the

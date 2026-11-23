@@ -88,7 +88,7 @@ final class PlateCardModel {
             problem = nil
         } catch {
             plate = nil
-            problem = "The plate couldn't be fetched: \(error.localizedDescription)"
+            problem = Problems.say("The plate could not be fetched", error)
         }
         guard let name = plate?.name, let place = try? await Planner.place(parts.ident) else { return }
         chartURL = Self.chart(named: name, in: place.procedures ?? [])?.url

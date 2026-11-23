@@ -278,13 +278,13 @@ function writeSwift() {
   const out = [header("//"), "import Foundation", "import OpenAPIRuntime", ""];
   out.push(
     "/// The engine's inputs and answers by rule, as engine/contract/engine.schema.json",
-    "/// types them; Engine's functions in EngineCalls.swift take and return them.",
-    "enum EngineContract {",
+    "/// types them; Engine's functions in EngineCalls.swift take and return them. Nonisolated: any thread asks the engine.",
+    "nonisolated enum EngineContract {",
   );
   for (const s of [...structs.values()].sort((a, b) => a.name.localeCompare(b.name))) {
     out.push("");
     out.push(swiftDoc(s.description, "    ").trimEnd());
-    out.push(`    struct ${s.name}: Codable, Equatable, Sendable {`);
+    out.push(`    nonisolated struct ${s.name}: Codable, Equatable, Sendable {`);
     for (const f of s.fields) {
       if (f.description) out.push(swiftDoc(f.description, "        ").trimEnd());
       out.push(`        var ${swiftId(f.name)}: ${swiftField(f)}`);
@@ -309,7 +309,7 @@ function writeSwift() {
     "/// parameters and its answer as the contract's type. Each throws",
     "/// Engine.Refused (or the decoder's error) where the engine refused the",
     "/// input or answered in a shape the contract does not give, and logs it.",
-    "extension Engine {",
+    "nonisolated extension Engine {",
   );
   for (const r of rules) {
     const s = structs.get(r.inputStruct);

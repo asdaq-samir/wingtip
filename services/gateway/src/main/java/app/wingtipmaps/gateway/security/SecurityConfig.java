@@ -147,8 +147,10 @@ public class SecurityConfig {
                     UpstreamRoutes upstream = UpstreamRoutes.shipped();
                     auth.requestMatchers(upstream.matcher(UpstreamRoutes.Access.DEVELOPER))
                             .access(developer)
-                            // The apps' speed over time and faults (SpeedController, DiagnosticsController).
-                            .requestMatchers(HttpMethod.GET, "/api/speed", "/api/diagnostics")
+                            // The apps' speed over time and faults, and both by build (SpeedController,
+                            // DiagnosticsController, AppHealthController).
+                            .requestMatchers(
+                                    HttpMethod.GET, "/api/speed", "/api/diagnostics", "/api/diagnostics/versions")
                             .access(developer);
                     // Reading from the planner: planning a route needs no
                     // account. The Go / No-Go, the debrief, lost comms and a

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { consolePage, expandConsole, noTips, openConsole, showTabs, consoleSheet } from "./helpers";
+import { consolePage, expandConsole, noTips, openConsole, showTabs, consoleSheet, slow } from "./helpers";
 
 /**
  * The speed trend (SpeedController): the Dev console's Speed page, under
@@ -52,6 +52,12 @@ test("a pilot's browser reports its Web Vitals as the page is put away, and noth
   // A browser driven by tests reports nothing (lib/speed), so this one
   // says it is not.
   await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false }));
+  // And that this load is one of the quarter that report (lib/helpImprove's
+  // SPEED_SAMPLE, drawn once a load): every draw still random, in [0, 0.25).
+  await page.addInitScript(() => {
+    const draw = Math.random.bind(Math);
+    Math.random = () => draw() * 0.25;
+  });
   await page.addInitScript(noTips);
   const sent: string[] = [];
   await page.route(
@@ -63,14 +69,18 @@ test("a pilot's browser reports its Web Vitals as the page is put away, and noth
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await page.locator('[data-slot="map-panel"]').waitFor();
-  // The library loads once the page is idle.
-  await page.waitForTimeout(4000);
-  await page.evaluate(() => {
-    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
-    document.dispatchEvent(new Event("visibilitychange"));
-  });
-
-  await expect.poll(() => sent.length).toBeGreaterThan(0);
+  // The library loads once the page is idle, so the page is put away
+  // until it has listened and sent, not after a fixed wait for it.
+  await page.evaluate(() => Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true }));
+  await expect
+    .poll(
+      async () => {
+        await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+        return sent.length;
+      },
+      { timeout: slow(20_000) },
+    )
+    .toBeGreaterThan(0);
   const report = JSON.parse(sent[0]!) as { page: string; device: string; version: string; metrics: Record<string, number> };
   expect(report.page).toBe("plan");
   expect(["phone", "tablet", "desktop"]).toContain(report.device);

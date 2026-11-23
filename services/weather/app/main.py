@@ -21,8 +21,9 @@ request (the FAA's browser-like one where its sites want it).
 GET / (or /health) answers 200 while the process runs, with each
 product's age: {"status": "ok" | "stale", "in_use", "products": {name:
 {"fetched_at", "age_s", "until", "servable", "failing", "error",
-"every_s", "stale"}}}. A product is stale once its copy is older than
-three of its idle turns, or past its own validity; "stale" overall if any
+"every_s", "stale"}}}, "fetched_at" and the age from when the copy was
+last confirmed (fetched, or found unchanged since). A product is stale
+once that is older than three of its idle turns, or past its own validity; "stale" overall if any
 is. The answer says so rather than failing the container's health, since
 a restart fetches nothing an outage at NOAA would give.
 """
@@ -40,7 +41,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from collections.abc import Callable
 
 from apscheduler.schedulers.base import BaseScheduler
-from wingtip import schedule, tracing, weather_store
+from wingtip import log_lines, schedule, tracing, weather_store
 
 from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, radar, satellite, spc, tfr
 from .settings import get_settings
@@ -71,7 +72,7 @@ def _winds(fcst_hr: str) -> Callable[[], None]:
 #: Every product, in the order a fresh start fetches them: what a plan
 #: reads first.
 PRODUCTS = (
-    *(Product(name, _source(name), "reports") for name in aviationweather.SOURCES),
+    *(Product(name, _source(name), "airmets" if name == "airmets" else "reports") for name in aviationweather.SOURCES),
     *(Product(f"winds-{hr}", _winds(hr), "winds") for hr in gfs.PERIODS),
     Product("glmp", glmp.fetch_latest, "glmp"),
     Product("glmp-forecast", glmp_forecast.fetch_latest, "glmp"),
@@ -81,6 +82,15 @@ PRODUCTS = (
     Product("satellite", satellite.fetch, "satellite"),
     Product("flow", flow.fetch, "flow"),
 )
+
+
+def products() -> tuple[Product, ...]:
+    """The products this service fetches: every one, but the flow layer
+    only while WEATHER_FLOW_ON says so (settings.flow_on), so a parked
+    layer costs no download and no memory."""
+    on = get_settings().flow_on
+    return tuple(p for p in PRODUCTS if on or p.name != "flow")
+
 
 #: What a fetch may fail with: its source, in its own words.
 FAILURES = (
@@ -105,8 +115,8 @@ def in_use(now: float | None = None) -> bool:
 class Schedule:
     """When each product was last tried, and its turns on the scheduler."""
 
-    def __init__(self, products=PRODUCTS):
-        self.products = {p.name: p for p in products}
+    def __init__(self, chosen: tuple[Product, ...] | None = None):
+        self.products = {p.name: p for p in (products() if chosen is None else chosen)}
         self.tried: dict[str, float] = {}
         self.lock = threading.Lock()
 
@@ -156,15 +166,18 @@ def health(now: float | None = None) -> dict:
     """Each product's freshness, as GET / answers it."""
     now = time.time() if now is None else now
     busy = in_use(now)
-    products = {}
-    for product in PRODUCTS:
+    fresh = {}
+    for product in products():
         record = weather_store.read(product.name)
         tried = weather_store.attempt(product.name)
-        age = None if record is None else round(now - record.fetched_at, 1)
+        # The age is from the copy's last confirmation, not its writing: a
+        # copy found unchanged is not written again (write_if_changed).
+        confirmed = weather_store.confirmed_at(product.name, record)
+        age = None if confirmed is None else round(now - confirmed, 1)
         servable = weather_store.servable(record, now)
-        failing = bool(tried and tried.get("error") and (record is None or tried["attempted"] >= record.fetched_at))
-        products[product.name] = {
-            "fetched_at": record.fetched_at if record else None,
+        failing = weather_store.failing(product.name, record)
+        fresh[product.name] = {
+            "fetched_at": confirmed,
             "age_s": age,
             "until": record.until if record else None,
             "servable": servable,
@@ -173,8 +186,8 @@ def health(now: float | None = None) -> dict:
             "every_s": product.every_s(busy),
             "stale": not servable or age is None or age > 3 * product.every_s(False),
         }
-    stale = any(p["stale"] for p in products.values())
-    return {"status": "stale" if stale else "ok", "in_use": busy, "products": products}
+    stale = any(p["stale"] for p in fresh.values())
+    return {"status": "stale" if stale else "ok", "in_use": busy, "products": fresh}
 
 
 class _Health(BaseHTTPRequestHandler):
@@ -196,7 +209,8 @@ class _Health(BaseHTTPRequestHandler):
 def main() -> None:
     from wingtip.config import get_settings as wingtip_settings
 
-    logging.basicConfig(level=wingtip_settings().log_level, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+    # One line a record, JSON in production (LOG_FORMAT, wingtip.log_lines).
+    log_lines.configure(wingtip_settings().log_level, wingtip_settings().log_format)
     # Traces with TRACING=1 (docs/LOCAL-DEV.md, "Tracing"); nothing otherwise.
     tracing.start("weather")
     settings = get_settings()

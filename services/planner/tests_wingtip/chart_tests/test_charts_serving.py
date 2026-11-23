@@ -1,10 +1,31 @@
 """The chart modules (wingtip.charts maps them): a cycle going over to a new pass, the published pointer and the publish."""
 
+import io
 import json
 
-from wingtip import chart_coverage, chart_cycle, chart_grid, chart_kinds, chart_publish, chart_render, chart_serving, chart_tiles, config
+from wingtip import (
+    chart_archives,
+    chart_coverage,
+    chart_cycle,
+    chart_grid,
+    chart_kinds,
+    chart_publish,
+    chart_render,
+    chart_serving,
+    chart_tiles,
+    config,
+)
 
 from .helpers import _Bucket
+
+
+def _png(n: int) -> bytes:
+    """A small palette PNG, its colour told by n."""
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (8, 8), (n, 255 - n, 7)).quantize(256).save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 def test_each_kind_goes_over_to_a_new_cycle_as_its_own_pass_finishes(tmp_path, monkeypatch):
@@ -53,7 +74,7 @@ def test_published_pointer_decides_the_served_cycle_in_the_cloud(tmp_path, monke
     calls = []
     monkeypatch.setattr(chart_serving.requests, "get", lambda url, **kw: calls.append(url) or Response())
     assert chart_serving.serving_cycle() == "09-03-2026"
-    assert calls == ["https://d123.cloudfront.net/tiles/serving.json"]
+    assert calls == ["https://d123.cloudfront.net/tiles/serving.json", "https://d123.cloudfront.net/tiles/next.json"]
 
     # Unreachable, the planner falls back to its own disk and the FAA's cycle.
     monkeypatch.setattr(chart_serving, "_serving_cache", {"value": None, "at": 0.0})
@@ -64,10 +85,11 @@ def test_published_pointer_decides_the_served_cycle_in_the_cloud(tmp_path, monke
 def test_publish_uploads_each_archive_once_and_points_serving_at_them(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(chart_grid, "TILE_SCALES", (1, 2))
+    monkeypatch.setattr(chart_archives, "_pack_workers", lambda: 0)
     root = tmp_path / "tiles" / "09-03-2026"
-    for key in ("sec/8/65/94.png", "sec/8/65/95.png", "sec/8/65/94@2x.png", "tac/11/522/757.png"):
+    for n, key in enumerate(("sec/8/65/94.png", "sec/8/65/95.png", "sec/8/65/94@2x.png", "tac/11/522/757.png")):
         (root / key).parent.mkdir(parents=True, exist_ok=True)
-        (root / key).write_bytes(b"\x89PNG" + key.encode())
+        (root / key).write_bytes(_png(40 * n))
     chart_serving.write_pyramid_status(
         "09-03-2026",
         {
@@ -92,9 +114,55 @@ def test_publish_uploads_each_archive_once_and_points_serving_at_them(tmp_path, 
     body, kind, cache = client.objects[("charts-bucket", f"tiles/09-03-2026/{names['1']}")]
     assert (kind, cache) == ("application/vnd.pmtiles", "public, max-age=2419200, immutable")
     archive = chart_tiles.tile_archive.Archive(lambda offset, length: body[offset : offset + length])
-    assert archive.get(8, 65, 95) == b"\x89PNGsec/8/65/95.png" and archive.get(8, 64, 95) is None
+    assert archive.header["tile_type"] == chart_tiles.tile_archive.TileType.WEBP
+    assert chart_tiles.tile_archive.media_type(archive.get(8, 65, 95)) == "image/webp" and archive.get(8, 64, 95) is None
+    assert chart_render.decode_rgba(archive.get(8, 65, 95))[0, 0, :3].tolist() == [40, 215, 7]
 
     # A second run uploads nothing new but refreshes the pointer.
     before = len(client.objects)
     assert chart_publish.publish("09-03-2026", "charts-bucket", prefix="tiles", client=client) == 0
     assert len(client.objects) == before
+
+
+def test_a_cycle_staged_ahead_is_served_from_0901z_on_its_date(tmp_path, monkeypatch):
+    # next.json (chart_publish, ahead) names the coming cycle: the map keeps
+    # serving.json's until the FAA's changeover, then takes it at once.
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(config, "CHART_TILES_URL", "https://d123.cloudfront.net/tiles")
+    pointers = {"serving.json": {"cycle": "09-03-2026"}, "next.json": {"cycle": "10-29-2026", "archives": {"sec": {"1": "sec-a"}}}}
+
+    class Response:
+        def __init__(self, body):
+            self.ok, self.body = body is not None, body
+
+        def json(self):
+            return self.body
+
+    monkeypatch.setattr(chart_serving.requests, "get", lambda url, **kw: Response(pointers.get(url.rsplit("/", 1)[-1])))
+    for in_force, served in ((False, "09-03-2026"), (True, "10-29-2026")):
+        monkeypatch.setattr(chart_serving, "_serving_cache", {"value": None, "at": 0.0})
+        monkeypatch.setattr(chart_cycle, "in_force", lambda cycle, now=None, on=in_force: on)
+        assert chart_serving.serving_cycle() == served
+    assert chart_serving.serving_pointer()["archives"] == {"sec": {"1": "sec-a"}}
+    # Promoted (serving.json moved on), a next.json left naming the same or an older cycle changes nothing.
+    pointers["serving.json"] = {"cycle": "10-29-2026"}
+    pointers["next.json"] = {"cycle": "09-03-2026"}
+    monkeypatch.setattr(chart_serving, "_serving_cache", {"value": None, "at": 0.0})
+    assert chart_serving.serving_cycle() == "10-29-2026"
+
+
+def test_publish_ahead_writes_next_json_and_promote_moves_serving_on(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(chart_publish.chart_archives, "pack_complete", lambda cycle: [])
+    (tmp_path / "tiles" / "10-29-2026").mkdir(parents=True)
+
+    client = _Bucket()
+    client.objects[("charts-bucket", "tiles/serving.json")] = (json.dumps({"cycle": "09-03-2026"}).encode(), "", "")
+    chart_publish.publish("10-29-2026", "charts-bucket", prefix="tiles", client=client, ahead=True)
+    assert chart_publish.bucket_cycle("charts-bucket", prefix="tiles", client=client) == "09-03-2026"  # untouched
+    assert chart_publish.bucket_cycle("charts-bucket", prefix="tiles", client=client, pointer=chart_publish.NEXT_POINTER) == "10-29-2026"
+    assert chart_publish.promote("charts-bucket", prefix="tiles", client=client) == "10-29-2026"
+    assert chart_publish.bucket_cycle("charts-bucket", prefix="tiles", client=client) == "10-29-2026"
+    # The cycle it replaced is kept, to copy back if the new one is bad.
+    previous = chart_publish.bucket_cycle("charts-bucket", prefix="tiles", client=client, pointer=chart_publish.PREVIOUS_POINTER)
+    assert previous == "09-03-2026"

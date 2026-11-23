@@ -7,6 +7,8 @@ import SwiftUI
 /// (`ready_to_fly`); this draws them.
 struct ReadyToFlyRows: View {
     @Environment(Navigator.self) private var nav
+    @Environment(KeepForAir.self) private var keepForAir
+    @Environment(Plan.self) private var plan
     @Environment(\.lookAccent) private var accent
     @Environment(ReadyToFly.self) private var model
     @State private var allOpen = false
@@ -53,7 +55,12 @@ struct ReadyToFlyRows: View {
         if let fix = item.fix {
             Button { run(fix) } label: {
                 HStack {
-                    Text(item.line).font(WingtipType.row)
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+                        Text(item.line).font(WingtipType.row)
+                        // Keep for the Air's fix says what the flight's
+                        // plates come to before it is tapped (KeepPlates).
+                        if Self.keeps(fix) { KeepPlatesLine(model: keepForAir).font(WingtipType.detail).foregroundStyle(.secondary) }
+                    }
                     Spacer(minLength: WingtipSpace.sm)
                     if model.fixing.contains(fix) { ProgressView() }
                 }
@@ -62,10 +69,14 @@ struct ReadyToFlyRows: View {
             }
             .tint(accent)
             .accessibilityHint(item.detail)
+            .modifier(SizingPlates(on: Self.keeps(fix), model: keepForAir, plan: plan))
         } else {
             Text(item.line).font(WingtipType.row).foregroundStyle(.secondary)
         }
     }
+
+    /// The fixes that run Keep for the Air (ReadyToFly.run).
+    static func keeps(_ fix: String) -> Bool { fix == "keep_for_air" || fix == "download_charts" }
 
     /// The fixes that ask the pilot open the pages that already ask it, in
     /// this card's stack with Back (Navigator.push): the Airplane page,
@@ -94,7 +105,7 @@ struct ReadyToFlySection: View {
         let keep = keepForAir
         let keeping = keep.sizeMb.map { "kept \($0)" } ?? keep.keeping.map { $0.kept >= $0.wanted ? "tiles" : "keeping" } ?? ""
         return [ReadyToFly.flightKey(plan), plan.airplaneName ?? "", "\(plan.altitudeFt ?? 0)", "\(plan.briefedAt?.timeIntervalSince1970 ?? 0)",
-                "\(plan.totals?.eteMin ?? 0)", keeping, "\(receiver.live)"].joined(separator: "|")
+                "\(plan.totals?.eteMin ?? 0)", keeping].joined(separator: "|")
     }
 
     var body: some View {
@@ -112,6 +123,9 @@ struct ReadyToFlySection: View {
                 try? await Task.sleep(for: .seconds(60))
             }
         }
+        // A receiver heard or lost: the facts again, not the NOTAMs. In the
+        // key, a heartbeat flapping fetched the route's NOTAMs each time.
+        .onChange(of: receiver.live) { Task { await model.refresh() } }
     }
 }
 
@@ -124,9 +138,13 @@ struct ReadyToFlyHost: ViewModifier {
     @Environment(OwnShip.self) private var ownShip
     @Environment(Verdict.self) private var verdict
     @Environment(Session.self) private var session
+    @Environment(KeepForAir.self) private var keepForAir
+    @Environment(Receiver.self) private var receiver
 
     func body(content: Content) -> some View {
-        content.task { ready.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session) }
+        content.task {
+            ready.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session, keepForAir: keepForAir, receiver: receiver)
+        }
     }
 }
 
@@ -181,11 +199,16 @@ struct NotamsSection: View {
                     DisclosureGroup("\(rest.count) more") { ForEach(rest, id: \.id) { notam in row(notam) } }
                 }
                 if ranked.notams.isEmpty {
-                    Text("None for the route").foregroundStyle(.secondary)
+                    // Never "no NOTAMs": none heard since the feed's day (NotamCoverage).
+                    Text(NotamCoverage.none(since: ranked.coverageSince, full: ranked.fullSet ?? false)).foregroundStyle(.secondary)
                 } else {
                     // Every one, searchable by place and kind (NotamListView).
                     NavigationLink("Show All \(ranked.notams.count)", value: SheetPage.notams(.route))
                 }
+                // Not the full set until the planner holds it (decision 0059), as the web's Brief says.
+                Text(NotamCoverage.line(since: ranked.coverageSince, full: ranked.fullSet ?? false))
+                    .font(WingtipType.note).foregroundStyle(ranked.fullSet == true ? .secondary : WingtipInk.caution)
+                    .accessibilityIdentifier("brief-notams-credit")
             }
             NotamWordsSection(ranked: ranked.notams, flight: plan.routed
                 ? WordsFigures.flight(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin) : nil)

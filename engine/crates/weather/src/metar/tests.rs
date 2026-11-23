@@ -49,7 +49,8 @@ fn a_us_report() {
 #[test]
 fn a_report_from_outside_the_us() {
     let m = parse("METAR SBVT 021400Z 05009KT 5000 BR SCT004 OVC013 25/24 Q1016").unwrap();
-    assert!((m.visibility_sm.unwrap() - 3.107).abs() < 0.001);
+    // 5,000 m is 3.107 sm: written 3, the whole mile at or below it.
+    assert_eq!(m.visibility_sm, Some(3.0));
     assert!((m.altimeter_inhg.unwrap() - 30.00).abs() < 0.005);
     assert_eq!(m.ceiling_ft(), Some(1300.0));
 }
@@ -59,4 +60,17 @@ fn nothing_from_a_line_that_is_no_report() {
     for bad in ["", "METAR", "METAR KDLH", "METAR KDLH 0213Z", "hello world 021355Z"] {
         assert!(parse(bad).is_none(), "{bad}");
     }
+}
+
+#[test]
+fn a_metric_visibility_is_the_step_below_never_above() {
+    // 1,200 m is 0.7456 sm: 11/16, not rounded up to 3/4 or 1.
+    assert_eq!(parse("METAR EGLL 021350Z 24005KT 1200 BR OVC002 08/08 Q1013").unwrap().visibility_sm, Some(11.0 / 16.0));
+    // 800 m is 0.497 sm: 7/16, under the half mile.
+    assert_eq!(metres_to_sm(800.0), 7.0 / 16.0);
+    // A figure already on a step stays on it.
+    assert_eq!(statute_miles_down(1.5), 1.5);
+    assert_eq!(statute_miles_down(0.0625), 0.0625);
+    assert_eq!(statute_miles_down(4.99), 4.0);
+    assert_eq!(metres_to_sm(9999.0), 6.0);
 }

@@ -146,7 +146,31 @@ test(
             for (const m of JSON.parse(probe.getAttribute(`data-${probe.dataset.glProbe}`) ?? "[]") as { x: number; y: number }[])
               marks.push({ x: map.left + m.x, y: map.top + m.y });
           }
-          const clear = (x: number, y: number) => marks.every((m) => Math.abs(m.x - x) > 34 || Math.abs(m.y - y) > 34);
+          // And clear of the route's own line, from C81 through its
+          // numbered checkpoints to Duluth: a line within a finger's reach
+          // takes the tap before an area under it (the map's tap ranks), and
+          // the click opened the Route Leg's card in place of the area's.
+          const route = document.querySelector<HTMLElement>("[data-route-marks]");
+          const points = (
+            JSON.parse(route?.getAttribute("data-route-marks") ?? "[]") as { kind: string; text: string; x: number; y: number }[]
+          )
+            .filter((m) => m.kind === "field" || m.kind === "checkpoint")
+            .map((m) => ({
+              at: m.kind === "checkpoint" ? Number(m.text) : m.text === "C81" ? 0 : Infinity,
+              x: map.left + m.x,
+              y: map.top + m.y,
+            }))
+            .sort((a, b) => a.at - b.at);
+          const offLine = (x: number, y: number) =>
+            points.every((a, i) => {
+              const b = points[i + 1];
+              if (!b) return true;
+              const dx = b.x - a.x,
+                dy = b.y - a.y;
+              const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+              return Math.hypot(x - (a.x + t * dx), y - (a.y + t * dy)) > 34;
+            });
+          const clear = (x: number, y: number) => offLine(x, y) && marks.every((m) => Math.abs(m.x - x) > 34 || Math.abs(m.y - y) > 34);
           for (let fy = 0.05; fy < 1; fy += 0.05) {
             for (let fx = 0.1; fx < 1; fx += 0.1) {
               const x = map.left + x0! + (x1! - x0!) * fx,

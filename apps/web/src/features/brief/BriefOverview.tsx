@@ -1,35 +1,38 @@
 import type { ReactNode } from "react";
+import { ListRow } from "../../components/GroupedList";
 import { DepartureWindowStrip } from "../departureWindow";
-import { NotamRankingSection } from "../notamRanking";
+import { NotamsRow } from "../notamRanking";
 import type { PanelTab } from "../plan";
 import BriefGlance from "./BriefGlance";
 import FlightWatch from "./FlightWatch";
 
+/** Preflight's section the NOTAMs' row opens (NotamRankingSection's title). */
+const NOTAMS_SECTION = "NOTAMs";
+
 /**
- * The Brief as it opens (BriefCard's overview): the verdict and its
- * lines first, at the owner's word ("Verdict first", 2026-11-08), then
- * when to go hour by hour (features/departureWindow), the four glance
- * cards (BriefGlance, the owner's D′), then the NOTAMs that matter,
- * ranked for the flight (features/notamRanking), and the flight watch.
- * Nothing of the cards moves: the rest is added round them.
+ * The Brief as it opens (BriefCard's overview), at the owner's pick of the
+ * Brief audit's option 2 (2026-11-21): the one grouped list (BriefGlance)
+ * with the findings first, what the briefing could not check said at their
+ * end rather than over them (PanelTabs' `notice` is left to the other
+ * pages), the Adverse Conditions, the parts of the flight, the NOTAMs
+ * that matter its last row, opening them ranked for the flight on
+ * Preflight (features/notamRanking); when to go hour by hour at its foot
+ * (features/departureWindow), and the flight watch under it.
  */
-export default function BriefOverview({ onOpen, notice }: { onOpen: (tab: PanelTab) => void; notice?: ReactNode }) {
+export default function BriefOverview({ onOpen }: { onOpen: (tab: PanelTab, section?: string) => void; notice?: ReactNode }) {
+  const openNotams = () => onOpen("preflight", NOTAMS_SECTION);
   return (
     <BriefGlance
       onOpen={onOpen}
-      // What the briefing could not check, under the verdict and its lines.
-      afterVerdict={
-        <>
-          {notice}
-          <DepartureWindowStrip />
-        </>
+      notams={
+        <NotamsRow
+          onOpen={openNotams}
+          // Its count comes with its chunk: the row is there from the first frame.
+          fallback={<ListRow title="NOTAMs" chevron onClick={openNotams} data-testid="brief-notams-row" />}
+        />
       }
-      after={
-        <>
-          <NotamRankingSection />
-          <FlightWatch />
-        </>
-      }
+      foot={<DepartureWindowStrip />}
+      after={<FlightWatch />}
     />
   );
 }

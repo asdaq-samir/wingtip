@@ -5,6 +5,7 @@ import {
   closeProfile,
   frontSheet,
   grabberTo,
+  mapStill,
   navLogSheet,
   openNavLog,
   openProfile,
@@ -112,6 +113,11 @@ for (const [how, start] of [
 }
 
 test("You opened again opens at half, not at the size it was put away at", async ({ page }) => {
+  // From 1180 wide on a touch screen (size.inspector; the desktop project's
+  // 1280 with this file's finger), You opens in the inspector at the map's
+  // right, the column's height with no grabber and no size to put it away
+  // at (decision 0058, the owner's "Yes do it all for iPad", 2026-11-21).
+  test.skip(page.viewportSize()!.width >= 1180, "a wide iPad's inspector holds its card at one size");
   await page.goto("/app/plan");
   await settle(page);
   await showPage(page, 0);
@@ -129,6 +135,16 @@ test("You opened again opens at half, not at the size it was put away at", async
 
 test.describe("by a pointer's drag", () => {
   test.use({ hasTouch: false });
+  // A phone's sheet: on the desktop project, and from 660 wide (size.regular), the cards
+  // ride the side panel, which keeps one height and does not swipe
+  // (CardStack's data-base-ui-swipe-ignore off a phone; rules.md's Detents,
+  // 92e217114), so there is no half to drag to.
+  test.beforeEach(({ page }, info) => {
+    test.skip(
+      info.project.name === "desktop" || page.viewportSize()!.width >= 660,
+      "a phone's detents; the owner, 2026-11-19, desktop cards keep one height",
+    );
+  });
   test("a swipe down closes You, a settings card, and parks an airport's card at the pill", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
@@ -205,6 +221,11 @@ test("the Map card's gear opens Settings on top of it, and its close goes back t
  *  opens it: by the chart's list of its marks (MapMarksList), the same
  *  select, which needs no WebGL to find where it is drawn. */
 async function otherField(page: Page, not: string) {
+  // The chart at rest first, as a pilot picks a field they can see: a
+  // place opened by its link comes up while the map is still flying there
+  // from where it opened, and a row read on the way was another by the
+  // time it was focused (KEED read over Kansas, KLWC focused at Waukegan).
+  await mapStill(page);
   const marks = page.getByRole("navigation", { name: "Airports on the map" }).getByRole("button");
   const field = marks.filter({ hasNotText: new RegExp(`^${not},`) }).first();
   await expect(field).toBeAttached({ timeout: slow(30_000) });
@@ -270,7 +291,7 @@ test("a field tapped on the chart with You open comes up once over it", async ({
 // gone with no close, and the map's buttons were thrown off the screen's top
 // and swept down to the sheet. Now it closes where it is, its own drawer.
 test("a kept card closes where it is, the map's buttons never off the screen", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's cards");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's cards");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await settled(sideDrawer(page));

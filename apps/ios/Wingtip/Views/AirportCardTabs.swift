@@ -114,7 +114,7 @@ struct AirportRunwaysTab: View {
             // The FAA's published pattern altitude, else 1,000 ft over the
             // field (AC 90-66C, 8.4), as the planner gives it.
             if let pattern = place.pattern, let altitude = pattern.altitudeFt {
-                CardRow(badge: RowBadge(systemImage: "arrow.triangle.2.circlepath", colour: Badge.runway), title: "Pattern altitude",
+                CardRow(badge: RowBadge(systemImage: "arrow.triangle.2.circlepath", colour: Badge.runway), title: Wording.patternAltitude,
                         detail: pattern.published == true ? "As the FAA publishes it" : "1,000 ft above the field: none published") {
                     Text(Format.altitude(altitude)).fontWeight(.semibold).accessibilityLabel(Format.spokenAltitude(altitude))
                 }

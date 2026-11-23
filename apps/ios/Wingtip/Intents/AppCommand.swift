@@ -11,7 +11,8 @@ enum AppCommand: Equatable, Sendable {
     /// The same route, then its Brief opened ("brief my flight to
     /// Oshkosh").
     case brief(ident: String)
-    /// A whole route, as a shared link carries one.
+    /// A whole route planned: a shared flight's Use This Plan, a saved
+    /// route from Siri, the demo flight; never a link straight from outside.
     case planRoute(dep: String, stops: [String], dest: String)
     /// Direct to the place said, from where the airplane is.
     case directTo(place: String)
@@ -43,6 +44,12 @@ enum AppCommand: Equatable, Sendable {
     /// A card a link names by its key (`tfr=`, `navaid=`): a TFR's or a
     /// VOR's, opened as a tap on it opens it.
     case card(SheetPage)
+    /// A document in the reader, at its place, as a link's `doc=` names
+    /// it (DocPlace): a cite, a bookmark or a page shared.
+    case document(DocPlace)
+    /// A PDF handed over from Files, the share sheet or a drop: added to
+    /// the pilot's own documents and opened (DocumentLibrary).
+    case addDocument(URL)
 }
 
 /// The root view's commands, handed down the views as SwiftUI hands down
@@ -66,7 +73,7 @@ extension EnvironmentValues {
 /// to the scene itself (TargetContentProvidingIntent, the root view's
 /// `onAppIntentExecution`, before `perform`), so the app is on the screen
 /// to do it; `perform` then only says what it did.
-protocol CommandIntent: AppIntent {
+nonisolated protocol CommandIntent: AppIntent {
     /// What the app does for the intent, nil for nothing; read once, on
     /// the main actor, as the app is opened.
     @MainActor func appCommand() -> AppCommand?

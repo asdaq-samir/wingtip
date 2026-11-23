@@ -29,16 +29,24 @@ function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
 
 function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Trigger.Props) {
   return (
-    <ComboboxPrimitive.Trigger data-slot="combobox-trigger" className={cn("[&_svg:not([class*='size-'])]:size-4", className)} {...props}>
+    <ComboboxPrimitive.Trigger
+      aria-label="Show the list"
+      data-slot="combobox-trigger"
+      className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
+      {...props}
+    >
       {children}
       <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
     </ComboboxPrimitive.Trigger>
   );
 }
 
+// The clear and the trigger are glyphs alone, so each carries a name a
+// screen reader says (WCAG 4.1.2); a caller's own aria-label wins.
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   return (
     <ComboboxPrimitive.Clear
+      aria-label="Clear"
       data-slot="combobox-clear"
       render={<InputGroupButton variant="ghost" size="icon-xs" />}
       className={cn(className)}
@@ -75,7 +83,7 @@ function ComboboxInput({
               variant="ghost"
               render={<ComboboxTrigger />}
               data-slot="input-group-button"
-              className="relative group-has-data-[slot=combobox-clear]/input-group:hidden after:absolute after:-inset-2.5 after:content-[''] data-pressed:bg-transparent"
+              className="relative group-has-data-[slot=combobox-clear]/input-group:hidden hit-2.5 data-pressed:bg-transparent"
               disabled={disabled}
             />
           )}

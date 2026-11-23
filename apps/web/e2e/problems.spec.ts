@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { clearTheRoute, settled as settledLocator, grabberTo, inSheet, openPanel, openRoute } from "./helpers";
+import { clearTheRoute, settled as settledLocator, grabberTo, inSheet, openPanel, openRoute, typeRoute } from "./helpers";
 
 /**
  * What a pilot meets when things go wrong, and the toasts that are left.
@@ -79,7 +79,7 @@ test("it offers a way out, the way out works, and the line goes with the problem
   await plannerDown(page);
   await page.goto(PLAN);
 
-  const retry = banner(page).getByRole("button", { name: "Try again" });
+  const retry = banner(page).getByRole("button", { name: "Try Again" });
   await expect(retry).toBeVisible({ timeout: 20000 });
   // The map's one banner (MapBanner): on the map buttons' glass at the
   // banner's corner, a row 44 tall at the least, its glyph, line and
@@ -152,7 +152,7 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await expect(line).toContainText("KZZZ", { timeout: 20000 });
   await expect(line.getByTestId("timeline-problem")).toHaveText("isn't an airport or waypoint we know");
   await expect(line.getByTestId("timeline-problem")).toHaveClass(/text-destructive/);
-  await openRoute(page);
+  await typeRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
   await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
@@ -181,9 +181,14 @@ test("an ident only a field abroad goes by is no destination: no distance, no wa
     "isn't an airport or waypoint we know",
     { timeout: 20000 },
   );
-  // No ways to suggest, so no button for them: the chips' count below is
-  // then no vacuous zero (they render only while the button is on).
-  await expect(page.getByTestId("routes-toggle")).toHaveCount(0);
+  // No ways to suggest, so Routes is greyed: the chips' count below
+  // is then no vacuous zero (they render only while it is on).
+  await page.getByTestId("share-route").click();
+  await expect(page.getByRole("menuitem").first()).toBeVisible();
+  // Routes stays in the bar, greyed and named why (the owner, 2026-11-22).
+  await expect(page.getByTestId("routes-toggle")).toBeDisabled();
+  await expect(page.getByTestId("routes-toggle")).toHaveAccessibleName("Routes, no route options");
+  await page.keyboard.press("Escape");
   await openRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KIGN isn't an airport or waypoint we know", { timeout: 20000 });
@@ -229,7 +234,7 @@ test("the line sits beside the map's buttons, level with them, one line tall, an
 
   const box = (await line.boundingBox())!;
   const controls = (await page.locator("[data-map-controls]").boundingBox())!;
-  if (page.viewportSize()!.width < 768) {
+  if (page.viewportSize()!.width < 660) {
     // A phone: at the top, the buttons riding on the sheet below it
     // (2026-10-26), clear of them.
     expect(box.y + box.height <= controls.y || box.x + box.width <= controls.x).toBe(true);
@@ -254,7 +259,7 @@ test("the panel all the way out goes over the line, and its grabber still lowers
   // sheet all the way out has its grabber at the top of the screen, where
   // a toast came in and a folded one stayed, and the sheet could not be
   // lowered while the problem lasted.
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   await plannerDown(page);
   await page.goto(PLAN);
   const line = banner(page).getByRole("status");
@@ -289,11 +294,20 @@ test("the progress line spans the screen and is centred on it", async ({ page })
   const box = (await first.boundingBox())!;
   const viewport = page.viewportSize()!;
 
-  const leftGap = box.x;
-  const rightGap = viewport.width - (box.x + box.width);
+  // Its room: the screen on a phone; from md up the map's beside the side
+  // panel, between the panel's edge and the map's buttons' glass card
+  // (AppToaster).
+  let [from, to] = [0, viewport.width];
+  if (viewport.width >= 768) {
+    const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
+    const buttons = (await page.locator("[data-map-controls] [data-map-group]").boundingBox())!;
+    [from, to] = [panel.x + panel.width, buttons.x];
+  }
+  const leftGap = box.x - from;
+  const rightGap = to - (box.x + box.width);
   expect(leftGap).toBeGreaterThanOrEqual(8); // a gutter, not edge to edge
   expect(Math.abs(leftGap - rightGap)).toBeLessThanOrEqual(2); // centred
-  if (viewport.width < 768) {
+  if (viewport.width < 660) {
     // A phone: the screen's width less a gutter either side, at its top
     // (the map's buttons ride on the sheet since 2026-10-26).
     expect(box.y).toBeLessThan(80);
@@ -304,8 +318,9 @@ test("the progress line spans the screen and is centred on it", async ({ page })
 test("a toast sits clear of the panel: at the top of a phone's screen, the bottom of a desktop's", async ({ page }) => {
   // On a phone the panel is a sheet up from the bottom of the screen,
   // and a toast anchored there covered it: it comes in from the top
-  // there, as an iOS banner does. From md up the panel is at the top,
-  // and the toast comes in from the bottom.
+  // there, as an iOS banner does. From md up the panel stands at the
+  // left the window's whole height, and the toast comes in from the
+  // bottom in the map's room beside it.
   await holdCourse(page);
   await page.goto(PLAN);
 
@@ -314,11 +329,12 @@ test("a toast sits clear of the panel: at the top of a phone's screen, the botto
   await settled(page, "[data-slot=toast]");
   const box = (await first.boundingBox())!;
   const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
-  if (page.viewportSize()!.width < 768) {
+  if (page.viewportSize()!.width < 660) {
     expect(box.y).toBeLessThan(60);
     expect(box.y + box.height).toBeLessThanOrEqual(panel.y);
   } else {
-    expect(box.y).toBeGreaterThanOrEqual(panel.y + panel.height);
+    expect(box.x).toBeGreaterThanOrEqual(panel.x + panel.width);
+    expect(box.y + box.height).toBeGreaterThan(page.viewportSize()!.height * 0.75);
   }
 });
 

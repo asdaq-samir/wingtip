@@ -11,9 +11,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from shapely.geometry import LineString
 
-from . import airspace, geo, notams, tfr, utc
+from . import airspace, geo_boxes, notams, tfr, utc
 from .engine import ask as engine
 from .terrain import DEFAULT_FAA_CACHE_DIR
 
@@ -46,8 +45,8 @@ def airspaces_on(path: list[tuple[float, float]]) -> list[str]:
     shp = airspace.ensure_class_airspace_shapefile(DEFAULT_FAA_CACHE_DIR)
     names: list[str] = []
     for start, end in zip(path, path[1:]):
-        line = LineString([(start[1], start[0]), (end[1], end[0])])
-        for polygon in airspace.load_controlled_airspace(shp, geo.corridor_bbox(start, end, buffer_nm=2.0)):
+        line = geo_boxes.line_across([start, end])
+        for polygon in airspace.load_controlled_airspace(shp, geo_boxes.corridor_box(start, end, buffer_nm=2.0)):
             name = (polygon.get("name") or "").strip()
             if name and name not in names and line.intersects(polygon["geometry"]):
                 names.append(name)

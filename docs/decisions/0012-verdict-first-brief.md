@@ -13,7 +13,7 @@ A verdict and at most three one-line actions come first, the Ask field sits stra
 
 ## Consequences
 
-A new brief section does not push the verdict down, and the actions stay at three or fewer.
+A new brief section does not push the verdict down, and the actions stay at three or fewer. On the web's Brief (the owner's pick of the Brief audit's option 2, 2026-11-21) nothing stands between the verdict and the findings: what could not be checked is one caution row at their end, the Adverse Conditions (at most three, AIM 7-1-5(b)(1)) come after them, and When to go is at the foot.
 
 ## Source
 

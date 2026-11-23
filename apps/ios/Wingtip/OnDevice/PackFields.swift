@@ -9,7 +9,7 @@ import Foundation
 /// then ranks by distance, or by reach where the airplane's glide is known,
 /// and says what it could not weigh. Nothing is measured here but by the
 /// engine.
-enum PackFields {
+nonisolated enum PackFields {
     /// What finds the fields in a box (FlightFigures.Pins): the packs, or a test's.
     typealias Pins = FlightFigures.Pins
 
@@ -88,7 +88,7 @@ extension Planner {
 /// reads the packs (airports_in_view, at most 300 fields a call, so each
 /// kept region is read in half-degree cells); the matching is the
 /// search's own, no aviation rule.
-enum PackSearch {
+nonisolated enum PackSearch {
     /// The cell each region is read in: small enough that no cell holds
     /// the engine's 300 fields a call, even round Los Angeles.
     static let cellDeg = 0.5
@@ -119,18 +119,18 @@ enum PackSearch {
     /// (KOSH, or OSH for KOSH), an ident starting with it, a name starting
     /// with it, then a name holding it; each with its use, the engine's,
     /// as the planner's search marks it.
-    static func search(_ q: String, in pins: [AirportPin], limit: Int = 12) -> [AirportSuggestion] {
+    static func search(_ q: String, in pins: [AirportPin], limit: Int = 12) throws -> [AirportSuggestion] {
         let typed = q.trimmingCharacters(in: .whitespaces).uppercased()
         guard typed.count >= 2 else { return [] }
-        func rank(_ pin: AirportPin) -> Int? {
+        func rank(_ pin: AirportPin) throws -> Int? {
             let ident = pin.ident.uppercased(), name = pin.name.uppercased()
-            if ident == typed || ident == "K" + typed { return 0 }
+            if try Engine.sameField(a: ident, b: typed) { return 0 }
             if ident.hasPrefix(typed) { return 1 }
             if name.hasPrefix(typed) { return 2 }
             if name.contains(typed) { return 3 }
             return nil
         }
-        return pins.compactMap { pin in rank(pin).map { ($0, pin) } }
+        return try pins.compactMap { pin in try rank(pin).map { ($0, pin) } }
             .sorted { ($0.0, $0.1.ident) < ($1.0, $1.1.ident) }
             .prefix(limit)
             .map { AirportSuggestion(ident: $0.1.ident, kind: $0.1.kind, name: $0.1.name,

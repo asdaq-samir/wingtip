@@ -262,3 +262,29 @@
 2026-11-18 POST /api/auth/device api path removed without deprecation -- the TV sign-in, deleted with the web's TV mode (f3a81945c); no phone calls it
 2026-11-18 POST /api/auth/device/approve api path removed without deprecation -- the same
 2026-11-18 POST /api/auth/device/token api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/weather api path removed without deprecation -- the Studio moved to its own repository (wingtip-studio, the feature review); only the web's developer page and the gateway's CrashDraftMail, gone with it, asked it, and no phone calls it
+2026-11-21 GET /api/studio/ntsb api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/notams api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/track api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/watched api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/ground api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts/{draft_id} api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts/{draft_id}/track api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/identity api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/dismiss api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/rendered api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts-to-notice api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/noticed api path removed without deprecation -- the same
+2026-11-21 GET /api/subscription api path removed without deprecation -- the subscription's leftovers, cut by the feature review; only the web's SubscriptionPanel, gone with it, asked it, and no phone calls it
+2026-11-21 POST /api/subscription/trial api path removed without deprecation -- the same
+2026-11-21 GET /api/auth/capabilities removed the required property `subscriptions` from the response with the `200` status -- the same; only the web read it
+2026-11-21 GET /api/me/export removed the required property `records/subscription` from the response with the `200` status -- the same; the export is a file for the pilot, read by no app
+2026-11-21 GET /api/me/export removed the required property `records/featureUses` from the response with the `200` status -- the same
+2026-11-23 POST /api/go-no-go the response property `loading/anyOf[subschema #1: Loading]/fuel_lb_per_gal` became nullable for the status `200` -- the airplane's handbook fuel weight may be left out, the engine then taking its fuel grade's standard weight (avgas 6, Jet A 6.8 lb a US gallon, FAA-H-8083-25 chapter 10; gonogo_balance); no released app; nothing in production
+2026-11-23 POST /api/go-no-go response property `loading/anyOf[subschema #1: Loading]/fuel_lb_per_gal` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same; no released app; nothing in production
+2026-11-23 GET /api/plan the response property `aircraft/anyOf[subschema #1: AircraftProfile]/loading/anyOf[subschema #1: Loading]/fuel_lb_per_gal` became nullable for the status `200` -- the airplane's handbook fuel weight may be left out, the engine then taking its fuel grade's standard weight (avgas 6, Jet A 6.8 lb a US gallon, FAA-H-8083-25 chapter 10; gonogo_balance); no released app; nothing in production
+2026-11-23 GET /api/plan response property `aircraft/anyOf[subschema #1: AircraftProfile]/loading/anyOf[subschema #1: Loading]/fuel_lb_per_gal` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same; no released app; nothing in production
+2026-11-23 POST /api/auth/apple/native added the new required request property `authorizationCode` -- Sign in with Apple sends its authorization code, which the gateway exchanges for the refresh token it revokes when an account is deleted (round2-security, V49); no released app; nothing in production
+2026-11-23 GET /api/me/export removed the required property `records/featureUses` from the response with the `401` status -- subscriptions dropped (V52), on the export's 401 response as on its 200; no released app; nothing in production
+2026-11-23 GET /api/me/export removed the required property `records/subscription` from the response with the `401` status -- the same; no released app; nothing in production

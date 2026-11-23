@@ -63,7 +63,6 @@ import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.RouteWorse
 import app.wingtipmaps.android.map.StationLayer
 import app.wingtipmaps.android.map.StationMarks
-import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.map.WeatherAge
 import app.wingtipmaps.android.map.WeatherAgeChip
 import app.wingtipmaps.android.map.WeatherLoopBar
@@ -131,14 +130,11 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val flight: FlightModel = hiltViewModel()
     val traffic = flight.traffic
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
-    val planes by traffic.planes.collectAsStateWithLifecycle()
-    val marks by traffic.marks.collectAsStateWithLifecycle()
-    val heardAtMs by traffic.heardAtMs.collectAsStateWithLifecycle()
     val tracked by flight.tracked.collectAsStateWithLifecycle()
-    val targets = remember(planes, marks, heardAtMs) {
-        val heard = heardAtMs ?: AppClock.nowMs()
-        planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
-    }
+    // The airplanes to draw, read only in ChartMap's lambda, as the fix is:
+    // read here, each answer (every 5 s, each second with a receiver) drew
+    // the whole pane again, its field actions, bars and emergency line.
+    val targets = traffic.targets.collectAsStateWithLifecycle(emptyList())
     // The cockpit's ADS-B receiver, listened for from the first map on
     // (Receiver: once a second while its setting is Auto).
     LaunchedEffect(Unit) { Receiver.of(context).start() }
@@ -240,7 +236,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             layers = layers.duringEmergency(emergencyFrom != null),
             terminal = terminal,
             weather = weather,
-            traffic = if (trafficOn) targets else emptyList(),
+            traffic = { if (trafficOn) targets.value else emptyList() },
             tracked = tracked,
             night = night,
             bottomInset = with(density) { covered.roundToPx() },

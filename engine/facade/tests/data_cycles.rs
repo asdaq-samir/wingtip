@@ -22,6 +22,12 @@ fn each_edition_is_in_force_for_its_own_cycle_only() {
         for key in ["state", "expires", "current", "current_ident", "next", "behind"] {
             assert_eq!(answer[key], c["expected"][key], "{key} of {}: {answer}", c["why"]);
         }
+        // The boundary cases, asked at a minute, say the instants too.
+        for key in ["next_at", "expires_at"] {
+            if let Some(want) = c["expected"].get(key) {
+                assert_eq!(&answer[key], want, "{key} of {}: {answer}", c["why"]);
+            }
+        }
     }
 }
 
@@ -31,6 +37,10 @@ fn a_day_or_kind_that_is_not_one_is_refused_in_words() {
         json!({ "kind": "weekly", "on": "2026-11-06" }),
         json!({ "kind": "airac", "on": "2026-02-30" }),
         json!({ "kind": "airac", "on": "2026-11-06", "effective": "29 Oct 2026" }),
+        // A time with an offset other than UTC is no time here: read as
+        // UTC it would move the 0901Z change by hours.
+        json!({ "kind": "airac", "on": "2026-11-26T04:01:00-05:00" }),
+        json!({ "kind": "airac", "on": "2026-11-26T25:00:00Z" }),
     ] {
         let err = call("data_cycle", &input.to_string()).unwrap_err();
         assert!(err.starts_with("data_cycle:"), "{err}");

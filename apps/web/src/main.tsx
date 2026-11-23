@@ -4,7 +4,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { NuqsAdapter, enableHistorySync } from "nuqs/adapters/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { chartQuery, courseQuery, flightsQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
+import { chartQuery, courseQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
+import { flightsQuery } from "./lib/queryClientRecords";
 import { api } from "./lib/api/client";
 import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
@@ -28,6 +29,10 @@ import { prefetchRouteBox } from "./features/route/routeBoxChunk";
 import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
 import "./index.css";
+// Inter, the text face, here rather than in index.css, which the
+// connector's live view shares (claude-view.html): its host's sandbox
+// loads no font of its own, and the view's one file would carry them all.
+import "@fontsource-variable/inter";
 // Barlow, the face of both looks (lib/brand), in the first stylesheet
 // rather than fetched once the app has drawn: drawn first in the system's
 // face and swapped, the tabs' and every other word shrank as the page
@@ -123,7 +128,7 @@ startFresh();
 // Each page in its own boundary (components/PageError): a part that could
 // not be drawn, most often a chunk the phone could not fetch, says which it
 // was in the map's place.
-const page = (mode: "pilot" | "dev" | "studio") => (
+const page = (mode: "pilot" | "dev") => (
   <PageErrorBoundary>
     <MapPage mode={mode} />
   </PageErrorBoundary>
@@ -143,8 +148,6 @@ const routes = (
         CPU, cold). The training workspace inside it stays its own chunk. */}
       <Route path="plan" element={page("pilot")} />
       <Route path="dev" element={page("dev")} />
-      {/* The Studio (features/studio): replays of real flights, the developer's for now. */}
-      <Route path="studio" element={page("studio")} />
       {/* The old labeling address, kept working with its route: its query
         string carried to /dev (the address as the browser has it as the
         route is drawn). */}
@@ -210,7 +213,11 @@ const prefetchCourse = () => {
   if (routeOf(openingDep, openingDest, openingStops)) {
     // Quiet: if the planner is down, the page's own course query says so
     // once it mounts and asks again -- under the page's rule, not this one.
-    void queryClient.prefetchQuery({ ...courseQuery(openingDep!, openingDest!, openingStops), meta: { silent: true } });
+    // With the chart's cycle in its key, as the page asks it (usePlan): on a
+    // first visit, none kept, the chart first (about a millisecond), where
+    // the course was asked without the cycle and again with it.
+    const ask = () => void queryClient.prefetchQuery({ ...courseQuery(openingDep!, openingDest!, openingStops), meta: { silent: true } });
+    void queryClient.ensureQueryData({ ...chartQuery, meta: { silent: true } }).then(ask, ask);
   }
 };
 // A stop's form is the engine's (lib/identSchema stopOf), so a route with

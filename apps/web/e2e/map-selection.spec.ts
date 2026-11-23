@@ -63,9 +63,13 @@ test("a new pick puts the last card away: a field tapped closes a VOR's card and
   await expect.poll(() => rings(page), { timeout: slow(10000) }).toBeGreaterThan(0);
   // A field drawn on the open chart above the card.
   await mapStill(page);
-  const sheetTop = (await openCard(page).boundingBox())!.y;
-  const width = page.viewportSize()!.width;
-  const open = async () => (await airportMarks(page)).find((m) => m.y > 90 && m.y < sheetTop - 30 && m.x > 30 && m.x < width - 70) ?? null;
+  // Clear of the card: above a phone's, beside a desktop's side panel,
+  // which runs the window's height.
+  const card = (await openCard(page).boundingBox())!;
+  const { width, height } = page.viewportSize()!;
+  const clear = (m: { x: number; y: number }) =>
+    m.y > 90 && m.x > 30 && m.x < width - 70 && (m.y < card.y - 30 || (m.x > card.x + card.width + 30 && m.y < height - 30));
+  const open = async () => (await airportMarks(page)).find(clear) ?? null;
   await expect.poll(open, { timeout: slow(20000) }).not.toBeNull();
   const field = (await open())!;
   await page.mouse.click(field.x, field.y);

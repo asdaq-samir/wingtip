@@ -59,4 +59,22 @@ describe("the route's Undo", () => {
     unmount();
     expect(shown.toasts.size).toBe(0);
   });
+
+  it("undoes from a keyboard's Cmd-Z or Ctrl-Z where a control in a list stops the key", () => {
+    vi.useFakeTimers();
+    const set = vi.fn();
+    const { rerender } = renderHook(({ address }) => usePlanHistory(address, set), {
+      initialProps: { address: loadAddress("dep=C81&dest=KDLH&tanks=C81:20") },
+    });
+    vi.advanceTimersByTime(SETTLE_MS + 100);
+    rerender({ address: loadAddress("dep=C81&dest=KDLH&tanks=C81:60") });
+    // A row's button whose keyboard handler stops every key, as React Aria's do.
+    const button = document.createElement("button");
+    button.addEventListener("keydown", (event) => event.stopPropagation());
+    document.body.append(button);
+    act(() => void button.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true })));
+    button.remove();
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(set.mock.calls[0]![0]).toMatchObject({ tanks: "C81:20" });
+  });
 });

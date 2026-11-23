@@ -1,5 +1,5 @@
 """The unit conversions more than one module makes, in one place: the planner,
-the weather service, the jobs and the Studio's routes all take them from here.
+the weather service and the jobs all take them from here.
 
 Standard library only, so a module that keeps its imports light (wingtip.weather
 stays free of the terrain and chart data, wingtip.glmp of everything but its

@@ -35,7 +35,7 @@ import time
 
 import numpy as np
 
-from . import geo, utc, weather_store
+from . import geo, geo_boxes, utc, weather_store
 from .engine import ask as _ask
 from .weather_asks import below_vfr_minimums as below_vfr_minimums, forecast_hour as forecast_hour, temperature_at as temperature_at
 from .weather_asks import temperature_at_altitude as temperature_at_altitude, temperatures_aloft as temperatures_aloft
@@ -285,9 +285,9 @@ def ceiling_visibility_along_route(
     start, end = window if window else (time.time(), time.time())
     # Only the stations in the corridor's box are handed over, so the
     # national set is not written out for every leg; the engine holds them
-    # to the same box.
-    s, w, n, e = geo.corridor_bbox(route_start, route_end, corridor_buffer_nm)
-    near = [t for t in _dataset("tafs") if s <= t["lat"] <= n and w <= t["lon"] <= e]
+    # to the same box, the short way round 180 (geo_boxes: Adak to Shemya).
+    box = geo_boxes.corridor_box(route_start, route_end, corridor_buffer_nm)
+    near = [t for t in _dataset("tafs") if geo_boxes.in_box(box, t["lat"], t["lon"])]
     return _ask(
         "tafs_along_route",
         tafs=near,
@@ -320,15 +320,28 @@ def tafs_over(windows: dict) -> dict:
 # --- SIGMET hazards ---
 
 
+def advisories() -> list:
+    """The SIGMETs (the combined SIGMET file, "airsigmets") and Alaska's
+    AIRMETs ("airmets", the data API's: app.aviationweather), which the
+    store keeps apart, each fetched on its own. The AIRMETs left out where
+    none can be had, which the Status page says (weather_status); the
+    SIGMETs' WeatherServiceError raised as before."""
+    sigmets = _dataset("airsigmets")
+    try:
+        return [*sigmets, *_dataset("airmets")]
+    except WeatherServiceError:
+        return sigmets
+
+
 def hazards_along_route(route_start: tuple, route_end: tuple, corridor_buffer_nm: float = 25.0) -> list:
-    """The SIGMETs in force now whose area the route line crosses: the
-    engine's (sigmets_along_route). CONUS AIRMETs gave way to G-AIRMETs in
-    January 2025 (gairmet_snapshots_along_route). Each keeps its valid
+    """The SIGMETs and Alaska's AIRMETs in force now whose area the route
+    line crosses: the engine's (sigmets_along_route). CONUS AIRMETs gave
+    way to G-AIRMETs in January 2025 (gairmet_snapshots_along_route). Each keeps its valid
     times, issue and area ("coords", [[lat, lon]]), for the briefing to say
     where and when the flight meets it."""
     return _ask(
         "sigmets_along_route",
-        advisories=_dataset("airsigmets"),
+        advisories=advisories(),
         **{"from": list(route_start), "to": list(route_end)},
         corridor_nm=corridor_buffer_nm,
         now=time.time(),

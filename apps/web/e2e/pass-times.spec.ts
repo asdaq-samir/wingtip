@@ -76,7 +76,7 @@ test("a TFR in force when the flight gets there is flagged, one that starts late
 
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   // Counted on FPL's Brief button (FplTabBar), the Preflight marked for
   // it, and the flag on its section inside.
   await expect(sideDrawer(page).getByTestId("route-brief-count")).toBeVisible();

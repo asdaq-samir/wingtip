@@ -12,10 +12,16 @@ struct AirplaneHost: ViewModifier {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     @Environment(FigureOffer.self) private var figureOffer
+    @Environment(Tracking.self) private var tracking
 
     func body(content: Content) -> some View {
         content
             .task { await airplanes.loadBooks() }
+            // The pilot's own N-numbers, whose watches go on while Other
+            // Airplanes is off (Tracking.ownTails).
+            .onChange(of: airplanes.records.map(\.tailNumber) + [plan.tail].compactMap { $0 }, initial: true) { _, tails in
+                tracking.ownTails = tails
+            }
             .task(id: session.signedIn) {
                 await airplanes.loadRecords(signedIn: session.signedIn)
                 plan.took(records: airplanes.records)
@@ -46,7 +52,7 @@ struct AirplaneFigureAlerts: ViewModifier {
         let offered = offer.offered
         content
             .alert(Self.title(offered), isPresented: Binding(get: { active && !offer.offered.isEmpty }, set: { if !$0 { offer.offered = [:] } })) {
-                Button("Save to Account") { Task { await keep() } }
+                Button(Wording.saveToAccount) { Task { await keep() } }
                 Button("Keep on This iPhone", role: .cancel) { offer.offered = [:] }
             } message: {
                 Text("You set figures for \(offered.keys.sorted().joined(separator: ", ")) while signed out. Save them with your airplanes?")
@@ -84,7 +90,7 @@ struct AirplaneFigureAlerts: ViewModifier {
                 if case .device(let why) = kept { failed.append(why ?? tail) } else { OwnFigureStore.forget(tail) }
                 plan.took(saved, for: tail)
             } catch {
-                failed.append("\(tail): \(error.localizedDescription)")
+                failed.append(Problems.say("\(tail) could not be saved", error))
             }
         }
         if !failed.isEmpty { offer.problem = failed.joined(separator: "\n") }

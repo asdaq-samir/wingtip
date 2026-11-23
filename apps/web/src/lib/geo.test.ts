@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import geodesic from "./fixtures/geodesic.json";
-import { deg, flatBearingDeg, flatDeg, flatDeg2, flatNm, lonScale, M_PER_DEG, normalizeDeg, rad, geoLoaded } from "./geo";
+import {
+  deg,
+  flatBearingDeg,
+  flatDeg,
+  flatDeg2,
+  flatNm,
+  lonBounds,
+  lonNear,
+  lonScale,
+  M_PER_DEG,
+  normalizeDeg,
+  rad,
+  geoLoaded,
+  unwrapLine,
+} from "./geo";
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
 const { bearingDeg, bestStopIndex, destination, distanceNm, legsNm } = await geoLoaded;
@@ -100,5 +114,25 @@ describe("the flat sums", () => {
     expect(flatBearingDeg(0, 1)).toBe(90);
     expect(flatBearingDeg(-1, 0)).toBe(180);
     expect(flatBearingDeg(0, -1)).toBe(270);
+  });
+});
+
+describe("a line across the antimeridian", () => {
+  // Adak (176.6 W) to Shemya (174.1 E): the short way, west past -180.
+  it("writes each longitude near the one before", () => {
+    expect(lonNear(174.1136, -176.646)).toBeCloseTo(-185.8864, 9);
+    expect(lonNear(-88.07, -92.19)).toBeCloseTo(-88.07, 9);
+    const line = unwrapLine([
+      [51.878, -176.646],
+      [52.3, 179.5],
+      [52.7123, 174.1136],
+    ]);
+    expect(line.map(([, lon]) => lon)).toEqual([-176.646, expect.closeTo(-180.5, 9), expect.closeTo(-185.8864, 9)]);
+  });
+
+  it("boxes the route, not the world", () => {
+    const [west, east] = lonBounds([-176.646, 174.1136]);
+    expect(east - west).toBeCloseTo(9.24, 2);
+    expect(lonBounds([-88.07, -92.19])).toEqual([-92.19, -88.07]);
   });
 });

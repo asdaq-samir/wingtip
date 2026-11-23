@@ -1,8 +1,8 @@
 import Evaluations
 import Foundation
 import FoundationModels
+import Testing
 @testable import Wingtip
-import XCTest
 
 /// The on-device AI scored on the shared aviation fixtures with Apple's
 /// Evaluations framework (Xcode 27, WWDC26 "Meet the Evaluations
@@ -10,10 +10,10 @@ import XCTest
 /// ranking and reasons) and a clearance said back for the engine's reader
 /// (clearances.json, the recognizer's words and the engine's reading).
 /// Each runs Apple's on-device model where the simulator or the phone has
-/// it, and is skipped where it does not; what each scores is what the
+/// it, and returns early where it does not; what each scores is what the
 /// app's rules promise: no figure of the model's own, the matter named,
 /// and the engine reading the same clearance from the model's words.
-final class AIEvaluationsTests: XCTestCase {
+struct AIEvaluationsTests {
     /// The share of samples each metric must pass, at the least. A figure
     /// of the model's own is a safety defect, so every sample must keep to
     /// the figures. The rest are quality. On a phone they are held where
@@ -26,41 +26,47 @@ final class AIEvaluationsTests: XCTestCase {
     static let floor = EvalBar.quality(device: 0.8, simulator: 0.7)
     static let namesFloor = EvalBar.quality(device: 0.8, simulator: 0.5)
 
-    func testTheNotamsInWordsKeepToTheNotams() async throws {
-        try await EvalBar.modelOrSkip()
+    @Test func theNotamsInWordsKeepToTheNotams() async throws {
+        if let why = await EvalBar.modelUnavailableWhy() {
+            print("SKIPPED \(Self.self).\(#function): \(why)")
+            return
+        }
         let evaluation = NotamWordsEvaluation(samples: try EvalBar.asked(try NotamWordsEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
-        XCTAssertEqual(result.aggregateValue(.mean(of: NotamWordsEvaluation.noInvented)), 1, result.groupedSummary)
-        XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: NotamWordsEvaluation.namesIt)), Self.namesFloor, result.groupedSummary)
+        #expect(result.aggregateValue(.mean(of: NotamWordsEvaluation.noInvented)) == 1, "\(result.groupedSummary)")
+        #expect(result.aggregateValue(.mean(of: NotamWordsEvaluation.namesIt)) >= Self.namesFloor, "\(result.groupedSummary)")
     }
 
-    func testAClearanceSaidBackReadsTheSame() async throws {
-        try await EvalBar.modelOrSkip()
+    @Test func aClearanceSaidBackReadsTheSame() async throws {
+        if let why = await EvalBar.modelUnavailableWhy() {
+            print("SKIPPED \(Self.self).\(#function): \(why)")
+            return
+        }
         let evaluation = ClearanceSaidEvaluation(samples: try EvalBar.asked(try ClearanceSaidEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
-        XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: ClearanceSaidEvaluation.sameReading)), Self.floor, result.groupedSummary)
+        #expect(result.aggregateValue(.mean(of: ClearanceSaidEvaluation.sameReading)) >= Self.floor, "\(result.groupedSummary)")
     }
 
     /// The fixtures' own checks, run everywhere, with or without a model:
     /// the samples are built and the metrics judge known answers right.
-    func testTheEvaluationsJudgeKnownAnswers() throws {
+    @Test func theEvaluationsJudgeKnownAnswers() throws {
         let samples = try NotamWordsEvaluation.samples()
-        XCTAssertTrue(samples.contains { $0.expected?.contains("runway") == true })
-        let runway = try XCTUnwrap(samples.first { $0.expected?.contains("runway") == true })
-        XCTAssertTrue(NotamWordsEvaluation.names("Runway 18/36 at KOSH is closed while you are there.", runway))
-        XCTAssertTrue(NotamWordsEvaluation.inventsNothing("Runway 18/36 at KOSH is closed.", runway))
-        XCTAssertFalse(NotamWordsEvaluation.inventsNothing("Runway 18/36 is closed for 45 minutes.", runway))
+        #expect(samples.contains { $0.expected?.contains("runway") == true })
+        let runway = try #require(samples.first { $0.expected?.contains("runway") == true })
+        #expect(NotamWordsEvaluation.names("Runway 18/36 at KOSH is closed while you are there.", runway))
+        #expect(NotamWordsEvaluation.inventsNothing("Runway 18/36 at KOSH is closed.", runway))
+        #expect(!NotamWordsEvaluation.inventsNothing("Runway 18/36 is closed for 45 minutes.", runway))
         // Two samples are too few however often they are asked; a set is
         // asked over to the simulator's count, each sample alike.
-        XCTAssertThrowsError(try EvalBar.asked(Array(samples.prefix(2))))
+        #expect(throws: EvalBar.TooFewSamples.self) { try EvalBar.asked(Array(samples.prefix(2))) }
         let asked = try EvalBar.asked(samples)
-        XCTAssertGreaterThanOrEqual(asked.count, EvalBar.onSimulator ? EvalBar.simulatorSamples : samples.count)
-        XCTAssertEqual(asked.count % samples.count, 0)
+        #expect(asked.count >= (EvalBar.onSimulator ? EvalBar.simulatorSamples : samples.count))
+        #expect(asked.count % samples.count == 0)
         let clearances = try ClearanceSaidEvaluation.samples()
-        let first = try XCTUnwrap(clearances.first)
-        XCTAssertEqual(ClearanceSaidEvaluation.reading(of: first.input), first.expected)
+        let first = try #require(clearances.first)
+        #expect(ClearanceSaidEvaluation.reading(of: first.input) == first.expected)
     }
 }
 
@@ -79,7 +85,7 @@ final class AIEvaluationsTests: XCTestCase {
 /// safety bar, no figure of the model's own, is 1 everywhere, whatever the
 /// sample count. A run with fewer than `leastSamples` fails rather than
 /// passing on nothing.
-enum EvalBar {
+nonisolated enum EvalBar {
     static var onSimulator: Bool {
         #if targetEnvironment(simulator)
         true
@@ -88,18 +94,21 @@ enum EvalBar {
         #endif
     }
 
-    /// Skipped where the model is said to be unavailable, and also where it
-    /// is said to be available but cannot answer: GitHub's macOS runner's
-    /// simulator reports `.available` yet holds none of the model's assets
-    /// (UnifiedAssetFramework 5000, ModelManagerError 1026, CI runs
-    /// 43517308483 and 43547550743), so every sample came back empty and
-    /// scored 0.
-    static func modelOrSkip() async throws {
-        if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
+    /// Why the evaluation cannot run here, or nil where it can: the model
+    /// is said to be unavailable, or is said to be available but cannot
+    /// answer. GitHub's macOS runner's simulator reports `.available` yet
+    /// holds none of the model's assets (UnifiedAssetFramework 5000,
+    /// ModelManagerError 1026, CI runs 43517308483 and 43547550743), so
+    /// every sample came back empty and scored 0. Swift Testing has no
+    /// skip that waits on an async check, so a test that gets a reason
+    /// prints it and returns early.
+    static func modelUnavailableWhy() async -> String? {
+        if let why = OnDeviceWords.unavailableWhy { return "No on-device model here: \(why)" }
         do {
             _ = try await LanguageModelSession().respond(to: "Say OK.")
+            return nil
         } catch {
-            throw XCTSkip("The on-device model cannot answer here: \(error.localizedDescription)")
+            return "The on-device model cannot answer here: \(error.localizedDescription)"
         }
     }
 
@@ -142,7 +151,7 @@ struct TextSample: SampleProtocol {
 }
 
 /// The fixtures, as the test bundle carries them (project.yml).
-enum EvalFixtures {
+nonisolated enum EvalFixtures {
     private final class Bundled {}
 
     static func load(_ name: String) throws -> [String: Any] {

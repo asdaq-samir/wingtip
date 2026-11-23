@@ -26,7 +26,7 @@ final class Session {
         } catch {
             // Offline, or the gateway down: the last answer stands, and
             // the chart is still the pilot's from its cache.
-            problem = error.localizedDescription
+            problem = Problems.words("Who is signed in could not be checked", error)
             Log.app.notice("who is signed in could not be asked: \(error.localizedDescription, privacy: .public)")
         }
         loaded = true
@@ -50,13 +50,13 @@ final class Session {
         SHA256.hash(data: Data(nonce.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
-    func signInWithApple(identityToken: String, nonce: String?) async {
+    func signInWithApple(identityToken: String, authorizationCode: String?, nonce: String?) async {
         defer { Task { await prepareAppleNonce() } }
         do {
-            try await Gateway.signInWithApple(identityToken: identityToken, nonce: nonce)
+            try await Gateway.signInWithApple(identityToken: identityToken, authorizationCode: authorizationCode, nonce: nonce)
             await refresh()
         } catch {
-            problem = "Apple's sign-in was not accepted: \(error.localizedDescription)"
+            problem = Problems.words("Apple's sign-in could not be accepted", error)
             Log.app.error("Sign in with Apple refused: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -67,7 +67,7 @@ final class Session {
             problem = nil
             return true
         } catch {
-            problem = "The link could not be sent: \(error.localizedDescription)"
+            problem = Problems.say("The link could not be sent", error)
             return false
         }
     }
@@ -134,7 +134,7 @@ final class Session {
             // Said only where who is signed in could be asked again.
             signedInByLink = problem == nil ? pilot?.email : nil
         } catch {
-            problem = "The sign-in link did not work: \(error.localizedDescription)"
+            problem = Problems.words("The sign-in link could not be used", error)
             Log.app.error("the sign-in link was refused: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -150,16 +150,23 @@ final class Session {
         pilot = nil
         Session.forgetPilot()
         (flight?.tracking ?? Tracking()).forgetFavorites()
-        WidgetFeed.shared.forgetPilot()
         // The session's cookies too: with no signal the gateway's logout
         // never ran, and the next person would still be signed in.
+        forgetThisDevice()
+    }
+
+    /// Signing out and deleting the account alike: the cookies, the path
+    /// flown, the recorder's track, the cached answers and the widgets'
+    /// copy of the pilot's, gone from this iPhone.
+    private func forgetThisDevice() {
         Session.forgetCookies()
         Session.forgetDevice(trail: flight?.ownShip.trail, recorder: flight?.ownShip.recorder)
+        WidgetFeed.shared.forgetPilot()
     }
 
     /// What this iPhone recorded or kept of the pilot outside the settings:
-    /// the path flown (OwnTrail) and the flight recorder's track, their
-    /// files deleted, and the gateway's and planner's answers kept in the
+    /// the path flown (OwnTrail), the flight recorder's track and the
+    /// pilot's marks on charts (PlateMarkup) and the scratchpad's pages, their files deleted, and the gateway's and planner's answers kept in the
     /// session's cache (the account, the logbook, saved flights). Signing
     /// out and deleting the account both (the store audit's P7). The trail
     /// and the recorder are the flight's (OwnShip); with none in hand their
@@ -168,6 +175,10 @@ final class Session {
                              cache: URLCache? = Gateway.session.configuration.urlCache) {
         (trail ?? OwnTrail()).erase()
         (recorder ?? FlightRecorder()).erase()
+        // The pilot's own marks on the charts (PlateMarkup).
+        PlateMarkup.forgetAll()
+        // The scratchpad's pages (ScratchStore).
+        ScratchStore.forgetAll()
         cache?.removeAllCachedResponses()
     }
 
@@ -203,9 +214,7 @@ final class Session {
         Kept.forget()
         KeptForAir.forgetPilotOwn()
         (flight?.tracking ?? Tracking()).erase()
-        Session.forgetCookies()
-        Session.forgetDevice(trail: flight?.ownShip.trail, recorder: flight?.ownShip.recorder)
-        WidgetFeed.shared.forgetPilot()
+        forgetThisDevice()
         pilot = nil
     }
 

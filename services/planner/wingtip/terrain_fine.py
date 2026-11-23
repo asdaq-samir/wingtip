@@ -53,6 +53,7 @@ import numpy as np
 import requests
 
 from . import elevation, faa_data, geo, ground_grid, outside
+from .geo_boxes import split_box
 from .atomic import atomic_path
 from .config import REQUEST_HEADERS
 from .engine import ask as engine
@@ -98,10 +99,12 @@ def airport_tiles(points: list[tuple[float, float]], radius_nm: float = AIRPORT_
     the nearest point of each tile in a point's box measured along the
     great circle (geo.distance_nm)."""
     found: set[tuple[int, int]] = set()
-    for lat, lon in points:
-        south, west, north, east = geo.box_around(lat, lon, radius_nm)
+    last = 2**FINE_ZOOM - 1
+    # Each box's one or two halves either side of 180 (geo_boxes), so a
+    # point by it (Shemya) asks no tile past the grid's edge.
+    for lat, lon, (south, west, north, east) in ((la, lo, h) for la, lo in points for h in split_box(geo.box_around(la, lo, radius_nm))):
         (x0, x1), (y1, y0) = _tile_of([south, north], [west, east])
-        for x in range(int(x0), int(x1) + 1):
+        for x in range(int(x0), min(int(x1), last) + 1):
             for y in range(int(y0), int(y1) + 1):
                 south, west, north, east = _tile_bounds(x, y)
                 near_lat = min(max(lat, south), north)

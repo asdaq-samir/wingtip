@@ -1,0 +1,175 @@
+import { lazy, Suspense, useCallback, useState } from "react";
+import { Bookmark, BookmarkCheck, ChevronDown, ChevronUp, ListTree, Moon, PencilLine, Share } from "lucide-react";
+import { cn } from "cn";
+import FullScreenViewer from "../../components/FullScreenViewer";
+import IconButton from "../../components/IconButton";
+import { SearchField } from "../../components/PanelCapsule";
+import { useIsMobile } from "../../hooks/use-mobile";
+import { TEXT } from "../../lib/text";
+import type { DocPlace } from "./docPlace";
+import type { OutlineRow } from "./pdfPlaces";
+import { MarkupBar } from "./MarkupBar";
+import type { Find, Goto } from "./readerBody";
+import { ReaderContents } from "./ReaderContents";
+import TextBody from "./TextBody";
+import { useMarkup } from "./useMarkup";
+import { useReader } from "./useReader";
+
+// pdf.js and its viewer, half a megabyte, fetched with the first PDF opened.
+const PdfBody = lazy(() => import("./PdfBody"));
+
+/**
+ * A document full screen, as the FAA's charts open (FullScreenViewer):
+ * its title and close on top, then a search of its text and the reader's
+ * four buttons -- Contents (the outline and the bookmarks), Bookmark the
+ * page, Invert for the night, Share the page as a link -- and under them
+ * its pages, a PDF's (PdfBody) or a CFR part's text (TextBody). A PDF's
+ * Markup button puts out the markup bar, under the head on an iPad and at
+ * the pages' foot on a phone (MarkupBar, useMarkup): highlights with notes, a pen, an eraser and Undo, kept on
+ * this device; the contents list the notes. Opened
+ * from the address's `doc` (ReaderHost), so a cite tapped, a link shared
+ * and Back all work as a card's do.
+ */
+export default function Reader({ place, onClose }: { place: DocPlace; onClose: () => void }) {
+  const vm = useReader(place);
+  const markup = useMarkup(vm.title);
+  // The markup bar's place: the head at an iPad's regular width, the foot on a phone (MarkupBar).
+  const barAt = useIsMobile() ? "foot" : "head";
+  const [contents, setContents] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [find, setFind] = useState<Find | null>(null);
+  const [goto, setGoto] = useState<Goto | null>(null);
+  const [outline, setOutline] = useState<OutlineRow[]>([]);
+  const [page, setPage] = useState<{ page: number; pages: number } | null>(null);
+  const [matches, setMatches] = useState<{ current: number; total: number } | null>(null);
+  const [failed, setFailed] = useState(false);
+  const bar = markup.tool && !contents ? <MarkupBar vm={markup} page={page?.page ?? null} at={barAt} /> : null;
+  const { leftAt } = vm;
+  const onPage = useCallback(
+    (at: number, pages: number) => {
+      setPage({ page: at, pages });
+      leftAt(at);
+    },
+    [leftAt],
+  );
+  const marked = !!page && vm.bookmarks.some((m) => m.page === page.page);
+  const ask = (step: Find["step"]) => typed.trim() && setFind((f) => ({ query: typed.trim(), step, n: (f?.n ?? 0) + 1 }));
+  // A bookmark's name: a CFR part's section by its heading, a PDF's page by its number.
+  const label = (at: number) =>
+    (vm.source?.kind === "text" && vm.source.text.groups.flatMap((g) => g.sections)[at - 1]?.head) || `Page ${at}`;
+  const body = vm.source &&
+    !failed && {
+      source: vm.source,
+      startPage: vm.startPage,
+      startAt: vm.startAt,
+      find,
+      goto,
+      inverted: vm.inverted,
+      onOutline: setOutline,
+      onPage,
+      onMatches: setMatches,
+      onFailed: () => setFailed(true),
+      marksKey: vm.marksKey,
+      onMarkup: markup.onMarkup,
+      onMarkupState: markup.onMarkupState,
+    };
+  return (
+    <FullScreenViewer title={vm.title} testId="document-reader" closeTestId="document-reader-close" onClose={onClose}>
+      <div className="flex shrink-0 items-center gap-2 px-4 pb-2">
+        <div className="min-w-0 flex-1">
+          <SearchField
+            value={typed}
+            onChange={(v) => {
+              setTyped(v);
+              if (!v) setMatches(null);
+            }}
+            onCancel={() => setTyped("")}
+            onSubmit={() => ask(find?.query === typed.trim() ? "next" : null)}
+            placeholder="Search"
+            label="Search this document"
+            testId="document-search"
+          />
+        </div>
+        <IconButton label="Contents" aria-pressed={contents} onClick={() => setContents((c) => !c)} data-testid="document-contents-button">
+          <ListTree />
+        </IconButton>
+        <IconButton
+          label={marked ? "Remove Bookmark" : "Bookmark This Page"}
+          aria-pressed={marked}
+          disabled={!page}
+          onClick={() => page && vm.toggleBookmark(page.page, label(page.page))}
+          data-testid="document-bookmark-button"
+        >
+          {marked ? <BookmarkCheck /> : <Bookmark />}
+        </IconButton>
+        {markup.available && (
+          <IconButton label="Markup" aria-pressed={!!markup.tool} onClick={markup.toggle} data-testid="document-markup">
+            <PencilLine />
+          </IconButton>
+        )}
+        <IconButton
+          label="Invert Colors"
+          aria-pressed={vm.inverted}
+          onClick={() => vm.setInverted(!vm.inverted)}
+          data-testid="document-invert"
+        >
+          <Moon />
+        </IconButton>
+        {vm.share && (
+          <IconButton label="Share This Page" onClick={() => void vm.share?.(page?.page ?? null)} data-testid="document-share">
+            <Share />
+          </IconButton>
+        )}
+      </div>
+      {barAt === "head" && bar}
+      {matches && vm.source?.kind === "pdf" && (
+        <div className="flex shrink-0 items-center justify-end gap-2 px-4 pb-2" data-testid="document-matches">
+          <span role="status" className={cn("text-muted-foreground tabular-nums", TEXT.detail)}>
+            {matches.total ? `${matches.current} of ${matches.total}` : "Not Found"}
+          </span>
+          <IconButton label="Previous Match" disabled={!matches.total} onClick={() => ask("previous")}>
+            <ChevronUp />
+          </IconButton>
+          <IconButton label="Next Match" disabled={!matches.total} onClick={() => ask("next")}>
+            <ChevronDown />
+          </IconButton>
+        </div>
+      )}
+      <div className="relative min-h-0 flex-1">
+        {body ? (
+          vm.source?.kind === "pdf" ? (
+            <Suspense fallback={null}>
+              <PdfBody {...body} />
+            </Suspense>
+          ) : (
+            <TextBody {...body} />
+          )
+        ) : (
+          <p role="status" className={cn("px-4 pt-4 text-muted-foreground", TEXT.prose)} data-testid="document-status">
+            {failed
+              ? "This document could not be opened."
+              : vm.trouble === "gone"
+                ? "This document is no longer on this device."
+                : vm.trouble === "unreachable"
+                  ? "This document is not kept on this device, and the library cannot be reached. Keep it for the air to read it with no signal."
+                  : "Opening…"}
+          </p>
+        )}
+        {barAt === "foot" && bar}
+        {contents && (
+          <ReaderContents
+            edition={vm.edition}
+            outline={outline}
+            bookmarks={vm.bookmarks}
+            notes={markup.available ? markup.notes : null}
+            paged={vm.source?.kind !== "text"}
+            onPick={(to) => {
+              setGoto((g) => ({ ...to, n: (g?.n ?? 0) + 1 }));
+              setContents(false);
+            }}
+          />
+        )}
+      </div>
+    </FullScreenViewer>
+  );
+}
