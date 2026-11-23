@@ -318,6 +318,19 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   }
 }
 
+/* The sheet's two rooms that one 16-point gap between groups
+   (space.group) is measured past, each said once by what keeps it:
+   --chips-foot, what FPL's bar row (sheet/SheetHead's SheetBarRow) leaves
+   under its chips, its 1.75rem less the look's heading line (3 at the
+   default look, 0 at Native); --box-foot, what the route's box
+   (fpl/workspace/RouteEditor) keeps under its last row. SheetHead's room
+   over the route's box and SheetScroller's end room take them away from
+   the gap, so it stays 16 when either changes (the r10 audit). */
+:root {
+  --chips-foot: max(0px, calc(1.75rem - var(--lead-heading)));
+  --box-foot: var(--space-sm);
+}
+
 /* Tailwind's md, the one width the phone's sheet gives way to the side
    panel at: design/tokens.json's size.regular (660, iPadOS's regular
    width: an iPad mini upright, a 13-inch iPad's half), which useIsMobile

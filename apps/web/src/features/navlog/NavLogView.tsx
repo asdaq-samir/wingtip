@@ -279,10 +279,10 @@ export default function NavLogView({
             Flight Planning
           </span>
           {/* The bottom inset clears the home indicator on an installed
-              app in the Nav Log's card; on FPL's page the foot bar
-              already clears it, and the page's end room is the gap over
-              the bar (SheetScroller). Laid out whole in the sheet's one
-              scroller (SheetParts). */}
+              app in the Nav Log's card; on FPL's page the page's end room
+              does, the gap over the foot bar or, with none, the
+              indicator's own room (SheetScroller's endRoom). Laid out
+              whole in the sheet's one scroller (SheetParts). */}
           <div
             className={cn("@container pr-4 pl-[max(1rem,env(safe-area-inset-left))]", cardHead && "pb-[env(safe-area-inset-bottom)]")}
             data-testid={cardHead ? "navlog-card-scroller" : "navlog-scroller"}

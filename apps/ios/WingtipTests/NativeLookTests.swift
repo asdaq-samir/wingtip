@@ -30,12 +30,14 @@ struct NativeLookTests {
     }
 
     @Test func aRowSaysWhenInUtcAndDropsTheHead() throws {
-        #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z"), now: try #require(FieldNotamWords.date("2026-11-10T00:00:00Z")))
+        #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z"), untilCharts: false, now: try #require(FieldNotamWords.date("2026-11-10T00:00:00Z")))
                 == "From 11/09 14:00 UTC")
-        #expect(NotamRows.when(notam("a", rank: 1, inForce: true)) == "In effect now")
+        #expect(NotamRows.when(notam("a", rank: 1, inForce: true), untilCharts: false) == "In effect now")
         // A card the engine could not read says no end at all (the r9 audit).
         let unread = notam("a", rank: 1, starts: "2026-11-09T14:00:00Z", ends: "2026-12-09T14:00:00Z", inForce: true)
         #expect(NotamRows.when(unread, untilCharts: nil) == "In effect now")
+        // Not in force, no start and no card: said so, not a blank line (the r10 audit).
+        #expect(NotamRows.when(notam("a", rank: 1, ends: "2026-12-09T14:00:00Z", inForce: false), untilCharts: nil) == "Not in effect")
         #expect(!NotamRows.summary(notam("a", rank: 1)).hasPrefix("!OSH"))
         #expect(NotamRows.kind(notam("t", rank: 1, kind: "tfr")) == "TFR")
     }

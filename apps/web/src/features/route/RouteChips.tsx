@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
@@ -44,8 +45,8 @@ export interface RouteProcedure {
 
 const PROCEDURE_GLYPH = { approach: PlaneLanding, arrival: Route, departure: PlaneTakeoff } as const;
 
-/** A suggested stop's look, one or a flight's folded (FuelStopFold): see below. */
-export const FUEL_CHIP =
+/** A suggested stop's look, one or a flight's folded (SuggestedPill, below). */
+const FUEL_CHIP =
   "relative h-7 gap-1 rounded-full border-dashed border-caution px-1.5 font-semibold text-caution-ink hit-y-2 after:inset-x-0 hover:text-caution-ink native:text-caution-ink";
 
 /** A fuel stop suggested and not yet in the route (the totals' fuel_stops), in the
@@ -71,19 +72,68 @@ export function FuelStopChip({
   // A break on a long flight the tanks hold wears a cup, not the pump.
   const Glyph = reason === "break" ? Coffee : Fuel;
   const words = `Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`;
-  // The stock Button (the owner, 2026-11-10), at the pills' size: 28 tall,
-  // round, the detail's type in their weight, so the line reads as one row
-  // of pills (RoutePill). One dashed border on the button itself, in the
-  // fuel's amber (the caution token, design/tokens.json's badge.fuel in the
-  // light look): the outline variant's 10-point corners under SwipeRow's
-  // round clip showed the dashes only along the top and bottom, the sides
-  // cut to a stray ":" (the owner's iPhone, 2026-11-23). A finger's 44
-  // round it by a pseudo-element, the button not grown.
-  const chip = (
+  return (
+    <SuggestedPill
+      onAdd={onAdd}
+      onHide={onHide}
+      label={`${words}: add it to the route`}
+      dismissLabel={`Dismiss ${words}`}
+      shortcuts="Delete"
+      testId="route-fuel-stop"
+      menu={
+        <ContextMenuGroup>
+          <ContextMenuLabel>{words}</ContextMenuLabel>
+          {onAdd && (
+            <ContextMenuItem onClick={onAdd} data-testid="route-fuel-stop-add">
+              <Plus aria-hidden="true" />
+              Add to Route
+            </ContextMenuItem>
+          )}
+          <ContextMenuItem variant="destructive" onClick={onHide} data-testid="route-fuel-stop-remove">
+            <X aria-hidden="true" />
+            Dismiss
+          </ContextMenuItem>
+        </ContextMenuGroup>
+      }
+    >
+      <Glyph aria-hidden="true" className="size-3.5" />
+      {ident}
+    </SuggestedPill>
+  );
+}
+
+/**
+ * A suggested stop's pill, one stop's (FuelStopChip) or a flight's folded
+ * (FuelStopFold), one interaction written once (the r10 audit): the stock
+ * Button (the owner, 2026-11-10) at the pills' size, 28 tall, round, the
+ * detail's type in their weight, so the line reads as one row of pills
+ * (RoutePill). One dashed border on the button itself, in the fuel's amber
+ * (FUEL_CHIP): the outline variant's 10-point corners under SwipeRow's
+ * round clip showed the dashes only along the top and bottom, the sides
+ * cut to a stray ":" (the owner's iPhone, 2026-11-23). A finger's 44 round
+ * it by a pseudo-element, the button not grown. A tap adds; where it can
+ * be dismissed, Delete or Backspace, a swipe to the left (SwipeRow) and
+ * its held or right-clicked menu (`menu`) do.
+ */
+export function SuggestedPill(p: {
+  onAdd?: () => void;
+  onHide?: () => void;
+  label: string;
+  dismissLabel: string;
+  /** Its keys said to a screen reader where it can be dismissed. */
+  shortcuts: string;
+  testId: string;
+  count?: number;
+  menuTestId?: string;
+  menu: ReactNode;
+  children: ReactNode;
+}) {
+  const { onHide } = p;
+  const pill = (
     <Button
       variant="ghost"
-      onClick={onAdd}
-      disabled={!onAdd}
+      onClick={p.onAdd}
+      disabled={!p.onAdd}
       onKeyDown={(e) => {
         if (onHide && (e.key === "Delete" || e.key === "Backspace")) {
           e.preventDefault();
@@ -91,35 +141,21 @@ export function FuelStopChip({
           onHide();
         }
       }}
-      data-testid="route-fuel-stop"
-      aria-label={`${words}: add it to the route`}
-      aria-keyshortcuts={onHide ? "Delete" : undefined}
+      data-testid={p.testId}
+      data-count={p.count}
+      aria-label={p.label}
+      aria-keyshortcuts={onHide ? p.shortcuts : undefined}
       className={cn(FUEL_CHIP, TEXT.detail)}
     >
-      <Glyph aria-hidden="true" className="size-3.5" />
-      {ident}
+      {p.children}
     </Button>
   );
-  if (!onHide) return chip;
+  if (!onHide) return pill;
   return (
-    <SwipeRow chip word="Dismiss" label={`Dismiss ${words}`} onRemove={onHide}>
+    <SwipeRow chip word="Dismiss" label={p.dismissLabel} onRemove={onHide}>
       <ContextMenu>
-        <ContextMenuTrigger render={chip} />
-        <ContextMenuContent>
-          <ContextMenuGroup>
-            <ContextMenuLabel>{words}</ContextMenuLabel>
-            {onAdd && (
-              <ContextMenuItem onClick={onAdd} data-testid="route-fuel-stop-add">
-                <Plus aria-hidden="true" />
-                Add to Route
-              </ContextMenuItem>
-            )}
-            <ContextMenuItem variant="destructive" onClick={onHide} data-testid="route-fuel-stop-remove">
-              <X aria-hidden="true" />
-              Dismiss
-            </ContextMenuItem>
-          </ContextMenuGroup>
-        </ContextMenuContent>
+        <ContextMenuTrigger render={pill} />
+        <ContextMenuContent data-testid={p.menuTestId}>{p.menu}</ContextMenuContent>
       </ContextMenu>
     </SwipeRow>
   );

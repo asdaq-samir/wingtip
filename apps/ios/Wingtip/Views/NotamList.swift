@@ -150,8 +150,10 @@ enum NotamRows {
     /// card could not be read (nil, an engine error), no end is said at
     /// all, never a firm date that may only be the estimate (the r8 audit's
     /// I-M1) nor "estimated", which the owner ruled out: "In effect now" or
-    /// "From …" (the r9 audit).
-    static func when(_ notam: APIRankedNotam, untilCharts: Bool? = nil, now: Date = .now) -> String {
+    /// "From …" (the r9 audit), and one not in force with no start "Not in
+    /// effect", never a blank line (the r10 audit). `untilCharts` has no
+    /// default, so a new caller cannot drop every end by leaving it out.
+    static func when(_ notam: APIRankedNotam, untilCharts: Bool?, now: Date = .now) -> String {
         let (s, e) = (notam.starts.flatMap(date), notam.ends.flatMap(date))
         let tfr = notam.kind == "tfr"
         let permanent = !tfr && untilCharts == true
@@ -166,7 +168,7 @@ enum NotamRows {
         }
         if permanent { return starts.map { "From \($0), permanent" } ?? "Permanent" }
         if let starts { return ends.map { "\(starts)–\($0)" } ?? "From \(starts)" }
-        return ends.map { "Until \($0)" } ?? ""
+        return ends.map { "Until \($0)" } ?? (notam.inForce == false ? "Not in effect" : "")
     }
 
     private static func date(_ text: String) -> Date? {
