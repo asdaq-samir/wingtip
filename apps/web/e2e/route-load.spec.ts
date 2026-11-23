@@ -24,12 +24,16 @@ import { pickAirplane } from "./startState";
  * tap, the search's page -- on timers from the page's mount, which a slow
  * route outran. Those wait for the route to draw now (lib/routeDrawn), and
  * the open reads 3,605,492 bytes in 176 files, at four times slower and at
- * sixteen alike (claude/w2-route's build, the mobile project). The figure
+ * sixteen alike (claude/w2-route's build, the mobile project). The wave
+ * after read 3,622,605 (the re-audit of 2026-11-22), the route list's drag
+ * and drop with it; that waits for the list's first touch now
+ * (procedures/RouteGrid), and the open reads 3,441,753 in 155 (claude/
+ * reaudit-fix's build, the mobile project). The figure
  * is written to the test's annotations each run; a change that brings it
  * down lowers the budget to the new figure, never the other way (the
  * measure-speed skill; CLAUDE.md, "The ratchet only goes down").
  */
-const ROUTE_LOAD_BUDGET = 3_605_492;
+const ROUTE_LOAD_BUDGET = 3_441_753;
 
 test.use({ serviceWorkers: "block" });
 
