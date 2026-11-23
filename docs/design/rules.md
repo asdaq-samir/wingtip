@@ -954,6 +954,18 @@ At each airport the chart already shows, from the map's own
   job's overlay tiles hold each kind from (`map_zoom`, a zoom less in the
   tiles' own levels), so no app keeps a tier of its own. Where marks
   would overlap, the rule's order keeps them, each 2 px from the next.
+- **The route over the whole country** (the owner's iPhone screenshot,
+  2026-11-23): out there the route is its line, its ends and its stops.
+  The Class B fields' weather marks are half size and unnamed below
+  `map.zoom.class-b-named` (5), and give way to the route's marks, a
+  stop's pin and own ship; the tops of climb and descent come in at
+  `route-tags` (6), and a procedure's and a plate's fix tags at
+  `procedure-words` (9). A route field's ident goes first on the side
+  outside the course's turn there, off the line, then round the field
+  before it gives way; a stop's pin and its field are drawn under the
+  route's names, its ident giving way to them; own ship's room is kept
+  clear by an empty symbol under the HTML arrow, so no label is drawn
+  under it.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather

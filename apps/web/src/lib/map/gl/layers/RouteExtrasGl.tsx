@@ -19,7 +19,8 @@ import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 import { useGlView } from "../useGlView";
 import { TAP, selectionRing } from "./common";
 import { useMapRing } from "../../mapPick";
-import { CHART } from "../../../tokens";
+import { CHART, MAP_ZOOM } from "../../../tokens";
+import { glZoom } from "../glStyle";
 
 /** The level the map is at, the app's, as the camera comes to rest: what
  *  the words on the procedures and the patterns come in at. */
@@ -53,6 +54,11 @@ const PROCEDURE_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer("procedure-fix-diamonds", "procedure-fixes"),
 ];
 
+/** From a route-readable zoom (map.zoom.route-tags): over the whole
+ *  country a TOD's pill sat on the fields it was between (the owner's
+ *  iPhone screenshot, 2026-11-23). */
+const LEG_POINTS_FROM = glZoom(MAP_ZOOM.routeTags);
+
 /** The layer of a top of climb's or descent's name, whose side turns with
  *  the map (useTurnedNames). */
 const LEG_POINT_NAMES = "leg-point-names";
@@ -66,7 +72,7 @@ const LEG_POINT_NAMES = "leg-point-names";
 const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer("leg-points", "leg-points", { collide: true, sort: 0 }),
   chipLayer(LEG_POINT_NAMES, "leg-points", { collide: true, sort: 0 }, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }),
-];
+].map((layer) => ({ ...layer, minzoom: LEG_POINTS_FROM }));
 
 /** How near either end of its leg a top of climb or descent is not drawn,
  *  in nautical miles: there it sits on the field, or on the airplane where
