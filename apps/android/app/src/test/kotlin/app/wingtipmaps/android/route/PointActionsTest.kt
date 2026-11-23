@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.route
 
+import app.wingtipmaps.android.FieldRules
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.api.CourseEnd
@@ -21,51 +22,54 @@ class PointActionsTest {
         bearingDeg = 320.0, chartCycle = "c", chartLayers = emptyList(), courseLine = emptyList(), departure = dep, destination = dest,
         distanceNm = 90.0, maxZoom = 12, minZoom = 5, stops = listOf(jvl, rfd),
     )
+    /** KJVL and JVL one field: the engine's same_field, which does not
+     *  load on the JVM, answered (FieldRules). */
+    private val same = FieldRules.same
     private val state = Plan.State(dep = "KDPA", dest = "KMSN", stops = listOf("KJVL", "KRFD"), course = course)
 
     @Test
     fun eachPointHasItsActionsInOneOrder() {
         assertEquals(
             listOf(Action.MORE_INFO, Action.DIRECT_TO, Action.HOLD_HERE, Action.ADD_STOP_AFTER, Action.MOVE_DOWN, Action.REMOVE),
-            PointActions.of("KJVL", state),
+            PointActions.of("KJVL", state, same),
         )
         assertEquals(
             listOf(Action.MORE_INFO, Action.DIRECT_TO, Action.HOLD_HERE, Action.ADD_STOP_AFTER, Action.MOVE_UP, Action.REMOVE),
-            PointActions.of("RFD", state),
+            PointActions.of("RFD", state, same),
         )
         // The destination's Brief beside its card; nothing added after it.
-        assertEquals(listOf(Action.MORE_INFO, Action.BRIEF, Action.DIRECT_TO, Action.HOLD_HERE), PointActions.of("KMSN", state))
+        assertEquals(listOf(Action.MORE_INFO, Action.BRIEF, Action.DIRECT_TO, Action.HOLD_HERE), PointActions.of("KMSN", state, same))
         // The departure is not flown to; a stop can follow it.
-        assertEquals(listOf(Action.MORE_INFO, Action.HOLD_HERE, Action.ADD_STOP_AFTER), PointActions.of("KDPA", state))
+        assertEquals(listOf(Action.MORE_INFO, Action.HOLD_HERE, Action.ADD_STOP_AFTER), PointActions.of("KDPA", state, same))
         // A point of the log that is none of the route's has no menu.
-        assertEquals(emptyList<Action>(), PointActions.of("VPBNG", state))
+        assertEquals(emptyList<Action>(), PointActions.of("VPBNG", state, same))
     }
 
     @Test
     fun holdHereOnlyWhereTheCourseHasThePoint() {
-        assertFalse(Action.HOLD_HERE in PointActions.of("KJVL", state.copy(course = null)))
-        assertEquals(Plan.ChartPoint("KJVL", 42.6, -89.0), PointActions.chartPoint("JVL", state))
-        assertNull(PointActions.chartPoint("KJVL", state.copy(course = null)))
+        assertFalse(Action.HOLD_HERE in PointActions.of("KJVL", state.copy(course = null), same))
+        assertEquals(Plan.ChartPoint("KJVL", 42.6, -89.0), PointActions.chartPoint("JVL", state, same))
+        assertNull(PointActions.chartPoint("KJVL", state.copy(course = null), same))
     }
 
     @Test
     fun directToReadsFlyAsPlannedOnceFlownDirect() {
-        assertTrue(PointActions.directOn("KRFD", state.copy(direct = "KRFD")))
-        assertFalse(PointActions.directOn("KRFD", state))
+        assertTrue(PointActions.directOn("KRFD", state.copy(direct = "KRFD"), same))
+        assertFalse(PointActions.directOn("KRFD", state, same))
     }
 
     @Test
     fun moveAndAddAStopAfter() {
         val stops = listOf("KJVL", "KRFD", "KEFT")
-        assertEquals(listOf("KRFD", "KJVL", "KEFT"), RouteEdits.moved(stops, "RFD", -1))
-        assertEquals(listOf("KJVL", "KEFT", "KRFD"), RouteEdits.moved(stops, "KRFD", 1))
-        assertNull("not past the first", RouteEdits.moved(stops, "KJVL", -1))
-        assertNull("not a stop", RouteEdits.moved(stops, "KMSN", 1))
+        assertEquals(listOf("KRFD", "KJVL", "KEFT"), RouteEdits.moved(stops, "RFD", -1, same))
+        assertEquals(listOf("KJVL", "KEFT", "KRFD"), RouteEdits.moved(stops, "KRFD", 1, same))
+        assertNull("not past the first", RouteEdits.moved(stops, "KJVL", -1, same))
+        assertNull("not a stop", RouteEdits.moved(stops, "KMSN", 1, same))
         val route = RouteEdits.Route("KDPA", listOf("KJVL"), "KMSN")
-        assertEquals(listOf("KC09", "KJVL"), RouteEdits.insertedAfter(route, "DPA", " kc09 "))
-        assertEquals(listOf("KJVL", "KC09"), RouteEdits.insertedAfter(route, "KJVL", "KC09"))
-        assertNull("nothing after the destination", RouteEdits.insertedAfter(route, "KMSN", "KC09"))
-        assertNull("nothing typed", RouteEdits.insertedAfter(route, "KJVL", "  "))
+        assertEquals(listOf("KC09", "KJVL"), RouteEdits.insertedAfter(route, "DPA", " kc09 ", same))
+        assertEquals(listOf("KJVL", "KC09"), RouteEdits.insertedAfter(route, "KJVL", "KC09", same))
+        assertNull("nothing after the destination", RouteEdits.insertedAfter(route, "KMSN", "KC09", same))
+        assertNull("nothing typed", RouteEdits.insertedAfter(route, "KJVL", "  ", same))
     }
 
     @Test

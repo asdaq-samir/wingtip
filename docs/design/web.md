@@ -42,7 +42,8 @@ These hold on every screen below and win over any reference app.
   the screen shows the warning beside it, and nothing is greyed out for
   being outside a limit.
 - **44-point hit areas, controls that do not grow** (decision 0030). The
-  area is a pseudo-element (`after:absolute after:-inset-…`), rows sit at
+  area is a pseudo-element, the `hit-*` utility (`hit-y-3`, `hit-x-2
+  hit-y-3`, `hit-3`; index.css), rows sit at
   `gap-2`. This is above WCAG 2.2's AA minimum of 24 by 24 CSS pixels and
   meets its AAA 44 by 44 ([WCAG 2.5.8][wcag-258], [2.5.5][wcag-255]);
   Vercel's interface guidelines ask the same, 24 px at least and 44 px on
@@ -1517,7 +1518,10 @@ the engine's (`gonogo_balance`). The grade is a menu (`PullDown`). Its
 first choice is the POH's own weight a gallon, which counts until the
 pilot picks a grade; then come the engine's grades, each with its
 gallon's standard weight (`fuel_grades`, FAA-H-8083-1B: avgas 6, Jet A
-6.8). An airplane with no loading asks for it in place (`AskFigure`),
+6.8). The pick is sent as the load's `fuel_grade` and the engine
+chooses (the grade picked, then the POH's figure, then the airplane's
+grade's standard weight), one rule for the web and both phones. An
+airplane with no loading asks for it in place (`AskFigure`),
 with no airplane assumed.
 
 ### 6. NOTAMs

@@ -354,7 +354,7 @@ export default function RouteBox({
                   size="sm"
                   onClick={() => remove(points.indexOf(unknownPoint.ident!))}
                   data-testid="route-unknown-remove"
-                  className="relative after:absolute after:-inset-y-1.5 after:inset-x-0"
+                  className="relative hit-y-1.5 after:inset-x-0"
                 >
                   Remove
                 </Button>

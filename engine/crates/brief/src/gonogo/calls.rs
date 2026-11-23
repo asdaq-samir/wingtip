@@ -166,7 +166,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         })(),
         "gonogo_runway_checks" => runway_checks_rule(i, v),
         "gonogo_balance" => (|| {
-            let l = loading(i, v)?;
+            let l = loading_for_load(i, v)?;
             let load = load(i, v)?;
             Ok(weight_balance::balance_json(&weight_balance::balance(&l, &load, i.opt_num(v, "trip_fuel_gal")?)))
         })(),

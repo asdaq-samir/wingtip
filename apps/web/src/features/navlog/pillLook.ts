@@ -82,5 +82,5 @@ export const PILL_END_ADDON = cn(
  */
 export const PILL_END = cn(
   "relative z-20 -mx-2 -my-1.5 size-9 rounded-md border-0 hover:bg-transparent hover:text-tint aria-expanded:bg-transparent [&_svg]:size-5!",
-  "after:absolute after:-inset-y-1 after:left-0 after:-right-1 after:content-['']",
+  "hit-y-1 after:left-0 after:-right-1",
 );

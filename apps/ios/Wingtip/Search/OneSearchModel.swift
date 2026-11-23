@@ -75,6 +75,9 @@ final class OneSearchModel {
     private(set) var fromDevice = false
     /// The packs' fields, read once the planner first fails to answer.
     @ObservationIgnored private var keptFields: [AirportPin]?
+    /// Every airport kept on this iPhone, read from the packs off the main actor.
+    @concurrent
+    private nonisolated static func allKept() async -> [AirportPin] { PackSearch.allKept() }
     @ObservationIgnored private var searching: Task<Void, Never>?
 
     var query: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -121,7 +124,7 @@ final class OneSearchModel {
             case .failure(let error):
                 // With no planner, the airports kept on this iPhone that
                 // match; the fixes, towns and registry need the planner.
-                if keptFields == nil { keptFields = await Task.detached(priority: .userInitiated) { PackSearch.allKept() }.value }
+                if keptFields == nil { keptFields = await Self.allKept() }
                 guard !Task.isCancelled else { return }
                 fixes = []
                 do {

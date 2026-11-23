@@ -18,47 +18,6 @@ import UIKit
 
 // MARK: - Inks
 
-/// The chart colours the overlays wear, each the web map's own
-/// (lib/useAirspace, lib/map/gl/glStyle.ts AIRSPACE_INK, glOverlays).
-/// They are the chart's and stay the same at night, as the sectional
-/// under them does.
-enum SectionalInk {
-    /// The sectional's airport and VOR blue and its magenta (web
-    /// useAirspace BLUE and MAGENTA): "Airports having control towers are
-    /// shown in blue, all others in magenta" (FAA Aeronautical Chart
-    /// User's Guide, VFR Terms and Symbols, Airports).
-    static let blue = WingtipColor.Chart.towered
-    static let magenta = WingtipColor.Chart.untowered
-    /// A field whose tower is not known yet (web airportMark UNKNOWN_GREY).
-    static let unknown = WingtipColor.Chart.fieldUnknown
-
-    static func airport(towered: Bool?) -> UIColor {
-        switch towered {
-        case true?: return blue
-        case false?: return magenta
-        case nil: return unknown
-        }
-    }
-
-    /// The airspace's lines in ForeFlight's brighter blue and magenta
-    /// (glStyle AIRSPACE_INK): Class B solid blue, C solid magenta, D
-    /// dashed blue, as the sectional codes them (Chart User's Guide,
-    /// Airspace).
-    static let airspaceBlue = WingtipColor.Chart.airspaceBlue
-    static let airspaceMagenta = WingtipColor.Chart.airspaceMagenta
-    /// The dark tab an airspace's altitudes sit in.
-    static let tab = WingtipColor.Chart.airspaceTab.withAlphaComponent(0.9)
-    /// A runway's surface and the halo of its numbers (glOverlays'
-    /// runwayLayers: ForeFlight's dark grey over its street map).
-    static let runway = WingtipColor.Chart.runwayHard
-    /// A soft runway's (turf, grass, dirt, gravel): the web's olive for
-    /// a runway that is not hard (glOverlays' runway-surface fill).
-    static let softRunway = WingtipColor.Chart.runwaySoft
-    static let runwayHalo = WingtipColor.Chart.fixInk
-}
-
-// MARK: - What the planner and the packs answer
-
 /// One Class B, C or D volume in view (the planner's AirspaceVolume, and
 /// the engine's from a pack).
 struct AirspaceVolume: Decodable, Equatable, Sendable {
@@ -416,6 +375,8 @@ final class RunwayEndView: MKAnnotationView {
     private var vors: [String: VorAnnotation] = [:]
     private var runwayLines: [String: [any MKOverlay]] = [:]
     private var runwayEnds: [String: [RunwayEndAnnotation]] = [:]
+    /// The map's heading the runway ends were last turned to.
+    private var endsTurnedTo: CLLocationDirection?
     private var runwaysKept: [String: [RunwayShape]] = [:]
     private var runwaysAsking: Set<String> = []
     /// The Map card's Aeronautical layer: off, the airspace and its tabs,
@@ -527,8 +488,8 @@ final class RunwayEndView: MKAnnotationView {
         if aeronautical {
             marks.moved(map, view: view, zoom: zoom)
             if airspaceFetch.wants(view, zoom: zoom) { askAirspace(map, view: view, zoom: zoom, chart: chart, live: live) }
-            if zoom >= VorZoom.from, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
-            if zoom < VorZoom.from, !vors.isEmpty {
+            if zoom >= WingtipMapZoom.vor, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
+            if zoom < WingtipMapZoom.vor, !vors.isEmpty {
                 map.removeAnnotations(Array(vors.values))
                 vors = [:]
                 vorFetch.forget()
@@ -536,8 +497,14 @@ final class RunwayEndView: MKAnnotationView {
             drawAirspace(map, zoom: zoom, chart: chart)
             if !live { placeTabs(map, zoom: zoom) }
         }
-        for case let end as RunwayEndView in runwayEnds.values.flatMap({ $0 }).compactMap({ map.view(for: $0) }) {
-            end.turn(mapHeading: map.camera.heading)
+        // The runway ends turned only as the map turns by a degree: a new
+        // one is turned as it is made (view(for:)).
+        let heading = map.camera.heading
+        if abs(heading - (endsTurnedTo ?? .infinity)) >= 1 {
+            endsTurnedTo = heading
+            for case let end as RunwayEndView in runwayEnds.values.flatMap({ $0 }).compactMap({ map.view(for: $0) }) {
+                end.turn(mapHeading: heading)
+            }
         }
     }
 
@@ -596,6 +563,8 @@ final class RunwayEndView: MKAnnotationView {
     /// over the chart and under the route.
     private func drawAirspace(_ map: MKMapView, zoom: Double, chart: (any MKOverlay)?) {
         let on = Set(map.overlays.filter { $0 is AirspaceLine || $0 is AirspaceVignette }.map { ObjectIdentifier($0) })
+        // Whether the chart is on the map, asked once, not for each line.
+        let chartOn = chart.map { chart in map.overlays.contains { $0 === chart } } ?? false
         for (_, kept) in volumes {
             let wanted = zoom >= AirspaceZoom.from(kept.volume.airspaceClass)
             // The band first, so each line is put over it.
@@ -603,7 +572,7 @@ final class RunwayEndView: MKAnnotationView {
             for line in overlays {
                 let drawn = on.contains(ObjectIdentifier(line))
                 if wanted && !drawn {
-                    if let chart, map.overlays.contains(where: { $0 === chart }) {
+                    if let chart, chartOn {
                         map.insertOverlay(line, above: chart)
                     } else {
                         map.insertOverlay(line, at: 0, level: .aboveLabels)
@@ -740,9 +709,4 @@ final class RunwayEndView: MKAnnotationView {
             runwayEnds[ident] = marks
         }
     }
-}
-
-/// The VORs from a region's zoom, the web map's (glOverlays VOR_ZOOM).
-enum VorZoom {
-    static let from = 8.0
 }

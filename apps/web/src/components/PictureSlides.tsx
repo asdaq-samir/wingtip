@@ -68,10 +68,7 @@ export function PhotoCredit({ credit, href, testId }: { credit: string; href?: s
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "absolute right-1 bottom-3.5 max-w-[90%] truncate rounded bg-black/55 px-1 text-white underline after:absolute after:-inset-3.5",
-        TEXT.caption,
-      )}
+      className={cn("absolute right-1 bottom-3.5 max-w-[90%] truncate rounded bg-black/55 px-1 text-white underline hit-3.5", TEXT.caption)}
       data-testid={testId}
     >
       {credit}

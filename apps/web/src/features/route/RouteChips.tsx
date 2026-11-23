@@ -58,7 +58,7 @@ export function FuelStopChip({
   // The stock small Button (the owner, 2026-11-10), outlined dashed in the
   // caution's colour with the pump: suggested, not yet in the route. A
   // finger's 44 round it by a pseudo-element, the button not grown.
-  const look = "relative border-dashed border-caution text-caution-ink after:absolute after:-inset-y-1.5 after:inset-x-0";
+  const look = "relative border-dashed border-caution text-caution-ink hit-y-1.5 after:inset-x-0";
   const face = (
     <>
       <Glyph aria-hidden="true" data-icon="inline-start" />

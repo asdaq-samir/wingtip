@@ -83,22 +83,42 @@ public class FlightService {
      *  flight's own row (CrossCountryReviewDto), so planning it again in
      *  place would put a route the instructor never reviewed under their
      *  signature (the security review of 2026-11-22, M1). The app never
-     *  changes a saved flight's route; the connector saves a new one. */
+     *  changes a saved flight's route; the connector saves a new one.
+     *
+     *  <p>A 409 too where the plan goes between other airports than the
+     *  saved flight, unless `replaceRoute`: the saved flight's id comes
+     *  back from the pilot's AI app, which a text it read can steer, so a
+     *  plan written over another flight of theirs is refused until the
+     *  model says so and the host has asked the pilot (the connector's
+     *  replace_route, which the live view cannot set; the security review
+     *  of 2026-11-22, L5). */
     @Transactional
-    public Optional<Flight> replan(Pilot pilot, Long id, SaveFlightRequest request) {
+    public Optional<Flight> replan(Pilot pilot, Long id, SaveFlightRequest request, boolean replaceRoute) {
         Aircraft flown = flownIn(pilot, request);
         Optional<Flight> theirs = get(pilot, id);
         if (theirs.isPresent() && reviews.existsByFlightId(id)) {
-            throw new ErrorResponseException(
-                    HttpStatus.CONFLICT,
-                    ProblemDetail.forStatusAndDetail(
-                            HttpStatus.CONFLICT,
-                            "This flight was put to an instructor for the solo cross-country review, so its route "
-                                    + "stays as reviewed: save the new plan as a new flight."),
-                    null);
+            throw refused("This flight was put to an instructor for the solo cross-country review, so its route "
+                    + "stays as reviewed: save the new plan as a new flight.");
+        }
+        if (!replaceRoute && theirs.isPresent() && !sameEnds(theirs.get(), request)) {
+            Flight saved = theirs.get();
+            throw refused("Saved flight " + id + " goes " + saved.getDepartureIdent() + " to "
+                    + saved.getDestinationIdent() + ", not " + request.departureIdent() + " to "
+                    + request.destinationIdent() + ": ask the pilot, then replace its route on purpose, or save "
+                    + "the plan as a new flight.");
         }
         return theirs.map(f ->
                 flights.save(filed(f.replanned(flown, request.departureIdent(), request.destinationIdent()), request)));
+    }
+
+    private static boolean sameEnds(Flight saved, SaveFlightRequest request) {
+        return saved.getDepartureIdent().equalsIgnoreCase(request.departureIdent())
+                && saved.getDestinationIdent().equalsIgnoreCase(request.destinationIdent());
+    }
+
+    private static ErrorResponseException refused(String why) {
+        return new ErrorResponseException(
+                HttpStatus.CONFLICT, ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, why), null);
     }
 
     private Aircraft flownIn(Pilot pilot, SaveFlightRequest request) {

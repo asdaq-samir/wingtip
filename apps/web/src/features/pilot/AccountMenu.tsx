@@ -76,7 +76,7 @@ function AccountMenu() {
               variant="ghost"
               size="sm"
               data-testid="role-menu"
-              className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+              className={cn("relative -mr-2 px-2 font-normal text-tint hit-y-2 after:inset-x-0", TEXT.row)}
             />
           }
         >

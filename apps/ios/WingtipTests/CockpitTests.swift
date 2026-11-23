@@ -118,6 +118,10 @@ struct CockpitTests {
         #expect(room.arm == 34...49 && room.weight == 1400...2400)
         model.weigh(loading(maxTakeoff: 2000), load: load, tripFuelGal: 10)
         #expect(model.balance?.problems.isEmpty == false)
+        // Jet A picked: the engine weighs the 40 gal at its 6.8 lb a
+        // gallon (gonogo_balance), 32 lb more than the POH's 6.0.
+        model.weigh(loading(), load: load, tripFuelGal: 10, grade: "jet_a")
+        #expect(abs((model.balance?.takeoff.weightLb ?? 0) - 2112) < 0.001)
     }
 
     /// The chart beside the map: one at a time, put away by its close.

@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// A region's charts kept on the phone (Setup → Downloads): which region
 /// of which cycle, the archives wanted and those on disk whole, and the
@@ -63,15 +64,24 @@ struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
 /// the map fetched as it went (TileStore, under Caches), and the planner
 /// can always cut them again. The map reads a tile here first
 /// (TileStore.read), then its own store, then the network.
-final class OfflineStore: @unchecked Sendable {
+///
+/// What changes (the list, the open archives, the cycles begun) is one
+/// `State` behind one mutex, which the map's tile loads take; no file is
+/// read, written or removed while it is held, so a tile never waits on a
+/// manifest write or a region's folder being deleted.
+final class OfflineStore: Sendable {
     static let shared = OfflineStore()
 
     let root: URL
-    private let lock = NSLock()
-    private var kept: [OfflineKept]?
-    private var readers: [URL: PMTilesReader] = [:]
-    /// Kept cycles known to have begun: once begun, always.
-    private var begun: Set<String> = []
+    private struct State {
+        var kept: [OfflineKept]?
+        var readers: [URL: PMTilesReader] = [:]
+        /// Kept cycles known to have begun: once begun, always.
+        var begun: Set<String> = []
+        /// Bumped by each change, so the manifest last written is the newest.
+        var version = 0
+    }
+    private let state = Mutex(State())
 
     init(root: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -86,37 +96,55 @@ final class OfflineStore: @unchecked Sendable {
 
     /// Every region kept, newest cycle first, by name.
     func all() -> [OfflineKept] {
-        lock.withLock { loaded() }.sorted { ($0.cycle.reversedDate, $0.name) > ($1.cycle.reversedDate, $1.name) }
+        loaded().sorted { ($0.cycle.reversedDate, $0.name) > ($1.cycle.reversedDate, $1.name) }
     }
 
+    /// The list, read from the manifest the first time (outside the lock).
     private func loaded() -> [OfflineKept] {
-        if let kept { return kept }
+        if let kept = state.withLock({ $0.kept }) { return kept }
         let read = (try? Data(contentsOf: manifest)).flatMap { try? JSONDecoder().decode([OfflineKept].self, from: $0) } ?? []
-        kept = read
-        return read
+        return state.withLock { s in
+            if let kept = s.kept { return kept }
+            s.kept = read
+            return read
+        }
     }
 
     /// One region changed, added, or (nil) removed with its files.
     func update(_ id: String, _ change: (inout OfflineKept?) -> Void) {
-        lock.withLock {
-            var list = loaded()
+        _ = loaded()
+        let gone: OfflineKept? = state.withLock { s in
+            var list = s.kept ?? []
             var entry = list.first { $0.id == id }
             let before = entry
             change(&entry)
             list.removeAll { $0.id == id }
             if let entry { list.append(entry) }
-            if entry == nil, let gone = before {
-                let folder = root.appending(path: "\(gone.cycle)/\(gone.region)")
-                readers = readers.filter { !$0.key.path.hasPrefix(folder.path) }
-                try? FileManager.default.removeItem(at: folder)
-            }
-            kept = list
-            try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            var folder = root
-            var values = URLResourceValues()
-            values.isExcludedFromBackup = true
-            try? folder.setResourceValues(values)
+            s.kept = list
+            s.version += 1
+            guard entry == nil, let before else { return nil }
+            let folder = root.appending(path: "\(before.cycle)/\(before.region)").path
+            s.readers = s.readers.filter { !$0.key.path.hasPrefix(folder) }
+            return before
+        }
+        if let gone { try? FileManager.default.removeItem(at: root.appending(path: "\(gone.cycle)/\(gone.region)")) }
+        writeManifest()
+    }
+
+    /// The list as it is now, written; again where it changed meanwhile,
+    /// so whichever of two writes ends last, the file is the newest list.
+    private func writeManifest() {
+        try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        var folder = root
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? folder.setResourceValues(values)
+        var written = -1
+        while true {
+            let (list, version) = state.withLock { ($0.kept ?? [], $0.version) }
+            guard version != written else { return }
             try? JSONEncoder().encode(list).write(to: manifest, options: .atomic)
+            written = version
         }
     }
 
@@ -142,9 +170,9 @@ final class OfflineStore: @unchecked Sendable {
     func keptInForce(after cycle: String, now: Date = .now) -> String? {
         let later = Set(all().map(\.cycle).filter { $0.reversedDate > cycle.reversedDate }).sorted { $0.reversedDate > $1.reversedDate }
         return later.first { kept in
-            if lock.withLock({ begun.contains(kept) }) { return true }
+            if state.withLock({ $0.begun.contains(kept) }) { return true }
             guard OfflineKept.begun(kept, now: now) else { return false }
-            lock.withLock { _ = begun.insert(kept) }
+            _ = state.withLock { $0.begun.insert(kept) }
             return true
         }
     }
@@ -158,7 +186,7 @@ final class OfflineStore: @unchecked Sendable {
         let names = [Self.archive(kind: kind, scale: scale), Self.archive(kind: kind, scale: scale == 1 ? 2 : 1)]
         let (lat, lon) = Self.centre(z: z, x: x, y: y)
         let cycles = [keptInForce(after: cycle, now: now), cycle].compactMap { $0 }
-        let covering = lock.withLock { loaded() }.filter { $0.covers(lat: lat, lon: lon, z: z) }
+        let covering = loaded().filter { $0.covers(lat: lat, lon: lon, z: z) }
         for drawn in cycles {
             for name in names {
                 for region in covering where region.cycle == drawn && region.done.contains(name) {
@@ -171,11 +199,13 @@ final class OfflineStore: @unchecked Sendable {
         return nil
     }
 
+    /// The archive, opened once (outside the lock) and kept.
     private func reader(_ url: URL) -> PMTilesReader? {
-        lock.withLock {
-            if let kept = readers[url] { return kept }
-            guard let opened = try? PMTilesReader(url: url) else { return nil }
-            readers[url] = opened
+        if let kept = state.withLock({ $0.readers[url] }) { return kept }
+        guard let opened = try? PMTilesReader(url: url) else { return nil }
+        return state.withLock { s in
+            if let kept = s.readers[url] { return kept }
+            s.readers[url] = opened
             return opened
         }
     }

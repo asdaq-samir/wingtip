@@ -124,7 +124,7 @@ function TileNavaids() {
   );
 }
 
-/** The VFR waypoints from zoom 10 (glOverlays' FIX_ZOOM): green triangles, a
+/** The VFR waypoints from map.zoom's fix (glOverlays' FIX_ZOOM): green triangles, a
  *  tap the waypoint's card (by its address, TileNavaids drawing it); the
  *  route's own left to it (`exclude`). From the overlay tiles' fixes
  *  (FIX_BASE's VFR waypoints). */

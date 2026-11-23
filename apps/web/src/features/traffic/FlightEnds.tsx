@@ -33,7 +33,7 @@ export function End({
           onClick={onOpen}
           aria-label={`${ident}'s card`}
           data-testid={openTestId}
-          className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3"
+          className="relative max-w-full hit-x-2 hit-y-3"
         >
           {name}
         </Button>

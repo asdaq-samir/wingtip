@@ -48,7 +48,7 @@ export function NearestStrip({
       onClick={() => setEnabled(true)}
       data-testid="nearest-strip-position"
       // At the left where the tiles start, as every strip's words are (F-L2).
-      className={cn("relative self-start py-1 text-left after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+      className={cn("relative self-start py-1 text-left hit-y-2 after:inset-x-0", TEXT.row)}
     >
       Show My Position
     </Button>

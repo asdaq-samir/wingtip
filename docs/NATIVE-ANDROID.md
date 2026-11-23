@@ -110,6 +110,11 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     `format/Typed.kt`, which takes a decimal comma ("8,5") as the point.
 - `app/src/test`: JUnit, on the JVM. `app/src/androidTest`: on an
   emulator, with the web's shared fixtures as the test APK's assets.
+  The engine does not load on the JVM, so a pure function that asks it
+  takes the rule as a parameter whose default is the engine's
+  (`SameField`, `ChartCycle`, `StationMarks.Rules`), and its JVM test
+  gives the answers, from the shared fixtures where they list the ask
+  (`FieldRules` in the tests, `dataCycles.json`).
 
 ## Rules
 
@@ -629,9 +634,11 @@ parts and each asking the engine every figure:
   the engine's `gonogo_balance` at takeoff and landing (14 CFR 91.9(a)),
   and the CG envelope drawn with Compose's Canvas as the web's
   `EnvelopeChart` draws it (`EnvelopeChart.kt`). The fuel is weighed by
-  its grade, picked on Material's segmented buttons from the engine's
-  `fuel_grades` (FAA-H-8083-1B), the profile's own density winning where
-  it gives one. The empty airplane is
+  its grade, picked on Material's segmented buttons: "As the POH says"
+  first, then the engine's `fuel_grades` (FAA-H-8083-1B). Which weight a
+  gallon wins is the engine's (`gonogo_balance`: the grade picked, then
+  the POH's figure, then the airplane's grade's), as on the web and the
+  iPhone. The empty airplane is
   the pilot's own record where given, its arm the engine's
   (`gonogo_default_load`); a missing figure is asked for in place
   (`AskFigures`, "weight_balance"); with no airplane picked, nothing is

@@ -64,12 +64,7 @@ export default function ChartViewer({
                   "The FAA lists nothing for this field in this chart."}
           </p>
           {failed && onRetry && (
-            <Button
-              type="button"
-              variant="ghost"
-              className="relative -ml-2 rounded-full text-tint after:absolute after:-inset-1"
-              onClick={onRetry}
-            >
+            <Button type="button" variant="ghost" className="relative -ml-2 rounded-full text-tint hit-1" onClick={onRetry}>
               {WORDING.tryAgain}
             </Button>
           )}

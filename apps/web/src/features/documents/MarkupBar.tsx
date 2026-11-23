@@ -18,7 +18,7 @@ const TOOLS: { value: Tool; label: string; icon: typeof PenLine }[] = [
 ];
 
 /** A tool's 40-point face, its 44-point area a pseudo-element round it. */
-const TOOL = "relative size-10 rounded-full after:absolute after:-inset-0.5 after:content-[''] [&_svg]:size-5";
+const TOOL = "relative size-10 rounded-full hit-0.5 [&_svg]:size-5";
 
 /**
  * The markup bar, where the iPad's layout puts a document's tools: at the

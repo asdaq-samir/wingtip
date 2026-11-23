@@ -64,20 +64,32 @@ enum HazardPaint {
     }
 
     /// The colours, premultiplied RGBA, for each height against the lines.
+    /// Written straight into the buffer, a pixel's four bytes as one
+    /// 32-bit store: 65,536 a tile, every tile in view each time the lines
+    /// move, so no array is made or replaced per pixel.
     static func pixels(_ heights: [Float], bands: HazardBands) -> [UInt8] {
         let (cautionM, warningM) = Self.metres(bands)
-        let amber = rgba(WingtipColor.Chart.caution, alpha: cautionAlpha), red = rgba(WingtipColor.Chart.warning, alpha: warningAlpha)
+        let amber = word(rgba(WingtipColor.Chart.caution, alpha: cautionAlpha))
+        let red = word(rgba(WingtipColor.Chart.warning, alpha: warningAlpha))
         var out = [UInt8](repeating: 0, count: heights.count * 4)
-        for (i, m) in heights.enumerated() {
-            let colour: [UInt8]
-            switch shade(m, cautionM: cautionM, warningM: warningM) {
-            case .clear: continue
-            case .caution: colour = amber
-            case .warning: colour = red
+        out.withUnsafeMutableBytes { raw in
+            let words = raw.bindMemory(to: UInt32.self)
+            heights.withUnsafeBufferPointer { metres in
+                for i in metres.indices {
+                    switch shade(metres[i], cautionM: cautionM, warningM: warningM) {
+                    case .clear: continue
+                    case .caution: words[i] = amber
+                    case .warning: words[i] = red
+                    }
+                }
             }
-            out.replaceSubrange((i * 4)..<(i * 4 + 4), with: colour)
         }
         return out
+    }
+
+    /// Four bytes in memory order as the one word that stores them.
+    private static func word(_ bytes: [UInt8]) -> UInt32 {
+        bytes.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
     }
 
     /// The tile's colours as the PNG MapKit's tile renderer draws.
@@ -111,6 +123,8 @@ enum HazardPaint {
 /// renderer keeps the coloured tiles; the map's hazard layer has it
 /// reload them only when the lines move (HazardLayer). Held off the map in
 /// 3D with the chart (RaisedMapView.isGround).
+/// Unchecked: MKTileOverlay is not Sendable, and MapKit loads its tiles
+/// on its own threads; its lines are in a lock, its heights in an NSCache.
 final class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
     /// The planner's terrain levels (wingtip.terrain_view, the web's
     /// dem.ts): past its 13th the 13th is enlarged.

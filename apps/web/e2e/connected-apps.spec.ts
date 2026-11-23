@@ -13,7 +13,7 @@ test("a connected app is listed and disconnected after asking", async ({ page })
     {
       id: "a1",
       app: "Claude",
-      scopes: "wingtip:read wingtip:write",
+      scopes: "wingtip:read wingtip:flights",
       can: ["Read your airplanes and saved flights, and plan with them", "Save, change and delete your saved flights"],
       renewedAt: "2026-11-20T15:00:00Z",
       until: null,

@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// One figure an on-device answer rests on: the chip (a WordsSource, the
 /// same id, label and raw text the planner's answers carry, so a chip
@@ -32,38 +33,32 @@ struct AskRefused: Error, LocalizedError, Equatable {
 /// The figures the tools worked out for one answer, in the order asked,
 /// each once: what the model's sentences may cite and nothing else
 /// (Words.checked). The tools run off the main actor, a call at a time
-/// or several at once, so the list is behind a lock.
-final class FigureLog: @unchecked Sendable {
-    private let lock = NSLock()
-    private var kept: [AskFigure] = []
-    /// Each tool called, by name, for the tests and the log.
-    private var calls: [String] = []
-    private var answeredAt: ModelPlace = .device
+/// or several at once, so the list is behind a mutex the compiler checks.
+final class FigureLog: Sendable {
+    private struct State {
+        var kept: [AskFigure] = []
+        /// Each tool called, by name, for the tests and the log.
+        var calls: [String] = []
+        var place: ModelPlace = .device
+    }
+    private let state = Mutex(State())
 
     /// Where the model that used these figures answered (AppleModels).
     var place: ModelPlace {
-        get { lock.lock(); defer { lock.unlock() }; return answeredAt }
-        set { lock.lock(); answeredAt = newValue; lock.unlock() }
+        get { state.withLock { $0.place } }
+        set { state.withLock { $0.place = newValue } }
     }
 
     func add(_ figures: [AskFigure], by tool: String) {
-        lock.lock()
-        defer { lock.unlock() }
-        calls.append(tool)
-        for figure in figures where !kept.contains(where: { $0.id == figure.id }) { kept.append(figure) }
+        state.withLock { s in
+            s.calls.append(tool)
+            for figure in figures where !s.kept.contains(where: { $0.id == figure.id }) { s.kept.append(figure) }
+        }
     }
 
-    var figures: [AskFigure] {
-        lock.lock()
-        defer { lock.unlock() }
-        return kept
-    }
+    var figures: [AskFigure] { state.withLock { $0.kept } }
 
-    var called: [String] {
-        lock.lock()
-        defer { lock.unlock() }
-        return calls
-    }
+    var called: [String] { state.withLock { $0.calls } }
 
     var sources: [WordsSource] { figures.map(\.source) }
 }

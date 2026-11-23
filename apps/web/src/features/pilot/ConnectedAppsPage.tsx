@@ -45,7 +45,7 @@ export default function ConnectedAppsPage() {
                 size="sm"
                 data-testid="disconnect-app"
                 disabled={apps.ending === c.id}
-                className={cn("relative -mr-2 text-destructive-ink after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+                className={cn("relative -mr-2 text-destructive-ink hit-y-2 after:inset-x-0", TEXT.row)}
                 onClick={() => {
                   apps.ask(c);
                   askDisconnect();

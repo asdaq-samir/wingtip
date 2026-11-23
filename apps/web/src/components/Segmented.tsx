@@ -57,8 +57,8 @@ export default function Segmented({
       // over or under it -- the Personal tab's, under the console's tabs
       // -- landed outside it. The track does not grow.
       className={cn(
-        "relative isolate rounded-lg bg-muted p-0.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']",
-        compact && "rounded-full after:-inset-y-2",
+        "relative isolate rounded-lg bg-muted p-0.5 after:inset-x-0 after:-z-10",
+        compact ? "rounded-full hit-y-2" : "hit-y-1.5",
         className,
       )}
     >

@@ -42,29 +42,19 @@ export function PadView({ id, onDelete }: { id: string; onDelete: () => void }) 
       )}
       <InkPad strokes={pad.strokes} onStroke={vm.addStroke} label={`${template.title}, ${pad.strokes.length} strokes`} />
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="ghost"
-          className="relative text-tint after:absolute after:-inset-1"
-          onClick={vm.undoStroke}
-          disabled={!pad.strokes.length}
-        >
+        <Button variant="ghost" className="relative text-tint hit-1" onClick={vm.undoStroke} disabled={!pad.strokes.length}>
           <Undo2 aria-hidden /> Undo
         </Button>
         <Button
           variant="ghost"
-          className="relative text-tint after:absolute after:-inset-1"
+          className="relative text-tint hit-1"
           onClick={vm.clearInk}
           disabled={!pad.strokes.length}
           data-testid="scratchpad-clear"
         >
           <Eraser aria-hidden /> Clear Ink
         </Button>
-        <Button
-          variant="ghost"
-          className="relative ml-auto text-destructive after:absolute after:-inset-1"
-          onClick={onDelete}
-          data-testid="scratchpad-delete"
-        >
+        <Button variant="ghost" className="relative ml-auto text-destructive hit-1" onClick={onDelete} data-testid="scratchpad-delete">
           <Trash2 aria-hidden /> Delete Page
         </Button>
       </div>

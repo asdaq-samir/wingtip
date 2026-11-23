@@ -3,6 +3,7 @@ import Foundation
 import ImageIO
 import MapKit
 import OSLog
+import Synchronization
 import UIKit
 
 /// The FAA chart as the map's ground: an overlay over Apple's map, drawn
@@ -20,7 +21,7 @@ import UIKit
 /// (ChartFade) into the USGS's aerial imagery under it (CloseImagery), as
 /// the web map's does, Apple's map under both (canReplaceMapContent off)
 /// where the USGS has none: the runways (RunwaySurface) lie on the real ones.
-final class ChartTileOverlay: NSObject, MKOverlay, @unchecked Sendable {
+final class ChartTileOverlay: NSObject, MKOverlay, Sendable {
     let template: TileTemplate
     /// The day's lift (ChartLift) put on each tile as it is decoded.
     let lift: Bool
@@ -31,8 +32,13 @@ final class ChartTileOverlay: NSObject, MKOverlay, @unchecked Sendable {
     let store: TileStore
     let cache: TileCache
     /// Told on the main queue as each tile is answered with a picture: the
-    /// map shows itself once the chart is drawn (ChartMap's reveal).
-    var onTile: (@MainActor @Sendable () -> Void)?
+    /// map shows itself once the chart is drawn (ChartMap's reveal). Set on
+    /// the main actor, read on the tile loads' threads.
+    var onTile: (@MainActor @Sendable () -> Void)? {
+        get { told.withLock { $0 } }
+        set { told.withLock { $0 = newValue } }
+    }
+    private let told = Mutex<(@MainActor @Sendable () -> Void)?>(nil)
 
     // The whole world: the renderer works out the tiles a rect needs.
     let coordinate = CLLocationCoordinate2D(latitude: 0, longitude: 0)
@@ -136,51 +142,6 @@ enum ChartTileMath {
     }
 }
 
-/// The decoded tiles drawn, in memory, so a tile scrolled back into view
-/// is drawn at once rather than read from disk and decoded again: the
-/// first level of the three (memory, the disk store, the network). An
-/// NSCache: safe from MapKit's drawing threads, and iOS trims it under
-/// memory pressure. It holds decoded bitmaps, the cost of each its bytes
-/// (a 512-pixel tile is 1 MB): 96 MB is about three screens of a 3x
-/// phone at the levels ChartTileMath picks, enough for a pan back and a
-/// zoom out and in again.
-final class TileCache: @unchecked Sendable {
-    static let shared = TileCache()
-
-    private final class Box {
-        let image: CGImage
-        init(_ image: CGImage) { self.image = image }
-    }
-
-    private let cache = NSCache<NSString, Box>()
-
-    init(bytes: Int = 96 * 1024 * 1024) {
-        cache.totalCostLimit = bytes
-    }
-
-    /// A tile's key: the edition, the kind (and whether the day's lift is
-    /// on it), the tile and its density, so none stands in for another.
-    static func key(cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int = 1) -> String {
-        "\(cycle)/\(kind)/\(z)/\(x)/\(y)@\(scale)x"
-    }
-
-    static func cost(of image: CGImage) -> Int {
-        image.bytesPerRow * image.height
-    }
-
-    func image(_ key: String) -> CGImage? {
-        cache.object(forKey: key as NSString)?.image
-    }
-
-    func keep(_ image: CGImage, for key: String) {
-        cache.setObject(Box(image), forKey: key as NSString, cost: Self.cost(of: image))
-    }
-
-    func removeAll() {
-        cache.removeAllObjects()
-    }
-}
-
 /// A tile made ready to draw, palette PNG or lossless WebP (ImageIO
 /// reads either, whatever the `.png` address says): decoded once into a
 /// plain 32-bit bitmap (#547's 256 colours Core Graphics would otherwise
@@ -215,6 +176,9 @@ enum ChartTileImage {
 /// shade, so the marks, the course and the sheets over it are untouched;
 /// its alpha is the chart's fade close in (ChartFade), set as the view
 /// moves.
+///
+/// Unchecked: MKOverlayRenderer is not Sendable, and MapKit draws it on
+/// its own threads; everything it changes is behind its two locks.
 final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
     private let chart: ChartTileOverlay
     private let session: URLSession
@@ -240,18 +204,22 @@ final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
         }
     }
 
+    /// This chart's part of every tile's key, made once.
+    private let prefix: String
+
     init(chart: ChartTileOverlay, session: URLSession = .shared) {
         self.chart = chart
         self.session = session
+        let t = chart.template
+        prefix = TileCache.prefix(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : ""), scale: t.scale)
         super.init(overlay: chart)
     }
 
     /// How many levels up a stand-in is looked for while a tile loads.
     static let standInLevels = 4
 
-    private func key(_ tile: ChartTile) -> String {
-        let t = chart.template
-        return TileCache.key(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : ""), z: tile.z, x: tile.x, y: tile.y, scale: t.scale)
+    private func key(_ tile: ChartTile) -> TileCache.Key {
+        TileCache.Key(prefix: prefix, tile: tile)
     }
 
     private func level(zoomScale: MKZoomScale) -> Int? {

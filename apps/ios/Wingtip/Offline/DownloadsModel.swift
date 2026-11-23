@@ -145,7 +145,7 @@ final class DownloadsModel {
             })
             downloads.fetch(saved, urls: urls)
             let packs = Set(saved.packs)
-            Task.detached { await CyclePacks.shared.keep(regions: packs) }
+            Task { await CyclePacks.shared.keep(regions: packs) }
             problem = nil
         } catch {
             problem = Problems.say("The region could not be fetched", error)

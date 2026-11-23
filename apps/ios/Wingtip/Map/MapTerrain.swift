@@ -1,4 +1,4 @@
-@preconcurrency import MapKit
+import MapKit
 import SwiftUI
 
 /// The map's Terrain, the 3D map button's (MapSideButtons; the web's 3D

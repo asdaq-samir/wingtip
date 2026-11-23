@@ -41,8 +41,8 @@ def _account(monkeypatch):
         asked.append(("save", pilot_id, request))
         return {"id": 99}
 
-    async def replan(pilot_id, flight_id, request):
-        asked.append(("replan", flight_id, request))
+    async def replan(pilot_id, flight_id, request, replace_route=False):
+        asked.append(("replan", flight_id, request, replace_route))
         return {"id": flight_id}
 
     async def delete(pilot_id, flight_id):
@@ -78,8 +78,8 @@ def test_the_flight_is_saved_new_with_its_procedures(_account):
 
 def test_the_saved_flight_is_replaced_and_one_from_nowhere_is_refused(_account):
     answer(call("update_saved_flight", {"flight": {**FLIGHT, "cruise_altitude_ft": 7500}}))
-    kind, flight_id, request = _account[0]
-    assert (kind, flight_id) == ("replan", 12) and request["picks"] == "altitude_ft=7500"
+    kind, flight_id, request, replace_route = _account[0]
+    assert (kind, flight_id, replace_route) == ("replan", 12, False) and request["picks"] == "altitude_ft=7500"
     assert "not from a saved flight" in refusal(call("update_saved_flight", {"flight": {**FLIGHT, "saved_flight_id": None}}))
 
 
@@ -93,11 +93,12 @@ def test_saving_replacing_and_deleting_need_the_write_scope():
     for tool, args in (
         ("save_flight_plan", {"flight": FLIGHT}),
         ("update_saved_flight", {"flight": FLIGHT}),
+        ("update_saved_flight_from_view", {"flight": FLIGHT}),
         ("delete_saved_flight", {"flight_id": 12}),
     ):
         said = refusal(call(tool, args, token="read-7"))
         # The consent page's own words for the box to tick (ConnectorSettings).
-        assert "not allowed wingtip:write" in said and '"Save, change and delete your saved flights" ticked' in said, tool
+        assert "not allowed wingtip:flights" in said and '"Save, change and delete your saved flights" ticked' in said, tool
 
 
 def _read_view() -> tuple:
@@ -158,3 +159,43 @@ def test_deleting_is_the_models_to_call_and_never_the_views():
 
     delete = next(t for t in listed() if t.name == "delete_saved_flight")
     assert delete.meta["ui"] == {"visibility": ["model"]}
+
+
+def test_another_route_goes_over_a_saved_flight_only_when_the_model_says_so(_account):
+    """replace_route reaches the gateway only from the model's tool; the
+    view's own Update cannot set it, and each is shown only where it is
+    meant (L5)."""
+    answer(call("update_saved_flight", {"flight": {**FLIGHT, "destination": "KMSP"}, "replace_route": True}))
+    answer(call("update_saved_flight_from_view", {"flight": FLIGHT}))
+    assert [a[3] for a in _account] == [True, False]
+    # Sent anyway, it is no argument of the view's tool: refused, or read as False.
+    sent = call("update_saved_flight_from_view", {"flight": FLIGHT, "replace_route": True})
+    assert sent.is_error or _account[-1][3] is False
+    from .mcp_harness import listed
+
+    shown = {t.name: t.meta["ui"].get("visibility") for t in listed() if t.name.startswith("update_saved_flight")}
+    assert shown == {"update_saved_flight": ["model"], "update_saved_flight_from_view": ["app"]}
+
+
+def test_the_view_names_the_saved_flight_from_the_pilot_s_records_and_the_share_is_said(_account, monkeypatch):
+    """The Update button's route is the saved flight's own, not the one
+    handed back; a shared flight's replacement says its link follows."""
+    got = answer(call("show_flight", {"flight": {**FLIGHT, "destination": "KMSP"}}))
+    assert got["view"]["saved"] == {"id": 12, "departure": "C81", "destination": "KDLH", "same_route": False}
+    assert answer(call("show_flight", {"flight": FLIGHT}))["view"]["saved"]["same_route"] is True
+    assert answer(call("show_flight", {"flight": {**FLIGHT, "saved_flight_id": 5}}))["view"]["saved"] is None
+
+    async def shared(pilot_id):
+        return [{**SAVED, "share": {"url": "https://wingtip.test/s/abc"}}]
+
+    monkeypatch.setattr(records, "flights", shared)
+    said = call("update_saved_flight", {"flight": FLIGHT}).content[0].text
+    assert "share link now shows this route" in said
+
+
+def test_the_views_channel_is_the_pilot_s_and_this_connector_s_alone():
+    """Made with a key only the server holds, from the view's resource
+    URI and the pilot: another connector's view cannot name it."""
+    assert flight_view.channel_of("7") == flight_view.channel_of("7")
+    assert flight_view.channel_of("7") != flight_view.channel_of("8")
+    assert len(flight_view.channel_of("7")) == 32

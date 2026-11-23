@@ -9,7 +9,7 @@ import { libraryQuery } from "./shelfQuery";
 
 /** A link's hit area, 44 points tall round words in a line (CLAUDE.md:
  *  controls never grow to get there). */
-const LINK = "relative font-[inherit] after:absolute after:-inset-x-1 after:-inset-y-3";
+const LINK = "relative font-[inherit] hit-x-1 hit-y-3";
 
 /**
  * Words as the app shows them, each cited rule among them a tap that

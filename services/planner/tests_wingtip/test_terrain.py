@@ -271,3 +271,33 @@ def test_two_reads_of_the_same_ground_at_once_ask_usgs_once(monkeypatch):
     second.join(5)
     assert fetched == [2]
     assert results == [{START: GROUND_M, END: GROUND_M}] * 2
+
+
+def test_a_lines_floors_are_read_once_where_the_towns_are_known(ground, towns, tmp_path, monkeypatch):
+    # A new departure hour or airplane asks for the same line's floors
+    # again: the ground and obstacles under it are held, not read again.
+    ground()
+    towns(lambda lat, lon: False)
+    monkeypatch.setattr(terrain, "_FLOORS", type(terrain._FLOORS)(maxsize=8, ttl=60))
+    reads = []
+    read = terrain._read_floors
+    monkeypatch.setattr(terrain, "_read_floors", lambda *a: reads.append(a) or read(*a))
+    first = terrain.floor_profile(START, END, [0.0, TOTAL_NM], faa_cache_dir=tmp_path)
+    first[0]["floor_ft"] = 0
+    again = terrain.floor_profile(START, END, [0.0, TOTAL_NM], faa_cache_dir=tmp_path)
+    assert len(reads) == 1
+    # A copy each time: a caller's change to one is not what the next gets.
+    assert again[0]["floor_ft"] == 2000
+
+
+def test_a_lines_floors_are_read_again_where_the_towns_could_not_be_read(ground, tmp_path, monkeypatch):
+    # Every point taken as congested is the safe answer for now, not one
+    # to keep once the towns can be read.
+    ground()
+    monkeypatch.setattr(terrain, "_FLOORS", type(terrain._FLOORS)(maxsize=8, ttl=60))
+    reads = []
+    read = terrain._read_floors
+    monkeypatch.setattr(terrain, "_read_floors", lambda *a: reads.append(a) or read(*a))
+    terrain.floor_profile(START, END, [0.0, TOTAL_NM], faa_cache_dir=tmp_path)
+    terrain.floor_profile(START, END, [0.0, TOTAL_NM], faa_cache_dir=tmp_path)
+    assert len(reads) == 2

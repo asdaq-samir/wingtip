@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import Speech
+import Synchronization
 
 /// The microphone heard by Apple's SpeechAnalyzer (iOS 26), on the iPhone
 /// only: its transcribers run on the device's own model, never a server,
@@ -162,52 +163,55 @@ final class SpeechSession {
 
 /// The microphone's buffers, from the audio thread, converted to the
 /// analyzer's format (AVAudioConverter) and given to its input stream.
-final class AudioFeed: @unchecked Sendable {
-    private let lock = NSLock()
-    private var builder: AsyncStream<AnalyzerInput>.Continuation?
-    private var converter: AVAudioConverter?
-    private var format: AVAudioFormat?
+/// The stream, the converter and the format are one state behind one
+/// mutex: opened and closed on the main actor, read on the audio thread.
+/// Each converted buffer is a new one, as the analyzer keeps what it is
+/// given after `yield` returns.
+final class AudioFeed: Sendable {
+    private struct State {
+        var builder: AsyncStream<AnalyzerInput>.Continuation?
+        var converter: AVAudioConverter?
+        var format: AVAudioFormat?
+    }
+    private let state = Mutex(State())
 
     func open(_ builder: AsyncStream<AnalyzerInput>.Continuation, from natural: AVAudioFormat, to format: AVAudioFormat) {
-        lock.lock(); defer { lock.unlock() }
-        self.builder = builder
-        self.format = format
-        converter = natural == format ? nil : AVAudioConverter(from: natural, to: format)
+        let converter = natural == format ? nil : AVAudioConverter(from: natural, to: format)
+        state.withLock { $0 = State(builder: builder, converter: converter, format: format) }
     }
 
     func close() {
-        lock.lock(); defer { lock.unlock() }
+        let builder = state.withLock { s in
+            defer { s = State() }
+            return s.builder
+        }
         builder?.finish()
-        builder = nil
-        converter = nil
     }
 
     func append(_ buffer: AVAudioPCMBuffer) {
-        lock.lock(); defer { lock.unlock() }
-        guard let builder else { return }
-        guard let converter, let format else {
-            builder.yield(AnalyzerInput(buffer: buffer))
-            return
-        }
-        let frames = AVAudioFrameCount((Double(buffer.frameLength) * format.sampleRate / buffer.format.sampleRate).rounded(.up))
-        guard let out = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: max(frames, 1)) else { return }
-        let given = Given()
-        var problem: NSError?
-        _ = converter.convert(to: out, error: &problem) { _, status in
-            // The one buffer, then nothing more for now.
-            if given.done {
-                status.pointee = .noDataNow
-                return nil
+        state.withLock { s in
+            guard let builder = s.builder else { return }
+            guard let converter = s.converter, let format = s.format else {
+                builder.yield(AnalyzerInput(buffer: buffer))
+                return
             }
-            given.done = true
-            status.pointee = .haveData
-            return buffer
+            let frames = AVAudioFrameCount((Double(buffer.frameLength) * format.sampleRate / buffer.format.sampleRate).rounded(.up))
+            guard let out = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: max(frames, 1)) else { return }
+            // Whether the converter has had the one buffer it is given: the
+            // block runs synchronously inside convert, on this thread.
+            nonisolated(unsafe) var given = false
+            var problem: NSError?
+            _ = converter.convert(to: out, error: &problem) { _, status in
+                // The one buffer, then nothing more for now.
+                if given {
+                    status.pointee = .noDataNow
+                    return nil
+                }
+                given = true
+                status.pointee = .haveData
+                return buffer
+            }
+            if problem == nil, out.frameLength > 0 { builder.yield(AnalyzerInput(buffer: out)) }
         }
-        if problem == nil, out.frameLength > 0 { builder.yield(AnalyzerInput(buffer: out)) }
     }
-}
-
-/// Whether the converter has had the one buffer it is given.
-private final class Given: @unchecked Sendable {
-    var done = false
 }

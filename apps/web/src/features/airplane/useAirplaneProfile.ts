@@ -1,6 +1,6 @@
 import { startTransition, useMemo, useOptimistic, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { choiceOf, profileOfRegistered, tailChoice, tailOf } from "../../lib/aircraftChoice";
+import { choiceOf, profileOfRegistered, tailChoice, useTailOf } from "../../lib/aircraftChoice";
 import { airplaneFigures, bookOf, handbookOf, type FigureKey } from "../../lib/airplane/figures";
 import { readFigure } from "../../lib/airplane/figureWords";
 import { closeAirplaneProfile, useProfileOpen } from "../../lib/airplane/profileStore";
@@ -40,6 +40,7 @@ export function useAirplaneProfile() {
   const { data: list } = useQuery({ ...aircraftListQuery, enabled: !!pilot });
   const { data: profiles } = useQuery(aircraftProfilesQuery);
   const flown = usePreferences((p) => p.aircraft);
+  const flownTail = useTailOf(flown);
   const device = usePreferences((p) => p.tailFigures[tail]);
   const record = list?.find((a) => a.tailNumber.toUpperCase() === tail) ?? null;
   // What the card says of the airplane itself (useAirplaneCard): the FAA's record, for its type
@@ -48,7 +49,7 @@ export function useAirplaneProfile() {
   const registered = card.record;
   const profileName = record
     ? choiceOf(record, profiles ?? []).profile
-    : tailOf(flown) === tail && flown.profile
+    : flownTail === tail && flown.profile
       ? flown.profile
       : registered
         ? (profileOfRegistered(registered) ?? "")
@@ -104,7 +105,7 @@ export function useAirplaneProfile() {
   // book under its N-number with the figures kept for it here -- and the
   // plan shown, flown for it. Its type unknown, it is flown on the
   // pilot's own figures alone, which the plan asks for where missing.
-  const flying = tailOf(flown) === tail;
+  const flying = flownTail === tail;
   const fly = () => {
     usePreferences
       .getState()

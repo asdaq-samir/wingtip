@@ -68,7 +68,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
         <BaseButton
           onClick={() => setSort(nextSort(sort, c.id))}
           className={cn(
-            "relative inline-flex items-center gap-1 rounded-sm outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring",
+            "relative inline-flex items-center gap-1 rounded-sm outline-none hit-2 focus-visible:ring-2 focus-visible:ring-ring",
             c.figure && "flex-row-reverse",
             on ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
@@ -87,7 +87,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
         <BaseButton
           onClick={() => (vm.changing === row.original.id ? vm.stopChanging() : vm.change(row.original.id))}
           aria-expanded={vm.changing === row.original.id}
-          className="relative font-semibold text-tint outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative font-semibold text-tint outline-none hit-2 focus-visible:ring-2 focus-visible:ring-ring"
           data-testid="logbook-entry-open"
         >
           {text}

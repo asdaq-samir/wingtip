@@ -1,104 +1,22 @@
 import type { ReactNode } from "react";
-import { Ellipsis, Fuel, Navigation, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
-import { colourOf } from "../../lib/map/marks/flightCategory";
 import { TEXT } from "../../lib/text";
-import { pointName } from "../../lib/identSchema";
-import { sameField } from "../../lib/procedures";
 import type { NavLogRow, ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
 import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
-import { fieldParts, kindMenu, kindPicked, windWords, type FieldPart } from "./fieldParts";
+import { kindMenu, windWords } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
 import { TimelineProcedureRows } from "./TimelineProcedureRows";
 import { LoadedApproach, MissedApproach } from "./TimelineApproachParts";
-import { missedOnTheLine } from "./approachState";
+import { lineModel, type TimelinePoint } from "./lineModel";
+import { LineIdent, LineNotes } from "./TimelineMark";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
-
-/** One point of FPL's timeline as the plan gives it (RouteTimeline). */
-export interface TimelinePoint {
-  ident: string;
-  role: ProcedureAirport["role"];
-  /** Its place among the route's typed points (routePoints). */
-  index: number;
-  /** How many times the route is at it before, and which visit this is
-   *  where it is at it more than once (visitAt): its nav log row's and
-   *  its own altitude's. */
-  seen: number;
-  visit: number | undefined;
-  /** Its time: the departure's leave time, the others' arrival. */
-  time: ReactNode;
-  /** Its flight category from its latest METAR; none with no report. */
-  category: string | null;
-  /** Why it cannot be flown to, in red under it: a point the planner does
-   *  not know, a field NASR lists as closed (decision 0043), or a field
-   *  whose card could not be had to say. */
-  problem: string | null;
-  /** Where it, or the leg to it, lies outside the United States: the
-   *  engine's warning that its figures are by US rules (decision 0053). */
-  caution: string | null;
-  /** A field whose card has not said yet whether it is open: its line
-   *  does not open to its runways and procedures till it has (0043). */
-  checking: boolean;
-  /** A fuel stop the plan or the pilot picked. */
-  fuelStop: boolean;
-  /** An airport, not My Location or a waypoint. */
-  field: boolean;
-}
-
-/**
- * A point's mark, as Apple Maps' Directions draw theirs (the owner,
- * 2026-11-17: "give it similar look to Apple Maps for single rows"): a
- * filled 32-point circle with a white glyph -- My Location the tint with
- * the location arrow; an airport its flight category's colour (the map's,
- * grey with no report) with an airplane, a fuel stop's the pump; a
- * waypoint a grey triangle; one that cannot be flown to the red with ✕.
- * An airport's glyph is "•••", not an airplane: where the list edits the
- * route the mark is the point's menu (pointEnd's `menu`), and its dots say
- * so (the owner, 2026-11-20: "Stops should have ... buttons to show that
- * there are more options", "I meant replace the plane icon with three
- * dots"); its colour still the field's flight category. A hold on the
- * line stays the row's lift to move it (RouteGrid).
- *
- * The fills that change with the scheme are a filled button's (My
- * Location the --primary with its own --primary-foreground, as a picked
- * runway's chip is, GLASS_PICKED) or carry their glyph in the ground's
- * colour, as a badge's figure is (TabCount): at night the tint, the red
- * and the grey are light, and a white glyph on them read 2.5:1 and less,
- * under WCAG 1.4.11's 3:1 for a graphic (the HIG review, 2026-11-21:
- * Add a Stop's + on the night's tint, 2.49:1). A flight category's
- * colour is the same at night, its glyph white.
- */
-export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
-  const Glyph = point.problem ? X : position ? Navigation : !point.field ? Triangle : point.fuelStop ? Fuel : Ellipsis;
-  return (
-    <span
-      className={cn(
-        "grid size-8 place-items-center rounded-full",
-        point.problem
-          ? "bg-destructive text-background"
-          : position
-            ? "bg-primary text-primary-foreground"
-            : !point.field || !point.category
-              ? "bg-muted-foreground text-background"
-              : "text-white",
-      )}
-      // The category's colour from the map's own scale (flightCategory). With
-      // no report, the text's grey, as a waypoint's: on the map's own grey
-      // (CATEGORY_UNKNOWN) the white "•••" read 2.6:1 by day and night.
-      style={point.field && point.category && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
-      data-testid={point.fuelStop ? "timeline-fuel" : undefined}
-    >
-      <Glyph className="size-4" strokeWidth={2.4} aria-label={point.fuelStop ? "fuel stop" : undefined} aria-hidden={!point.fuelStop} />
-    </span>
-  );
-}
 
 /**
  * One line of FPL's timeline (TimelineRoute): its mark (its menu), the
@@ -137,27 +55,11 @@ export function TimelineLine({
   open: boolean;
   onOpen: (open: boolean) => void;
 }) {
-  const { onInfo, tanks, reportedOf } = vm;
-  // Never opened to land at before the field is known open (decision 0043).
-  const opens = !!field && !!vm.edit && !point.problem && !point.checking;
-  // A move of this point refused, why under it (useRouteListEdit).
-  const refused = vm.edit?.refusal?.index === point.index ? vm.edit.refusal.note : null;
-  const tank = point.role === "Departure" ? tanks.get("departure") : row ? tanks.get(row.key) : undefined;
-  const reported = reportedOf(point.ident);
-  // The gauge is a control where the fuel leaving the field is set there
-  // (FuelSet): the departure's and a stop's, where the list edits the route.
-  const fuelSet = !!tank && !!vm.onTanks && !!row && !!point.field && !point.problem && (row.kind === "departure" || row.kind === "stop");
-  const parts = field ? fieldParts(vm, field, row) : [];
+  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn, onPast } = lineModel(vm, point, row, field, last);
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
-  // "+ APCH"; the destination's hold last, once it has one. A kind picked
-  // is no chip: its fixes are points on the route's line (TimelineProcedureRows).
-  // An approach only loaded is no point on the line: its box sits after
-  // the field's line, off it (LoadedApproach).
-  const loadedHere = !!field && vm.inRoute.some((p) => p.kind === "approach" && !!p.loaded && sameField(p.ident, field.ident));
-  const onLine = (kinds: FieldPart["kinds"]) =>
-    field && !point.problem ? kinds.filter((k) => kindPicked(vm, field, k) && !(k === "approach" && loadedHere)) : [];
-  const chips = parts.map((part, i) => {
+  // "+ APCH"; the destination's hold last, once it has one.
+  const chips = parts.map(({ part, add, hold }, i) => {
     const tray = (
       <PartTray
         key={part.role}
@@ -165,11 +67,8 @@ export function TimelineLine({
         a={field!}
         part={part}
         trailing={[
-          ...part.kinds.filter((k) => !kindPicked(vm, field!, k)).map((k) => kindMenu(vm, field!, k, "add")),
-          // The destination's hold after its procedures (HoldChip), once
-          // there is one: no "+ HOLD" to add one (the owner, 2026-11-19: "No
-          // need for +HOLD"); its menu's Hold adds it.
-          ...(point.role === "Destination" && part.role === "Arrive" && vm.holdOn(point.ident)
+          ...add.map((k) => kindMenu(vm, field!, k, "add")),
+          ...(hold
             ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
             : []),
         ]}
@@ -183,14 +82,6 @@ export function TimelineLine({
       </section>
     );
   });
-  // A procedure picked, its fixes on the route's line in flight order, at
-  // the owner's pick (option D, 2026-11-21): an arrival's and an
-  // approach's before the field's line, a departure's after it.
-  const before = onLine(parts.find((p) => p.role === "Arrive")?.kinds ?? []);
-  const after = onLine(parts.find((p) => p.role === "Depart")?.kinds ?? []);
-  // Its missed approach unsuspended, the line goes on into it.
-  const missedOn = !!field && !point.problem && missedOnTheLine(vm, field);
-  const onPast = !last || after.length > 0;
   const line = (
     <Collapsible
       open={opens && open}
@@ -236,54 +127,8 @@ export function TimelineLine({
               }
             />
           )}
-          {/* The ident in the regular weight (the owner, 2026-11-20: "Stops
-              font can be non-bold"). */}
           <div className="flex min-w-0 shrink flex-col">
-            {end.change || (point.field && !point.problem) ? (
-              <h3 className="relative z-10 flex min-w-0 shrink">
-                {/* A tap on the name changes the point where the list edits
-                    the route (pointEnd's `change`, the one search with its
-                    suggestions); elsewhere it opens the airport's card. */}
-                <Button
-                  variant="plain"
-                  size="inline"
-                  onClick={end.change ?? (() => onInfo(point.ident))}
-                  aria-label={
-                    end.change
-                      ? `${pointName(point.ident)}${point.category ? `, ${point.category}` : ""}: change it`
-                      : `${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`
-                  }
-                  data-testid="timeline-ident"
-                  // The name cut short in a span of its own, not the
-                  // button: a button that clips (truncate's overflow) cut
-                  // its own 44-point area to its 22-point line (the iOS
-                  // audit's P1, "C81: change it" 25×22). Its area starts
-                  // 10 before the name, where the mark's ends (6 past the
-                  // marks' column, PointMenu's `bare`, in the line's 16),
-                  // and runs right to 44 wide at the least, over the fuel's
-                  // gauge after a short name where it is no control. Where
-                  // the gauge is one (FuelSet) the two meet in the middle of
-                  // the 18 between them, 9 past the name, so neither takes
-                  // the other's taps (the HIG review, 2026-11-21: the gauge
-                  // took 2-3 of "C81: change it"'s probes).
-                  className={cn(
-                    "relative min-w-0 font-normal after:absolute after:-inset-y-3 after:-left-2.5 after:content-['']",
-                    fuelSet ? "after:w-[max(44px,calc(100%+19px))]" : "after:w-[max(54px,calc(100%+14px))]",
-                    point.problem && "text-destructive",
-                    TEXT.row,
-                  )}
-                >
-                  <span className="min-w-0 truncate">{pointName(point.ident)}</span>
-                </Button>
-              </h3>
-            ) : (
-              <span
-                className={cn("min-w-0 truncate font-normal", point.problem && "text-destructive", TEXT.row)}
-                data-testid="timeline-ident"
-              >
-                {pointName(point.ident)}
-              </span>
-            )}
+            <LineIdent point={point} change={end.change} onInfo={() => vm.onInfo(point.ident)} fuelSet={!!fuelSet} />
           </div>
           {/* The fuel right after the ident, the time at the right (the
               owner, 2026-11-17: "Fuel should go right after airport"; kept
@@ -291,13 +136,13 @@ export function TimelineLine({
           {/* Tapped to set the fuel leaving a field (FuelSet), where the
               list edits the route: the departure's on board, a stop's after
               fuelling; the destination's and a waypoint's read only. */}
-          {fuelSet && tank && row ? (
+          {fuelSet && tank ? (
             <FuelSet
               tank={tank}
-              ident={row.airport.ident}
-              stop={row.kind === "stop"}
+              ident={fuelSet.ident}
+              stop={fuelSet.stop}
               tone={tank.low ? "low" : undefined}
-              onSet={(gallons) => vm.onTanks?.(row.airport.ident, gallons)}
+              onSet={(gallons) => vm.onTanks?.(fuelSet.ident, gallons)}
             />
           ) : (
             // As far from the ident as a gauge that is a control (FuelSet's
@@ -316,25 +161,7 @@ export function TimelineLine({
               the chevrons"): the line itself is the tap that opens it. */}
           {end.grip}
         </div>
-        {/* A field it cannot land at, or a point the planner does not
-            know: why, in red, always in sight (decision 0043). */}
-        {point.problem && (
-          <p className={cn("pb-2 text-destructive", TEXT.note)} data-testid="timeline-problem">
-            {point.problem}
-          </p>
-        )}
-        {/* Outside the United States: said under it, never refused. */}
-        {point.caution && !point.problem && (
-          <p className={cn("pb-2 text-caution-ink", TEXT.note)} data-testid="timeline-caution">
-            {point.caution}
-          </p>
-        )}
-        {/* A move of it the route cannot take, said where it was tried
-            (lib/problems: in place, no toast); polite, as a screen
-            reader's drop is said. */}
-        <p role="status" className={cn("text-destructive empty:hidden", refused && "pb-2", TEXT.note)} data-testid="timeline-refusal">
-          {refused}
-        </p>
+        <LineNotes point={point} refused={refused} />
         {opens && (
           <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
             {/* The elevation under the time (the owner, 2026-11-17: "the
@@ -355,7 +182,7 @@ export function TimelineLine({
   // read in flight names its step ("KDLH · Arrive"), so VoiceOver goes
   // from field to field.
   return (
-    <div role={parts[0] ? "region" : undefined} aria-label={parts[0] ? `${point.ident} · ${parts[0].role}` : undefined}>
+    <div role={parts[0] ? "region" : undefined} aria-label={parts[0] ? `${point.ident} · ${parts[0].part.role}` : undefined}>
       {before.map((k) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
       ))}

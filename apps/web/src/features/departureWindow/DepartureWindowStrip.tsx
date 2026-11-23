@@ -111,7 +111,7 @@ export default function DepartureWindowStrip() {
                         data-verdict={h.verdict}
                         className={cn(
                           "relative h-auto w-12 flex-col gap-0.5 rounded-xl py-1.5",
-                          "after:absolute after:-inset-1 data-pressed:ring-2 data-pressed:ring-tint",
+                          " hit-1 data-pressed:ring-2 data-pressed:ring-tint",
                           TILE_TINT[finding],
                         )}
                       >

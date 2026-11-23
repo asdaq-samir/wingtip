@@ -20,6 +20,14 @@
     },
     "fuel_gal": {
       "type": "number"
+    },
+    "fuel_grade": {
+      "enum": [
+        "avgas",
+        "jet_a",
+        null
+      ],
+      "description": "The grade the pilot picked for the fuel aboard: its standard weight a gallon (fuel_grades) comes before the loading's fuel_lb_per_gal and its own fuel_grade. Null or not given, the loading's."
     }
   },
   "required": [

@@ -18,6 +18,10 @@ final class ForecastRunMapLayer {
     private weak var map: MKMapView?
     private var shown: [RunAreaPolygon] = []
     private var drawn: [APIRunArea] = []
+    /// One task the layer owns, iterating Observations: every change is
+    /// drawn, none lost between a change and a re-arm, and it ends with the
+    /// layer.
+    private var following: Task<Void, Never>?
 
     func attach(_ map: MKMapView) {
         self.map = map
@@ -25,10 +29,12 @@ final class ForecastRunMapLayer {
     }
 
     private func follow() {
-        withObservationTracking {
-            draw(ForecastRun.shared.areas)
-        } onChange: { [weak self] in
-            Task { @MainActor in self?.follow() }
+        following?.cancel()
+        following = Task { [weak self] in
+            for await areas in Observations({ @MainActor in ForecastRun.shared.areas }) {
+                guard let self else { return }
+                draw(areas)
+            }
         }
     }
 

@@ -35,7 +35,7 @@ export default function FrequencyButton({
   const text = typeof mhz === "number" ? mhzText(mhz) : mhz;
   const button = (
     <BaseButton
-      className="relative inline-flex items-center gap-1 font-semibold text-tint tabular-nums after:absolute after:-inset-x-2 after:-inset-y-3"
+      className="relative inline-flex items-center gap-1 font-semibold text-tint tabular-nums hit-x-2 hit-y-3"
       aria-label={`Copy ${name ? `${name} ` : ""}${text}`}
       data-testid={testId}
       onClick={(event) => {

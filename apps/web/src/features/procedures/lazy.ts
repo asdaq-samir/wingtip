@@ -13,4 +13,4 @@ export type { ProceduresRouteProps } from "./routeProps";
 export { visitAt, visitRow } from "./visits";
 // A point's mark as the timeline draws it, for the connector's live view
 // (its own page, claude-view.html).
-export { TimelineMark } from "./TimelineLine";
+export { TimelineMark } from "./TimelineMark";

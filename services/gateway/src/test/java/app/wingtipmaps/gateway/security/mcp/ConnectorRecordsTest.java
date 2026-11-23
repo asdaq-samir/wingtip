@@ -60,7 +60,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @Testcontainers
 class ConnectorRecordsTest {
 
-    static final String TOKEN = "planner-and-gateway";
+    static final String TOKEN = "planner-and-gateway-share-this-long-key";
 
     /** app.internal.port's default. */
     static final int INTERNAL_PORT = 8081;
@@ -223,7 +223,11 @@ class ConnectorRecordsTest {
                 + "\"picks\":\"procs=KMSP%3AI30L%3A%3A%3AL\"}";
         mvc.perform(asPilot(put("/internal/mcp/flights/999999"), id).content(replanned))
                 .andExpect(status().isNotFound());
+        // KDLH to KMSP is another route: refused unless asked on purpose.
         mvc.perform(asPilot(put("/internal/mcp/flights/" + flightId), id).content(replanned))
+                .andExpect(status().isConflict());
+        mvc.perform(asPilot(put("/internal/mcp/flights/" + flightId + "?replaceRoute=true"), id)
+                        .content(replanned))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(Long.parseLong(flightId)))
                 .andExpect(jsonPath("$.destinationIdent").value("KMSP"))

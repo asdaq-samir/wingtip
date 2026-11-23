@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { tailOf } from "../aircraftChoice";
+import { useTailOf } from "../aircraftChoice";
 import { useExtra } from "../extras";
 import { usePreferences } from "../preferences";
 import { pilotQuery } from "../queryClient";
@@ -17,7 +17,7 @@ interface OwnAirplanes {
 
 export function useOwnAirplanes(): OwnAirplanes {
   const mine = usePreferences((s) => s.myAircraft);
-  const flownTail = usePreferences((s) => tailOf(s.aircraft));
+  const flownTail = useTailOf(usePreferences((s) => s.aircraft));
   // The flown airplane's address from the registry, the lookup the
   // airplane card already makes (cached); no live find.
   const flown = useTailLookup(flownTail, false);

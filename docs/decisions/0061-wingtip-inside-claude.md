@@ -109,7 +109,7 @@ What was read, on 2026-11-22, from the pages themselves:
    `set_fuel_on_board`, `pick_airplane` change nothing kept: read-only,
    the read scope. `open_saved_flight` reads; `save_flight_plan` adds;
    `update_saved_flight` and `delete_saved_flight` are destructive (the
-   host always asks); those three need `wingtip:write`, which the pilot
+   host always asks); those three need `wingtip:flights` (named `wingtip:write` when this was written; renamed by the security review of 2026-11-22), which the pilot
    may now leave out on the consent page. Connected Apps says what each
    connection may do in the consent page's words.
 5. **Not app tools.** Claude's app tools (tools registered in the view)

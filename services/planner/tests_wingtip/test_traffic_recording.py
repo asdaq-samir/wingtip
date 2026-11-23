@@ -3,6 +3,7 @@ in the background and from ADS-B Exchange where adsb.lol does not hear them, kep
 and the FAA radar's -- and the pressure altitudes set on the nearest
 altimeter."""
 
+import datetime as dt
 from unittest.mock import Mock, patch
 
 import pytest
@@ -131,9 +132,12 @@ def test_a_watched_flight_is_kept_across_a_restart_and_listed_with_the_archives(
     assert len(recorded._recorded("a128b9")) == 12
     stand_in(monkeypatch, "_trace", lambda hex_id: None)
     stand_in(monkeypatch, "_day_trace", lambda hex_id, day: traffic.UNREAD)
-    found = traffic.history("a128b9", limit=5)
+    # Asked on the flight's own day, the stubbed clock's: on the real date
+    # it passes out of the archive's ARCHIVE_DAYS (from 2026-11-23 UTC).
+    today = dt.datetime.fromtimestamp(wall["now"], dt.timezone.utc).date()
+    found = traffic.history("a128b9", limit=5, today=today)
     assert [f["id"] for f in found["flights"]] == [1791800000] and found["flights"][0]["origin"] is None
-    replay = traffic.past_flight("a128b9", 1791800000)
+    replay = traffic.past_flight("a128b9", 1791800000, today=today)
     assert replay is not None and len(replay["points"]) == 12
 
 

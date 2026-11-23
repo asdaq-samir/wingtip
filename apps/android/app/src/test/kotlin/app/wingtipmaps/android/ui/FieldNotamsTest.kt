@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import app.wingtipmaps.android.FieldRules
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.generated.EngineContract
 import org.junit.Assert.assertEquals
@@ -58,8 +59,13 @@ class FieldNotamsTest {
 
     @Test
     fun numberDropsTheFieldsOwnName() {
-        assertEquals("11/439", FieldNotams.number(notam("ORD 11/439"), "KORD"))
-        assertEquals("FDC 6/2478", FieldNotams.number(notam("FDC 6/2478"), "KSJT"))
-        assertEquals(listOf("KOSH", "OSH"), FieldNotams.identsOf("KOSH"))
+        // The field's names are the engine's field_names, which does not
+        // load on the JVM: given, as it answers for KORD and KSJT.
+        assertEquals("11/439", FieldNotams.number(notam("ORD 11/439"), "KORD", listOf("KORD", "ORD")))
+        assertEquals("FDC 6/2478", FieldNotams.number(notam("FDC 6/2478"), "KSJT", listOf("KSJT", "SJT")))
+        // The engine's names taken as it gives them (fieldNames.json), the
+        // ident alone where it cannot be asked.
+        assertEquals(listOf("KOSH", "OSH"), FieldNotams.identsOf("KOSH", FieldRules::names))
+        assertEquals(listOf("KOSH"), FieldNotams.identsOf("KOSH") { null })
     }
 }

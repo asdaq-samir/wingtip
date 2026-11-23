@@ -6,14 +6,16 @@ import { sameField } from "../../lib/procedures";
 import { pointEnd } from "./pointEnd";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
 import { RouteSheets } from "./RouteSheets";
-import { TimelineLine, TimelineMark, type TimelinePoint } from "./TimelineLine";
+import { TimelineLine } from "./TimelineLine";
+import { TimelineMark } from "./TimelineMark";
+import type { TimelinePoint } from "./lineModel";
 import { listedPoints } from "./stopsRow";
 import { AddStopRow, StopsRow, TIMELINE_CARD } from "./TimelineRows";
 import { visitRow } from "./visits";
 import type { ProceduresRouteProps } from "./routeProps";
 import { toggleField, useProceduresRoute } from "./useProceduresRoute";
 
-export type { TimelinePoint } from "./TimelineLine";
+export type { TimelinePoint } from "./lineModel";
 
 /** The one line open to its runways and procedures, by its key, kept
  *  while the page is: the timeline is drawn again as the sheet moves. The

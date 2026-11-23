@@ -65,11 +65,7 @@ function NewPad({ create }: { create: ReturnType<typeof useScratchpads>["create"
   const open = useOpenPage();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" className="relative self-end text-tint after:absolute after:-inset-1" data-testid="scratchpad-new" />
-        }
-      >
+      <DropdownMenuTrigger render={<Button variant="ghost" className="relative self-end text-tint hit-1" data-testid="scratchpad-new" />}>
         <Plus aria-hidden /> New Page
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

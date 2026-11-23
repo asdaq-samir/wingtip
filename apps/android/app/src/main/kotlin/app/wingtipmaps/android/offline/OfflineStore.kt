@@ -45,20 +45,18 @@ data class OfflineKept(
      *  the next one's date ("Effective 0901 UTC"). The rule was worked out
      *  here as `expires` plus nine hours and a minute. Said on the list,
      *  never removed for it alone (warn, never limit; decision 0008). */
-    fun expired(now: Instant = AppClock.javaNow()): Boolean {
-        val effective = isoDay(cycle) ?: return false
-        val answer = Engine.dataCycle(kind = "chart", effective = effective, on = now.truncatedTo(ChronoUnit.SECONDS).toString()).getOrNull()
-        return answer?.state == "expired"
-    }
+    fun expired(now: Instant = AppClock.javaNow(), cycles: ChartCycle = ChartCycle.ENGINE): Boolean = state(now, cycles) == "expired"
 
     /** Whether the cycle has taken over by `now`: in force, or since
      *  replaced (the engine's `data_cycle`, 0901Z on its date). A region of
      *  the next cycle kept ahead is drawn from then on (OfflineStore.keptInForce). */
-    fun begun(now: Instant = AppClock.javaNow()): Boolean {
-        val effective = isoDay(cycle) ?: return false
-        val state = Engine.dataCycle(kind = "chart", effective = effective, on = now.truncatedTo(ChronoUnit.SECONDS).toString()).getOrNull()?.state
-        return state == "in_force" || state == "expired"
-    }
+    fun begun(now: Instant = AppClock.javaNow(), cycles: ChartCycle = ChartCycle.ENGINE): Boolean =
+        state(now, cycles).let { it == "in_force" || it == "expired" }
+
+    /** The cycle's state at `now`, asked at the second; null for a name
+     *  that is no cycle's or where the rule cannot say. */
+    private fun state(now: Instant, cycles: ChartCycle): String? =
+        isoDay(cycle)?.let { cycles.state(it, now.truncatedTo(ChronoUnit.SECONDS).toString()) }
 
     companion object {
         /** A chart cycle's name, "10-29-2026" as the FAA's links write it, as
@@ -71,6 +69,18 @@ data class OfflineKept(
     }
 }
 
+/** The engine's `data_cycle` on the FAA's 56-day chart schedule: an
+ *  edition's state ("not_yet", "in_force", "expired") at a time, null
+ *  where it cannot say. A seam, as the engine does not load in the JVM's
+ *  unit tests, which answer from the shared fixtures (dataCycles.json). */
+fun interface ChartCycle {
+    fun state(effective: String, on: String): String?
+
+    companion object {
+        val ENGINE = ChartCycle { effective, on -> Engine.dataCycle(kind = "chart", effective = effective, on = on).getOrNull()?.state }
+    }
+}
+
 /**
  * The downloaded regions on disk: one PMTiles archive per chart kind and
  * density of each (<root>/<cycle>/<region>/<archive>.pmtiles) and the
@@ -79,7 +89,7 @@ data class OfflineKept(
  * OfflineLayers), over the network's tiles; the overlays' archive is the
  * map's own OverlayStore, fetched whole with a region.
  */
-class OfflineStore(val root: File) {
+class OfflineStore(val root: File, private val cycles: ChartCycle = ChartCycle.ENGINE) {
     private val manifest = File(root, "manifest.json")
     private val serializer = ListSerializer(OfflineKept.serializer())
     private val json = Json { ignoreUnknownKeys = true }
@@ -130,7 +140,7 @@ class OfflineStore(val root: File) {
     fun keptInForce(cycle: String, now: Instant = AppClock.javaNow()): String? =
         _kept.value.filter { sortable(it.cycle) > sortable(cycle) }.distinctBy { it.cycle }
             .sortedByDescending { sortable(it.cycle) }
-            .firstOrNull { it.cycle in begun || it.begun(now).also { b -> if (b) begun += it.cycle } }?.cycle
+            .firstOrNull { it.cycle in begun || it.begun(now, cycles).also { b -> if (b) begun += it.cycle } }?.cycle
 
     /**
      * The archives the map draws for a chart kind of the cycle: each
@@ -156,7 +166,7 @@ class OfflineStore(val root: File) {
      *  changeover day still has a chart. */
     fun sweep(now: Instant = AppClock.javaNow()) {
         val list = all()
-        for (old in list.filter { it.expired(now) }) {
+        for (old in list.filter { it.expired(now, cycles) }) {
             if (list.any { it.region == old.region && it.complete && sortable(it.cycle) > sortable(old.cycle) }) update(old.id) { null }
         }
     }

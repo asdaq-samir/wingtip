@@ -110,10 +110,7 @@ export default function SignInModal({
           <Button
             variant="link"
             data-testid="sign-in"
-            className={cn(
-              "relative h-auto p-0 font-bold tracking-tight text-tint after:absolute after:-inset-y-2 after:inset-x-0",
-              TEXT.hero,
-            )}
+            className={cn("relative h-auto p-0 font-bold tracking-tight text-tint hit-y-2 after:inset-x-0", TEXT.hero)}
           >
             Sign In
           </Button>
@@ -222,13 +219,7 @@ export default function SignInModal({
       </p>
       <nav aria-label="Legal" className={`flex justify-center gap-2 text-tint ${TEXT.note}`} data-testid="sign-in-legal">
         {[LEGAL_PAGES[1], LEGAL_PAGES[0], LEGAL_PAGES[2]].map((p) => (
-          <a
-            key={p.key}
-            className="relative after:absolute after:-inset-x-1 after:-inset-y-3.5"
-            href={p.href}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a key={p.key} className="relative hit-x-1 hit-y-3.5" href={p.href} target="_blank" rel="noreferrer">
             {p.title}
           </a>
         ))}

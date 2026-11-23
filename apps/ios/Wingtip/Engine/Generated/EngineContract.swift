@@ -5466,12 +5466,15 @@ enum EngineContract {
         /// Each station's load, in the loading's station order.
         var stationsLb: [Double?]
         var fuelGal: Double
+        /// The grade the pilot picked for the fuel aboard: its standard weight a gallon (fuel_grades) comes before the loading's fuel_lb_per_gal and its own fuel_grade. Null or not given, the loading's.
+        var fuelGrade: String?
 
         enum CodingKeys: String, CodingKey {
             case emptyWeightLb = "empty_weight_lb"
             case emptyArmIn = "empty_arm_in"
             case stationsLb = "stations_lb"
             case fuelGal = "fuel_gal"
+            case fuelGrade = "fuel_grade"
         }
     }
 
@@ -5486,7 +5489,7 @@ enum EngineContract {
         var baggageCombinedMaxLb: Double?
         var fuelArmIn: Double
         var fuelMaxGal: Double
-        /// The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
+        /// The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given. A grade the load picks (GonogoLoad's fuel_grade) comes first.
         var fuelLbPerGal: Double?
         /// The fuel the airplane burns, for its standard weight where its handbook gives none.
         var fuelGrade: String?
@@ -12982,6 +12985,98 @@ enum EngineContract {
             case lon
             case atS = "at_s"
         }
+    }
+
+    struct SunTimesAnswer: Codable, Equatable, Sendable {
+        /// UNIX seconds.
+        var solarNoonS: Double
+        /// both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+        var sun: String
+        /// UNIX seconds.
+        var sunriseS: Double?
+        /// UNIX seconds.
+        var sunsetS: Double?
+        /// both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+        var civilTwilight: String
+        /// Morning civil twilight begins, UNIX seconds.
+        var civilDawnS: Double?
+        /// Evening civil twilight ends, UNIX seconds.
+        var civilDuskS: Double?
+        /// 14 CFR 1.1's night from this evening.
+        var night: EngineContract.SunTimesAnswerNight
+        /// 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
+        var passengerNight: EngineContract.SunTimesAnswerPassengerNight
+        /// 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
+        var lights: EngineContract.SunTimesAnswerLights
+
+        enum CodingKeys: String, CodingKey {
+            case solarNoonS = "solar_noon_s"
+            case sun
+            case sunriseS = "sunrise_s"
+            case sunsetS = "sunset_s"
+            case civilTwilight = "civil_twilight"
+            case civilDawnS = "civil_dawn_s"
+            case civilDuskS = "civil_dusk_s"
+            case night
+            case passengerNight = "passenger_night"
+            case lights
+        }
+    }
+
+    /// 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
+    struct SunTimesAnswerLights: Codable, Equatable, Sendable {
+        /// When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+        var fromS: Double?
+        /// When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+        var untilS: Double?
+        /// The sun never comes above that line this day: the whole day is in the period.
+        var allDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case fromS = "from_s"
+            case untilS = "until_s"
+            case allDay = "all_day"
+        }
+    }
+
+    /// 14 CFR 1.1's night from this evening.
+    struct SunTimesAnswerNight: Codable, Equatable, Sendable {
+        /// When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+        var fromS: Double?
+        /// When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+        var untilS: Double?
+        /// The sun never comes above that line this day: the whole day is in the period.
+        var allDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case fromS = "from_s"
+            case untilS = "until_s"
+            case allDay = "all_day"
+        }
+    }
+
+    /// 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
+    struct SunTimesAnswerPassengerNight: Codable, Equatable, Sendable {
+        /// When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+        var fromS: Double?
+        /// When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+        var untilS: Double?
+        /// The sun never comes above that line this day: the whole day is in the period.
+        var allDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case fromS = "from_s"
+            case untilS = "until_s"
+            case allDay = "all_day"
+        }
+    }
+
+    struct SunTimesInput: Codable, Equatable, Sendable {
+        var lat: Double
+        /// East positive.
+        var lon: Double
+        /// The local date, yyyy-mm-dd.
+        var date: String
     }
 
     struct SurfaceAirspaceAnswer: Codable, Equatable, Sendable {

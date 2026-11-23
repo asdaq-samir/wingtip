@@ -12,9 +12,17 @@ struct IPadTests {
     /// The sidebar stays beside a card where the map keeps a phone's width
     /// between them, at full screen held sideways; not upright, nor at a
     /// half or two thirds of a 13-inch in Split View.
-    @Test func theSidebarStaysBesideACardOnlyWhereTheMapHasRoom() {
-        for wide in [1194.0, 1376, 1133] { #expect(SplitRoom.cardFitsBesideSidebar(width: wide)) }
-        for narrow in [834.0, 1032, 744, 683, 910] { #expect(!SplitRoom.cardFitsBesideSidebar(width: narrow)) }
+    @Test(arguments: [1194.0, 1376, 1133])
+    func theSidebarStaysBesideACardWhereTheMapHasRoom(width: Double) {
+        #expect(SplitRoom.cardFitsBesideSidebar(width: width))
+    }
+
+    @Test(arguments: [834.0, 1032, 744, 683, 910])
+    func theSidebarLeavesTheCardWhereTheMapHasNoRoom(width: Double) {
+        #expect(!SplitRoom.cardFitsBesideSidebar(width: width))
+    }
+
+    @Test func theSidebarsRoomAddsUpToAPhonesWidthOfMap() {
         #expect(SplitRoom.sidebar + SplitRoom.inspector + SplitRoom.leastMap == 1125)
     }
 

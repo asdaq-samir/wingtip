@@ -199,6 +199,14 @@ enum CardTests {
         XCTAssertTrue(element.isHittable, "\(element) could not be scrolled into view")
     }
 
+    /// Until the element exists and can be tapped, or `timeout` runs out:
+    /// a card or row that has finished coming in, in place of a sleep.
+    @MainActor @discardableResult
+    static func waitHittable(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND isHittable == true"), object: element)
+        return XCTWaiter().wait(for: [ready], timeout: timeout) == .completed
+    }
+
     /// Until the element stops moving: the sheet's spring at rest.
     @MainActor
     static func settled(_ element: XCUIElement) {
