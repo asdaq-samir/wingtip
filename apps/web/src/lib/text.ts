@@ -136,11 +136,18 @@ export const FIXED_FIGURE = {
  *  20 on 25 under a note's 13 on 18, as the sheet goes to the pill (--pin-p, 0 to 1, usePinAtFoot's
  *  growAt, a frame at a time under the finger; the owner, 2026-11-22:
  *  "make the figures strip very thin when fpl is half or full"; "It should
- *  follow finger to look natural"). One strip that changes size. */
+ *  follow finger to look natural"). One strip that changes size. On a
+ *  kneeboard (an iPad) the pill's own is the flying size GROW_FIGURE gives
+ *  there, 26 on 31 under 15-point names (the owner, 2026-11-21: "Yes do it
+ *  all for iPad"), from the same thin line. */
+const KNEEBOARD_PIN =
+  "kneeboard:[--fig:calc(0.8125rem+(var(--type-figure)-0.8125rem)*var(--pin-p,1))] kneeboard:leading-[calc(1rem+0.9375rem*var(--pin-p,1))]";
+const KNEEBOARD_PIN_NAME =
+  "kneeboard:text-[length:calc(0.6875rem+(var(--type-detail)-0.6875rem)*var(--pin-p,1))] kneeboard:leading-[calc(0.75rem+0.5rem*var(--pin-p,1))]";
 export const PIN_FIGURE = {
-  value: "[--fig:calc(0.8125rem+0.4375rem*var(--pin-p,1))] leading-[calc(1rem+0.5625rem*var(--pin-p,1))]",
+  value: `[--fig:calc(0.8125rem+0.4375rem*var(--pin-p,1))] leading-[calc(1rem+0.5625rem*var(--pin-p,1))] ${KNEEBOARD_PIN}`,
   unit: "text-[length:0.65em] leading-(--lead-note)",
-  name: "text-[length:calc(0.6875rem+0.125rem*var(--pin-p,1))] leading-[calc(0.75rem+0.375rem*var(--pin-p,1))]",
+  name: `text-[length:calc(0.6875rem+0.125rem*var(--pin-p,1))] leading-[calc(0.75rem+0.375rem*var(--pin-p,1))] ${KNEEBOARD_PIN_NAME}`,
   unitScale: 0.65,
 };
 

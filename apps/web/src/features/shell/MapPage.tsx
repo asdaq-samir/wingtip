@@ -20,6 +20,7 @@ import { BootMap } from "../plan-map";
 import { MODES, type Mode } from "./modes";
 import { isDesktopNow } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
+import { useInspector } from "../../hooks/use-inspector";
 import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "../../lib/workspace";
 
@@ -105,6 +106,11 @@ export default function MapPage({ mode }: { mode: Mode }) {
   useWarmAirportIndex(mode === "pilot");
   useHomeAirportSync(); // the account's home base and this device's home airport, one field
   const fullInAddress = address.view === "full";
+  // Where a card opens in the inspector at the map's right (an iPad on its
+  // side, useInspector), the side panel stays as it was under it -- its
+  // search, its head and its plan in sight -- rather than giving way to the
+  // card alone as it does where the card covers it (MapPanel).
+  const inspector = useInspector();
   const panel: PanelState = mode === "pilot" ? (fullInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
   // The panel moves the moment the address says so: nuqs changes the
   // address's state at once, where React Router landed a navigation in a
@@ -198,8 +204,9 @@ export default function MapPage({ mode }: { mode: Mode }) {
   );
   // The panel's top row with it out: the workspace's head, or the route's
   // row; none over a card alone or the console's layer.
+  const aloneOf = (pieces: WorkspacePieces) => !!pieces.alone && !inspector;
   const topRowOf = (pieces: WorkspacePieces, routeRow: ReactNode) =>
-    pieces.alone ? null : pieces.head !== undefined ? pieces.head : routeRow;
+    aloneOf(pieces) ? null : pieces.head !== undefined ? pieces.head : routeRow;
 
   return (
     // The map alone (BootMap: chart and overlay tiles, which ask the engine
@@ -265,7 +272,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 {(pieces.around ?? ((panelNode: ReactNode) => panelNode))(
                   <MapPanel
                     label={panelLabel}
-                    controls={pieces.alone ? undefined : pieces.controls}
+                    controls={aloneOf(pieces) ? undefined : pieces.controls}
                     state={panel}
                     onStateChange={setPanel}
                     onInsetsChange={setMapInsets}
@@ -277,7 +284,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     // The first row (the one search), put away under a card; and the pages, Search and FPL (MapPanel).
                     bar={pieces.bar}
                     pages={pieces.pages}
-                    layer={pieces.alone ? "card" : "tab"}
+                    layer={aloneOf(pieces) ? "card" : "tab"}
                     foot={pieces.foot}
                     flying={!!pieces.flying}
                     // Kept too where the row holds the workspace's actions: one can own a card in the

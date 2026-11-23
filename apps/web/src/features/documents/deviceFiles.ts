@@ -1,6 +1,7 @@
 import { createStore, del, get, set, update } from "idb-keyval";
 import type { CfrText, LibraryDocument } from "../../lib/api/types";
 import { ownDocName } from "./docPlace";
+import { fromBytes, putKeepingBlobs } from "./storedBlobs";
 import type { SavedMark } from "./markup";
 
 /**
@@ -45,8 +46,9 @@ export function deviceStore(): FileStore {
   if (device) return device;
   const store = createStore("wingtip-documents", "files");
   device = {
-    get: (key) => get(key, store),
-    set: (key, value) => set(key, value, store),
+    // A Blob as its bytes where the browser's IndexedDB refuses one (storedBlobs).
+    get: async <T>(key: string) => fromBytes(await get(key, store)) as T | undefined,
+    set: (key, value) => putKeepingBlobs(value, (stored) => set(key, stored, store)),
     del: (key) => del(key, store),
     update: (key, change) => update(key, change, store),
   };

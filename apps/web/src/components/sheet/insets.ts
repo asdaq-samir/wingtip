@@ -201,7 +201,9 @@ export const FLOAT_PX = 16;
  * the wide 448 from 1024 on every screen: on a 13-inch iPad the map was
  * fitted 64 px under the panel (the iPad audit, 2026-11-21). And `right`,
  * the inspector's column at the map's right while a card is in it
- * (MapPanel), its float on both sides.
+ * (MapPanel) and its float at the window's edge: the room ends at its
+ * edge as it begins at the side panel's (ipad-layout.spec measures both),
+ * where a second float left 16 px of map unused beside it.
  *
  * The screen's top under a sheet from the bottom is the status bar's and
  * the Dynamic Island's (`safeTop`, env(safe-area-inset-top)): kept out of
@@ -212,7 +214,7 @@ export const FLOAT_PX = 16;
 export function insetsOf(s: PanelState, cover: number, onPhone: boolean, fromBottom: boolean, safeTop = 0, side = 0, right = 0): MapInsets {
   const up = s === "full";
   if (!onPhone) {
-    const inspector = right ? { right: right + 2 * FLOAT_PX } : {};
+    const inspector = right ? { right: right + FLOAT_PX } : {};
     if (s !== "peek") return { top: safeTop, bottom: 0, left: FLOAT_PX + (side || CARD), out: true, up, ...inspector };
     return { top: cover + SHEET_MARGIN + FLOAT_PX, bottom: 0, left: 0, out: false, up, ...inspector };
   }

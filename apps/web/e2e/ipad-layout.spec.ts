@@ -1,6 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openRoute } from "./routeHelpers";
-import { consoleSheet, grabberTo, openConsole, settle, showTabs, sideDrawer } from "./helpers";
+import { consoleSheet, grabberTo, openConsole, openPanel, settle, settled, showTabs, sideDrawer, typeRoute } from "./helpers";
 import { pick, ROUTE } from "./cardEntries";
 
 /**
@@ -67,13 +66,40 @@ test("at every iPad width the panel takes the right layout, nothing is clipped o
     expect(at.scrollWidth, `${size.name}: nothing wider than the window`).toBeLessThanOrEqual(at.width);
     expect(at.panel.left, `${size.name}: the panel inside the window's left`).toBeGreaterThanOrEqual(0);
     expect(at.panel.right, `${size.name}: the panel inside the window's right`).toBeLessThanOrEqual(at.width + 0.5);
-    expect(at.panel.bottom, `${size.name}: the panel inside the window's foot`).toBeLessThanOrEqual(at.height + 0.5);
     if (size.side) {
+      expect(at.panel.bottom, `${size.name}: the panel inside the window's foot`).toBeLessThanOrEqual(at.height + 0.5);
       // The map's room begins where the panel ends (its float, 16, and its
       // drawn width): read off the pointer, a 13-inch iPad's map was fitted
       // 64 px under a 448-wide panel.
-      expect(Math.abs(at.insetLeft - at.panel.right), `${size.name}: the map's room at the panel's edge`).toBeLessThanOrEqual(1);
+      // Polled: the room is the panel's measured width (useSheetCover's
+      // ResizeObserver), told the map a render after the window changes,
+      // which read the 13-inch half's 331 at the mini's 384 while it came.
+      await expect
+        .poll(
+          async () => {
+            const now = await layout(page);
+            return Math.abs(now.insetLeft - now.panel.right);
+          },
+          { message: `${size.name}: the map's room at the panel's edge` },
+        )
+        .toBeLessThanOrEqual(1);
       expect(at.width - at.panel.right, `${size.name}: room for the map beside the panel`).toBeGreaterThanOrEqual(300);
+    } else {
+      // A bottom sheet is its whole height slid down to its detent (Base
+      // UI's Drawer, --drawer-snap-point-offset), its box past the foot by
+      // what is out of sight, as Maps' sheet is: its top in the window, and
+      // nothing between its foot and the window's.
+      // Polled: Base UI's Drawer measures the new window (its
+      // ResizeObserver) and eases the sheet to the detent there, half a
+      // second from 956 px down in an 834-high window to 758.
+      await expect
+        .poll(async () => (await layout(page)).panel.top, { message: `${size.name}: the sheet's top inside the window` })
+        .toBeLessThan(size.height);
+      await settled(sideDrawer(page));
+      const sheet = await layout(page);
+      expect(sheet.panel.top, `${size.name}: the sheet's top inside the window`).toBeGreaterThanOrEqual(0);
+      expect(sheet.panel.top, `${size.name}: the sheet's top inside the window`).toBeLessThan(sheet.height);
+      expect(sheet.panel.bottom, `${size.name}: the sheet down to the window's foot`).toBeGreaterThanOrEqual(sheet.height - 0.5);
     }
     await page.screenshot({ path: testInfo.outputPath(`${size.name}-${size.width}x${size.height}.png`) });
   }
@@ -131,6 +157,8 @@ test("on an iPad the map's buttons take a finger 44 points across, and a trackpa
   await page.setViewportSize({ width: 1032, height: 1376 });
   await page.goto(ROUTE);
   await settle(page);
+  // Drawn once the map is: all() reads what is there, so waited on first.
+  await expect(page.locator("[data-map-controls] button:visible").first()).toBeVisible();
   const buttons = await page.locator("[data-map-controls] button:visible").all();
   expect(buttons.length).toBeGreaterThan(0);
   for (const button of buttons) {
@@ -154,7 +182,12 @@ test("on an iPad the map's buttons take a finger 44 points across, and a trackpa
       expect(hit, `${name} at ${Math.round(x)},${Math.round(y)}`).toBe(name);
     }
   }
-  await openRoute(page);
+  // An iPad's side panel rests at its pill (MapPage: out from the start on a
+  // desktop alone), the route in it once it is out; the route's pills are
+  // in its field, the box turned into it by its toggle (Type the route,
+  // TypeRouteButton; the owner, 2026-11-22), as airport-search.spec has it.
+  await openPanel(page);
+  await typeRoute(page);
   await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
   await expect(page.getByTestId("pill-menu-change")).toBeVisible();
 });
