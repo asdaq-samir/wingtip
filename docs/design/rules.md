@@ -639,7 +639,10 @@ off by default (the owner, 2026-11-13).
    grouped box's bottom right, after Add a Stop and the fuel stops' pill on
    one line (2026-11-22: "pinned to the bottom right"), is a toggle that
    turns the same box into the route's field and back, its size and shape
-   kept and the route wrapped in it, pressed while it is the field,
+   kept at the least and the route wrapped in it, each pill whole with
+   the arrow into it, never cut at the edge, the box growing to hold every
+   line and the toggle's row under the last (the owner's iPhone,
+   2026-11-23), pressed while it is the field,
    with no "Route" row and no Done (the owner, 2026-11-22: "It should make
    the same grouped box into route box and the other way"), what is typed
    read as the field is left, the plan's Undo as ever; the
