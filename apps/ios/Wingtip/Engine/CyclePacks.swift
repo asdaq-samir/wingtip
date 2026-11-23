@@ -139,8 +139,7 @@ final nonisolated class CyclePacks: Sendable {
             // The crc32 in the address: the pack is kept as long as its
             // cycle by the phone's cache and the edge's, which a pack
             // rebuilt within the cycle would otherwise be answered from.
-            let address = Config.gateway.appending(path: Config.plannerPath("/api/cycle-pack/\(fresh.cycle)/\(name).pack"))
-                .appending(queryItems: [URLQueryItem(name: "crc32", value: String(region.crc32))])
+            let address = Planner.cyclePackURL(cycle: fresh.cycle, region: name, crc32: region.crc32)
             guard let (bytes, response) = try? await URLSession.shared.data(from: address),
                   (response as? HTTPURLResponse)?.statusCode == 200, Engine.verify(bytes),
                   (try? bytes.write(to: file, options: .atomic)) != nil else {
