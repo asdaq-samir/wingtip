@@ -6,7 +6,6 @@ import { Toggle } from "../../components/ui/toggle";
 import { TEXT } from "../../lib/text";
 import { MAX_STOPS } from "../../lib/identSchema";
 import { stopsNames, stopsTitle } from "./stopsRow";
-import { chipLook } from "./chipLook";
 
 /** The route's magenta, one solid line from under a line's mark into the
  *  next line, centred under the marks (TimelineLine's and the rows here);
@@ -197,14 +196,15 @@ export function AddStopRow({ disabled, onClick, trailing }: { disabled: boolean;
  *  2026-11-20: "We should have a add fuel stops pill in the last row and
  *  when added, remove fuel stops pill"): "Add Fuel Stops" puts the first
  *  flight's suggested ones in, "Remove Fuel Stops" takes the fuel stops
- *  out again. The procedures' "+ APCH" chip's shape (chipLook), in the
+ *  out again. The stock Button's chip, as the procedures' "+ APCH", in the
  *  tint's light wash to add and the stock destructive's light red to
  *  remove (the owner, 2026-11-20: "Adding fuel stops capsule should be
  *  light blue and removing should be light red"). */
 export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () => void }) {
   return (
     <Button
-      variant={added ? "destructive" : "ghost"}
+      variant={added ? "destructive" : "tint"}
+      size="chip"
       type="button"
       onClick={onClick}
       // The fuel glyph says "fuel", so the words are "Add Stops" and "Remove
@@ -217,7 +217,7 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
       data-testid="timeline-fuel-stops"
       style={CHIP_44}
       data-look={added ? "remove" : "add"}
-      className={cn(chipLook(true), ROW_CHIP, !added && "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
+      className={ROW_CHIP}
     >
       <Fuel className="size-4" aria-hidden="true" />
       {added ? "Remove Stops" : "Add Stops"}
@@ -240,7 +240,7 @@ export function NoFuelStopNote({ flight }: { flight: { name: string; onBoard: bo
 }
 
 /** The row's chips' areas 44 tall whatever their own height (30 at the
- *  default text, where chipLook's hit-1.5 made 42): the area's reach over
+ *  default text, where the chip's hit-1.5 made 42): the area's reach over
  *  and under the chip, as a pseudo-element, so nothing that is seen grows. */
 const CHIP_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
 
@@ -249,7 +249,7 @@ const CHIP_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
  *  19.65-px text on a 375- or 393-point iPhone (measured: "Remove Stops"
  *  wrapped by 27 points at 393, 15 at 375): their areas stay 44 (CHIP_44,
  *  hit-1.5), overlapping where the chips are closer than 12. */
-const ROW_CHIP = cn("gap-0.5 px-1 font-medium", TEXT.note);
+const ROW_CHIP = cn("shrink-0 gap-0.5 px-1", TEXT.note);
 
 /** Type the Route, at the box's own bottom right on every face, in its
  *  last row (Add a Stop's, the empty route's Destination, half a route's

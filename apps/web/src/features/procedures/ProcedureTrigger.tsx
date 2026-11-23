@@ -80,6 +80,7 @@ export function procedureTrigger({
   return (
     <Button
       variant="glass"
+      size="chip"
       {...data}
       className={chipLook(look === "add")}
       aria-label={look === "add" ? `+ ${CHIP[kind]}, ${what}: none picked` : `${label ?? SHORT[kind]}, ${what}`}
