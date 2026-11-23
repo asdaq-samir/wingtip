@@ -31,7 +31,7 @@ struct SearchSuggestions: View {
     @Environment(Traffic.self) private var traffic
 
     var body: some View {
-        if let ask = model.picking { PointAskHead(ask: ask) }
+        if let ask = model.picking { PointAskHead(ask: ask) { model.presented = false } }
         if model.query.isEmpty { BrowseSections(nearest: model.nearest, pick: pick, picking: model.picking) } else { results }
     }
 
@@ -144,23 +144,35 @@ struct SearchSuggestions: View {
 /// route, as Apple Maps' Add Stop sheet titles its search (the owner's
 /// screenshot, 2026-11-20): Add Stop, Change Stop or the end, large and
 /// bold, and the point it takes the place of under it. The search field's
-/// own Cancel cancels it, back to the plan.
+/// own Cancel cancels it, back to the plan; the iPad's field in the
+/// sidebar has none, so there the head has its own, as Maps' Add Stop
+/// sheet has.
 struct PointAskHead: View {
     let ask: PointAsk
+    /// The pick put away, back to the plan (OneSearch).
+    let cancel: () -> Void
     @Environment(Plan.self) private var plan
+    @Environment(\.splitLayout) private var split
 
     var body: some View {
         Section {
             EmptyView()
         } header: {
-            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                Text(ask.title(points: plan.idents.count))
-                    .font(WingtipType.card)
-                    .foregroundStyle(.primary)
-                    .accessibilityAddTraits(.isHeader)
-                    .accessibilityIdentifier("point-ask-title")
-                if let replacing = ask.replacing {
-                    Text("In place of \(replacing)").font(WingtipType.detail).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                    Text(ask.title(points: plan.idents.count))
+                        .font(WingtipType.card)
+                        .foregroundStyle(.primary)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("point-ask-title")
+                    if let replacing = ask.replacing {
+                        Text("In place of \(replacing)").font(WingtipType.detail).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if split {
+                    Button("Cancel", action: cancel)
+                        .font(.body)
                 }
             }
             .textCase(nil)
