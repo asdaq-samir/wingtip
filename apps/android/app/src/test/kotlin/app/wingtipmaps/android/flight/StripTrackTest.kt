@@ -13,9 +13,8 @@ class StripTrackTest {
     @Test
     fun theEnginesMagneticTrackOnTheRouteElseTheTrueLessTheVariation() {
         assertEquals(272.0, StripTrack.of(fix(270.0), underway = true, magneticDeg = 272.0)!!, 1e-9)
-        // East is least: 4 degrees west of north is 356 magnetic with 4 E.
-        assertEquals(356.0, StripTrack.of(fix(0.0), underway = true, magneticDeg = null) { _, _ -> 4.0 }!!, 1e-9)
-        assertEquals(5.0, StripTrack.of(fix(1.0), underway = true, magneticDeg = null) { _, _ -> -4.0 }!!, 1e-9)
+        // The true less the variation is the engine's magnetic_of, held on
+        // the device (MagneticAndVisibilityEngineTest).
     }
 
     @Test
