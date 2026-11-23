@@ -8,6 +8,7 @@ import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
 import { TypeRouteButton } from "../../procedures/lazy";
 import { keptTimelineHeight } from "./routeEditing";
+import { FuelPill } from "./FuelPill";
 
 /**
  * FPL's route's field, the box's other face once its toggle asks for it
@@ -108,8 +109,11 @@ export default function RouteEditor({
       {routeOpen && (
         // At the box's bottom right, where it is on the timeline's face, over
         // the box's last line (z-10), its 44-point area whole.
-        // As far in from the right as on the rows' face (TIMELINE_END).
-        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end pr-4">
+        // As far in from the right as on the rows' face (TIMELINE_END), the
+        // fuel stops' pill before it 8 apart as there, so a whole route's
+        // pair sits in one place on both faces (FuelPill).
+        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end gap-2 pr-4">
+          {wholeRoute && !vm.flight.flying && !vm.flight.dryRunning && <FuelPill vm={vm} />}
           <TypeRouteButton
             pressed
             onToggle={() => {

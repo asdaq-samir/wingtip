@@ -17,6 +17,7 @@ export function HoldChip({ ident, hold, onOpen }: { ident: string; hold: Hold | 
   return (
     <Button
       variant="glass"
+      size="chip"
       type="button"
       onClick={onOpen}
       data-testid="hold-chip"

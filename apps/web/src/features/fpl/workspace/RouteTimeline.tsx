@@ -9,11 +9,12 @@ import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import { FuelStopsChip, NoFuelStopNote, TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
+import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
 import { etaAt, rowCautions } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
 import { BoxToggle, MissingEnd } from "./RouteStart";
+import { FuelPill } from "./FuelPill";
 
 /**
  * FPL's route on the ground, the one layout (decision 0047) and where it
@@ -50,8 +51,6 @@ export default function RouteTimeline({
   const { routeRows } = vm.leg;
   const { metarCategory } = vm.brief;
   const { waypointStops } = vm.routeList;
-  const { setStops } = vm.route;
-  const { fuelToAdd, noFuelStop } = vm.stops;
   const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
   // From md up the side panel is the window's height at half as at full
@@ -189,20 +188,8 @@ export default function RouteTimeline({
   // Half a route, open to edit: the end it lacks in its place, and the
   // box's toggle in its last row where Add a Stop is on a whole one.
   const half = !read && !wholeRoute;
-  // The fuel stops' pill at Add a Stop's end: the planner's suggested ones
-  // put in, every flight's, or, once the route has fuel stops and needs no
-  // more, taken out again (the owner, 2026-11-20); none where there are
-  // neither. Add while any flight still has stops suggested, though some are
-  // in: the owner's trip read 21 gal short after the tap, its last flight's
-  // stops never offered.
-  const fuelIn = planned.stops.some((stop) => fuel.some((f) => sameField(f, stop)));
-  const fuelPill = fuelToAdd ? (
-    <FuelStopsChip added={false} onClick={fuelToAdd.add} />
-  ) : fuelIn ? (
-    <FuelStopsChip added onClick={() => setStops(planned.stops.filter((stop) => !fuel.some((f) => sameField(f, stop))))} />
-  ) : noFuelStop[0] ? (
-    <NoFuelStopNote flight={noFuelStop[0]} />
-  ) : null;
+  // The fuel stops' pill at Add a Stop's end, as on the field's face (FuelPill).
+  const fuelPill = <FuelPill vm={vm} />;
   // The box's toggle at Add a Stop's end on a whole route whose field is
   // folded, where More's item was (the owner, 2026-11-21: More keeps three
   // items), after the fuel stops' pill: the box's bottom right, as it is
