@@ -72,7 +72,11 @@ enum Glance {
     /// cut at a word to the longest a line holds.
     static func sentence(_ item: VerdictItem) -> String {
         var words = item.detail.trimmingCharacters(in: .whitespacesAndNewlines)
-        words = words.isEmpty ? item.label : "\(item.label): \(words)"
+        // The label opens the sentence, so in sentence case: "Weight &
+        // balance: …" from the engine's "Weight & Balance" (rules.md §17.7).
+        let name = lowered(item.label)
+        let label = name.prefix(1).uppercased() + name.dropFirst()
+        words = words.isEmpty ? label : "\(label): \(words)"
         if let last = words.last, !".!?…".contains(last) { words += "." }
         guard words.count > longest else { return words }
         let cut = String(words.prefix(longest - 1))
@@ -80,10 +84,15 @@ enum Glance {
         return atWord.trimmingCharacters(in: CharacterSet(charactersIn: " ,;:")) + "…"
     }
 
-    /// A label lowered for a list, its codes kept ("TFRs & special use").
+    /// A label inside a sentence: the engine's Title Case names ("TFRs &
+    /// Special Use", "Weight & Balance") lowered word by word, a code's
+    /// word kept ("TFRs & special use"), as the engine's own glance and
+    /// verdict lines set them (in_sentence, engine/crates/brief/src/gonogo/glance.rs;
+    /// docs/design/rules.md §17, rule 7).
     private static func lowered(_ label: String) -> String {
-        guard let first = label.first, let second = label.dropFirst().first, second.isLowercase else { return label }
-        return first.lowercased() + label.dropFirst()
+        label.split(separator: " ", omittingEmptySubsequences: false)
+            .map { word in word.prefix(2).filter(\.isUppercase).count == 2 ? String(word) : word.lowercased() }
+            .joined(separator: " ")
     }
 
     /// "Weather", "weather and fuel", "weather, fuel and airspace".
