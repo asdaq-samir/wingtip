@@ -10,6 +10,7 @@ import { sameField } from "../../lib/procedures";
 import type { PointAltitude } from "./PointAltitudeDialog";
 import { FuelStopChip, ProcedureChip, type RouteProcedure } from "./RouteChips";
 import RoutePill from "./RoutePill";
+import { FuelStopFold } from "./FuelStopFold";
 import { fuelStopsAt } from "./fuelStopsAt";
 
 /** What every point's token draws from: the route, what is said about its
@@ -182,27 +183,32 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
     .filter((p) => p.kind === "departure")
     .forEach((p) => pieces.push({ key: `${p.kind}-${p.label}`, tight: true, node: <ProcedureChip procedure={p} onOpen={opener(p)} /> }));
   // The fuel stops suggested for the flight that leaves this point, dashed
-  // after it as the route goes on to them: a tap puts them in, there.
-  for (const stop of flight?.stops ?? [])
+  // after it as the route goes on to them: one its ident, more folded into
+  // one pill, "+3 fuel stops" (FuelStopFold; the owner, 2026-11-23: a box of
+  // dashed pills). A tap puts them all in, there; each one from its menu.
+  const idents = flight?.stops.map((s) => s.ident) ?? [];
+  const keep = box.onKeepFuelStops;
+  if (flight && idents.length)
     pieces.push({
-      key: `fuel-${stop.ident}`,
+      key: "fuel",
       tight: false,
-      node: (
-        <FuelStopChip
-          ident={stop.ident}
-          reason={flight!.reason}
-          onAdd={
-            box.onKeepFuelStops
-              ? () =>
-                  box.onKeepFuelStops!(
-                    i,
-                    flight!.stops.map((s) => s.ident),
-                  )
-              : undefined
-          }
-          onHide={box.onHideFuelStop ? () => box.onHideFuelStop!(stop.ident) : undefined}
-        />
-      ),
+      node:
+        idents.length === 1 ? (
+          <FuelStopChip
+            ident={idents[0]!}
+            reason={flight.reason}
+            onAdd={keep ? () => keep(i, idents) : undefined}
+            onHide={box.onHideFuelStop ? () => box.onHideFuelStop!(idents[0]!) : undefined}
+          />
+        ) : (
+          <FuelStopFold
+            idents={idents}
+            reason={flight.reason}
+            onAddAll={keep ? () => keep(i, idents) : undefined}
+            onAdd={keep ? (ident) => keep(i, [ident]) : undefined}
+            onHide={box.onHideFuelStop}
+          />
+        ),
     });
   return (
     // In the sheet's own type, not the field's monospace capitals, and its
