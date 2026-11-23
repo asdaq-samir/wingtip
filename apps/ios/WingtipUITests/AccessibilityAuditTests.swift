@@ -34,7 +34,14 @@ final class AccessibilityAuditTests: XCTestCase {
     /// screenshot:
     @MainActor
     private static func known(_ issue: XCUIAccessibilityAuditIssue, screen: String, screenHeight: CGFloat, keyboard: CGRect) -> Bool {
-        guard let element = issue.element else { return unnamedUnderGlass(issue, screen: screen) }
+        guard let found = issue.element else { return unnamedUnderGlass(issue, screen: screen) }
+        // The element read once, as one snapshot: each of its attributes
+        // read off the element itself was a query of the app's whole tree
+        // (XCTest's "Find the …", four or five an issue), made inside the
+        // audit's own time, and on CI's loaded runner one issue's queries
+        // took up to 5 s, so a screen with a few known issues overran the
+        // audit ("Audit failed to complete in time", run 45142870656).
+        guard let element = try? found.snapshot() else { return false }
         let id = element.identifier, type = element.elementType
         // The system keyboard's own bar, up with the search focused: its
         // empty prediction cells are buttons with no description, Apple's
