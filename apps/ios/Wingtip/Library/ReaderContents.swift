@@ -42,6 +42,11 @@ struct ReaderContents: View {
             Button("Rename") { if let mark = renaming { model.renameBookmark(mark, to: name) } }
             Button("Cancel", role: .cancel) {}
         }
+        // A container of its own, so its rows keep their own identifiers
+        // ("reader-bookmarks"): set on the stack alone, the panel's was
+        // given to every element in it, and the bookmarks list went
+        // unfound (DocumentsIPadTests:45).
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("reader-contents-panel")
     }
 
