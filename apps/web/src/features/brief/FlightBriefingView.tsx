@@ -20,10 +20,6 @@ import PreflightPart from "./PreflightPart";
 import EnroutePart from "./EnroutePart";
 import { WORDING } from "../../lib/wording/generated/wording";
 
-// Save and the review asked from the route, at the path the routePanel
-// chunk imports them from.
-export { ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "./SaveFlight";
-
 interface Props {
   /** Which of the panel's tabs this is drawn in: its sections only; null,
    *  nothing drawn -- the one kept out of the tabs that `publish`es. */
