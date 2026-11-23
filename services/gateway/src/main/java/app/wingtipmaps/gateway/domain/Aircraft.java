@@ -16,9 +16,9 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
 import lombok.Getter;
-import org.jspecify.annotations.Nullable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.jspecify.annotations.Nullable;
 
 /**
  * One aeroplane, belonging to one pilot.

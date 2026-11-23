@@ -88,9 +88,20 @@ fn countries() -> &'static [Country] {
 }
 
 /// The engine's own code for one the file names, so each is a 'static str.
+/// A code the engine does not know (a new territory in borders.txt) stops
+/// the read, never reads as some other country: the file is built in, so
+/// the_outlines_name_only_known_places fails on it before it ships.
 fn code_of(code: &str) -> &'static str {
     const CODES: [&str; 17] = ["US", "CA", "MX", "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT", "BS"];
-    CODES.iter().find(|c| **c == code).copied().unwrap_or("BS")
+    CODES.iter().find(|c| **c == code).copied().unwrap_or_else(|| panic!("borders.txt names {code}, which the engine does not know"))
+}
+
+/// The countries and the provinces borders.txt holds, in its order, for
+/// the test that every one is known.
+#[cfg(test)]
+pub(crate) fn outline_codes() -> (Vec<&'static str>, Vec<&'static str>) {
+    let all = outlines();
+    (all.countries.iter().map(|c| c.code).collect(), all.provinces.iter().map(|p| p.code).collect())
 }
 
 fn read(text: &str) -> Outlines {
@@ -212,7 +223,9 @@ fn province_in(lat: f64, lon: f64) -> Option<&'static str> {
         "PE" => "Prince Edward Island",
         "QC" => "Quebec",
         "SK" => "Saskatchewan",
-        _ => "Yukon",
+        "YT" => "Yukon",
+        // code_of lets only the codes above through as a province's.
+        other => unreachable!("{other} is no province of Canada"),
     })
 }
 
@@ -332,7 +345,8 @@ fn and(names: &[String]) -> String {
 }
 
 /// The countries met along a leg, ends included, each once in the order
-/// met, at points LEG_STEP_NM apart on its geodesic.
+/// met, at points LEG_STEP_NM apart on its geodesic (route_adiz's; whose
+/// rules a leg is under is leg_outside's, which walks it once).
 pub fn leg_codes(a: (f64, f64), b: (f64, f64)) -> Vec<&'static str> {
     let mut codes: Vec<&'static str> = Vec::new();
     along(a, b, |code, _, _| {

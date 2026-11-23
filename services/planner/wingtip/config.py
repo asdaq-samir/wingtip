@@ -222,6 +222,11 @@ class Settings(BaseSettings):
     #: with no pilot named is the shared one. Off, such a write is refused
     #: (app.routers.notes, the security review of 2026-11-23, L9).
     app_open_writes: bool = False
+    #: The key a pilot's share of the followed airplanes is hashed with
+    #: (FOLLOW_SHARE_KEY, wingtip.traffic.recorded.share_of), 32 characters
+    #: or more where set; unset, one made at random and kept in the live
+    #: store. Never logged: _named hides a _KEY's value.
+    follow_share_key: str | None = None
     #: Tool calls one pilot's connector may make a minute and a day (app.mcp.limits).
     mcp_calls_per_minute: int = 30
     mcp_calls_per_day: int = 600
@@ -248,17 +253,20 @@ class Settings(BaseSettings):
         """A base address without its trailing slash, None where blank."""
         return _none_if_blank(value.rstrip("/") if isinstance(value, str) else value)
 
-    read_blank_as_unset = field_validator("chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", mode="before")(_none_if_blank)
+    read_blank_as_unset = field_validator(
+        "chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", "follow_share_key", mode="before"
+    )(_none_if_blank)
 
-    @field_validator("mcp_internal_token")
+    @field_validator("mcp_internal_token", "follow_share_key")
     @classmethod
-    def read_internal_token(cls, value):
-        """The connector's shared secret, 32 characters or more where set:
-        it alone opens every pilot's records on the gateway's internal
-        port, as the gateway checks at its own start (ConnectorSettings,
-        the security review of 2026-11-22)."""
+    def read_secret(cls, value):
+        """A secret, 32 characters or more where set: the connector's
+        alone opens every pilot's records on the gateway's internal port,
+        as the gateway checks at its own start (ConnectorSettings, the
+        security review of 2026-11-22), and a short follow share key could
+        be guessed."""
         if value is not None and len(value.strip()) < MIN_INTERNAL_TOKEN:
-            raise ValueError(f"is shorter than {MIN_INTERNAL_TOKEN} characters (scripts/dev/dev.sh doctor writes one)")
+            raise ValueError(f"is shorter than {MIN_INTERNAL_TOKEN} characters (openssl rand -hex 32 makes one)")
         return value
 
     @field_validator("chart_tiles_prefix", mode="before")

@@ -152,7 +152,11 @@ public class AircraftService {
                                 r.transponderCheckOn(),
                                 r.eltInspectedOn(),
                                 r.eltBatteryDueOn())
-                        .forHire(r.forHire() == null ? a.getForHire() : r.forHire())));
+                        // Null is "not said", as each date here: the form sends
+                        // every answer, so its "Not Set" clears a kept one (the
+                        // round 6 audit, G2), and the engine then weighs it as
+                        // for hire, the safe side (91.409(b)).
+                        .forHire(r.forHire())));
     }
 
     /** Its handbook figures as its pilot confirmed them, kept as sent (the

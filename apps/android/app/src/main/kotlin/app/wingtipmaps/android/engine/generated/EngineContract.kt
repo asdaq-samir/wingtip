@@ -9134,6 +9134,11 @@ object EngineContract {
          */
         val permanent: Boolean,
         /**
+         * Its end is "until the charts are updated": a permanent condition (PERM, JO 7930.2 4-2-1) with an end marked EST, or with none, stays until the charts show it, the EST time only the estimate of when. False where its end, firm, is its end.
+         */
+        @SerialName("until_charts")
+        val untilCharts: Boolean,
+        /**
          * The procedures it takes away (NA), in its order; empty where it takes none.
          */
         val procedures: List<EngineContract.NotamCardAnswerProceduresItem>,
@@ -9161,6 +9166,10 @@ object EngineContract {
          * The field's idents (OSH, KOSH), kept as written.
          */
         val idents: List<String>? = null,
+        /**
+         * The end the caller holds besides the text's own (the feed's), ISO 8601 UTC; a firm one keeps a permanent NOTAM whose text gives no end from being said to run until the charts are updated.
+         */
+        val ends: String? = null,
     )
 
     @Serializable
@@ -11946,7 +11955,7 @@ object EngineContract {
          */
         val codes: List<String>,
         /**
-         * The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
+         * The leg's own warning where it meets a country, or a province of Canada, neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
          */
         val caution: String? = null,
     )

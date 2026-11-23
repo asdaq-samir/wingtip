@@ -2,9 +2,15 @@ package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.planner.model.PlannerUsageDay;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +37,7 @@ public class UsageRollup {
     /** As far back as the planner keeps (app.usage_days' 90 days). */
     static final int PLANNER_KEEPS_DAYS = 90;
 
-    /** usage_days' column widths (V55): a longer route or method is clipped. */
+    /** usage_days' column widths (V55): a longer route is fitted (fit), a method cut. */
     static final int ROUTE_WIDTH = 300;
 
     static final int METHOD_WIDTH = 10;
@@ -67,42 +73,79 @@ public class UsageRollup {
     }
 
     /** Reads the finished days from the day after the last one kept (or as
-     *  far back as the planner keeps), and keeps them all or none, in one
+     *  far back as the planner keeps), then keeps them all or none, in one
      *  transaction: the next run starts the day after max(day), so a day
      *  before it left unwritten by a failure part way would never be read
-     *  again. Through a TransactionTemplate, not @Transactional, which
+     *  again. The planner is asked before the transaction opens, so no
+     *  database connection waits on its HTTP answer (the round 6 audit,
+     *  G1). Through a TransactionTemplate, not @Transactional, which
      *  Spring's proxy never applies to nightly()'s call on this (the safety
-     *  audit of 2026-11-23, L8). Answers how many rows. */
+     *  audit of 2026-11-23, L8). Answers how many rows were written. */
     public int rollUp() {
-        Integer rows = tx.execute(status -> keep());
-        return rows == null ? 0 : rows;
-    }
-
-    private int keep() {
         LocalDate today = LocalDate.now(clock);
         LocalDate last = jdbc.queryForObject("SELECT max(day) FROM usage_days", LocalDate.class);
         LocalDate earliest = today.minusDays(PLANNER_KEEPS_DAYS);
         LocalDate since = last == null || last.isBefore(earliest) ? earliest : last.plusDays(1);
-        List<PlannerUsageDay> days = planner.usageDaily(since).getDays();
+        Map<Key, Long> counts = finished(planner.usageDaily(since).getDays(), today);
+        Integer rows = tx.execute(status -> keep(counts));
+        return rows == null ? 0 : rows;
+    }
+
+    /** A row of usage_days: its day, route, method and status. */
+    record Key(LocalDate day, String route, String method, int status) {}
+
+    /** The finished days' rows (today's counts are still growing), each
+     *  route and method as its column takes it; two the planner sends
+     *  that come to the same row are added, never one written over the
+     *  other. */
+    static Map<Key, Long> finished(List<PlannerUsageDay> days, LocalDate today) {
+        Map<Key, Long> counts = new LinkedHashMap<>();
         for (PlannerUsageDay row : days) {
             LocalDate day = LocalDate.parse(row.getDay());
             if (!day.isBefore(today)) {
-                // Only finished days: today's counts are still growing.
                 continue;
             }
-            jdbc.update(
-                    "INSERT INTO usage_days (day, route, method, status, calls) VALUES (?, ?, ?, ?, ?)"
-                            + " ON CONFLICT (day, route, method, status) DO UPDATE SET calls = EXCLUDED.calls",
-                    day,
-                    clip(row.getRoute(), ROUTE_WIDTH),
-                    clip(row.getMethod(), METHOD_WIDTH),
-                    row.getStatus(),
-                    row.getCalls());
+            Key key = new Key(
+                    day, fit(row.getRoute(), ROUTE_WIDTH), clip(row.getMethod(), METHOD_WIDTH), row.getStatus());
+            counts.merge(key, (long) row.getCalls(), Long::sum);
         }
-        return days.size();
+        return counts;
     }
 
+    private int keep(Map<Key, Long> counts) {
+        counts.forEach((key, calls) -> jdbc.update(
+                "INSERT INTO usage_days (day, route, method, status, calls) VALUES (?, ?, ?, ?, ?)"
+                        + " ON CONFLICT (day, route, method, status) DO UPDATE SET calls = EXCLUDED.calls",
+                key.day(),
+                key.route(),
+                key.method(),
+                key.status(),
+                calls));
+        return counts.size();
+    }
+
+    /** The text as its column takes it: whole where it fits, else its
+     *  start and "#" and its SHA-256's first 16 hex digits, so two routes
+     *  alike for the first 300 characters stay two rows. */
+    static String fit(String text, int width) {
+        if (text.length() <= width) {
+            return text;
+        }
+        String mark = "#" + HexFormat.of().formatHex(sha256(text)).substring(0, 16);
+        return text.substring(0, width - mark.length()) + mark;
+    }
+
+    /** A method cut to its column: GET, POST and the rest all fit. */
     private static String clip(String text, int width) {
         return text.length() <= width ? text : text.substring(0, width);
+    }
+
+    private static byte[] sha256(String text) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException absent) {
+            // Every Java platform has SHA-256 (MessageDigest's own list).
+            throw new IllegalStateException(absent);
+        }
     }
 }
