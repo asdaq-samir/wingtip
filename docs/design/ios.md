@@ -948,10 +948,14 @@ edged in the waypoint magenta outside the turn, turned with the map
      seconds, as Mail and Photos offer one after a delete) all take it
      back; the iPad's sidebar keeps the bar's Undo button too
      (`UndoToolbarItem`). Never an alert ([HIG Alerts][hig-alerts]).
-     With two windows over the one plan, each window hands the plan its
-     own `UndoManager` as it becomes the key window (`KeyWindow`), so a
-     step is undone in the window it was made in, and only that window
-     shows its bar. Undoing Clear Route on From and To typed but never
+     With two windows over the one plan, the route has one history, the
+     plan's own `UndoManager`, and each window's manager forwards a step
+     to it (`Plan+History`, `windowUndo`): an Undo in either window takes
+     back the latest edit to the route, wherever it was made, and never
+     a route from before it, since two histories over one route would
+     each hold a state the other had already changed (round 5, in place
+     of round 4's history per window; `PlanHistoryTests`'
+     `twoWindowsShareOneHistory` holds it). Undoing Clear Route on From and To typed but never
      planned puts them back as typed, unplanned.
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.

@@ -71,6 +71,6 @@ private fun title(kind: Minimums.Kind): Int = when (kind) {
 /** A minimum as its menu writes it, by Format: 1,500 ft, 3 sm, 15 kt. */
 private fun words(kind: Minimums.Kind, value: Double): String = when (kind) {
     Minimums.Kind.CEILING -> Format.altitude(value)
-    Minimums.Kind.VISIBILITY -> Format.visibility(value)
+    Minimums.Kind.VISIBILITY -> Format.visibility(value) ?: Format.NONE
     Minimums.Kind.CROSSWIND, Minimums.Kind.WIND -> Format.speed(value.roundToInt().toDouble())
 }
