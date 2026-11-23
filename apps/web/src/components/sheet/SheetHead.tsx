@@ -38,12 +38,15 @@ export function SheetBarRow(p: {
   shown: boolean;
   hairline: boolean;
   rises?: boolean;
+  /** Faded out as the figures held at the foot reach it (sheet/pinClears). */
+  clears?: boolean;
   layout: SheetLayout;
   panelSize: PanelSizeValue;
 }) {
   const { layout } = p;
   return (
     <div
+      data-pin-clears={p.clears ? "" : undefined}
       className={cn(
         "flex shrink-0 px-4",
         barRowPad(layout.fromBottom),

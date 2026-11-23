@@ -113,10 +113,14 @@ export default function FlightFoot({
   // the tree another shape there, and React built the bar afresh (its
   // toolbar, its menu, its two panes of glass) each time the sheet reached
   // or left the pill, as the settle began (the motion review of 2026-11-22:
-  // the bar's element not the same after a trip to the pill).
+  // the bar's element not the same after a trip to the pill). At the pill
+  // it lies on the foot's edge, as it rests off it (the foot, not this
+  // wrapper, its box), where on the wrapper's foot, the middle of the
+  // pill's short foot, it stood half its height higher and over the figures
+  // as a finger raised the sheet (sheet/pinAtFoot's MAKES_WAY).
   if (more && !dryRunning && !flying) {
     return (
-      <div className="relative w-full">
+      <div className="w-full">
         <div className={panelOpen ? undefined : cn("absolute inset-x-0 bottom-0", RISEN_OVER)}>
           <FplTabBar vm={vm} more={more} fileable={fileable} onFile={onFile} routes={routes} />
         </div>

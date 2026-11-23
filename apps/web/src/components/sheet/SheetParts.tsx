@@ -81,7 +81,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
           <SheetScroller
             band={
               <>
-                <SheetBarRow bar={bar} shown={planShown} hairline={false} rises={rises} layout={layout} panelSize={panelSize} />
+                <SheetBarRow bar={bar} shown={planShown} hairline={false} rises={rises} clears layout={layout} panelSize={panelSize} />
                 <SheetHeadBlock shownAtRest={routeShown} alone={false} rises={rises} pillRow={deskPill} slots={slots} layout={layout} />
               </>
             }
