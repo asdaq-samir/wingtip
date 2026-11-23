@@ -200,7 +200,12 @@ test("a cleared route's box takes the departure first, then asks for the destina
   // Taken after the destination, the field has an arrow on from it: what
   // is typed there is the new destination.
   await expect(sideDrawer(page).getByTestId("route-arrow-on")).toHaveCount(0);
-  await sideDrawer(page).getByTestId("route-type").click();
+  // Tapped past the last point, as a pilot taps after a field's words: the
+  // field's middle is in the destination's pill's 44-point area once a
+  // suggested fuel stop's pill is on the line, and that tap is the pill's.
+  const typeHere = sideDrawer(page).getByTestId("route-type");
+  const fieldBox = (await typeHere.boundingBox())!;
+  await typeHere.click({ position: { x: fieldBox.width - 8, y: fieldBox.height / 2 } });
   await expect(sideDrawer(page).getByTestId("route-arrow-on")).toBeVisible();
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dep=/);
