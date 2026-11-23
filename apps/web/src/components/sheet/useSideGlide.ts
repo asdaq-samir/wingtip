@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import type { PanelState } from "../../lib/mapChrome";
-import { prefersReducedMotion } from "../../lib/motion";
-import { MOTION } from "../../lib/tokens";
+import { prefersReducedMotion, timing } from "../../lib/motion";
 
 /**
  * The side panel (from `md` up, MapPanel) put in and out with its edge
@@ -29,7 +28,7 @@ export function useSideGlide(panel: HTMLElement | null, size: PanelState, radius
     if (!before || before.size === size || typeof panel.animate !== "function" || prefersReducedMotion()) return;
     // Half and all the way up are one box beside the map.
     if (Math.abs(height - before.height) < 1) return;
-    const timing = { duration: MOTION.drawer * 1000, easing: `cubic-bezier(${MOTION.drawerEase.join(",")})` };
+    const glide = timing("drawer");
     const clip = (cut: number) => `inset(0 0 ${Math.max(0, cut)}px 0 round ${radius}px)`;
     // A second tap part way through goes on from where the glide is, not
     // from its first frame (the r5-ui audit's L2, 2026-11-23): the clip
@@ -46,7 +45,7 @@ export function useSideGlide(panel: HTMLElement | null, size: PanelState, radius
     ground0?.remove();
     if (height > before.height) {
       const from = seen ?? before.height;
-      panel.animate([{ clipPath: clip(height - from) }, { clipPath: clip(0) }], { ...timing, id: GLIDE });
+      panel.animate([{ clipPath: clip(height - from) }, { clipPath: clip(0) }], { ...glide, id: GLIDE });
       return;
     }
     // Put in: its ground drawn to its old height under the head, closing
@@ -63,7 +62,7 @@ export function useSideGlide(panel: HTMLElement | null, size: PanelState, radius
     ground.style.cssText = `position:fixed;pointer-events:none;top:${box.top}px;left:${box.left}px;width:${box.width}px;height:${from}px;border-radius:${radius}px`;
     panel.before(ground);
     ground
-      .animate([{ clipPath: clip(0) }, { clipPath: clip(from - height) }], timing)
+      .animate([{ clipPath: clip(0) }, { clipPath: clip(from - height) }], glide)
       .finished.catch(() => {})
       .finally(() => ground.remove());
   }, [panel, size, radius]);

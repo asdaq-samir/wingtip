@@ -94,16 +94,12 @@ def _verdict_asked(monkeypatch) -> list:
     return asked
 
 
-def test_the_briefing_never_says_the_poh_sample_load_is_the_pilots(monkeypatch):
-    """The mcp audit of 2026-11-23, H2: without the pilot's load the
-    endpoint balances the POH's sample airplane with a 170 lb pilot; that
-    is said not worked, never "within limits", and the runway distances
-    are said to be at the sample load."""
+def test_the_briefing_asks_for_the_pilots_load_and_sends_none(monkeypatch):
+    """The mcp audit of 2026-11-23, H2, and the code audit's R5-2: without
+    the pilot's load none is sent, the planner says the balance is not
+    worked, and the connector passes its findings on as they are."""
     asked = _verdict_asked(monkeypatch)
     brief = answer(call("flight_briefing", {"departure": "C81", "destination": "KDLH", "airplane_tail": "N123AB"}))
-    found = {f["key"]: f for f in brief["findings"]}
-    assert found["balance"]["finding"] == "unknown" and "within limits" not in found["balance"]["detail"]
-    assert "stations_lb" in found["balance"]["detail"] and "sample load" in found["runways"]["detail"]
     assert "load" not in asked[0] and any("stations_lb" in m or "empty_weight_lb" in m for m in brief["missing"])
 
 

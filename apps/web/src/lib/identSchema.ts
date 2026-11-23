@@ -153,10 +153,19 @@ export function routeOf(
     a = identOf(dest);
   if (!d || !a) return null;
   const idents = [d, ...stops, a];
-  // Before the engine is in (the page's first draw reads the address's
-  // route), the idents alike as written; never a throw that takes the page down.
-  const same = (x: string, y: string) => (engineLoaded() ? callEngine("same_field", { a: x, b: y }) : x === y);
-  return idents.every((ident, i) => i === 0 || !same(ident, idents[i - 1]!)) ? { dep: d, dest: a } : null;
+  return idents.every((ident, i) => i === 0 || !sameField(ident, idents[i - 1]!)) ? { dep: d, dest: a } : null;
+}
+
+/** Whether two idents name one field: the CIFP names it by its ICAO ident
+ *  (KBUR) where the route may have the FAA's (BUR), and a typed one may
+ *  come with a space round it. The one test for the app, which the
+ *  traffic's (fbo) had a second of. */
+export function sameField(a: string, b: string): boolean {
+  // Before the engine is in (a page's first draw can ask, a kept route's
+  // ways read on load): the idents alike as written, never a throw that
+  // takes the page down; the engine's answer, KBUR for BUR, once it is.
+  if (!engineLoaded()) return a.trim().toUpperCase() === b.trim().toUpperCase();
+  return callEngine("same_field", { a, b });
 }
 
 const ARROW = " → ";

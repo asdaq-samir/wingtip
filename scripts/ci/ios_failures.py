@@ -17,6 +17,8 @@ import os
 import re
 import sys
 
+from junit_annotations import say
+
 # GitHub shows ten annotations a step: past those, one more lists the rest.
 SHOWN = 9
 
@@ -42,10 +44,6 @@ def from_log(path: str) -> list[tuple[str, str]]:
         why = re.search(rf"error: .*{re.escape(name)}.*?: (.*)", text)
         found.append((name, why[1] if why else "failed (xcodebuild's log)"))
     return found
-
-
-def say(title: str, text: str) -> None:
-    print(f"::error title={title}::{text.replace('%', '%25').replace(chr(10), '%0A')[:2000]}")
 
 
 def main() -> int:

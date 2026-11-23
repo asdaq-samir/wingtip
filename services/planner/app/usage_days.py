@@ -22,6 +22,7 @@ from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+from wingtip import stores
 from wingtip.config import DATA_DIR
 
 STORE = DATA_DIR / "raw" / "usage" / "usage.sqlite"
@@ -56,8 +57,8 @@ def count(route: str, method: str, status: int) -> None:
 
 
 def _open(path: Path) -> sqlite3.Connection:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(path, timeout=10)
+    # WAL and synchronous=NORMAL, as every store here (wingtip.stores).
+    db = stores.connect(path)
     db.execute(_SCHEMA)
     return db
 

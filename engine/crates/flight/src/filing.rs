@@ -6,6 +6,7 @@
 
 use crate::limits::is_flight_level;
 use wingtip_core::text::js_round;
+use wingtip_core::time::parse_date;
 
 /// Item 9's wake turbulence category L: a maximum certificated takeoff
 /// weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1).
@@ -167,7 +168,7 @@ pub fn endurance_burn_gph(legs: &[BurnLeg], cruise_burn_gph: Option<f64>) -> Opt
 /// a day not written "YYYY-MM-DD". Both days are UTC's.
 pub fn date_of_flight(depart: &str, today: &str) -> Option<String> {
     fn day(d: &str) -> Option<&str> {
-        d.get(..10).filter(|d| d.as_bytes()[4] == b'-' && d.as_bytes()[7] == b'-')
+        d.get(..10).filter(|d| parse_date(d).is_some())
     }
     let (d, t) = (day(depart)?, day(today)?);
     (d != t).then(|| format!("DOF/{}{}{}", &d[2..4], &d[5..7], &d[8..10]))

@@ -16,7 +16,9 @@ const STEP_FT = 50;
 export function useHazardView(cruiseFt: number | null): HazardView | null {
   const setting = usePreferences((s) => s.hazard);
   const clearance = usePreferences((s) => s.hazardClearanceFt);
-  const speedKt = useOwnShip((s) => (s.enabled && s.fix ? s.fix.speedKt : null));
+  // The speed to the knot (the engine reads it only as underway or not),
+  // so a fix a second is no new answer at a steady speed either.
+  const speedKt = useOwnShip((s) => (s.enabled && s.fix && s.fix.speedKt != null ? Math.round(s.fix.speedKt) : null));
   const gpsFt = useOwnShip((s) => {
     const ft = s.enabled && s.fix ? s.fix.altitudeFt : null;
     return ft === null ? null : Math.round(ft / STEP_FT) * STEP_FT;

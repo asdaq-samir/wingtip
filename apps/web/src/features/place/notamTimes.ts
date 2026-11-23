@@ -1,5 +1,5 @@
 import { corner, dateOf, windowOf, type FieldNotam, type NotamReading } from "./fieldNotams";
-import { twoFigures, zuluTime } from "../../lib/format";
+import { MONTHS, formatIn, twoFigures, zuluTime } from "../../lib/format";
 
 /** One labelled line of a NOTAM's times: "Since", "Starts", "Ends",
  *  "Duration". */
@@ -47,46 +47,31 @@ export function timeLines(n: FieldNotam, read: NotamReading, zone: string | null
   return lines;
 }
 
-/** One formatter per zone for a NOTAM card's day and clock with the
- *  zone's own short name ("27 May 2026, 13:43 CDT"), made the first time
- *  (an Intl formatter is costly to make); null where the browser does not
- *  know the zone. */
-const cardFormats = new Map<string, Intl.DateTimeFormat | null>();
-function cardFormat(zone: string): Intl.DateTimeFormat | null {
-  if (!cardFormats.has(zone)) {
-    let format: Intl.DateTimeFormat | null = null;
-    try {
-      const day = { day: "numeric", month: "short", year: "numeric" } as const;
-      format = new Intl.DateTimeFormat("en-US", {
-        ...day,
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-        timeZoneName: "short",
-        timeZone: zone,
-      });
-    } catch {
-      // RangeError: a zone this browser's time-zone data does not have.
-    }
-    cardFormats.set(zone, format);
-  }
-  return cardFormats.get(zone) ?? null;
-}
+/** A NOTAM card's day and clock with the zone's own short name ("27 May
+ *  2026, 13:43 CDT"). */
+const CARD = {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZoneName: "short",
+} as const;
 
 /** "27 May 2026, 13:43 CDT" in the field's own time (the planner's
  *  zone), the year only where `year`; UTC where the zone is not known
  *  ("27 May 2026, 1843Z"), never the device's own time called the
  *  field's. `clock` false says the day alone. */
 function cardWhen(at: Date, zone: string | null, year: boolean, clock = true): string {
-  const format = zone ? cardFormat(zone) : null;
+  const format = zone ? formatIn(zone, CARD) : null;
   const p: Record<string, string | undefined> = format
     ? Object.fromEntries(format.formatToParts(at).map((x) => [x.type, x.value]))
-    : { day: String(at.getUTCDate()), month: UTC_MONTHS[at.getUTCMonth()], year: String(at.getUTCFullYear()) };
+    : { day: String(at.getUTCDate()), month: MONTHS[at.getUTCMonth()], year: String(at.getUTCFullYear()) };
   const day = `${p.day} ${p.month}${year ? ` ${p.year}` : ""}`;
   if (!clock) return day;
   return format ? `${day}, ${p.hour}:${p.minute} ${p.timeZoneName}` : `${day}, ${zuluTime(at)}`;
 }
-const UTC_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
  * A NOTAM's times on its own card, in words (the owner, 2026-11-23, of

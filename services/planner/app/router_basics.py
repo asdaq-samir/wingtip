@@ -48,31 +48,24 @@ CHART_CACHE = "public, max-age=60"
 DIAGRAM_CACHE = f"public, max-age={28 * 24 * 3600}, immutable"
 
 
-def near_points(near: str) -> tuple:
-    """ "42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
-    not a pair of numbers left out."""
-    points = []
-    for pair in near.split(";"):
-        try:
-            lat, lon = (float(v) for v in pair.split(","))
-        except ValueError:
-            continue
-        points.append((lat, lon))
-    return tuple(points)
-
-
-def points(text: str, on_bad: str, off_globe: str) -> list[tuple[float, float]]:
+def points(text: str, on_bad: str | None = None, off_globe: str | None = None) -> list[tuple[float, float]]:
     """ "lat,lon;lat,lon;..." as its points, [] where none was sent (empty
-    pieces between semicolons are passed over). A piece that is not a pair
-    of numbers is a 422 saying `on_bad`, and a point off the globe one
-    saying `off_globe`: each route words its own."""
-    if not text.strip():
-        return []
-    try:
-        found = [(float(a), float(b)) for a, b in (p.split(",") for p in text.split(";") if p.strip())]
-    except ValueError as err:
-        raise HTTPException(422, on_bad) from err
-    if any(not (-90 <= lat <= 90 and -180 <= lon <= 180) for lat, lon in found):
+    pieces between semicolons are passed over). Strict, a piece that is
+    not a pair of numbers is a 422 saying `on_bad`, and a point off the
+    globe one saying `off_globe`: each route words its own. Lenient (no
+    `on_bad`), such a piece is left out."""
+    found = []
+    for piece in text.split(";"):
+        if not piece.strip():
+            continue
+        try:
+            lat, lon = (float(v) for v in piece.split(","))
+        except ValueError as err:
+            if on_bad is None:
+                continue
+            raise HTTPException(422, on_bad) from err
+        found.append((lat, lon))
+    if off_globe and any(not (-90 <= lat <= 90 and -180 <= lon <= 180) for lat, lon in found):
         raise HTTPException(422, off_globe)
     return found
 

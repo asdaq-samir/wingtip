@@ -49,3 +49,22 @@ rules:
       - metavariable-regex:
           metavariable: $N
           regex: ^(111\.32|111_?320(\.0*)?)$
+  - id: degree-scale-outside-units-py
+    message: >-
+      Metres in a degree written here. The Python services' flat sums take
+      it from services/planner/wingtip/units.py (M_PER_DEG); a copy is where
+      a different rounding hides (the code audit of 2026-11-23, round 4's
+      L3: chart_edges had its own). A test's own worked figures are its data.
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude:
+        - "services/planner/wingtip/units.py"
+        - "**/tests/**"
+        - "**/tests_wingtip/**"
+        - "**/test_*.py"
+    patterns:
+      - pattern: $N
+      - metavariable-regex:
+          metavariable: $N
+          regex: ^(111\.32\d*|111_?320(\.0*)?)$

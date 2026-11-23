@@ -12231,8 +12231,8 @@ extension Components {
                 case off
             }
         }
-        /// The weight and balance for the load used: the pilot's, or the
-        /// POH's sample airplane where none was sent.
+        /// The weight and balance for the pilot's own load (null where none
+        /// was sent: it is never balanced at the POH's sample airplane).
         ///
         /// - Remark: Generated from `#/components/schemas/LoadBalance`.
         public struct LoadBalance: Codable, Hashable, Sendable {

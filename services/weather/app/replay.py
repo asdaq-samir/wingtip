@@ -25,13 +25,12 @@ import calendar
 import gzip
 import json
 import re
-import shutil
 import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from wingtip import weather_store
+from wingtip import utc, weather_store
 
 #: The products a recording holds: every report, forecast and advisory a
 #: plan or a brief reads, GLMP's modelled weather and the TFRs.
@@ -123,7 +122,7 @@ def shifted(value, shift: int, near: datetime, key: str = ""):
     if not isinstance(value, str):
         return value
     if m := _ISO.match(value):
-        at = datetime.fromisoformat(m[1] + (m[2] or "") + "+00:00") + timedelta(seconds=shift)
+        at = utc.parse(m[1] + (m[2] or "")) + timedelta(seconds=shift)
         fraction = m[3] or ""
         return at.strftime("%Y-%m-%dT%H:%M") + (at.strftime(":%S") if m[2] else "") + fraction + m[4]
     if _STAMP.match(value):
@@ -199,18 +198,19 @@ def record(store: Path, out: Path) -> None:
 def seed(recording: Path, now: float | None = None) -> set[str]:
     """Each recorded product written into the store, its times moved to
     now, and a try that confirms it; the names written."""
+    import numpy as np
+
     now = time.time() if now is None else now
     recorded_at = float(json.loads((recording / "recorded.json").read_text())["recorded_at"])
     shift, near = _hour_shift(recorded_at, now), datetime.fromtimestamp(recorded_at, timezone.utc)
-    store = weather_store.store_dir()
-    store.mkdir(parents=True, exist_ok=True)
+    weather_store.store_dir().mkdir(parents=True, exist_ok=True)
     written = set()
     for path in sorted(recording.glob("*.json.gz")):
         name = path.name.removesuffix(".json.gz")
         raw = json.loads(gzip.decompress(path.read_bytes()))
         for array in _arrays(raw):
-            with gzip.open(recording / f"{array}.npy.gz") as source, open(store / f"{array}.npy", "wb") as target:
-                shutil.copyfileobj(source, target)
+            with gzip.open(recording / f"{array}.npy.gz") as source:
+                weather_store.write_array(array, np.load(source, allow_pickle=False))
         until = raw.get("until")
         data, meta = shifted(raw.get("data"), shift, near), shifted(raw.get("meta") or {}, shift, near)
         weather_store.write(name, data, float(raw["fetched_at"]) + shift, None if until is None else float(until) + shift, meta)

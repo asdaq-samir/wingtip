@@ -112,8 +112,12 @@ def by_key(body: dict) -> dict:
     return {i["key"]: i for i in body["items"]}
 
 
-def test_a_quiet_flight_with_the_sample_load_and_a_pilot_is_nothing_found_against_it(stubbed):
-    resp = client.post("/api/go-no-go", json=ask())
+#: A pilot of 170 lb alone, and 53 gal at the start.
+SOLO = {"empty_weight_lb": 1642, "empty_arm_in": 38.1, "stations_lb": [170, 0, 0, 0], "fuel_gal": 53}
+
+
+def test_a_quiet_flight_with_the_pilots_load_is_nothing_found_against_it(stubbed):
+    resp = client.post("/api/go-no-go", json=ask(load=SOLO))
     assert resp.status_code == 200
     body = resp.json()
     items = by_key(body)
@@ -123,7 +127,6 @@ def test_a_quiet_flight_with_the_sample_load_and_a_pilot_is_nothing_found_agains
     assert items["altitude"]["detail"] == "5,500 ft · Lowest plan"
     assert items["fuel"]["detail"] == "Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal beyond reserve"
     assert (items["fuel"]["tab"], items["fuel"]["section"]) == ("preflight", "Fuel")
-    # The POH's sample airplane, a pilot of 170 lb and the usable fuel.
     assert body["balance"]["load"]["stations_lb"] == [170, 0, 0, 0]
     assert body["loading"]["stations"][0]["name"]
     assert items["balance"]["detail"].endswith(", within limits")
@@ -134,6 +137,16 @@ def test_a_quiet_flight_with_the_sample_load_and_a_pilot_is_nothing_found_agains
     assert marks["alcohol"] == (None, True, "You") and marks["pressure"] == (None, False, "The day")
     # The briefing for the flight's own hours.
     assert stubbed["asked"]["ete_min"] == 150.0
+
+
+def test_with_no_load_the_balance_is_not_worked_never_the_poh_sample(stubbed):
+    """The code audit of 2026-11-23, R5-2: a go/no-go with no load says
+    the weight and balance is not worked (14 CFR 91.9(a), 91.103), and
+    balances nothing at the POH's sample airplane."""
+    body = client.post("/api/go-no-go", json=ask()).json()
+    balance = by_key(body)["balance"]
+    assert (balance["finding"], balance["detail"]) == ("unknown", "Not worked out: give your load")
+    assert body["balance"] is None and body["loading"]["stations"]
 
 
 def test_what_the_pilot_sends_decides_the_minimums_the_loading_and_the_risk(stubbed):

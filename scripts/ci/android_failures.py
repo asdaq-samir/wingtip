@@ -14,25 +14,15 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from junit_annotations import failures, say
+
 # GitHub shows ten annotations a step: past those, one more lists the rest.
 SHOWN = 9
 
 
 def tests(root: Path) -> list[tuple[str, str]]:
-    found = []
-    for path in sorted(root.glob("app/build/test-results/**/*.xml")):
-        try:
-            suite = ET.parse(path).getroot()
-        except ET.ParseError:
-            continue
-        for case in suite.iter("testcase"):
-            bad = case.find("failure")
-            if bad is None:
-                bad = case.find("error")
-            if bad is not None:
-                why = (bad.get("message") or bad.text or "failed").strip().splitlines()[0]
-                found.append((f"Android test failed: {case.get('classname', '').rsplit('.', 1)[-1]}.{case.get('name')}", why))
-    return found
+    paths = sorted(str(p) for p in root.glob("app/build/test-results/**/*.xml"))
+    return [(f"Android test failed: {test}", (lines or ["failed"])[0]) for test, lines in failures(paths)]
 
 
 def lint(root: Path) -> list[tuple[str, str]]:
@@ -49,10 +39,6 @@ def lint(root: Path) -> list[tuple[str, str]]:
             at = f"{where.get('file', '').split('apps/android/')[-1]}:{where.get('line', '')}" if where is not None else ""
             found.append((f"Android lint: {issue.get('id')}", f"{at} {issue.get('message', '')}".strip()))
     return found
-
-
-def say(title: str, text: str) -> None:
-    print(f"::error title={title}::{text.replace('%', '%25').replace(chr(10), '%0A')[:2000]}")
 
 
 def main() -> int:
