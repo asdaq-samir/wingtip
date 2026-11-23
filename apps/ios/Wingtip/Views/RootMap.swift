@@ -174,8 +174,6 @@ struct RootMap: View {
                 // Over the iPhone's sheet they ride its top, so the banners
                 // have the width.
                 .padding(.trailing, layout == .split ? WingtipSize.mapButton + WingtipSpace.md * 2 : 0)
-                // After the chart, as the buttons are (MapButtonsDock above).
-                .accessibilitySortPriority(-1)
             }
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: WingtipSpace.sm) {
@@ -190,8 +188,6 @@ struct RootMap: View {
                     if traffic.on, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
-                // After the chart, as the buttons are (MapButtonsDock above).
-                .accessibilitySortPriority(-1)
             }
             // The flight's own work while the map is up (FlightLoops), in
             // the lead window alone (MainWindow), behind the map.
