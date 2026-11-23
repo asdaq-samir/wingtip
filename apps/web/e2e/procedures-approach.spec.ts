@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
+import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { procedureRuns as runs } from "./marks";
 import { pickAirplane } from "./startState";
 import { circuitsOf, openRunways, LIST, DRAWN, ARRIVAL_DRAWN } from "./procedureStubs";
@@ -78,7 +78,9 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await expect.poll(() => runs(page, "hold")).toBe(1);
   await expect.poll(async () => (await drawn(page, "procedure-fixes")).length).toBe(3);
   // Said in the route's box after the destination's pill, and a tap there
-  // opens the Procedures.
+  // opens the Procedures. The box's pills are its field's (typeRoute), not
+  // the timeline's.
+  await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-procedure");
   await expect(chip).toHaveText("ILS 09 · DLH");
   // Before the destination's pill, as it is flown into the field.

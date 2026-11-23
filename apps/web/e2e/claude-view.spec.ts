@@ -84,7 +84,11 @@ test("the live view draws the flight Claude plans and a tap changes it", { tag: 
   await view.getByTestId("view-approach-KDLH").getByRole("button", { name: "Activate" }).click();
   await expect(view.getByTestId("view-approach-KDLH")).toContainText("active, missed approach suspended");
   const asked = await page.evaluate(() => (window as unknown as { asked: unknown[] }).asked);
-  expect(asked).toEqual([{ name: "change_approach", arguments: { flight: fixture.flight, airport: "KDLH", action: "activate" } }]);
+  // The tool and its arguments exactly; the host's SDK adds its own
+  // _meta (a progressToken) to every call, which is not the view's.
+  expect(asked).toEqual([
+    expect.objectContaining({ name: "change_approach", arguments: { flight: fixture.flight, airport: "KDLH", action: "activate" } }),
+  ]);
   const told = await page.evaluate(() => (window as unknown as { told: { content: { text: string }[] }[] }).told);
   expect(told[0]!.content[0]!.text).toContain("the pilot activated the ILS OR LOC RWY 27 at KDLH");
 });

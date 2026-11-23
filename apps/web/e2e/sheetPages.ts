@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { airportMarks, searchAirports, sideDrawer, slow } from "./helpers";
+import { airportMarks, cardHost, searchAirports, sideDrawer, slow } from "./helpers";
 export { showPage } from "./oneSearch";
 
 /**
@@ -67,7 +67,7 @@ export async function openAirport(page: Page, ident: string, touch = false) {
   const row = searchAirports(page).filter({ hasText: ident }).first().locator(".font-mono").first();
   if (touch) await row.tap({ timeout: slow(10_000) });
   else await row.click({ timeout: slow(10_000) });
-  await expect(sideDrawer(page).getByTestId("place-card").getByTestId("place-name").last()).toHaveText(ident, { timeout: slow(10_000) });
+  await expect(cardHost(page).getByTestId("place-card").getByTestId("place-name").last()).toHaveText(ident, { timeout: slow(10_000) });
 }
 
 /** The airport `ident` drawn on the chart tapped by a finger where

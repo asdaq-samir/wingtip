@@ -65,8 +65,13 @@ test.describe("on the owner's phone's width, to a finger", () => {
     await typeRoute(page);
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
-    // Its lines', the buttons over them in FPL's bar (the owner, 2026-11-14).
-    expect((await box.getByTestId("route-slide").boundingBox())!.height).toBeLessThanOrEqual(48);
+    // Turned from the grouped box, the route wraps over its lines (the
+    // owner, 2026-11-22: "Route box should be as tall as the grouped box,
+    // same shape"): the field past KRFD ends on KRFD's own line, not one
+    // of its own under it.
+    const end = (await box.getByTestId("route-type").boundingBox())!;
+    const last = (await box.getByRole("group", { name: "Destination KRFD" }).boundingBox())!;
+    expect(end.y + end.height).toBeLessThanOrEqual(last.y + last.height + 4);
   });
 });
 

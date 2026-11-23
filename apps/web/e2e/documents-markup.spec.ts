@@ -66,8 +66,14 @@ const keptMarks = (page: Page) =>
   );
 
 /** A stroke across the page's lower half, by a mouse's pointer events. */
+/** A stroke over the part of the page in sight, by fractions of it: at a
+ *  desktop's width the page is fitted to it, 1604 tall in an 800-high
+ *  window, and a stroke laid over the whole page ran off the screen. */
 async function stroke(page: Page, sheet: Locator, from: [number, number], to: [number, number]) {
-  const box = (await sheet.boundingBox())!;
+  const [whole, window] = [(await sheet.boundingBox())!, page.viewportSize()!];
+  const top = Math.max(whole.y, 0),
+    foot = Math.min(whole.y + whole.height, window.height);
+  const box = { x: whole.x, width: whole.width, y: top, height: foot - top };
   await page.mouse.move(box.x + box.width * from[0], box.y + box.height * from[1]);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * to[0], box.y + box.height * to[1], { steps: 12 });
