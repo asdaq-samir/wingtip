@@ -966,6 +966,13 @@ At each airport the chart already shows, from the map's own
   route's names, its ident giving way to them; own ship's room is kept
   clear by an empty symbol under the HTML arrow, so no label is drawn
   under it.
+  No chart field is drawn bare (the owner's iPhone screenshot,
+  2026-11-23, the Great Lakes at 6): a field's mark and its ident are
+  placed together, so one whose ident has no room, or isn't named yet at
+  that zoom, is not drawn there, the bigger field winning
+  (`symbol-sort-key`, the engine's `field_mark_rank`). A Class B's field
+  and the one whose card is open always keep their mark, only the ident
+  giving way; the route's fields and stops wear their own marks.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather
