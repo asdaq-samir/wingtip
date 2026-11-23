@@ -166,7 +166,10 @@ def register(apps: Apps) -> None:
         # the planner offers no stop where the usable fuel is not known
         # (wingtip.flight_legs.fuel_stops_of), a stop filling the tanks to
         # it. Never "none needed" then (the mcp audit of 2026-11-23, H1).
-        if totals.get("usable_fuel_gal") is None or totals.get("fuel_margin_gal") is None:
+        # A route that lands on the way has a check for each flight
+        # (flight_view.fuel_checks); its own totals carry none.
+        checks = [c for _, c in flight_view.fuel_checks(totals)]
+        if any(c.get("usable_fuel_gal") is None or c.get("fuel_margin_gal") is None for c in checks):
             raise ToolError(
                 f"Fuel stops need {flight.airplane_tail}'s usable fuel, which Wingtip does not have: add it to "
                 f"{flight.airplane_tail} in Wingtip's Setup, Airplanes, then ask again."

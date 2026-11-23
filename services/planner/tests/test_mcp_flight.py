@@ -150,3 +150,18 @@ def test_the_plan_names_the_winds_it_flew_and_its_link_keeps_the_time(monkeypatc
     plan = answer(call("plan_route", {"departure": "C81", "destination": "KDLH", "depart_at": "2026-12-01T15:00:00Z"}))
     assert plan["sources"][1]["source"].startswith("Aviation Weather Center GFA winds aloft and NOAA GFS temperatures")
     assert "depart=2026-12-01T15%3A00%3A00%2B00%3A00" in plan["open_in_wingtip"]
+    # An IFR plan opens in Wingtip as IFR (lib/address's rules; L8).
+    ifr = answer(call("plan_route", {"departure": "C81", "destination": "KDLH", "rules": "ifr"}))
+    assert "rules=ifr" in ifr["open_in_wingtip"]
+
+
+def test_a_route_that_lands_on_the_way_gives_each_flight_s_fuel_check():
+    """The safety audit of 2026-11-23, M6: its totals carry no check of their
+    own (the tanks are filled at each stop), so each flight's is in hops."""
+    hop = {"usable_fuel_gal": 53.0, "fuel_required_gal": 30.04, "reserve_gal": 6.0, "fuel_margin_gal": -3.5, "ete_min": 80.0}
+    totals = {"distance_nm": 300.0, "hops": [{"departure": "C81", "destination": "KMSN", "totals": hop}]}
+    totals["no_fuel_stop"] = [{"departure": "C81", "destination": "KMSN", "on_board": False}]
+    got = flight_tools.totals_of(totals)
+    figures = {"fuel_required_gal": 30.04, "reserve_gal": 6.0, "usable_fuel_gal": 53.0, "fuel_margin_gal": -3.5}
+    assert got["hops"] == [{"departure": "C81", "destination": "KMSN", **figures}]
+    assert got["no_fuel_stop"] == [{"departure": "C81", "destination": "KMSN"}]

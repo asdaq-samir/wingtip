@@ -93,6 +93,22 @@ def test_the_followed_are_capped_and_the_card_opened_latest_is_asked_first(wall,
     assert traffic.followed() == ["a00004", "a00003", "a00002"]
 
 
+def test_one_pilot_s_follows_never_push_out_another_s(wall, monkeypatch):
+    """The safety audit of 2026-11-23, M5: each pilot follows FOLLOW_EACH at
+    most, their own oldest going, so one account's card opens cannot evict
+    every other pilot's airplanes."""
+    monkeypatch.setattr(recorded, "FOLLOW_EACH", 3)
+    wall["t"] += 1
+    traffic.follow("b00001", "pilot-a")
+    for n in range(10):
+        wall["t"] += 1
+        traffic.follow(f"a0000{n}", "pilot-b")
+    assert "b00001" in traffic.followed()
+    assert traffic.followed()[:3] == ["a00009", "a00008", "a00007"] and len(traffic.followed()) == 4
+    # The store keeps no pilot's id, only a short hash of it.
+    assert "pilot-a" not in recorded.share_of("pilot-a") and len(recorded.share_of("pilot-a")) == 12
+
+
 def test_track_points_go_after_30_days_though_the_airplane_is_never_heard_again(wall):
     store.record("a3c858", {"t": wall["t"], "lat": 42.0, "lon": -88.0}, wall["t"] - traffic.RECORD_KEEP_S)
     store.record("a3c858", {"t": wall["t"] + 600, "lat": 42.1, "lon": -88.0}, wall["t"] - traffic.RECORD_KEEP_S)

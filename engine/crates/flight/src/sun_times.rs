@@ -95,8 +95,14 @@ fn period(out: &mut String, today: &Ends, next: &Ends, margin_s: f64, rule: &str
 /// What each period is, as the rules read it (eCFR): the words a host says
 /// beside its times, so none keeps a copy.
 const NIGHT_RULE: &str = "14 CFR 1.1's night: end of evening civil twilight to beginning of morning civil twilight (91.151(a)(2)'s 45-minute VFR reserve, 91.205(c)'s equipment, night flight time)";
-const PASSENGER_NIGHT_RULE: &str = "14 CFR 61.57(b): 1 hour after sunset to 1 hour before sunrise; carrying passengers in it needs three takeoffs and three landings to a full stop made in it in the preceding 90 days";
-const LIGHTS_RULE: &str = "14 CFR 91.209(a): position lights on from sunset to sunrise";
+/// 61.57(b)(1) as the eCFR gives it (2026-11-23): who may act as PIC
+/// carrying persons in the period, and what the three takeoffs and landings
+/// must have been. The words say the rule; nothing here permits a flight.
+const PASSENGER_NIGHT_RULE: &str = "14 CFR 61.57(b)(1): no person may act as pilot in command of an aircraft carrying persons from 1 hour after sunset to 1 hour before sunrise unless, within the preceding 90 days, that person made at least three takeoffs and three landings to a full stop in that period, as sole manipulator of the flight controls, in an aircraft of the same category, class and type (if a class or type rating is required)";
+/// 91.209(a): sunset to sunrise, and in Alaska also whenever a prominent
+/// unlighted object cannot be seen from 3 statute miles or the sun is more
+/// than 6 degrees below the horizon, which can need the lights by day.
+const LIGHTS_RULE: &str = "14 CFR 91.209(a): position lights on from sunset to sunrise; in Alaska, also whenever a prominent unlighted object cannot be seen from 3 statute miles or the sun is more than 6 degrees below the horizon";
 
 /// The local date "yyyy-mm-dd" as days since 1970-01-01.
 fn date_days(name: &str, date: &str) -> Result<i64, String> {

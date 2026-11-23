@@ -83,6 +83,10 @@ fn a_metric_visibility_is_the_reportable_value_it_stands_for() {
     assert_eq!(metres_to_sm(1500.0), 0.875);
     // 5,000 m is 3.1 sm: 3, the whole mile below.
     assert_eq!(metres_to_sm(5000.0), 3.0);
+    // A figure standing for no US value is floored, never lifted a step:
+    // 4,000 m is 2.485 sm, 2 1/4 (not 2 1/2); 4,400 m is 2.734, 2 1/2.
+    assert_eq!(metres_to_sm(4000.0), 2.25);
+    assert_eq!(metres_to_sm(4400.0), 2.5);
     assert_eq!(metres_to_sm(9999.0), 6.0);
     // Ten kilometres and more, as some states write them: 18 km is 11.2 sm.
     assert_eq!(parse("METAR SKBO 021300Z 36005KT 18KM FEW020 12/08 Q1028").unwrap().visibility_sm, Some(11.0));

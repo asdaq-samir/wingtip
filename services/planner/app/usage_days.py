@@ -68,16 +68,25 @@ def flush(path: Path | None = None) -> int:
     with _LOCK:
         pending = dict(_PENDING)
         _PENDING.clear()
-    db = _open(path or STORE)
     try:
-        with db:
-            db.executemany(
-                "INSERT INTO daily VALUES (?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET calls = calls + excluded.calls",
-                [(*key, calls) for key, calls in pending.items()],
-            )
-            db.execute("DELETE FROM daily WHERE day < ?", ((_today() - timedelta(days=KEEP_DAYS)).isoformat(),))
-    finally:
-        db.close()
+        db = _open(path or STORE)
+        try:
+            with db:
+                db.executemany(
+                    "INSERT INTO daily VALUES (?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET calls = calls + excluded.calls",
+                    [(*key, calls) for key, calls in pending.items()],
+                )
+                db.execute("DELETE FROM daily WHERE day < ?", ((_today() - timedelta(days=KEEP_DAYS)).isoformat(),))
+        finally:
+            db.close()
+    except Exception:
+        # The write failed whole (the transaction rolled back): the counts
+        # go back to wait for the next flush rather than being lost (the
+        # safety audit of 2026-11-23, L9).
+        with _LOCK:
+            for key, calls in pending.items():
+                _PENDING[key] += calls
+        raise
     return len(pending)
 
 

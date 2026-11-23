@@ -1652,8 +1652,8 @@
             "type" : [ "string", "null" ]
           },
           "forHire" : {
-            "description" : "Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b))",
-            "type" : "boolean"
+            "description" : "Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b)); null until the owner says, weighed as for hire",
+            "type" : [ "boolean", "null" ]
           },
           "hoursNow" : {
             "format" : "double",

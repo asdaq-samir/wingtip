@@ -106,6 +106,7 @@ public record AircraftDto(
 
             @Schema(
                     description = "Whether it carries people or is given for flight instruction for hire, when the "
-                            + "100-hour inspection applies (91.409(b))")
-            boolean forHire) {}
+                            + "100-hour inspection applies (91.409(b)); null until the owner says, weighed as for hire")
+            @Nullable
+            Boolean forHire) {}
 }

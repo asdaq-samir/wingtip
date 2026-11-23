@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Each planner route's calls a day, kept in Postgres (V55, usage_days):
@@ -31,18 +31,25 @@ public class UsageRollup {
     /** As far back as the planner keeps (app.usage_days' 90 days). */
     static final int PLANNER_KEEPS_DAYS = 90;
 
+    /** usage_days' column widths (V55): a longer route or method is clipped. */
+    static final int ROUTE_WIDTH = 300;
+
+    static final int METHOD_WIDTH = 10;
+
     private final PlannerApi planner;
     private final JdbcOperations jdbc;
+    private final TransactionTemplate tx;
     private final Clock clock;
 
     @Autowired
-    public UsageRollup(PlannerApi planner, JdbcOperations jdbc) {
-        this(planner, jdbc, Clock.systemUTC());
+    public UsageRollup(PlannerApi planner, JdbcOperations jdbc, TransactionTemplate tx) {
+        this(planner, jdbc, tx, Clock.systemUTC());
     }
 
-    UsageRollup(PlannerApi planner, JdbcOperations jdbc, Clock clock) {
+    UsageRollup(PlannerApi planner, JdbcOperations jdbc, TransactionTemplate tx, Clock clock) {
         this.planner = planner;
         this.jdbc = jdbc;
+        this.tx = tx;
         this.clock = clock;
     }
 
@@ -60,9 +67,18 @@ public class UsageRollup {
     }
 
     /** Reads the finished days from the day after the last one kept (or as
-     *  far back as the planner keeps), and keeps them; answers how many rows. */
-    @Transactional
+     *  far back as the planner keeps), and keeps them all or none, in one
+     *  transaction: the next run starts the day after max(day), so a day
+     *  before it left unwritten by a failure part way would never be read
+     *  again. Through a TransactionTemplate, not @Transactional, which
+     *  Spring's proxy never applies to nightly()'s call on this (the safety
+     *  audit of 2026-11-23, L8). Answers how many rows. */
     public int rollUp() {
+        Integer rows = tx.execute(status -> keep());
+        return rows == null ? 0 : rows;
+    }
+
+    private int keep() {
         LocalDate today = LocalDate.now(clock);
         LocalDate last = jdbc.queryForObject("SELECT max(day) FROM usage_days", LocalDate.class);
         LocalDate earliest = today.minusDays(PLANNER_KEEPS_DAYS);
@@ -78,11 +94,15 @@ public class UsageRollup {
                     "INSERT INTO usage_days (day, route, method, status, calls) VALUES (?, ?, ?, ?, ?)"
                             + " ON CONFLICT (day, route, method, status) DO UPDATE SET calls = EXCLUDED.calls",
                     day,
-                    row.getRoute(),
-                    row.getMethod(),
+                    clip(row.getRoute(), ROUTE_WIDTH),
+                    clip(row.getMethod(), METHOD_WIDTH),
                     row.getStatus(),
                     row.getCalls());
         }
         return days.size();
+    }
+
+    private static String clip(String text, int width) {
+        return text.length() <= width ? text : text.substring(0, width);
     }
 }

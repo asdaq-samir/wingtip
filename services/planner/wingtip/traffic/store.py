@@ -17,11 +17,14 @@ The tables:
   with its place and time; kept while it is fresh (STALE_S).
 - looked: the regions (adsb.lol's cells, never a view's own middle) the
   map has asked for traffic round in the last minute (radar.LOOKED_S).
-- followed: the airplanes whose card has been opened, each with when it
-  was last opened; dropped FOLLOW_KEEP_S after that (recorded.py).
+- following: the airplanes whose card has been opened, each with when it
+  was last opened and by whose share (`who`, a short one-way hash of the
+  pilot's id, never the id: recorded.share_of); dropped FOLLOW_KEEP_S
+  after that (recorded.py).
 - points: each recorded airplane's track, a point a row, kept as long as
   RECORD_KEEP_S (wingtip.traffic.recorded).
-Nothing in any table names a pilot or an account. The planner prunes all
+Nothing in any table names a pilot or an account; `following` counts
+each pilot's share by a hash it cannot be read back from. The planner prunes all
 three on a schedule (wingtip.traffic.radar.prune, from app.main), not
 only when ingest or a request happens to write.
 - beats: what ingest last said of each feed and of itself (its health).
@@ -44,7 +47,9 @@ _SCHEMA = """
     CREATE TABLE IF NOT EXISTS radar (hex TEXT PRIMARY KEY, lat REAL, lon REAL, at REAL, plane TEXT);
     CREATE INDEX IF NOT EXISTS radar_at ON radar (at);
     CREATE TABLE IF NOT EXISTS looked (place TEXT PRIMARY KEY, lat REAL, lon REAL, radius REAL, at REAL);
-    CREATE TABLE IF NOT EXISTS followed (hex TEXT PRIMARY KEY, since REAL);
+    DROP TABLE IF EXISTS followed;
+    CREATE TABLE IF NOT EXISTS following (who TEXT, hex TEXT, since REAL, PRIMARY KEY (who, hex));
+    CREATE INDEX IF NOT EXISTS following_hex ON following (hex);
     CREATE TABLE IF NOT EXISTS points (hex TEXT, t REAL, point TEXT, PRIMARY KEY (hex, t)) WITHOUT ROWID;
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
 """
@@ -179,24 +184,34 @@ def looked(since: float) -> list[tuple[float, float, float]]:
 # The followed airplanes and their recorded tracks.
 
 
-def follow(hex_id: str, at: float, most: int) -> None:
-    """An airplane followed from now on, or still: `since` is when its card
-    was last opened, which its expiry counts from. At most `most` are
-    followed: past that, the ones whose card was opened longest ago go."""
-    _write("INSERT INTO followed (hex, since) VALUES (?, ?) ON CONFLICT (hex) DO UPDATE SET since = excluded.since", (hex_id, at))
-    _write("DELETE FROM followed WHERE hex IN (SELECT hex FROM followed ORDER BY since DESC LIMIT -1 OFFSET ?)", (most,))
+def follow(hex_id: str, who: str, at: float, each: int, most: int) -> None:
+    """An airplane followed from now on, or still, in `who`'s share: `since`
+    is when its card was last opened, which its expiry counts from. At most
+    `each` in one share, so one account opening cards cannot push every
+    other pilot's airplanes out (the safety audit of 2026-11-23, M5), and
+    `most` in all; past either, the ones whose card was opened longest ago
+    go, from that share first."""
+    _write(
+        "INSERT INTO following (who, hex, since) VALUES (?, ?, ?) ON CONFLICT (who, hex) DO UPDATE SET since = excluded.since",
+        (who, hex_id, at),
+    )
+    _write(
+        "DELETE FROM following WHERE who = ? AND hex IN (SELECT hex FROM following WHERE who = ? ORDER BY since DESC LIMIT -1 OFFSET ?)",
+        (who, who, each),
+    )
+    _write("DELETE FROM following WHERE rowid IN (SELECT rowid FROM following ORDER BY since DESC LIMIT -1 OFFSET ?)", (most,))
 
 
 def unfollow_before(before: float) -> int:
-    """The airplanes whose card has not been opened since `before` followed
-    no more; how many. Their tracks age out on their own (forget_points)."""
-    return _write("DELETE FROM followed WHERE since < ?", (before,))
+    """The follows whose card has not been opened since `before` dropped;
+    how many. Their tracks age out on their own (forget_points)."""
+    return _write("DELETE FROM following WHERE since < ?", (before,))
 
 
 def unfollow_unheard(before: float) -> int:
     """The airplanes followed since before `before` that no source has
     been heard from at all, followed no more; how many."""
-    return _write("DELETE FROM followed WHERE since < ? AND NOT EXISTS (SELECT 1 FROM points WHERE points.hex = followed.hex)", (before,))
+    return _write("DELETE FROM following WHERE since < ? AND NOT EXISTS (SELECT 1 FROM points WHERE points.hex = following.hex)", (before,))
 
 
 def forget_points(before: float) -> int:
@@ -207,12 +222,12 @@ def forget_points(before: float) -> int:
 
 
 def is_followed(hex_id: str) -> bool:
-    return bool(_query("SELECT 1 FROM followed WHERE hex = ?", (hex_id,)))
+    return bool(_query("SELECT 1 FROM following WHERE hex = ?", (hex_id,)))
 
 
 def followed() -> list[str]:
     """The followed airplanes' addresses, the card opened latest first."""
-    return [row[0] for row in _query("SELECT hex FROM followed ORDER BY since DESC, hex")]
+    return [row[0] for row in _query("SELECT hex FROM following GROUP BY hex ORDER BY MAX(since) DESC, hex")]
 
 
 def record(hex_id: str, point: dict, oldest: float) -> bool:

@@ -86,7 +86,7 @@
             "boolean",
             "null"
           ],
-          "description": "Flown for hire, so the 100-hour inspection applies (91.409(b))."
+          "description": "Flown for hire, so the 100-hour inspection applies (91.409(b)); null, not said, is weighed as for hire and its reminder says \"if flown for hire\"."
         },
         "elt_battery_due_on": {
           "type": [

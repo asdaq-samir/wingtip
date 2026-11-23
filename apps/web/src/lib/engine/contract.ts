@@ -3823,7 +3823,7 @@ export interface EngineContract {
     answer: SunDownAnswer;
   };
   /**
-   * A day's sun at a point, as times: its solar noon, sunrise and sunset (the sun's upper limb on the horizon, its centre 0.833 degrees down; NOAA's solar calculation, the Naval Observatory's definition), and the beginning of morning and the end of evening civil twilight (its centre six degrees down, as the Air Almanac publishes it); and the periods the rules read from them that begin that evening and end the next morning: 14 CFR 1.1's night (end of evening civil twilight to beginning of morning civil twilight: 91.151(a)(2)'s reserve, 91.205(c)'s equipment), 61.57(b)'s period (1 hour after sunset to 1 hour before sunrise: the three takeoffs and landings to a full stop it asks for within 90 days are made in it, and passengers are carried in it only then) and 91.209(a)'s position lights (sunset to sunrise). The date is the pilot's local one, read at the longitude's mean noon. Where the sun does not cross a line that day (Alaska's summer, the Arctic's winter) its instants are null and `sun` or `civil_twilight` says which way.
+   * A day's sun at a point, as times: its solar noon, sunrise and sunset (the sun's upper limb on the horizon, its centre 0.833 degrees down; NOAA's solar calculation, the Naval Observatory's definition), and the beginning of morning and the end of evening civil twilight (its centre six degrees down, as the Air Almanac publishes it); and the periods the rules read from them that begin that evening and end the next morning: 14 CFR 1.1's night (end of evening civil twilight to beginning of morning civil twilight: 91.151(a)(2)'s reserve, 91.205(c)'s equipment), 61.57(b)(1)'s period (1 hour after sunset to 1 hour before sunrise: no person may act as pilot in command of an aircraft carrying persons in it without three takeoffs and three landings to a full stop made in it within the preceding 90 days, as sole manipulator of the flight controls, in an aircraft of the same category, class and type (if a class or type rating is required)) and 91.209(a)'s position lights (sunset to sunrise; in Alaska also whenever a prominent unlighted object cannot be seen from 3 statute miles or the sun is more than 6 degrees below the horizon). The date is the pilot's local one, read at the longitude's mean noon. Where the sun does not cross a line that day (Alaska's summer, the Arctic's winter) its instants are null and `sun` or `civil_twilight` says which way.
    */
   sun_times: {
     input: SunTimesInput;
@@ -9376,7 +9376,7 @@ export interface InspectionsDueInput {
    */
   tail_number?: string | null;
   /**
-   * Flown for hire, so the 100-hour inspection applies (91.409(b)).
+   * Flown for hire, so the 100-hour inspection applies (91.409(b)); null, not said, is weighed as for hire and its reminder says "if flown for hire".
    */
   for_hire?: boolean | null;
   /**

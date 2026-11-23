@@ -7061,7 +7061,7 @@ nonisolated enum EngineContract {
         var vorCheck: EngineContract.InspectionsDueInputVorCheck?
         /// The airplane's registration, for the reminders' words.
         var tailNumber: String?
-        /// Flown for hire, so the 100-hour inspection applies (91.409(b)).
+        /// Flown for hire, so the 100-hour inspection applies (91.409(b)); null, not said, is weighed as for hire and its reminder says "if flown for hire".
         var forHire: Bool?
         /// YYYY-MM-DD, the date marked on the transmitter (91.207(c)).
         var eltBatteryDueOn: String?

@@ -79,6 +79,66 @@
         "permanent": false,
         "procedures": []
       }
+    },
+    {
+      "about": "A taxiway closed between two others names the closed one, never a between-point (3-3-6)",
+      "text": "!ORD 11/070 ORD TWY A BTN TWY B AND TWY C CLSD 2611120000-2611202359",
+      "answer": {
+        "account": "ORD",
+        "category": "Taxiway",
+        "title": "Taxiway A closed between taxiway B and taxiway C",
+        "effect": "Taxiway A is closed between taxiway B and taxiway C.",
+        "permanent": false,
+        "procedures": []
+      }
+    },
+    {
+      "about": "A taxiway closed between a taxiway and a runway: the runway stays open (3-3-6)",
+      "text": "!OSH 11/072 OSH TWY A BTN TWY B AND RWY 01/19 CLSD 2511120000-2511202359",
+      "answer": {
+        "account": "OSH",
+        "category": "Taxiway",
+        "title": "Taxiway A closed between taxiway B and runway 01/19",
+        "effect": "Taxiway A is closed between taxiway B and runway 01/19.",
+        "permanent": false,
+        "procedures": []
+      }
+    },
+    {
+      "about": "Closed only to the wider airplanes: no card of ours, the NOTAM's words stand in",
+      "text": "!ORD 10/175 ORD TWY A2 BTN TWY A AND TWY B CLSD TO ACFT WINGSPAN MORE THAN 118FT 2610311030-2611261200",
+      "answer": {
+        "account": "ORD",
+        "category": "Taxiway",
+        "title": null,
+        "effect": null,
+        "permanent": false,
+        "procedures": []
+      }
+    },
+    {
+      "about": "Closed except taxiing keeps the exception (CLSD EXC TAX, JO 7930.2 TBL 3-3-1)",
+      "text": "!OSH 11/042 OSH RWY 18/36 CLSD EXC TAX 2511120900-2511121700",
+      "answer": {
+        "account": "OSH",
+        "category": "Runway",
+        "title": "Runway 18/36 closed except taxiing",
+        "effect": "Runway 18/36 is closed except taxiing.",
+        "permanent": false,
+        "procedures": []
+      }
+    },
+    {
+      "about": "A transition not authorized is a part of the arrival: no card of ours, the words stand in (7-1-3)",
+      "text": "!FDC 6/2 ORD STAR CHICAGO O'HARE INTL, CHICAGO, IL. BENKY SIX ARRIVAL... CARYN TRANSITION NA. 2611010000-2612010000",
+      "answer": {
+        "account": "FDC",
+        "category": "Arrival procedures",
+        "title": null,
+        "effect": null,
+        "permanent": false,
+        "procedures": []
+      }
     }
   ]
 }

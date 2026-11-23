@@ -196,7 +196,14 @@ fn navaid(body: &[String], r: &NotamRead) -> Four {
 fn approach(after: &str, r: &NotamRead) -> Four {
     let Some(title) = r.title.as_deref() else { return Four::default() };
     let words: Vec<&str> = after.split_whitespace().map(|w| w.trim_matches(|c: char| matches!(c, ',' | '.' | ';'))).collect();
-    let na = words.windows(2).any(|p| p == ["PROCEDURE", "NA"]);
+    // Only a sentence that is "PROCEDURE NA" and nothing more takes the
+    // whole approach away; "PROCEDURE NA AT NIGHT" or "... NA WHEN ..."
+    // is a part of it (7-1-3), which the NOTAM's words say, not ours.
+    let sentences: Vec<Vec<&str>> = after.split('.').map(|s| s.split_whitespace().collect()).collect();
+    let na = sentences.iter().any(|s| s[..] == ["PROCEDURE", "NA"]);
+    if !na && words.contains(&"NA") {
+        return Four::default();
+    }
     let minimums = words.iter().any(|w| matches!(*w, "DA" | "MDA" | "VIS" | "VISIBILITY" | "RVR"));
     // NA is "not authorized" (JO 7340.2); FDC NOTAMs amend published
     // approaches (AIM 5-1-3).

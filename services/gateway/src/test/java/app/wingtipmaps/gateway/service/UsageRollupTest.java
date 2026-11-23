@@ -19,7 +19,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /** The planner's daily counts kept in Postgres (V55): finished days only,
@@ -28,6 +30,7 @@ class UsageRollupTest {
 
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18");
     static JdbcTemplate jdbc;
+    static TransactionTemplate TX;
 
     private static final Clock NOV_23 = Clock.fixed(Instant.parse("2026-11-23T04:20:00Z"), ZoneOffset.UTC);
 
@@ -39,8 +42,10 @@ class UsageRollupTest {
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
-        jdbc = new JdbcTemplate(
-                new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()));
+        DriverManagerDataSource db =
+                new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        jdbc = new JdbcTemplate(db);
+        TX = new TransactionTemplate(new DataSourceTransactionManager(db));
     }
 
     @AfterAll
@@ -61,7 +66,7 @@ class UsageRollupTest {
                         row("2026-11-22", "/api/plan", 200, 55),
                         row("2026-11-22", "/api/plan", 502, 1),
                         row("2026-11-23", "/api/plan", 200, 3))));
-        UsageRollup rollup = new UsageRollup(planner, jdbc, NOV_23);
+        UsageRollup rollup = new UsageRollup(planner, jdbc, TX, NOV_23);
 
         rollup.rollUp();
         // Nothing kept yet: as far back as the planner keeps.

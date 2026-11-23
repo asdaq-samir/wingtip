@@ -212,6 +212,31 @@ def test_the_line_says_the_fuel_check_was_not_worked_where_no_usable_fuel_is_kno
     assert "Fuel check: not worked" in said("show_flight", {**ROUTE, "airplane_tail": "N9XY"})
 
 
+def test_a_route_that_lands_on_the_way_reads_each_flight_s_fuel_check(monkeypatch):
+    """The safety audit of 2026-11-23, H2: a route with a landing carries
+    its fuel checks in totals.hops (one a flight, the tanks filled at each
+    stop), none of its own. It was said "not worked" and its short second
+    flight never said; add_fuel_stops refused for usable fuel it had."""
+
+    def hop(dep, dest, margin):
+        figures = {"usable_fuel_gal": 53.0, "fuel_required_gal": 30.0, "reserve_gal": 6.0, "reserve_min": 30.0, "fuel_margin_gal": margin}
+        return {"departure": dep, "destination": dest, "totals": figures}
+
+    async def landing(flight, pilot_id):
+        p = fake_plan(flight)
+        p["totals"]["hops"] = [hop("C81", "KMSN", 12.0), hop("KMSN", "KDLH", -3.5)]
+        return p, AIRPLANE
+
+    monkeypatch.setattr(flight_view, "planned", landing)
+    flight = {**FLOWN, "stops": ["KMSN"]}
+    fuel = next(line for line in said("show_flight", flight).splitlines() if line.startswith("Fuel"))
+    assert "not worked" not in fuel and "C81-KMSN" in fuel and "KMSN-KDLH" in fuel
+    assert "Least margin -3.5 gal" in fuel and "Short of fuel: " in fuel and "short by 3.5 gal" in fuel
+    stops = call("add_fuel_stops", {"flight": flight})
+    assert not stops.is_error
+    assert said("add_fuel_stops", flight).startswith("No fuel stop put in, and the flight is short of fuel")
+
+
 def test_an_edit_needs_only_the_read_scope():
     assert not call("show_flight", {"flight": ROUTE}, token="read-7").is_error
 

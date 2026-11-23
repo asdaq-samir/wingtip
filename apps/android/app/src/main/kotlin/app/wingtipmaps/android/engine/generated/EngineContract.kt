@@ -7231,7 +7231,7 @@ object EngineContract {
         @SerialName("tail_number")
         val tailNumber: String? = null,
         /**
-         * Flown for hire, so the 100-hour inspection applies (91.409(b)).
+         * Flown for hire, so the 100-hour inspection applies (91.409(b)); null, not said, is weighed as for hire and its reminder says "if flown for hire".
          */
         @SerialName("for_hire")
         val forHire: Boolean? = null,

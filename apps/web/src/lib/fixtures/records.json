@@ -124,6 +124,7 @@
         "static_check_on": "2024-02-29",
         "transponder_check_on": null,
         "hundred_hour_at_hours": 1234.5,
+        "for_hire": false,
         "vor_check": {
           "on": "2026-11-01",
           "kind": "AIRBORNE",

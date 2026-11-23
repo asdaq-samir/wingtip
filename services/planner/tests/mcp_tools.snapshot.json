@@ -1779,7 +1779,7 @@
       "readOnlyHint": true,
       "title": "Plan a route"
     },
-    "description": "Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
+    "description": "Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, wind, ground speed, time and fuel, the totals with the reserve and the fuel margin (each flight's in hops where it lands on the way), and the cautions. Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
@@ -2813,6 +2813,7 @@
         "offset": {
           "default": 0,
           "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "maximum": 500,
           "minimum": 0,
           "title": "Offset",
           "type": "integer"

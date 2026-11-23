@@ -63,6 +63,10 @@ open_prs=$(gh pr list --state open --limit 500 --json headRefName -q '.[].headRe
 
 on_main() { # is every patch of ref $1 on origin/main?
   git merge-base --is-ancestor "$1" origin/main 2> /dev/null && return 0
+  # git cherry compares patches and skips merge commits, whose conflict
+  # resolutions are work of their own: a branch with a merge not on main is
+  # kept (the safety audit of 2026-11-23, L10).
+  [ -z "$(git rev-list --merges origin/main.."$1" 2> /dev/null)" ] || return 1
   ! git cherry origin/main "$1" 2> /dev/null | grep -q '^+'
 }
 # Seconds since ref $1 last changed: its commit, or for a local branch its

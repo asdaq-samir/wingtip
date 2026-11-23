@@ -152,7 +152,7 @@ public class AircraftService {
                                 r.transponderCheckOn(),
                                 r.eltInspectedOn(),
                                 r.eltBatteryDueOn())
-                        .forHire(r.forHire() == null ? a.isForHire() : r.forHire())));
+                        .forHire(r.forHire() == null ? a.getForHire() : r.forHire())));
     }
 
     /** Its handbook figures as its pilot confirmed them, kept as sent (the

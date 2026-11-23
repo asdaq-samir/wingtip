@@ -79,7 +79,7 @@ public class PaperworkClient {
     public static PlannerInspectionsAsk askOf(Aircraft a, List<AircraftDueItem> kept) {
         PlannerInspectionsAsk ask = new PlannerInspectionsAsk()
                 .tailNumber(a.getTailNumber())
-                .forHire(a.isForHire())
+                .forHire(a.getForHire())
                 .annualOn(a.getAnnualOn())
                 .eltOn(a.getEltInspectedOn())
                 .eltBatteryDueOn(a.getEltBatteryDueOn())

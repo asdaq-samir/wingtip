@@ -260,7 +260,10 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             let due = paperwork::aircraft_due(
                 paperwork::AircraftDays {
                     tail: v.get("tail_number").and_then(Value::as_str).unwrap_or("The airplane").to_owned(),
-                    for_hire: matches!(v.get("for_hire"), Some(Value::Bool(true))),
+                    for_hire: match v.get("for_hire") {
+                        Some(Value::Bool(b)) => Some(*b),
+                        _ => None,
+                    },
                     annual_until: annual,
                     hundred_hour_due_at: hundred,
                     elt_until: elt,
@@ -308,6 +311,16 @@ mod tests {
             ask("inspections_due", r#"{"vor_check":{"on":"2026-11-01","kind":"AIRBORNE","error_deg":-5},"hundred_hour_at_hours":1234.5}"#);
         assert!(vor.contains(r#""vor_check":{"limit_deg":6.0,"within":true,"until":"2026-12-01"}"#), "{vor}");
         assert!(vor.contains(r#""hundred_hour_due_at_hours":1334.5"#), "{vor}");
+    }
+
+    #[test]
+    fn a_hundred_hour_is_listed_unless_the_owner_says_not_for_hire() {
+        // 14 CFR 91.409(b): owed for hire. Not said is weighed as for hire,
+        // and says so; only the owner's "not for hire" leaves it off.
+        let at = |hire: &str| ask("inspections_due", &format!(r#"{{"tail_number":"N1","hundred_hour_at_hours":100,{hire}}}"#));
+        assert!(at(r#""for_hire":true"#).contains(r#""label":"100-Hour Inspection","#));
+        assert!(at(r#""for_hire":null"#).contains("100-Hour Inspection, if Flown for Hire"));
+        assert!(!at(r#""for_hire":false"#).contains("hundred-hour"));
     }
 
     #[test]
