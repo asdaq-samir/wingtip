@@ -113,32 +113,31 @@ export default function RouteTimeline({
   const zoneOf = (at: Date, ident: string) => clockIn(at, fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone);
   const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
     if (role === "Departure") {
-      const leave = read ? (
-        depart ? (
-          leaveWhen(new Date(depart))
-        ) : (
-          "Now"
-        )
-      ) : (
-        <DepartPicker value={depart} onChange={changeDepart} look="time" />
-      );
       // Read, the departure's own clock and zone, as the stops'. Picked,
       // the picker keeps this device's clock, so it says this device's
       // zone: it said the departure's beside the device's time, two hours
-      // out for a phone in New York leaving Denver.
+      // out for a phone in New York leaving Denver. The zone always right
+      // after the time, so "Now" over "14:05 CST", where it sat after the
+      // two lines, "Now CST" over "14:05" (the owner's iPhone, 2026-11-23).
       if (zoned && read && depart) {
         const there = zoneOf(new Date(depart), ident);
         if (there) return <ZonedTime {...there} />;
       }
       const here = zoned ? clockIn(new Date(from), null) : null;
-      return here ? (
-        <span className="inline-flex items-baseline">
-          {leave}
-          <span className={`ml-1 font-normal ${TEXT.caption}`}>{here.zone}</span>
-        </span>
-      ) : (
-        leave
-      );
+      if (!read) return <DepartPicker value={depart} onChange={changeDepart} look="time" zone={here?.zone} />;
+      if (!depart)
+        return here ? (
+          <span className="inline-flex flex-col items-end">
+            Now
+            <span className={`font-normal ${TEXT.caption}`}>
+              <ZonedTime {...here} />
+            </span>
+          </span>
+        ) : (
+          "Now"
+        );
+      const leave = leaveWhen(new Date(depart));
+      return here ? <ZonedTime time={leave} zone={here.zone} /> : leave;
     }
     const arrival = arrivalAt(ident, role, seen);
     if (!arrival) return "—";
