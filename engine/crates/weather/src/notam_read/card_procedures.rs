@@ -29,7 +29,7 @@ pub(in crate::notam_read) fn procedure_word(core: &str, next: &str, after: &str)
 pub struct Procedure {
     pub name: String,
     pub rnav: bool,
-    pub(super) departure: bool,
+    pub departure: bool,
 }
 
 /// The procedures its titles name, as the d-TPP charts them (7-1-3): a

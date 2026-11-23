@@ -121,6 +121,24 @@ final class FieldNotams {
     func tfr(_ notam: APIRankedNotam) -> EngineContract.TfrReadAnswer? { tfrs[notam.id] }
     func card(_ notam: APIRankedNotam) -> EngineContract.NotamCardAnswer? { notam.kind == "tfr" ? nil : cards[notam.id] }
 
+    /// Which part of the planned flight a NOTAM of this field affects, the
+    /// chip on its page: the roles the field plays in the plan (by any of
+    /// its idents), asked of the engine (notam_affects: which each reaches,
+    /// and whether it takes a procedure that role flies), the first it
+    /// names. Only one in force affects the flight; none where the field
+    /// plays no part or the engine could not say.
+    func affects(_ notam: APIRankedNotam, dep: String, stops: [String], dest: String, alternate: String?)
+        -> EngineContract.NotamAffectsAnswerAffectsItem? {
+        guard notam.kind != "tfr", notam.inForce != false else { return nil }
+        let upper = idents.map { $0.uppercased() }
+        func its(_ field: String?) -> Bool { field.map { !$0.isEmpty && upper.contains($0.uppercased()) } ?? false }
+        let plays: [(String, Bool)] = [("departure", its(dep)), ("stop", stops.contains { its($0) }), ("arrival", its(dest)),
+                                       ("alternate", its(alternate))]
+        let roles = plays.filter(\.1).map(\.0)
+        guard !roles.isEmpty, let answer = try? Engine.notamAffects(text: notam.raw, idents: idents, roles: roles) else { return nil }
+        return answer.affects.first
+    }
+
     /// The field's own time zone, the planner's, for a NOTAM card's times;
     /// nil where it is not known (the times are then UTC).
     var zone: TimeZone? { ranked?.timeZone.flatMap(TimeZone.init(identifier:)) }

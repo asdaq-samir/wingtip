@@ -8958,6 +8958,26 @@ nonisolated enum EngineContract {
         var `where`: String?
     }
 
+    nonisolated struct NotamAffectsAnswer: Codable, Equatable, Sendable {
+        /// Each role it reaches, those it takes a procedure from first, then departure, stop, arrival, alternate; the chip is the first. Empty where it reaches none.
+        var affects: [EngineContract.NotamAffectsAnswerAffectsItem]
+    }
+
+    nonisolated struct NotamAffectsAnswerAffectsItem: Codable, Equatable, Sendable {
+        var role: String
+        /// It takes away a procedure this role flies: the red chip; false, the field's own, the neutral one.
+        var taken: Bool
+    }
+
+    nonisolated struct NotamAffectsInput: Codable, Equatable, Sendable {
+        /// The NOTAM as sent, domestic or ICAO form.
+        var text: String
+        /// The field's idents (OSH, KOSH), as notam_card takes them.
+        var idents: [String]?
+        /// The roles the NOTAM's field plays in the planned flight, any order; empty where it plays none.
+        var roles: [String]
+    }
+
     nonisolated struct NotamCardAnswer: Codable, Equatable, Sendable {
         /// The domestic form's accountability ("FDC", "OSH"); null in the ICAO form.
         var account: String?

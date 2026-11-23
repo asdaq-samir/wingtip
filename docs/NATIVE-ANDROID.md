@@ -237,7 +237,8 @@ and `glOverlays.ts`):
   number under it ("FDC 6/3373"), its category, chips (Active, Permanent,
   "Affects your departure", a stop, arrival or alternate while in force:
   red where it takes away a procedure that role flies, neutral where it
-  is only the field's; `roleChip`, the web's usePlanRole), its effect,
+  is only the field's; the engine's `notam_affects`, as on the web and
+  the iPhone), its effect,
   the procedures not authorized, its times in the field's own zone, a
   line each that drops "· in 18d" rather than wraps ("Since 05/27 13:43
   CDT", "Ends ...", no "local", Z or "estimated"; one the engine's

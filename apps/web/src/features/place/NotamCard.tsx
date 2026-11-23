@@ -8,6 +8,7 @@ import { stopsOf } from "../../lib/identSchema";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { instantOf } from "../../lib/format";
+import { callEngine } from "../../lib/engine/engine";
 import {
   cardOf,
   headingOf,
@@ -24,39 +25,39 @@ import { timeLines } from "./notamTimes";
 import { NotamTimeLines } from "./NotamTimeLines";
 import { TfrDetails } from "./TfrDetails";
 
-/** What the NOTAM's field is to the planned flight, as the chip says it
- *  (the address's dep, stops, dest and alternate filed), or null where it
- *  is none of them or only takes away what the field is not used for.
- *  A procedure taken away affects only the role that flies it: a SID or
- *  an ODP the departure and each stop left from, a STAR the destination,
- *  each stop and the alternate (AIM 5-2-9, 5-4-1; the engine's notam_card
- *  says which each is). `taken` is whether it takes away one the role
- *  flies, the red chip; a NOTAM taking none (a runway closed, a light
- *  out) is the field's, the neutral chip (the r6-ui audit's M4). */
-function usePlanRole(ident: string, card: NotamCardReading): { words: string; taken: boolean } | null {
+/** The chip's words for each role the engine names (notam_affects). */
+const ROLE_WORDS = {
+  departure: "Affects your departure",
+  stop: "Affects your stop",
+  arrival: "Affects your arrival",
+  alternate: "Affects your alternate",
+} as const;
+
+type PlanRole = keyof typeof ROLE_WORDS;
+
+/** What the NOTAM's field is to the planned flight, as the chip says it,
+ *  or null where it is none of the address's dep, stops, dest and
+ *  alternate filed, or reaches none of them. Which roles it reaches, and
+ *  whether it takes a procedure one flies (red) or is the field's
+ *  (neutral), is the engine's notam_affects (the r8 audit's S-M1). */
+function usePlanRole(n: FieldNotam, ident: string): { words: string; taken: boolean } | null {
   const [dep] = useAddressKey("dep");
   const [dest] = useAddressKey("dest");
   const [alternate] = useAddressKey("alternate");
   const [stops] = useAddressKey("stops");
-  const idents = identsOf(ident).map((i) => i.toUpperCase());
-  const is = (field: string | null) => !!field && idents.includes(field.toUpperCase());
-  // Each role, in the order the chip names them, and whether it leaves
-  // from the field (a departure procedure's) or lands there (an arrival's).
-  const roles = [
-    { words: "Affects your departure", here: is(dep), leaves: true, lands: false },
-    { words: "Affects your stop", here: stopsOf(stops).some(is), leaves: true, lands: true },
-    { words: "Affects your arrival", here: is(dest), leaves: false, lands: true },
-    { words: "Affects your alternate", here: is(alternate), leaves: false, lands: true },
-  ].filter((r) => r.here);
-  if (card.procedures.length === 0) return roles[0] ? { words: roles[0].words, taken: false } : null;
-  const flown = roles.find((r) => card.procedures.some((p) => (p.departure ? r.leaves : r.lands)));
-  if (flown) return { words: flown.words, taken: true };
-  // What happened beside the procedures, the field's own ("Runway 18/36
-  // closed" over FDC 6/3373's departures), affects every role there: the
-  // neutral chip, where a procedure-only title is the engine's "... not
-  // authorized" (notam_card; the r7 audit's W-M4).
-  const fieldWide = !!card.title && !/not authorized/i.test(card.title);
-  return fieldWide && roles[0] ? { words: roles[0].words, taken: false } : null;
+  const idents = identsOf(ident);
+  const upper = idents.map((i) => i.toUpperCase());
+  const is = (field: string | null) => !!field && upper.includes(field.toUpperCase());
+  const plays: Record<PlanRole, boolean> = {
+    departure: is(dep),
+    stop: stopsOf(stops).some(is),
+    arrival: is(dest),
+    alternate: is(alternate),
+  };
+  const roles = (Object.keys(plays) as PlanRole[]).filter((r) => plays[r]);
+  if (roles.length === 0) return null;
+  const [first] = callEngine("notam_affects", { text: n.raw, idents, roles }).affects;
+  return first ? { words: ROLE_WORDS[first.role], taken: first.taken } : null;
 }
 
 /** Whether it is in force now, the shared StatusBadge (the owner,
@@ -108,7 +109,7 @@ function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; car
   // (the r5-ui audit's M6, 2026-11-23). Red only where it takes a
   // procedure away; a crane's light at the field is the neutral chip.
   const active = n.in_force !== false;
-  const role = usePlanRole(ident, card);
+  const role = usePlanRole(n, ident);
   // On the minute clock NotamState keeps, so "in 18d" moves on with it.
   const times = timeLines(n, read, card.until_charts, useFieldZone(ident), useMinuteClock());
   const where = whereOf(n, read);

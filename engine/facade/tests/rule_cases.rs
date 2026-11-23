@@ -64,3 +64,8 @@ fn the_approach_glide_fuel_and_altitude_rules_hold_to_their_sources() {
 fn the_suns_times_and_the_nights_are_the_naval_observatorys() {
     holds("rules/sun.json");
 }
+
+#[test]
+fn which_part_of_the_flight_a_notam_affects_is_the_aims() {
+    holds("rules/notamAffects.json");
+}

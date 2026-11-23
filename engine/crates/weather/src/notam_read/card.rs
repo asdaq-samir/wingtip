@@ -14,6 +14,8 @@
 //! out (notam_read's), never a guess.
 
 use super::body::{is_runway, is_taxiway};
+#[path = "affects.rs"]
+pub mod affects;
 #[path = "card_procedures.rs"]
 mod procs;
 use super::{bare, read, spaced, NotamRead};
@@ -33,6 +35,24 @@ pub struct Card {
     /// only the estimate of when (until_charts).
     pub until_charts: bool,
     pub procedures: Vec<Procedure>,
+    /// Which way a procedure NOTAM's procedures are flown, by its keyword
+    /// (JO 7930.2 1-2-1: SID, ODP and DVA leave the field, STAR and IAP
+    /// come to it); None for a NOTAM about the field itself.
+    pub flown: Option<Flown>,
+    /// What it says happened is the field's own, so every flight there
+    /// meets it (notam_affects): a NOTAM about the field (a runway closed,
+    /// a light out), or a procedure NOTAM's own sentence closing a surface
+    /// (FDC 6/3373's "RWY 18/36 PERMANENTLY CLSD"); a procedure NOTAM's
+    /// procedures alone are only theirs who fly them.
+    pub field_wide: bool,
+}
+
+/// Which way a procedure is flown: away from the field (a departure) or
+/// to it (an arrival or an approach).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Flown {
+    Leaving,
+    Landing,
 }
 
 /// Whether a permanent condition's end is "until the charts are
@@ -143,8 +163,13 @@ pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
     let parts = sentences(t);
     // A closure stated as a sentence of its own is a procedure NOTAM's
     // (SID, ODP, DVA, STAR, IAP; 1-2-1); a surface's NOTAM says its own.
-    let procedure_notam = matches!(r.keyword.as_deref(), Some("SID" | "ODP" | "DVA" | "STAR" | "IAP"));
-    let shut = if procedure_notam { closure(&parts) } else { None };
+    let flown = match r.keyword.as_deref() {
+        Some("SID" | "ODP" | "DVA") => Some(Flown::Leaving),
+        Some("STAR" | "IAP") => Some(Flown::Landing),
+        _ => None,
+    };
+    let shut = if flown.is_some() { closure(&parts) } else { None };
+    let field_wide = flown.is_none() || shut.is_some();
     // Permanent by its end (PERM) or in its words (PERMANENTLY CLSD), one
     // answer for every path below (the round 7 audit, E-L1).
     let permanent = r.permanent || shut.as_ref().is_some_and(|(_, perm)| *perm);
@@ -153,7 +178,7 @@ pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
     if takes.contains(&Taken::Unsure) {
         // Part of something not authorized, which the card cannot say whole:
         // the NOTAM's words written out stand in.
-        return Card { account, category, permanent, until_charts, ..Card::default() };
+        return Card { account, category, permanent, until_charts, flown, field_wide, ..Card::default() };
     }
     let named = procedures(&words);
     let runway = takes.iter().find_map(|k| if let Taken::Runway(d) = k { Some(d.clone()) } else { None });
@@ -190,7 +215,7 @@ pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
         (None, true) => Some(not_authorized()),
         (None, false) => r.what.as_deref().and_then(|w| sentence_of(w, permanent)),
     };
-    Card { account, category, title, effect, permanent, until_charts, procedures }
+    Card { account, category, title, effect, permanent, until_charts, procedures, flown, field_wide }
 }
 
 /// `notam_card`: `{"text", "idents"?, "ends"?}` to `{"account",

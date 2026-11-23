@@ -73,35 +73,11 @@ struct FieldNotamPage: View {
     }
 
     /// What the NOTAM's field is to the planned flight, as the chip says
-    /// it (the web's usePlanRole): the departure, a stop, the destination or
-    /// the alternate filed, only for a NOTAM in force. A procedure taken
-    /// away affects only the role that flies it: a SID or an ODP the
-    /// departure and each stop left from, a STAR the destination, each stop
-    /// and the alternate (AIM 5-2-9, 5-4-1; the engine's notam_card says
-    /// which each is). `taken` is whether it takes away one the role flies,
-    /// the red chip; a NOTAM taking none (a runway closed, a light out) is
-    /// the field's, the neutral chip.
+    /// it: the engine's (notam_affects, through the field's model), the
+    /// words this app's.
     private var role: PlanRole? {
-        guard notam.inForce != false else { return nil }
-        let idents = notams.idents.map { $0.uppercased() }
-        func its(_ field: String?) -> Bool {
-            guard let field, !field.isEmpty else { return false }
-            return idents.contains(field.uppercased())
-        }
-        // Each role, in the order the chip names them, and whether it
-        // leaves from the field (a departure procedure's) or lands there.
-        let all: [(words: String, here: Bool, leaves: Bool, lands: Bool)] = [
-            ("Affects your departure", its(plan.dep), true, false),
-            ("Affects your stop", plan.stops.contains { its($0) }, true, true),
-            ("Affects your arrival", its(plan.dest), false, true),
-            ("Affects your alternate", its(plan.extras.alternate), false, true),
-        ]
-        let roles = all.filter { $0.here }
-        guard let procedures = notams.card(notam)?.procedures, !procedures.isEmpty else {
-            return roles.first.map { PlanRole(words: $0.words, taken: false) }
-        }
-        let flown = roles.first { r in procedures.contains { $0.departure ? r.leaves : r.lands } }
-        return flown.map { PlanRole(words: $0.words, taken: true) }
+        notams.affects(notam, dep: plan.dep, stops: plan.stops, dest: plan.dest, alternate: plan.extras.alternate)
+            .flatMap { chip in PlanRole.words[chip.role].map { PlanRole(words: $0, taken: chip.taken) } }
     }
 }
 
@@ -110,6 +86,10 @@ struct FieldNotamPage: View {
 private struct PlanRole {
     let words: String
     let taken: Bool
+
+    /// The chip's words for each role the engine names.
+    static let words = ["departure": "Affects your departure", "stop": "Affects your stop",
+                        "arrival": "Affects your arrival", "alternate": "Affects your alternate"]
 }
 
 /// The card the engine read (notam_card), drawn as the web's NotamFull.
@@ -120,7 +100,6 @@ private struct NotamCardBody: View {
     let role: PlanRole?
 
     var body: some View {
-        let times = notams.times(notam)
         VStack(alignment: .leading, spacing: WingtipSpace.md) {
             // The category is a label only where the title says what
             // happened; otherwise it is the title already.
@@ -135,7 +114,10 @@ private struct NotamCardBody: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("place-notam-effect")
             if !card.procedures.isEmpty { notAuthorized }
-            NotamTimeLinesView(lines: times).font(WingtipType.prose)
+            // On the minute, so "in 18d" moves on as Android's do.
+            TimelineView(.everyMinute) { context in
+                NotamTimeLinesView(lines: notams.times(notam, now: context.date)).font(WingtipType.prose)
+            }
             if let place = notams.place(notam) {
                 Text(place).font(WingtipType.prose).foregroundStyle(.secondary)
             }

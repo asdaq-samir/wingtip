@@ -2064,7 +2064,11 @@ owner's word):
 7. **As sent**, folded (the stock Collapsible), never rewritten.
 
 Title, category, effect, the list and permanence are the engine's
-(`notam_card`, read from the NOTAM's parts); where it cannot structure a
+(`notam_card`, read from the NOTAM's parts), and so is the chip saying
+which part of the flight it affects (`notam_affects`: a departure
+procedure taken is red at the departure and a stop, an arrival's at the
+destination, a stop and the alternate, and what happened to the field
+itself neutral at every role there); where it cannot structure a
 NOTAM they are null and the card says its words written out
 (`notam_read`) under its heading, as before. In those words a
 procedure's name keeps its capitals and its number is a word ("BLOKR
