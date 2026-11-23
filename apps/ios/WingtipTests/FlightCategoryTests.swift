@@ -14,11 +14,10 @@ import UIKit
         return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
     }
 
-    @Test func whiteWordsOnEveryCategorysChipPassAA() {
-        for category in ["VFR", "MVFR", "IFR", "LIFR"] {
-            let ratio = 1.05 / (Self.luminance(FlightCategory.words(category)) + 0.05)
-            #expect(ratio >= 4.5, "\(category) chip at \(ratio):1")
-        }
+    @Test(arguments: ["VFR", "MVFR", "IFR", "LIFR"])
+    func whiteWordsOnEveryCategorysChipPassAA(category: String) {
+        let ratio = 1.05 / (Self.luminance(FlightCategory.words(category)) + 0.05)
+        #expect(ratio >= 4.5, "\(category) chip at \(ratio):1")
     }
 
     @Test func theMarksAreTheTokensAndOnlyLIFRsWordsAreDeeper() {

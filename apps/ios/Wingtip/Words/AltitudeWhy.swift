@@ -92,7 +92,7 @@ enum AltitudeWhy {
     }
 
     /// The reasons said, or the engine's own words for them.
-    static func said(_ reasons: Reasons, model: any AltitudeWhyModel = AppleAltitudeWhy()) async -> OnDeviceAnswer {
+    static func said(_ reasons: Reasons, model: some AltitudeWhyModel = AppleAltitudeWhy()) async -> OnDeviceAnswer {
         let log = FigureLog()
         log.add([reasons.flown], by: "flown")
         do {

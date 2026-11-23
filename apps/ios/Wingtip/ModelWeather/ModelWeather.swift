@@ -5,7 +5,7 @@ import Observation
 import UIKit
 
 /// A field's picture painted for the map (FlowPaint), with the box it covers.
-final class PaintedField: @unchecked Sendable {
+final class PaintedField: Sendable {
     let key: String
     let image: CGImage
     /// [west, south, east, north], degrees.
@@ -228,6 +228,18 @@ final class ModelWeather {
         }
     }
 
+    /// A field's picture read into values, off the main actor.
+    @concurrent
+    private nonisolated static func decode(_ data: Data, field spec: APIFlowField, bounds: [Double], name: String) async -> FlowGrid? {
+        FlowGrid.decode(png: data, field: spec, bounds: bounds, name: name)
+    }
+
+    /// An hour's values painted for the map, off the main actor.
+    @concurrent
+    private nonisolated static func paint(_ grid: FlowGrid, ramp: FlowRamp, key: String, opacity: CGFloat) async -> PaintedField? {
+        FlowPaint.image(grid, ramp: ramp).map { PaintedField(key: key, image: $0, box: FlowPaint.box(of: grid), opacity: opacity) }
+    }
+
     /// A frame's picture of a file as values, fetched once at its version.
     func grid(_ frame: APIFlowFrame, _ file: String) async -> FlowGrid? {
         let name = String(file.split(separator: "-")[0])
@@ -239,7 +251,7 @@ final class ModelWeather {
             try await Data(collecting: $0.flowPicture(path: .init(frame: frame.id, field: String(file)), query: .init(v: version)).ok.body.png, upTo: 32 << 20)
         }) else { return nil }
         let bounds = file == "world" ? (layer.worldBounds ?? layer.bounds) : layer.bounds
-        let grid = await Task.detached { FlowGrid.decode(png: data, field: spec, bounds: bounds, name: name) }.value
+        let grid = await Self.decode(data, field: spec, bounds: bounds, name: name)
         if let grid {
             // The hours of one field at one level are kept; another's let go.
             if grids.count > 24 { grids.removeAll() }
@@ -260,9 +272,7 @@ final class ModelWeather {
         painting = Task {
             guard let grid = await grid(frame, file), !Task.isCancelled else { return }
             let ramp = look.ramp, opacity = look.opacity
-            let made = await Task.detached {
-                FlowPaint.image(grid, ramp: ramp).map { PaintedField(key: key, image: $0, box: FlowPaint.box(of: grid), opacity: opacity) }
-            }.value
+            let made = await Self.paint(grid, ramp: ramp, key: key, opacity: opacity)
             guard !Task.isCancelled, let made else { return }
             painted = made
             read()

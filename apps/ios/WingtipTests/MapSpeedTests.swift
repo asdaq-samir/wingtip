@@ -9,18 +9,17 @@ import Testing
 /// writes off the main actor land in order and never outlive an erase.
 @MainActor
 struct MapSpeedTests {
-    @Test func aRememberedRegionIsTheEnginesForEveryPointOfItsDegree() throws {
-        // Both sides of the equator and the meridian, and a region's edges
-        // (pack_query.rs region_of's 4-degree squares).
-        for (lat, lon) in [(41.98, -88.35), (40.0, -88.0), (39.999, -88.001), (-0.5, 0.5), (-33.9, 151.2), (43.99, -84.01)] {
-            let asked = Engine.region(lat: lat, lon: lon)
-            let engine: String = try Engine.call("region_of", json: ["lat": lat, "lon": lon])
-            #expect(asked == engine)
-            // A second point in the same degree comes from memory, and is still the engine's.
-            let near = (lat.rounded(.down) + 0.99, lon.rounded(.down) + 0.01)
-            let again: String = try Engine.call("region_of", json: ["lat": near.0, "lon": near.1])
-            #expect(Engine.region(lat: near.0, lon: near.1) == again)
-        }
+    // Both sides of the equator and the meridian, and a region's edges
+    // (pack_query.rs region_of's 4-degree squares).
+    @Test(arguments: [(41.98, -88.35), (40.0, -88.0), (39.999, -88.001), (-0.5, 0.5), (-33.9, 151.2), (43.99, -84.01)])
+    func aRememberedRegionIsTheEnginesForEveryPointOfItsDegree(lat: Double, lon: Double) throws {
+        let asked = Engine.region(lat: lat, lon: lon)
+        let engine: String = try Engine.call("region_of", json: ["lat": lat, "lon": lon])
+        #expect(asked == engine)
+        // A second point in the same degree comes from memory, and is still the engine's.
+        let near = (lat.rounded(.down) + 0.99, lon.rounded(.down) + 0.01)
+        let again: String = try Engine.call("region_of", json: ["lat": near.0, "lon": near.1])
+        #expect(Engine.region(lat: near.0, lon: near.1) == again)
     }
 
     @Test func thePacksListIsReadOnceAndAgainOnceRewritten() throws {

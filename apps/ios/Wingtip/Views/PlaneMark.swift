@@ -1,4 +1,4 @@
-@preconcurrency import MapKit
+import MapKit
 import UIKit
 
 /// The dry run's airplane: a blue arrow in a white casing, as the web app

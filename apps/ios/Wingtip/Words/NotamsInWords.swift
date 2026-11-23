@@ -27,7 +27,7 @@ enum NotamsInWords {
         return WordsSource(id: "notam:\(id)", label: "NOTAM \(id)", text: why.isEmpty ? raw : "\(raw)\nWhy it matters: \(why).")
     }
 
-    static func said(_ figures: [WordsSource], device: any WordsProvider = OnDeviceWords()) async -> SaidWords {
+    static func said(_ figures: [WordsSource], device: some WordsProvider = OnDeviceWords()) async -> SaidWords {
         guard figures.contains(where: { $0.id.hasPrefix("notam:") }) else {
             return SaidWords(words: .none(OnDeviceWords.model, "No NOTAMs to say."), origin: .none)
         }

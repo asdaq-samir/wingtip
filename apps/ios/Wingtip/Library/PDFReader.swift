@@ -1,6 +1,7 @@
 import Observation
 import PDFKit
 import SwiftUI
+import Synchronization
 
 /// A PDF as the reader holds it: PDFKit's document, its pages drawn white
 /// on black for the night when `inverted` (InvertiblePage), as ForeFlight's
@@ -47,6 +48,11 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
     private(set) var matches: [PDFSelection] = []
     private(set) var current: Int?
     private(set) var finding = false
+    /// The words of the find under way, and its number: a match is taken
+    /// only where it was told during this find and is these words, so a
+    /// match a cancelled find had already queued is never highlighted.
+    @ObservationIgnored private var words = ""
+    private let generation = Atomic<Int>(0)
     private(set) var canGoBack = false
     private(set) var canGoForward = false
     /// Told each page turned (ReaderModel keeps the page left at).
@@ -127,35 +133,54 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
     /// (beginFindString), the first shown as it comes.
     func find(_ query: String) {
         guard let doc = document else { return }
+        generation.add(1, ordering: .sequentiallyConsistent)
         if doc.isFinding { doc.cancelFindString() }
+        // Again once the old find is cancelled: anything it still tells
+        // carries a number that is not this find's.
+        generation.add(1, ordering: .sequentiallyConsistent)
         matches = []
         current = nil
         view?.highlightedSelections = nil
         let words = query.trimmingCharacters(in: .whitespaces)
+        self.words = words
         guard words.count >= 2 else { return }
         finding = true
         doc.beginFindString(words, withOptions: [.caseInsensitive])
     }
 
     // PDFKit's find may tell its matches off the main thread: each taken
-    // to the main actor, in the order told.
+    // to the main actor, in the order told, with the find's number then.
+    // PDFKit makes the selection for this call and keeps no hold on it, so
+    // it is handed to the main actor whole (nonisolated(unsafe)), and is
+    // touched only there.
     nonisolated func didMatchString(_ instance: PDFSelection) {
         nonisolated(unsafe) let match = instance
-        Task { @MainActor [weak self] in self?.found(match) }
+        let told = generation.load(ordering: .sequentiallyConsistent)
+        Task { @MainActor [weak self] in self?.found(match, in: told) }
     }
 
     nonisolated func documentDidEndDocumentFind(_ notification: Notification) {
-        Task { @MainActor [weak self] in self?.ended() }
+        let told = generation.load(ordering: .sequentiallyConsistent)
+        Task { @MainActor [weak self] in self?.ended(told) }
     }
 
-    private func found(_ match: PDFSelection) {
-        guard finding else { return }
+    private func found(_ match: PDFSelection, in told: Int) {
+        guard finding, told == generation.load(ordering: .sequentiallyConsistent),
+              Self.same(match.string, words) else { return }
         match.color = .systemYellow
         matches.append(match)
         if current == nil { show(0) }
     }
 
-    private func ended() {
+    /// Whether a match's text is the words looked for, case and the
+    /// spacing (a line break inside a match) aside.
+    nonisolated static func same(_ text: String?, _ words: String) -> Bool {
+        let squeeze = { (s: String) in s.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
+        return text.map { squeeze($0).caseInsensitiveCompare(squeeze(words)) == .orderedSame } ?? false
+    }
+
+    private func ended(_ told: Int) {
+        guard told == generation.load(ordering: .sequentiallyConsistent) else { return }
         finding = false
         view?.highlightedSelections = matches.isEmpty ? nil : matches
     }

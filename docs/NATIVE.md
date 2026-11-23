@@ -263,7 +263,11 @@ owner, 2026-11-03):
   Stratux, Sentry, SkyEcho or a Stratus in open mode on the Wi-Fi sends
   GDL 90 to UDP port 4000; `ReceiverListener` (Network.framework) gathers
   it and once a second the engine reads it (`receiver_read`,
-  `engine/crates/receiver`). Its GPS becomes own ship where the device has
+  `engine/crates/receiver`), off the main actor, and not at all when
+  nothing was heard and nothing ages. A listener that fails (the port
+  taken, Local Network refused) says so on the setting's row
+  (`Receiver.problem`) and is tried again only when the network or the
+  setting changes. Its GPS becomes own ship where the device has
   none, as a Wi-Fi iPad has, or where it is twice as good, and the
   device's is taken back once it is 3 s old (`receiver_position`,
   `OwnShipSource`, `OwnShip.fromReceiver`). Its traffic is drawn ahead of
@@ -295,7 +299,14 @@ owner, 2026-11-03):
 - **Strict concurrency** (`SWIFT_STRICT_CONCURRENCY: complete` in
   project.yml): Swift 6's language mode (`SWIFT_VERSION: "6.0"`), so a
   data race is a compile error, and every warning is one too
-  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`).
+  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`). Approachable Concurrency is on
+  (`SWIFT_APPROACHABLE_CONCURRENCY`, Swift 6.2): a `nonisolated async`
+  function runs on its caller's actor, and work meant for the thread
+  pool is a `@concurrent` function, awaited where it is needed, not a
+  `Task.detached`. State shared with MapKit's or Network's threads is in
+  a `Mutex` (Synchronization) the compiler checks; `@unchecked Sendable`
+  is left only on subclasses of MapKit's renderers and tile overlays and
+  on `TileCache` (NSCache), each saying why.
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
   language is a column, not a rewrite. xcodebuild extracts the strings
@@ -610,8 +621,11 @@ asks `OfflineStore.tile`), at the density asked for or else the other,
 then from the tiles it fetched as it went, then the network.
 `PMTilesReader` is the phone's own reader of the format (spec v3): the
 header once, each directory once as it is needed, then the tile's own
-bytes, by ranged reads of the file, never mapped whole (Alaska's
-sectional at 2x is 7 GB). When the planner has the next cycle, a kept
+bytes, by ranged reads of the file (`pread`, so no lock is held over
+the disk), never mapped whole (Alaska's sectional at 2x is 7 GB). Every
+offset and length is checked against the file: a damaged or truncated
+archive is a tile it does not have, never a crash
+(`PMTilesDamageTests`). When the planner has the next cycle, a kept
 region offers "Update to" it; on the day the old edition is replaced
 (0901Z on the next one's date, the engine's `data_cycle` asked at the
 minute) it is said to be expired and kept until

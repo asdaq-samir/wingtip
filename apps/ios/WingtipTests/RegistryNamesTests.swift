@@ -25,13 +25,17 @@ struct RegistryNamesTests {
         #expect(RegistryNames.coOwners(r, own: true) == "SMITH JANE")
     }
 
-    @Test func organisationsAreNamedAndPeopleAndPartnershipsAreNot() throws {
-        for kind in ["Corporation", "Government", "LLC", "Non-citizen corporation"] {
-            #expect(RegistryNames.named(ownerType: kind, own: false), "\(kind)")
-        }
-        for kind in ["Individual", "Partnership", "Co-owned", "Non-citizen co-owned", nil] {
-            #expect(!RegistryNames.named(ownerType: kind, own: false), "\(kind ?? "none")")
-        }
+    @Test(arguments: ["Corporation", "Government", "LLC", "Non-citizen corporation"])
+    func organisationsAreNamed(kind: String) {
+        #expect(RegistryNames.named(ownerType: kind, own: false), "\(kind)")
+    }
+
+    @Test(arguments: ["Individual", "Partnership", "Co-owned", "Non-citizen co-owned", nil] as [String?])
+    func peopleAndPartnershipsAreNotNamed(kind: String?) {
+        #expect(!RegistryNames.named(ownerType: kind, own: false), "\(kind ?? "none")")
+    }
+
+    @Test func aClubIsNamedWithItsTown() throws {
         let club = try record(#"{"n_number":"N3429J","owner":"LAKE SUPERIOR FLYING CLUB","owner_type":"Corporation","city":"Duluth","state":"MN"}"#)
         #expect(RegistryNames.owner(club, own: false) == "LAKE SUPERIOR FLYING CLUB")
         #expect(RegistryNames.town(club, own: false) == "Duluth, MN")

@@ -130,27 +130,26 @@ struct ReadyStore: Equatable, Sendable {
 
     /// The tiles KeepForAir keeps for the route, and the packs of
     /// the regions it crosses, looked for on disk.
+    @concurrent
     static func look(tiles: Set<KeepRoute.Tile>, template: TileTemplate?, regions: Set<String>) async -> ReadyStore {
-        await Task.detached(priority: .utility) {
-            var kept = false
-            if let template, !tiles.isEmpty {
-                let store = TileStore.shared
-                kept = tiles.allSatisfy { tile in
-                    FileManager.default.fileExists(atPath: store.path(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale).path)
-                        || store.read(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale) != nil
-                }
+        var kept = false
+        if let template, !tiles.isEmpty {
+            let store = TileStore.shared
+            kept = tiles.allSatisfy { tile in
+                FileManager.default.fileExists(atPath: store.path(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale).path)
+                    || store.read(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale) != nil
             }
-            let packs = CyclePacks.shared
-            var edition: String?
-            if let index = packs.index {
-                // The cycle's packs held where every region of the route
-                // the planner has a pack of is on disk; with no route, the
-                // cycle the phone holds at all.
-                let listed = Set(index.regions.map(\.name))
-                let whole = regions.intersection(listed).allSatisfy { FileManager.default.fileExists(atPath: packs.path(cycle: index.cycle, region: $0).path) }
-                edition = whole ? index.cycle : nil
-            }
-            return ReadyStore(chartsKept: kept, chartEdition: kept ? ReadyFacts.isoDay(template?.cycle) : nil, packEdition: edition)
-        }.value
+        }
+        let packs = CyclePacks.shared
+        var edition: String?
+        if let index = packs.index {
+            // The cycle's packs held where every region of the route
+            // the planner has a pack of is on disk; with no route, the
+            // cycle the phone holds at all.
+            let listed = Set(index.regions.map(\.name))
+            let whole = regions.intersection(listed).allSatisfy { FileManager.default.fileExists(atPath: packs.path(cycle: index.cycle, region: $0).path) }
+            edition = whole ? index.cycle : nil
+        }
+        return ReadyStore(chartsKept: kept, chartEdition: kept ? ReadyFacts.isoDay(template?.cycle) : nil, packEdition: edition)
     }
 }
