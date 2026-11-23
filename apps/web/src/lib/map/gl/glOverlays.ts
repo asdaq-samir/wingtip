@@ -92,8 +92,12 @@ function keptField(): ExpressionSpecification {
   return ["any", ["==", ["get", "size"], "largest"], ["==", ["get", "ident"], ["coalesce", ["global-state", SELECTED_AIRPORT], ""]]];
 }
 
-/** The tile airports' two layers, for the taps and probes that read them. */
-export const AIRPORT_TILE_LAYERS = ["airports", "airports-kept"];
+/** A Class C's field (field_mark_rank's larger): its own layer, placed before the other fields, as symbol-sort-key
+ *  orders only within a tile and a small field across a tile's edge took a Class C's room, leaving its ring bare. */
+const CLASS_C_FIELD: ExpressionSpecification = ["==", ["get", "size"], "larger"];
+
+/** The tile airports' layers, bottom to top, for the taps and probes that read them. */
+export const AIRPORT_TILE_LAYERS = ["airports", "airports-c", "airports-kept"];
 
 /** The airports' symbol layers, from either source: the mark (airportIcons), its ident beside it in bold in the field's
  *  ink (the sectional sets an airport's name in its symbol's colour, Chart User's Guide, Airports), kept apart by MapLibre's
@@ -101,9 +105,10 @@ export const AIRPORT_TILE_LAYERS = ["airports", "airports-kept"];
  *  (O'Hare), then a Class C's, then each tier by its longest hard runway. A field whose ident has no room is not drawn
  *  at all at that zoom, mark and name placed together (the owner's iPhone screenshot, 2026-11-23: the Great Lakes at
  *  zoom 6 strewn with unnamed marks); a Class B's field and the open card's keep their mark, only the name giving way
- *  (`airports-kept`, above, so placed first). The route's own fields and stops wear their own marks (RouteGl, StopMarksGl). */
+ *  (`airports-kept`, on top, so placed first), and a Class C's field is placed next (`airports-c`), so its ring, drawn
+ *  from zoom 5 (decision 0052), stands with its field and name. The route's own fields and stops wear their own marks (RouteGl, StopMarksGl). */
 function airportMarksLayers(from: { source: string; "source-layer"?: string }): SymbolLayerSpecification[] {
-  const layer = (id: string, kept: boolean): SymbolLayerSpecification => ({
+  const layer = (id: string, kept: boolean, tier: ExpressionSpecification): SymbolLayerSpecification => ({
     id,
     type: "symbol",
     ...from,
@@ -117,6 +122,7 @@ function airportMarksLayers(from: { source: string; "source-layer"?: string }): 
       ["any", ["boolean", ["global-state", SHOW_PRIVATE], false], ["!=", ["get", "use"], "private"]],
       notOwn(ROUTE_AIRPORTS),
       kept ? keptField() : ["!", keptField()],
+      tier,
     ],
     layout: {
       "icon-image": kept ? TILE_AIRPORT_ICON : AIRPORT_ICON_NAMED,
@@ -138,7 +144,11 @@ function airportMarksLayers(from: { source: string; "source-layer"?: string }): 
     },
     paint: { "text-color": labelInk(AIRPORT_IDENT_INK), ...labelHalo("airportIdent"), "text-opacity": SELECTED_HIDDEN },
   });
-  return [layer("airports", false), layer("airports-kept", true)];
+  return [
+    layer("airports", false, ["!", CLASS_C_FIELD]),
+    layer("airports-c", false, CLASS_C_FIELD),
+    layer("airports-kept", true, ["literal", true]),
+  ];
 }
 
 /** The mark, its ident beside it on whichever side is clear: MapLibre's

@@ -70,6 +70,7 @@ describe("the overlay tiles' layers", () => {
       "navaids",
       "navaids-idents",
       "airports",
+      "airports-c",
       "airports-kept",
     ]);
     // Each class from its own zoom (AIRSPACE_FROM).
