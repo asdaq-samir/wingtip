@@ -84,7 +84,7 @@ export function FplRoute({
           pills just above the stops"), where they were a section under the
           figures. */}
       {routesShown && routeLine && (
-        <section aria-label="Suggested routes" className="pb-2" data-testid="route-group">
+        <section aria-label="Suggested routes" className="pb-(--space-group)" data-testid="route-group">
           <Suspense fallback={<div className="h-11" />}>
             <RouteLine line={routeLine} grouped />
           </Suspense>

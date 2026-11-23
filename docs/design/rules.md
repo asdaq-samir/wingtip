@@ -1532,6 +1532,11 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    7350.9): KIGN was planned 7,191 nm to Indagen, Papua New Guinea, whose
    local code is IGN (2026-11-17). Web: `unknownPlaceIn`, usePlan's
    `unknownPlace`.
+9. **One gap between groups, 16.** Between the page's groups (chips and
+   the route's box, the suggested routes and the box, the box and what
+   follows, a page's sections, the last row and the foot bar) the one
+   token `space.group` (16, the side gutter's); inside a group `space.sm`,
+   8 (the owner, 2026-11-23).
 
 ## 12. A list's rows: swipe to remove, hold to move (the owner, 2026-11-17)
 
