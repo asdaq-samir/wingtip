@@ -183,7 +183,7 @@ def test_the_view_s_answer_is_the_shape_the_web_s_view_reads(monkeypatch):
     monkeypatch.setattr(procedure_picks, "_approaches_at", approaches_at)
     flight = {**ROUTE, "stops": ["KMSN"], "fuel_stops": ["KMSN"], "airplane_tail": "N123AB", "procedures": "KDLH:I27:::L"}
     got = edited("show_flight", flight)
-    got["view"]["seq"], got["view"]["created_at"] = 1, 1767225600000
+    got["view"]["seq"], got["view"]["created_at"], got["view"]["channel"] = 1, 1767225600000, "0" * 32
     if os.environ.get("WRITE_FLIGHT_VIEW_FIXTURE"):
         FIXTURE.write_text(json.dumps(got, indent=2, sort_keys=True) + "\n")
     kept = json.loads(FIXTURE.read_text())

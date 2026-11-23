@@ -53,6 +53,7 @@ final class PlateMapTests: XCTestCase {
         if grabber.exists {
             grabber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
         }
+        // The plate is drawn on the map's canvas, which has no element to ask, so a fixed wait for its tiles before the picture.
         sleep(10)
         keep(app, "plate-on-map")
 
@@ -63,11 +64,14 @@ final class PlateMapTests: XCTestCase {
         XCTAssertTrue(app.switches["Show Annotations"].exists, "no Show Annotations switch")
         XCTAssertTrue(app.switches["Invert Plate Colors"].exists, "no Invert Plate Colors switch")
         XCTAssertTrue(app.sliders.firstMatch.exists, "no transparency slider")
-        sleep(2)
+        // The card's sheet at rest, and its controls ready, before the picture.
+        CardTests.waitHittable(app.sliders.firstMatch, timeout: 10)
+        CardTests.settled(card)
         keep(app, "plate-card")
 
         app.buttons["plate-hide"].tap()
         XCTAssertTrue(card.waitForNonExistence(timeout: 10), "Hide Plate did not put the card away")
+        // The map redrawing without the plate has no element to ask, so a fixed wait before the picture.
         sleep(3)
         keep(app, "plate-hidden")
         // The page gone, a tap where it was opens no card.

@@ -61,14 +61,14 @@ def test_the_resource_metadata_names_the_gateway_and_both_scopes():
     assert body["resource"] == RESOURCE
     assert body["authorization_servers"] == [ISSUER]
     # Both asked for at once, so saving a flight is approved when connecting.
-    assert body["scopes_supported"] == ["wingtip:read", "wingtip:write"]
+    assert body["scopes_supported"] == ["wingtip:read", "wingtip:flights"]
     assert body["bearer_methods_supported"] == ["header"]
 
 
 def test_a_connection_allowed_only_to_read_cannot_save_a_flight():
     result = call("save_flight", {"departure": "C81", "destination": "KDLH"}, token="read-7")
     assert result.is_error
-    assert "not allowed wingtip:write" in text(result)
+    assert "not allowed wingtip:flights" in text(result)
 
 
 def test_a_pilot_past_the_limit_is_told_so_and_another_pilot_is_not(monkeypatch):
@@ -91,11 +91,12 @@ def test_every_tool_says_whether_it_writes_and_needs_the_scope_it_says():
         assert hints.open_world_hint is False, name
         assert len(name) <= 64
     writes = {name for name, t in tools.items() if not t.annotations.read_only_hint}
-    assert writes == {"save_flight", "save_flight_plan", "update_saved_flight", "delete_saved_flight"}
+    assert writes == {"save_flight", "save_flight_plan", "update_saved_flight", "update_saved_flight_from_view", "delete_saved_flight"}
     # Saving adds; replacing and deleting are what the host always asks about.
-    assert {n for n in writes if tools[n].annotations.destructive_hint} == {"update_saved_flight", "delete_saved_flight"}
+    overwrites = {"update_saved_flight", "update_saved_flight_from_view", "delete_saved_flight"}
+    assert {n for n in writes if tools[n].annotations.destructive_hint} == overwrites
     for name in writes:
-        assert tools[name].meta["securitySchemes"][0]["scopes"] == ["wingtip:read", "wingtip:write"], name
+        assert tools[name].meta["securitySchemes"][0]["scopes"] == ["wingtip:read", "wingtip:flights"], name
     # The edits change only the flight handed in: read-only, the read scope.
     assert tools["add_stop"].annotations.read_only_hint and tools["add_stop"].meta["securitySchemes"][0]["scopes"] == ["wingtip:read"]
 
@@ -115,7 +116,7 @@ KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 def signed(**over) -> str:
     now = int(time.time())
-    claims = {"iss": ISSUER, "aud": RESOURCE, "sub": "42", "scope": "wingtip:read wingtip:write", "client_id": "c1"}
+    claims = {"iss": ISSUER, "aud": RESOURCE, "sub": "42", "scope": "wingtip:read wingtip:flights", "client_id": "c1"}
     claims |= {"iat": now, "exp": now + 900, **over}
     return jwt.encode(claims, KEY, algorithm="RS256", headers={"kid": "k1"})
 
@@ -146,7 +147,7 @@ def _jwk() -> dict:
 
 def test_a_gateway_token_for_this_connector_is_read_as_its_pilot(tokens):
     read = anyio.run(tokens.verify_token, signed())
-    assert read.subject == "42" and read.scopes == ["wingtip:read", "wingtip:write"] and read.client_id == "c1"
+    assert read.subject == "42" and read.scopes == ["wingtip:read", "wingtip:flights"] and read.client_id == "c1"
     assert read.resource == RESOURCE
 
 

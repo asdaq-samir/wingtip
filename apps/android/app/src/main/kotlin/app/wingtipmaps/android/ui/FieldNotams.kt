@@ -31,9 +31,11 @@ object FieldNotams {
     fun isTfr(n: RankedNotam): Boolean = n.kind == TFR
 
     /** The field's idents as a NOTAM may write them ("OSH", "KOSH"): the
-     *  engine's field_names (FAA JO 7350.9GG 4-1); the ident alone where
-     *  the engine cannot be asked. */
-    fun identsOf(ident: String): List<String> = Engine.fieldNames(ident).getOrNull() ?: listOf(ident)
+     *  engine's field_names (FAA JO 7350.9GG 4-1), given in the JVM's unit
+     *  tests, where the engine does not load; the ident alone where it
+     *  cannot be asked. */
+    fun identsOf(ident: String, names: (String) -> List<String>? = { Engine.fieldNames(it).getOrNull() }): List<String> =
+        names(ident) ?: listOf(ident)
 
     /** The NOTAM read by the engine (notam_read); null where it fails, the
      *  NOTAM's words as sent standing in then. */
@@ -77,8 +79,8 @@ object FieldNotams {
 
     /** Its number as a briefer reads it, the field's own name off it on the
      *  field's card ("11/060", not "ORD 11/060"); another place's kept. */
-    fun number(n: RankedNotam, ident: String): String {
-        val own = identsOf(ident).firstOrNull { n.id.startsWith("$it ") }
+    fun number(n: RankedNotam, ident: String, names: List<String> = identsOf(ident)): String {
+        val own = names.firstOrNull { n.id.startsWith("$it ") }
         return own?.let { n.id.drop(it.length + 1) } ?: n.id
     }
 

@@ -110,4 +110,30 @@ struct ReceiverTests {
         #expect(!Receiver.trafficChanged(quiet, try Engine.receiverRead(data: "", at: last + 61, picture: quiet)))
         #expect(Receiver.trafficChanged(nil, heard))
     }
+
+    /// The read off the main actor says what changed, so the main actor
+    /// takes a new picture only when there is one.
+    @Test func theReadSaysWhatChanged() async throws {
+        let f = try fixture()
+        let first = try await Receiver.engineRead(Data(), at: Date(timeIntervalSince1970: f.datagrams[0].at), after: nil)
+        var last = first
+        for d in f.datagrams {
+            last = try await Receiver.engineRead(bytes(d.hex), at: Date(timeIntervalSince1970: d.at), after: last.picture)
+        }
+        #expect(last.changed)
+        #expect(last.picture.targets.map(\.hex) == ["ab4549"])
+        let again = try await Receiver.engineRead(Data(), at: Date(timeIntervalSince1970: f.datagrams.last!.at), after: last.picture)
+        #expect(!again.trafficChanged)
+        #expect(!again.nexradChanged)
+    }
+
+    /// A listener that is stopped lets go of its senders and its problem,
+    /// and has nothing gathered.
+    @Test func aStoppedListenerHasNothing() {
+        let listener = ReceiverListener()
+        listener.start()
+        listener.stop()
+        #expect(listener.problem == nil)
+        #expect(listener.drain().isEmpty)
+    }
 }

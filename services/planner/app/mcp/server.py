@@ -24,15 +24,17 @@ from starlette.routing import Route
 from ..settings import get_settings
 from mcp.server.apps import Apps
 
-from . import airport_tools, edit_tools, flight_tools, pilot_tools, saved_tools, view_resource, weather_tools
+from . import airport_tools, day_tools, edit_tools, flight_tools, pilot_tools, route_tools, saved_tools, view_resource, weather_tools
 from .auth import GatewayTokens
 from .calls import PLANNER, READ, SCOPES
 
 INSTRUCTIONS = (
     "Wingtip Maps is a US flight planner for VFR and IFR pilots. Its tools read FAA airport data, the weather and "
     "NOTAMs at a field, plan a route with the nav log on the pilot's own airplane, give the flight's Go / No-Go "
-    "briefing, list the pilot's saved airplanes and flights, and save a planned flight to their account. Each "
-    "answer names its sources. Airport identifiers are US ones (KDLH, C81). "
+    "briefing with the winds aloft, the hazards and the airspace along the route, the sun's times and night at a "
+    "field, the pilot's own airplane's weight and balance and runway distances, list the pilot's saved airplanes "
+    "and flights, and save a planned flight to their account. Each answer names its sources. "
+    "Airport identifiers are US ones (KDLH, C81). "
     "show_flight opens the flight in Wingtip's live view; each edit tool (add_stop, set_cruise_altitude, "
     "change_approach and the rest) takes the flight the last answer gave and answers it changed, which the "
     "view draws; a change the pilot makes in the view is told as the flight's new state. "
@@ -66,7 +68,7 @@ def build(*, resource: str, issuer: str, jwks_url: str, verifier=None) -> MCPSer
         auth=AuthSettings(issuer_url=issuer, resource_server_url=resource, required_scopes=[READ], validate_token_resource=False),
         extensions=[apps],
     )
-    for group in (airport_tools, weather_tools, flight_tools, pilot_tools, saved_tools):
+    for group in (airport_tools, weather_tools, flight_tools, route_tools, day_tools, pilot_tools, saved_tools):
         group.register(server)
     return server
 

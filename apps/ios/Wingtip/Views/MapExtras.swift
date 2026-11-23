@@ -138,8 +138,8 @@ struct MapExtrasInput {
 
 /// The map's coordinator's part for these, kept apart from the rest of
 /// it: the held finger, the waypoints asked for as the map rests, the
-/// Class B fields, the plates (PlateLayer). On the main actor, as the map is; the
-/// coordinator's delegate calls come in through MainActor.assumeIsolated.
+/// Class B fields, the plates (PlateLayer). On the main actor, as the map
+/// and its coordinator are.
 @MainActor
 final class MapExtrasState: NSObject {
     var onHold: ((CLLocationCoordinate2D) -> Void)?

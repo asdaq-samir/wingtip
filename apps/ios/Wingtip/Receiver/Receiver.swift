@@ -50,8 +50,11 @@ final class Receiver {
     private(set) var picture: EngineContract.ReceiverPicture?
     /// The NEXRAD to draw, worked out again as blocks come and go.
     private(set) var nexrad: EngineContract.ReceiverNexradAnswer?
-    /// Why the engine could not read the bytes, for the setting's row.
-    private(set) var problem: String?
+    /// Why the receiver is not heard (the listener failed: the port taken,
+    /// Local Network refused) or could not be read, for the setting's row.
+    var problem: String? { listenProblem ?? readProblem }
+    private var listenProblem: String?
+    private var readProblem: String?
 
     /// A receiver heard in the last few seconds.
     var live: Bool { picture?.receiver.live ?? false }
@@ -84,8 +87,11 @@ final class Receiver {
 
     /// The bytes read into the picture by the engine, off the main actor:
     /// the picture holds the FIS-B texts and blocks, often hundreds of kB
-    /// each way. Traffic is told only where the picture's airplanes or
-    /// whether a receiver was heard changed.
+    /// each way, so the encode, the decode and the comparisons with the
+    /// last picture are all done there (`engineRead`), and the main actor
+    /// only takes what changed. Nothing heard and nothing to age (`due`),
+    /// the engine is not asked at all. Traffic is told only where the
+    /// picture's airplanes or whether a receiver was heard changed.
     func read(now: Date = Date()) async {
         guard !reading else { return }
         guard listening else {
@@ -94,36 +100,60 @@ final class Receiver {
             // own ship is the device's again.
             listener.stop()
             if picture != nil || problem != nil {
-                (picture, nexrad, problem) = (nil, nil, nil)
+                (picture, nexrad, listenProblem, readProblem) = (nil, nil, nil, nil)
                 onOwnship?(nil, nil)
             }
             return
         }
         listener.start()
+        // The listener's own failure is the pilot's to see (CLAUDE.md:
+        // errors show where they happen), not a silent retry each second.
+        let heardProblem = listener.problem
+        if listenProblem != heardProblem { listenProblem = heardProblem }
         let bytes = listener.drain()
         guard Self.due(picture, heard: !bytes.isEmpty, sinceS: now.timeIntervalSince(readAt)) else { return }
         let before = picture
         reading = true
         defer { reading = false }
-        let read = await Task.detached(priority: .userInitiated) { () -> Result<(EngineContract.ReceiverPicture, EngineContract.ReceiverNexradAnswer?), any Error> in
-            Result {
-                let picture = try Engine.receiverRead(data: bytes.base64EncodedString(), at: now.timeIntervalSince1970, picture: before)
-                return (picture, picture.nexrad != before?.nexrad ? (try? Engine.receiverNexrad(picture: picture)) : nil)
-            }
-        }.value
+        let read: Result<EngineRead, any Error>
+        do { read = .success(try await Self.engineRead(bytes, at: now, after: before)) } catch { read = .failure(error) }
         guard mode == .auto else { return }
         readAt = now
         switch read {
-        case let .success((next, drawn)):
-            problem = nil
-            if next != picture { picture = next }
-            if next.nexrad != before?.nexrad { nexrad = drawn }
+        case let .success(next):
+            readProblem = nil
+            if next.changed { picture = next.picture }
+            if next.nexradChanged { nexrad = next.nexrad }
             if live, !Self.used { UserDefaults.standard.set(true, forKey: Self.usedKey) }
-            if Self.trafficChanged(before, next) { onRead?() }
-            if next.receiver.heartbeatAt != nil { onOwnship?(next.ownship, next.receiver) }
+            if next.trafficChanged { onRead?() }
+            if next.picture.receiver.heartbeatAt != nil { onOwnship?(next.picture.ownship, next.picture.receiver) }
         case let .failure(error):
-            problem = Problems.say("The receiver could not be read", error)
+            readProblem = Problems.say("The receiver could not be read", error)
         }
+    }
+
+    /// One read by the engine and what it changed against `before`.
+    struct EngineRead: Sendable {
+        let picture: EngineContract.ReceiverPicture
+        let nexrad: EngineContract.ReceiverNexradAnswer?
+        let changed: Bool
+        let nexradChanged: Bool
+        let trafficChanged: Bool
+    }
+
+    /// The engine's read, on the concurrent pool: the whole picture's JSON
+    /// both ways and the deep comparisons, none of it on the main actor.
+    @concurrent
+    nonisolated static func engineRead(_ bytes: Data, at now: Date, after before: EngineContract.ReceiverPicture?) async throws -> EngineRead {
+        let picture = try Engine.receiverRead(data: bytes.base64EncodedString(), at: now.timeIntervalSince1970, picture: before)
+        let nexradChanged = picture.nexrad != before?.nexrad
+        return EngineRead(
+            picture: picture,
+            nexrad: nexradChanged ? (try? Engine.receiverNexrad(picture: picture)) : nil,
+            changed: picture != before,
+            nexradChanged: nexradChanged,
+            trafficChanged: trafficChanged(before, picture)
+        )
     }
 
     /// Quiet, with nothing left that ages by the second, the picture is

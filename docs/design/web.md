@@ -425,6 +425,19 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   tap highlight, a box over the whole hit area on top of it, is off on
   every control (`-webkit-tap-highlight-color: transparent`, index.css's
   base layer; the owner's "Yes to all recs", 2026-11-17).
+- The rest of what makes a tap feel installed (the mobile-native review,
+  2026-11-22, `audit/rev-mobile.md`): every control takes
+  `touch-action: manipulation` in the base layer, so two quick taps on a
+  stepper are two presses, not Safari's double-tap zoom of a page the
+  pilot has pinched; a control's own `touch-none` or `touch-pan-y` still
+  wins. Tailwind's `hover:` is redefined to `(hover: hover) and (pointer:
+  fine)`, as `usePointerHover` is, so a touch screen that also reports
+  hover keeps no hover fill after a tap. A long press selects no words on
+  a button, a tab, a menu's, a list's or a picker's row (index.css, with
+  Safari's `-webkit-user-select`); content stays selectable. A field is
+  never under 16 to a finger, the Native look and an iPad included
+  (`md:pointer-fine:text-sm` on the stock Input, Textarea and number
+  field), or iOS zooms the page in on focus and leaves it there.
 - The keyboard: `Drawer.VirtualKeyboardProvider` on the sheet, each card
   and each question (`PhoneSheet`), its `--drawer-keyboard-inset` the
   viewport's bottom, in place of a `visualViewport` reading.

@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import Synchronization
 
 /// The planner's list of the phones' packs of its FAA cycle
 /// (/api/cycle-packs, the planner's CyclePacks).
@@ -29,14 +30,24 @@ struct CyclePackIndex: Codable, Equatable, Sendable {
 /// a pack is rebuilt within it.
 /// Under Application Support, not Caches: iOS may not clear them when
 /// space is short, as it may the chart's tiles, and they are small.
-final class CyclePacks: @unchecked Sendable {
+///
+/// What changes is one `State` behind one mutex, never held over a file:
+/// a pan's airspace queries read the index without waiting on a keep.
+final class CyclePacks: Sendable {
     static let shared = CyclePacks()
 
     let root: URL
-    private let lock = NSLock()
-    /// index.json as last read or written, so a pan's queries do not read
-    /// and decode it again each time (nil: not read yet).
-    private var known: CyclePackIndex??
+    private struct State {
+        /// index.json as last read or written, so a pan's queries do not
+        /// read and decode it again each time (nil: not read yet).
+        var known: CyclePackIndex??
+        /// Bumped as a keep writes the index, so a read made before it is
+        /// not kept after it.
+        var version = 0
+        /// The keep under way: one at a time (`keep`).
+        var keeping: Task<Void, Never>?
+    }
+    private let state = Mutex(State())
 
     init(root: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -48,12 +59,13 @@ final class CyclePacks: @unchecked Sendable {
     /// The list the packs on the phone were fetched by, read from disk
     /// once and kept as `keep` writes it.
     var index: CyclePackIndex? {
-        lock.withLock {
-            if let known { return known }
-            let read = (try? Data(contentsOf: indexFile)).flatMap { try? Planner.snakeCase.decode(CyclePackIndex.self, from: $0) }
-            known = .some(read)
-            return read
+        let (known, version) = state.withLock { ($0.known, $0.version) }
+        if let known { return known }
+        let read = (try? Data(contentsOf: indexFile)).flatMap { try? Planner.snakeCase.decode(CyclePackIndex.self, from: $0) }
+        state.withLock { s in
+            if s.version == version, s.known == nil { s.known = .some(read) }
         }
+        return read
     }
 
     func path(cycle: String, region: String) -> URL {
@@ -89,7 +101,26 @@ final class CyclePacks: @unchecked Sendable {
     /// for the air because one fetch failed. Quiet where the planner
     /// cannot be reached: the next keep tries again, and finds the packs
     /// already fetched in the new cycle's folder.
+    ///
+    /// One keep at a time: a keep asked for while another runs waits for
+    /// it, then finds the packs it fetched already on disk (by their
+    /// crc32), so no pack is fetched twice and no sweep of the old cycle's
+    /// folders runs while another keep is writing into one.
     func keep(regions wanted: Set<String>) async {
+        let task = state.withLock { s in
+            let before = s.keeping
+            let task = Task { [self] in
+                await before?.value
+                await keepNow(regions: wanted)
+            }
+            s.keeping = task
+            return task
+        }
+        await task.value
+    }
+
+    @concurrent
+    private func keepNow(regions wanted: Set<String>) async {
         // The planner's index, read as the phone keeps it (in camel case).
         guard let answer = try? await Planner.call(.usual, { try await $0.cyclePacks().ok.body.json }),
               let fresh: CyclePackIndex = try? Engine.recoded(answer, decoder: Planner.snakeCase) else { return }
@@ -120,14 +151,16 @@ final class CyclePacks: @unchecked Sendable {
         // The same cycle, or none kept before: what came is used as it is,
         // with nothing older to fall back on. A new cycle only when whole.
         if let kept, kept.cycle != fresh.cycle, !whole { return }
-        lock.withLock {
-            try? JSONEncoder().encode(answer).write(to: indexFile, options: .atomic)
-            // Read again at the next ask, as written (the same keys).
-            known = nil
-            if let editions = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) {
-                for edition in editions where edition.hasDirectoryPath && edition.lastPathComponent != fresh.cycle {
-                    try? FileManager.default.removeItem(at: edition)
-                }
+        try? JSONEncoder().encode(answer).write(to: indexFile, options: .atomic)
+        // Read again at the next ask, as written (the same keys).
+        state.withLock { s in
+            s.known = nil
+            s.version += 1
+        }
+        // The old cycle's folders go only once the index names the new one.
+        if let editions = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) {
+            for edition in editions where edition.hasDirectoryPath && edition.lastPathComponent != fresh.cycle {
+                try? FileManager.default.removeItem(at: edition)
             }
         }
     }
@@ -145,6 +178,7 @@ final class CyclePacks: @unchecked Sendable {
 
     /// The packs kept again for a new cycle, or changed within it, where
     /// the phone has any.
+    @concurrent
     func refresh() async {
         guard let kept = index, !keptRegions(kept.cycle).isEmpty else { return }
         await keep(regions: [])

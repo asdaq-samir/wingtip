@@ -1,4 +1,4 @@
-import { useState, type PointerEvent } from "react";
+import { memo, useState, type PointerEvent } from "react";
 import { cn } from "cn";
 import type { Stroke } from "./padStore";
 import { draws, pressureOf, strokePath } from "./ink";
@@ -11,6 +11,15 @@ const DOWN = 1333;
 /** A stroke's width in those units: about 2.5 points on an iPhone's
  *  page, 4 on an iPad's. */
 const NIB = 6;
+
+/** The strokes already made, drawn again only when they change. Each is
+ *  perfect-freehand's outline worked out afresh, and drawn beside the live
+ *  stroke every pointer move (and every letter typed in a box above) took
+ *  every stroke on the page through it again: hundreds of outlines a move
+ *  on a page of notes. */
+const KeptInk = memo(function KeptInk({ strokes }: { strokes: Stroke[] }) {
+  return strokes.map((s, i) => <path key={i} d={strokePath(s, ACROSS, NIB)} fill="currentColor" />);
+});
 
 /**
  * The scratchpad's ink: an Apple Pencil, a finger or a mouse writes on
@@ -43,7 +52,6 @@ export function InkPad({ strokes, onStroke, label }: { strokes: Stroke[]; onStro
     if (live && live.points.length > 0) onStroke(live);
     setLive(null);
   };
-  const shown = live ? [...strokes, live] : strokes;
   return (
     <svg
       viewBox={`0 0 ${ACROSS} ${DOWN}`}
@@ -57,9 +65,8 @@ export function InkPad({ strokes, onStroke, label }: { strokes: Stroke[]; onStro
       onPointerUp={up}
       onPointerCancel={() => setLive(null)}
     >
-      {shown.map((s, i) => (
-        <path key={i} d={strokePath(s, ACROSS, NIB)} fill="currentColor" />
-      ))}
+      <KeptInk strokes={strokes} />
+      {live && <path d={strokePath(live, ACROSS, NIB)} fill="currentColor" />}
     </svg>
   );
 }

@@ -74,7 +74,7 @@
       "source": "14 CFR 1.1: \"Ceiling means the height above the earth's surface of the lowest layer of clouds or obscuring phenomena that is reported as 'broken', 'overcast', or 'obscuration', and not classified as 'thin' or 'partial'.\""
     },
     {
-      "name": "1,600 m is 0.99 statute miles",
+      "name": "1,600 m is 0.99 statute miles, said as 15/16, the step at or below",
       "rule": "ceiling_visibility",
       "input": {
         "visibility": {
@@ -85,14 +85,14 @@
       "expect": [
         {
           "path": "visibility_sm",
-          "value": 0.9941939075797344,
-          "tolerance": 0.005
+          "value": 0.9375,
+          "tolerance": 0
         }
       ],
-      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28)."
+      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28). A US report gives sixteenths below 3 sm and never rounds a visibility up (FAA JO 7900.5E's reportable values), so the engine says the step at or below (metres_to_sm)."
     },
     {
-      "name": "5,000 m is 3.11 statute miles",
+      "name": "5,000 m is 3.11 statute miles, said as 3, the step at or below",
       "rule": "ceiling_visibility",
       "input": {
         "visibility": {
@@ -103,11 +103,11 @@
       "expect": [
         {
           "path": "visibility_sm",
-          "value": 3.1068559611866697,
-          "tolerance": 0.005
+          "value": 3.0,
+          "tolerance": 0
         }
       ],
-      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28)."
+      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28). From 3 sm a US report gives whole miles and never rounds a visibility up (FAA JO 7900.5E's reportable values), so the engine says 3 (metres_to_sm)."
     },
     {
       "name": "2 1/2 SM is 2.5",
@@ -378,29 +378,106 @@
           {
             "hazard": "Icing",
             "valid": 1789994600,
-            "coords": [[42.4, -88.2], [42.4, -87.8], [42.6, -87.8], [42.6, -88.2]],
+            "coords": [
+              [
+                42.4,
+                -88.2
+              ],
+              [
+                42.4,
+                -87.8
+              ],
+              [
+                42.6,
+                -87.8
+              ],
+              [
+                42.6,
+                -88.2
+              ]
+            ],
             "raw": "on the route, 90 minutes before"
           },
           {
             "hazard": "Icing",
             "valid": 1789994599,
-            "coords": [[42.4, -88.2], [42.4, -87.8], [42.6, -87.8], [42.6, -88.2]],
+            "coords": [
+              [
+                42.4,
+                -88.2
+              ],
+              [
+                42.4,
+                -87.8
+              ],
+              [
+                42.6,
+                -87.8
+              ],
+              [
+                42.6,
+                -88.2
+              ]
+            ],
             "raw": "on the route, a second more"
           },
           {
             "hazard": "Icing",
             "valid": 1790009000,
-            "coords": [[42.4, -88.2], [42.4, -87.8], [42.6, -87.8], [42.6, -88.2]],
+            "coords": [
+              [
+                42.4,
+                -88.2
+              ],
+              [
+                42.4,
+                -87.8
+              ],
+              [
+                42.6,
+                -87.8
+              ],
+              [
+                42.6,
+                -88.2
+              ]
+            ],
             "raw": "on the route, 90 minutes after"
           },
           {
             "hazard": "Icing",
             "valid": 1790000000,
-            "coords": [[42.4, -80.2], [42.4, -79.8], [42.6, -79.8], [42.6, -80.2]],
+            "coords": [
+              [
+                42.4,
+                -80.2
+              ],
+              [
+                42.4,
+                -79.8
+              ],
+              [
+                42.6,
+                -79.8
+              ],
+              [
+                42.6,
+                -80.2
+              ]
+            ],
             "raw": "away from the route"
           }
         ],
-        "path": [[42.0, -88.0], [43.0, -88.0]],
+        "path": [
+          [
+            42.0,
+            -88.0
+          ],
+          [
+            43.0,
+            -88.0
+          ]
+        ],
         "start": 1790000000,
         "end": 1790003600
       },
@@ -474,7 +551,12 @@
             "raw": "east of the box"
           }
         ],
-        "box": [42.0, -89.0, 43.0, -87.0],
+        "box": [
+          42.0,
+          -89.0,
+          43.0,
+          -87.0
+        ],
         "now": 1790000000
       },
       "expect": [
@@ -535,7 +617,16 @@
             "raw": "31 nm east, outside 30"
           }
         ],
-        "path": [[42.0, -88.0], [43.0, -88.0]],
+        "path": [
+          [
+            42.0,
+            -88.0
+          ],
+          [
+            43.0,
+            -88.0
+          ]
+        ],
         "now": 1790000000
       },
       "expect": [

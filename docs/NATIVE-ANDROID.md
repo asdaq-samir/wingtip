@@ -110,6 +110,11 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     `format/Typed.kt`, which takes a decimal comma ("8,5") as the point.
 - `app/src/test`: JUnit, on the JVM. `app/src/androidTest`: on an
   emulator, with the web's shared fixtures as the test APK's assets.
+  The engine does not load on the JVM, so a pure function that asks it
+  takes the rule as a parameter whose default is the engine's
+  (`SameField`, `ChartCycle`, `StationMarks.Rules`), and its JVM test
+  gives the answers, from the shared fixtures where they list the ask
+  (`FieldRules` in the tests, `dataCycles.json`).
 
 ## Rules
 

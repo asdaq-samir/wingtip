@@ -1,6 +1,7 @@
 import Foundation
 import FoundationModels
 import os
+import Synchronization
 
 /// Who wrote an answer the pilot reads, for the caption over it.
 enum AskOrigin: String, Equatable, Sendable {
@@ -48,22 +49,21 @@ struct OnDeviceAnswer: Equatable, Sendable {
 /// from what is shown withdraws it first. The model's partial output is
 /// streamed a whole, checked sentence at a time (OnDeviceAsk), never a
 /// half sentence whose number the guard has not seen.
-final class StreamedWords: @unchecked Sendable {
-    private let lock = NSLock()
-    private var shown: [String] = []
+final class StreamedWords: Sendable {
+    private let shown = Mutex<[String]>([])
 
     func lines(for sentences: [String]) -> [AssistantLine] {
-        lock.lock()
-        defer { lock.unlock() }
-        if sentences.starts(with: shown) {
-            let new = sentences.dropFirst(shown.count)
-            guard !new.isEmpty else { return [] }
-            let text = (shown.isEmpty ? "" : " ") + new.joined(separator: " ")
+        shown.withLock { shown in
+            if sentences.starts(with: shown) {
+                let new = sentences.dropFirst(shown.count)
+                guard !new.isEmpty else { return [] }
+                let text = (shown.isEmpty ? "" : " ") + new.joined(separator: " ")
+                shown = sentences
+                return [.text(text)]
+            }
             shown = sentences
-            return [.text(text)]
+            return [.retract] + (sentences.isEmpty ? [] : [.text(sentences.joined(separator: " "))])
         }
-        shown = sentences
-        return [.retract] + (sentences.isEmpty ? [] : [.text(sentences.joined(separator: " "))])
     }
 }
 

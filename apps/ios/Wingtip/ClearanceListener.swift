@@ -39,7 +39,10 @@ final class ClearanceListener {
     }
 
     private(set) var heard: [Transmission] = []
-    private(set) var listening = false
+    /// The radio being listened to.
+    var listening: Bool {
+        if case .radio(_, live: true) = state { true } else { false }
+    }
     /// Why it could not listen, in a pilot's words.
     private(set) var problem: String?
     /// The last call to us put away.
@@ -60,7 +63,9 @@ final class ClearanceListener {
     /// The microphone open for one thing said to the radio's own screens
     /// -- a readback (hearOnce). The pilot asking the app by voice is
     /// VoiceInput's, apart from the radio.
-    private(set) var hearingOnce = false
+    var hearingOnce: Bool {
+        if case .once = state { true } else { false }
+    }
     /// The words of it so far, and those of them settled.
     private var heardOnce: String?
     private var settledOnce = ""
@@ -76,7 +81,29 @@ final class ClearanceListener {
     /// Whether voice is offered here: English transcribed on this iPhone,
     /// never on a server. Every microphone control shows only when it is.
     var canListen: Bool { SpeechSession.canListen }
-    private var session: SpeechSession?
+
+    /// What the microphone is doing: one session at a time, by its type.
+    /// A resumed radio, or a readback asked for while another starts,
+    /// replaces the session held, which is cancelled first (`begin`).
+    private enum State {
+        case idle
+        /// The radio's session; live once it has started.
+        case radio(SpeechSession, live: Bool)
+        /// One thing said, a readback.
+        case once(SpeechSession)
+    }
+
+    private var state: State = .idle
+    private var session: SpeechSession? {
+        switch state {
+        case .idle: nil
+        case let .radio(session, _), let .once(session): session
+        }
+    }
+
+    /// The sessions stopped, still being cancelled: a new one waits for
+    /// them, so no old analyzer is still running beside it.
+    @ObservationIgnored private var retiring: Task<Void, Never>?
     private var words: [String] = []
     private var next = 0
     private var cut: Task<Void, Never>?
@@ -112,6 +139,7 @@ final class ClearanceListener {
             return false
         }
         stop()
+        await retiring?.value
         // The radio takes the microphone: a question being said ends.
         VoiceInput.shared.finish()
         do {
@@ -127,15 +155,31 @@ final class ClearanceListener {
     }
 
     /// A session started, with `problem` set where it cannot be.
+    /// Any session still held is stopped and its cancelling awaited first,
+    /// and only the newest session's results are told, so two analyzers
+    /// never feed the log at once.
     private func begin(_ kind: SpeechSession.Kind, words: [String], heard: @escaping @MainActor (SpeechSession.Heard) -> Void) async -> SpeechSession? {
+        // Looped: another begin may have started while this one waited.
+        while session != nil || retiring != nil {
+            if session != nil { retire() }
+            await retiring?.value
+        }
         let session = SpeechSession(kind)
-        self.session = session
+        state = kind == .radio ? .radio(session, live: false) : .once(session)
         do {
-            try await session.start(words: words, heard: heard)
+            try await session.start(words: words) { [weak self] result in
+                guard self?.session === session else { return }
+                heard(result)
+            }
+            guard self.session === session else {
+                await session.cancel()
+                return nil
+            }
+            if kind == .radio { state = .radio(session, live: true) }
             return session
         } catch {
             await session.cancel()
-            self.session = nil
+            if self.session === session { state = .idle }
             problem = Problems.words("The microphone would not start", error)
             Log.radio.error("the microphone would not start: \(error.localizedDescription, privacy: .public)")
             return nil
@@ -155,7 +199,6 @@ final class ClearanceListener {
             self.heard(id, result.text.trimmingCharacters(in: .whitespaces), final: result.final)
             if result.final { self.next += 1 }
         }) != nil else { return }
-        listening = true
         Log.radio.notice("listening to the radio, \(words.count) names to listen for")
         // Taken away by a phone call or Siri, the microphone is listened
         // to again once the system recommends resuming (iOS 27's
@@ -213,7 +256,6 @@ final class ClearanceListener {
             return nil
         }
         guard await openMicrophone() else { return nil }
-        hearingOnce = true
         heardOnce = nil
         settledOnce = ""
         let session = await begin(.said, words: words) { [weak self] result in
@@ -228,8 +270,7 @@ final class ClearanceListener {
             endAfter(Self.longestOnce)
             await session.finished()
         }
-        hearingOnce = false
-        stop()
+        if self.session === session { stop() }
         return heardOnce
     }
 
@@ -274,16 +315,32 @@ final class ClearanceListener {
     }
 
     func stop() {
-        listening = false
         cut?.cancel()
         interruptions?.cancel()
         interruptions = nil
-        let session = session
-        self.session = nil
-        session?.closeMicrophone()
-        Task { await session?.cancel() }
+        retire()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
+
+    /// The session held let go: its microphone closed at once, its
+    /// analyzer cancelled in `retiring`, after any cancelled before it.
+    private func retire() {
+        guard let session else { return }
+        state = .idle
+        session.closeMicrophone()
+        let before = retiring
+        let task = Task { [weak self] in
+            await before?.value
+            await session.cancel()
+            guard let self else { return }
+            // The last one to end clears the slot.
+            if self.retiringID == ObjectIdentifier(session) { self.retiring = nil }
+        }
+        retiring = task
+        retiringID = ObjectIdentifier(session)
+    }
+
+    @ObservationIgnored private var retiringID: ObjectIdentifier?
 
     static func allowed() async -> Bool {
         let speech = await withCheckedContinuation { (done: CheckedContinuation<Bool, Never>) in

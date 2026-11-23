@@ -303,7 +303,17 @@ test("the Brief opens on whether to go and one grouped list, a row for each part
   // Read with the pointer off the rows, as a finger lifts: the Brief opens
   // at half over where its button in FPL's bar was tapped, and a mouse left
   // over a row is its hover's fill (bg-muted/50), not its own.
+  // The hover's fill fades out over the row's transition (100 ms): each
+  // row read once it has, or the row under the mouse reads its fill.
   await page.mouse.move(0, 0);
+  await card.evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations({ subtree: true })
+        .filter((a) => a instanceof CSSTransition)
+        .map((a) => a.finished.catch(() => null)),
+    ),
+  );
   const fill = (id: string) => card.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
   await expect(card.getByTestId("brief-glance-enroute")).toHaveCSS("background-color", await fill("brief-glance-depart"));
   expect(await fill("brief-verdict")).not.toBe(await fill("brief-glance-depart"));

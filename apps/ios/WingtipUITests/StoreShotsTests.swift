@@ -29,6 +29,7 @@ final class StoreShotsTests: XCTestCase {
 
     @MainActor
     private func save(_ app: XCUIApplication, _ name: String, settle: TimeInterval = 4) {
+        // A store picture of the map once its tiles and route are drawn on its canvas, which has no element to ask.
         Thread.sleep(forTimeInterval: settle)
         let png = XCUIScreen.main.screenshot().pngRepresentation
         try? png.write(to: dir.appendingPathComponent("\(name).png"))
@@ -57,6 +58,7 @@ final class StoreShotsTests: XCTestCase {
         XCTAssertTrue(tail.waitForExistence(timeout: 30))
         tail.tap()
         tail.typeText("N3429J\n")
+        // The registry lookup's answer has no element of its own to wait for, so a fixed wait before leaving the page.
         Thread.sleep(forTimeInterval: 8)
         // The Airplane page left by the system's Back: the plan under it.
         app.navigationBars.buttons.element(boundBy: 0).tap()
@@ -69,17 +71,17 @@ final class StoreShotsTests: XCTestCase {
         // And up again for the route card's Nav Log and Brief.
         let low = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.84))
         low.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
-        Thread.sleep(forTimeInterval: 2)
         let item = app.buttons["Nav Log"]
         XCTAssertTrue(item.waitForExistence(timeout: Self.planner))
+        CardTests.waitHittable(item, timeout: 10)
         item.tap()
         let navLog = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nav Log'")).firstMatch
         XCTAssertTrue(navLog.waitForExistence(timeout: Self.planner))
         save(app, "03-navlog", settle: 8)
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        Thread.sleep(forTimeInterval: 2)
         let brief = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Brief'")).firstMatch
         XCTAssertTrue(brief.waitForExistence(timeout: Self.planner))
+        CardTests.waitHittable(brief, timeout: 10)
         brief.tap()
         XCTAssertTrue(app.navigationBars["Brief"].waitForExistence(timeout: Self.planner))
         // Until the verdict is in, not its "Checking the flight…".

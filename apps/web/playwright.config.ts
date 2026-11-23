@@ -154,11 +154,12 @@ export default defineConfig({
     },
     // The phone's sheet in Safari's engine at an iPhone's size and touch
     // (sheet-webkit.spec): its one @smoke after merge with mobile's, the
-    // owner's iPhone having found the sheet's bugs Chromium did not.
+    // owner's iPhone having found the sheet's bugs Chromium did not; and
+    // the touch styles the iPad's ipad-touch.spec checks, on the iPhone.
     {
       name: "webkit-phone",
       dependencies: ["setup"],
-      testMatch: /sheet-webkit\.spec\.ts/,
+      testMatch: /(sheet-webkit|ipad-touch)\.spec\.ts/,
       use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE },
     },
     // The iPad, the device most pilots fly with (decision 0058; the owner,

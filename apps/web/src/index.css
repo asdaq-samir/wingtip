@@ -12,6 +12,18 @@
 @import "./styles/feel.css";
 
 @custom-variant dark (&:is(.dark *));
+/* A hover's look only under a mouse or a trackpad, as usePointerHover's
+   previews are: Tailwind's own hover asks only (hover: hover), which a
+   touch screen that also reports hover (an Android tablet, a touch
+   Chromebook) matches, and a row tapped there kept its hover fill until
+   the next tap elsewhere. A finger's feedback is the press (:active). */
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
 /* Reduce Transparency, or Increase Contrast, asked for on the device
    (Safari reports iOS's Increase Contrast as prefers-contrast: more; Chrome
    reports Reduce Transparency): every frosted surface solid, as iOS's own
@@ -99,12 +111,28 @@
    long, still touch would select by mistake are kept from it -- a
    button (the sheet's grabber and its page tabs are buttons too), a
    tab, and the map with its markers -- so the touch starts what the
-   control does, not the selection loupe or the "copy/share" callout. */
+   control does, not the selection loupe or the "copy/share" callout.
+   A menu's, a list's and a picker's rows are controls too (Base UI's
+   menu items, select options, switches, checkboxes and radios are
+   elements with a role, not buttons), and a long press on one started
+   a selection of its words. Safari has long read user-select only with
+   its prefix, so both are said. */
 button,
-[role="button"],
-[role="tab"],
+:is(
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="menuitemcheckbox"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="slider"]
+),
 .maplibregl-map {
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -416,6 +444,32 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
      row, a Toggle's pressed fill -- so this takes nothing away. */
   :is(a, button, input, select, textarea, label, summary, [role="button"], [role="option"], [role="menuitem"], [role="tab"], [tabindex]) {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* A tap is the control's at once, and two quick taps are two presses:
+     the page may be pinch-zoomed (index.html's viewport), and once it
+     has been, Safari waits after each tap to see whether a second comes
+     to zoom by, and two quick taps on a stepper's + or the map's zoom
+     button can zoom the page instead (WebKit, "More Responsive Tapping
+     on iOS"). Pans and pinches stay the browser's. In the base layer, so a
+     control's own touch-none or touch-pan-y (a drag handle, a slider,
+     the route pill) still wins. */
+  :is(
+    a,
+    button,
+    summary,
+    label,
+    [role="button"],
+    [role="tab"],
+    [role="option"],
+    [role="menuitem"],
+    [role="menuitemradio"],
+    [role="menuitemcheckbox"],
+    [role="switch"],
+    [role="checkbox"],
+    [role="radio"]
+  ) {
+    touch-action: manipulation;
   }
 
   * {

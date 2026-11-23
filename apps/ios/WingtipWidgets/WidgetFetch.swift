@@ -157,8 +157,9 @@ enum WidgetFetch {
 /// The planner's paths behind the gateway's proxy (Config.plannerPath), as
 /// the app's PlannerPath middleware sends them.
 private struct WidgetPlannerPath: ClientMiddleware {
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
         request.path = request.path.map(Config.plannerPath)
         return try await next(request, body, baseURL)

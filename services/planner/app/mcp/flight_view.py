@@ -14,15 +14,19 @@ the view reads the structured content, which hosts keep from the model
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import itertools
 import json
+import secrets
 import time
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp_types import CallToolResult, TextContent
 from wingtip.engine import ask as engine
 
 from ..generated.planner_calls import plan
 from ..settings import get_settings
-from . import airplane
+from . import airplane, records
 from .calls import ENGINE_SOURCE, WINDS_SOURCE, editions
 from .flight_state import Flight, link_of, query_of, same
 from .procedure_picks import approaches_of
@@ -39,6 +43,10 @@ LINE_POINTS = 400
 # say over older ones in the conversation (claude.com/docs ... instance
 # supersession: a server-made key, the time and a count).
 _SEQ = itertools.count(1)
+
+#: The key the views' channel name is made with where no shared secret
+#: is set (a server that reads no records, the tests).
+_PROCESS_KEY = secrets.token_bytes(32)
 
 #: The plan's chart fields the view's tiles need (web lib/map/sources tiles' tileTemplate).
 CHART_KEYS = ("chart_cycle", "chart_revision", "chart_tiles_base", "max_zoom", "min_zoom")
@@ -103,9 +111,44 @@ def chart_of(p: dict) -> dict:
     return {**{k: p.get(k) for k in CHART_KEYS}, "chart_layers": layers}
 
 
-async def view_of(flight: Flight, p: dict, flown: dict | None) -> dict:
+def channel_of(pilot_id: str) -> str:
+    """The name the pilot's views of this connector say their keys on
+    (web features/claude-view/supersede): made from the view's resource
+    URI and the pilot with a key only the server holds, so a view of
+    another connector sharing the host's sandbox origin can neither guess
+    it nor stand Wingtip's views down (the security review of
+    2026-11-22)."""
+    key = (get_settings().mcp_internal_token or "").encode() or _PROCESS_KEY
+    return hmac.new(key, f"{VIEW_URI}|{pilot_id}".encode(), hashlib.sha256).hexdigest()[:32]
+
+
+async def saved_of(flight: Flight, pilot_id: str) -> dict | None:
+    """The saved flight the flight came from, as the view's Update button
+    names it ("Update KMSN-KDLH"): its id and its two ends, from the
+    pilot's own records, never from the flight handed back (the model's,
+    which a text it read can steer). None where there is none, or it is
+    not among theirs."""
+    if flight.saved_flight_id is None:
+        return None
+    try:
+        theirs = await records.flights(pilot_id)
+    except ToolError:
+        return None
+    for f in theirs:
+        if f.get("id") == flight.saved_flight_id:
+            ends = (f["departureIdent"], f["destinationIdent"])
+            # As the gateway compares them (FlightService.replan): the view
+            # offers Update only where the gateway would take it.
+            same_route = [e.upper() for e in ends] == [flight.departure.upper(), flight.destination.upper()]
+            return {"id": f["id"], "departure": ends[0], "destination": ends[1], "same_route": same_route}
+    return None
+
+
+async def view_of(flight: Flight, p: dict, flown: dict | None, saved: dict | None = None, pilot_id: str = "") -> dict:
     """What the live view draws of the planned flight."""
     return {
+        "channel": channel_of(pilot_id),
+        "saved": saved,
         "seq": next(_SEQ),
         "created_at": int(time.time() * 1000),
         "origin": get_settings().mcp_issuer,
@@ -154,7 +197,7 @@ async def answer(flight: Flight, pilot_id: str, said: str = "") -> CallToolResul
     """A flight tool's answer: the line for the model, the flight and its
     view for the live view."""
     p, flown = await planned(flight, pilot_id)
-    view = await view_of(flight, p, flown)
+    view = await view_of(flight, p, flown, await saved_of(flight, pilot_id), pilot_id)
     content = {
         "flight": flight.model_dump(mode="json"),
         "view": view,

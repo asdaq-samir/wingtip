@@ -117,7 +117,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
         // replyHandler:)); the task below is its only caller, so handing
         // it over is safe though the SDK does not mark it Sendable.
         nonisolated(unsafe) let reply = replyHandler
-        Task.detached {
+        Task {
             let nearest = await WatchLink.nearest(request)
             let answer = (try? WatchCoding.encoder.encode(nearest)) ?? Data()
             reply([WatchMessageKey.nearest: answer])

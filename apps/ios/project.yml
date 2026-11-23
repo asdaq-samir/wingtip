@@ -18,6 +18,14 @@ settings:
     # owner's ask, 2026-11-03, made so once a run was clean, 2026-11-09).
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
+    # Approachable Concurrency (Swift 6.2; write-swift's first setting):
+    # a nonisolated async function runs on its caller's actor
+    # (NonisolatedNonsendingByDefault), and work meant for the pool says
+    # so with @concurrent; conformances take their type's isolation
+    # (InferIsolatedConformances). Here, never on xcodebuild's command
+    # line, so the Swift packages build as they ship (swift-openapi-runtime
+    # 1.13.4 does not compile with it, the rev-swift probe, 2026-11-22).
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
     # No warnings anywhere: every target's warning is an error (the owner,
     # 2026-11-09), Swift's and clang's alike, so none piles up unread.
     SWIFT_TREAT_WARNINGS_AS_ERRORS: YES

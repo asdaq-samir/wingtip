@@ -2,7 +2,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
 import { Progress } from "../../components/ui/progress";
-import { aboutMb } from "../keptForAir";
+import { aboutMb } from "../keptForAir/lazy";
 import { useKeptStatesCount, useStatePlates } from "./useStatePlates";
 import type { KeptState } from "./statePlates";
 

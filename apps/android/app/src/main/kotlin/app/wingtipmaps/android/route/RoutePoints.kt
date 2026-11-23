@@ -6,6 +6,11 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.sameField
 import java.util.Locale
 
+/** Whether two idents name one field: the engine's `same_field`
+ *  (RoutePoints.same). A parameter where a pure edit asks it, as the
+ *  engine does not load in the JVM's unit tests, which give its answers. */
+typealias SameField = (String, String) -> Boolean
+
 /** A point the route goes through: a field by its ident, or a place
  *  ("@41.8800,-87.6300") as the planner reads one. */
 data class RoutePoint(val ident: String, val name: String, val lat: Double, val lon: Double)

@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// A PMTiles archive (protomaps' format, spec v3) on the phone's disk,
 /// read a tile at a time with ranged reads of the file: the 127-byte
@@ -8,7 +9,14 @@ import Foundation
 /// wingtip.tile_archive), so the map draws a downloaded region's tiles
 /// with no signal. Never mapped whole: Alaska's sectional at 2x is 7 GB,
 /// more than a process's address space on some phones.
-final class PMTilesReader: @unchecked Sendable {
+///
+/// Every number read from the file is checked before it is used: an
+/// offset or a length past the file, or arithmetic that would overflow,
+/// throws (`Failure.truncated`), so a truncated or bit-flipped region is a
+/// tile the map does not have, never a crash in flight on the tile-load
+/// path. The reads are `pread`s, which share no file position, so no lock
+/// is held over the disk; one mutex guards only the leaf cache.
+final class PMTilesReader: Sendable {
     struct Header: Equatable, Sendable {
         let rootOffset: UInt64, rootLength: UInt64
         let leafOffset: UInt64
@@ -27,47 +35,53 @@ final class PMTilesReader: @unchecked Sendable {
 
     let url: URL
     let header: Header
-    private let handle: FileHandle
-    private let lock = NSLock()
-    private var root: [Entry]
-    private var leaves: [UInt64: [Entry]] = [:]
-    private var leafOrder: [UInt64] = []
+    private let file: File
+    private let root: [Entry]
+    private struct Leaves {
+        var byOffset: [UInt64: [Entry]] = [:]
+        var order: [UInt64] = []
+    }
+    private let leaves = Mutex(Leaves())
 
     init(url: URL) throws {
         self.url = url
-        handle = try FileHandle(forReadingFrom: url)
-        let head = try Self.read(handle, offset: 0, length: 127)
-        header = try Self.header(head)
-        root = try Self.directory(Self.read(handle, offset: header.rootOffset, length: Int(header.rootLength)), compression: header.internalCompression)
+        let file = try File(url)
+        header = try Self.header(file.read(offset: 0, length: 127))
+        root = try Self.directory(file.read(offset: header.rootOffset, length: header.rootLength), compression: header.internalCompression)
+        self.file = file
     }
 
-    deinit { try? handle.close() }
-
-    /// The tile's bytes, or nil where the archive has none.
+    /// The tile's bytes, or nil where the archive has none or is damaged.
     func tile(z: Int, x: Int, y: Int) -> Data? {
-        guard z >= header.minZoom, z <= header.maxZoom, let id = Self.tileID(z: z, x: x, y: y) else { return nil }
-        return lock.withLock {
-            var entries = root
-            // PMTiles' deepest directory is four levels.
-            for _ in 0..<4 {
-                guard let entry = Self.find(entries, id) else { return nil }
-                if entry.runLength > 0 {
-                    return try? Self.read(handle, offset: header.dataOffset + entry.offset, length: Int(entry.length))
-                }
-                guard let leaf = leaf(at: header.leafOffset + entry.offset, length: entry.length) else { return nil }
-                entries = leaf
-            }
-            return nil
-        }
+        try? lookup(z: z, x: x, y: y)
     }
 
-    private func leaf(at offset: UInt64, length: UInt64) -> [Entry]? {
-        if let kept = leaves[offset] { return kept }
-        guard let bytes = try? Self.read(handle, offset: offset, length: Int(length)),
-              let entries = try? Self.directory(bytes, compression: header.internalCompression) else { return nil }
-        leaves[offset] = entries
-        leafOrder.append(offset)
-        if leafOrder.count > 64 { leaves[leafOrder.removeFirst()] = nil }
+    /// The tile's bytes, nil where the archive has none; throws where it
+    /// is damaged.
+    func lookup(z: Int, x: Int, y: Int) throws -> Data? {
+        guard z >= header.minZoom, z <= header.maxZoom, let id = Self.tileID(z: z, x: x, y: y) else { return nil }
+        var entries = root
+        // PMTiles' deepest directory is four levels.
+        for _ in 0..<4 {
+            guard let entry = Self.find(entries, id) else { return nil }
+            if entry.runLength > 0 {
+                return try file.read(offset: Self.sum(header.dataOffset, entry.offset), length: entry.length)
+            }
+            entries = try leaf(at: Self.sum(header.leafOffset, entry.offset), length: entry.length)
+        }
+        return nil
+    }
+
+    private func leaf(at offset: UInt64, length: UInt64) throws -> [Entry] {
+        if let kept = leaves.withLock({ $0.byOffset[offset] }) { return kept }
+        // Read and unpacked outside the lock: two threads after the same
+        // leaf at once read it twice, which is cheaper than waiting.
+        let entries = try Self.directory(file.read(offset: offset, length: length), compression: header.internalCompression)
+        leaves.withLock { l in
+            guard l.byOffset.updateValue(entries, forKey: offset) == nil else { return }
+            l.order.append(offset)
+            if l.order.count > 64 { l.byOffset[l.order.removeFirst()] = nil }
+        }
         return entries
     }
 
@@ -75,18 +89,59 @@ final class PMTilesReader: @unchecked Sendable {
 
     enum Failure: Error { case notPMTiles, truncated, compression }
 
-    static func read(_ handle: FileHandle, offset: UInt64, length: Int) throws -> Data {
-        try handle.seek(toOffset: offset)
-        guard let data = try handle.read(upToCount: length), data.count == length else { throw Failure.truncated }
-        return data
+    /// `a + b`, or `truncated` where it overflows: no real archive's
+    /// offsets come near it, so one that does is damaged.
+    static func sum(_ a: UInt64, _ b: UInt64) throws -> UInt64 {
+        let (total, over) = a.addingReportingOverflow(b)
+        guard !over else { throw Failure.truncated }
+        return total
+    }
+
+    /// The archive's file, read by `pread` at an offset, every range
+    /// checked against the file's size.
+    final class File: Sendable {
+        private let fd: Int32
+        let size: UInt64
+
+        init(_ url: URL) throws {
+            let fd = open(url.path, O_RDONLY | O_CLOEXEC)
+            guard fd >= 0 else { throw CocoaError(.fileReadNoSuchFile, userInfo: [NSURLErrorKey: url]) }
+            var info = stat()
+            guard fstat(fd, &info) == 0, info.st_size >= 0 else {
+                close(fd)
+                throw Failure.truncated
+            }
+            self.fd = fd
+            size = UInt64(info.st_size)
+        }
+
+        deinit { close(fd) }
+
+        func read(offset: UInt64, length: UInt64) throws -> Data {
+            guard try PMTilesReader.sum(offset, length) <= size, let count = Int(exactly: length),
+                  let start = off_t(exactly: offset) else { throw Failure.truncated }
+            var data = Data(count: count)
+            let got = data.withUnsafeMutableBytes { buffer -> Int in
+                guard let base = buffer.baseAddress else { return 0 }
+                var done = 0
+                while done < count {
+                    let n = pread(fd, base + done, count - done, start + off_t(done))
+                    if n <= 0 { break }
+                    done += n
+                }
+                return done
+            }
+            guard got == count else { throw Failure.truncated }
+            return data
+        }
     }
 
     static func header(_ d: Data) throws -> Header {
         guard d.count >= 127, d.prefix(7) == Data("PMTiles".utf8), d[d.startIndex + 7] == 3 else { throw Failure.notPMTiles }
-        func u64(_ at: Int) -> UInt64 {
-            d.subdata(in: d.startIndex + at..<d.startIndex + at + 8).withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) }.littleEndian
+        func field(_ at: Int) -> UInt64 {
+            d.withUnsafeBytes { UInt64(littleEndian: $0.loadUnaligned(fromByteOffset: at, as: UInt64.self)) }
         }
-        return Header(rootOffset: u64(8), rootLength: u64(16), leafOffset: u64(40), dataOffset: u64(56),
+        return Header(rootOffset: field(8), rootLength: field(16), leafOffset: field(40), dataOffset: field(56),
                       minZoom: Int(d[d.startIndex + 100]), maxZoom: Int(d[d.startIndex + 101]),
                       internalCompression: d[d.startIndex + 97])
     }
@@ -110,17 +165,31 @@ final class PMTilesReader: @unchecked Sendable {
             }
             throw Failure.truncated
         }
-        let count = Int(try varint())
+        // Each entry takes four varints of a byte or more: a count past
+        // what the bytes could hold is a damaged directory.
+        guard let count = Int(exactly: try varint()), count <= bytes.count / 4 else { throw Failure.truncated }
         var ids = [UInt64](), last: UInt64 = 0
         ids.reserveCapacity(count)
-        for _ in 0..<count { last += try varint(); ids.append(last) }
+        for _ in 0..<count {
+            last = try sum(last, varint())
+            ids.append(last)
+        }
         let runs = try (0..<count).map { _ in try varint() }
         let lengths = try (0..<count).map { _ in try varint() }
         var entries: [Entry] = []
         entries.reserveCapacity(count)
         for i in 0..<count {
             let raw = try varint()
-            let offset = (i > 0 && raw == 0) ? entries[i - 1].offset + entries[i - 1].length : raw - 1
+            // Stored plus one; 0 is "straight after the entry before",
+            // which the first entry has none of.
+            let offset: UInt64
+            if raw > 0 {
+                offset = raw - 1
+            } else if i > 0 {
+                offset = try sum(entries[i - 1].offset, entries[i - 1].length)
+            } else {
+                throw Failure.truncated
+            }
             entries.append(Entry(tileID: ids[i], offset: offset, length: lengths[i], runLength: runs[i]))
         }
         return entries

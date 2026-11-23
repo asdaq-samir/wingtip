@@ -52,7 +52,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * authorizations and consents are Spring's JDBC stores, on V40's tables.
  */
 @SpringBootTest(
-        properties = {"app.public-base-url=http://localhost", "app.mcp.enabled=true", "app.mcp.internal-token=t"})
+        properties = {
+            "app.public-base-url=http://localhost",
+            "app.mcp.enabled=true",
+            "app.mcp.internal-token=0123456789abcdef0123456789abcdef"
+        })
 @AutoConfigureMockMvc
 @Testcontainers
 class ConnectorFlowTest {
@@ -188,8 +192,8 @@ class ConnectorFlowTest {
         assertThat(jwt.getJWTClaimsSet().getSubject()).isEqualTo(String.valueOf(pilot.getId()));
         assertThat(jwt.getJWTClaimsSet().getIssuer()).isEqualTo("http://localhost");
         assertThat(jwt.getJWTClaimsSet().getStringClaim("client_id")).isEqualTo(clientId);
-        assertThat(jwt.getJWTClaimsSet().getStringClaim("scope"))
-                .isEqualTo(ConnectorSettings.READ + " " + ConnectorSettings.WRITE);
+        assertThat(jwt.getJWTClaimsSet().getStringClaim("scope").split(" "))
+                .containsExactlyInAnyOrder(ConnectorSettings.READ, ConnectorSettings.WRITE);
         assertThat(jwt.getHeader().getAlgorithm().getName()).isEqualTo("RS256");
         String jwks = mvc.perform(get("/oauth2/jwks")).andReturn().getResponse().getContentAsString();
         RSAKey key = (RSAKey) JWKSet.parse(jwks).getKeyByKeyId(jwt.getHeader().getKeyID());
@@ -209,8 +213,8 @@ class ConnectorFlowTest {
         SignedJWT again = SignedJWT.parse(JsonPath.read(refreshed, "$.access_token"));
         assertThat(again.getJWTClaimsSet().getAudience()).containsExactly(RESOURCE);
         assertThat(again.getJWTClaimsSet().getSubject()).isEqualTo(String.valueOf(pilot.getId()));
-        assertThat(again.getJWTClaimsSet().getStringClaim("scope"))
-                .isEqualTo(ConnectorSettings.READ + " " + ConnectorSettings.WRITE);
+        assertThat(again.getJWTClaimsSet().getStringClaim("scope").split(" "))
+                .containsExactlyInAnyOrder(ConnectorSettings.READ, ConnectorSettings.WRITE);
         mvc.perform(post("/oauth2/token")
                         .param("grant_type", "refresh_token")
                         .param("refresh_token", refresh)

@@ -30,7 +30,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @SpringBootTest(
         properties = {
             "app.mcp.enabled=true",
-            "app.mcp.internal-token=t",
+            "app.mcp.internal-token=0123456789abcdef0123456789abcdef",
             "app.mcp.registrations-per-client-per-hour=3",
             "app.mcp.housekeeping-cron=-"
         })

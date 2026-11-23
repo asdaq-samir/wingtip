@@ -30,8 +30,11 @@ from ..settings import get_settings
 
 #: Reading the planner with the pilot's own airplanes and flights.
 READ = "wingtip:read"
-#: Saving a flight to the pilot's account.
-WRITE = "wingtip:write"
+#: Saving, changing and deleting the pilot's saved flights. Not the
+#: wingtip:write a pilot once consented to as "Save flights" alone: the
+#: gateway keeps a consent and does not ask again, so the wider grant has
+#: a name of its own (gateway V53, the security review of 2026-11-22, L4).
+WRITE = "wingtip:flights"
 SCOPES = [READ, WRITE]
 
 # One process's count: the planner runs as one (docker-compose.yml, the

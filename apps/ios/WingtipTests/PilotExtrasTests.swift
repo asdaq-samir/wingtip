@@ -90,7 +90,7 @@ struct PaperworkTests {
     @Test func whatFallsDueIsReadAndSaidByDayOrHours() throws {
         let json = #"{"today":"2026-11-08","items":[{"what":"elt-battery","title":"ELT Battery","rule":"14 CFR 91.207(c)","aircraftId":7,"tailNumber":"N3429J","itemId":null,"dueOn":"2026-11-15","daysLeft":7,"dueAtHours":null,"hoursLeft":null},{"what":"flight-review","title":"Flight Review","rule":"14 CFR 61.56(c)","aircraftId":null,"tailNumber":null,"itemId":null,"dueOn":"2027-03-31","daysLeft":143,"dueAtHours":null,"hoursLeft":null},{"what":"hundred-hour","title":"100-Hour Inspection","rule":"14 CFR 91.409(b)","aircraftId":7,"tailNumber":"N3429J","itemId":null,"dueOn":null,"daysLeft":null,"dueAtHours":2450.0,"hoursLeft":-0.5}]}"#
         let p = try JSONDecoder().decode(Paperwork.self, from: Data(json.utf8))
-        #expect(p.items.map(\.named) == ["N3429J · ELT battery", "Flight Review", "N3429J · 100-hour inspection"])
+        #expect(p.items.map(\.named) == ["N3429J · ELT Battery", "Flight Review", "N3429J · 100-Hour Inspection"])
         #expect(p.items.map(\.when) == ["In 7 days", "In 143 days", "Due now"])
         #expect(p.items.map(\.tone) == [WingtipInk.caution, WingtipInk.go, WingtipInk.problem])
         #expect(Set(p.items.map(\.key)).count == 3)

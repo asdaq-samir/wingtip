@@ -213,7 +213,14 @@ test("with the box turned into the route's field, typed in, the figures stay pin
   const strip = page.locator("[data-pin-foot]").first();
   await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
   await typeRoute(page);
-  await page.getByTestId("route-type").click();
+  // Tapped past its last point, where a pilot taps to type on: its middle
+  // is whatever the day's route puts there (a fuel stop's pill and the
+  // arrow after it, on a day of headwinds), and the arrow asks the search
+  // for a stop.
+  const field = page.getByTestId("route-type");
+  const room = (await field.boundingBox())!;
+  await field.click({ position: { x: room.width - 8, y: room.height / 2 } });
+  await expect(field).toBeFocused();
   for (const size of ["half", "full"] as const) {
     await grabberTo(page, size);
     await page.waitForTimeout(500);

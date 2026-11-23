@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -106,15 +107,17 @@ public class InternalRecordsController {
 
     /** One of the pilot's saved flights planned again (the connector's
      *  update_saved_flight), validated as a new one is; a 404 where it is
-     *  not theirs. */
+     *  not theirs, a 409 where the plan goes between other airports and
+     *  `replaceRoute` was not asked (FlightService.replan). */
     @PutMapping("/flights/{id}")
     public ResponseEntity<FlightSummaryDto> replan(
             @RequestHeader(value = TOKEN_HEADER, required = false) String token,
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
             @PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean replaceRoute,
             @Valid @RequestBody SaveFlightRequest request) {
         return pilot(token, pilotId)
-                .flatMap(pilot -> flights.replan(pilot, id, request))
+                .flatMap(pilot -> flights.replan(pilot, id, request, replaceRoute))
                 .map(FlightSummaryDto::of)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

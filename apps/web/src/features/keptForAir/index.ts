@@ -1,10 +1,10 @@
 import type { keepForAir as KeepForAir } from "./keepForAir";
 
 /** Keep for the Air: the route's answers kept with its charts, and what is
- *  on board for Ready to fly, the feature's entries. */
+ *  on board for Ready to fly, the feature's entries; a flight's plates and
+ *  their size, drawn only in You, are lazy.ts's. */
 export { useKeptForAir } from "./useKeptForAir";
 export { forgetKeptRecord, keptRecordStore } from "./keptRecord";
-export { aboutMb, flightPlatesLine, useFlightPlates } from "./keepPlates";
 
 /** The keep itself (keepForAir) on a chunk of its own, with the answers it
  *  asks for (the briefing, NOTAMs and their ranking, plates, the side view
