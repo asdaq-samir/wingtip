@@ -101,7 +101,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
   return (
     // The scroll's own padding under the sticky header, so a row focused by
     // Tab is never hidden under it (WCAG 2.4.11, web.md §4).
-    <div className="max-h-[70vh] scroll-pt-11 overflow-y-auto rounded-lg border border-border" data-testid="logbook-table">
+    <div className="max-h-[70dvh] scroll-pt-11 overflow-y-auto rounded-lg border border-border" data-testid="logbook-table">
       <Table className={cn("tabular-nums", TEXT.detail)}>
         <TableHeader className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl solid:bg-background dark:bg-popover/85">
           {table.getHeaderGroups().map((group) => (

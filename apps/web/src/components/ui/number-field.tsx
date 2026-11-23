@@ -6,10 +6,12 @@ import { Group, Input, NumberField as AriaNumberField, NumberFieldStateContext, 
 const BOX =
   "relative flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md border border-input bg-transparent px-2.5 shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 data-focus-within:border-ring data-focus-within:ring-2 data-focus-within:ring-ring data-focus-within:ring-offset-2 data-focus-within:ring-offset-background data-disabled:pointer-events-none data-disabled:opacity-50 data-invalid:border-destructive data-invalid:ring-3 data-invalid:ring-destructive/20 dark:data-invalid:border-destructive/50";
 
-/** The figure: 16 below md so a phone does not zoom on it, a row's to a
- *  finger (lib/text). */
+/** The figure: 16 wherever a finger types it, so iOS does not zoom in on
+ *  a field under 16 (an iPad in the Native look, which takes no
+ *  pointer-coarse size, too), 14 with a mouse from md, a row's to a finger
+ *  in Wingtip's looks (lib/text). */
 const FIGURE =
-  "h-full w-full min-w-0 bg-transparent py-1 text-base tabular-nums outline-none placeholder:text-muted-foreground md:text-sm pointer-coarse:text-(length:--type-row)";
+  "h-full w-full min-w-0 bg-transparent py-1 text-base tabular-nums outline-none placeholder:text-muted-foreground md:pointer-fine:text-sm pointer-coarse:text-(length:--type-row)";
 const UNIT = "shrink-0 text-sm text-muted-foreground pointer-coarse:text-(length:--type-row)";
 
 /** The figure as it is typed, each change: React Aria's own reading of the
