@@ -96,3 +96,47 @@ fn na_takes_away_only_what_it_names() {
     assert_eq!(c.effect.as_deref(), Some("The ADELL 8 departure (RNAV) is not authorized."));
     assert_eq!(c.procedures.len(), 1);
 }
+
+#[test]
+fn a_decimal_point_ends_no_sentence() {
+    let s = sentences("!FDC 6/7 ARR SID AURORA MUNI. TAKEOFF MINIMUMS RWY 18 2.5 SM... RWY 18/36 CLSD. 2611010000-2612010000");
+    assert!(s.iter().any(|w| w.contains(&"2.5")));
+    assert!(s.iter().any(|w| w[..] == ["RWY", "18/36", "CLSD"]));
+}
+
+#[test]
+fn a_what_is_said_at_its_first_condition_in_the_words() {
+    assert_eq!(
+        sentence_of("Taxiway A unusable between taxiway B and the ramp closed", false).as_deref(),
+        Some("Taxiway A is unusable between taxiway B and the ramp closed.")
+    );
+}
+
+#[test]
+fn a_permanent_condition_with_an_estimated_end_or_none_runs_until_the_charts() {
+    // FDC 6/3373: PERMANENTLY CLSD, its end EST (JO 7930.2 4-2-1).
+    assert!(card(FDC_6_3373, &[]).until_charts);
+    // PERM as its end: no end at all.
+    assert!(card("!OSH 11/090 OSH TWY B CLSD 2511120900-PERM", &[]).until_charts);
+    // Not permanent, EST or not: its end is its end.
+    assert!(!card("!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700EST", &[]).until_charts);
+    // Permanent in its words with a firm end: said as its time.
+    let firm = "!FDC 6/8 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. RWY 18/36 PERMANENTLY CLSD. 2605271843-2805271843";
+    assert!(!card(firm, &[]).until_charts);
+    // A permanent text with no end of its own, where the feed gives a firm one.
+    let bare = "!FDC 6/9 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. RWY 18/36 PERMANENTLY CLSD.";
+    assert!(card(bare, &[]).until_charts);
+    assert!(!card_with_end(bare, &[], true).until_charts);
+    let answer =
+        call("notam_card", &crate::json::parse(&format!(r#"{{"text":"{bare}","ends":"2028-05-27T18:43:00Z"}}"#)).unwrap()).unwrap();
+    assert!(answer.contains("\"until_charts\":false"));
+}
+
+#[test]
+fn each_procedure_says_whether_it_is_a_departure() {
+    // The card's "Affects your ..." chip matches it to the field's role.
+    let json = |text: &str| call("notam_card", &crate::json::parse(&format!("{{\"text\":{text:?}}}")).unwrap()).unwrap();
+    assert!(json(FDC_6_3373).contains("{\"name\":\"ADELL 8\",\"rnav\":true,\"departure\":true}"));
+    let star = json("!FDC 6/1 ORD STAR CHICAGO O'HARE INTL, CHICAGO, IL. BENKY SIX ARRIVAL NA. 2611010000-2612010000");
+    assert!(star.contains("{\"name\":\"BENKY 6\",\"rnav\":false,\"departure\":false}"), "{star}");
+}

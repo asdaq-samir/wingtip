@@ -27,6 +27,10 @@ NEAREST_MOST = 25
 WEATHER = ("metar", "nearby_metar", "modelled_weather", "taf", "weather_unavailable")
 
 
+#: The furthest search_airports pages, its offset's most.
+SEARCH_REACH = 500
+
+
 def register(server: MCPServer) -> None:
     @server.tool(
         name="search_airports",
@@ -40,7 +44,9 @@ def register(server: MCPServer) -> None:
     async def search_airports(
         query: Annotated[str, Field(min_length=2, max_length=60, description="An identifier, an airport's name or its town.")],
         limit: Annotated[int, Field(ge=1, le=25, description="How many to answer, 1 to 25.")] = 10,
-        offset: Annotated[int, Field(ge=0, le=500, description="How many to skip, for the next page: the last answer's next_offset.")] = 0,
+        offset: Annotated[
+            int, Field(ge=0, le=SEARCH_REACH, description="How many to skip, for the next page: the last answer's next_offset.")
+        ] = 0,
     ) -> dict[str, Any]:
         pilot()
         # The search the app's own box runs (/api/airports/search's), asked
@@ -55,6 +61,12 @@ def register(server: MCPServer) -> None:
         page = paged(found, offset, limit)
         if page["has_more"]:
             page["total"] = None
+        # The search pages no further than SEARCH_REACH: past it the last
+        # page says so, never a next_offset the tool would refuse (the
+        # round 6 audit, P4; MCP's pagination, a null next page at the end).
+        if page["next_offset"] is not None and page["next_offset"] > SEARCH_REACH:
+            reach = page["next_offset"]
+            page |= {"has_more": False, "next_offset": None, "note": f"Only the first {reach} matches are paged: give more of the name."}
         return {"airports": found[offset : offset + limit], **page, "sources": editions("nasr")}
 
     @server.tool(

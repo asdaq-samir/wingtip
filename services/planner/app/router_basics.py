@@ -52,8 +52,10 @@ def points(text: str, on_bad: str | None = None, off_globe: str | None = None) -
     """ "lat,lon;lat,lon;..." as its points, [] where none was sent (empty
     pieces between semicolons are passed over). Strict, a piece that is
     not a pair of numbers is a 422 saying `on_bad`, and a point off the
-    globe one saying `off_globe`: each route words its own. Lenient (no
-    `on_bad`), such a piece is left out."""
+    globe one saying `off_globe` (else `on_bad`): each route words its
+    own. Lenient (no `on_bad`), such a piece is left out, a point off the
+    globe too: "nan,nan" and "inf,1" parse as floats, and are never passed
+    on as a place (the round 6 audit, P2)."""
     found = []
     for piece in text.split(";"):
         if not piece.strip():
@@ -64,9 +66,12 @@ def points(text: str, on_bad: str | None = None, off_globe: str | None = None) -
             if on_bad is None:
                 continue
             raise HTTPException(422, on_bad) from err
+        # NaN fails every comparison, so it is off the globe here too.
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            if on_bad is None and off_globe is None:
+                continue
+            raise HTTPException(422, off_globe or on_bad)
         found.append((lat, lon))
-    if off_globe and any(not (-90 <= lat <= 90 and -180 <= lon <= 180) for lat, lon in found):
-        raise HTTPException(422, off_globe)
     return found
 
 

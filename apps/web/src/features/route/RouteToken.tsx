@@ -10,6 +10,7 @@ import { sameField } from "../../lib/procedures";
 import type { PointAltitude } from "./PointAltitudeDialog";
 import { FuelStopChip, ProcedureChip, type RouteProcedure } from "./RouteChips";
 import RoutePill from "./RoutePill";
+import { fuelStopsAt } from "./fuelStopsAt";
 
 /** What every point's token draws from: the route, what is said about its
  *  points, and what a tap on one of them does. */
@@ -87,7 +88,10 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
   // The departure asked for in the arrow's own button, its word after it.
   const asking = i === 0 && !box.typedAtStart;
   const stepped = (by: -1 | 1) => points.map((p, j) => (j === i ? points[i + by]! : j === i + by ? point : p));
-  const fuel = !last && first ? fuelStops.filter((f) => sameField(f.departure, point)).slice(0, 1) : [];
+  // The flight leaving this point's suggested stops, by both its ends
+  // (fuelStopsAt): a field departed from twice has each flight's own.
+  const flight = fuelStopsAt(points, waypoints, fuelStops)[i];
+  const fuel = flight ? [flight] : [];
   return (
     // In the sheet's own type, as the box's pills were, not the field's
     // (the idents typed are in capitals in the monospace), and its own

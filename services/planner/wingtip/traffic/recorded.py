@@ -6,9 +6,12 @@ none of it."""
 
 from __future__ import annotations
 
+import functools
 import hashlib
+import hmac
 import re
 
+from ..config import get_settings
 from . import store
 from .common import _wall
 
@@ -56,11 +59,21 @@ def followed() -> list[str]:
     return store.followed()
 
 
+@functools.cache
+def _share_key() -> bytes:
+    """FOLLOW_SHARE_KEY where the settings give it, else the store's own."""
+    key = get_settings().follow_share_key
+    return key.encode() if key else store.share_key()
+
+
 def share_of(pilot: str) -> str:
-    """A pilot's share of the followed airplanes, by a short one-way hash of
-    their id: the store counts a pilot's follows without naming them
-    (docs/privacy-inventory.md)."""
-    return hashlib.sha256(f"wingtip-follow:{pilot}".encode()).hexdigest()[:12] if pilot else ""
+    """A pilot's share of the followed airplanes, by a short keyed hash of
+    their id (HMAC-SHA-256 with a server secret): the store counts a
+    pilot's follows without naming them, and without the key no one can
+    tell whose share is whose by hashing ids they guess, an email or a
+    number in order among them (docs/privacy-inventory.md; the round 6
+    audit, P1)."""
+    return hmac.new(_share_key(), pilot.encode(), hashlib.sha256).hexdigest()[:12] if pilot else ""
 
 
 def follow(hex_id: str, pilot: str = "") -> None:

@@ -4,7 +4,7 @@
 //! FAA's rules for a place outside the United States, and the Brief says
 //! it once.
 
-use crate::jurisdiction::{country_name, jurisdiction_of, leg_codes, leg_outside, province_of, Outside};
+use crate::jurisdiction::{country_name, jurisdiction_of, leg_outside, province_of, Outside};
 use wingtip_core::ask::{num_in, opt_str_in, strings, Ask};
 use wingtip_core::json::{self, Value};
 
@@ -79,20 +79,25 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     }
     out.push_str("],\"legs\":[");
     for (i, pair) in points.windows(2).enumerate() {
-        let leg: Vec<&str> = leg_codes(pair[0], pair[1]).into_iter().filter(|c| *c != "US").collect();
+        // One walk of the leg gives its countries (the US left out) and
+        // its provinces.
         let outside = leg_outside(pair[0], pair[1]);
+        let leg = &outside.countries;
         if i > 0 {
             out.push(',');
         }
         out.push_str("{\"codes\":");
         strings(&mut out, &leg.iter().map(|c| c.to_string()).collect::<Vec<_>>());
-        // The leg's own warning only where it meets a country neither end
-        // is in, as KUGN to KBUF across southern Ontario: a leg into a field
-        // in Canada is said at the field, not again on the leg. It is the
-        // leg's, named by where it goes, never the field's at its end.
-        let ends: Vec<&str> = at[i].countries.iter().chain(&at[i + 1].countries).copied().collect();
+        // The leg's own warning only where it meets a country, or a
+        // province of Canada, neither end is in, as KUGN to KBUF across
+        // southern Ontario, or CYQT to CYWG across into Manitoba: a leg into
+        // a field in Canada is said at the field, not again on the leg. It
+        // is the leg's, named by where it goes, never the field's at its end.
+        let (a, b) = (&at[i], &at[i + 1]);
+        let new_country = leg.iter().any(|c| !a.countries.contains(c) && !b.countries.contains(c));
+        let new_province = outside.provinces.iter().any(|p| !a.provinces.contains(p) && !b.provinces.contains(p));
         let subject = names[i + 1].map_or_else(|| "The leg crosses".to_string(), |n| format!("The leg to {n} crosses"));
-        let crosses = leg.iter().any(|c| !ends.contains(c));
+        let crosses = new_country || new_province;
         out.push_str(",\"caution\":");
         json::opt_string(&mut out, if crosses { outside.caution(&subject) } else { None }.as_deref());
         out.push('}');

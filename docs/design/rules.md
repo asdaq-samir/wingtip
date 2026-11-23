@@ -686,9 +686,13 @@ off by default (the owner, 2026-11-13).
    alone at the pill's size in the pill's room under the grabber, the tabs
    folded away (about 50 points of map), and at half and all the way up the
    strip one thin line on the tab bar, one stack (each value a detail's 15
-   after its name in a note's 13, the names dropping first where the line
-   is short; the owner, 2026-11-22, "make the figures strip very thin when
-   fpl is half or full"). It changes between the two only once the sheet
+   after its name in a note's 13, two by two where the line is too short
+   for every figure whole; the owner, 2026-11-22, "make the figures strip
+   very thin when fpl is half or full"). The pill is one row of at most
+   four figures, the GPS altitude the first left out, a figure still too
+   wide cut short with "…", never stacked; at a large text size the bar
+   grows taller than the pill's room and the map's room follows its
+   measured height (the r6 UI audit's H1). It changes between the two only once the sheet
    has come to rest (`sheet/sheetMotion`, from Base UI's own data-swiping
    and the popup's transform transition), with a 200 ms fade, never with
    the finger. It is opaque on the sheet's ground with no fade or scrim
@@ -696,8 +700,13 @@ off by default (the owner, 2026-11-13).
    route buttons above it"); the page ends with room as tall as the bar
    (`--foot-bar`, set as the bar is resized), so the route's last row
    scrolls clear above it all the way up; the map's room is never less than
-   the bar. At the pill it takes no touch, so a drag on it is the sheet's and
-   a tap raises the sheet to half. The tab bar is a floating glass bar, the one floating bar the airport card's
+   the bar, and a row tabbed to stops clear above it (scroll padding as tall
+   as the bar). Its ground takes no touch at any size, only its buttons
+   do, so a drag on it is the sheet's, as on Apple Maps; at the pill a tap
+   raises the sheet to half, and from half up a tap on its ground does
+   nothing. Only what it holds fades as it changes, never its ground; it
+   goes at once, with no fade, under a card (before the card rises), on
+   Search's page and while the keyboard is up, as iOS puts a tab bar away. The tab bar is a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief and Nav Log, each opening its card over FPL;
@@ -1711,10 +1720,12 @@ its figures are (decision
 On all three apps:
 
 - **A product's time says whose it is.** A report's, a forecast's, a
-  NOTAM's, a TFR's or a hazard's time is written on the device's clock
+  TFR's or a hazard's time is written on the device's clock
   with its zone and UTC beside it, "15:00 CST (2100Z)" (the web's
   `clockAndZulu` and `tfrTimes`, the iPhone's TfrCard), or in Zulu alone
-  where the product's line is short. A local time with no zone is the
+  where the product's line is short. A NOTAM's time is the field's own
+  clock with its zone's short name alone, "13:43 CDT", or "UTC" where the
+  zone is not known (section 20). A local time with no zone is the
   airplane's own (the nav log's ETAs), and where that can be read as
   another clock it names its zone: the nav log's ETA column, the printed
   kneeboard and its head, the FPL timeline once the device keeps another
@@ -1748,7 +1759,7 @@ On all three apps:
   visibility, ft, kt, inHg (a Q group converted), °C, US gallons and
   pounds. There is no metric setting.
 
-## 16. Unusual places and routes (the owner, 2026-11-21)
+## 17. Unusual places and routes (the owner, 2026-11-21)
 
 Most routes are flown over the Midwest; the edge-places audit of
 2026-11-21 ("Yes to all") holds the rest to the same rules:
@@ -1786,7 +1797,7 @@ Most routes are flown over the Midwest; the edge-places audit of
 | Where | `features/plan/adiz` (`routeAdiz`), the Brief's glance `adiz` line; `lib/geo` `unwrapLine`, `lonBounds`                                                          | Not yet: on the owner's word (decision 0038) | Not yet |
 | Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`), `core/src/geo_tests.rs`, `weather/src/forecast/route/tests.rs`; `tests_wingtip/test_geo_boxes.py`; `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
 
-## 17. Registry names in the store apps (the owner, 2026-11-21)
+## 18. Registry names in the store apps (the owner, 2026-11-21)
 
 Decision 0055. The airplane card's Info, its facts strip and a tracked
 airplane's FAA section name the FAA registry's owner and co-owners on the
@@ -1806,7 +1817,7 @@ Store.
 | Rule  | Not applied: every name (`AirplaneInfo`) | `Airplane/RegistryNames.swift`, drawn by `AirplaneInfoSections`, `AirplaneFacts` and `FAARecordSection` | `airplane/RegistryNames.kt`, drawn by `AirplaneInfo` |
 | Tests | -- | `RegistryNamesTests` | `RegistryNamesTest` |
 
-## 18. The app's words (the owner, 2026-11-21)
+## 19. The app's words (the owner, 2026-11-21)
 
 The owner took the words audit's fixes on 2026-11-21 ("Yes to all").
 Every word a pilot reads, on all three apps, follows these rules
@@ -1990,7 +2001,7 @@ The words the three apps share, generated from `design/wording.json`:
 | Words | `lib/wording/generated/wording.ts` (`WORDING`) | `Design/Generated/Wording.swift` (`Wording`), kept by `Localizable.xcstrings` | `res/values/wording_strings.xml` (`R.string.wording_*`) |
 | Tests | `lib/wording/wording.test.ts` | `WingtipTests/WordingTests.swift` | `WordingTest` |
 
-## 19. A NOTAM's own card (the owner, 2026-11-23)
+## 20. A NOTAM's own card (the owner, 2026-11-23)
 
 The owner, of FDC 6/3373 at KARR on his iPhone: the card said "SID" and
 lowercased the departures' names. A NOTAM's own card now says, top to
@@ -2012,11 +2023,17 @@ owner's word):
 5. **What it takes away**, under "Not authorized", by the procedures'
    charted names in capitals and their numbers: "ADELL 8 · BLOKR 8 ·
    CARYN 8 · DARCY 8 · ELANR 9 · OBENE 3 (RNAV)".
-6. **Its times in words**, in the field's own time with its zone: "In
-   effect since 27 May 2026, 13:43 CDT"; a permanent condition with an
-   estimated end "Until charts are updated (est. 27 May 2028)"; otherwise
-   "Until ...", estimated where EST says so, "· in 18d". The year where
-   either end is not this year's.
+6. **Its times, one line each**, as the list's rows say them
+   (`NotamTimeLines`): "Since 05/27/26 13:43 CDT", "Ends 05/27/28 13:43
+   CDT · in 551d" (Starts, with how soon, for one to come). In the
+   field's own time named by its zone's short name ("CST" at O'Hare),
+   "UTC" where the zone is not known; never "local", never a Z time
+   beside it, never "estimated" (the owner, 2026-11-23). A permanent
+   one's end is "Permanent" (the engine's `until_charts`: a permanent
+   condition with an EST end, or none; or a PERM end). The year on both
+   lines only where either is not this year's. Each line stays one line
+   at 390 pt and the owner's 19.65 px text: where "· in 551d" would not
+   fit, it is dropped, never wrapped.
 7. **As sent**, folded (the stock Collapsible), never rewritten.
 
 Title, category, effect, the list and permanence are the engine's
@@ -2025,8 +2042,7 @@ NOTAM they are null and the card says its words written out
 (`notam_read`) under its heading, as before. In those words a
 procedure's name keeps its capitals and its number is a word ("BLOKR
 Eight departure (RNAV)"), every one of a list alike. The list's rows say
-the same title, with Since and Ends lines ("05/27/28 13:43 local
-(1843Z), estimated · in 550d").
+the same title, with the same Since and Ends lines.
 
 ## Changing a rule
 

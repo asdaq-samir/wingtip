@@ -378,12 +378,14 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   dropped 30 days after that (`FOLLOW_KEEP_S`). Opening its card again
   starts the 30 days again. A card opened with nobody signed in follows
   nothing; one no source has heard a day after it was followed is dropped
-  (`FOLLOW_UNHEARD_S`), and at most 500 are followed, the card opened
-  longest ago going first (`FOLLOW_MOST`), and at most 20 by one pilot, their
-  own oldest going first (`FOLLOW_EACH`), so one account cannot push out
-  everyone else's. Which pilot opened a card is not kept: each follow is
-  counted in a share named by a short one-way hash of the pilot's id
-  (`share_of`), never the id.
+  (`FOLLOW_UNHEARD_S`), and at most 20 by one pilot, their own oldest
+  going first (`FOLLOW_EACH`), and at most 500 in all (`FOLLOW_MOST`), past
+  which the largest share loses its oldest first, so neither one account
+  nor a group of them can push out a pilot who follows fewer. Which pilot
+  opened a card is not kept: each follow is counted in a share named by a
+  short keyed hash of the pilot's id (`share_of`, HMAC-SHA-256 with
+  `FOLLOW_SHARE_KEY`, else a random key kept in the live store), never the
+  id, and not one that can be worked out from a guessed id.
 - **Other airplanes' tracks** (`points`): a followed airplane's public
   ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange
   (while a card is open) and the FAA's radar, card open or not, so its card can show its

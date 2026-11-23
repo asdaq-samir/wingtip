@@ -6,11 +6,11 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { useInspector } from "../hooks/use-inspector";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
-import { useSafeArea } from "../hooks/use-viewport";
+import { useKeyboardInset, useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { CARD, FLOAT_PX, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
+import { CARD, FLOAT_PX, footPillPx, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { FootBar } from "./sheet/FootBar";
 import { useFootBarHeight } from "./sheet/sheetMotion";
@@ -78,7 +78,7 @@ interface Props {
  * stock sheet with its own motion, gestures and behaviour): open and
  * non-modal, so the map stays the map's; the pill, half and all the way
  * up its snap points, fixed in the Drawer's own units (sheet/insets'
- * snapsOf: the pill's rem, 23 rem, 1), which it measures itself; a
+ * snapsOf: the pill's rem or FPL's foot bar's px, 23 rem, 1), which it measures itself; a
  * bottom or a top sheet by the pilot's Layout (swipeDirection down or up). The Drawer follows the finger, reads the
  * throw, picks the snap point and eases there on its own curve; a swipe
  * past the pill is refused and lands on the pill. What the stock sheet
@@ -131,8 +131,11 @@ export default function MapPanel(props: Props) {
   // sliding behind it (sheet/FootBar); in flight, a dry run, a top sheet
   // and the side panel the foot is the sheet's own (SheetFoot).
   const footBar = bottomSheet && !!foot && !flying && !!props.pages?.floats;
-  // In sight on FPL's page alone, as its foot was (SheetPages), and not under a card.
-  const footBarUp = footBar && footShown && props.pages?.at === 1;
+  // In sight on FPL's page alone, as its foot was (SheetPages), and not
+  // under a card; put away while the keyboard is up, as iOS puts a tab bar
+  // away, so the field typed in keeps the screen (the r6 UI audit's M1).
+  const keyboard = useKeyboardInset();
+  const footBarUp = footBar && footShown && props.pages?.at === 1 && keyboard === 0;
   // A card or a page open is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
   const barShown = !!bar && !flying && !covering && layer === "tab";
@@ -153,18 +156,22 @@ export default function MapPanel(props: Props) {
   // The sheet's element (the Drawer's popup, or the side panel), for what
   // it covers of the map.
   const [sheetNode, setSheetNode] = useState<HTMLElement | null>(null);
-  const snaps = snapsOf(fromBottom);
+  // FPL's pill, where its foot bar is in sight, is the bar folded and the
+  // grabber's room (footPillPx), so the sheet rests wholly behind the bar.
+  const { height: barHeight, pill: barPill } = useFootBarHeight();
+  const pillPx = footBarUp ? footPillPx(barPill) : 0;
+  const snaps = snapsOf(fromBottom, pillPx);
 
   // The room the sheet in sight (the top card, else the sheet) leaves the
   // map, from the size it is set to: the map eases with the sheet
   // (GlMapShell, in the Drawer's time).
-  const sheetCover = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const sheetCover = useSheetCover(sheetNode, front, onPhone, fromBottom, pillPx);
   const { most, width } = sheetCover;
   // Never less than the foot bar, which stands over the sheet's foot: it
   // sits inside what the sheet covers at every size (the pill's room under
-  // the grabber is its height), but at a large text size its figures may
-  // stand taller than that, and the map's room ends at its top.
-  const barHeight = useFootBarHeight((b) => b.height);
+  // the grabber is its least height), but at a large text size it grows
+  // taller than that (FlightFoot's min-height), its measured height here,
+  // and the map's room ends at its top.
   const barRoom = footBarUp ? barHeight : 0;
   const cover = Math.max(sheetCover.cover, barRoom);
   const least = Math.max(sheetCover.least, barRoom);
@@ -276,7 +283,7 @@ export default function MapPanel(props: Props) {
   // A drag let go (letGo); a swipe past the pill lands on it. A card's drag
   // is its own drawer's (CardStack).
   const snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => {
-    if (!cardsUp) letGo(point, details, { fromBottom, at: size, ask, park: "peek" });
+    if (!cardsUp) letGo(point, details, { fromBottom, pillPx, at: size, ask, park: "peek" });
   };
 
   // The cards over it, its nested drawers (CardStack), with its sizes.

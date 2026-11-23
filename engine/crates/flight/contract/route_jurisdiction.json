@@ -98,7 +98,7 @@
                   "string",
                   "null"
                 ],
-                "description": "The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, \"The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules\"; null otherwise (a leg into a field in Canada is said at the field)."
+                "description": "The leg's own warning where it meets a country, or a province of Canada, neither of its ends is in, named by where it goes and where it crosses, \"The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules\"; null otherwise (a leg into a field in Canada is said at the field)."
               }
             },
             "required": [

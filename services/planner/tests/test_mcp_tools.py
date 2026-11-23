@@ -152,6 +152,15 @@ def test_search_airports_pages_past_the_endpoints_eight(monkeypatch):
     assert last["count"] == 20 and last["has_more"] is False and last["total"] == 30
 
 
+def test_search_airports_ends_at_its_reach_with_no_next_page(monkeypatch):
+    """The round 6 audit, P4: past the offset the tool takes, the page
+    says it is the last, never a next_offset the tool would refuse."""
+    many = [{"ident": f"K{n:03}", "name": "Springfield", "municipality": "Springfield"} for n in range(600)]
+    monkeypatch.setattr(airports, "search_airports", lambda query, limit=8, **_: many[:limit])
+    page = answer(call("search_airports", {"query": "Springfield", "limit": 25, "offset": 490}))
+    assert page["count"] == 25 and page["has_more"] is False and page["next_offset"] is None and "first 515" in page["note"]
+
+
 def test_nearest_airports_needs_a_place():
     assert "give `near`" in refusal(call("nearest_airports", {}))
 

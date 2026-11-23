@@ -167,3 +167,23 @@ fn a_field_in_canada_is_said_at_the_field_not_again_on_its_leg() {
     let home = route(r#"[{"lat":42.3246,"lon":-88.0741},{"lat":46.842,"lon":-92.1936}]"#);
     assert!(home.get("brief").unwrap().as_str().is_none() && home.get("outside").unwrap().as_array().unwrap().is_empty());
 }
+
+#[test]
+fn a_leg_across_a_province_neither_field_is_in_is_said_on_the_leg() {
+    // Winnipeg, CYWG (Manitoba), to Edmonton, CYEG (Alberta), crosses
+    // Saskatchewan; Thunder Bay to Winnipeg meets only its ends' provinces.
+    let answer = route(r#"[{"lat":49.91,"lon":-97.2399,"name":"CYWG"},{"lat":53.3097,"lon":-113.58,"name":"CYEG"}]"#);
+    let leg = caution(answer.get("legs").unwrap().as_array().unwrap().first()).unwrap();
+    assert!(leg.starts_with("The leg to CYEG crosses Canada (") && leg.contains("Saskatchewan"), "{leg}");
+    let answer = route(r#"[{"lat":48.3719,"lon":-89.3239,"name":"CYQT"},{"lat":49.91,"lon":-97.2399,"name":"CYWG"}]"#);
+    assert_eq!(caution(answer.get("legs").unwrap().as_array().unwrap().first()), None);
+}
+
+#[test]
+fn the_outlines_name_only_known_places() {
+    // code_of stops on a code it does not know; reading the file here
+    // proves every C and P line is one, so none reads as another country.
+    let (countries, provinces) = crate::jurisdiction::outline_codes();
+    assert_eq!(countries, vec!["US", "CA", "MX", "BS"]);
+    assert_eq!(provinces, vec!["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]);
+}
