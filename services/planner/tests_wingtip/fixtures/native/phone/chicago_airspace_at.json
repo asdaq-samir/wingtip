@@ -9,6 +9,7 @@
     "ceiling_ft": 10000.0,
     "class": "B",
     "name": "CHICAGO CLASS B",
+    "ident": "ORD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -34,6 +35,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -59,6 +61,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -86,6 +89,7 @@
     "ceiling_ft": 3300.0,
     "class": "D",
     "name": "CHICAGO, DUPAGE AIRPORT CLASS D",
+    "ident": "DPA",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -111,6 +115,7 @@
     "ceiling_ft": 4000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -136,6 +141,7 @@
     "ceiling_ft": 10000.0,
     "class": "B",
     "name": "CHICAGO CLASS B",
+    "ident": "ORD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -161,6 +167,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -186,6 +193,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -213,6 +221,7 @@
     "ceiling_ft": 3000.0,
     "class": "C",
     "name": "CHICAGO CLASS C",
+    "ident": "MDW",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -238,6 +247,7 @@
     "ceiling_ft": 10000.0,
     "class": "B",
     "name": "CHICAGO CLASS B",
+    "ident": "ORD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -263,6 +273,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -288,6 +299,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -315,6 +327,7 @@
     "ceiling_ft": 700.0,
     "class": "G",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 1,
@@ -340,6 +353,7 @@
     "ceiling_ft": 1900.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -365,6 +379,7 @@
     "ceiling_ft": 3600.0,
     "class": "C",
     "name": "CHICAGO CLASS C",
+    "ident": "MDW",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -390,6 +405,7 @@
     "ceiling_ft": 10000.0,
     "class": "B",
     "name": "CHICAGO CLASS B",
+    "ident": "ORD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -415,6 +431,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -440,6 +457,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -467,6 +485,7 @@
     "ceiling_ft": 3000.0,
     "class": "D",
     "name": "WHEELING CLASS D",
+    "ident": "PWK",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -492,6 +511,7 @@
     "ceiling_ft": 10000.0,
     "class": "B",
     "name": "CHICAGO CLASS B",
+    "ident": "ORD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -517,6 +537,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -542,6 +563,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -569,6 +591,7 @@
     "ceiling_ft": 700.0,
     "class": "G",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 1,
@@ -594,6 +617,7 @@
     "ceiling_ft": 3600.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -619,6 +643,7 @@
     "ceiling_ft": 10000.0,
     "class": "B",
     "name": "CHICAGO CLASS B",
+    "ident": "ORD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -644,6 +669,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -669,6 +695,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -696,6 +723,7 @@
     "ceiling_ft": 2500.0,
     "class": "D",
     "name": "CHICAGO/ROCKFORD CLASS D",
+    "ident": "RFD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -721,6 +749,7 @@
     "ceiling_ft": 3200.0,
     "class": "D",
     "name": "CHICAGO/ROCKFORD CLASS D",
+    "ident": "RFD",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -746,6 +775,7 @@
     "ceiling_ft": 10000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -771,6 +801,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -796,6 +827,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -819,6 +851,7 @@
     "ceiling_ft": 2500.0,
     "class": "D",
     "name": "CHICAGO, AURORA MUNI AIRPORT CLASS D",
+    "ident": "ARR",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -844,6 +877,7 @@
     "ceiling_ft": 3200.0,
     "class": "D",
     "name": "CHICAGO, AURORA MUNI AIRPORT CLASS D",
+    "ident": "ARR",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -869,6 +903,7 @@
     "ceiling_ft": 10000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -894,6 +929,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -919,6 +955,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -946,6 +983,7 @@
     "ceiling_ft": 2500.0,
     "class": "D",
     "name": "GARY CLASS D",
+    "ident": "GYY",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -971,6 +1009,7 @@
     "ceiling_ft": 3100.0,
     "class": "D",
     "name": "GARY CLASS D",
+    "ident": "GYY",
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -996,6 +1035,7 @@
     "ceiling_ft": 10000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -1021,6 +1061,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -1046,6 +1087,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
@@ -1069,6 +1111,7 @@
     "ceiling_ft": 700.0,
     "class": "G",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 1,
@@ -1094,6 +1137,7 @@
     "ceiling_ft": 10000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 3,
@@ -1119,6 +1163,7 @@
     "ceiling_ft": 18000.0,
     "class": "E",
     "name": null,
+    "ident": null,
     "minimums": {
      "day": {
       "visibility_sm": 5,
@@ -1144,6 +1189,7 @@
     "ceiling_ft": 60000.0,
     "class": "A",
     "name": null,
+    "ident": null,
     "minimums": null,
     "entry": "IFR only: an instrument rating, an IFR flight plan and a clearance (91.135).",
     "equipment": null,
