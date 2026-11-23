@@ -21,6 +21,12 @@ enum SheetPage: Hashable {
     /// NOTAMs in a list of their own: the route's, or one field's.
     case notams(NotamSource)
     case practice, training, instructing, contact
+    /// Pages of You and Settings, each a value so it is pushed on the
+    /// stack it was opened from: a view-destination NavigationLink in the
+    /// iPad's sidebar (a NavigationSplitView's column) popped the page
+    /// under it on its Back, Settings with Help & About (CardScrollTests,
+    /// CardRuleTests, 2026-11-23), where the iPhone's card kept it.
+    case pilotDetails, trainingHome, connectedApps, alerts, atc, help, sources
     /// An airplane in the air, by its ICAO address: its card, tracked.
     case traffic(String)
     /// An airplane's profile by its N-number, the one profile card
@@ -76,7 +82,8 @@ enum SheetPage: Hashable {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
         case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid, .scratchpad: true
-        case .flight, .notams, .practice, .training, .instructing, .contact, .settings: false
+        case .flight, .notams, .practice, .training, .instructing, .contact, .settings,
+             .pilotDetails, .trainingHome, .connectedApps, .alerts, .atc, .help, .sources: false
         }
     }
 
@@ -140,6 +147,13 @@ enum SheetPage: Hashable {
         case .training: "card-training"
         case .instructing: "card-instructing"
         case .contact: "card-contact"
+        case .pilotDetails: "card-pilot-details"
+        case .trainingHome: "card-training-home"
+        case .connectedApps: "card-connected-apps"
+        case .alerts: "card-alerts"
+        case .atc: "card-atc"
+        case .help: "card-help"
+        case .sources: "card-sources"
         case .traffic: "card-traffic"
         case .tail: "card-tail"
         case .hold: "card-hold"
@@ -175,7 +189,8 @@ enum SheetPage: Hashable {
         case .scratchpad: "+scratchpad"
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
-        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid: nil
+        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid,
+             .pilotDetails, .trainingHome, .connectedApps, .alerts, .atc, .help, .sources: nil
         }
     }
 
@@ -256,6 +271,13 @@ struct SheetPageView: View {
         case .training: TrainingView()
         case .instructing: InstructorView()
         case .contact: ContactView()
+        case .pilotDetails: PilotDetailsView()
+        case .trainingHome: TrainingPage()
+        case .connectedApps: ConnectedAppsView()
+        case .alerts: AlertsPage()
+        case .atc: AtcPage()
+        case .help: HelpPage()
+        case .sources: SourcesPage()
         case .traffic(let hex): AirplaneCard(hex: hex).id(hex)
         case .tail(let asked): AirplaneProfileView(tail: asked.tail, focus: asked.focus).id(asked)
         case .hold(let fix): HoldSheet(fix: fix).id(fix)

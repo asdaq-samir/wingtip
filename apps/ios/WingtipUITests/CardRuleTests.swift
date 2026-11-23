@@ -24,9 +24,12 @@ final class CardRuleTests: XCTestCase {
                     let app = CardTests.open(entry, size: size.arguments)
                     let shown = CardTests.card(app, card.id)
                     XCTAssertTrue(shown.waitForExistence(timeout: 20), "\(context): \(card.id) did not open")
-                    // Every card opens half way (the card rule's 2).
+                    // Every card opens half way (the card rule's 2): the
+                    // iPhone's sheet. The iPad has no sheet, so it is not
+                    // waited for there (five seconds a card for nothing,
+                    // thirty times, on CI's iPad 2/2 leg).
                     let grabber = CardTests.grabber(app)
-                    if grabber.waitForExistence(timeout: 5) {
+                    if !CardTests.split, grabber.waitForExistence(timeout: 5) {
                         CardTests.settled(grabber)
                         XCTAssertNotEqual(grabber.value as? String, "Expanded", "\(context): it did not open half way")
                     }
