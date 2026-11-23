@@ -62,6 +62,19 @@ class StopTimesTest {
         assertEquals("Tue 15:54 MST", StopTimes.words(at("2026-11-24T22:54:00Z"), denver, said = true, device = chicago, left = from))
     }
 
+    /** With no zone said, the clock is this phone's, so the day it left is
+     *  counted there too (the r7 audit's A-M2): a phone in Los Angeles
+     *  leaving 01:00 EST Tuesday (22:00 PST Monday) says a same-day 23:00
+     *  arrival with no day. */
+    @Test
+    fun theBareClocksDayIsThePhones() {
+        val newYork = ZoneId.of("America/New_York")
+        val la = ZoneId.of("America/Los_Angeles")
+        val left = Instant.parse("2026-11-24T06:00:00Z").toEpochMilli()
+        val lands = Instant.parse("2026-11-24T07:00:00Z").toEpochMilli()
+        assertEquals("23:00", StopTimes.words(lands, la, said = false, device = la, left = StopTimes.Left(left, newYork)))
+    }
+
     @Test
     fun theZoneIsSaidOnlyOnceTheRouteCrossesOne() {
         val times = StopTimes.of(depart, legs, listOf("KJVL"))

@@ -53,7 +53,7 @@ struct TimelineClock: Equatable, Sendable {
         let there = zoned ? zone(point) : TimeZone.current
         let day = Format.arrivalDay(date, left: leaves, zone: there, leftZone: zoned ? departZone : .current).map { "\($0) " } ?? ""
         guard zoned else { return (day + Format.time(date), nil) }
-        return (day + date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: there)), there.abbreviation(for: date))
+        return (day + date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: there)), Format.zoneName(there, at: date))
     }
 
     /// A time of day picked for the departure, as the next time the clock

@@ -122,12 +122,12 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     if (shown != null && place != null) {
         BackHandler { opened = null }
         val pages = shown.map { n -> said?.firstOrNull { it.notam.id == n.id } ?: FieldNotams.say(n, place.ident) }
-        // The chip where it is the planned flight's field: its departure, destination or IFR alternate filed.
+        // What the field is to the planned flight, for each NOTAM's chip: its departure, a stop, destination or IFR alternate filed.
         val filed by PlanAlternate.filed.collectAsStateWithLifecycle()
-        val role = remember(place.ident, planState.dep, planState.dest, planState.rules, filed) {
-            planRole(FieldNotams.identsOf(place.ident), planState.dep, planState.dest, PlanAlternate.of(planState.rules, planState.dest, filed))
+        val roles = remember(place.ident, planState.dep, planState.stops, planState.dest, planState.rules, filed) {
+            planRoles(FieldNotams.identsOf(place.ident), planState.dep, planState.stops, planState.dest, PlanAlternate.of(planState.rules, planState.dest, filed))
         }
-        NotamPage(pages, place.ident, CardExit(back = { opened = null }, close = exit.close), name = place.name, zone = state.notams?.timeZone, role = role)
+        NotamPage(pages, place.ident, CardExit(back = { opened = null }, close = exit.close), name = place.name, zone = state.notams?.timeZone, roles = roles)
         return
     }
     val open: (List<RankedNotam>) -> Unit = { opened = it }

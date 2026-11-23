@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -61,11 +62,11 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * what happened (the engine's notam_card, "Runway 18/36 closed"), else
  * its kind, the field and its number under it ("KARR Aurora Municipal ·
  * FDC 6/3373"). `name` is the field's, `zone` the planner's time zone for
- * it, and `role` the chip's words where it is the planned flight's field
- * (planRole).
+ * it, and `roles` what the field is to the planned flight (planRoles),
+ * from which each NOTAM's chip (roleChip).
  */
 @Composable
-fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, name: String? = null, zone: String? = null, role: Int? = null) {
+fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, name: String? = null, zone: String? = null, roles: List<PlanRole> = emptyList()) {
     var one by remember(notams) { mutableStateOf(notams.singleOrNull()) }
     val shown = one
     if (shown != null) {
@@ -79,7 +80,7 @@ fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, nam
         ) { padding ->
             Box(Modifier.padding(padding)) {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl)) {
-                    NotamFull(shown, zone, role)
+                    NotamFull(shown, zone, roles)
                 }
             }
         }
@@ -92,17 +93,39 @@ fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, nam
     }
 }
 
-/** Which of the planned flight's fields this NOTAM's field is, as its chip
- *  says it: the departure, the destination or the alternate filed, by any
- *  of the field's idents (field_names); null where it is none of them. */
-fun planRole(idents: List<String>, dep: String, dest: String, alternate: String?): Int? {
+/** A part the NOTAM's field plays in the planned flight: the chip's
+ *  words, and whether the flight leaves from it (a departure procedure's)
+ *  or lands there (an arrival's). */
+data class PlanRole(val words: Int, val leaves: Boolean, val lands: Boolean)
+
+/** The chip on one NOTAM: its words, and whether it takes away a procedure
+ *  its role flies (red) or is only the field's (neutral). */
+data class RoleChip(val words: Int, val taken: Boolean)
+
+/** Which of the planned flight's fields this NOTAM's field is, by any of
+ *  its idents (field_names), in the order the chip names them: the
+ *  departure, a stop, the destination, the alternate filed. */
+fun planRoles(idents: List<String>, dep: String, stops: List<String>, dest: String, alternate: String?): List<PlanRole> {
     fun isIt(field: String?) = !field.isNullOrBlank() && idents.any { it.equals(field, ignoreCase = true) }
-    return when {
-        isIt(dep) -> R.string.notam_affects_departure
-        isIt(dest) -> R.string.notam_affects_arrival
-        isIt(alternate) -> R.string.notam_affects_alternate
-        else -> null
-    }
+    return listOfNotNull(
+        PlanRole(R.string.notam_affects_departure, leaves = true, lands = false).takeIf { isIt(dep) },
+        PlanRole(R.string.notam_affects_stop, leaves = true, lands = true).takeIf { stops.any(::isIt) },
+        PlanRole(R.string.notam_affects_arrival, leaves = false, lands = true).takeIf { isIt(dest) },
+        PlanRole(R.string.notam_affects_alternate, leaves = false, lands = true).takeIf { isIt(alternate) },
+    )
+}
+
+/** The chip a NOTAM wears (the web's usePlanRole), null where its field is
+ *  none of the flight's or it only takes away what the field is not used
+ *  for. A procedure taken away affects only the role that flies it: a SID
+ *  or an ODP the departure and each stop left from, a STAR the
+ *  destination, each stop and the alternate (AIM 5-2-9, 5-4-1; the
+ *  engine's notam_card says which each is), and is red; a NOTAM taking
+ *  none (a runway closed, a light out) is the field's, the neutral chip. */
+fun roleChip(roles: List<PlanRole>, procedures: List<EngineContract.NotamCardAnswerProceduresItem>): RoleChip? {
+    if (procedures.isEmpty()) return roles.firstOrNull()?.let { RoleChip(it.words, taken = false) }
+    val flown = roles.firstOrNull { r -> procedures.any { if (it.departure) r.leaves else r.lands } }
+    return flown?.let { RoleChip(it.words, taken = true) }
 }
 
 /** Its number as a briefer reads it: an FDC NOTAM's with its
@@ -121,33 +144,37 @@ private fun numberLine(s: FieldNotams.Said, ident: String): String {
  * title already); chips -- Active or not, Permanent, and that it affects
  * the planned flight while it is in force; one plain sentence of its
  * effect; the procedures it takes away; its times in words in the field's
- * own time (NotamCardTimes); where it is; and its text as sent folded
+ * own time (NotamLines, NotamTimes); where it is; and its text as sent folded
  * beneath, never rewritten. Each the engine's (notam_card); where it
  * cannot structure one, the NOTAM's words written out (notam_read) stand
  * in. A TFR keeps its kind and rule as its first line and its place,
  * instructions and whom to call (TfrDetails).
  */
 @Composable
-private fun NotamFull(s: FieldNotams.Said, zone: String?, role: Int?) {
+private fun NotamFull(s: FieldNotams.Said, zone: String?, roles: List<PlanRole>) {
     val tfr = FieldNotams.isTfr(s.notam)
     val active = FieldNotams.active(s.notam)
     val card = s.card
     val scheme = MaterialTheme.colorScheme
     val permanent = !tfr && (card?.permanent ?: (s.read?.permanent == true))
-    val times = remember(s, zone) { NotamCardTimes.lines(s.notam, s.read, card?.untilCharts == true, zone) }
+    val role = roleChip(roles, card?.procedures.orEmpty())
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         if (card?.title != null) card.category?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
             NotamState(s.notam)
             if (permanent) Badge(containerColor = scheme.secondaryContainer, contentColor = scheme.onSecondaryContainer) { Text(stringResource(R.string.notam_permanent)) }
-            if (role != null && active) Badge(containerColor = scheme.error, contentColor = scheme.onError) { Text(stringResource(role)) }
+            if (role != null && active) {
+                Badge(
+                    containerColor = if (role.taken) scheme.error else scheme.secondaryContainer,
+                    contentColor = if (role.taken) scheme.onError else scheme.onSecondaryContainer,
+                ) { Text(stringResource(role.words)) }
+            }
         }
         val ink = if (active) Color.Unspecified else scheme.onSurfaceVariant
         if (tfr) Text(notamWhat(s.what), style = MaterialTheme.typography.titleMedium, color = ink)
         else Text(card?.effect ?: s.read?.words ?: s.notam.raw, style = MaterialTheme.typography.bodyLarge, color = ink)
         if (card != null && card.procedures.isNotEmpty()) NotAuthorized(card.procedures)
-        if (times.isNotEmpty()) Column { times.forEach { OneLine(cardTimeForms(it), MaterialTheme.typography.bodyMedium) } }
-        s.where?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant) }
+        NotamLines(s, zone)
         if (tfr) TfrDetails(s)
         Fold(stringResource(if (tfr) R.string.tfr_as_sent else R.string.notam_as_sent)) {
             AsSent(s.notam.raw)
@@ -168,28 +195,12 @@ private fun NotAuthorized(procedures: List<EngineContract.NotamCardAnswerProcedu
     }
 }
 
-/** A card time line in words (NotamCardTimes.Line), its forms from the
- *  fullest: this year's year dropped first, then the time to go. */
-@Composable
-private fun cardTimeForms(line: NotamCardTimes.Line): List<String> {
-    if (line.kind == NotamCardTimes.Kind.PERMANENT) return listOf(stringResource(R.string.notam_permanent))
-    val id = when (line.kind) {
-        NotamCardTimes.Kind.SINCE -> R.string.notam_card_since
-        NotamCardTimes.Kind.STARTS -> R.string.notam_card_starts
-        else -> R.string.notam_card_until
-    }
-    val full = stringResource(id, line.at.orEmpty())
-    val short = stringResource(id, line.short ?: line.at.orEmpty())
-    val soon = line.soon
-    return if (soon == null) listOf(full, short).distinct()
-    else listOf(stringResource(R.string.notam_card_soon, full, soon), stringResource(R.string.notam_card_soon, short, soon), short).distinct()
-}
-
 /** The first of `forms` that fits the width on one line, else the last
- *  cut at its end: a card's time line shortens rather than wraps (the
- *  owner, 2026-11-23: "one line each"), at any font scale. */
+ *  cut at its end: a NOTAM's time line shortens rather than wraps, on its
+ *  row and on its card (the owner, 2026-11-23: "one line each"), at any
+ *  font scale. */
 @Composable
-private fun OneLine(forms: List<String>, style: TextStyle) {
+fun OneLine(forms: List<AnnotatedString>, style: TextStyle) {
     val measurer = rememberTextMeasurer()
     BoxWithConstraints {
         val width = constraints.maxWidth
