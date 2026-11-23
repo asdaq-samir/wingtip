@@ -5,6 +5,10 @@ import type { NavLogRow } from "./navLogRows";
 /** The planned flight as a replay's reports (features/plan/pastFlight), and
  *  what it has flown and burnt by each, for the figures under it. */
 export interface DryRun {
+  /** The nav log's rows it is flown along, which `rowT` and `bends` count:
+   *  the next checkpoint is read against these, never the page's rows of
+   *  the moment, which may be another list (dryRunNext). */
+  rows: NavLogRow[];
   points: PastFlightPoint[];
   /** Distance flown by each point, nm. */
   alongNm: number[];
@@ -67,8 +71,9 @@ export interface DryRun {
  */
 export function dryRunOf(rows: NavLogRow[], startS: number, line?: [number, number][], missed = false): DryRun {
   const run = callEngine("dry_run", { rows, start_s: startS, line: line ?? null, missed });
-  if (!run.row_t.length) return { points: [], alongNm: [], fuelGal: [], rowT: [], bends: [], landings: [] };
+  if (!run.row_t.length) return { rows, points: [], alongNm: [], fuelGal: [], rowT: [], bends: [], landings: [] };
   return {
+    rows,
     points: run.points,
     alongNm: run.along_nm,
     fuelGal: run.fuel_gal,

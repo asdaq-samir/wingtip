@@ -29,8 +29,8 @@ function checkpointFrom(rows: NavLogRow[], from: number): number | null {
 }
 
 /** The dry run's next row at `t`, seconds into it. */
-export function dryRunNext(run: DryRun, rows: NavLogRow[], t: number): number | null {
-  return checkpointFrom(rows, dryRunRow(run, t));
+export function dryRunNext(run: DryRun, t: number): number | null {
+  return checkpointFrom(run.rows, dryRunRow(run, t));
 }
 
 /** Own ship's next checkpoint from the GPS fix: its row, the miles to it
@@ -65,8 +65,8 @@ export function useFlyingTo(run: DryRun | null, rows: NavLogRow[], line: CourseL
   const flying = useFlying((s) => s.flying);
   const dry = usePastFlight((s) => {
     if (!flying || !run || s.hex !== DRY_RUN || s.at === null) return null;
-    const index = dryRunNext(run, rows, s.at);
-    return index === null ? null : rows[index]!.key;
+    const index = dryRunNext(run, s.at);
+    return index === null ? null : run.rows[index]!.key;
   });
   // The next checkpoint from the fix is the engine's (in_flight): none
   // until its .wasm is there.

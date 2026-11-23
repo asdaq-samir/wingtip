@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { gpsAhead } from "./flyingTo";
+import { dryRunNext, gpsAhead } from "./flyingTo";
+import type { DryRun } from "./dryRun";
 import type { NavLogRow } from "./navLogRows";
 
 // East along the equator, a degree each leg (60.108 nm on WGS-84, the
@@ -45,5 +46,20 @@ describe("own ship's next checkpoint from the GPS (the engine's in_flight)", () 
     expect(gpsAhead(rows, line, { lat: 0, lon: 0.5, headingDeg: 90, speedKt: 120, at: 0 })!.onRoute).toBe(true);
     expect(gpsAhead(rows, line, { lat: 0.1, lon: 0.5, headingDeg: 90, speedKt: 120, at: 0 })!.onRoute).toBe(false);
     expect(gpsAhead(rows, line, { lat: 0, lon: 0.5, headingDeg: null, speedKt: 10, at: 0 })!.onRoute).toBe(false);
+  });
+});
+
+describe("the dry run's next checkpoint", () => {
+  // A run along the four rows: at each row by its time, 0, 6, 30 and 60 min.
+  const run = { rows, rowT: [0, 360, 1800, 3600], bends: [], points: [], alongNm: [], fuelGal: [], landings: [] } as unknown as DryRun;
+
+  it("is read against the rows the run was flown along, whatever list the page holds then", () => {
+    // Between the top of climb and the checkpoint: the checkpoint next,
+    // not the top of climb. The page's nav log may be the route as entered
+    // for a moment, its two ends alone, while a plan is asked again: read
+    // against that, the index named no checkpoint and the flying head
+    // went (emergency.spec on CI, run 45127491141).
+    expect(dryRunNext(run, 600)).toBe(2);
+    expect(dryRunNext(run, 2000)).toBe(3);
   });
 });
