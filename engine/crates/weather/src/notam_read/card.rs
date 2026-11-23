@@ -86,20 +86,69 @@ fn procedures(words: &[&str]) -> Vec<Procedure> {
     out
 }
 
-/// A surface closed among its words: "RWY 18/36 PERMANENTLY CLSD", "TWY
-/// B CLSD" (3-3-5, 3-3-6; CLSD, JO 7340.2): "Runway 18/36", and whether
-/// the words call it permanent.
-fn closure(words: &[&str]) -> Option<(String, bool)> {
-    words.windows(3).find_map(|p| {
-        let named = match p[0] {
-            "RWY" if is_runway(bare(p[1])) => "Runway",
-            "TWY" if is_taxiway(bare(p[1])) => "Taxiway",
+/// A procedure NOTAM's own sentence closing a surface: "RWY 18/36
+/// PERMANENTLY CLSD." standing alone (3-3-5, 3-3-6; CLSD, JO 7340.2), as
+/// FDC 6/3373 states it: "Runway 18/36", and whether it says permanent.
+/// Only a whole sentence counts: a CLSD inside one ("... NA WHEN RWY 9/27
+/// CLSD") is a condition, not a closure, and a RWY or TWY NOTAM's own
+/// closure is notam_read's `what`, read from its subject (four), never
+/// from the last surface before a CLSD (a taxiway's between-points, 3-3-6).
+fn closure(sentences: &[Vec<&str>]) -> Option<(String, bool)> {
+    sentences.iter().find_map(|s| {
+        let s: Vec<&str> = s.iter().map(|w| bare(w)).collect();
+        let (kind, d, perm) = match s[..] {
+            [k, d, "CLSD"] => (k, d, false),
+            [k, d, "PERM" | "PERMANENTLY", "CLSD"] => (k, d, true),
             _ => return None,
         };
-        let perm = matches!(p[2], "PERMANENTLY" | "PERM");
-        let closed = if perm { words.iter().skip_while(|w| **w != p[2]).nth(1).copied() } else { Some(p[2]) };
-        (closed.map(bare) == Some("CLSD")).then(|| ([named, " ", bare(p[1])].concat(), perm))
+        let named = match kind {
+            "RWY" if is_runway(d) => "Runway",
+            "TWY" if is_taxiway(d) => "Taxiway",
+            _ => return None,
+        };
+        Some(([named, " ", d].concat(), perm))
     })
+}
+
+/// What a sentence with NA in it takes away (NA, JO 7340.2; 7-1-3 names
+/// the part that is not authorized): every procedure the NOTAM names
+/// ("PROCEDURE NA"), those from one runway ("RWY 18/36 PROCEDURES NA"), or
+/// the one whose title it is ("BENKY SIX ARRIVAL NA"). Anything else, a
+/// transition, a runway's part, "NA AT NIGHT", "NA WHEN ...", is Unsure,
+/// and the card then says nothing of its own.
+#[derive(Debug, PartialEq)]
+enum Taken {
+    All,
+    Runway(String),
+    One(Procedure),
+    Unsure,
+}
+
+fn taken_by(s: &[&str]) -> Option<Taken> {
+    let b: Vec<&str> = s.iter().map(|w| bare(w)).collect();
+    if !b.contains(&"NA") {
+        return None;
+    }
+    Some(match b[..] {
+        ["PROCEDURE" | "PROCEDURES", "NA"] => Taken::All,
+        ["RWY", d, "PROCEDURE" | "PROCEDURES", "NA"] if is_runway(d) => Taken::Runway(d.to_owned()),
+        _ => {
+            let title = &s[..s.len() - 1];
+            let mut one = procedures(title);
+            let whole = b.last() == Some(&"NA") && one.len() == 1 && title.len() == 3 + usize::from(one[0].rnav);
+            if whole {
+                Taken::One(one.remove(0))
+            } else {
+                Taken::Unsure
+            }
+        }
+    })
+}
+
+/// The NOTAM's sentences, each its words as sent: split at its full stops
+/// and the "..." between a procedure NOTAM's titles.
+fn sentences(t: &str) -> Vec<Vec<&str>> {
+    t.split('.').map(|s| s.split_whitespace().collect::<Vec<_>>()).filter(|s| !s.is_empty()).collect()
 }
 
 /// "closed", "out of service", ... in a what as the engine says it: the
@@ -136,31 +185,57 @@ pub fn card(text: &str, idents: &[String]) -> Card {
     let r = read(text, idents);
     let t = text.trim();
     let account = (r.form == "domestic").then(|| t.split_whitespace().next().map(|w| w.trim_start_matches('!').to_owned())).flatten();
+    let category = category(&r);
     let spaced = spaced(t);
     let words: Vec<&str> = spaced.split_whitespace().collect();
-    let procedures = procedures(&words);
-    let na = words.iter().any(|w| bare(w) == "NA");
-    let shut = closure(&words);
+    let parts = sentences(t);
+    let takes: Vec<Taken> = parts.iter().filter_map(|s| taken_by(s)).collect();
+    if takes.contains(&Taken::Unsure) {
+        // Part of something not authorized, which the card cannot say whole:
+        // the NOTAM's words written out stand in.
+        return Card { account, category, permanent: r.permanent, ..Card::default() };
+    }
+    let named = procedures(&words);
+    let runway = takes.iter().find_map(|k| if let Taken::Runway(d) = k { Some(d.clone()) } else { None });
+    let every = runway.is_some() || takes.contains(&Taken::All);
+    let procedures: Vec<Procedure> =
+        if every { named } else { takes.into_iter().filter_map(|k| if let Taken::One(p) = k { Some(p) } else { None }).collect() };
+    // A closure stated as a sentence of its own is a procedure NOTAM's
+    // (SID, ODP, DVA, STAR, IAP; 1-2-1); a surface's NOTAM says its own.
+    let procedure_notam = matches!(r.keyword.as_deref(), Some("SID" | "ODP" | "DVA" | "STAR" | "IAP"));
+    let shut = if procedure_notam { closure(&parts) } else { None };
     let permanent = r.permanent || shut.as_ref().is_some_and(|(_, perm)| *perm);
     let perm = if permanent { "permanently " } else { "" };
-    let taken = na && !procedures.is_empty();
+    let taken = !procedures.is_empty();
     let one = |p: &Procedure| [p.name.as_str(), if p.departure { " departure" } else { " arrival" }].concat();
+    let scope = runway
+        .as_deref()
+        .map_or(String::new(), |d| [if procedures.iter().all(|p| p.departure) { " from runway " } else { " for runway " }, d].concat());
     let title = r.what.clone().or_else(|| shut.as_ref().map(|(s, _)| [s.as_str(), " closed"].concat())).or_else(|| {
         taken.then(|| match &procedures[..] {
-            [p] => [one(p).as_str(), " not authorized"].concat(),
-            ps => [ps.len().to_string().as_str(), " ", &kind_of(ps), " not authorized"].concat(),
+            [p] => [one(p).as_str(), " not authorized", &scope].concat(),
+            ps => [ps.len().to_string().as_str(), " ", &kind_of(ps), " not authorized", &scope].concat(),
         })
     });
+    let not_authorized = || match &procedures[..] {
+        [p] => ["The ", one(p).as_str(), if p.rnav { " (RNAV)" } else { "" }, " is not authorized", &scope, "."].concat(),
+        ps => ["These ", ps.len().to_string().as_str(), " ", &kind_of(ps), " are not authorized", &scope, "."].concat(),
+    };
     let effect = match (&shut, taken) {
-        (Some((s, _)), true) => Some([s.as_str(), " is ", perm, "closed, so its ", &kind_of(&procedures), " are not authorized."].concat()),
-        (Some((s, _)), false) => Some([s.as_str(), " is ", perm, "closed."].concat()),
-        (None, true) => Some(match &procedures[..] {
-            [p] => ["The ", one(p).as_str(), if p.rnav { " (RNAV)" } else { "" }, " is not authorized."].concat(),
-            ps => ["These ", ps.len().to_string().as_str(), " ", &kind_of(ps), " are not authorized."].concat(),
-        }),
+        // The runway closed is the one whose procedures are taken: "its".
+        (Some((s, _)), true) if runway.as_deref().is_some_and(|d| s.split_once(' ').is_some_and(|(k, at)| k == "Runway" && at == d)) => {
+            Some([s.as_str(), " is ", perm, "closed, so its ", &kind_of(&procedures), " are not authorized."].concat())
+        }
+        (Some((s, _)), true) => Some([s.as_str(), " is ", perm, "closed. ", &not_authorized()].concat()),
+        // An approach's own "not authorized" is kept beside the closure.
+        (Some((s, _)), false) => {
+            let also = r.what.as_deref().and_then(|w| sentence_of(w, false)).map_or(String::new(), |w| [" ", w.as_str()].concat());
+            Some([s.as_str(), " is ", perm, "closed.", &also].concat())
+        }
+        (None, true) => Some(not_authorized()),
         (None, false) => r.what.as_deref().and_then(|w| sentence_of(w, permanent)),
     };
-    Card { account, category: category(&r), title, effect, permanent, procedures: if taken { procedures } else { vec![] } }
+    Card { account, category, title, effect, permanent, procedures }
 }
 
 /// `notam_card`: `{"text", "idents"?}` to `{"account", "category",
@@ -193,43 +268,5 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    const FDC_6_3373: &str = "!FDC 6/3373 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. ADELL EIGHT DEPARTURE (RNAV)... BLOKR EIGHT DEPARTURE (RNAV)... CARYN EIGHT DEPARTURE (RNAV)... DARCY EIGHT DEPARTURE (RNAV)... ELANR NINE DEPARTURE (RNAV)... OBENE THREE DEPARTURE (RNAV)... RWY 18/36 PROCEDURES NA. RWY 18/36 PERMANENTLY CLSD. 2605271843-2805271843EST";
-
-    #[test]
-    fn a_runway_closed_for_good_takes_its_departures_away() {
-        let c = card(FDC_6_3373, &[]);
-        assert_eq!(c.account.as_deref(), Some("FDC"));
-        assert_eq!(c.category.as_deref(), Some("Departure procedures"));
-        assert_eq!(c.title.as_deref(), Some("Runway 18/36 closed"));
-        assert_eq!(c.effect.as_deref(), Some("Runway 18/36 is permanently closed, so its RNAV departures are not authorized."));
-        assert!(c.permanent);
-        let names: Vec<&str> = c.procedures.iter().map(|p| p.name.as_str()).collect();
-        assert_eq!(names, ["ADELL 8", "BLOKR 8", "CARYN 8", "DARCY 8", "ELANR 9", "OBENE 3"]);
-        assert!(c.procedures.iter().all(|p| p.rnav));
-    }
-
-    #[test]
-    fn each_kind_says_its_effect_or_none() {
-        // A runway (JO 7930.2 5-1-3 c), for now: not permanent.
-        let c = card("!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700", &[]);
-        assert_eq!((c.title.as_deref(), c.effect.as_deref()), (Some("Runway 18/36 closed"), Some("Runway 18/36 is closed.")));
-        assert_eq!((c.category.as_deref(), c.permanent, c.procedures.len()), (Some("Runway"), false, 0));
-        // A navaid's part (NAV; AIM 1-1-9).
-        let c = card("!OSH 11/081 OSH NAV ILS RWY 36 GP U/S 2511120000-2511202359", &[]);
-        assert_eq!(c.effect.as_deref(), Some("Glide slope runway 36 is out of service."));
-        // One arrival not authorized (STAR, 7-1-3).
-        let c = card("!FDC 6/1 ORD STAR CHICAGO O'HARE INTL, CHICAGO, IL. BENKY SIX ARRIVAL NA. 2611010000-2612010000", &[]);
-        assert_eq!(c.category.as_deref(), Some("Arrival procedures"));
-        assert_eq!(c.title.as_deref(), Some("BENKY 6 arrival not authorized"));
-        assert_eq!(c.effect.as_deref(), Some("The BENKY 6 arrival is not authorized."));
-        // Permanent by its end (PERM, 4-2-1).
-        let c = card("!OSH 11/090 OSH TWY B CLSD 2511120900-PERM", &[]);
-        assert_eq!((c.effect.as_deref(), c.permanent), (Some("Taxiway B is permanently closed."), true));
-        // Airspace it cannot structure: none, the words stand in.
-        let c = card("!OSH 11/100 OSH AIRSPACE UAS WI AN AREA DEFINED AS 2NM RADIUS OF OSH SFC-400FT 2511120900-2511121700", &[]);
-        assert_eq!((c.title, c.effect, c.category.as_deref()), (None, None, Some("Airspace")));
-    }
-}
+#[path = "card_tests.rs"]
+mod tests;

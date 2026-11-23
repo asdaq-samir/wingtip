@@ -223,7 +223,7 @@ public class AircraftController {
                 a.getEltInspectedOn(),
                 due.getEltUntil(),
                 a.getEltBatteryDueOn(),
-                a.isForHire());
+                a.getForHire());
     }
 
     static AircraftDto.VorCheckDto vorCheckOf(Aircraft a, PlannerInspections due) {

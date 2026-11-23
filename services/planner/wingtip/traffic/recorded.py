@@ -6,6 +6,7 @@ none of it."""
 
 from __future__ import annotations
 
+import hashlib
 import re
 
 from . import store
@@ -24,6 +25,11 @@ FOLLOW_KEEP_S = 30 * 86400.0
 #: security review of 2026-11-23, M5). Past it, the card opened longest ago
 #: goes.
 FOLLOW_MOST = 500
+#: The most one pilot follows at once, their share of FOLLOW_MOST: past it
+#: their own card opened longest ago goes, never another pilot's (the
+#: safety audit of 2026-11-23, M5: one account's 500 card opens had pushed
+#: every other pilot's followed airplanes out).
+FOLLOW_EACH = 20
 #: A followed airplane no source has heard from in this long, s, followed
 #: no more: an address made up, or one no feeder hears.
 FOLLOW_UNHEARD_S = 86400.0
@@ -50,15 +56,23 @@ def followed() -> list[str]:
     return store.followed()
 
 
-def follow(hex_id: str) -> None:
-    """An airplane followed from now on: its card opened. Kept in the store,
-    so a restart does not forget it: the owner's N3429J, its card opened
-    before a restart and nothing heard of it since, was followed no more
-    while the following lived in the planner's memory. Each opening starts
-    its FOLLOW_KEEP_S again."""
+def share_of(pilot: str) -> str:
+    """A pilot's share of the followed airplanes, by a short one-way hash of
+    their id: the store counts a pilot's follows without naming them
+    (docs/privacy-inventory.md)."""
+    return hashlib.sha256(f"wingtip-follow:{pilot}".encode()).hexdigest()[:12] if pilot else ""
+
+
+def follow(hex_id: str, pilot: str = "") -> None:
+    """An airplane followed from now on: its card opened, by `pilot` (the
+    one share "" for a follow no pilot asked, ingest's and the tests').
+    Kept in the store, so a restart does not forget it: the owner's N3429J,
+    its card opened before a restart and nothing heard of it since, was
+    followed no more while the following lived in the planner's memory.
+    Each opening starts its FOLLOW_KEEP_S again."""
     key = _key(hex_id)
     if key is not None:
-        store.follow(key, _wall(), FOLLOW_MOST)
+        store.follow(key, share_of(pilot), _wall(), FOLLOW_EACH, FOLLOW_MOST)
 
 
 def _record(hex_id: str, plane: dict) -> None:

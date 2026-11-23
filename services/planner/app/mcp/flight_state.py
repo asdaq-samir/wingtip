@@ -99,7 +99,8 @@ def query_of(flight: Flight, airplane_fields: dict) -> dict:
 
 
 def address_of(flight: Flight) -> dict[str, str]:
-    """The web's address keys for the flight (lib/address), those set."""
+    """The web's address keys for the flight (lib/address), those set: its
+    route, picks and rules."""
     keys = {
         "dep": flight.departure,
         "dest": flight.destination,
@@ -109,6 +110,10 @@ def address_of(flight: Flight) -> dict[str, str]:
         "depart": flight.depart_at.isoformat() if flight.depart_at else "",
         "procs": flight.procedures,
         "tanks": tanks_text(flight),
+        # The rules flown, which the web's address reads (lib/address
+        # PICK_KEYS), so an IFR plan opens as IFR, not the app's own setting
+        # (the mcp audit, L8); VFR is the default and not written.
+        "rules": "ifr" if flight.rules == "ifr" else "",
     }
     return {k: v for k, v in keys.items() if v}
 

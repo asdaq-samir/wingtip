@@ -75,7 +75,8 @@ pub fn pilot_due(d: PilotDays) -> Vec<Due> {
 /// them out, with what the owner keeps of it.
 pub struct AircraftDays {
     pub tail: String,
-    pub for_hire: bool,
+    /// The owner's word: Some(true) for hire, Some(false) not, None not said.
+    pub for_hire: Option<bool>,
     pub annual_until: Option<String>,
     pub hundred_hour_due_at: Option<f64>,
     pub elt_until: Option<String>,
@@ -113,15 +114,19 @@ pub fn aircraft_due(a: AircraftDays, kept: Vec<Kept>) -> Vec<Due> {
     let t = &a.tail;
     let mut out: Vec<Due> = Vec::new();
     out.extend(dated("annual", "Annual Inspection", "14 CFR 91.409(a)", a.annual_until, format!("{t}'s annual inspection runs out")));
-    if let Some(hours) = a.hundred_hour_due_at.filter(|_| a.for_hire) {
+    // Not said is weighed as for hire, as the Go/No-Go's risk factors weigh
+    // it (brief's frat): a reminder of an inspection not owed costs a look,
+    // one owed and never reminded of is a flight without it. Said so.
+    if let Some(hours) = a.hundred_hour_due_at.filter(|_| a.for_hire != Some(false)) {
+        let unsaid = a.for_hire.is_none();
         out.push(Due {
             what: "hundred-hour",
             item_id: None,
-            label: "100-Hour Inspection".into(),
+            label: if unsaid { "100-Hour Inspection, if Flown for Hire" } else { "100-Hour Inspection" }.into(),
             rule: Some("14 CFR 91.409(b)".into()),
             until: None,
             due_at_hours: Some(hours),
-            lead: format!("{t}'s 100-hour inspection is due"),
+            lead: format!("{t}'s 100-hour inspection{} is due", if unsaid { ", if it is flown for hire," } else { "" }),
         });
     }
     out.extend(dated("elt", "ELT Inspection", "14 CFR 91.207(d)", a.elt_until, format!("{t}'s ELT inspection runs out")));

@@ -13,9 +13,9 @@ from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 
 from . import records
-from .calls import WRITE, paged, pilot
+from .calls import WRITE, paged, pilot, rounded
 from .airport_tools import Ident
-from .flight_tools import Altitude, Depart, Rules, Stops, Tail, app_link, planned, route_fields
+from .flight_tools import Altitude, Depart, Rules, Stops, Tail, app_link, planned, route_fields, totals_of
 from .tool_meta import READS, WRITES, additive, read_only
 
 AIRPLANE_FIELDS = (
@@ -163,6 +163,8 @@ def register(server: MCPServer) -> None:
         saved = await records.save_flight(who, request)
         return {
             "saved": {k: v for k, v in saved.items() if v is not None},
+            # The plan saved, with each flight's fuel check (totals_of).
+            "totals": rounded(totals_of(p["totals"])),
             "open_in_wingtip": app_link(fields),
             "sources": [ACCOUNT_SOURCE],
         }

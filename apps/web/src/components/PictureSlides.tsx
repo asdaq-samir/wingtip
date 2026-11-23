@@ -1,5 +1,6 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
+import { safeHref } from "../lib/safeHref";
 import { TEXT } from "../lib/text";
 
 /**
@@ -60,7 +61,10 @@ export function PhotoSlide({
  *  photo's own page where it has one, words alone where not. Drawn beside
  *  a tile's button, never inside it (CardPictures' `credit`): a link in a
  *  button is two controls in one, axe's nested-interactive. */
-export function PhotoCredit({ credit, href, testId }: { credit: string; href?: string; testId?: string }) {
+export function PhotoCredit({ credit, href: given, testId }: { credit: string; href?: string; testId?: string }) {
+  // The photo's page comes from others' data (Planespotters, Wikimedia):
+  // only an address the app may open (safeHref), else the words alone.
+  const href = given ? safeHref(given) : undefined;
   return href ? (
     // Over the picture's own tap, its hit area grown by a pseudo-element
     // to 44 points, the caption itself kept its size.

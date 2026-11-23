@@ -51,7 +51,7 @@ def flight(hex_id: str, pilot: str | None = None) -> dict:
     # anonymous ask: one walking the addresses 000000, 000001 and on put
     # them all in the round adsb.lol is asked (security round 4, M5).
     if pilot:
-        follow(hex_id)
+        follow(hex_id, pilot)
     trace = _trace(hex_id) or {}
     # A point is [seconds, lat, lon, altitude, ground speed, track, flags,
     # ...]; one too short to hold them is not used.

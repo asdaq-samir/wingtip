@@ -40,7 +40,7 @@ def register(server: MCPServer) -> None:
     async def search_airports(
         query: Annotated[str, Field(min_length=2, max_length=60, description="An identifier, an airport's name or its town.")],
         limit: Annotated[int, Field(ge=1, le=25, description="How many to answer, 1 to 25.")] = 10,
-        offset: Annotated[int, Field(ge=0, description="How many to skip, for the next page: the last answer's next_offset.")] = 0,
+        offset: Annotated[int, Field(ge=0, le=500, description="How many to skip, for the next page: the last answer's next_offset.")] = 0,
     ) -> dict[str, Any]:
         pilot()
         # The search the app's own box runs (/api/airports/search's), asked
@@ -135,8 +135,8 @@ def register(server: MCPServer) -> None:
             a
             for a in found
             if (min_runway_ft is None or (a.get("longest_runway_ft") or 0) >= min_runway_ft)
-            # The nearest list's tower is its inbound radio's (its `towered`
-            # is the map pin's, which this list leaves unset).
+            # Towered by the nearest list's `towered` (the field in the FAA's
+            # list of towers, routers/airports.py) or its inbound radio's kind.
             and (not towered_only or a.get("towered") or (a.get("radio") or {}).get("kind") == "TWR")
             and (not public_only or (not a.get("private") and a.get("military") != "military"))
             and (fuel is None or fuel in (a.get("fuel") or []))

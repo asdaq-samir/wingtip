@@ -47,6 +47,24 @@ TOTALS = ("distance_nm", "ete_min", "fuel_gal", "reserve_min", "reserve_gal", "f
 TOTALS += ("fuel_margin_gal", "night", "rules", "unflyable_legs", "legs_without_wind")
 
 
+HOP = ("fuel_required_gal", "reserve_gal", "usable_fuel_gal", "fuel_margin_gal")
+
+
+def totals_of(totals: dict) -> dict:
+    """The plan's totals for the model, with each flight's fuel check where
+    the route lands on the way: its tanks are filled at every stop, so the
+    route's own totals carry no check and `hops` holds each one's
+    (wingtip.route_join.route_totals), and the flights with no field with
+    fuel in reach (`no_fuel_stop`)."""
+    out = pick(totals, TOTALS)
+    if totals.get("hops"):
+        ends = ("departure", "destination")
+        out["hops"] = [{**{k: h[k] for k in ends}, **pick(h.get("totals") or {}, HOP)} for h in totals["hops"]]
+    if totals.get("no_fuel_stop"):
+        out["no_fuel_stop"] = [{k: s.get(k) for k in ("departure", "destination")} for s in totals["no_fuel_stop"]]
+    return out
+
+
 async def route_fields(pilot_id: str, dep: str, dest: str, stops: list[str], altitude, tail, depart, rules) -> tuple:
     """The flight as /api/plan's query and /api/go-no-go's ask take it, and
     the airplane flown (None for none)."""
@@ -66,12 +84,15 @@ async def route_fields(pilot_id: str, dep: str, dest: str, stops: list[str], alt
 
 def app_link(fields: dict) -> str | None:
     """The plan in Wingtip (the web's lib/flightLink planHrefOf address):
-    its route, altitude and time. The address has no key for the airplane
-    flown or the rules, which the app keeps as the pilot's own setting."""
+    its route, altitude, time and rules (lib/address PICK_KEYS' `rules`, so
+    an IFR plan opens as IFR; VFR is the default and not written). The
+    address has no key for the airplane flown, the pilot's own setting."""
     base = get_settings().mcp_issuer
     if not base:
         return None
     query = {k: str(fields[k]) for k in ("dep", "dest", "stops", "altitude_ft", "depart") if fields.get(k) not in (None, "")}
+    if fields.get("rules") == "ifr":
+        query["rules"] = "ifr"
     return f"{base}/app/plan?{urlencode(query)}"
 
 
@@ -101,7 +122,8 @@ def register(server: MCPServer) -> None:
         name="plan_route",
         description="Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or "
         "the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, "
-        "wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. "
+        "wind, ground speed, time and fuel, the totals with the reserve and the fuel margin (each flight's in hops "
+        "where it lands on the way), and the cautions. "
         "Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; "
         "show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
         title="Plan a route",
@@ -127,7 +149,7 @@ def register(server: MCPServer) -> None:
             "altitude_choice": p.get("altitude_choice"),
             "altitude_cautions": p.get("altitude_cautions", []),
             "legs": rounded([pick(leg, LEG) for leg in p["legs"]]),
-            "totals": rounded(pick(p["totals"], TOTALS)),
+            "totals": rounded(totals_of(p["totals"])),
             "open_in_wingtip": app_link(fields),
             "sources": [ENGINE_SOURCE, winds_source(p.get("winds")), *editions("nasr", "dof", "charts")],
         }

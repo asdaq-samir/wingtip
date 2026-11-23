@@ -335,9 +335,9 @@ data class InspectionsDto (
 
     /**
      * Whether it carries people or is given for flight instruction for hire, when the 100-hour
-     * inspection applies (91.409(b))
+     * inspection applies (91.409(b)); null until the owner says, weighed as for hire
      */
-    val forHire: Boolean,
+    val forHire: Boolean? = null,
 
     val hoursNow: Double? = null,
     val hundredHourAtHours: Double? = null,

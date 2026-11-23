@@ -227,6 +227,8 @@ jobs:
       GH_REPO: ${{ github.repository }}
       BRANCH: ${{ github.head_ref }}
       PR: ${{ github.event.pull_request.number }}
+      # The head the review ran on: any commit after it is the address job's.
+      BEFORE: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with: { ref: main, persist-credentials: false, sparse-checkout: scripts/ci }

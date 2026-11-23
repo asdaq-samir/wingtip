@@ -45,7 +45,8 @@ export function inspectionsInput(i: Inspections) {
     // Whether the 100-hour is owed (14 CFR 91.409(b)) is the engine's,
     // from the owner's word that the airplane is flown for hire.
     hundred_hour_due_at_hours: i.hundredHourDueAtHours ?? null,
-    for_hire: !!i.forHire,
+    // Not said (null) stays not said: the engine weighs it as for hire.
+    for_hire: i.forHire ?? null,
     hours_now: i.hoursNow ?? null,
   };
 }

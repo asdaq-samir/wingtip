@@ -2570,10 +2570,10 @@ extension Components {
             public var eltInspectedOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/InspectionsDto/eltInspectionGoodThrough`.
             public var eltInspectionGoodThrough: Swift.String?
-            /// Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b))
+            /// Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b)); null until the owner says, weighed as for hire
             ///
             /// - Remark: Generated from `#/components/schemas/InspectionsDto/forHire`.
-            public var forHire: Swift.Bool
+            public var forHire: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/InspectionsDto/hoursNow`.
             public var hoursNow: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/InspectionsDto/hundredHourAtHours`.
@@ -2596,7 +2596,7 @@ extension Components {
             ///   - eltBatteryDueOn: The date the ELT's battery is to be replaced by, as marked on it (91.207(c))
             ///   - eltInspectedOn:
             ///   - eltInspectionGoodThrough:
-            ///   - forHire: Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b))
+            ///   - forHire: Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b)); null until the owner says, weighed as for hire
             ///   - hoursNow:
             ///   - hundredHourAtHours:
             ///   - hundredHourDueAtHours:
@@ -2610,7 +2610,7 @@ extension Components {
                 eltBatteryDueOn: Swift.String? = nil,
                 eltInspectedOn: Swift.String? = nil,
                 eltInspectionGoodThrough: Swift.String? = nil,
-                forHire: Swift.Bool,
+                forHire: Swift.Bool? = nil,
                 hoursNow: Swift.Double? = nil,
                 hundredHourAtHours: Swift.Double? = nil,
                 hundredHourDueAtHours: Swift.Double? = nil,

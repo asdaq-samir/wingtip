@@ -16,6 +16,7 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -136,9 +137,11 @@ public class Aircraft {
 
     /** Whether it carries people for hire or is given for flight
      *  instruction for hire, as its owner says (V32): only then does 14 CFR
-     *  91.409(b) ask for the 100-hour inspection. */
-    @Column(nullable = false)
-    private boolean forHire;
+     *  91.409(b) ask for the 100-hour inspection. Null until the owner says
+     *  (V56), which the engine weighs as for hire, the safe side. */
+    @Column
+    @Nullable
+    private Boolean forHire;
 
     /** What its flight plan says of it (V29, FAA Form 7233-4 as AIM
      *  Appendix 4 writes each item): item 10a, its navigation,
@@ -272,7 +275,7 @@ public class Aircraft {
     }
 
     /** Whether it is flown for hire (91.409(b)). */
-    public Aircraft forHire(boolean forHire) {
+    public Aircraft forHire(@Nullable Boolean forHire) {
         this.forHire = forHire;
         return this;
     }
