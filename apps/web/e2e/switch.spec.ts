@@ -5,7 +5,7 @@ import {
   settle,
   roleMenu,
   openPanel,
-  openRoute,
+  typeRoute,
   closeSidebarWithTheStockKey,
   expectDrawerClosed,
   noTips,
@@ -83,7 +83,10 @@ test("the route box leads the pill's head the same, signed in or out", async ({ 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  // The route's box, its field: the timeline's toggle turns the grouped
+  // box into it (typeRoute; the owner, 2026-11-22), where the timeline is
+  // what a whole route opens on.
+  await typeRoute(page);
   leads.push(await lead(page));
   const signedOut = await browser.newContext({
     baseURL: new URL(page.url()).origin,
@@ -95,7 +98,7 @@ test("the route box leads the pill's head the same, signed in or out", async ({ 
   await planner.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(planner);
   await openPanel(planner);
-  await openRoute(planner);
+  await typeRoute(planner);
   leads.push(await lead(planner));
   await signedOut.close();
   expect(Math.max(...leads) - Math.min(...leads)).toBeLessThanOrEqual(1);

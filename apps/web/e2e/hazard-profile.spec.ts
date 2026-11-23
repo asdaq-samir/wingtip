@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, openMapSettings, openProfile, settle, slow } from "./helpers";
+import { controlsInSight, inSheet, openMapSettings, openProfile, settle, slow } from "./helpers";
 import { closeMapSettings } from "./mapCard";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its climb read (the setup picks none)
@@ -21,7 +21,12 @@ test("Terrain Hazards colour the ground against the plan's cruise on the ground,
   await expect(map(page)).not.toHaveAttribute("data-hazard", /.*/);
   await openMapSettings(page);
   const card = page.getByTestId("map-settings");
-  await card.getByTestId("hazard-setting").getByText("On", { exact: true }).click();
+  // Under the half card's edge below its Layers and Route Checkpoints, the
+  // card pulled up to it first, as a finger does: at half a card's body
+  // does not scroll (rules.md's "Grow, then scroll").
+  const on = card.getByTestId("hazard-setting").getByText("On", { exact: true });
+  await inSheet(page, on);
+  await on.click();
   // The engine's lines under the plan's cruise: red within 1,000 ft (14
   // CFR 91.119(b)), amber 1,000 ft under that, the plan's altitude.
   await expect(map(page)).toHaveAttribute("data-hazard", /^(\d+)\/(\d+)\/plan$/, { timeout: slow(15000) });

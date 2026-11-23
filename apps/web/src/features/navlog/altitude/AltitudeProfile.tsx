@@ -21,9 +21,16 @@ import { coursePoints } from "../../../lib/course";
 import { sideViewTop } from "../profile";
 
 /** What the side view is drawn for: the altitude previewed (null while
- *  the one flown is in sight), the cruise flown, its height in feet, and
- *  where the slider goes on it. */
-type SideView = { preview: number | null; cruise: number | null; top: number | null; wheelSlot: (el: HTMLElement | null) => void };
+ *  the one flown is in sight), the cruise flown, its height in feet, where
+ *  the slider goes on it, and where its weather's key goes, under the
+ *  graph's fixed height. */
+type SideView = {
+  preview: number | null;
+  cruise: number | null;
+  top: number | null;
+  wheelSlot: (el: HTMLElement | null) => void;
+  keySlot: HTMLElement | null;
+};
 
 const LEVEL_INK: Record<string, string> = { red: "text-destructive-ink", yellow: "text-caution-ink" };
 
@@ -116,6 +123,10 @@ export function AltitudeProfile({
   // the graph's whole height, and FL-145 was drawn at about 9,500 on a
   // ruler topping at 12,000 (the UI audit's A1, 2026-11-17).
   const [slot, setSlot] = useState<HTMLElement | null>(null);
+  // Under the graph, in the column's flow: the weather's key laid inside
+  // the graph's fixed 224 ran out of its foot over the Set row, which no
+  // tap then reached (plans.spec's altitude-set, more lines with more TAFs).
+  const [keySlot, setKeySlot] = useState<HTMLElement | null>(null);
   const preview = shownAt !== null && shownAt !== flown ? shownAt : null;
   const top = profile ? sideViewTop(profile, [flown ?? 0, preview ?? 0]) : null;
   // The engine's row nearest the feet the slider is at: its steps are
@@ -128,7 +139,7 @@ export function AltitudeProfile({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-3">
       <div ref={graph} className="relative h-56 max-h-full min-h-16 shrink-0">
-        {chart({ preview, cruise: flown, top, wheelSlot: setSlot })}
+        {chart({ preview, cruise: flown, top, wheelSlot: setSlot, keySlot })}
         {/* The stock Slider, upright down the plot's left on its scale in
             feet, a step each of the engine's altitudes: to VoiceOver and
             the keyboard an adjustable control saying the altitude and what
@@ -167,6 +178,9 @@ export function AltitudeProfile({
         {!wheelHidden && marks.map((p) => <LegAltitude key={p.ident} point={p} profile={airplaneProfile} onSet={setLeg} />)}
         {corner}
       </div>
+      {/* The weather's key, right under the graph as it was in it (the
+          column's gap taken back), nothing where there is none. */}
+      <div ref={setKeySlot} className="-mt-3 empty:hidden" />
       {shownAt !== null && (
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
