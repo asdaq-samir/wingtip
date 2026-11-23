@@ -132,7 +132,7 @@ export function PhoneSheetHeader({
         middle={
           <Drawer.Title
             data-slot="sheet-title"
-            className={cn("max-w-full font-bold tracking-tight break-words text-foreground", TEXT.card)}
+            className={cn("max-w-full font-bold break-words text-foreground", TEXT.card)}
           >
             {title}
           </Drawer.Title>

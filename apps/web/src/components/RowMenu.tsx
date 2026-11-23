@@ -31,9 +31,13 @@ export interface RowMenuProps {
 }
 
 /** The row's own box, lifted while its held menu is open (RowMenuImpl).
- *  No iOS callout over a long press: the menu is the row's own. */
+ *  No iOS callout over a long press: the menu is the row's own. Its grow
+ *  (scale-*, the CSS `scale` property in Tailwind 4) and its rounded
+ *  corner ease with the ground and the shadow, on the app's curve: with
+ *  `transform` listed instead, the row jumped 2% under the finger while
+ *  its ground faded in (the design review of 2026-11-23, M2). */
 export const ROW_LIFT =
-  "group/row flex items-center gap-1 pr-2 transition-[background-color,box-shadow,transform] [-webkit-touch-callout:none]";
+  "group/row flex items-center gap-1 pr-2 transition-[background-color,box-shadow,scale,border-radius] duration-(--motion-fade) ease-(--motion-sheet-ease) [-webkit-touch-callout:none]";
 
 /** The •••: with a mouse, shown as the row is pointed at or has the focus
  *  in it, as Base UI's own context-menu example has it; to a finger always

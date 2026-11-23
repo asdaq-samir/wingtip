@@ -215,20 +215,20 @@ export const INK = {
 
 /** Each text role's classes (lib/text's TEXT reads these). */
 export const TYPE_CLASS = {
-  hero: "text-(length:--type-hero) leading-(--lead-hero)",
-  card: "text-(length:--type-card) leading-(--lead-card)",
-  heading: "text-(length:--type-heading) leading-(--lead-heading)",
+  hero: "text-(length:--type-hero) leading-(--lead-hero) tracking-[-0.02em] native:tracking-normal",
+  card: "text-(length:--type-card) leading-(--lead-card) tracking-[-0.015em] native:tracking-normal",
+  heading: "text-(length:--type-heading) leading-(--lead-heading) tracking-[-0.01em] native:tracking-normal",
   title: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
   row: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
   prose: "text-base pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
   detail: "text-sm pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
-  note: "text-(length:--type-note) leading-(--lead-note)",
+  note: "text-(length:--type-note) leading-(--lead-note) tracking-[0.005em] native:tracking-normal",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
-  badge: "text-(length:--type-badge) leading-(--lead-badge)",
-  caption: "text-(length:--type-caption) leading-(--lead-caption)",
+  badge: "text-(length:--type-badge) leading-(--lead-badge) tracking-[0.01em] native:tracking-normal",
+  caption: "text-(length:--type-caption) leading-(--lead-caption) tracking-[0.01em] native:tracking-normal",
   chip: "text-xs pointer-coarse:text-[min(0.8125rem,14px)]",
   label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase native:normal-case tracking-[0.1em] native:tracking-normal",
-  figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tabular-nums",
+  figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tracking-[-0.01em] native:tracking-normal tabular-nums",
   word: "font-display font-semibold uppercase native:normal-case tracking-[0.08em] native:tracking-normal",
 } as const;
 

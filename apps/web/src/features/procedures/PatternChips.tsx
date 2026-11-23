@@ -157,7 +157,7 @@ export function PatternChips({
     // Laid out from there before the transition back: a call, as the
     // minifier drops a bare read of offsetWidth.
     box.getBoundingClientRect();
-    box.style.transition = "transform 300ms ease-out";
+    box.style.transition = "transform var(--motion-page) var(--motion-sheet-ease)";
     box.style.transform = "";
   });
   if (shown === "folded" && picked) {
@@ -187,7 +187,9 @@ export function PatternChips({
           // do not cross: at 8 KDEN's runway lost 3 of its probes to
           // "+ ARR" (the HIG review, 2026-11-21). A margin, so a pull-down
           // wrapped under it starts at the line's edge.
-          className={cn(TRAY_BODY, "mr-3 rounded-l-none")}
+          // It comes in from its end as the open line comes from its head,
+          // the group and not the chip, whose own transition is its colour.
+          className={cn(TRAY_BODY, "mr-3 rounded-l-none appear-slide [--appear-from:0.75rem_0]")}
         >
           <ToggleGroupItem
             variant="glass"
@@ -204,7 +206,7 @@ export function PatternChips({
             // P1, on KDLH's folded runway, 2026-11-06), over index.css's rule.
             className={cn(
               CHIP,
-              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-3 motion-safe:duration-300",
+              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px]",
               c.ring,
             )}
             aria-label={`${c.words}${note ? `, ${note}` : ""}, picked: tap for the other runways`}
@@ -274,7 +276,7 @@ export function PatternChips({
               trailingRef={after}
               enter={
                 chosen !== null
-                  ? "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-6 motion-safe:duration-300"
+                  ? "appear-slide [--appear-from:-0.75rem_0]"
                   : undefined
               }
             >

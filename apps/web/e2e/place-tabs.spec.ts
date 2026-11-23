@@ -127,11 +127,19 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
       .getByTestId(testId)
       .evaluate((el) => ({ ink: getComputedStyle(el).color, fill: getComputedStyle(el).backgroundColor }));
   const tint = (await look("fly-here")).fill;
-  // Once its colour's transition has run (the stock trigger's transition-all).
+  // Once its colour's transition has run (the stock trigger's).
   await expect.poll(async () => (await look("place-tab-radio")).ink).toBe(tint);
-  const [picked, other] = [await look("place-tab-radio"), await look("place-tab-weather")];
-  expect(other.ink).not.toBe(tint);
-  expect(picked.fill).not.toBe(other.fill);
+  expect((await look("place-tab-weather")).ink).not.toBe(tint);
+  // The pill is the stock Tabs' indicator, one piece under the picked tab
+  // that slides to the next (the design review of 2026-11-23, M6): filled,
+  // and once its slide has run, under Info and, picked, under Runways.
+  const pill = card(page).locator("[data-slot=tabs-indicator]");
+  expect(await pill.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+  const under = (testId: string) =>
+    Promise.all([pill, card(page).getByTestId(testId)].map((l) => l.evaluate((el) => Math.round(el.getBoundingClientRect().left)))).then(
+      ([a, b]) => a === b,
+    );
+  await expect.poll(() => under("place-tab-radio")).toBe(true);
 
   // 48 tall, the bar's item, its own hit area over 44 points (CLAUDE.md):
   // what a tap finds at its top and foot is the trigger.
@@ -156,6 +164,7 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await expect(bar).toBeInViewport({ ratio: 1 });
   await atTheFoot(page, bar);
   await card(page).getByTestId("place-tab-runways").click();
+  await expect.poll(() => under("place-tab-runways")).toBe(true);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await atTheFoot(page, bar);
   // The last row of a page clear of the bar once scrolled to its end.

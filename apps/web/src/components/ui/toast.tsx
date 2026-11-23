@@ -87,9 +87,17 @@ function Toasts({ position }: { position: "top" | "bottom" }) {
         // Its corner radius.banner in px, not rem: iOS's corners do not
         // grow with Dynamic Type, and rounded-3xl came to 24.6 at 17.88 px
         // (the HIG review, the owner, 2026-11-21).
-        "absolute inset-x-0 flex min-h-12 items-center gap-2 rounded-(--radius-banner) px-4 py-2.5 transition-[opacity,transform] duration-200 ease-out [--gap:0.5rem]",
-        "data-limited:hidden data-ending-style:opacity-0 data-starting-style:opacity-0",
-        "motion-safe:data-starting-style:translate-y-2 motion-reduce:transition-none",
+        // `translate` in the list beside the stack's `transform`: Tailwind's
+        // translate-y-* writes the `translate` property, which the list
+        // left out, so the toast's rise snapped and only its fade ran.
+        "absolute inset-x-0 flex min-h-12 items-center gap-2 rounded-(--radius-banner) px-4 py-2.5 transition-[opacity,transform,translate] duration-(--motion-fade) ease-(--motion-sheet-ease) [--gap:0.5rem]",
+        "data-limited:hidden data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none",
+        // It comes from its own edge and goes back to it, as an iOS banner
+        // drops from the top: down from above at the top, up from below
+        // at the foot (the design review of 2026-11-23, M3).
+        position === "top"
+          ? "motion-safe:data-starting-style:-translate-y-2 motion-safe:data-ending-style:-translate-y-2"
+          : "motion-safe:data-starting-style:translate-y-2 motion-safe:data-ending-style:translate-y-2",
         position === "top"
           ? "top-0 [transform:translate(var(--toast-swipe-movement-x),calc(var(--toast-offset-y)_+_var(--toast-index)_*_var(--gap)_+_var(--toast-swipe-movement-y)))]"
           : "bottom-0 [transform:translate(var(--toast-swipe-movement-x),calc(var(--toast-swipe-movement-y)_-_var(--toast-offset-y)_-_var(--toast-index)_*_var(--gap)))]",
@@ -127,7 +135,9 @@ function Anchored({ className }: { className?: string }) {
               data-testid="done-note"
               className={cn(
                 "flex max-w-[min(20rem,calc(100vw-2rem))] items-center gap-2 rounded-full px-3 py-2 shadow-md",
-                "transition-[opacity,scale] duration-150 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none",
+                // Grown a little out of the control that caused it, as Apple's
+                // "Copied" is, rather than only fading in place.
+                "origin-(--transform-origin) transition-[opacity,scale] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 motion-reduce:transition-none",
               )}
             >
               <Check className="size-(--size-glyph-row) shrink-0 text-tint" strokeWidth={2.5} aria-hidden />

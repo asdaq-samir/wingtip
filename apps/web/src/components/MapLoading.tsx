@@ -19,7 +19,7 @@ export default function MapLoading({ shown, insets }: { shown: boolean; insets: 
       role="status"
       aria-label={WORDING.fetchingTheMap}
       data-testid="map-loading"
-      className={`pointer-events-none absolute flex items-center justify-center transition-opacity duration-150 ease-out ${shown ? "opacity-100" : "opacity-0"}`}
+      className={`pointer-events-none absolute flex items-center justify-center transition-opacity duration-(--motion-fade) ease-(--motion-sheet-ease) ${shown ? "opacity-100" : "opacity-0"}`}
       style={{ top: insets.top, bottom: insets.bottom, left: insets.left, right: insets.right ?? 0 }}
       onTransitionEnd={() => {
         if (!shown) setGone(true);

@@ -129,7 +129,7 @@ export function ProcedureChip({
       aria-label={`${procedure.spoken}: the route's procedures`}
       className={cn(
         before ? "relative mr-1" : "relative ml-1",
-        "h-7 gap-1 rounded-full px-1 font-semibold text-procedure hit-y-2 hover:bg-transparent hover:text-procedure native:text-procedure",
+        "h-7 gap-1 rounded-full px-1 font-semibold text-procedure hit-y-2 hover:text-procedure native:text-procedure",
         TEXT.note,
       )}
     >

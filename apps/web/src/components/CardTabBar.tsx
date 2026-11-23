@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
-import { TabsList, TabsTrigger } from "./ui/tabs";
+import { TabsIndicator, TabsList, TabsTrigger } from "./ui/tabs";
 import { CARD_FOOT_ROOM, HOLD_AT_EDGE } from "./sheet/insets";
 import { FloatingBar, FloatingBarFace } from "./FloatingBar";
-import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM, FLOATING_BAR_ROOM } from "./floatingBarLook";
+import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM, FLOATING_BAR_PICKED, FLOATING_BAR_ROOM } from "./floatingBarLook";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
@@ -71,7 +71,7 @@ export function CardTabBar<T extends string>({
         <TabsList
           activateOnFocus
           className={cn(
-            "h-auto w-full rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto",
+            "relative isolate h-auto w-full rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto",
             FLOATING_BAR_COLUMNS,
           )}
         >
@@ -85,7 +85,9 @@ export function CardTabBar<T extends string>({
                 // soft pill: Fly Here's blue by day, and by night the look's
                 // light tint, which reads on the dark glass where the deep
                 // primary read 2.4 to 2.8:1 (the iOS audit's P15).
-                "data-active:text-primary dark:data-active:border-transparent dark:data-active:text-tint group-data-[variant=default]/tabs-list:data-active:shadow-none",
+                // Its pill is the indicator under it (FLOATING_BAR_PICKED), so
+                // the tab's own ground stays clear.
+                "data-active:bg-transparent data-active:text-primary dark:data-active:border-transparent dark:data-active:bg-transparent dark:data-active:text-tint group-data-[variant=default]/tabs-list:data-active:shadow-none",
               )}
               disabled={disabled}
               aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}
@@ -97,6 +99,7 @@ export function CardTabBar<T extends string>({
               <FloatingBarFace icon={<t.icon aria-hidden />} badge={t.badge} label={t.label} />
             </TabsTrigger>
           ))}
+          <TabsIndicator className={FLOATING_BAR_PICKED} />
         </TabsList>
       </FloatingBar>
     </div>
