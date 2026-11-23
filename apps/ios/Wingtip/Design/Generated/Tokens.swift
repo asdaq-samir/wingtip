@@ -1004,7 +1004,7 @@ enum WingtipMap {
     static let airspaceLabelFaded: Double = 0.6
 }
 
-/// From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1.
+/// From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1.
 enum WingtipMapZoom {
     /// The farthest out the airports' layer is drawn, where its marks are smallest; each field within it from its own tier's zoom below.
     static let airportsFarthest: Double = 4
@@ -1036,6 +1036,10 @@ enum WingtipMapZoom {
     static let airspaceLabels: Double = 9
     /// Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21).
     static let specialUse: Double = 7
+    /// The VORs a pilot tunes (NASR's NAV_TYPE VOR, VOR/DME and VORTAC), from a region's zoom. The app's alone: the charts job's tiles hold every navaid from its own zooms (overlay_layers).
+    static let vor: Double = 8
+    /// The VFR waypoints and the low enroute chart's fixes. The app's alone: the charts job's tiles hold every fix from its own zooms (overlay_layers).
+    static let fix: Double = 10
 }
 
 /// The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo.

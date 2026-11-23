@@ -132,10 +132,10 @@ object MapStyle {
     /** The airports' farthest zoom, Leaflet's (the web's AIRPORTS_FARTHEST_ZOOM); within it each field is in the
      *  tiles from its own tier's zoom (AIRPORT_MIN_ZOOM in services/jobs/charts/overlay_layers.py, the same tokens). */
     const val AIRPORTS_FARTHEST_ZOOM = WingtipMapZoom.AIRPORTS_FARTHEST
-    /** The VORs from a region's zoom, the fixes and the VFR waypoints from
-     *  10, Leaflet's (the web's VOR_ZOOM, FIX_ZOOM). */
-    const val VOR_ZOOM = 8.0
-    const val FIX_ZOOM = 10.0
+    /** The VORs from a region's zoom, the fixes and the VFR waypoints
+     *  closer in, Leaflet's: map.zoom's vor and fix (design/tokens.json). */
+    const val VOR_ZOOM = WingtipMapZoom.VOR
+    const val FIX_ZOOM = WingtipMapZoom.FIX
     /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE). */
     val VOR_KINDS = listOf("VORTAC", "VOR/DME", "VOR")
     /** From MapLibre's 12, where the chart is only enlarged: before it a

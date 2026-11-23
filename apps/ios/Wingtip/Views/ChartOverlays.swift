@@ -527,8 +527,8 @@ final class RunwayEndView: MKAnnotationView {
         if aeronautical {
             marks.moved(map, view: view, zoom: zoom)
             if airspaceFetch.wants(view, zoom: zoom) { askAirspace(map, view: view, zoom: zoom, chart: chart, live: live) }
-            if zoom >= VorZoom.from, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
-            if zoom < VorZoom.from, !vors.isEmpty {
+            if zoom >= WingtipMapZoom.vor, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
+            if zoom < WingtipMapZoom.vor, !vors.isEmpty {
                 map.removeAnnotations(Array(vors.values))
                 vors = [:]
                 vorFetch.forget()
@@ -740,9 +740,4 @@ final class RunwayEndView: MKAnnotationView {
             runwayEnds[ident] = marks
         }
     }
-}
-
-/// The VORs from a region's zoom, the web map's (glOverlays VOR_ZOOM).
-enum VorZoom {
-    static let from = 8.0
 }

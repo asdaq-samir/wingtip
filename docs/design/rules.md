@@ -943,7 +943,8 @@ At each airport the chart already shows, from the map's own
   the Class D rings, the restricted areas and MOAs, and the rings at their
   full width with their band; the other public fields from 8, every field
   named from there, private ones from 10, heliports from 11, and the
-  altitude tabs from 9. The names are capped so on the web (glOverlays'
+  altitude tabs from 9; the VORs from 8, the VFR waypoints and the low
+  enroute chart's fixes from 10. The names are capped so on the web (glOverlays'
   `AIRPORT_IDENT_FAR`, the tiles' `towered`): the cap thins only the
   untowered fields' names below 8, the long hard runways' some 2,400
   idents at 7 having been about a second of a phone's main thread a wheel

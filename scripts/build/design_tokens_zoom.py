@@ -21,7 +21,7 @@ PYTHON = Path("services/jobs/charts/map_zoom.py")
 # (scripts/ci/file_sizes.py; generated/ folders are left out of it).
 WEB = Path("apps/web/src/lib/generated/mapTokens.ts")
 TS_REEXPORT = 'export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
-HEAD = "From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1."
+HEAD = "From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1."
 
 
 def _zooms(tree):
