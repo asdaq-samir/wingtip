@@ -48,37 +48,33 @@ async function pullDown(page: Page, by: number) {
 test.describe("by a pointer's drag", () => {
   test.use({ hasTouch: false });
 
-  test("let go toward the pill, FPL's figures ride the plan down and stop on the foot, never sliding ahead or over it", async ({
-    page,
-  }) => {
+  test("let go toward the pill, FPL's foot bar stays still on the screen's foot and the sheet slides behind it", async ({ page }) => {
+    // The figures and the tabs are one fixed bar beside the sheet (sheet/FootBar;
+    // the sheet-motion audit of 2026-11-23, option B): nothing in it follows
+    // the sheet, and it changes size only once the sheet is at rest.
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await grabberTo(page, "half");
-    await expect(page.locator("[data-pin-foot]").first()).toContainText(/\d/);
-    const edge = await page.evaluate(() => document.querySelector('[data-testid="panel-foot"]')!.getBoundingClientRect().bottom);
+    await expect(page.locator("[data-foot-strip]").first()).toContainText(/\d/);
+    const rest = await page.evaluate(() => document.querySelector('[data-testid="foot-bar"]')!.getBoundingClientRect().bottom);
     await pullDown(page, 120);
-    // The sheet's top and slide, the figures' foot, the body's cut where it has one, and the foot's place.
-    const settle_ = frames<{ sheet: number; slid: number; bottom: number; cut: number | null; foot: number }>(
+    // The sheet's top, the bar's foot and height, and what size the bar shows.
+    const settle_ = frames<{ sheet: number; bottom: number; at: string | null }>(
       page,
-      `(() => { const s = document.querySelector('[data-swipe-direction="down"]'); const cut = /inset\\(0px 0px ([\\d.]+)px/.exec([...document.querySelectorAll("[data-sheet-scroll]")].map((e) => getComputedStyle(e).clipPath).find((c) => c.startsWith("inset")) ?? ""); return { sheet: s.getBoundingClientRect().top, slid: new DOMMatrixReadOnly(getComputedStyle(s).transform).m42, bottom: document.querySelector("[data-pin-foot]").getBoundingClientRect().bottom, cut: cut ? +cut[1] : null, foot: document.querySelector('[data-testid="panel-foot"]').getBoundingClientRect().bottom }; })()`,
+      `(() => { const s = document.querySelector('[data-swipe-direction="down"]'); const b = document.querySelector('[data-testid="foot-bar"]'); return { sheet: s.getBoundingClientRect().top, bottom: b.getBoundingClientRect().bottom, at: b.getAttribute("data-at") }; })()`,
     );
     await page.mouse.up();
     const seen = await settle_;
-    for (let i = 1; i < seen.length; i++) {
-      const [was, now] = [seen[i - 1]!, seen[i]!];
-      const sheet = now.sheet - was.sheet;
-      const fig = now.bottom - was.bottom;
-      // Never ahead of the plan it rides, never back up, never past the foot.
-      expect(fig, `frame ${i}: not ahead of the sheet`).toBeLessThanOrEqual(Math.max(0, sheet) + 2);
-      expect(fig, `frame ${i}: never back up`).toBeGreaterThanOrEqual(-2);
-      expect(now.bottom, `frame ${i}: never past the foot`).toBeLessThanOrEqual(edge + 1);
-      // Short of the foot it goes with the plan, not a share of its speed.
-      if (now.bottom < edge - 6 && sheet > 2) expect(fig, `frame ${i}: down with the plan`).toBeGreaterThanOrEqual(sheet - 3);
-      // The foot held still on the screen's edge, and the body's cut where the sheet is, every frame.
-      expect(Math.abs(now.foot - edge), `frame ${i}: the foot still`).toBeLessThanOrEqual(1);
-      if (now.cut !== null) expect(Math.abs(now.cut - now.slid), `frame ${i}: the cut with the sheet`).toBeLessThanOrEqual(2);
+    const last = seen.at(-1)!;
+    for (let i = 0; i < seen.length; i++) {
+      const now = seen[i]!;
+      // Its foot never moves, every frame.
+      expect(Math.abs(now.bottom - rest), `frame ${i}: the bar still`).toBeLessThanOrEqual(1);
+      // Its size is half's until the sheet has come to rest at the pill.
+      if (Math.abs(now.sheet - last.sheet) > 0.5) expect(now.at, `frame ${i}: half's size while it moves`).toBe("half");
     }
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
+    await expect(page.getByTestId("foot-bar")).toHaveAttribute("data-at", "peek");
   });
 
   test("You swiped away from half carries on down off the screen, not gone under the finger", async ({ page }) => {

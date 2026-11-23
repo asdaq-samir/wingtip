@@ -12,11 +12,11 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-/** FPL's page scroller, the one holding the figures. */
+/** FPL's page scroller, the one with room at its end for the foot bar. */
 const scroller = (page: Page) =>
   page
     .locator("[data-sheet-scroll]")
-    .filter({ has: page.locator("[data-pin-foot]") })
+    .filter({ has: page.locator("[data-foot-room]") })
     .first();
 
 /** Whether the point is the element's own: in sight, not under the bar or off the sheet. */
@@ -34,8 +34,9 @@ async function ownsPoint(target: Locator) {
  * the figure strip's names showed and its values did not, held on the
  * foot's edge behind FPL's actions' bar, and scrolled to the route's end
  * the head (Search, the title, the pills, the ✕) went up off the sheet's
- * top. The figures now sit on the foot's top over the bar, and the head's
- * row sticks at the sheet's top while the route scrolls under it.
+ * top. The figures now sit over the tab bar in one fixed bar beside the
+ * sheet (sheet/FootBar), and the head's row sticks at the sheet's top
+ * while the route scrolls under it.
  */
 for (const size of ["full", "half"] as const) {
   test(`a long route at ${size} at 19.65 px: the figures' values in sight over the bar, the head in sight at every scroll`, async ({
@@ -45,17 +46,17 @@ for (const size of ["full", "half"] as const) {
     await page.goto("/app/plan?dep=KPWK&dest=C81&stops=KUGN");
     await settle(page);
     await grabberTo(page, size);
-    const ete = page.locator("[data-pin-foot]").getByTestId("navlog-ete");
+    const ete = page.locator("[data-foot-strip]").getByTestId("navlog-ete");
     await expect(ete).toBeVisible({ timeout: slow(90_000) });
     const room = await scroller(page).evaluate((el) => el.scrollHeight - el.clientHeight);
     for (const at of size === "full" ? [0, 0.5, 1] : [0]) {
       await scroller(page).evaluate((el, y) => el.scrollTo(0, y), Math.round(room * at));
-      // Once the scroll and the strip pinned under it are at rest.
-      await steady(() => page.locator("[data-pin-foot]").boundingBox());
+      // Once the scroll is at rest.
+      await steady(() => page.locator("[data-foot-strip]").boundingBox());
       if (at === 0) await page.screenshot({ path: test.info().outputPath(`fpl-${size}.png`) });
       // The strip's time and track its own points, not the bar's.
       for (const id of ["navlog-ete", "strip-track"]) {
-        expect(await ownsPoint(page.locator("[data-pin-foot]").getByTestId(id)), `${id} at scroll ${at}`).toBe(true);
+        expect(await ownsPoint(page.locator("[data-foot-strip]").getByTestId(id)), `${id} at scroll ${at}`).toBe(true);
       }
       // The head's row whole on the screen and its own.
       for (const id of ["fpl-search", "fpl-clear"]) {

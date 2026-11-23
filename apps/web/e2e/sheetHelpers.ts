@@ -128,8 +128,10 @@ export async function inSheet(page: Page, locator: Locator) {
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
     // either way above the route's figures pinned at its foot, and above
-    // FPL's floating bar, whose capsule the route runs on under (FplTabBar).
-    const foot = sheet.querySelector("[data-testid=panel-foot]")?.getBoundingClientRect();
+    // FPL's foot bar beside the sheet (sheet/FootBar), the figures over its tabs.
+    const foot = (
+      sheet.querySelector("[data-testid=panel-foot]") ?? document.querySelector("[data-testid=foot-bar]:not(.invisible)")
+    )?.getBoundingClientRect();
     // A card's floating tab bar (CardTabBar) holds at that edge too, and
     // FPL's own floating bar of actions.
     const tabs = [...sheet.querySelectorAll("[data-testid$=tab-bar] > *")].find((b) => !b.contains(el))?.getBoundingClientRect();

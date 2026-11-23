@@ -157,11 +157,9 @@ test("the Brief opens at its size, and asking its weather again moves nothing", 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // The route's lines in first: they come in their own chunk once the page
-  // has painted (routePanelParts), taller than the room held for them, and
-  // the pill's figures under them are moved down in the layout and held
-  // where they were by their transform (sheet/pinAtFoot), which Chromium
-  // counts as a shift though nothing is seen to move. The Brief's opening
-  // is what is timed here, not the page's load.
+  // has painted (routePanelParts), taller than the room held for them,
+  // which moves what is under them in the sheet. The Brief's opening is
+  // what is timed here, not the page's load.
   await expect(sideDrawer(page).getByTestId("timeline-line")).toHaveCount(2, { timeout: slow(30_000) });
   // Opened: the verdict's line from the first frame, the hours' tiles in
   // their own shape, so neither the verdict's "Still checking" going from
