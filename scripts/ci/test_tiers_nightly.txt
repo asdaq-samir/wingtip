@@ -123,6 +123,7 @@ saved-flight-edit.spec.ts
 scratchpad.spec.ts
 search-desk.spec.ts
 search-results.spec.ts
+sheet-cards-map.spec.ts
 sheet-cards.spec.ts
 sheet-drag-content.spec.ts
 sheet-drag.spec.ts
