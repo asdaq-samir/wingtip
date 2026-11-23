@@ -124,9 +124,8 @@ jobs:
           retention-days: 7
 
   device:
-    needs: build
-    # scripts/ci/android_device_tests.sh: ten minutes and more, so the night's (the owner, 2026-11-06), a wave's (validate-wave.yml,
-    # whose name a called workflow sees) and by hand, never a pull request's; on the phone and on a Pixel Tablet, each its own runner.
+    # scripts/ci/android_device_tests.sh, ten minutes and more: the night's (the owner, 2026-11-06), a wave's and by hand, on the
+    # phone and a Pixel Tablet. Not after build, as Gradle builds the APKs here anyway (it held them 14 minutes, run 45127491141).
     if: (github.workflow == 'Native Android' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || github.workflow == 'Validate wave'
     name: device (${{ matrix.device }})
     strategy:
@@ -157,6 +156,8 @@ jobs:
           key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
+        env:
+          WINGTIP_ENGINE_ABIS: x86_64
         run: engine/bindings/ffi/build-android.sh
       - name: KVM, for the emulator
         run: scripts/ci/kvm.sh
