@@ -123,8 +123,9 @@ extension Gateway {
 /// The planner's operation paths are `/api/…`; through the gateway's proxy
 /// they are `/api/planner/…` (Config.plannerPath).
 struct PlannerPath: ClientMiddleware {
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
         request.path = request.path.map(Config.plannerPath)
         return try await next(request, body, baseURL)
@@ -138,8 +139,9 @@ struct PlannerPath: ClientMiddleware {
 struct CSRF: ClientMiddleware {
     static let header = HTTPField.Name("X-XSRF-TOKEN")!
 
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
         if request.method != .get, request.method != .head {
             if Gateway.csrfToken == nil { _ = try? await Gateway.me() }
@@ -156,8 +158,9 @@ struct CSRF: ClientMiddleware {
 struct DeviceZone: ClientMiddleware {
     static let header = HTTPField.Name("X-Time-Zone")!
 
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
         request.headerFields[Self.header] = TimeZone.current.identifier
         return try await next(request, body, baseURL)
@@ -172,8 +175,9 @@ struct DeviceZone: ClientMiddleware {
 struct Refusals: ClientMiddleware {
     let gateway: Bool
 
+    @concurrent
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
-                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+                   next: @concurrent @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         let (response, answer) = try await next(request, body, baseURL)
         SessionCookies.keep()
         let status = response.status.code

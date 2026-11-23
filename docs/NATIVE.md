@@ -299,7 +299,14 @@ owner, 2026-11-03):
 - **Strict concurrency** (`SWIFT_STRICT_CONCURRENCY: complete` in
   project.yml): Swift 6's language mode (`SWIFT_VERSION: "6.0"`), so a
   data race is a compile error, and every warning is one too
-  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`).
+  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`). Approachable Concurrency is on
+  (`SWIFT_APPROACHABLE_CONCURRENCY`, Swift 6.2): a `nonisolated async`
+  function runs on its caller's actor, and work meant for the thread
+  pool is a `@concurrent` function, awaited where it is needed, not a
+  `Task.detached`. State shared with MapKit's or Network's threads is in
+  a `Mutex` (Synchronization) the compiler checks; `@unchecked Sendable`
+  is left only on subclasses of MapKit's renderers and tile overlays and
+  on `TileCache` (NSCache), each saying why.
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
   language is a column, not a rewrite. xcodebuild extracts the strings
