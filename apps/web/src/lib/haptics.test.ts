@@ -24,9 +24,9 @@ describe("feel", () => {
     expect(vibrate).toHaveBeenLastCalledWith([...HAPTIC.detent]);
   });
 
-  it("is still with Reduce Motion", () => {
+  it("still plays with Reduce Motion", () => {
     media.matches = true;
     feel("directTo");
-    expect(vibrate).not.toHaveBeenCalled();
+    expect(vibrate).toHaveBeenCalledWith([...HAPTIC.directTo]);
   });
 });

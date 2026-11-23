@@ -341,8 +341,8 @@ and replay views are.
   - a page 0.25 s
   - a fade 0.2 s
   - a press 0.1 s, scaling by `feel.press-scale` (0.97)
-- **Haptics** come from `haptic.*` through `.sensoryFeedback`, and never
-  play under Reduce Motion (`FeelHost`). HIG Playing haptics names
+- **Haptics** come from `haptic.*` through `.sensoryFeedback`, and play
+  under Reduce Motion too (a tap is not motion; `FeelHost`). HIG Playing haptics names
   three kinds ([HIG Haptics][hig-haptics]):
   - *selection*, "while the values of a UI element are changing": an
     altitude set
