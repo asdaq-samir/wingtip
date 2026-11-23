@@ -13,12 +13,13 @@ describe("insetsOf", () => {
     expect(insetsOf("half", 0, false, true)).toEqual({ top: 0, bottom: 0, left: FLOAT_PX + CARD, out: true, up: false });
     // From 1024 wide the side panel is wider, measured, and so is what it covers.
     expect(insetsOf("full", 0, false, true, 0, 448)).toEqual({ top: 0, bottom: 0, left: FLOAT_PX + 448, out: true, up: true });
-    // An inspector's card at the right: its column and its float either side.
+    // An inspector's card at the right: its column and its float at the
+    // window's edge, the room ending at its edge as it begins at the side panel's.
     expect(insetsOf("half", 0, false, true, 0, 448, 375)).toEqual({
       top: 0,
       bottom: 0,
       left: FLOAT_PX + 448,
-      right: 375 + 2 * FLOAT_PX,
+      right: 375 + FLOAT_PX,
       out: true,
       up: false,
     });
