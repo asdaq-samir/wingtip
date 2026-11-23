@@ -67,6 +67,15 @@ case "$step" in
     rm -rf "$RUNNER_TEMP/Wingtip.xcresult"
     opts+=(-resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult")
     touch "$log"
+    # The simulator booted and ready before the first test asks for the
+    # app: booted inside xcodebuild, the boot ran into the first test's
+    # launch, which on a loaded runner timed out ("Timed out while
+    # launching application via Xcode", 321 s, the iPad's 1/2 leg of run
+    # 45127491141, its first test). Said how long it took.
+    started=$(date +%s)
+    xcrun simctl boot "$SIM" 2>/dev/null || true
+    xcrun simctl bootstatus "$SIM" -b > /dev/null
+    echo "ios_test: the simulator booted in $(($(date +%s) - started)) s"
     ;;
   *)
     echo "ios_test: no step '$step' (build or test)" >&2
