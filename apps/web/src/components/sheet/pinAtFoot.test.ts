@@ -37,6 +37,10 @@ describe("pinAtFoot", () => {
   it("only ever moves the bar down, by no more than the finger's pull, on the drawer's curve", () => {
     expect(MAKES_WAY).toContain("max(0px,min(var(--sheet-swipe,0px),");
     expect(MAKES_WAY).toContain("var(--pin-bar-room,9999px)");
+    // Near the pill, under the figures by as much as their lift has gone.
+    expect(MAKES_WAY).toContain(
+      "min(var(--pin-lift,0px),calc(var(--pin-lift,0px)-var(--pin-pill,0px)+var(--sheet-offset,0px)+var(--sheet-swipe,0px)))",
+    );
     expect(MAKES_WAY).toContain("group-data-swiping/sheet:transition-none");
   });
 
