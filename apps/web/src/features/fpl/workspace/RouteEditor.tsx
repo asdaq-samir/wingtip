@@ -107,7 +107,8 @@ export default function RouteEditor({
       {routeOpen && (
         // At the box's bottom right, where it is on the timeline's face, over
         // the box's last line (z-10), its 44-point area whole.
-        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end pr-2">
+        // As far in from the right as on the rows' face (TIMELINE_END).
+        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end pr-4">
           <TypeRouteButton
             pressed
             onToggle={() => {

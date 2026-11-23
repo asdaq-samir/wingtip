@@ -1212,12 +1212,16 @@ Edit and Done.
    SkyVector's, under the rows, and the figures under it. Before the
    route is whole it is folded away behind the box's toggle
    (`TypeRouteButton`, `route-type-open`, the stock Toggle's `tint`
-   variant: the keyboard glyph in the tint on its wash, a circle the head's
-   round buttons' size, filled in the tint while pressed), at the box's
+   variant: the keyboard glyph in the tint on its wash, a circle a row
+   chip's size (`size.chip`, 32) centred in its 44-point row and as far
+   in from the box's right edge as the rows' words are from its left
+   (`TIMELINE_END`), filled in the tint while pressed), at the box's
    own bottom right in its last row: the empty route's Destination, half
    a route's last row, a whole route's Add a Stop (`RouteStart`'s
    `BoxToggle`). A tap turns the box into the field in the same place and
-   height (`routeTyped`, `RouteEditor` inPlace), focused in the tap so a
+   height (`routeTyped`, `RouteEditor` inPlace), its words starting where
+   the rows' words do, with no figures under it before the route is
+   whole (the toggle changes nothing outside the box), focused in the tap so a
    phone's keyboard comes up, the toggle pressed where it was; a tap on
    it turns it back. No row of its own, and no Undo beside it: the
    toast's Undo and Cmd-Z give a cleared route back (the owner,

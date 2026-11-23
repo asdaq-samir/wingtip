@@ -84,8 +84,11 @@ export function FplRoute({
   // own under it); the grouped box turned into the field by its toggle does
   // not: the figures stay pinned and follow the sheet alone, thin above the
   // pill whatever the box shows or the keyboard does (the owner,
-  // 2026-11-22: "Route box still shows figures full size").
-  const editing = routeEditing(vm) && !routeTyped(vm);
+  // 2026-11-22: "Route box still shows figures full size"). Before the
+  // route is whole there are no figures on either face: the toggle changes
+  // nothing outside the box (the owner's iPhone, 2026-11-23, an empty
+  // route's field showed Dest, Dist, ETE, Trk and GPS under it).
+  const editing = routeEditing(vm) && !(routeTyped(vm) && vm.route.wholeRoute);
   const routesShown = routesOut(vm);
   // The figures are FPL's pill too, one copy at every size: held on the
   // foot's edge at the pill, and as the sheet goes down they stop there
