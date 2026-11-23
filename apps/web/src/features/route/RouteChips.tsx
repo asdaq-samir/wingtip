@@ -44,6 +44,10 @@ export interface RouteProcedure {
 
 const PROCEDURE_GLYPH = { approach: PlaneLanding, arrival: Route, departure: PlaneTakeoff } as const;
 
+/** A suggested stop's look, one or a flight's folded (FuelStopFold): see below. */
+export const FUEL_CHIP =
+  "relative h-7 gap-1 rounded-full border-dashed border-caution px-1.5 font-semibold text-caution-ink hit-y-2 after:inset-x-0 hover:text-caution-ink native:text-caution-ink";
+
 /** A fuel stop suggested and not yet in the route (the totals' fuel_stops), in the
  *  box: a small button dashed in the caution's colour with the pump. One tap puts
  *  it in the route where it is drawn, no menu between (the owner, 2026-11-23); a
@@ -90,10 +94,7 @@ export function FuelStopChip({
       data-testid="route-fuel-stop"
       aria-label={`${words}: add it to the route`}
       aria-keyshortcuts={onHide ? "Delete" : undefined}
-      className={cn(
-        "relative h-7 gap-1 rounded-full border-dashed border-caution px-1.5 font-semibold text-caution-ink hit-y-2 after:inset-x-0 hover:text-caution-ink native:text-caution-ink",
-        TEXT.detail,
-      )}
+      className={cn(FUEL_CHIP, TEXT.detail)}
     >
       <Glyph aria-hidden="true" className="size-3.5" />
       {ident}

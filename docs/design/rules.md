@@ -673,7 +673,14 @@ off by default (the owner, 2026-11-13).
    stop stays dashed after the point its flight leaves (`fuelStopsAt`, by
    both the flight's ends): one tap puts it in the route there, no menu; a
    swipe to the left (`SwipeRow`), its held or right-clicked menu's
-   Dismiss, or Delete dismisses it for this plan. A present position is "My Location" (Apple Maps' words)
+   Dismiss, or Delete dismisses it for this plan. A flight with more than
+   one suggested is one dashed pill in that place, the same look and
+   height, "+3 fuel stops" ("+3 stops" for breaks; `FuelStopFold`, the
+   owner, 2026-11-23: a long route's box was mostly dashed pills): a tap
+   or Enter puts them all in there; held, right-clicked or the menu key,
+   the stock menu lists them, each with its own Add to Route and Dismiss,
+   then Add All and Dismiss All; a swipe to the left or Delete dismisses
+   the flight's suggestions. The map keeps a pin for each. A present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,
    Distance, ETE (ETA for an arrival), Track: short words, ETE and ETA the FAA's (2026-11-20), the distance whole
