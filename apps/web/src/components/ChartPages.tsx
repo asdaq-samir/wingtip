@@ -8,6 +8,7 @@ import { ownShipHtml } from "../lib/map/marks/icons";
 import { usePreferences } from "../lib/preferences";
 import { drawOwnShip, ownShipMarker, placeOwnShip } from "../lib/map/gl/layers/ownShipMarker";
 import { CHART } from "../lib/tokens";
+import { keepFaceReadable } from "../lib/map/gl/glFace";
 import { bounds, corners, MAX_ZOOM, onPage, type laidOut, type PageRing } from "./chartLayout";
 
 /**
@@ -76,6 +77,8 @@ export function Pages({ placed, all, mark, rings = NO_RINGS }: ReturnType<typeof
       renderWorldCopies: false,
     });
     map.touchZoomRotate.disableRotation();
+    // Its picture kept by a closing card's copy (useCardFrame).
+    keepFaceReadable(map);
     const fit = () => {
       const first = placed[0]!.box;
       const whole = map.cameraForBounds(bounds(first))?.zoom;

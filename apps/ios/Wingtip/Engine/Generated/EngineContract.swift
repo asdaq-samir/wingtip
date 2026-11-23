@@ -8978,6 +8978,8 @@ nonisolated enum EngineContract {
         var name: String
         /// An RNAV procedure, "(RNAV)" on its title.
         var rnav: Bool
+        /// A departure procedure (SID, ODP; DEPARTURE in its title, 7-1-3), which a field's departures use; false for an arrival (STAR), which its arrivals use.
+        var departure: Bool
     }
 
     nonisolated struct NotamCardInput: Codable, Equatable, Sendable {

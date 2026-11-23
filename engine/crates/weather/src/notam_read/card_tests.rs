@@ -96,3 +96,12 @@ fn na_takes_away_only_what_it_names() {
     assert_eq!(c.effect.as_deref(), Some("The ADELL 8 departure (RNAV) is not authorized."));
     assert_eq!(c.procedures.len(), 1);
 }
+
+#[test]
+fn each_procedure_says_whether_it_is_a_departure() {
+    // The card's "Affects your ..." chip matches it to the field's role.
+    let json = |text: &str| call("notam_card", &crate::json::parse(&format!("{{\"text\":{text:?}}}")).unwrap()).unwrap();
+    assert!(json(FDC_6_3373).contains("{\"name\":\"ADELL 8\",\"rnav\":true,\"departure\":true}"));
+    let star = json("!FDC 6/1 ORD STAR CHICAGO O'HARE INTL, CHICAGO, IL. BENKY SIX ARRIVAL NA. 2611010000-2612010000");
+    assert!(star.contains("{\"name\":\"BENKY 6\",\"rnav\":false,\"departure\":false}"), "{star}");
+}

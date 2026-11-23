@@ -9149,6 +9149,10 @@ object EngineContract {
          * An RNAV procedure, "(RNAV)" on its title.
          */
         val rnav: Boolean,
+        /**
+         * A departure procedure (SID, ODP; DEPARTURE in its title, 7-1-3), which a field's departures use; false for an arrival (STAR), which its arrivals use.
+         */
+        val departure: Boolean,
     )
 
     @Serializable
