@@ -16,8 +16,11 @@ import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.FilterDrama
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.FlightLand
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Info
@@ -129,6 +132,12 @@ object WingtipIcons {
     val showOnMap = Icons.Outlined.Map
     val plateClear = Icons.Outlined.CropSquare
     val plateSolid = Icons.Filled.Square
+
+    /** An airport card's Weather, Runways and Charts tabs (C1): a cloud
+     *  with the sun behind it, an airplane landing, a page of the FAA's. */
+    val weather = Icons.Filled.FilterDrama
+    val runways = Icons.Filled.FlightLand
+    val charts = Icons.Filled.Description
 
     /** Fly Here, a new route to the field: the route's own glyph. */
     val flyHere = Icons.Filled.Route

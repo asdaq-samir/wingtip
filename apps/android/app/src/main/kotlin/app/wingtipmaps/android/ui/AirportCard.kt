@@ -2,7 +2,6 @@ package app.wingtipmaps.android.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +41,7 @@ import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
+import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
@@ -50,6 +50,7 @@ import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
+import app.wingtipmaps.android.ui.sheet.InSightFoot
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -67,9 +68,10 @@ import kotlinx.coroutines.flow.map
  * ship, else "From KMSN", the route's departure) -- as containers; the
  * actions, four and no more, as the web's (the owner, 2026-11-11): Fly
  * Here filled, with its time at the airplane's cruise speed, then Add as
- * Stop, Call and Favorite; right under them the sections in a tab row
- * (AirportTabRow, the owner's T4 of 2026-11-14), Overview's first the
- * pictures (AirportSections), and the field's report in one line; each
+ * Stop, Call and Favorite; under them the field's report in one line,
+ * then the page of the tab picked in the bar floating at the foot of the
+ * card in sight (AirportTabBar; C1, the owner, 2026-11-14, as the web's
+ * and the iPhone's), Info's first the pictures (AirportSections); each
  * thing a NOTAM in force addresses badged by its name (NotamMarks). A NOTAM, from its row
  * or a badge, opens on a page of its own in the card's stack
  * (NotamPage), ← and Back coming back to the card where it was. The
@@ -141,8 +143,16 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     ) { padding ->
         // The card is fetched as it opens; no pull to refresh in a sheet,
         // whose drag down is the sheet's (the scrolling rule, 2026-11-10).
-        Box(Modifier.padding(padding)) {
-            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
+        // The tabs float at the foot of the card in sight (C1), there once
+        // the field's answer is in, as their pages are.
+        val tabs: @Composable (Modifier) -> Unit = { at ->
+            if (place != null) {
+                AirportTabBar(AirportSection.entries[section], onPick = { section = it.ordinal }, category = place.metar?.flightCategory, charts = chartCount(place), modifier = at)
+            }
+        }
+        InSightFoot(Modifier.padding(padding).fillMaxSize(), foot = tabs) {
+            // Clear of the floating tabs at the list's end.
+            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = WingtipSize.TabBar + WingtipSpace.Xl)) {
                 state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg), onRetry = { model.open(ident) }) } }
                 if (place == null) {
                     if (state.loading) item(key = "loading") { LoadingRow(Modifier.padding(WingtipSpace.Lg)) }
@@ -159,13 +169,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
                 // as Maps' place sheet has them (the audit's AND-1): docked at
                 // the foot of the full-height layout they sat below the window.
                 item(key = "actions") { ActionPills(place, facts, actions, onDone = onDone) }
-                // The sections' tabs right under the actions (the owner's T4,
-                // 2026-11-14), pinned under the bar as the card scrolls (the
-                // scrolling rule, 2026-11-10), in the sheet's own colour.
-                stickyHeader(key = "tabs") {
-                    AirportTabRow(section, onPick = { section = it }, category = place.metar?.flightCategory, charts = chartCount(place))
-                }
-                // The field's own report in one line under the tabs (T4).
+                // The field's own report in one line under the actions.
                 item(key = "weather-line") { AirportWeatherLine(place.metar, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 airportSection(AirportSection.entries[section], place, state, view)
             }
