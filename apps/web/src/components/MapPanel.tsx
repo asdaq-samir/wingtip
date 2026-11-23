@@ -13,6 +13,7 @@ import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
 import { CARD, FLOAT_PX, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
+import { useSideGlide } from "./sheet/useSideGlide";
 import { useDrawn } from "./sheet/useDrawn";
 import { SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { SHEET_BELOW } from "./sheet/sheetLayout";
@@ -267,17 +268,24 @@ export default function MapPanel(props: Props) {
       inspector ? null : <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} sizes={grabberSizes} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
     below: SHEET_BELOW,
+    inspector,
   };
+  // The side panel's edge glides as it is put in and out (useSideGlide).
+  useSideGlide(onPhone ? null : sheetNode, size, PILL_RADIUS);
 
   // The inspector's column, the window's height inside its float as the
   // side panel is, at the right inside the safe area: the cards' host,
-  // drawn as a panel only while one is in it.
+  // drawn as a panel only while one is in it, its ground fading in and out
+  // with its card on the Drawer's time (the apple-design audit of
+  // 2026-11-23, H1), where it popped in and out as the map eased beside it.
   const inspectorColumn = inspector && (
     <div
       data-slot="map-inspector"
       className={cn(
         "pointer-events-none fixed right-[max(1rem,env(safe-area-inset-right))] z-40 w-(--size-panel) overflow-clip print:hidden",
-        cardsUp && cn(GLASS_SHEET, "ring-1 ring-inset ring-black/5 dark:ring-white/10"),
+        GLASS_SHEET,
+        "ring-1 ring-inset ring-black/5 transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) dark:ring-white/10",
+        !cardsUp && "opacity-0",
       )}
       style={{
         top: `max(${FLOAT_PX}px, env(safe-area-inset-top))`,

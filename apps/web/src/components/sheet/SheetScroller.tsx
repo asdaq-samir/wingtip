@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
 import TabKept from "../TabKept";
-import { AT_PILL, PILL_BODY } from "./insets";
+import { AT_PILL, PILL_BODY, SHEET_SLIDE } from "./insets";
+import { SWIPE_READER } from "./sheetFollow";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { bandFits } from "./bandFits";
 import { SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayout";
@@ -31,8 +32,15 @@ const FULL_BAND = cn(
 const RISEN_BAND =
   "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
 
-/** The body cut off at a bottom sheet's figures by the same offset. */
-const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)]";
+/** The body cut off at a bottom sheet's figures by the same offset, the
+ *  finger's movement handed to it alone (SWIPE_READER, sheet/sheetFollow).
+ *  Eased with the sheet once it is drawn where it rests (its popup's
+ *  data-ready): the cut is the sheet's slide itself, a straight line of
+ *  it, so on the same curve and time it is where the sheet is at every
+ *  frame, where it jumped to its end at the let-go and showed a band of
+ *  bare sheet under the route through the settle (the gestures audit of
+ *  2026-11-23, M1). */
+const CUT_BOTTOM = `[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)] group-data-ready/sheet:transition-[clip-path] duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;
 
 /** Where the panel's top-right button sits, one place in every panel. */
 const CORNER_VARS = {

@@ -688,6 +688,14 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* But a sheet's slide, and what is held against it, kept on the Drawer's
+     time (sheet/insets' SHEET_SLIDE): iOS keeps a sheet's slide under
+     Reduce Motion, a move along one axis the pilot made, where a jump
+     between sizes lost where the sheet went (the apple-design audit of
+     2026-11-23, M5; the owner took the recommendation). */
+  .sheet-slide {
+    transition-duration: var(--motion-drawer) !important;
+  }
 }
 
 /* A page giving way to the next (lib/viewTransition): React's
@@ -763,13 +771,25 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
    frame of a phone's (CPU 4x slower), 3.3 s of a drag up; 0.1 s with it
    kept to the glass (measured 2026-10-08). Nothing under a pane of glass
    reads it: a pane inside one sets its own. */
-/* How far up the map's panel is, 0 at the pill to 1 all the way
-   (MapPanel), registered so its change eases with the sheet's height
-   (mapChrome's SHEET_SETTLE) rather than jumping as a tap lets go. */
+/* Whether the sheet's foot is at half (0) or not (1), for the figures'
+   size beside the side panel and in flight (SheetFoot, lib/text's
+   GROW_FIGURE): set at once with the snap point, as what the sheet shows
+   follows its snap point the moment it is set (docs/design/web.md). Its
+   comment once said it eased with the sheet; nothing eases it. */
 @property --sheet-progress {
   syntax: "<number>";
   inherits: true;
   initial-value: 1;
+}
+
+/* The finger's movement on a sheet, handed by script to the few parts that
+   read it (sheet/sheetFollow), and inherited by nothing: a plain custom
+   property on the popup restyled the whole sheet at every move of a
+   finger (the animation audit of 2026-11-23, H1). */
+@property --sheet-swipe {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
 }
 
 @property --glass-fill {

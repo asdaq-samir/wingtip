@@ -2,6 +2,7 @@ import type { Drawer } from "@base-ui/react/drawer";
 import { SHEET_MARGIN, type MapInsets, type PanelState } from "../../lib/mapChrome";
 import { REACH } from "../../lib/sheetCards";
 import { MOTION, SIZE } from "../../lib/tokens";
+import { SWIPE_READER } from "./sheetFollow";
 
 /** How long the stock Drawer takes to settle, ms: the time and curve of
  *  Base UI's own drawer demo (design/tokens.json motion.drawer and
@@ -106,17 +107,27 @@ export const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(
  *  same place scrolled to the end as it does pinned. */
 export const CARD_FOOT_ROOM = "max(1rem, env(safe-area-inset-bottom))";
 
+/** What slides with a sheet, the popup and what is held against its slide:
+ *  eased under Reduce Motion too (index.css), as iOS keeps a sheet's slide
+ *  there -- a move along one axis that the pilot made, not the zoom or
+ *  parallax the setting is for -- where it jumped between its sizes and
+ *  the pilot lost where it went (the apple-design audit of 2026-11-23, M5;
+ *  the owner took the recommendation). */
+export const SHEET_SLIDE = "sheet-slide";
+
 /** Held at a sheet's free edge however far the sheet is slid: moved back by
  *  the Drawer's snap offset and the finger's movement, on its curve, held
  *  still under a finger -- the foot's figures and bar (SheetParts), a
- *  card's tabs (CardTabBar), sticky at its scroller's foot. Read through
- *  the popup's own copies (--sheet-offset and --sheet-swipe, SheetDrawer
- *  and CardStack): Base UI registers its variables with `inherits: false`,
- *  so under the popup they were 0 and nothing followed -- a top sheet's
- *  search rode off the screen at the pill (consoles.spec, 2026-11-10). 0
- *  beside the side panel. */
-export const HOLD_AT_EDGE =
-  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+ *  card's tabs (CardTabBar), sticky at its scroller's foot. Its offset read
+ *  through the popup's own copy (--sheet-offset, SheetDrawer and
+ *  CardStack), the finger's movement handed to it alone (SWIPE_READER,
+ *  sheet/sheetFollow): Base UI registers its variables with `inherits:
+ *  false`, so under the popup they were 0 and nothing followed -- a top
+ *  sheet's search rode off the screen at the pill (consoles.spec,
+ *  2026-11-10). The two terms cancel the popup's own transform exactly at
+ *  every frame of its ease, both on one curve from one start. 0 beside
+ *  the side panel. */
+export const HOLD_AT_EDGE = `[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;
 
 /** A sheet's snap points and each size's, one constant per edge. */
 export function snapsOf(fromBottom: boolean) {

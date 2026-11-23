@@ -2,8 +2,9 @@ import { useEffect, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
-import { SETTLE_MS } from "./insets";
+import { SETTLE_MS, SHEET_SLIDE } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
+import { useSwipeRelay } from "./sheetFollow";
 import { SheetViewport } from "./SheetViewport";
 
 /** The Drawer's keyboard inset, 0 or a keyboard's height. */
@@ -25,10 +26,14 @@ export const UNDER_INDICATOR =
  * sheet"): the card is the one sheet in sight, as Apple Maps'. Hidden
  * too once faded, so it is out of a finger's, the keyboard's and a screen
  * reader's way: visibility holds visible to a transition's end and turns
- * visible at its start, so it never cuts the fade.
+ * visible at its start, so it never cuts the fade. On the card's own time
+ * and curve, not the demo's 300 ms: the two ran on two clocks, and as a
+ * card went away the search was back whole while the card was still a
+ * third in sight (the apple-design and gestures audits of 2026-11-23, N5
+ * and N6).
  */
 const GIVE_WAY =
-  "transition-[opacity,visibility] duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0";
+  "transition-[opacity,visibility] duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0";
 
 /**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner
@@ -81,6 +86,8 @@ export function SheetDrawer({
   cards: ReactNode;
   children: ReactNode;
 }) {
+  // The popup watched for its movement's few readers (sheet/sheetFollow).
+  const relayed = useSwipeRelay(popupRef);
   return (
     <Drawer.Root
       open
@@ -114,11 +121,13 @@ export function SheetDrawer({
           >
             <Drawer.Popup
               {...popup}
-              ref={popupRef}
+              ref={relayed}
               // The Drawer's own word on a finger's drag, its or a card's on it.
               render={(own, state) => <Told swiping={state.swiping || state.nestedDrawerSwiping} {...own} />}
               initialFocus={false}
               finalFocus={false}
+              // Eased once drawn where it rests (useDrawn), for what eases with it (SheetScroller's cut).
+              data-ready={ready || undefined}
               style={{
                 // All the way up clear of the status bar (a bottom sheet's) or
                 // the home indicator (a top sheet's), and eight: the Drawer's
@@ -134,12 +143,20 @@ export function SheetDrawer({
                 // under a finger, and not before its first measure (it would
                 // slide in from its full height as the page opens).
                 "[transform:translateY(calc(var(--drawer-snap-point-offset)_+_var(--drawer-swipe-movement-y)))]",
-                // Copied for what is inside it (SheetParts, CardStack): Base UI's own do not inherit.
-                "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)] [--sheet-base:var(--drawer-snap-point-offset)]",
-                // Its ground, edge and shadow fade on the same time as a card comes and goes.
-                ready &&
-                  "transition-[transform,background-color,box-shadow,backdrop-filter] duration-(--motion-drawer) ease-(--motion-drawer-ease)",
-                "data-swiping:transition-none motion-reduce:transition-none",
+                // Its snap offset copied for what is inside it (SheetParts,
+                // CardStack): Base UI's own does not inherit. It changes once
+                // a let-go; the finger's movement, which changes at every
+                // move, is handed only to the parts that read it
+                // (sheet/sheetFollow), not inherited by the whole sheet.
+                "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-base:var(--drawer-snap-point-offset)]",
+                // Its transform alone eased: its ground, edge and shadow go
+                // at once under a card, which covers them as it comes and
+                // goes, where easing them repainted the largest box on the
+                // screen for 450 ms as a card mounted (the animation audit of
+                // 2026-11-23, M7). Kept under Reduce Motion (SHEET_SLIDE).
+                ready && "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease)",
+                SHEET_SLIDE,
+                "data-swiping:transition-none",
                 fromBottom ? cn("bottom-0", UNDER_INDICATOR) : "top-0",
                 look,
                 // A card up (Base UI's own data-nested-drawer-open): the card

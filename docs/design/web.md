@@ -392,7 +392,23 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   buttons ride), as Apple Maps' place card takes over its sheet, and
   eases to its own size: its popup placed at the front's snap offset
   under `[data-starting-style]` (`--card-from`, `sheetTopSlot`'s
-  `frontOffset`), and faded out under `[data-ending-style]`. The map's
+  `frontOffset`) and faded in; it goes the way it came, back down to the
+  top of the sheet in front once it is gone (`--card-to`, `frontUnder`)
+  and faded out under `[data-ending-style]`, with its content still on
+  it: a card whose caller goes with its close (an airport's ✕) leaves a
+  still, inert copy of its face for the close (`useCardFrame`'s
+  `keepFace`). Swiped away (a settings card at half,
+  `[data-swipe-dismiss]`) it carries on down off the screen at the throw's
+  speed, as the stock PhoneSheet does. From `md` up a card fades in with a
+  short move, from the right edge in the inspector's column and up over
+  the side panel, the column's ground fading with it; the side panel's
+  edge glides between its head and the window's height by a clip
+  (`useSideGlide`). The finger's movement (`--sheet-swipe`) is registered
+  with `inherits: false` and handed by script only to the parts that read
+  it (`sheet/sheetFollow`), so a drag restyles those parts, not the whole
+  sheet; FPL's pinned figures follow a settle by an animation of their
+  own on the Drawer's curve that keeps their path, riding the plan to the
+  foot and stopping there (`sheet/pinFollow`). The map's
   buttons move onto its top in the commit it opens in, and glide (Web
   Animations, on the Drawer's time and curve) only when handed to a top
   at another height (Base UI writes the snap offset as 0 until it has
@@ -469,7 +485,12 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   and swipe (`--motion-drawer-ease`), and the Native look shadcn's stock.
 - `prefers-reduced-motion`: animate only inside `(prefers-reduced-motion:
   no-preference)`, keep normal scrolling, drop zooms and autoplay
-  ([web.dev reduced motion][webdev-reduced-motion]). Vercel adds: CSS
+  ([web.dev reduced motion][webdev-reduced-motion]). One exception, as
+  iOS has it: a sheet's slide between its sizes, and what is held against
+  it, keep the Drawer's time (`SHEET_SLIDE`, the `.sheet-slide` rule in
+  index.css), a move along one axis the pilot made, where a jump lost
+  where the sheet went (the apple-design audit of 2026-11-23, M5; the
+  owner took the recommendation). Vercel adds: CSS
   first, transform and opacity only, never `transition: all`, animations
   interruptible and never autoplaying ([Vercel guidelines][vercel-guidelines]).
 - `prefers-contrast` and `forced-colors` are Baseline widely available

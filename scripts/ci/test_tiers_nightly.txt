@@ -67,6 +67,7 @@ ios/audit.spec.ts
 ios/gestures.spec.ts
 ios/menus.spec.ts
 ipad-layout.spec.ts
+ipad-motion.spec.ts
 ipad-touch.spec.ts
 jurisdiction.spec.ts
 kneeboard.spec.ts
@@ -127,6 +128,7 @@ sheet-cards-map.spec.ts
 sheet-cards.spec.ts
 sheet-drag-content.spec.ts
 sheet-drag.spec.ts
+sheet-motion.spec.ts
 sheet-size.spec.ts
 sheet-turn.spec.ts
 speed-lab.spec.ts
