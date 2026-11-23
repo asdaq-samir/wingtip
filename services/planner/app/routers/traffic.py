@@ -3,7 +3,7 @@ receivers hear there now, from adsb.lol's open data."""
 
 import datetime as dt
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, Header, HTTPException, Path, Query
 from wingtip import traffic
 
 from ..schemas.traffic import (
@@ -17,7 +17,7 @@ from ..schemas.traffic import (
     Traffic,
     TrafficFound,
 )
-from ..gateway import PUBLIC
+from ..gateway import PILOT_HEADER, PUBLIC, gateway
 
 router = APIRouter()
 
@@ -69,12 +69,15 @@ def traffic_registered(q: str = Query(min_length=2, max_length=12, description="
     return AircraftRegistration(**record) if record else None
 
 
-@router.get("/api/traffic/flight/{hex_id}", response_model=FlightDetail, openapi_extra=PUBLIC)
-def traffic_flight(hex_id: str = Path(pattern=r"^~?[0-9a-fA-F]{6}$")) -> FlightDetail:
+@router.get("/api/traffic/flight/{hex_id}", response_model=FlightDetail, openapi_extra=gateway("public", pilot=True))
+def traffic_flight(
+    hex_id: str = Path(pattern=r"^~?[0-9a-fA-F]{6}$"), x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)
+) -> FlightDetail:
     """An airplane being tracked: what it is, the field it took off from
     and its track today (wingtip.traffic.flight); no track where its trace
-    cannot be had."""
-    return FlightDetail(**traffic.flight(hex_id))
+    cannot be had. Followed from now on, its flights recorded, only where
+    a signed-in pilot opened it (X-Pilot-Id, set by the gateway)."""
+    return FlightDetail(**traffic.flight(hex_id, x_pilot_id))
 
 
 @router.get("/api/traffic/flight/{hex_id}/status", response_model=FlightStatus, openapi_extra=PUBLIC)

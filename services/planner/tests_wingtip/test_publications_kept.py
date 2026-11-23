@@ -7,6 +7,7 @@ from datetime import date
 
 import pytest
 import requests
+from cachetools import TTLCache
 
 from wingtip import publication_drawing, publication_pages, publications
 
@@ -21,7 +22,7 @@ def faa_down(monkeypatch, tmp_path):
     """The FAA answering nothing, the asks counted; an empty cache."""
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications, "_HELD", {})
-    monkeypatch.setattr(publications, "_FAILED", {})
+    monkeypatch.setattr(publications, "_FAILED", TTLCache(maxsize=64, ttl=publications.RETRY_S))
     asked = []
 
     def down(url, **kw):
@@ -47,7 +48,7 @@ def test_an_outage_with_nothing_kept_is_said_and_not_asked_again_at_once(faa_dow
 
 
 def test_an_index_that_failed_is_asked_again_once_the_wait_is_over(faa_down, monkeypatch):
-    monkeypatch.setattr(publications, "RETRY_S", 0)
+    monkeypatch.setattr(publications, "_FAILED", TTLCache(maxsize=64, ttl=0))
     publications.terminal_charts("KDLH", ON)
     publications.terminal_charts("KDLH", ON)
     assert len(faa_down) == 2

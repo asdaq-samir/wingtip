@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 import requests
 from cachetools import TTLCache
 
-from . import outside
+from . import outside, utc
 from .config import REQUEST_HEADERS
 from .engine import ask as engine
 
@@ -147,4 +147,4 @@ def along(
         levels_ft=LEVELS_FT,
         legs=[{"altitude_ft": alt, "section": sections[i], "valid_s": middles[i]} for i, alt in enumerate(altitudes_ft)],
     )
-    return {**answer, "issued": _issued(now).isoformat().replace("+00:00", "Z")}
+    return {**answer, "issued": utc.iso(_issued(now))}

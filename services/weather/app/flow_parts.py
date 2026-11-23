@@ -166,7 +166,7 @@ def aloft(valid: datetime, now: datetime, levels: dict, held: dict | None, fallb
         key = {"run": utc.iso(run), "forecast_hour": step, "fallback": fallback}
         if held and held.get("key") == key and flow_store.stored(held) and held.get("numbers"):
             return held
-        if time.time() - flow_nomads.NOT_UP.get(("aloft", run, step), 0) < flow_nomads.NOT_UP_RETRY_S:
+        if ("aloft", run, step) in flow_nomads.NOT_UP:
             continue
 
         def make(run=run, step=step, key=key):
@@ -194,7 +194,7 @@ def _aloft_made(run: datetime, step: int, levels: dict, fallback: bool) -> tuple
         return held
     body = flow_aloft.column_body(flow_nomads.grouped, run, step, levels["temperature_hpa"], wind=fallback)
     if body is None:
-        flow_nomads.NOT_UP[("aloft", run, step)] = time.time()
+        flow_nomads.NOT_UP[("aloft", run, step)] = True
         return None
     half = flow_aloft.at_levels_half(body, levels["wind"], levels["flight_levels_from_ft"])
     terrain = _held_terrain()

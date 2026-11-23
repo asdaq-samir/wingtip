@@ -19,6 +19,14 @@ RECORD_KEEP_S = 30 * 86400.0
 #: open-ended list of other people's airplanes recorded for good is not
 #: what the privacy policy promises (docs/privacy-inventory.md, 30 days).
 FOLLOW_KEEP_S = 30 * 86400.0
+#: The most airplanes followed at once: each is asked of adsb.lol in the
+#: background, so made-up addresses must not crowd out pilots' own (the
+#: security review of 2026-11-23, M5). Past it, the card opened longest ago
+#: goes.
+FOLLOW_MOST = 500
+#: A followed airplane no source has heard from in this long, s, followed
+#: no more: an address made up, or one no feeder hears.
+FOLLOW_UNHEARD_S = 86400.0
 
 # An airplane's ICAO address, six hex digits (a TIS-B one's "~" taken off):
 # all its track is kept by. The addresses come from the feeds and from
@@ -37,8 +45,8 @@ def _followed(hex_id: str) -> bool:
     return key is not None and store.is_followed(key)
 
 
-def followed() -> set[str]:
-    """The addresses of every airplane followed."""
+def followed() -> list[str]:
+    """The addresses of every airplane followed, the card opened latest first."""
     return store.followed()
 
 
@@ -50,7 +58,7 @@ def follow(hex_id: str) -> None:
     its FOLLOW_KEEP_S again."""
     key = _key(hex_id)
     if key is not None:
-        store.follow(key, _wall())
+        store.follow(key, _wall(), FOLLOW_MOST)
 
 
 def _record(hex_id: str, plane: dict) -> None:

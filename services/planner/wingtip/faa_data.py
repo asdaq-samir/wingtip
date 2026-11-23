@@ -11,11 +11,12 @@ than re-fetched every notebook run: ensure_nasr_file() downloads a file
 that is missing, and wingtip.faa_editions a newer edition of one there.
 """
 
+import csv
 import io
 import json
 import logging
 import zipfile
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from datetime import date
 from pathlib import Path
 
@@ -70,6 +71,20 @@ def download_and_extract(url: str, dest_dir: Path, retries: int = 3, only: Itera
             zf.extractall(dest_dir, members=members)
 
     with_retries(attempt, describe=f"Download of {url}", retries=retries, transient=(requests.RequestException, zipfile.BadZipFile))
+
+
+def zip_csv(archive: zipfile.ZipFile, name: str) -> Iterator[dict[str, str]]:
+    """A CSV file of a downloaded archive as rows keyed by its header's
+    names, upper case, every field stripped: the FAA's files carry a
+    byte-order mark, padded fields and a trailing comma. `name` is the
+    member's, or the end of its path (the airmen file is in a folder)."""
+    names = archive.namelist()
+    member = name if name in names else next(n for n in names if n.upper().endswith(name.upper()))
+    with archive.open(member) as raw:
+        reader = csv.reader(io.TextIOWrapper(raw, encoding="utf-8-sig", errors="replace"))
+        header = [h.strip().upper() for h in next(reader)]
+        for row in reader:
+            yield dict(zip(header, (cell.strip() for cell in row)))
 
 
 def _is_icloud_evicted(path: Path) -> bool:

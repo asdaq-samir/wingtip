@@ -31,10 +31,10 @@ run; waste-server.md E).
 from __future__ import annotations
 
 import json
-import time
 from datetime import datetime, timedelta
 
 import numpy as np
+from cachetools import TTLCache
 from wingtip import utc, weather_store
 
 from . import flow_grid, flow_store, nomads
@@ -51,10 +51,10 @@ RUNS_TRIED = 3
 #: FALLBACK_FIELDS while AWC's are past their margin.
 FIELDS = ("precip", "ceiling", "temp", "vis", "cape", "frzlvl")
 FALLBACK_FIELDS = ("wind", "gust", "cloud")
-#: (model, run, step) -> when NOMADS last said it was not posted yet: not
+#: The (model, run, step)s NOMADS said were not posted yet: not
 #: asked again for NOT_UP_RETRY_S.
-NOT_UP: dict = {}
 NOT_UP_RETRY_S = 300
+NOT_UP: TTLCache = TTLCache(maxsize=256, ttl=NOT_UP_RETRY_S)
 
 
 #: The grids kept (_grid) are named so; nothing else in the store is. Each
@@ -224,11 +224,11 @@ def _first(model: str, runs: list[tuple[datetime, int]], held: dict | None, fall
         source = {"run": utc.iso(run), "forecast_hour": step}
         if held == source:
             return source, None
-        if time.time() - NOT_UP.get((model, run, step), 0) < NOT_UP_RETRY_S:
+        if (model, run, step) in NOT_UP:
             continue
         body = GET[model](run, step, _groups(model, fallback))
         if body is None:
-            NOT_UP[(model, run, step)] = time.time()
+            NOT_UP[(model, run, step)] = True
             continue
         return source, body
     return None, None

@@ -29,11 +29,11 @@ import json
 import logging
 import re
 import threading
-import time
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 
 import requests
+from cachetools import LRUCache, TTLCache
 
 from . import data_cycles, outside
 from .atomic import atomic_path
@@ -53,9 +53,9 @@ _LOCK = threading.Lock()
 _HELD: dict = {}
 
 #: How long an index the FAA did not give is not asked for again: during
-#: an outage every card waited on the index's 120 s fetch.
+#: an outage every card waited on the index's 120 s fetch. Held under _LOCK.
 RETRY_S = 600
-_FAILED: dict = {}
+_FAILED: TTLCache = TTLCache(maxsize=64, ttl=RETRY_S)
 
 
 def dtpp_cycle(on: date | datetime | None = None) -> str:
@@ -86,7 +86,7 @@ def _charts_of(xml_bytes: bytes) -> dict:
         charts = [
             [record.findtext("chart_code") or "", record.findtext("chart_name") or "", record.findtext("pdf_name")]
             for record in airport.iter("record")
-            if _PDF_NAME.match(record.findtext("pdf_name") or "")
+            if _PDF_NAME.fullmatch(record.findtext("pdf_name") or "")
         ]
         for ident in (airport.get("apt_ident"), airport.get("icao_ident")):
             if ident and charts:
@@ -115,7 +115,7 @@ def _supplements_of(xml_bytes: bytes) -> dict:
     found = {}
     for airport in ET.fromstring(xml_bytes).iter("airport"):
         ident = airport.findtext("aptid")
-        pdfs = [pdf.text.strip() for pdf in airport.iterfind("pages/pdf") if _PDF_NAME.match((pdf.text or "").strip())]
+        pdfs = [pdf.text.strip() for pdf in airport.iterfind("pages/pdf") if _PDF_NAME.fullmatch((pdf.text or "").strip())]
         if ident and pdfs:
             found.setdefault(ident.upper(), pdfs)
     return found
@@ -135,7 +135,7 @@ def _index(name: str, edition: str, url: str, parse) -> dict | None:
             index = json.loads(path.read_text())
         else:
             # By its file, so a failure is the one folder's.
-            if path in _FAILED and time.monotonic() - _FAILED[path] < RETRY_S:
+            if path in _FAILED:
                 return None
             try:
                 resp = outside.get(url, headers=HEADERS, timeout=120)
@@ -143,7 +143,7 @@ def _index(name: str, edition: str, url: str, parse) -> dict | None:
                 index = parse(resp.content)
             except (requests.RequestException, ET.ParseError) as err:
                 log.warning("No %s index for %s: %s", name, edition, err)
-                _FAILED[path] = time.monotonic()
+                _FAILED[path] = True
                 return None
             with atomic_path(path) as partial:
                 partial.write_text(json.dumps(index))
@@ -181,15 +181,20 @@ def _kept_edition(source: str, edition: str) -> str | None:
     return max(earlier, key=order, default=None)
 
 
+def _index_of(source: str, edition: str) -> dict | None:
+    """The edition's index of `source`'s charts (`_index`)."""
+    name, base, _ = _KINDS[source]
+    url = f"{base}/{edition}/xml_data/d-tpp_Metafile.xml" if source == "dtpp" else f"{base}/{edition}/afd_{edition}.xml"
+    return _index(name, edition, url, _charts_of if source == "dtpp" else _supplements_of)
+
+
 def _edition(source: str, on: date | datetime | None) -> tuple:
     """(the edition a card's links are of, its index, "current", "kept" or
     "unavailable"): the edition in force where the FAA gives it, else the
     newest earlier one kept on disk, else none and an empty index."""
-    name, base, _ = _KINDS[source]
+    name = _KINDS[source][0]
     edition = _in_force(source, on)
-    url = f"{base}/{edition}/xml_data/d-tpp_Metafile.xml" if source == "dtpp" else f"{base}/{edition}/afd_{edition}.xml"
-    parse = _charts_of if source == "dtpp" else _supplements_of
-    index = _index(name, edition, url, parse)
+    index = _index_of(source, edition)
     if index is not None:
         return edition, index, "current"
     kept = _kept_edition(source, edition)
@@ -294,7 +299,30 @@ def airport_diagram_cycle(ident: str, on: date | None = None) -> str | None:
 
 #: A PDF's own name in an FAA publication: letters, figures and a few
 #: marks, no path -- what a chart's address may name and nothing else.
-_PDF_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,80}\.pdf$", re.IGNORECASE)
+#: Matched whole (fullmatch): a `$` would also pass a name ending in a newline.
+_PDF_NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}\.pdf", re.IGNORECASE)
+
+#: The PDFs each edition's index names, by (source, edition), as (the index
+#: they were read from, the names): read once, not walked at every ask.
+_NAMES: LRUCache = LRUCache(maxsize=8)
+
+
+def listed(source: str, edition: str, name: str) -> bool:
+    """Whether the edition's own index names the PDF: the planner fetches,
+    keeps and draws the FAA's charts and nothing else of the right shape
+    (a made-up name each time was a download, a file and a draw under the
+    one drawing lock each: the security review of 2026-11-23, M3). Only
+    asked of an edition the card shows (`serves`), whose index is had."""
+    if source not in _KINDS or not _PDF_NAME.fullmatch(name):
+        return False
+    index = _index_of(source, edition)
+    if index is None:
+        return False
+    with _LOCK:
+        held = _NAMES.get((source, edition))
+        if held is None or held[0] is not index:
+            held = _NAMES[(source, edition)] = (index, frozenset(c if isinstance(c, str) else c[2] for cs in index.values() for c in cs))
+    return name in held[1]
 
 
 def _source_of(url: str, on: date | None = None) -> tuple | None:
@@ -307,7 +335,7 @@ def _source_of(url: str, on: date | None = None) -> tuple | None:
         if not url.startswith(f"{base}/"):
             continue
         edition, _, name = url[len(base) + 1 :].partition("/")
-        if serves(source, edition, on) and _PDF_NAME.match(name):
+        if serves(source, edition, on) and _PDF_NAME.fullmatch(name):
             return source, edition, name
     return None
 
@@ -318,15 +346,18 @@ class FaaUnreachable(Exception):
 
 
 #: PDFs the FAA said it has no such file for, by (source, edition, name):
-#: an address made up to fetch is asked of the FAA once, not each time.
-_ABSENT: set = set()
-_ABSENT_MAX = 1000
+#: an index's name the FAA has not put up is asked of it once, not each
+#: time; the least lately missed go first. Held under _LOCK.
+_ABSENT: LRUCache = LRUCache(maxsize=1000)
 
 
 def _pdf_of(source: str, edition: str, name: str) -> bytes | None:
     """One of the FAA's PDFs, downloaded once and kept for its edition;
     None where the FAA has no such file; FaaUnreachable where it could
-    not be asked, so an outage is not taken for a missing chart."""
+    not be asked, so an outage is not taken for a missing chart. None, and
+    no ask, for a name its edition's index does not list (`listed`)."""
+    if not listed(source, edition, name):
+        return None
     path = CACHE_DIR / "pdf" / source / edition / name
     if path.exists():
         return path.read_bytes()
@@ -341,9 +372,7 @@ def _pdf_of(source: str, edition: str, name: str) -> bytes | None:
             if resp.status_code in (403, 404):
                 # S3, which serves the FAA's files, answers 403 for a key that is not there.
                 with _LOCK:
-                    if len(_ABSENT) >= _ABSENT_MAX:
-                        _ABSENT.clear()
-                    _ABSENT.add((source, edition, name))
+                    _ABSENT[(source, edition, name)] = True
                 return None
             resp.raise_for_status()
         except requests.RequestException as err:

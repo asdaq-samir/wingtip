@@ -123,7 +123,7 @@ def chart_pdf(source: str, edition: str, name: str, on: date | None = None) -> b
     aeronav.faa.gov, which sends no CORS headers. None for a chart not in
     force or not the FAA's; FaaUnreachable while the FAA cannot be reached."""
     current = {"dtpp": dtpp_cycle(on), "dcs": dcs_edition(on)}
-    if current.get(source) != edition or not _PDF_NAME.match(name):
+    if current.get(source) != edition or not _PDF_NAME.fullmatch(name):
         return None
     return publications._pdf_of(source, edition, name)
 
@@ -134,7 +134,7 @@ def chart_page_png(source: str, edition: str, name: str, page: int, on: date | N
     airport diagram is (`airport_diagram_png`); None for a chart not in
     force or not the FAA's, or a page it does not have; FaaUnreachable
     while the FAA cannot be reached."""
-    if not serves(source, edition, on) or not _PDF_NAME.match(name) or page < 1:
+    if not serves(source, edition, on) or not _PDF_NAME.fullmatch(name) or page < 1:
         return None
     path = publications.CACHE_DIR / "pages" / source / edition / f"{Path(name).stem}-{page}.png"
     if path.exists():

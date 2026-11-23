@@ -11,6 +11,7 @@ import requests
 from cachetools import TTLCache
 
 from ..geo import distance_nm
+from ..single_flight import one_at_a_time
 from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _sleep, _wall, lol_headers, refused_for_s
 
 URL = "https://api.adsb.lol/v2/point/{lat:.2f}/{lon:.2f}/{radius}"
@@ -201,8 +202,6 @@ RECENT_TTL_S = 5
 #: answer and its alerts' state (`status`).
 _RECENT: TTLCache = TTLCache(maxsize=256, ttl=RECENT_TTL_S)
 
-_TRACE_GATES: dict[str, threading.Lock] = {}
-
 
 def _paced(url: str) -> dict:
     """adsb.lol's answer to a pilot's search, asked ahead of the regions'
@@ -366,8 +365,9 @@ def _trace(hex_id: str) -> dict | None:
     with _LOCK:
         if hex_id in _TRACES:
             return _TRACES[hex_id]
-        gate = _TRACE_GATES.setdefault(hex_id, threading.Lock())
-    with gate:
+    # One gate per airplane while it is read, let go after (single_flight):
+    # the gates were cleared whole at 256, one another thread still held.
+    with one_at_a_time(("adsb.lol trace", hex_id)):
         with _LOCK:
             if hex_id in _TRACES:
                 return _TRACES[hex_id]
@@ -386,8 +386,6 @@ def _trace(hex_id: str) -> dict | None:
             return None
         with _LOCK:
             _TRACES[hex_id] = trace
-            if len(_TRACE_GATES) > 256:
-                _TRACE_GATES.clear()
     return trace
 
 
