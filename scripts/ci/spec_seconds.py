@@ -42,6 +42,10 @@ from pathlib import Path
 UNKNOWN = 60.0
 # A validation's shards that timed their specs, of the wave's sixteen, for its figures to count as the whole suite's.
 WHOLE = 12
+# The validations `latest` downloads at most: it runs in the specs job, which
+# every shard waits on, and each download is a run's sixteen artifacts, so
+# twenty tries were minutes on the run's critical path (CI audit 2026-11-23, L5).
+TRIES = 3
 
 
 def collect(results: Path, outdir: Path) -> None:
@@ -97,10 +101,13 @@ def latest(out: Path) -> None:
         return
     runs = ["gh", "run", "list", "--workflow", "validate-wave.yml", "--status", "completed", "--limit", "20"]
     listed = subprocess.run([*runs, "--json", "databaseId,headBranch"], capture_output=True, text=True)
-    for run in json.loads(listed.stdout) if listed.returncode == 0 else []:
+    candidates = [
+        run
+        for run in (json.loads(listed.stdout) if listed.returncode == 0 else [])
+        if run["headBranch"].startswith("claude/validate-") and not run["headBranch"].startswith("claude/validate-failed/")
+    ]
+    for run in candidates[:TRIES]:
         branch = run["headBranch"]
-        if not branch.startswith("claude/validate-") or branch.startswith("claude/validate-failed/"):
-            continue
         with tempfile.TemporaryDirectory() as tmp:
             got = ["gh", "run", "download", str(run["databaseId"]), "--pattern", "e2e-flaky-*", "--dir", tmp]
             subprocess.run(got, capture_output=True)
@@ -115,7 +122,7 @@ def latest(out: Path) -> None:
         out.write_text(json.dumps({k: round(v, 1) for k, v in total.items()}, sort_keys=True) + "\n")
         print(f"spec seconds: {len(total)} from run {run['databaseId']} ({branch}, {len(shards)} shards)", file=sys.stderr)
         return
-    print("spec seconds: no whole validation timed its specs (or no gh here); Playwright's --shard splits", file=sys.stderr)
+    print(f"spec seconds: none of the last {TRIES} validations timed every spec (or no gh); Playwright's --shard splits", file=sys.stderr)
 
 
 def load(path: str | None, project: str) -> dict[str, float]:
