@@ -168,8 +168,8 @@ nonisolated enum WingtipColor {
         static let car = rgb(0x2563EB)
         static let food = rgb(0xBE185D)
         static let lodging = rgb(0x7E3FB8)
-        /// The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel.
-        static let stopFuel = rgb(0xD97706)
+        /// The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel. The fuel badge's amber, #b45309, a step deeper than the #d97706 picked: the white pump on it was 3.2:1, and the iPad's accessibility audit failed Find Nearby's Fuel row on it; 5.0:1 now (WCAG 2.2 1.4.3).
+        static let stopFuel = rgb(0xB45309)
         static let stopFood = rgb(0xDC2626)
         static let stopRepair = rgb(0x0F766E)
         static let stopTraining = rgb(0x0369A1)

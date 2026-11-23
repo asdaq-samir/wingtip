@@ -104,7 +104,7 @@ export const BADGE = {
   car: "#2563eb",
   food: "#be185d",
   lodging: "#7e3fb8",
-  stopFuel: "#d97706",
+  stopFuel: "#b45309",
   stopFood: "#dc2626",
   stopRepair: "#0f766e",
   stopTraining: "#0369a1",
