@@ -18,7 +18,24 @@ import java.time.Instant
  *  density, a cycle's expiry and sweep, the style the archives go into,
  *  and the picks, as the iOS app's OfflineChartsTests. */
 class OfflineTest {
-    private fun store() = OfflineStore(Files.createTempDirectory("offline").toFile())
+    /** The engine's data_cycle on the chart schedule, which does not load
+     *  on the JVM: the shared fixture's chart cases (dataCycles.json), and
+     *  the next edition's own asks, which it does not list, as the engine
+     *  answers them (in force from 0901Z on its date). Any other ask fails. */
+    private val answers: Map<Pair<String, String>, String> = Json.parseToJsonElement(
+        checkNotNull(javaClass.classLoader!!.getResource("dataCycles.json")) { "dataCycles.json is not on the test's classpath" }.readText(),
+    ).jsonObject.getValue("cases").jsonArray.map { it.jsonObject }.filter { it.getValue("kind").jsonPrimitive.content == "chart" }.associate {
+        (it.getValue("effective").jsonPrimitive.content to it.getValue("on").jsonPrimitive.content) to
+            it.getValue("expected").jsonObject.getValue("state").jsonPrimitive.content
+    } + mapOf(
+        ("2026-12-24" to "2026-12-24T09:00:00Z") to "not_yet",
+        ("2026-12-24" to "2026-12-24T09:01:00Z") to "in_force",
+        ("2026-10-29" to "2026-12-25T00:00:00Z") to "expired",
+        ("2026-12-24" to "2026-12-25T00:00:00Z") to "in_force",
+    )
+    private val cycles = ChartCycle { effective, on -> answers[effective to on] ?: error("data_cycle asked of $effective at $on, which the test does not answer") }
+
+    private fun store() = OfflineStore(Files.createTempDirectory("offline").toFile(), cycles)
 
     private fun kept(cycle: String = "10-29-2026", expires: String? = "2026-12-24", done: List<String> = emptyList()) =
         OfflineKept("Chicago", "Chicago", cycle, expires, listOf(listOf(-93.0, 40.0, -84.0, 44.0)), mapOf("sec@2x" to 3L), done)
@@ -47,9 +64,9 @@ class OfflineTest {
     @Test
     fun anEditionExpiresAt0901ZOnTheNextOnesDay() {
         // The minute before, of and after the 24 Dec 2026 edition takes over.
-        assertFalse(kept().expired(Instant.parse("2026-12-24T09:00:00Z")))
-        assertTrue(kept().expired(Instant.parse("2026-12-24T09:01:00Z")))
-        assertTrue(kept().expired(Instant.parse("2026-12-24T09:02:00Z")))
+        assertFalse(kept().expired(Instant.parse("2026-12-24T09:00:00Z"), cycles))
+        assertTrue(kept().expired(Instant.parse("2026-12-24T09:01:00Z"), cycles))
+        assertTrue(kept().expired(Instant.parse("2026-12-24T09:02:00Z"), cycles))
         assertEquals("2026-10-29", OfflineKept.isoDay("10-29-2026"))
         assertNull(OfflineKept.isoDay("latest"))
     }

@@ -119,7 +119,9 @@ case $area in
     # engine, linked in through JNA, is one more, its licence these notices.
     python3 - "$out/NOTICES.txt" "$out/wingtip-engine.json" << 'EOF'
 import json, sys
-text = open(sys.argv[1], encoding="utf-8").read()
+# newline="" keeps a crate's CRLF licence lines as cargo-about wrote them:
+# the About's text is NOTICES.txt to the byte (AboutTest).
+text = open(sys.argv[1], encoding="utf-8", newline="").read()
 licence = {
     "name": "The engine's Rust crates",
     "hash": "wingtip-engine",

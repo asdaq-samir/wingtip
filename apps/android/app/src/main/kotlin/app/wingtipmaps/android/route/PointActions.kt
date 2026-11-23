@@ -16,10 +16,10 @@ object PointActions {
 
     /** Where the point is in the route as entered; null for a point of
      *  the log that is none of them (a hold's or a procedure's). */
-    fun role(ident: String, s: Plan.State): Role? = when {
-        RoutePoints.same(ident, s.dest) -> Role.DESTINATION
-        s.stops.any { RoutePoints.same(it, ident) } -> Role.STOP
-        RoutePoints.same(ident, s.dep) -> Role.DEPARTURE
+    fun role(ident: String, s: Plan.State, same: SameField = RoutePoints::same): Role? = when {
+        same(ident, s.dest) -> Role.DESTINATION
+        s.stops.any { same(it, ident) } -> Role.STOP
+        same(ident, s.dep) -> Role.DEPARTURE
         else -> null
     }
 
@@ -27,10 +27,10 @@ object PointActions {
      *  course has found the point's place; Move only as far as the stops
      *  go; the departure is not flown to, and nothing is added after the
      *  destination. */
-    fun of(ident: String, s: Plan.State): List<Action> {
-        val role = role(ident, s) ?: return emptyList()
-        val at = s.stops.indexOfFirst { RoutePoints.same(it, ident) }
-        val placed = RoutePoints.of(s.course).any { RoutePoints.same(it.ident, ident) }
+    fun of(ident: String, s: Plan.State, same: SameField = RoutePoints::same): List<Action> {
+        val role = role(ident, s, same) ?: return emptyList()
+        val at = s.stops.indexOfFirst { same(it, ident) }
+        val placed = RoutePoints.of(s.course).any { same(it.ident, ident) }
         return buildList {
             add(Action.MORE_INFO)
             if (role == Role.DESTINATION) add(Action.BRIEF)
@@ -44,10 +44,10 @@ object PointActions {
     }
 
     /** The point as the chart has it, for Hold Here. */
-    fun chartPoint(ident: String, s: Plan.State): Plan.ChartPoint? =
-        RoutePoints.of(s.course).firstOrNull { RoutePoints.same(it.ident, ident) }?.let { Plan.ChartPoint(it.ident, it.lat, it.lon) }
+    fun chartPoint(ident: String, s: Plan.State, same: SameField = RoutePoints::same): Plan.ChartPoint? =
+        RoutePoints.of(s.course).firstOrNull { same(it.ident, ident) }?.let { Plan.ChartPoint(it.ident, it.lat, it.lon) }
 
     /** Whether the route is flown direct to the point already, when its
      *  Direct To reads Fly as Planned and cancels it. */
-    fun directOn(ident: String, s: Plan.State): Boolean = s.direct != null && RoutePoints.same(s.direct, ident)
+    fun directOn(ident: String, s: Plan.State, same: SameField = RoutePoints::same): Boolean = s.direct != null && same(s.direct, ident)
 }

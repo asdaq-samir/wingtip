@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.map
 
+import app.wingtipmaps.android.FieldRules
 import app.wingtipmaps.android.api.generated.Briefing
 import app.wingtipmaps.android.api.generated.Forecast
 import app.wingtipmaps.android.api.generated.ForecastStation
@@ -141,7 +142,7 @@ class StationMarksTest {
                     } + ForecastStation(icaoId = "KXYZ", eta = "2026-11-10T18:00:00Z", etaCeilingFt = 200.0),
                 ),
             )
-            val (then, eta) = RouteWorse.readings(now.map { it.ident } + "KOFF", briefing)
+            val (then, eta) = RouteWorse.readings(now.map { it.ident } + "KOFF", briefing, FieldRules.same)
             // Off the route, nothing asked; on it, the fixture's readings.
             assertEquals(now, then)
             assertEquals(atEta, eta)
