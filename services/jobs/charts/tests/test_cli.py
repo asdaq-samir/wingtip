@@ -105,6 +105,7 @@ def test_run_still_refreshes_the_cycle_when_the_overlays_fail(tmp_path, monkeypa
 def test_transcode_writes_each_cycle_asked_again_as_webp(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     done = []
-    monkeypatch.setattr(cli.chart_archives, "transcode", lambda cycle, workers=None: done.append((cycle, workers)) or {})
+    monkeypatch.setattr(cli.chart_archives, "transcode", lambda cycle, workers=None, out=None: done.append((cycle, workers, out)) or {})
     assert cli.main(["transcode", "--cycle", "10-29-2026", "--workers", "3"]) == 0
-    assert done == [("10-29-2026", 3)]
+    assert cli.main(["transcode", "--cycle", "10-29-2026", "--out", str(tmp_path / "staged")]) == 0
+    assert done == [("10-29-2026", 3, None), ("10-29-2026", None, tmp_path / "staged")]
