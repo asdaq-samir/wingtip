@@ -33,7 +33,7 @@ export default function PlanPage({
   navLog,
   more,
 }: {
-  vm: PlanSlices<"brief" | "cards" | "flight" | "fpl" | "map" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+  vm: PlanSlices<"brief" | "cards" | "flight" | "fpl" | "leg" | "map" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
   navLog: ReactNode;
   /** The route's ••• as the flying drawer's fourth tile (FplActions). */
   more: ReactNode;

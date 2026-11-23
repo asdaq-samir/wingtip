@@ -5,15 +5,36 @@ import { sameField } from "../../lib/procedures";
 
 const NO_FUEL_STOPS: FuelStopSuggestion[] = [];
 const NO_IDENTS: string[] = [];
-const NO_SHORT: { name: string; onBoard: boolean }[] = [];
+/** A flight short of fuel with no stop offered: its name, whether the
+ *  airplane cannot carry the fuel at all, and its two ends (fuelStopsAt). */
+interface ShortFlight {
+  name: string;
+  onBoard: boolean;
+  departure: string;
+  destination: string;
+}
+const NO_SHORT: ShortFlight[] = [];
 
 /** The route with `idents` put in after `after` (the departure, or one of
- *  its stops), as many as the planner takes (MAX_STOPS), and those that
- *  went in; null where none can. */
-function withStopsAfter(dep: string, stops: string[], after: string, idents: string[]): { stops: string[]; added: string[] } | null {
+ *  its stops): by its place in the route (0 the departure, 1 the first
+ *  stop), so a field the route leaves twice takes them on the flight they
+ *  were suggested for (fuelStopsAt); by its name, its first place. As many
+ *  as the planner takes (MAX_STOPS), and those that went in; null where
+ *  none can. */
+function withStopsAfter(
+  dep: string,
+  stops: string[],
+  after: string | number,
+  idents: string[],
+): { stops: string[]; added: string[] } | null {
   const room = MAX_STOPS - stops.length;
   if (room <= 0 || idents.length === 0) return null;
-  const at = sameField(dep, after) ? 0 : stops.findIndex((stop) => sameField(stop, after)) + 1 || stops.length;
+  const at =
+    typeof after === "number"
+      ? Math.min(Math.max(after, 0), stops.length)
+      : sameField(dep, after)
+        ? 0
+        : stops.findIndex((stop) => sameField(stop, after)) + 1 || stops.length;
   const added = idents.slice(0, room);
   return { stops: [...stops.slice(0, at), ...added, ...stops.slice(at)], added };
 }
@@ -104,11 +125,16 @@ export function useSuggestedStops({
   }, [local, totals]);
   // The flights short of fuel the planner offers no stop on, and why
   // (the totals' no_fuel_stop), named by their ends.
-  const noFuelStop = useMemo(
+  const noFuelStop = useMemo<ShortFlight[]>(
     () =>
       local || !totals?.no_fuel_stop?.length
         ? NO_SHORT
-        : totals.no_fuel_stop.map((f) => ({ name: `${pointName(f.departure)} → ${pointName(f.destination)}`, onBoard: !!f.on_board })),
+        : totals.no_fuel_stop.map((f) => ({
+            name: `${pointName(f.departure)} → ${pointName(f.destination)}`,
+            onBoard: !!f.on_board,
+            departure: f.departure,
+            destination: f.destination,
+          })),
     [local, totals],
   );
   // Their pins on the map, every flight's.
@@ -118,8 +144,11 @@ export function useSuggestedStops({
   );
   // A break the planner suggests on a long flight its tanks hold is the
   // pilot's own stop once kept, not a fuel stop (useFuelStops).
+  // Kept from the route box, after the point at its place there (`after`,
+  // 0 the departure): the flight the suggestion is drawn on, where a field
+  // the route leaves twice took them after its first visit by its name.
   const keepFuelStops = useCallback(
-    (after: string, idents: string[]) => {
+    (after: number, idents: string[]) => {
       const next = withStopsAfter(planned.dep, planned.stops, after, idents);
       const isBreak = fuelStops.some(
         (f) => f.reason === "break" && [...f.stops, ...(f.choices ?? [])].some((c) => idents.includes(c.ident)),

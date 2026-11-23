@@ -5,10 +5,13 @@ import {
   Crosshair,
   Ellipsis,
   Info,
+  ListPlus,
+  Map as MapIcon,
   Mountain,
   MoveUpRight,
   MoveVertical,
   Pencil,
+  PlaneLanding,
   Plus,
   Repeat2,
   Trash2,
@@ -84,10 +87,16 @@ const KIND_WORDS: Record<AltitudeKind, string> = { elev: "field elevation", crui
 
 /** What can be done at a point of the route, each there only where the
  *  point has it: the same items in FPL's "⋯" (PointMenu) and the route
- *  box's pill (RouteBox), in the same words and order, at the audit's
- *  finding (two menus for one point, in different words). */
+ *  box's pill (RoutePill), in the same words and order, at the audit's
+ *  finding (two menus for one point, in different words). First the
+ *  owner's set after ForeFlight's route editor (2026-11-23): Info, Insert
+ *  Before, Insert After, Show on Map, Procedures, then the rest, Remove
+ *  last. */
 interface PointActions {
   ident: string;
+  /** What is wrong at the point, said at the menu's head under its ident:
+   *  a point not known, a field closed, a caution (the pill's "!"). */
+  notes?: { text: string; tone: "error" | "caution" }[];
   /** Another point in its place (the route box's search). */
   onChange?: () => void;
   /** Flown direct to now: its item flies the route as planned again. */
@@ -103,9 +112,13 @@ interface PointActions {
   onHold?: () => void;
   held?: boolean;
   onInfo?: () => void;
-  /** The route's field asked to type a stop in after it (FPL's route open
-   *  to edit). */
+  /** The one search asked for a point to go in before it, or after it. */
+  onAddBefore?: () => void;
   onAddAfter?: () => void;
+  /** The map brought to it, ringed (the map's picked point). */
+  onShowOnMap?: () => void;
+  /** The field's Procedures, where the FAA publishes any for it. */
+  onProcedures?: () => void;
   /** One place earlier or later in the route: the drag's way without a
    *  drag, for a single tap or click (WCAG 2.5.7, web.md section 3). */
   onMoveUp?: () => void;
@@ -129,6 +142,44 @@ export function PointMenuItems({
   return (
     <Group>
       <Label>{a.ident}</Label>
+      {/* What is wrong there, in its colour, where a reader meets it first. */}
+      {a.notes?.map((note) => (
+        <Label key={note.text}>
+          <span className={note.tone === "error" ? "text-destructive" : "text-caution-ink"} data-testid={`${testId}-note`}>
+            {note.text}
+          </span>
+        </Label>
+      ))}
+      {a.onInfo && (
+        <Item onClick={later(a.onInfo)} data-testid={`${testId}-info`}>
+          <Info aria-hidden="true" />
+          Info
+        </Item>
+      )}
+      {a.onAddBefore && (
+        <Item onClick={later(a.onAddBefore, true)} data-testid={`${testId}-add-before`}>
+          <ListPlus aria-hidden="true" />
+          Insert Before
+        </Item>
+      )}
+      {a.onAddAfter && (
+        <Item onClick={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
+          <Plus aria-hidden="true" />
+          Insert After
+        </Item>
+      )}
+      {a.onShowOnMap && (
+        <Item onClick={a.onShowOnMap} data-testid={`${testId}-show`}>
+          <MapIcon aria-hidden="true" />
+          Show on Map
+        </Item>
+      )}
+      {a.onProcedures && (
+        <Item onClick={later(a.onProcedures)} data-testid={`${testId}-procedures`}>
+          <PlaneLanding aria-hidden="true" />
+          Procedures
+        </Item>
+      )}
       {a.onChange && (
         <Item onClick={later(a.onChange, true)} data-testid={`${testId}-change`}>
           <Pencil aria-hidden="true" />
@@ -158,18 +209,6 @@ export function PointMenuItems({
         <Item onClick={later(a.onHold)} data-testid={`${testId}-hold`}>
           <Repeat2 aria-hidden="true" />
           {a.held ? "Change Hold…" : "Hold Here…"}
-        </Item>
-      )}
-      {a.onInfo && (
-        <Item onClick={later(a.onInfo)} data-testid={`${testId}-info`}>
-          <Info aria-hidden="true" />
-          More Info
-        </Item>
-      )}
-      {a.onAddAfter && (
-        <Item onClick={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
-          <Plus aria-hidden="true" />
-          Add a Stop After
         </Item>
       )}
       {a.onMoveUp && (

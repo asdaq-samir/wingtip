@@ -39,22 +39,19 @@ const RUNS_ON_PX = 8;
 
 /**
  * The route as ForeFlight's is: one box, every point of it a pill in the
- * order flown -- the departure, the airports landed at and the waypoints
- * flown through, the destination -- an arrow between each two. The box is
- * React Aria's TokenField, each point a token: the caret goes anywhere
- * among them and what is typed there goes in there; typed after the
- * destination it goes on to it, the old destination a stop on the way
- * (or, with none, names it); Backspace takes the point before the caret
- * and Undo puts it back. A tap on an arrow asks for a stop there. The
- * airports and waypoints that answer what is typed are offered under the
- * box as it is typed (React Aria's Autocomplete; Enter takes the first,
- * or what was typed, "VPBNG 06C"). A pill is tapped to change it, and
- * moved or taken out from its menu -- a hold, a right-click, or Enter on
- * it selected -- any of them, the departure and the destination too: the
- * next airport along becomes the end taken out, and a route of two keeps
- * the other end, half a route. From Fly via, on the flight the Class B
- * stops (`via`), the ways round are offered before anything is typed.
- * Every change re-plans at once, so there is no Load button.
+ * order flown, left to right with no arrows (the owner, 2026-11-23). The
+ * box is React Aria's TokenField, each point a token: the caret goes
+ * anywhere among them and what is typed there goes in there; typed after
+ * the destination it goes on to it, the old one a stop on the way;
+ * Backspace takes the point before the caret and Undo puts it back. What
+ * answers the typing is offered under the box (React Aria's Autocomplete;
+ * Enter takes the first, or what was typed, "VPBNG 06C"). A tap on a pill
+ * is its menu (RoutePill: Info, Insert Before and After, Show on Map,
+ * Procedures, Change, Move, Remove), as Enter on it is; the arrow keys go
+ * between pills and Delete takes one out, the ends too: the next airport
+ * along becomes the end, a route of two keeping the other, half a route.
+ * From Fly via (`via`) the ways round the Class B are offered before
+ * anything is typed. Every change re-plans at once: no Load button.
  *
  * The search bar's field, as Maps' is, round at a line's ends to sit in
  * the sheet's round corners. The ends stay airports: a waypoint is flown
@@ -78,6 +75,9 @@ export default function RouteBox({
   procedures = NO_PROCEDURES,
   onProcedures,
   onOpenAirport,
+  onOpenProcedures,
+  onShowOnMap,
+  shortFlights = NO_SHORT,
   directTo = null,
   onDirectTo,
   fuelStops = NO_FUEL_STOPS,
@@ -109,7 +109,6 @@ export default function RouteBox({
     onFieldClick,
     onPress,
     onBlur,
-    focused,
     typed,
     clearTyped,
     field,
@@ -117,7 +116,7 @@ export default function RouteBox({
     slideRow,
     toEnd,
     isRoom,
-    arrowAt,
+    insertAt,
     suggestions,
     dismiss,
   } = useRouteBox({ dep, stops, dest, waypoints, onChange, onTypedProcedures, adding, onAddingChange, via, addAt });
@@ -150,22 +149,23 @@ export default function RouteBox({
     points,
     waypoints,
     hasDep,
-    hasDest,
     full,
     roleOf,
-    focused,
-    typedAtEnd: !!typed.text && at === null,
     typedAtStart: !!typed.text && at === 0,
     procedures,
     onProcedures,
+    onOpenProcedures,
     fuelStops,
     onKeepFuelStops,
     onHideFuelStop,
+    shortFlights,
     airspaceOf,
     metarColourOf,
     altitudeAt,
     unknown: unknownPoint?.ident ?? null,
+    unknownWhy: unknownPoint?.ident ? `${unknownPoint.ident} ${unknownWhy(unknownPoint)}.` : null,
     onOpenAirport,
+    onShowOnMap,
     directTo,
     onDirectTo,
     change: (list: string[]) => void change(list),
@@ -173,7 +173,7 @@ export default function RouteBox({
     remove,
     editAltitude: (ident: string) =>
       setEditing({ ident, waypoint: waypoints.has(ident), altitude: altitudeAt(ident, waypoints.has(ident)) }),
-    arrowAt,
+    insertAt,
   };
   return (
     // React Aria's Autocomplete round the field and its suggestions: the
@@ -396,3 +396,4 @@ export default function RouteBox({
 
 const NO_PROCEDURES: RouteProcedure[] = [];
 const NO_FUEL_STOPS: FuelStopSuggestion[] = [];
+const NO_SHORT: NonNullable<RouteBoxProps["shortFlights"]> = [];

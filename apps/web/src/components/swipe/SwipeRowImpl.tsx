@@ -16,6 +16,11 @@ export interface SwipeRowProps {
   /** The same handler as the row's menu's Remove, so its Undo is the same. */
   onRemove: () => void;
   children: ReactNode;
+  /** A chip in a line of them, not a list's row (the route box's suggested
+   *  fuel stop): round, its button only behind the chip, its box reaching
+   *  past the chip so its 44-point area is not cut, and it closes up
+   *  sideways as it goes, not upward. */
+  chip?: boolean;
 }
 
 /**
@@ -35,7 +40,7 @@ export interface SwipeRowProps {
  * the sheet (`data-base-ui-swipe-ignore="x"`: a sideways drag is the
  * row's, an upright one the Drawer's).
  */
-export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps) {
+export function SwipeRowImpl({ word, label, onRemove, children, chip = false }: SwipeRowProps) {
   const x = useMotionValue(0);
   const controls = useDragControls();
   const box = useRef<HTMLDivElement>(null);
@@ -75,12 +80,13 @@ export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps)
     await settle(gone, velocity);
     if (Math.abs(x.get() - gone) > 1) return;
     // Its place closes up before it goes, as iOS's list closes over it.
-    if (!prefersReducedMotion()) await animate(row, { height: 0 }, { duration: MOTION.fade });
+    if (!prefersReducedMotion()) await animate(row, chip ? { width: 0 } : { height: 0 }, { duration: MOTION.fade });
     onRemove();
     // Still drawn (a list that keeps it, or its Undo already pressed): as it was.
     setOpen(false);
     x.jump(0);
     row.style.height = "";
+    row.style.width = "";
   };
 
   // Open, any press elsewhere closes it, and the press goes on to what it
@@ -114,10 +120,15 @@ export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps)
   };
 
   return (
-    <div ref={box} className="relative overflow-hidden" data-base-ui-swipe-ignore="x" data-swipe-row="">
+    <div
+      ref={box}
+      className={cn("relative overflow-hidden", chip && "-my-1.5 rounded-full py-1.5")}
+      data-base-ui-swipe-ignore="x"
+      data-swipe-row=""
+    >
       {/* As wide as the row has gone, so it is never under the row. */}
       <motion.div
-        className="absolute inset-y-0 right-0 flex overflow-hidden bg-destructive"
+        className={cn("absolute right-0 flex overflow-hidden bg-destructive", chip ? "inset-y-1.5 rounded-full" : "inset-y-0")}
         style={{ width }}
         // Out of reach until uncovered: the row's menu says Remove to a
         // keyboard and to VoiceOver.

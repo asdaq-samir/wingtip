@@ -9,6 +9,8 @@ import { FlightFigures } from "./FlightFoot";
 import { TypeRouteButton } from "../../procedures/lazy";
 import { keptTimelineHeight } from "./routeEditing";
 import { FuelPill } from "./FuelPill";
+import { coursePoints } from "../../../lib/course";
+import { sameField } from "../../../lib/procedures";
 
 /**
  * FPL's route's field, the box's other face once its toggle asks for it
@@ -22,15 +24,17 @@ export default function RouteEditor({
   vm,
   inPlace = false,
 }: {
-  vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+  vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
   /** Drawn in the timeline's own place (RouteHead), the box where the grouped box was. */
   inPlace?: boolean;
 }) {
   const { directParam, hasPoints, planned, routed, setPointAltitude, setRoute, wholeRoute } = vm.route;
-  const { directToPoint, s } = vm.plan;
+  const { course, directToPoint, s } = vm.plan;
   const { selectPlace } = vm.cards;
-  const { openProcedures, routeProcedures, typeProcedures } = vm.picks;
-  const { fuelStops, hideFuelStop, keepFuelStops } = vm.stops;
+  const { openProcedures, routeProcedures, setProceduresShown, typeProcedures } = vm.picks;
+  const { fuelStops, hideFuelStop, keepFuelStops, noFuelStop } = vm.stops;
+  const { selectPointAt } = vm.leg;
+  const { panel, setPanel } = vm.view;
   const { addAt, addingChange, addingStop, clearRoute, foldRoute, routeOpen, setEditorFocused, waypointStops } = vm.routeList;
   const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
   // A stop asked for from a card (the profile's no-legal-altitude problem,
@@ -80,6 +84,22 @@ export default function RouteEditor({
                     }
                   : openProcedures
               }
+              // A pill's Procedures, the same way: the timeline's sheet, of
+              // the kind the route flies there.
+              onOpenProcedures={(ident, kind) => {
+                if (inPlace) foldRoute();
+                setProceduresShown({ ident, kind });
+              }}
+              // A pill's Show on Map: the map brought to the point and ringed,
+              // as a nav log row's tap does (the map's picked point), the
+              // sheet down to half where it hid the map.
+              onShowOnMap={(ident) => {
+                const at = course ? coursePoints(course).find((p) => sameField(p.ident, ident)) : undefined;
+                if (!at) return;
+                if (panel === "full") setPanel("half");
+                selectPointAt(at.lat, at.lon);
+              }}
+              shortFlights={noFuelStop}
               fuelStops={fuelStops}
               onKeepFuelStops={keepFuelStops}
               onHideFuelStop={hideFuelStop}
@@ -113,7 +133,10 @@ export default function RouteEditor({
         // As far in from the right as on the rows' face (TIMELINE_END), the
         // fuel stops' pill before it 8 apart as there, so a whole route's
         // pair sits in one place on both faces (FuelPill).
-        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end gap-2 pr-4">
+        // The row itself takes no tap: the box's last line under it is the
+        // field's, a tap there putting the caret at the route's end (the r6
+        // audit's M8); only its two controls take theirs.
+        <div className="pointer-events-none relative z-10 -mt-11 flex h-11 items-center justify-end gap-2 pr-4 *:pointer-events-auto">
           {wholeRoute && !vm.flight.flying && !vm.flight.dryRunning && <FuelPill vm={vm} />}
           <TypeRouteButton
             pressed

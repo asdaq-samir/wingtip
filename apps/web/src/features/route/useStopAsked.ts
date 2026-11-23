@@ -2,14 +2,15 @@ import { departureOf, stopOf } from "../../lib/identSchema";
 import { askSearchPick, useSearchPick } from "../../lib/oneSearch";
 
 /**
- * The route box's arrow between two points asking the one search for the
- * stop there (or, before a route with none, the departure) in its pick
- * mode, as a pill's Change does, by the one card rule's one search field
- * (the owner, 2026-11-10), where it opened a field of the box's own at the
- * arrow. The pick goes in between the two points the arrow was between,
+ * A pill's Insert Before or Insert After (its menu, RoutePill) asking the
+ * one search for the point there (or, before a route with none, the
+ * departure) in its pick mode, as a pill's Change does, by the one card
+ * rule's one search field (the owner, 2026-11-10). The pick goes in at
+ * that place, before the point that was there (after the destination, the
+ * new destination, the old one a stop, as Maps' Add Stop does),
  * through the box's own `change`, which keeps its ends and its limits.
  * `oneSearch` false where none is drawn (the developer's page): the box's
- * own field at the arrow then, as before.
+ * own field's caret there then, as before.
  */
 export function useStopAsked({
   points,

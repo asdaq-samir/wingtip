@@ -131,6 +131,9 @@ export function pointEnd(
         // its ident a link to its card (FieldHead; the owner, 2026-11-17:
         // "Can we make the airports/stops tappable as the navlog does?").
         onChange={edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop, at.stop || at.waypoint) : undefined}
+        // A stop asked for on the flight into it, as on the one out of it:
+        // not before the departure, which leaves no flight to stop on.
+        onAddBefore={edit && at.index !== undefined && at.index > 0 && !stopsFull ? () => edit.onAddAt(at.index!) : undefined}
         onAddAfter={
           edit && at.index !== undefined && at.index < routePoints.length - 1 && !stopsFull ? () => edit.onAddAt(at.index! + 1) : undefined
         }

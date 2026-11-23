@@ -2,7 +2,8 @@ import { useEffect, useEffectEvent } from "react";
 import { airportQuery, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { navlogQuery, suggestedStopAt } from "../../plan";
 import { useSuggestedStops } from "../../stops";
-import { useMapActions } from "../../route";
+import { fuelStopsAt, useMapActions } from "../../route";
+import { sameField } from "../../../lib/procedures";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanCards } from "./usePlanCards";
@@ -43,11 +44,31 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
   useEffect(() => prefetchAhead(), [aheadKey]); // keyed on the route and the plan's choices
   // The map's cards' and the radio's actions on the route (useMapActions).
   useMapActions({ course, planned, aircraft, setStops, setRoute, directToChartPoint, flyAltitude, typeProcedures });
+  // The suggested stop the airport's card is open on, where it is one: its
+  // figures at the card's top, and Add Stop keeps it at its place
+  // (PlaceCard's `stop`) -- after the point its flight leaves, by that
+  // point's place in the route (fuelStopsAt, by both the flight's ends; the
+  // stops the course calls fixes flown through), so a field the route
+  // leaves twice takes it on the right flight.
+  const at = suggestedStopAt(place, fuelStops);
+  const points = [planned.dep, ...planned.stops, planned.dest];
+  const fixes = new Set(planned.stops.filter((stop) => course?.stops?.some((a) => a.ident === stop && a.kind === "fix")));
+  const flightAt = at
+    ? fuelStopsAt(points, fixes, fuelStops).findIndex(
+        (f) => !!f && [...f.stops, ...(f.choices ?? [])].some((c) => sameField(c.ident, place!)),
+      )
+    : -1;
   return {
     ...suggested,
-    // The suggested stop the airport's card is open on, where it is one: its
-    // figures at the card's top, and Add Stop keeps it at its place
-    // (PlaceCard's `stop`).
-    suggestedAt: suggestedStopAt(place, fuelStops),
+    suggestedAt: at && {
+      stop: at.stop,
+      after:
+        flightAt >= 0
+          ? flightAt
+          : Math.max(
+              0,
+              points.findIndex((p) => sameField(p, at.after)),
+            ),
+    },
   };
 }
