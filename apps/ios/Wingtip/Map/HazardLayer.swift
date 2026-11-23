@@ -3,7 +3,7 @@ import MapKit
 /// The DOF's obstacles the hazard colouring rings: only those the engine
 /// levels red or amber, each a dot of a few points, as the web's
 /// OBSTACLE_LAYER (3 points at zoom 9 to 6 at 13, a white casing).
-final class HazardObstacleOverlay: NSObject, MKOverlay, @unchecked Sendable {
+final class HazardObstacleOverlay: NSObject, MKOverlay, Sendable {
     let points: [(at: MKMapPoint, warning: Bool)]
     let boundingMapRect: MKMapRect
     var coordinate: CLLocationCoordinate2D { boundingMapRect.origin.coordinate }
@@ -15,6 +15,7 @@ final class HazardObstacleOverlay: NSObject, MKOverlay, @unchecked Sendable {
     }
 }
 
+/// Unchecked: MKOverlayRenderer is not Sendable; this one holds nothing.
 final class HazardObstacleRenderer: MKOverlayRenderer, @unchecked Sendable {
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
         guard let dots = overlay as? HazardObstacleOverlay else { return }
