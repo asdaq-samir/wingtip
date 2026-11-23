@@ -77,7 +77,11 @@ export function TimelineLine({
     return i === 0 ? (
       tray
     ) : (
-      <section key={part.role} aria-label={`${point.ident} · ${part.role}`}>
+      // The chips row's width and no wider, as the first part's field-part
+      // is: a flex item of its own, a stop's Depart line took its runways'
+      // whole width, KMSN's six ran 126 past a phone's 390 and its 32 was
+      // out of reach under the summary's clip (stops.spec).
+      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className="w-full min-w-0">
         {tray}
       </section>
     );

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, sideDrawer, slow } from "./helpers";
+import { cardHost, grabberTo, settle, sideDrawer, slow } from "./helpers";
 import { expectShown, openAirport, showPage, tapAirportOnMap } from "./sheetPages";
 
 /**
@@ -19,7 +19,8 @@ import { expectShown, openAirport, showPage, tapAirportOnMap } from "./sheetPage
 // scripts/build/e2e-overlay-tiles.sh): Oshkosh, north of it, has no marks.
 test.use({ geolocation: { latitude: 42.92, longitude: -89.22 }, permissions: ["geolocation"], hasTouch: true });
 
-const card = (page: Page) => sideDrawer(page).getByTestId("place-card").last();
+// A finger's on a desktop's 1280 is a wide iPad's: the card in the inspector.
+const card = (page: Page) => cardHost(page).getByTestId("place-card").last();
 const ROUTE = "/app/plan?dep=C81&dest=KDLH";
 
 /** Fly Here on the card up, and the route to `ident` in the address. */

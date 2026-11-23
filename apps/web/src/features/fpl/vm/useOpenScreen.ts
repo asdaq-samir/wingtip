@@ -3,6 +3,7 @@ import type { Address, SetAddress } from "../../../lib/address";
 import { useWantedPage } from "../../../lib/navigation/wantedPage";
 import { openEmergency } from "../../../lib/emergencyStore";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
+import { useSheetCards } from "../../../lib/sheetCards";
 import { SCREEN_LINK, screenOf, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { stale, takeScreen, useWanted, wantScreen } from "../../../lib/navigation/wanted";
 import { tailOf } from "../../../lib/aircraftChoice";
@@ -77,10 +78,17 @@ export function useOpenScreen({
   // The airplane's screen opens on its N-number, the engine's to tell
   // (tailOf): a link to it waits for the engine.
   const engine = useEngineReady();
+  // A link that opens a card too (an airplane's, an airport's) has it up
+  // first and You over it, as You opens over whatever is up: on a desktop
+  // the plan's code came in after the console's, and the airplane's card,
+  // opened second, went over You (tracking-card.spec).
+  const linkCard = !!(address.flight || address.place);
+  const cardUp = useSheetCards((s) => s.stack.some((e) => e.state === "open"));
   useEffect(() => {
     if (!wanted || (wanted === "airplane" && !engine)) return;
     // A link with the route in it is planned first: the Brief waits for it.
     if (OVER_ROUTE.has(wanted) && !routed && !stale()) return;
+    if (wanted in SETUP_PAGES && linkCard && !cardUp && !stale()) return;
     const screen = takeScreen();
     if (!screen) return;
     const pages = SETUP_PAGES[screen];
@@ -166,5 +174,5 @@ export function useOpenScreen({
       default:
         screen satisfies never;
     }
-  }, [wanted, engine, routed, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
+  }, [wanted, engine, routed, linkCard, cardUp, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
 }

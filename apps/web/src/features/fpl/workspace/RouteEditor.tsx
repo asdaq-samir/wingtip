@@ -72,7 +72,18 @@ export default function RouteEditor({
               adding={addingStop && !covered}
               onAddingChange={addingChange}
               procedures={routeProcedures}
-              onProcedures={openProcedures}
+              // The Procedures' sheets are the timeline's (RouteSheets): from
+              // the field the toggle opened, a procedure's pill turns the
+              // box back to it, its sheet opening over it, where the tap did
+              // nothing (procedures-approach.spec).
+              onProcedures={
+                inPlace
+                  ? (p) => {
+                      foldRoute();
+                      openProcedures(p);
+                    }
+                  : openProcedures
+              }
               fuelStops={fuelStops}
               onKeepFuelStops={keepFuelStops}
               onHideFuelStop={hideFuelStop}

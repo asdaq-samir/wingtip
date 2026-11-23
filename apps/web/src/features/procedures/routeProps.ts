@@ -44,7 +44,9 @@ export type ProceduresAt = { ident: string; kind: Kind; pick?: { approach: strin
 interface RunwayPicks {
   /** The runway end picked for each field's pattern. */
   picked: Map<string, string>;
-  onPick: (ident: string, end: string | null) => void;
+  /** The pilot's pick, the map brought to its pattern; with `go` false,
+   *  a runway that follows from another pick, the map left on that one. */
+  onPick: (ident: string, end: string | null, go?: boolean) => void;
   /** The runway into the wind picked for the pilot as the route comes in:
    *  into the address with no move of the map, which stays on the route. */
   onPreselect: (ident: string, end: string) => void;
