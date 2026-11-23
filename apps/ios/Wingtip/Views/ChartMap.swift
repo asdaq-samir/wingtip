@@ -1,4 +1,4 @@
-@preconcurrency import MapKit
+import MapKit
 import SwiftUI
 
 /// The map: the FAA chart as its ground over Apple's map, own ship on it,
@@ -247,6 +247,7 @@ struct ChartMap: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
+    @MainActor
     final class Coordinator: NSObject, MKMapViewDelegate {
         var overlay: ChartTileOverlay?
         var courseLine: MKPolyline?
@@ -315,8 +316,8 @@ struct ChartMap: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
-            if let renderer = MainActor.assumeIsolated({ legLayer.renderer(for: overlay) }) { return renderer }
-            if let renderer = MainActor.assumeIsolated({ overlays.renderer(for: overlay) }) { return renderer }
+            if let renderer = legLayer.renderer(for: overlay) { return renderer }
+            if let renderer = overlays.renderer(for: overlay) { return renderer }
             if let chart = overlay as? ChartTileOverlay {
                 let renderer = ChartTileRenderer(chart: chart)
                 renderer.shade = shade
@@ -324,9 +325,9 @@ struct ChartMap: UIViewRepresentable {
                 tiles = renderer
                 return renderer
             }
-            if let imagery = overlay as? CloseImageryOverlay { return MainActor.assumeIsolated { CloseImagery.shared.renderer(imagery, zoom: Self.zoom(of: mapView)) } }
+            if let imagery = overlay as? CloseImageryOverlay { return CloseImagery.shared.renderer(imagery, zoom: Self.zoom(of: mapView)) }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
-            if let renderer = MainActor.assumeIsolated({ extras.renderer(for: overlay) }) { return renderer }
+            if let renderer = extras.renderer(for: overlay) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
                 renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)
@@ -382,9 +383,9 @@ struct ChartMap: UIViewRepresentable {
                 view.show(mark)
                 return view
             }
-            if let extra = MainActor.assumeIsolated({ extras.view(for: annotation, on: mapView) }) { return extra }
-            if let overlay = MainActor.assumeIsolated({ overlays.view(for: annotation, on: mapView) }) { return overlay }
-            if let mark = MainActor.assumeIsolated({ routeMarks.view(for: annotation, on: mapView) }) { return mark }
+            if let extra = extras.view(for: annotation, on: mapView) { return extra }
+            if let overlay = overlays.view(for: annotation, on: mapView) { return overlay }
+            if let mark = routeMarks.view(for: annotation, on: mapView) { return mark }
             guard annotation is AirportAnnotation else { return nil }
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: AirportMarkView.reuse, for: annotation)
             (view as? AirportMarkView)?.scaleSymbol(symbolScale)
@@ -530,37 +531,35 @@ struct ChartMap: UIViewRepresentable {
         /// packs where the view changes level or leaves what was asked, as
         /// the web map's do (useGlView), not only once the fingers lift.
         func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
-            MainActor.assumeIsolated {
-                let zoom = Self.zoom(of: mapView)
-                CloseImagery.shared.fade(chart: tiles, last: overlay?.maxZoom, zoom: zoom)
-                // The chart's loads of tiles gone out of view stopped.
-                if mapView.visibleMapRect.width > 0 {
-                    tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
+            let zoom = Self.zoom(of: mapView)
+            CloseImagery.shared.fade(chart: tiles, last: overlay?.maxZoom, zoom: zoom)
+            // The chart's loads of tiles gone out of view stopped.
+            if mapView.visibleMapRect.width > 0 {
+                tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
+            }
+            // The checkpoints' names in with the zoom, the route's
+            // points' names kept outside their turns (RouteMarksLayer).
+            routeMarks.moved(mapView, zoom: zoom)
+            let scale = FieldMark.scale(zoom: zoom)
+            if abs(scale - symbolScale) > 0.02 {
+                symbolScale = scale
+                for case let field as AirportAnnotation in mapView.annotations {
+                    (mapView.view(for: field) as? AirportMarkView)?.scaleSymbol(scale)
                 }
-                // The checkpoints' names in with the zoom, the route's
-                // points' names kept outside their turns (RouteMarksLayer).
-                routeMarks.moved(mapView, zoom: zoom)
-                let scale = FieldMark.scale(zoom: zoom)
-                if abs(scale - symbolScale) > 0.02 {
-                    symbolScale = scale
-                    for case let field as AirportAnnotation in mapView.annotations {
-                        (mapView.view(for: field) as? AirportMarkView)?.scaleSymbol(scale)
-                    }
-                }
-                overlays.moved(mapView, chart: overlay, live: true)
-                weather.moved(mapView, zoom: zoom)
-                let view = ViewBox(mapView.region)
-                guard liveAirports.wants(view, zoom: zoom) else { return }
-                let asked = liveAirports.ask(view, zoom: zoom)
-                // Off the main actor (CyclePacks.airportsInView), taken back
-                // only while the view still wants this box.
-                Task { @MainActor [weak self, weak mapView] in
-                    let pins = await CyclePacks.shared.airportsInView(asked)
-                    guard let self, let mapView, liveAirports.box == asked else { return }
-                    guard let pins else { return liveAirports.forget() }
-                    self.pins = pins
-                    showFields(on: mapView)
-                }
+            }
+            overlays.moved(mapView, chart: overlay, live: true)
+            weather.moved(mapView, zoom: zoom)
+            let view = ViewBox(mapView.region)
+            guard liveAirports.wants(view, zoom: zoom) else { return }
+            let asked = liveAirports.ask(view, zoom: zoom)
+            // Off the main actor (CyclePacks.airportsInView), taken back
+            // only while the view still wants this box.
+            Task { @MainActor [weak self, weak mapView] in
+                let pins = await CyclePacks.shared.airportsInView(asked)
+                guard let self, let mapView, liveAirports.box == asked else { return }
+                guard let pins else { return liveAirports.forget() }
+                self.pins = pins
+                showFields(on: mapView)
             }
         }
 
@@ -586,12 +585,10 @@ struct ChartMap: UIViewRepresentable {
             } else {
                 setRouteAway?(false)
             }
-            MainActor.assumeIsolated {
-                extras.regionChanged(mapView)
-                overlays.moved(mapView, chart: overlay, live: false)
-                overlays.runways(mapView, fields: shownPins, chart: overlay)
-                weather.rested(mapView)
-            }
+            extras.regionChanged(mapView)
+            overlays.moved(mapView, chart: overlay, live: false)
+            overlays.runways(mapView, fields: shownPins, chart: overlay)
+            weather.rested(mapView)
             let region = mapView.region
             let (c, span) = (region.center, region.span) // The miles to the corner the engine's (distance_nm), else the last view's kept: a real one, not a guess.
             if let nm = try? Flight.distanceNm(c, CLLocationCoordinate2D(latitude: c.latitude + span.latitudeDelta / 2, longitude: c.longitude + span.longitudeDelta / 2)) { onRegion?(c, nm) }
@@ -606,16 +603,14 @@ struct ChartMap: UIViewRepresentable {
                 guard !Task.isCancelled, let self, let mapView else { return }
                 let pins = try? await PackMapData.airports(asked, limit: RestedFetch.most)
                 guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    // In, or not to be had: either way the map need not
-                    // wait for them to show.
-                    self.airportsIn = true
-                    self.revealIfIn()
-                    guard let pins else { return self.restedAirports.forget() }
-                    self.pins = pins
-                    self.showFields(on: mapView)
-                    self.overlays.runways(mapView, fields: self.shownPins, chart: self.overlay)
-                }
+                // In, or not to be had: either way the map need not
+                // wait for them to show.
+                self.airportsIn = true
+                self.revealIfIn()
+                guard let pins else { return self.restedAirports.forget() }
+                self.pins = pins
+                self.showFields(on: mapView)
+                self.overlays.runways(mapView, fields: self.shownPins, chart: self.overlay)
             }
         }
 
