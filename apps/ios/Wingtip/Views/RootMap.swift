@@ -142,6 +142,16 @@ struct RootMap: View {
                 MapButtonsDock(overSheet: layout == .sheet, following: $following,
                                routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
                                ask: layoutName == "strip" ? nil : { ask(nil) })
+                    // After the chart in the accessibility order, as they lie
+                    // over it: the system's accessibility hit-test takes the
+                    // later element at a point as the one on top, and on the
+                    // iPad SwiftUI put these before MapKit's map, which then
+                    // answered for every point of the detail. VoiceOver's
+                    // finger, Voice Control and the UI tests reached the map
+                    // where the button was (MapButtonsTests and
+                    // SheetPageToggleTests on the iPad Pro, 2026-11-22: the
+                    // hit-test at the Map button's centre gave MapKit's Map).
+                    .accessibilitySortPriority(-1)
             }
             .overlay(alignment: .top) {
                 VStack(spacing: WingtipSpace.sm) {
@@ -164,6 +174,8 @@ struct RootMap: View {
                 // Over the iPhone's sheet they ride its top, so the banners
                 // have the width.
                 .padding(.trailing, layout == .split ? WingtipSize.mapButton + WingtipSpace.md * 2 : 0)
+                // After the chart, as the buttons are (MapButtonsDock above).
+                .accessibilitySortPriority(-1)
             }
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: WingtipSpace.sm) {
@@ -178,6 +190,8 @@ struct RootMap: View {
                     if traffic.on, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
+                // After the chart, as the buttons are (MapButtonsDock above).
+                .accessibilitySortPriority(-1)
             }
             // The flight's own work while the map is up (FlightLoops), in
             // the lead window alone (MainWindow), behind the map.

@@ -181,6 +181,9 @@ struct SplitLayout<Map: View>: View {
                     .background(WingtipInk.sheet, in: floatingCard)
                     .padding(.bottom, WingtipSpace.lg)
                     .padding(.horizontal, WingtipSpace.lg)
+                    // After the chart in the accessibility order, as the
+                    // map's buttons are (RootMap's MapButtonsDock).
+                    .accessibilitySortPriority(-1)
             }
             // No bar over the map while the sidebar is up, its own bar
             // holding Hide Sidebar; with the sidebar put away, the
