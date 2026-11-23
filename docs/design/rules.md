@@ -672,7 +672,9 @@ off by default (the owner, 2026-11-13).
    or below flying speed (the engine's `underway`), a column always. The
    fuel stays on the timeline's tank gauges, the nav log and the Brief,
    no longer on the strip, so the strip no longer opens its breakdown. At the sheet's very foot from
-   half up, the Apple way, the strip held just over it and sliding under
+   half up, the Apple way, the strip right under the plan's content and
+   held just over the bar only once the content reaches it, with no empty
+   band under a short route (the owner, 2026-11-23), and sliding under
    it to the pill as the sheet goes down (the owner, 2026-11-22), the strip one
    thin line at half and full (each value a detail's 15 after its name in a
    note's 13, the names dropping first where the line is short; "make the

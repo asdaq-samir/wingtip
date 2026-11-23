@@ -227,7 +227,9 @@ test("stepped from the pill to half, the strip lands thin as the sheet lands, an
   await expect(page.locator('[data-testid="fpl-actions"][data-probe]')).toHaveCount(1);
 });
 
-test("with the box turned into the route's field, typed in, the figures stay pinned and thin at half and full", async ({ page }) => {
+test("with the box turned into the route's field, typed in, the figures stay thin and under the route at half and full", async ({
+  page,
+}) => {
   // The owner, 2026-11-22: "Route box still shows figures full size."
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -250,10 +252,15 @@ test("with the box turned into the route's field, typed in, the figures stay pin
     await expect(async () => {
       const box = (await strip.boundingBox())!;
       expect(box.height, `thin at ${size}`).toBeLessThanOrEqual(32);
-      // Pinned at the plan's bottom, on the tab bar (the owner, 2026-11-22:
-      // "Route box figures strip is not pinning to the bottom").
+      // Under the plan's content, pinned on the tab bar only once the
+      // content reaches it, so no empty band between the route and the
+      // strip (the owner, 2026-11-23), and never under the bar.
       const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
-      expect(Math.abs(box.y + box.height - bar.y), `on the bar at ${size}`).toBeLessThanOrEqual(12);
+      const route = (await field.boundingBox())!;
+      const onBar = Math.abs(box.y + box.height - bar.y) <= 12;
+      const underRoute = box.y - (route.y + route.height) <= 40;
+      expect(box.y + box.height, `over the bar at ${size}`).toBeLessThanOrEqual(bar.y + 12);
+      expect(onBar || underRoute, `under the route or on the bar at ${size}`).toBe(true);
     }).toPass({ timeout: slow(10_000) });
   }
 });
