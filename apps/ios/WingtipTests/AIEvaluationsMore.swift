@@ -1,7 +1,7 @@
 import Evaluations
 import Foundation
-@testable import Wingtip
 import Testing
+@testable import Wingtip
 
 /// The on-device AI added after the NOTAMs and the clearance, scored with
 /// Apple's Evaluations framework on the shared fixtures as AIEvaluations

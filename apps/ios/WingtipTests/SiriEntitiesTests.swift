@@ -1,6 +1,6 @@
 import AppIntents
-@testable import Wingtip
 import Testing
+@testable import Wingtip
 
 /// Siri's entities and what its intents say: ids that find the same thing
 /// again with no planner, the approach Siri hears in "brief the ILS 27 at

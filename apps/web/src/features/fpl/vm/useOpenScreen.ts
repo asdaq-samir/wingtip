@@ -174,5 +174,18 @@ export function useOpenScreen({
       default:
         screen satisfies never;
     }
-  }, [wanted, engine, routed, linkCard, cardUp, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
+  }, [
+    wanted,
+    engine,
+    routed,
+    linkCard,
+    cardUp,
+    setAddress,
+    setViewPick,
+    setPanel,
+    openBrief,
+    openNavLogCard,
+    openProfileCard,
+    openNearest,
+  ]);
 }

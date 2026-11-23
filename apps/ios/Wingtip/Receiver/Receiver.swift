@@ -152,8 +152,7 @@ final class Receiver {
             nexrad: nexradChanged ? (try? Engine.receiverNexrad(picture: picture)) : nil,
             changed: picture != before,
             nexradChanged: nexradChanged,
-            trafficChanged: trafficChanged(before, picture)
-        )
+            trafficChanged: trafficChanged(before, picture))
     }
 
     /// Quiet, with nothing left that ages by the second, the picture is

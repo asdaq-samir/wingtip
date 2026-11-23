@@ -11,7 +11,7 @@ import { tileTemplate } from "../../lib/map/sources/tiles";
  * no engine, its host's sandbox loading no WebAssembly, so the strip's
  * fuel comes worked out too (strip_fuel).
  */
-export interface Flight {
+interface Flight {
   departure: string;
   destination: string;
   stops?: string[];

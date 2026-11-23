@@ -1,8 +1,8 @@
 import Evaluations
 import Foundation
 import FoundationModels
-@testable import Wingtip
 import Testing
+@testable import Wingtip
 
 /// The on-device AI scored on the shared aviation fixtures with Apple's
 /// Evaluations framework (Xcode 27, WWDC26 "Meet the Evaluations
