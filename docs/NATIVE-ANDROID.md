@@ -223,6 +223,22 @@ and `glOverlays.ts`):
   distance field glyphs in the app's assets (`assets/glyphs/Inter-Bold`,
   written by `scripts/build/map-glyphs.py` from the web's Inter), so no
   glyph server is asked.
+- **The route over the whole country** (rules.md, the web's round 4):
+  a Class B field's mark is half size and unnamed below
+  `map.zoom.class-b-named`; the route's fields are named on their dark
+  pill, placed before the chart's marks (the destination first, on
+  whichever side is free), its tops of climb and descent from
+  `route-tags`, and an approach plate's tags from `procedure-words`;
+  own ship keeps an empty symbol's room in MapLibre's collision under
+  the LocationComponent, so no ident is drawn under it
+  (`RouteMarksLayer`, `MapStyle`'s airports, `PlateLayer`).
+- **A NOTAM's own card** is the engine's `notam_card`, as the web's
+  NotamCard (rules.md 19): its title what happened, the field and its
+  number under it ("FDC 6/3373"), its category, chips (Active, Permanent,
+  "Affects your departure" while in force), its effect, the procedures
+  not authorized, its times in the field's own zone ("In effect since",
+  "Until charts are updated (est. ...)"; `NotamCardTimes`) and its text as
+  sent folded; its words (`notam_read`) where the engine gives no card.
 - **The map is shown as one thing**: Material's loading indicator in the
   middle of what the sheet leaves (`MapLoading`, still with the system's
   animations off) until the map is first at rest with the chart and the

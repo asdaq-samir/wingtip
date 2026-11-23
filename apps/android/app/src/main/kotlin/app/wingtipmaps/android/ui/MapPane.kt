@@ -202,7 +202,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         ship.fix.collect { taken -> flight.took(if (ownShip.on) taken else null, planNow) }
     }
     LaunchedEffect(ahead) { flight.hear(ahead) }
-    LaunchedEffect(state.legs) { app.wingtipmaps.android.map.AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }) }
+    LaunchedEffect(state.legs, routePoints) { app.wingtipmaps.android.map.AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }).also { app.wingtipmaps.android.map.RouteMarksLayer.show(routePoints, state.legs) } }
     // While the emergency assistant is open, the line from the airplane to the field it picked (EmergencyCard's model).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
     // The glide ring off unless kept on, on by itself while the emergency assistant is open (GlideRing).

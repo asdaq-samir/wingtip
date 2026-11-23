@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.FigureKey
+import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
@@ -121,7 +122,12 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     if (shown != null && place != null) {
         BackHandler { opened = null }
         val pages = shown.map { n -> said?.firstOrNull { it.notam.id == n.id } ?: FieldNotams.say(n, place.ident) }
-        NotamPage(pages, place.ident, CardExit(back = { opened = null }, close = exit.close))
+        // The chip where it is the planned flight's field: its departure, destination or IFR alternate filed.
+        val filed by PlanAlternate.filed.collectAsStateWithLifecycle()
+        val role = remember(place.ident, planState.dep, planState.dest, planState.rules, filed) {
+            planRole(FieldNotams.identsOf(place.ident), planState.dep, planState.dest, PlanAlternate.of(planState.rules, planState.dest, filed))
+        }
+        NotamPage(pages, place.ident, CardExit(back = { opened = null }, close = exit.close), name = place.name, zone = state.notams?.timeZone, role = role)
         return
     }
     val open: (List<RankedNotam>) -> Unit = { opened = it }
