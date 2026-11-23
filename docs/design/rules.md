@@ -674,7 +674,13 @@ off by default (the owner, 2026-11-13).
    no longer on the strip, so the strip no longer opens its breakdown. At the sheet's very foot from
    half up, the Apple way, the strip right under the plan's content and
    held just over the bar only once the content reaches it, with no empty
-   band under a short route (the owner, 2026-11-23), and sliding under
+   band under a short route (the owner, 2026-11-23); where the route runs
+   on under the held strip, it fades into the strip's ground over its last
+   24 points, as a list fades under Apple Maps' floating bar, so the cut
+   row reads as going on under it (`FplActions`' `FADE_OVER`, a gradient on
+   the held strip, none on a short route or at the pill), and all the way
+   up the route scrolls fully clear above it, the strip in the page's flow
+   at its end; and sliding under
    it to the pill as the sheet goes down (the owner, 2026-11-22), the strip one
    thin line at half and full (each value a detail's 15 after its name in a
    note's 13, the names dropping first where the line is short; "make the
