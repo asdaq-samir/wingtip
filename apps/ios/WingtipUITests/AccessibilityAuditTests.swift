@@ -228,6 +228,7 @@ final class AccessibilityAuditTests: XCTestCase {
     @MainActor
     private func raiseTheSheet(_ app: XCUIApplication) {
         if UIDevice.current.userInterfaceIdiom == .pad {
+            // The map is a canvas with no element to ask; past its reveal cap, a fixed wait.
             sleep(4)
             return
         }
@@ -289,6 +290,7 @@ final class AccessibilityAuditTests: XCTestCase {
     /// on the iPad for the map past its reveal, as raiseTheSheet does.
     @MainActor
     private func settle() {
+        // The sheet's rise and the iPad's map reveal have no element state to wait on (the grabber is not on every page), so a fixed wait.
         sleep(UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2)
     }
 
