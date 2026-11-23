@@ -141,12 +141,12 @@ jobs:
       - if: steps.derived.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::ios-derived-data"
       # This leg's device, the newest the runner's Xcode has (an iPad a Pro
-      # where there is one), by its id, picked as on the Mac; LEG for ios_test.sh.
+      # where there is one; a wave's iPad legs the 11-inch, newest_simulator.py), by its id; LEG for ios_test.sh.
       - name: The simulator to test on
         id: sim
         env:
           DEVICE: ${{ matrix.device }}
-        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${DEVICE%% [0-9]*}")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
+        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${DEVICE%% [0-9]*}" "$([[ "$DEVICE" == *iPad*/* ]] && echo 11)")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
       # Built, then the string catalog's check, then the tests, so a stale
       # catalog fails before they run. scripts/ci/ios_test.sh picks them: a
       # pull request's unit tests, main's push's CardSmokeTests too (the one
