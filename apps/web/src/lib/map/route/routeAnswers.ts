@@ -13,12 +13,22 @@ import { planner } from "../../api/http";
  */
 const ROUTE_ANSWER = /^\/api\/planner\/(course|checkpoints|navlog|briefing|airport\/[^/]+)$/;
 
-const asked = new Map<string, string>();
+/** Every route answer asked, by its address, the latest last: more than
+ *  one of a kind for a route, its own and the fuel stops' preview (the
+ *  same ends, `stops` the suggested ones), which as "the latest of each"
+ *  took the route's own place, so a kept route opened offline had no
+ *  course (flight-critical.spec, "offline from the first ask"). */
+const asked = new Set<string>();
+const KEPT_MAX = 24;
 
 /** A GET's address noted where it is one of the route's answers. */
 export function noteRouteAnswer(address: string) {
   const url = new URL(address, "http://localhost");
-  if (ROUTE_ANSWER.test(url.pathname)) asked.set(url.pathname, `${url.pathname}${url.search}`);
+  if (!ROUTE_ANSWER.test(url.pathname)) return;
+  const at = `${url.pathname}${url.search}`;
+  asked.delete(at);
+  asked.add(at);
+  if (asked.size > KEPT_MAX) asked.delete(asked.values().next().value!);
 }
 
 planner.use({
@@ -28,8 +38,18 @@ planner.use({
   },
 });
 
-/** The addresses of the route's answers last asked, one per kind (and per
- *  field's card). */
-export function routeAnswersAsked(): string[] {
-  return [...asked.values()];
+/** The addresses of the route's answers asked: each between `ends` (the
+ *  route's departure and destination, every variant of its stops asked),
+ *  and the latest of each field's card; with no ends, the latest of each
+ *  kind. */
+export function routeAnswersAsked(ends?: { dep: string; dest: string }): string[] {
+  const latest = new Map<string, string>();
+  for (const at of asked) {
+    const url = new URL(at, "http://localhost");
+    const dep = url.searchParams.get("dep");
+    if (ends && dep !== null) {
+      if (dep === ends.dep && url.searchParams.get("dest") === ends.dest) latest.set(at, at);
+    } else latest.set(url.pathname, at);
+  }
+  return [...latest.values()];
 }

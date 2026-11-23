@@ -169,7 +169,8 @@ async function keepRouteCharts(
   // The route's own answers first -- its course, checkpoints, nav log and
   // briefing, as the page asked them (routeAnswers) -- each read to its
   // end so the worker keeps it whole: a kept route then plans offline.
-  await Promise.allSettled(routeAnswersAsked().map((url) => fetch(url, { signal }).then((res) => res.arrayBuffer())));
+  const ends = { dep: course.departure.ident, dest: course.destination.ident };
+  await Promise.allSettled(routeAnswersAsked(ends).map((url) => fetch(url, { signal }).then((res) => res.arrayBuffer())));
   const urls = [
     ...(await routeDiagrams(course)),
     ...(await routeStopsKept(course)),
