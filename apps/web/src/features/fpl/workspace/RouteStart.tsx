@@ -1,13 +1,10 @@
 import { flushSync } from "react-dom";
-import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { FieldClearButton } from "../../../components/ui/field-clear";
 import { usePlanUndo } from "../../../lib/planUndo";
 import { TEXT } from "../../../lib/text";
-import { fromChunk } from "../../../lib/fromChunk";
-import { afterRouteDrawn } from "../../../lib/routeDrawn";
-import { EndRow, OpenRouteFileRow, TIMELINE_CARD, TypeRouteButton, TypeRouteRow } from "../../procedures";
+import { EndRow, TIMELINE_CARD, TypeRouteButton } from "../../procedures";
 import { keepTimelineHeight } from "./routeEditing";
 import type { PlanSlices } from "../vm/planSlices";
 
@@ -15,13 +12,14 @@ type StartSlices = PlanSlices<"route" | "routeList">;
 
 /**
  * The timeline's last row before the route is whole (the owner,
- * 2026-11-18: the empty route drawn as the whole one is): Type or Paste a
- * Route, where Add a Stop is after, opening the route's field under the
- * card (RouteEditor), focused in the tap itself, so a phone's keyboard
- * comes up with it. At its end the field's own controls while it is
- * folded, where they were at its end: half a route's ✕, and a route
- * just cleared, its Undo (the plan's one Undo, as every edit's toast has). None while
- * the field is open, which is the row then.
+ * 2026-11-18: the empty route drawn as the whole one is): the route box's
+ * toggle at the card's end, where Add a Stop's is after (the
+ * owner, 2026-11-23: no "Type or Paste a Route" row, "the toggle is
+ * enough"), opening the route's field under the card (RouteEditor),
+ * focused in the tap itself, so a phone's keyboard comes up with it.
+ * Before it the field's own controls while it is folded: half a route's
+ * ✕, and a route just cleared, its Undo (the plan's one Undo, as every
+ * edit's toast has). None while the field is open, which is the row then.
  */
 export function TypeRow({ vm }: { vm: StartSlices }) {
   const { hasPoints, routed } = vm.route;
@@ -61,15 +59,10 @@ export function TypeRow({ vm }: { vm: StartSlices }) {
     />
   );
   return (
-    <TypeRouteRow
-      onType={type}
-      trailing={
-        <>
-          {field}
-          {toggle}
-        </>
-      }
-    />
+    <div className="flex h-11 items-center justify-end gap-2 pr-2" data-testid="timeline-type-row">
+      {field}
+      {toggle}
+    </div>
   );
 }
 
@@ -80,40 +73,20 @@ export function MissingEnd({ vm, end }: { vm: StartSlices; end: "Departure" | "D
   return <EndRow end={end} onPick={() => pickEnd(end)} line={end === "Departure"} first={end === "Departure"} />;
 }
 
-/** The file parts (RouteFileParts), off the first load: until their chunk
- *  is in, the card is drawn as it is with its Open a Route File row, which
- *  opens the picker once it has come (a moment after the first frame). */
-const loadFileParts = () => import("./RouteFileParts");
-const { Part: RouteFileDrop } = fromChunk(loadFileParts, (m) => m.RouteFileDrop);
-const { Part: OpenFileRow } = fromChunk(loadFileParts, (m) => m.OpenFileRow);
-
 /**
  * FPL's route with no point yet, as the timeline draws a whole one (the
  * owner, 2026-11-18: "the empty fpl page looks a bit different than filled
  * one"): its card, the departure's and the destination's rows to pick, on
- * the course's line, the route typed or pasted under them, and a route
- * file opened, picked or dropped on the card (an iPad's Files beside the
- * app, a desktop's Finder).
+ * the course's line, and the route typed or pasted under them. No route
+ * file is opened here (the owner, 2026-11-23: "No need for open a route
+ * file").
  */
 export function EmptyRoute({ vm }: { vm: StartSlices }) {
-  const card = (openRow: ReactNode) => (
+  return (
     <div className={TIMELINE_CARD} role="group" aria-label="The route" data-testid="route-empty">
       <MissingEnd vm={vm} end="Departure" />
       <MissingEnd vm={vm} end="Destination" />
       <TypeRow vm={vm} />
-      {openRow}
     </div>
-  );
-  // Asked for once the route the page opened on has drawn (lib/routeDrawn):
-  // a route link shows this card for a moment before its route is read,
-  // and fetching the file parts then put React Aria's drag code in every
-  // route link's load (route-load.spec, 17 KB over its budget).
-  const [fileParts, setFileParts] = useState(false);
-  useEffect(() => afterRouteDrawn(() => setFileParts(true), 0), []);
-  if (!fileParts) return card(<OpenRouteFileRow />);
-  return (
-    <Suspense fallback={card(<OpenRouteFileRow />)}>
-      <RouteFileDrop>{card(<OpenFileRow />)}</RouteFileDrop>
-    </Suspense>
   );
 }

@@ -67,7 +67,7 @@ test.describe("/app/plan", () => {
     await expect(firstRow(page)).toBeVisible();
     // The empty route is on FPL's page of the sheet's pager, beside
     // Search's off the screen's edge: out of sight, not out of the page.
-    await expect(sideDrawer(page).getByTestId("timeline-type-route")).not.toBeInViewport();
+    await expect(sideDrawer(page).getByTestId("route-type-open")).not.toBeInViewport();
     await expect(sideDrawer(page).getByTestId("flight-line")).toHaveCount(0);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);

@@ -6,7 +6,6 @@ import { bearing, clockTime, feet, gal, hm, knots, localDay, wholeNm, zuluTime }
 import { routeName } from "../../lib/identSchema";
 import type { SharedLink, SharedPlan } from "../../lib/sharedFlight";
 import { TEXT } from "../../lib/text";
-import { RouteFileRows } from "./RouteFileRows";
 import { useSharedFlightPreview, type SharedFlightPreview } from "./useSharedFlightPreview";
 
 /** When it leaves: the receiver's own day and clock, and Z as a flight
@@ -83,9 +82,7 @@ function NavLogRows({ vm }: { vm: SharedFlightPreview }) {
 /**
  * A flight another pilot sent, before it is used (design/screens.json's
  * `shared`): the plan, a saved flight's filed nav log, and the two
- * answers. The receiver's own plan stays until Use This Plan. A route
- * file opened (.fpl, .gpx) is previewed the same way: its points, what
- * was named or left out, and the same two answers.
+ * answers. The receiver's own plan stays until Use This Plan.
  */
 export default function SharedFlightSheet({ link }: { link: SharedLink }) {
   const vm = useSharedFlightPreview(link);
@@ -93,15 +90,9 @@ export default function SharedFlightSheet({ link }: { link: SharedLink }) {
     <SheetDialog
       open
       onOpenChange={(open) => !open && vm.notNow()}
-      title={vm.file ? "Route File" : "Shared Flight"}
+      title="Shared Flight"
       testId="shared-flight"
-      description={
-        vm.plan
-          ? vm.file
-            ? `The route in ${link.kind === "file" ? link.fileName : "the file"}. Your own plan stays until you use this one.`
-            : "A flight sent to you. Your own plan stays until you use this one."
-          : undefined
-      }
+      description={vm.plan ? "A flight sent to you. Your own plan stays until you use this one." : undefined}
       action={vm.plan ? { label: "Use This Plan", onClick: vm.use, testId: "shared-flight-use" } : undefined}
       more={
         vm.plan ? (
@@ -118,7 +109,7 @@ export default function SharedFlightSheet({ link }: { link: SharedLink }) {
       ) : (
         vm.asked && !vm.plan && <QueryState query={vm.asked} fetching="Fetching the flight…" failed="The flight could not be fetched." />
       )}
-      {vm.file ? <RouteFileRows file={vm.file} /> : vm.plan && <PlanRows plan={vm.plan} ownAirplane={vm.ownAirplane} />}
+      {vm.plan && <PlanRows plan={vm.plan} ownAirplane={vm.ownAirplane} />}
       <NavLogRows vm={vm} />
     </SheetDialog>
   );

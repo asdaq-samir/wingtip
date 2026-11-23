@@ -1097,8 +1097,7 @@ the route's field (`RouteBox`) and the figures. Before the route is
 whole there is no head: the timeline's own card (`RouteStart`'s
 `EmptyRoute`, half a route's in `RouteTimeline`), the ends still to pick
 as rows of it (the owner, 2026-11-18: "the empty fpl page looks a bit
-different than filled one"), and the field folded into its last row,
-Type or Paste a Route, till that row opens it. On a phone the sheet's height drives it
+different than filled one"), and the field folded away, the route box's toggle at the card's end opening it (no "Type or Paste a Route" row, 2026-11-23). On a phone the sheet's height drives it
 (usePlanRouteList): open at the full snap point, folded at half and the
 pill, never while the field has the focus (`editorFocused`); the line's
 tap sets the full snap point (`openRoute`) and Done sets half
@@ -1205,22 +1204,16 @@ Edit and Done.
    Change does. The end it has is its own row as on a whole route.
 3. The route string field (typed or pasted, Enter to compute), as
    SkyVector's, under the rows, and the figures under it. Before the
-   route is whole it is folded into the card's last row, where Add a Stop
-   is after: "Type or Paste a Route", in the tint, after a filled tint
-   circle with a keyboard glyph (`TypeRouteRow`); a tap opens the
+   route is whole it is folded away and the route box's toggle
+   (`TypeRouteButton`, `route-type-open`, the stock Toggle with a keyboard
+   glyph, as it comes) sits at the card's end; a tap opens the
    field under the card, focused in the tap so a phone's keyboard comes
-   up (`routeBoxOpen`). On a whole route a keyboard button at Add a Stop's end opens it
-   (`route-type-open`; it is no longer an item of More, e401f646d).
-   Under it on the empty route, "Open a Route File" (`OpenRouteFileRow`,
-   a filled tint circle with a file glyph): React Aria's FileTrigger for
-   a flight plan's .fpl (Garmin's FlightPlan v1, as Garmin Pilot and
-   ForeFlight export it) or a GPX route, and the empty route's card is a
-   drop target for one (`FileDrop`, an iPad's Files beside the app, a
-   desktop's Finder). The engine reads it (`route_file_read`) and it is
-   previewed in the shared flight's sheet, "Route File": its points, a
-   user waypoint named off the nearest fix as a dropped pin is, a closed
-   field left out and said so (a closed end offers no plan, decision
-   0043), and Use This Plan or Not Now.
+   up (`routeBoxOpen`). On a whole route the same toggle is at Add a Stop's end
+   (it is no longer an item of More, e401f646d). The "Type or Paste a
+   Route" row is gone (the owner, 2026-11-23: "the toggle is enough").
+   The empty route has no "Open a Route File" row and takes no dropped
+   .fpl or .gpx (removed, the owner, 2026-11-23: "No need for open a
+   route file"); `route_file_read` stays in the engine for Android.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: Leg or Dest, Distance, ETE, Track, GPS alt (ETE only with
    an airplane; Track a dash with no course or below flying speed, the
@@ -1300,7 +1293,7 @@ Edit and Done.
    a reload (rules.md §11; the ••• menu holds no Undo or Redo since
    2026-11-21, e401f646d). Before there is
    a route there is no •••: a route just cleared comes back from Undo at
-   the end of the empty route's Type or Paste a Route row (the field's
+   the end of the empty route's card, before its toggle (the field's
    own while it is open, `RouteEditor`'s `onUndo`; the same
    `lib/planUndo`), till a new one is started, and half a route is
    cleared by the stock ✕ in the same place (the owner, 2026-11-18).

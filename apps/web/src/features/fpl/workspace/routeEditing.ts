@@ -15,7 +15,7 @@ export function routeEditing(vm: PlanSlices<"flight" | "routeList">): boolean {
 /** Whether the route's field (RouteEditor) is open under the timeline:
  *  the route open to edit and the field asked for (usePlanRouteList's
  *  `boxOpen`). A new plan and half a route have it folded into their
- *  timeline's Type or Paste a Route till it is asked for. */
+ *  timeline's the route box's toggle till it is asked for. */
 export function routeBoxOpen(vm: PlanSlices<"flight" | "routeList">): boolean {
   return routeEditing(vm) && vm.routeList.boxOpen;
 }

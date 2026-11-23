@@ -2,7 +2,7 @@
 /**
  * The route before it is whole, drawn as the timeline draws a whole one
  * (the owner, 2026-11-18): the two ends to pick, each asking the one
- * search, and Type or Paste a Route last, opening the route's field --
+ * search, and the route box's toggle last, opening the route's field --
  * with half a route's ✕ and a cleared route's Undo at its end while the
  * field is folded.
  */
@@ -22,11 +22,11 @@ function slices({ hasPoints = false, routed = false, boxOpen = false } = {}) {
 }
 
 describe("the empty route", () => {
-  test("is the timeline's card: the two ends in a placeholder's words, then Type or Paste a Route and Open a Route File", () => {
+  test("is the timeline's card: the two ends in a placeholder's words, the route box's toggle at its end", () => {
     const { vm } = slices();
     render(<EmptyRoute vm={vm} />);
     const card = screen.getByRole("group", { name: "The route" });
-    expect(card.textContent).toBe("DepartureDestinationType or Paste a RouteOpen a Route File");
+    expect(card.textContent).toBe("DepartureDestination");
     expect(screen.getByRole("button", { name: "Pick the departure" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Pick the destination" })).toBeTruthy();
   });
@@ -49,7 +49,7 @@ describe("the empty route", () => {
   });
 });
 
-describe("Type or Paste a Route", () => {
+describe("The route box's toggle", () => {
   test("has the route box's toggle at its end, even on an empty route, opening the field", () => {
     const { vm, routeList } = slices();
     render(<EmptyRoute vm={vm} />);
@@ -65,7 +65,7 @@ describe("Type or Paste a Route", () => {
     field.dataset.testid = "route-type";
     document.body.append(field);
     render(<TypeRow vm={vm} />);
-    fireEvent.click(screen.getByTestId("timeline-type-route"));
+    fireEvent.click(screen.getByTestId("route-type-open"));
     expect(routeList.setRouteOpen).toHaveBeenCalledWith(true);
     expect(document.activeElement).toBe(field);
     field.remove();
@@ -74,7 +74,7 @@ describe("Type or Paste a Route", () => {
   test("is not drawn while the field is open: the field is the row then", () => {
     const { vm } = slices({ boxOpen: true });
     render(<TypeRow vm={vm} />);
-    expect(screen.queryByTestId("timeline-type-route")).toBeNull();
+    expect(screen.queryByTestId("route-type-open")).toBeNull();
   });
 
   test("half a route: the field's ✕ at its end clears it", () => {

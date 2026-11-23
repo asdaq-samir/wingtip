@@ -95,13 +95,13 @@ export async function planFromSearch(page: Page) {
 
 /** The sheet half way on the plan's empty route, as a fresh load with no
  *  route had FPL's (the one search opens on its own page now), and its
- *  field to type the route in opened from the timeline's Type or Paste a
- *  Route (the owner, 2026-11-18), the focus in it. */
+ *  field to type the route in opened from the timeline's route box
+ *  toggle (the owner, 2026-11-18), the focus in it. */
 export async function emptyPlan(page: Page) {
   await openPanel(page);
   await settled(sideDrawer(page));
   await planFromSearch(page);
-  await sideDrawer(page).getByTestId("timeline-type-route").click();
+  await sideDrawer(page).getByTestId("route-type-open").click();
   await expect(sideDrawer(page).getByTestId("route-type")).toBeFocused();
 }
 
