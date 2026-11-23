@@ -100,14 +100,42 @@ class NoServiceWorker extends Error {
 
 async function workerReady(): Promise<boolean> {
   if (!keepingAvailable()) return false;
+  return workerHolds(navigator.serviceWorker, WORKER_WAIT_MS);
+}
+
+/**
+ * Whether a service worker holds this page, waited for up to `waitMs`:
+ * active (`ready`) and the page's controller. `ready` comes as the worker
+ * activates, a moment before it claims the page (vite.config.ts'
+ * clientsClaim): a keep begun between the two asked the route's course
+ * and nav log straight of the network, round a worker that never saw
+ * them, and offline the route opened again sat at "Drawing Route…" with
+ * no Nav Log (flight-critical.spec's "offline from the first ask" on
+ * CI's iPad, run 45122610478, where the keep starts sooner after a first
+ * load than on a phone held in the hand).
+ */
+export async function workerHolds(
+  sw: Pick<ServiceWorkerContainer, "ready" | "controller" | "addEventListener" | "removeEventListener">,
+  waitMs: number,
+): Promise<boolean> {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let claimed: (() => void) | undefined;
   const late = new Promise<false>((resolve) => {
-    timer = setTimeout(() => resolve(false), WORKER_WAIT_MS);
+    timer = setTimeout(() => resolve(false), waitMs);
   });
+  const holds = sw.ready.then(
+    () =>
+      sw.controller !== null ||
+      new Promise<true>((resolve) => {
+        claimed = () => resolve(true);
+        sw.addEventListener("controllerchange", claimed, { once: true });
+      }),
+  );
   try {
-    return await Promise.race([navigator.serviceWorker.ready.then(() => true as const), late]);
+    return await Promise.race([holds, late]);
   } finally {
     clearTimeout(timer);
+    if (claimed) sw.removeEventListener("controllerchange", claimed);
   }
 }
 
