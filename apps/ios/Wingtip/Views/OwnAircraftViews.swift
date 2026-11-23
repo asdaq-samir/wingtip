@@ -241,7 +241,13 @@ struct InspectionsSection: View {
             }
             // Whether the 100-hour is owed at all (91.409(b)): only then is
             // it listed and reminded of.
-            Toggle(isOn: Binding(get: { form.forHire ?? false }, set: { form.forHire = $0 })) {
+            // Unset until the owner answers: the engine then lists the
+            // 100-hour as "if flown for hire", not as owed or not owed.
+            Picker(selection: $form.forHire) {
+                Text("Not Set").tag(Bool?.none)
+                Text("Yes").tag(Bool?.some(true))
+                Text("No").tag(Bool?.some(false))
+            } label: {
                 Text("Flown for hire")
                 Text("Hire or instruction for hire: the 100-hour, 91.409(b)")
             }
