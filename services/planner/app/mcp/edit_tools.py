@@ -10,6 +10,7 @@ read scope. Saving it is saved_tools', with the write scope."""
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Annotated
 
 from mcp.server.apps import Apps
@@ -29,11 +30,13 @@ from .tool_meta import READS, read_only
 FlightIn = Annotated[Flight, Field(description="The flight as the last Wingtip answer gave it.")]
 PointIn = Annotated[str, Field(min_length=2, max_length=16, description="An airport or waypoint identifier.")]
 Place = Annotated[int | None, Field(ge=1, le=MAX_STOPS, description="Its place among the stops, 1 the first; none is last.")]
+NewPlace = Annotated[int, Field(ge=1, le=MAX_STOPS, description="Its new place among the stops, 1 the first; past the last is last.")]
 
 SHOW = (
     "Opens the flight in Wingtip's live view beside the chat -- the chart with the route, the route's points with "
     "their times and fuel, and the figures -- planned by Wingtip's nav log. Give at least the departure and "
-    "destination. Every edit tool answers the flight changed, to pass to the next one."
+    "destination. Every edit tool answers the flight changed, to pass to the next one. plan_route answers the "
+    "same plan as data, without the view."
 )
 
 
@@ -42,6 +45,28 @@ def _index(flight: Flight, ident: str) -> int:
         if same(stop, ident):
             return i
     raise ToolError(f"{ident.upper()} is not a stop of this route. Its stops: {', '.join(flight.stops) or 'none'}.")
+
+
+def _no_fuel_stop_said(totals: dict, suggested: bool, full: bool) -> str:
+    """Why no fuel stop went in: the plan's fuel check passes, or it fails
+    with no field in reach (`no_fuel_stop`), or with no room left in the
+    route or the fields offered already on it."""
+    short = totals.get("no_fuel_stop") or []
+    if short:
+        why = [
+            f"{s['departure']} to {s['destination']}: "
+            + ("the fuel on board leaving is under its start, taxi and reserve" if s.get("on_board") else "no field with fuel in reach")
+            for s in short
+        ]
+        return f"No fuel stop put in, and the flight is short of fuel: {'; '.join(why)}. Change the route or the fuel on board."
+    if suggested and full:
+        return f"No fuel stop put in: the route has its {MAX_STOPS} stops. Take a stop out, then add fuel stops again."
+    if suggested:
+        return (
+            "No fuel stop put in: the fields offered for fuel are on the route already, and it is still short: "
+            "change the route or the fuel on board."
+        )
+    return "No fuel stops are needed: the tanks reach each landing with the reserve."
 
 
 def register(apps: Apps) -> None:
@@ -69,7 +94,7 @@ def register(apps: Apps) -> None:
         return await answer(changed_flight, who, f"Removed {flight.stops[i]}.")
 
     @tool("move_stop", "Move a stop", "Moves one of the flight's stops to another place among its stops.")
-    async def move_stop(flight: FlightIn, ident: PointIn, place: Annotated[int, Field(ge=1, le=MAX_STOPS)]) -> CallToolResult:
+    async def move_stop(flight: FlightIn, ident: PointIn, place: NewPlace) -> CallToolResult:
         who = pilot()
         i = _index(flight, ident)
         stops = flight.stops[:i] + flight.stops[i + 1 :]
@@ -91,17 +116,20 @@ def register(apps: Apps) -> None:
 
     @tool("set_departure_time", "Set departure time", "Sets when the flight leaves (ISO 8601, UTC without an offset), or none for now.")
     async def set_departure_time(
-        flight: FlightIn, depart_at: Annotated[str | None, Field(description="ISO 8601, or none.")]
+        flight: FlightIn,
+        depart_at: Annotated[
+            datetime | None, Field(description="ISO 8601 (2026-11-22T15:30:00Z; UTC without an offset), or none for now.")
+        ],
     ) -> CallToolResult:
         who = pilot()
-        updated = Flight.model_validate({**flight.model_dump(), "depart_at": depart_at})
-        return await answer(updated, who, f"Leaving {depart_at}." if depart_at else "Leaving now.")
+        updated = flight.model_copy(update={"depart_at": depart_at})
+        return await answer(updated, who, f"Leaving {depart_at.isoformat()}." if depart_at else "Leaving now.")
 
     @tool(
         "change_approach",
         "Change an approach",
-        "Loads an approach at one of the route's airports (load, with its id from airport_info's procedures or "
-        "the error's list), activates it onto the route, deactivates it back to loaded, removes it, or unsuspends "
+        "Loads an approach at one of the route's airports (load, with its id from airport_procedures), "
+        "activates it onto the route, deactivates it back to loaded, removes it, or unsuspends "
         "or suspends its missed approach at the MAP, as a GPS navigator does.",
     )
     async def change_approach(
@@ -119,15 +147,20 @@ def register(apps: Apps) -> None:
         "add_fuel_stops",
         "Add fuel stops",
         "Puts in the fuel stops the flight needs where it is short of fuel, each landing with the reserve "
-        "(14 CFR 91.151, 91.167), as FPL's Add Fuel Stops does. Needs an airplane.",
+        "(14 CFR 91.151, 91.167), as FPL's Add Fuel Stops does. Needs an airplane (pick_airplane).",
     )
     async def add_fuel_stops(flight: FlightIn) -> CallToolResult:
         who = pilot()
+        # With no airplane the plan has no fuel figures at all (decision
+        # 0011), so it cannot say the tanks reach: never "none needed".
+        if not flight.airplane_tail:
+            raise ToolError("Fuel stops need the airplane's fuel figures: pick one with pick_airplane (my_airplanes lists them).")
         p, _ = await flight_view.planned(flight, who)
-        suggested = [f for f in p["totals"].get("fuel_stops", []) if f.get("reason", "fuel") == "fuel" and f.get("stops")]
+        totals = p["totals"]
+        suggested = [f for f in totals.get("fuel_stops", []) if f.get("reason", "fuel") == "fuel" and f.get("stops")]
         made = with_fuel_stops(flight.departure, flight.stops, suggested, MAX_STOPS)
         if not made:
-            return await answer(flight, who, "No fuel stops are needed: the tanks reach each landing with the reserve.")
+            return await answer(flight, who, _no_fuel_stop_said(totals, bool(suggested), len(flight.stops) >= MAX_STOPS))
         stops, added = made
         updated = flight.model_copy(update={"stops": stops, "fuel_stops": [*flight.fuel_stops, *added]})
         return await answer(updated, who, f"Added fuel stops {', '.join(added)}.")
@@ -146,7 +179,7 @@ def register(apps: Apps) -> None:
     )
     async def set_fuel_on_board(
         flight: FlightIn,
-        gallons: Annotated[float, Field(ge=0, le=2000)],
+        gallons: Annotated[float, Field(ge=0, le=2000, description="US gallons in the tanks leaving there; 0 for none bought.")],
         airport: Annotated[str | None, Field(max_length=16, description="Where; the departure when none.")] = None,
     ) -> CallToolResult:
         who = pilot()

@@ -218,26 +218,34 @@ never a stock airplane's (decision 0011).
 
 | Tool | Answers | From |
 |---|---|---|
-| `search_airports` | airports whose identifier or name starts with the text | `GET /api/airports/search` |
+| `search_airports` | airports whose identifier or name starts with the text, a page at a time | `GET /api/airports/search` |
 | `airport_info` | the airport card without its weather: elevation, surface airspace class, tower, runways, frequencies, pattern, lighting, contact, FAA diagram and Chart Supplement links | `GET /api/airport/{ident}` |
 | `airport_weather` | METAR and TAF as sent and read; the nearest report or the modelled weather where a field has none | `GET /api/airport/{ident}` |
-| `airport_notams` | the field's NOTAMs and nearby TFRs, ranked by the engine | `GET /api/airport/{ident}/notams` |
+| `airport_notams` | the field's NOTAMs and nearby TFRs, ranked by the engine, a page at a time | `GET /api/airport/{ident}/notams` |
+| `airport_procedures` | the field's approaches, arrivals and departures from the CIFP, each with the id `change_approach` takes, its chart name, runway and transitions | `GET /api/airport/{ident}/procedures` |
 | `nearest_airports` | the nearest fields to a point or an airport, filtered by runway length, tower, public use | `GET /api/airports/nearest` |
 | `plan_route` | the nav log: altitude and why, each leg's courses, heading, wind, ground speed, time and fuel, the totals with reserve and margin, the cautions, a link to open it in Wingtip | `GET /api/plan` |
 | `flight_briefing` | the Go / No-Go line, each finding, the risk assessment | `POST /api/go-no-go` |
 | `my_airplanes` | the pilot's airplanes and their figures, inspections and open squawks | gateway `/internal/mcp/aircraft` |
-| `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when); never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
+| `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when), a page at a time; never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
 | `save_flight` | plans the route and saves it to the pilot's Flights | `GET /api/plan`, then gateway `POST /internal/mcp/flights` |
 | `show_flight` | opens the flight in the live view (4b) | `GET /api/plan` |
 | `add_stop`, `remove_stop`, `move_stop` | the flight with a stop put in, taken out or moved | `GET /api/plan` |
 | `set_cruise_altitude`, `set_departure_time` | the flight at another altitude (or the legal fastest), leaving at another time (or now) | `GET /api/plan` |
 | `change_approach` | an approach at one of the route's fields loaded, activated, deactivated, removed, its missed approach unsuspended or suspended | the engine's `procedures_read` and `procedures_write`, `GET /api/airport/{ident}/procedures`, `GET /api/plan` |
-| `add_fuel_stops`, `remove_fuel_stops` | the fuel stops the plan's fuel check says the flight needs put in (`wingtip.fuel_rounds`), or taken out | `GET /api/plan` |
+| `add_fuel_stops`, `remove_fuel_stops` | the fuel stops the plan's fuel check says the flight needs put in (`wingtip.fuel_rounds`), or taken out; with no airplane, refused (no fuel figures to check), and a flight short with no field in reach said short | `GET /api/plan` |
 | `set_fuel_on_board`, `pick_airplane` | the tanks leaving a field; one of the pilot's airplanes, or none | `GET /api/plan`, gateway `/internal/mcp/aircraft` |
 | `open_saved_flight` | a saved flight as the flight to edit | gateway `/internal/mcp/flights` |
 | `save_flight_plan` | the flight being planned saved as a new flight (write, adds) | gateway `POST /internal/mcp/flights` |
 | `update_saved_flight` | the saved flight it came from replaced with it (write, destructive) | gateway `PUT /internal/mcp/flights/{id}` |
 | `delete_saved_flight` | a saved flight deleted (write, destructive) | gateway `DELETE /internal/mcp/flights/{id}` |
+
+Lists come a page at a time (`limit` and `offset`), each answer with
+`total`, `count`, `offset`, `has_more` and `next_offset` (`calls.paged`).
+`plan_route` and `save_flight` take a route by its airports and answer in
+text; `show_flight`, the edits and `save_flight_plan` carry the whole
+flight (fuel stops, approaches, fuel on board) and draw it in the live
+view; each pair's descriptions say which is which.
 
 Hints, on every tool: `title`, `readOnlyHint`, `destructiveHint`,
 `idempotentHint`, `openWorldHint: false` (Wingtip's own data and the pilot's

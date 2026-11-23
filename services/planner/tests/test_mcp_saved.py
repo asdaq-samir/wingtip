@@ -95,7 +95,9 @@ def test_saving_replacing_and_deleting_need_the_write_scope():
         ("update_saved_flight", {"flight": FLIGHT}),
         ("delete_saved_flight", {"flight_id": 12}),
     ):
-        assert "not allowed wingtip:write" in refusal(call(tool, args, token="read-7")), tool
+        said = refusal(call(tool, args, token="read-7"))
+        # The consent page's own words for the box to tick (ConnectorSettings).
+        assert "not allowed wingtip:write" in said and '"Save, change and delete your saved flights" ticked' in said, tool
 
 
 def _read_view() -> tuple:

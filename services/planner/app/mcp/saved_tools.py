@@ -64,8 +64,9 @@ def register_view(apps: Apps) -> None:
         resource_uri=VIEW_URI,
         name="save_flight_plan",
         title="Save flight plan to Wingtip",
-        description="Saves the flight being planned to the pilot's Wingtip account as a new saved flight, planned as "
-        "the live view shows it. Adds a flight; changes nothing already saved.",
+        description="Saves the flight being planned (the flight the last show_flight or edit answer gave) to the "
+        "pilot's Wingtip account as a new saved flight, planned as the live view shows it. Adds a flight; changes "
+        "nothing already saved. To save over the saved flight it came from, update_saved_flight.",
         annotations=additive("Save flight plan to Wingtip"),
         meta=WRITES,
     )

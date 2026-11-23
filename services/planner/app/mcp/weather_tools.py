@@ -10,7 +10,7 @@ from pydantic import Field
 
 from .airport_tools import Ident
 from ..generated.planner_calls import airport_notams as notams_of, airport_place
-from .calls import METAR_SOURCE, NOTAM_SOURCE, ident as ident_of, pick, pilot
+from .calls import METAR_SOURCE, NOTAM_SOURCE, ident as ident_of, paged, pick, pilot
 from .tool_meta import READS, read_only
 
 WEATHER = ("ident", "name", "elevation_ft", "metar", "nearby_metar", "modelled_weather", "taf", "weather_unavailable")
@@ -48,13 +48,16 @@ def register(server: MCPServer) -> None:
         meta=READS,
     )
     async def airport_notams(
-        ident: Ident, limit: Annotated[int, Field(ge=1, le=50, description="How many to answer, best first, 1 to 50.")] = 15
+        ident: Ident,
+        limit: Annotated[int, Field(ge=1, le=50, description="How many to answer, best first, 1 to 50.")] = 15,
+        offset: Annotated[int, Field(ge=0, description="How many to skip, for the next page: the last answer's next_offset.")] = 0,
     ) -> dict[str, Any]:
         pilot()
         ranked = await notams_of(ident=ident_of(ident))
+        found = ranked["notams"]
         return {
-            "notams": ranked["notams"][:limit],
-            "total": len(ranked["notams"]),
+            "notams": found[offset : offset + limit],
+            **paged(found, offset, limit),
             "said_first": ranked["top"],
             "held_since": ranked.get("coverage_since"),
             # False: only the NOTAMs heard since held_since, not every one in force.
