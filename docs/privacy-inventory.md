@@ -400,7 +400,8 @@ without the times, are kept per UTC day on the planner's disk
 the day, the route's template, the method, the status and how many calls,
 nothing else. Each finished day is served at `/api/usage/daily`, on the
 stack's own network only, for the gateway's nightly rollup into Postgres
-(its job is still to be built), so the totals outlive a server replaced: counts per day of each kind of
+(`UsageRollup`, 04:20 UTC, into `usage_days`: the same five fields, kept
+as the owner's totals), so the totals outlive a server replaced: counts per day of each kind of
 request, not tied to any pilot or device. The status page
 reads the apps' faults and speed figures by build from the rows above
 (`AppHealthController`), keeping nothing more.
