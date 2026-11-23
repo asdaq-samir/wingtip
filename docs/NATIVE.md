@@ -263,7 +263,11 @@ owner, 2026-11-03):
   Stratux, Sentry, SkyEcho or a Stratus in open mode on the Wi-Fi sends
   GDL 90 to UDP port 4000; `ReceiverListener` (Network.framework) gathers
   it and once a second the engine reads it (`receiver_read`,
-  `engine/crates/receiver`). Its GPS becomes own ship where the device has
+  `engine/crates/receiver`), off the main actor, and not at all when
+  nothing was heard and nothing ages. A listener that fails (the port
+  taken, Local Network refused) says so on the setting's row
+  (`Receiver.problem`) and is tried again only when the network or the
+  setting changes. Its GPS becomes own ship where the device has
   none, as a Wi-Fi iPad has, or where it is twice as good, and the
   device's is taken back once it is 3 s old (`receiver_position`,
   `OwnShipSource`, `OwnShip.fromReceiver`). Its traffic is drawn ahead of
