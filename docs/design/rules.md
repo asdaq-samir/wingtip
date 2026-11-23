@@ -639,14 +639,41 @@ off by default (the owner, 2026-11-13).
    grouped box's bottom right, after Add a Stop and the fuel stops' pill on
    one line (2026-11-22: "pinned to the bottom right"), is a toggle that
    turns the same box into the route's field and back, its size and shape
-   kept at the least and the route wrapped in it, each pill whole with
-   the arrow into it, never cut at the edge, the box growing to hold every
+   kept at the least and the route wrapped in it, each pill and chip whole,
+   never cut at the edge, the box growing to hold every
    line and the toggle's row under the last (the owner's iPhone,
-   2026-11-23), pressed while it is the field,
+   2026-11-23; the row takes no tap but on its own two controls, the
+   field's last line under it the field's), pressed while it is the field,
    with no "Route" row and no Done (the owner, 2026-11-22: "It should make
    the same grouped box into route box and the other way"), what is typed
    read as the field is left, the plan's Undo as ever; the
-   figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
+   figures under it and the Routes' chips put away. **The route box's
+   pills** are ForeFlight's route editor's (the owner's screenshot,
+   2026-11-23): in the order flown, left to right with no arrows, `gap-2`
+   between two (each one's 44-point area half the gap wider each side),
+   wrapping whole; a field's arrival and approach chips sit before its
+   pill and its departure's after it at a gap of 4, each chip its own
+   piece that may wrap, a long title cut with "…"; nothing written after
+   the last point ("Destination" is the timeline's word). A tap on a pill
+   is its menu, the stock DropdownMenu with the same items as the
+   timeline's "⋯" (`PointMenuItems`, one menu for both): Info (an
+   airport's card), Insert Before and Insert After (the one search asked
+   for the point, put in there; after the destination it is the new
+   destination), Show on Map (the map brought to it and ringed, the sheet
+   down to half from full), Procedures (where the FAA publishes one of the
+   kind the route flies there, its d-TPP DP, IAP or STR), then Change,
+   Direct To, the altitude, Move Up and Down, and Remove last, its Undo the
+   plan's toast. Enter on a pill opens it, the left and right arrows go
+   from pill to pill, Delete takes one out. What is wrong is on the pill:
+   a point not known, or a field NASR lists closed (the engine's
+   `field_status` on its card; decision 0043), is red, "Closed" or "not
+   known" in its name and the reason at its menu's head; a caution there
+   (the altitude's, a flight short of fuel with no stop offered) is a red
+   "!" at its top right, its words at the menu's head. A suggested fuel
+   stop stays dashed after the point its flight leaves (`fuelStopsAt`, by
+   both the flight's ends): one tap puts it in the route there, no menu; a
+   swipe to the left (`SwipeRow`), its held or right-clicked menu's
+   Dismiss, or Delete dismisses it for this plan. A present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,
    Distance, ETE (ETA for an arrival), Track: short words, ETE and ETA the FAA's (2026-11-20), the distance whole
