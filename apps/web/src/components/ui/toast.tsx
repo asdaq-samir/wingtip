@@ -95,6 +95,8 @@ function Toasts({ position }: { position: "top" | "bottom" }) {
         // left out, so the toast's rise snapped and only its fade ran.
         "absolute inset-x-0 flex min-h-12 items-center gap-2 rounded-(--radius-banner) px-4 py-2.5 transition-[opacity,transform,translate] duration-(--motion-fade) ease-(--motion-sheet-ease) [--gap:0.5rem]",
         "data-limited:hidden data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none",
+        // Under the finger as it is swiped, not eased behind it (the r5-ui audit's L7).
+        "data-swiping:transition-none",
         // It comes from its own edge and goes back to it, as an iOS banner
         // drops from the top: down from above at the top, up from below
         // at the foot (the design review of 2026-11-23, M3).

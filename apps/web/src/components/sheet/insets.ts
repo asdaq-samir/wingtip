@@ -1,4 +1,5 @@
 import type { Drawer } from "@base-ui/react/drawer";
+import { feel } from "../../lib/haptics";
 import { SHEET_MARGIN, type MapInsets, type PanelState } from "../../lib/mapChrome";
 import { REACH } from "../../lib/sheetCards";
 import { MOTION, SIZE } from "../../lib/tokens";
@@ -154,14 +155,22 @@ export function letGo(
   details: Pick<Drawer.Root.SnapPointChangeEventDetails, "cancel">,
   s: { fromBottom: boolean; at: PanelState; ask: (size: PanelState) => void; park: PanelState; close?: () => void },
 ) {
+  // A light tick as a swipe lands the sheet or a card at another size, as
+  // iOS's sheet gives one (lib/haptics: Chrome on Android; Safari has
+  // none): from the pilot's own drag alone, not as the app raises it (the
+  // r5-ui audit's L8).
   if (point === null) {
     if (s.close) return;
     details.cancel();
-    if (s.park !== s.at) s.ask(s.park);
+    if (s.park !== s.at) {
+      feel("detent");
+      s.ask(s.park);
+    }
     return;
   }
   const target = sizeAt(s.fromBottom, point);
   if (!target || target === s.at) return;
+  feel("detent");
   if (s.close && REACH[target] < REACH[s.at]) s.close();
   else s.ask(target === "peek" ? s.park : target);
 }

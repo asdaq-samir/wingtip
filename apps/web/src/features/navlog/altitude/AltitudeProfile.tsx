@@ -18,6 +18,7 @@ import ProfileNotes from "./ProfileNotes";
 import { pointsAlong, waypointsAlong } from "./points";
 import { useAltitudePreview } from "./useAltitudePreview";
 import { coursePoints } from "../../../lib/course";
+import { feel } from "../../../lib/haptics";
 import { sideViewTop } from "../profile";
 
 /** What the side view is drawn for: the altitude previewed (null while
@@ -161,6 +162,9 @@ export function AltitudeProfile({
               value={sliding ?? shownAt}
               onValueChange={(ft) => {
                 const row = rowNear(ft as number);
+                // A tick at each altitude passed, as a picker's wheel
+                // ticks (haptic altitude; the r5-ui audit's L17).
+                if (row !== (sliding ?? shownAt)) feel("altitude");
                 setSliding(row);
                 vm.live(row);
               }}

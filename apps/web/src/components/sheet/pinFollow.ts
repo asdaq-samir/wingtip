@@ -54,12 +54,22 @@ export function followSettle(row: HTMLElement): () => void {
 
 function ride(row: HTMLElement, s: Settle) {
   const style = row.style;
-  const running = row.getAnimations().some((a) => a.id === FOLLOW);
-  // Where it is drawn now: mid-ease, the ease's own place; else its CSS
-  // with what it was told before this change.
-  let from: number;
-  if (running) from = slidOf(row);
-  else {
+  const going = row.getAnimations().filter((a) => a.id === FOLLOW);
+  // Where it is drawn now: mid-ease, the ease's own place, read before the
+  // ease is let go.
+  let from = going.length ? slidOf(row) : Number.NaN;
+  for (const a of going) a.cancel();
+  // Its height, the same at both ends, and its rest, read together before
+  // anything is written (no style written and read back here: trying the
+  // end size on the row forced two layouts as the settle began, in the
+  // let-go's own frame; the animation audit of 2026-11-23, M2), so the
+  // let-go works the style out twice at most, not four times (the r5-ui
+  // audit's L3).
+  const h = row.offsetHeight;
+  const to = slidOf(row);
+  // Else its CSS with what it was told before this change, the one style
+  // written and read back.
+  if (Number.isNaN(from)) {
     const swipe = style.getPropertyValue("--sheet-swipe");
     style.setProperty("--sheet-offset", s.was.offset);
     style.setProperty("--sheet-swipe", s.was.swipe);
@@ -67,12 +77,6 @@ function ride(row: HTMLElement, s: Settle) {
     style.removeProperty("--sheet-offset");
     style.setProperty("--sheet-swipe", swipe);
   }
-  for (const a of row.getAnimations()) if (a.id === FOLLOW) a.cancel();
-  // Its height, the same at both ends (no style written and read back
-  // here: trying the end size on the row forced two layouts as the settle
-  // began, in the let-go's own frame; the animation audit of 2026-11-23, M2).
-  const h = row.offsetHeight;
-  const to = slidOf(row);
   const frames = path({ sheetFrom: s.from, sheetTo: s.to, from, to, h0: h, h1: h });
   if (frames.length < 2 || frames.every((f) => Math.abs(f.y - from) < 0.5)) return;
   row.animate(

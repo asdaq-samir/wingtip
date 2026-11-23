@@ -17,6 +17,7 @@ import {
   whereOf,
   type FieldNotam,
   type NotamCardReading,
+  type NotamReading,
 } from "./fieldNotams";
 import { cardTimes } from "./notamTimes";
 import { TfrDetails } from "./TfrDetails";
@@ -79,12 +80,16 @@ function NotAuthorized({ card }: { card: NotamCardReading }) {
  * written out (notam_read) stand in, as before. A TFR's place,
  * instructions and whom to call are TfrDetails'.
  */
-function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
-  const read = readNotam(n, ident);
+function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; card: NotamCardReading; read: NotamReading }) {
   const tfr = n.kind === "tfr";
-  const card = cardOf(n, ident);
+  // Only one in force affects the flight: an expired NOTAM, or one not
+  // yet begun, at the departure wore the red chip beside its own Inactive
+  // (the r5-ui audit's M6, 2026-11-23). Red only where it takes a
+  // procedure away; a crane's light at the field is the neutral chip.
+  const active = n.in_force !== false;
   const role = usePlanRole(ident);
-  const times = cardTimes(n, read, card.permanent, useFieldZone(ident));
+  // On the minute clock NotamState keeps, so "in 18d" moves on with it.
+  const times = cardTimes(n, read, card.permanent, useFieldZone(ident), useMinuteClock());
   const where = whereOf(n, read);
   // The category is a label only where the title says what happened;
   // otherwise it is the title already (NotamCard).
@@ -103,8 +108,12 @@ function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
             Permanent
           </Badge>
         )}
-        {role && (
-          <Badge variant="destructive" className={TEXT.badge} data-testid="place-notam-affects">
+        {role && active && (
+          <Badge
+            variant={card.procedures.length > 0 ? "destructive" : "secondary"}
+            className={TEXT.badge}
+            data-testid="place-notam-affects"
+          >
             {role}
           </Badge>
         )}
@@ -136,9 +145,7 @@ function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
 /** Its number as a briefer reads it: an FDC NOTAM's with its
  *  accountability ("FDC 6/3373", JO 7930.2 4-2-1), the field's own
  *  without the field's name ("NOTAM 11/060"). */
-function numberLine(n: FieldNotam, ident: string): string {
-  const card = cardOf(n, ident);
-  const read = readNotam(n, ident);
+function numberLine(n: FieldNotam, ident: string, card: NotamCardReading, read: NotamReading): string {
   return card.account === "FDC" && read.number ? `FDC ${read.number}` : `NOTAM ${numberOf(n, ident)}`;
 }
 
@@ -147,16 +154,20 @@ function numberLine(n: FieldNotam, ident: string): string {
  *  (headingOf), the field and its number under it ("KARR Aurora
  *  Municipal · FDC 6/3373"). */
 export function NotamCard({ n, ident, name, onClose }: { n: FieldNotam; ident: string; name?: string | null; onClose: () => void }) {
-  const title = n.kind === "tfr" ? null : cardOf(n, ident).title;
+  // Asked of the engine once a render, each a trip through its WASM, and
+  // handed down (the r5-ui audit's L13).
+  const card = cardOf(n, ident);
+  const read = readNotam(n, ident);
+  const title = n.kind === "tfr" ? null : card.title;
   const field = name ? `${ident} ${name}` : ident;
   return (
     <SheetCard
       title={title ?? headingOf(n, ident)}
-      description={`${field} · ${numberLine(n, ident)}`}
+      description={`${field} · ${numberLine(n, ident, card, read)}`}
       onClose={onClose}
       testId="place-notam-card"
     >
-      <NotamFull n={n} ident={ident} />
+      <NotamFull n={n} ident={ident} card={card} read={read} />
     </SheetCard>
   );
 }

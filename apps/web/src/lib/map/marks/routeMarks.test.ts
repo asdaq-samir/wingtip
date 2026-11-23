@@ -18,7 +18,7 @@ describe("a route field's ident", () => {
     const ends = [field("KUGN", 42.42, -87.87), field("KAHQ", 41.24, -96.59), field("KLAS", 36.08, -115.15)];
     const line: [number, number][] = ends.map((e) => [e.lat, e.lon]);
     const marks = routeMarks(ends, [], line);
-    const side = (ident: string) => marks.find((m) => m.key === ident)?.props?.side;
+    const side = (ident: string) => fieldSide(Number(marks.find((m) => m.key === ident)?.props?.out));
     // The course bends south at Wahoo: its outside is to the north.
     expect(side("KAHQ")).toBe("bottom");
     // Each end square to its leg, on the upper side: above, off the line.
