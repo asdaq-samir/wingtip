@@ -46,6 +46,10 @@ interface Props {
    *  on the ground. A time picked outside is brought inside and said so. */
   earliest?: number;
   latest?: number;
+  /** The zone said right after the clock's time under "Now" ("14:05
+   *  CST"), as every time in FPL's list has its zone after it; none
+   *  where no point keeps another clock. */
+  zone?: string;
 }
 
 /** The instant of a calendar day at a local "HH:mm". */
@@ -72,6 +76,7 @@ export default function DepartPicker({
   leavesNow = true,
   earliest,
   latest,
+  zone,
 }: Props) {
   const [open, setOpen] = useState(false);
   // A pick outside its range, brought inside: said under the time, where
@@ -113,13 +118,16 @@ export default function DepartPicker({
                 label-content-name-mismatch, a11y.spec's Nav Log). */}
             <span className="sr-only">{label}, </span>
             {date ? (
-              leaveWhen(date)
+              <span className="whitespace-nowrap">
+                {leaveWhen(date)}
+                {zone ? <span className={cn("ml-1 font-normal text-foreground", TEXT.caption)}>{zone}</span> : null}
+              </span>
             ) : (
               // Each line at its own size's leading (TEXT.detail's), as
               // the iOS audit's P3 asks: tightened, "Now" sat on 18.8.
               <span className="flex flex-col items-end">
                 Now
-                <NowTime />
+                <NowTime zone={zone} />
               </span>
             )}
             <span className="sr-only">: change</span>
@@ -228,8 +236,13 @@ export default function DepartPicker({
   );
 }
 
-/** The time now, under "Now", kept to the minute. */
-function NowTime() {
+/** The time now, under "Now", kept to the minute, its zone after it. */
+function NowTime({ zone }: { zone?: string }) {
   const now = useMinuteClock();
-  return <span className={cn("font-normal text-muted-foreground", TEXT.caption)}>{clockTime(new Date(now))}</span>;
+  return (
+    <span className={cn("font-normal whitespace-nowrap text-muted-foreground", TEXT.caption)}>
+      {clockTime(new Date(now))}
+      {zone ? ` ${zone}` : null}
+    </span>
+  );
 }
