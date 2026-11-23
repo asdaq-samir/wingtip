@@ -84,7 +84,7 @@ export default function FigureStrip({
    *  review of 2026-11-22). */
   still?: boolean;
   /** One row whatever the width, never two by two: a bar one row high
-   *  (FPL's pill), where the last figure is dropped when they do not all
+   *  (FPL's pill), where figures are dropped from the end until the rest
    *  fit at full size, never one cut short. */
   row?: boolean;
 }) {
@@ -94,19 +94,23 @@ export default function FigureStrip({
   // (useFiguresFit), as below 16 rem: never one cut short (the HIG audit
   // of 2026-11-23, H2).
   const strip = useRef<HTMLDListElement>(null);
-  const fits = useFiguresFit(strip, figures.map((f) => `${f.label ?? f.name}${f.value}${f.unit ?? ""}`).join("|"));
+  const fitting = useFiguresFit(strip, figures.map((f) => `${f.label ?? f.name}${f.value}${f.unit ?? ""}`).join("|"));
+  const fits = fitting >= figures.length;
   const fit = row || fits;
-  // One row that does not hold them all at full size: the last figure
-  // dropped rather than any cut short with "…" (the r7 audit's W-M3, at
-  // the owner's 17.88 and 19.65 px on a 375-point iPhone). It stays laid
-  // out, out of the grid and out of sight, so what the strip needs is
-  // measured the same and the row never flips between three and four.
-  const drop = row && !fits && figures.length > 1 ? figures.length - 1 : -1;
-  const last = drop >= 0 ? drop - 1 : figures.length - 1;
+  // One row that does not hold them all at full size: figures dropped from
+  // the end until the rest fit, rather than any cut short with "…" (the r7
+  // audit's W-M3, at the owner's 17.88 and 19.65 px on a 375-point iPhone;
+  // the r8 audit's W-L2, three at 320 points in Slide Over), one kept
+  // whatever. Those dropped stay laid out, out of the grid and out of
+  // sight, so what the strip needs is measured the same and the row never
+  // flips between counts.
+  const shown = row && !fits ? Math.max(1, fitting) : figures.length;
+  const dropped = (i: number) => i >= shown;
+  const last = shown - 1;
   // As many columns as figures shown, so none ever wraps onto a row of its
   // own (in flight the GPS altitude, a fifth figure in four columns, went
   // under the rest, and the pill showed that row alone).
-  const cols = { "--cols": figures.length - (drop >= 0 ? 1 : 0) } as CSSProperties;
+  const cols = { "--cols": shown } as CSSProperties;
   return (
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
@@ -157,11 +161,11 @@ export default function FigureStrip({
             // Each column as wide as its widest of name and figure.
             <div
               key={f.name}
-              inert={i === drop || undefined}
-              aria-hidden={i === drop || undefined}
+              inert={dropped(i) || undefined}
+              aria-hidden={dropped(i) || undefined}
               className={cn(
                 "min-w-0 text-center",
-                i === drop && "invisible absolute",
+                dropped(i) && "invisible absolute",
                 edge === "start" && "@min-[16rem]/figures:text-left",
                 edge === "end" && "@min-[16rem]/figures:text-right",
               )}

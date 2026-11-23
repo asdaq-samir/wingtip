@@ -26,14 +26,29 @@
 export function bandFits(band: HTMLElement | null) {
   const scroller = band?.parentElement;
   if (!band || !scroller) return;
-  const room = scroller.querySelector<HTMLElement>(":scope > [data-foot-room]");
+  const watch = new ResizeObserver(() => check());
+  // The foot room found again as it comes and goes with the scroller's
+  // children (a layout that adds or drops its end room), not once.
+  let room: HTMLElement | null = null;
+  const find = () => {
+    const now = scroller.querySelector<HTMLElement>(":scope > [data-foot-room]");
+    if (now === room) return;
+    if (room) watch.unobserve(room);
+    room = now;
+    if (room) watch.observe(room);
+  };
   const check = () => {
+    find();
     const foot = (parseFloat(getComputedStyle(scroller).paddingBottom) || 0) + (room?.offsetHeight ?? 0);
     band.toggleAttribute("data-band-tall", band.offsetHeight > scroller.clientHeight - foot);
   };
-  const watch = new ResizeObserver(check);
+  find();
   watch.observe(band);
   watch.observe(scroller);
-  if (room) watch.observe(room);
-  return () => watch.disconnect();
+  const children = new MutationObserver(check);
+  children.observe(scroller, { childList: true });
+  return () => {
+    watch.disconnect();
+    children.disconnect();
+  };
 }

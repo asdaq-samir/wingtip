@@ -94,7 +94,13 @@ const onVisual = (onChange: () => void) => {
   window.addEventListener("resize", onChange);
   visual?.addEventListener("resize", onChange);
   visual?.addEventListener("scroll", onChange);
+  // The focus leaving a field puts the keyboard away before the window
+  // has grown back; read again on each move of the focus.
+  document.addEventListener("focusin", onChange);
+  document.addEventListener("focusout", onChange);
   return () => {
+    document.removeEventListener("focusin", onChange);
+    document.removeEventListener("focusout", onChange);
     window.removeEventListener("resize", onChange);
     visual?.removeEventListener("resize", onChange);
     visual?.removeEventListener("scroll", onChange);
@@ -108,6 +114,17 @@ let tallest = { width: 0, height: 0 };
  *  keyboard: its toolbar and address bar are under 100 points together. */
 const KEYBOARD_PX = 150;
 
+/** Whether the focus is in a field that takes typing: a text input, a
+ *  textarea or editable content. Buttons, checkboxes and the like are
+ *  inputs too, but bring up no keyboard. */
+const NO_KEYBOARD = new Set(["button", "checkbox", "color", "file", "hidden", "image", "radio", "range", "reset", "submit"]);
+function typing(): boolean {
+  const el = document.activeElement;
+  if (el instanceof HTMLTextAreaElement) return !el.readOnly;
+  if (el instanceof HTMLInputElement) return !el.readOnly && !NO_KEYBOARD.has(el.type);
+  return el instanceof HTMLElement && el.isContentEditable;
+}
+
 const keyboard = held(() => {
   const visual = window.visualViewport;
   if (!visual) return "0|0";
@@ -118,10 +135,12 @@ const keyboard = held(() => {
   // 26's Safari shrinks the window itself with the keyboard, as Chrome on
   // Android does, so the window and the visual viewport agree and the
   // inset is 0 while the keyboard is up: the tab bar stayed over it (the
-  // owner's iPhone, 2026-11-23). Only under a finger: a desktop's window
-  // made shorter by hand is no keyboard.
+  // owner's iPhone, 2026-11-23). Only under a finger, and only while a
+  // field that takes typing has the focus, the one thing the on-screen
+  // keyboard comes up for: a desktop's window, an iPad's window dragged
+  // shorter or a touch laptop's is no keyboard (the r8 audit's W-L1).
   const touch = window.matchMedia("(any-pointer: coarse)").matches;
-  const up = inset > 0 || (touch && tallest.height - visual.height > KEYBOARD_PX);
+  const up = inset > 0 || (touch && typing() && tallest.height - visual.height > KEYBOARD_PX);
   return `${inset}|${up ? 1 : 0}`;
 }, onVisual);
 const useKeyboardReading = () => useSyncExternalStore(keyboard.subscribe, keyboard.get, () => "0|0").split("|");

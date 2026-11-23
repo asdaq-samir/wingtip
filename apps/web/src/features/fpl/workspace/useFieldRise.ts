@@ -25,7 +25,7 @@ export function useFieldRise(field: RefObject<HTMLElement | null>, on: boolean, 
       if (raised.current || panelNow.current === "full") return;
       // Only under a phone's foot bar (sheet/FootBar), laid out at the
       // viewport's foot even while the keyboard hides it.
-      const bar = document.querySelector<HTMLElement>('[data-testid="foot-bar"]');
+      const bar = document.querySelector<HTMLElement>("[data-foot-bar]");
       if (!bar) return;
       if (Math.round(el.getBoundingClientRect().bottom) <= Math.round(bar.getBoundingClientRect().top)) return;
       raised.current = true;

@@ -280,7 +280,11 @@ export default function RouteBox({
                       data-typed={typed.text}
                       className={cn(
                         "min-h-7 min-w-full font-sans font-semibold uppercase outline-none",
-                        wrapped ? "w-full whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
+                        // Wrapped, the line runs 8 past the field into the row's
+                        // pr-2, so the gap each route piece keeps at its end
+                        // (RouteToken) hangs there at a line's end rather than
+                        // wrapping a piece one place early (the r8 audit's nit).
+                        wrapped ? "-me-2 w-[calc(100%+--spacing(2))] whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
                         TEXT.row,
                         "leading-7 pointer-coarse:leading-7",
                       )}

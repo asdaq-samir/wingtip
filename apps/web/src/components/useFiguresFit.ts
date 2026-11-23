@@ -32,9 +32,9 @@ function needed(column: Element): number {
 }
 
 /**
- * Whether a strip's figures fit side by side at their full size: the sum
- * of the widths each column's figure needs and the gaps between, against
- * the strip's own width. Measured as it lays out (a ResizeObserver on the
+ * How many of a strip's figures, from the first, fit side by side at their
+ * full size: the sum of the widths each column's figure needs and the gaps
+ * between, against the strip's own width; every one of them where all fit. Measured as it lays out (a ResizeObserver on the
  * strip and its columns: the panel's width and the reader's text size each
  * change one), so where they do not fit the strip goes to two rows of two
  * rather than cut a figure short (the owner's rule: every figure whole;
@@ -48,22 +48,30 @@ function needed(column: Element): number {
  * walked again only when a column's own size changes, never for the
  * strip's width alone (the r5-code audit's R5-3, 2026-11-23).
  * `content` is the figures' words, to measure again when they change.
+ * A pill one row high drops those past the count (FigureStrip's `row`).
  */
-export function useFiguresFit(strip: RefObject<HTMLElement | null>, content: string): boolean {
-  const [fit, setFit] = useState(true);
+export function useFiguresFit(strip: RefObject<HTMLElement | null>, content: string): number {
+  const [fit, setFit] = useState(Infinity);
   useLayoutEffect(() => {
     const dl = strip.current;
     if (!dl || typeof ResizeObserver === "undefined") return;
-    // The columns' need, walked again only when one of them changes size.
-    let need: number | null = null;
+    // Each column's need, walked again only when one of them changes size.
+    let needs: number[] | null = null;
+    let gap = 0;
     const check = (entries: ResizeObserverEntry[]) => {
-      if (need === null || entries.some((e) => e.target !== dl)) {
-        const columns = [...dl.children];
-        const gap = parseFloat(getComputedStyle(dl).columnGap) || 0;
-        need = columns.reduce((sum, column) => sum + needed(column), 0) + gap * Math.max(0, columns.length - 1);
+      if (needs === null || entries.some((e) => e.target !== dl)) {
+        needs = [...dl.children].map(needed);
+        gap = parseFloat(getComputedStyle(dl).columnGap) || 0;
       }
       // Half a pixel's slack for the rounding of a layout that just fits.
-      setFit(need <= dl.clientWidth + 0.5);
+      let used = -gap;
+      let count = 0;
+      for (const need of needs) {
+        used += gap + need;
+        if (used > dl.clientWidth + 0.5) break;
+        count += 1;
+      }
+      setFit(count === needs.length ? Infinity : count);
     };
     const watch = new ResizeObserver(check);
     watch.observe(dl);
