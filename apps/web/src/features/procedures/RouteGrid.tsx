@@ -42,20 +42,28 @@ export function RouteGrid(props: RouteGridProps) {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (List) return;
+    // Nor while a menu opened from them is open: its focus is in its popup,
+    // outside the rows, and the swap took its trigger away, so a point's
+    // menu tapped as the chunk came in shut under the finger before its
+    // Change or Hold could be had (route-fields.spec, procedures-route.spec).
+    const busy = (rows: HTMLElement) => rows.contains(document.activeElement) || !!rows.querySelector("[aria-expanded=true]");
     const take = () => {
       const list = loaded;
-      if (list && !box.current?.contains(document.activeElement)) setList(() => list);
+      if (list && box.current && !busy(box.current)) setList(() => list);
     };
     const rows = box.current;
-    // The focus gone from the rows: looked at once it has landed.
+    // The focus gone from the rows, or moved anywhere once a menu of
+    // theirs has closed: looked at once it has landed.
     const left = () => window.setTimeout(take, 0);
     rows?.addEventListener("focusout", left);
+    document.addEventListener("focusin", left);
     told.add(take);
     const later = afterRouteDrawn(() => void fetchList().catch(() => {}), AFTER_MS);
     take();
     return () => {
       told.delete(take);
       rows?.removeEventListener("focusout", left);
+      document.removeEventListener("focusin", left);
       later();
     };
   }, [List]);
