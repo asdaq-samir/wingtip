@@ -1,10 +1,24 @@
 import { Suspense } from "react";
 import { EngineGate } from "../../../lib/engine/engineGate";
-import { FavoriteStrip, PillSection, PillStrip } from "../../../components/Favorites";
-import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
+import {
+  FavoriteStrip,
+  PillSection,
+  PillStrip,
+} from "../../../components/Favorites";
+import {
+  usePreferences,
+  type KeptAircraft,
+  type RecentAirport,
+} from "../../../lib/preferences";
+import { useSearchPick } from "../../../lib/oneSearch";
+import { FieldError } from "../../../components/ui/field";
+import { TEXT } from "../../../lib/text";
 import AddFavoriteTile from "../../../components/AddFavoriteTile";
 import TabPage from "../../../components/TabPage";
-import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../aircraft-pick";
+import {
+  AircraftFavoriteStrip,
+  AircraftRecentTiles,
+} from "../../aircraft-pick";
 import { useAirportIndex } from "../../../lib/airportIndex";
 import FindNearby from "./FindNearby";
 import { NearestStrip } from "./NearestStrip";
@@ -49,21 +63,54 @@ export default function SearchHome({
   const selectPlace = pickIdent ?? openPlace;
   const { nearOrigin } = vm.map;
   const { openNearest, findNearby } = vm.fpl;
-  const { home, favorites, askFor, pickAirplane, pickPlace: openRecent, nearStrip, nearMap } = vm.search;
-  const pickPlace = (a: RecentAirport) => (pickIdent ? pickIdent(a.ident) : openRecent(a));
-  const openAirplane = (kept: KeptAircraft) => pickAirplane(kept, (hex) => selectFlight(hex));
-  const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
+  const {
+    home,
+    favorites,
+    askFor,
+    pickAirplane,
+    pickPlace: openRecent,
+    nearStrip,
+    nearMap,
+  } = vm.search;
+  const pickPlace = (a: RecentAirport) =>
+    pickIdent ? pickIdent(a.ident) : openRecent(a);
+  const openAirplane = (kept: KeptAircraft) =>
+    pickAirplane(kept, (hex) => selectFlight(hex));
+  // Why the ask came back (the first flight's "is where you are"), said here as under typed results.
+  const askProblem = useSearchPick((s) => s.pick?.problem ?? null);
+  const hasAirplane = usePreferences(
+    (s) => !!s.myAircraft || s.favoriteAircraft.length > 0,
+  );
   return (
     <TabPage testId="search-home">
-      <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
+      {askProblem && (
+        <FieldError className={`appear text-destructive-ink ${TEXT.note}`}>
+          {askProblem}
+        </FieldError>
+      )}
+      <PillSection
+        title="Nearest"
+        onMore={openNearest}
+        testId="pill-section-nearest"
+      >
         {/* Each field's bearing is the engine's word (compassPoint), and the
             nearest can answer before its .wasm is there. */}
         <EngineGate>
-          <NearestStrip fields={nearStrip} located={!!nearOrigin} nearMap={nearMap} onOpen={selectPlace} refusal={refusal} />
+          <NearestStrip
+            fields={nearStrip}
+            located={!!nearOrigin}
+            nearMap={nearMap}
+            onOpen={selectPlace}
+            refusal={refusal}
+          />
         </EngineGate>
       </PillSection>
       <FindNearby onFind={findNearby} />
-      <PillSection title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
+      <PillSection
+        title="Favorites"
+        onMore={() => openList("favorites")}
+        testId="pill-section-favorites"
+      >
         {/* Home and the airports, then the Airplane and the airplanes, in one
             row sliding sideways, as Apple Maps' Favorites are (the sheet
             audit's F-L2): they stood in two rows, a tile each. Each strip's
@@ -94,15 +141,32 @@ export default function SearchHome({
             <AddFavoriteTile
               testId="pill-favorite-add"
               choices={[
-                { value: "airport", label: "Airport", testId: "pill-favorite-add-airport", onPick: () => askFor("favorite") },
-                { value: "airplane", label: "Airplane", testId: "pill-favorite-add-airplane", onPick: () => askFor("airplane") },
+                {
+                  value: "airport",
+                  label: "Airport",
+                  testId: "pill-favorite-add-airport",
+                  onPick: () => askFor("favorite"),
+                },
+                {
+                  value: "airplane",
+                  label: "Airplane",
+                  testId: "pill-favorite-add-airplane",
+                  onPick: () => askFor("airplane"),
+                },
               ]}
             />
           )}
         </PillStrip>
       </PillSection>
-      <PillSection title="Recents" onMore={() => openList("recents")} testId="airport-recents">
-        <RecentCards onPick={(airport) => void pickPlace(airport)} refusal={refusal} />
+      <PillSection
+        title="Recents"
+        onMore={() => openList("recents")}
+        testId="airport-recents"
+      >
+        <RecentCards
+          onPick={(airport) => void pickPlace(airport)}
+          refusal={refusal}
+        />
         <Suspense fallback={null}>
           <EngineGate>
             <AircraftRecentTiles onPick={openAirplane} />
