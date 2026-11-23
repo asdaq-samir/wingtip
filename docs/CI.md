@@ -79,7 +79,8 @@ script can check, and the rest are for whoever writes a test or a job.
    whole. The integration branch above all: 8 of its pull request's last
    20 runs (2026-11-13/14) were cancelled by the next push, one 16.6
    minutes in, 2 of the 20 green, and a push to `claude/validate-<wave>`
-   cancels that wave's validation the same way ("Validating a wave").
+   cancels any validation running the same way, and a push to
+   `claude/check-<topic>` that branch's last check ("Validating a wave").
    Merge the wave's branches into `claude/integration` locally, then push
    its tip once; in the validation pass, push once per set of fixes, after all
    of the set's own checks have passed, and not again until its run ends.
@@ -308,19 +309,86 @@ Mac runs only the narrow tests and quick checks a branch runs before its
 push (decision 0042), and `.claude/hooks/guard.py` refuses a whole suite
 there, live stack or not.
 
-Once a wave's branches are merged into `claude/integration` (3 to 5 of
-them, merged and validated within the day), the integrator pushes its tip
-to `claude/validate-<wave>`:
+Validation is smart (the owner, 2026-11-22, decision
+[0062](decisions/0062-smart-validation.md): "I think you can make
+validation smart but you didn't do it. This happens over and over
+again."). Each branch is checked on GitHub as soon as its fix is ready.
+After a red run, only what failed runs again, along with what the fixes
+reach. One full run ends the wave. All three go through
+`scripts/dev/validate-wave.sh`, and its push to a branch starts
+`.github/workflows/validate-wave.yml`. That workflow calls `ci.yml` with
+`wave: true`: the same jobs and scripts as every run, none copied.
+`scripts/ci/validation.py` tells the three apart by the branch:
 
 ```sh
-scripts/dev/validate-wave.sh 2026-11-22a    # git push origin HEAD:claude/validate-2026-11-22a
+scripts/dev/validate-wave.sh --check              # claude/check-<topic>: this branch alone, early
+scripts/dev/validate-wave.sh wave3 --failed       # claude/validate-failed/wave3/<run>: the newest red run's failures
+scripts/dev/validate-wave.sh wave3 --failed 45089884568   # that run's
+scripts/dev/validate-wave.sh wave3 --full         # claude/validate-wave3: everything, the last proof
 ```
 
-That push starts `.github/workflows/validate-wave.yml`, which calls
-`ci.yml` with `wave: true`: the same jobs and scripts as every run, none
-copied. `changes` takes everything as due (its event is `wave`:
-`changes_since.sh` diffs nothing, `plan.py` builds both phones), so the
-run is the night's, but for the audits, the flake hunt and the issue:
+**1. A check, per branch, early.** An agent pushes its branch to
+`claude/check-<topic>` the moment a fix is ready, before or after it is
+merged into the wave. A dispatch of `validate-wave.yml` on a branch does
+the same once the workflow is on main; its `base` input picks the branch
+to compare against.
+
+- **The base:** the nearest of `claude/wave*`, `claude/integration` and
+  `main`, the one the branch is fewest commits ahead of (GitHub's compare
+  API).
+- **What runs:** what a pull request would run for that diff. The paths
+  filter picks the areas and their unit tests. `browser_specs.py` picks
+  the specs the diff reaches, on the wave's four projects (`mobile`,
+  `desktop`, `webkit-phone`, `webkit-ipad`) rather than the pull request's
+  one, so a red the full run would find shows here. A branch that
+  reaches half the suite or more runs the wave's own 16 shards of it.
+  iOS runs its unit tests alone.
+- **Cost:** a few minutes on GitHub's runners and nothing on the Mac.
+  Each check branch is its own concurrency group, so two agents' checks
+  never cancel each other.
+
+**2. A rerun of what failed.** After a red run, the fixes are merged into
+the wave and its tip is pushed to `claude/validate-failed/<wave>/<run>`.
+The run is the wave's newest failed one unless named. The script deletes
+the wave's older rerun branches; their runs are kept. Reading the red run
+through the API, the `changes` job takes:
+
+- **Jobs:** each job that failed or was cancelled (`validation.py`'s
+  `AREAS` gives the filter it is due under), and each one the commits
+  since that run's commit reach (the paths filter, with that commit as
+  its base). The guards run on every run, since any file reaches them.
+  iOS runs its iPad legs only when iOS failed.
+- **Browser tests:** the hard reds of each red shard's Playwright run
+  summary (not the tests that passed on their retry), and
+  `browser_specs.py` deals the shards:
+  - each known red runs on its own project with `--retries=0`, six to a
+    shard (`REDS_A_SHARD`). It keeps its own timeout, so it still fails
+    the run, but it cannot spend a shard on the retry's second timeout;
+  - a known red's spec that the commits changed or reach runs whole on
+    the wave's projects, still with no retry, since its lines may have
+    moved;
+  - every other spec the commits reach runs on the wave's projects with
+    the usual retry. When they reach half the suite or more (a shared
+    hook such as `useOpenScreen.ts` reaches 190 of 191 specs, and each of
+    wave 3's fix rounds reached all 191), only the specs they edit run,
+    and the rest are left to the full run;
+  - a shard that left no list of its reds (its setup failed, it timed
+    out, or a setup test failed and the rest did not run) runs again
+    with the arguments its annotation gives (`e2e_summary.py`'s `args:`
+    line, or `--shard=k/16` for a wave's run from before that line
+    existed);
+  - when the browser tests never ran at all (the images or the plan
+    failed), the whole suite runs again.
+
+`GH_TOKEN=$(gh auth token) python3 scripts/ci/validation.py show <run>`
+prints what a rerun of a run would take. Run 45089884568 gives 53 reds (by file and line),
+one lost shard, both phones, the engine, wingtip and the X-Plane leg.
+
+**3. One full run, at the end.** Once the checks and reruns are green,
+the wave's tip goes to `claude/validate-<wave>` (`--full`, or no flag).
+`changes` takes everything as due: `validation.py` writes `all=true` and
+`plan.py` builds both phones. The run is the night's, without the audits,
+the flake hunt and the issue, and with CI's usual retry:
 
 | What | Shards / runners | Expected |
 |---|---|---|
@@ -330,24 +398,29 @@ run is the night's, but for the audits, the flake hunt and the issue:
 | `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in two legs (`test (iPad 1/2)`, the UI classes `ios_test.sh`'s `IPAD_FIRST` names, and `test (iPad 2/2)`, every other test; decision 0058), on macOS | 3 | 6-10 min (iPhone), ~20-25 min (each iPad leg) |
 | `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
 
-About 20 to 25 minutes from the push, the iPad's legs and the browser shards being the longest;
-the night's ten shards take half an hour. GitHub runs 20 jobs at once on
+About 30 to 35 minutes from the push, the iPad's legs and the browser
+shards being the longest (wave 3's runs, 2026-11-22); the night's ten
+shards take half an hour. GitHub runs 20 jobs at once on
 a free account, so the sixteen shards and the short jobs share them.
 `CI passed` is the verdict; `budget` holds the run to the night's budgets
 and names each failure with its narrow command (`failure_summary.py`),
 and each e2e shard writes its failures as annotations, as on every run.
 Read it with `gh run list -w "Validate wave" -b claude/validate-<wave>`
 and `gh run view <id> --log-failed`. A failure is reproduced with that
-narrow command, fixed on its branch, merged into integration, and the tip
-pushed again to the same branch (a fast-forward, never forced); the new
-push cancels the run before it. It opens no pull request or issue and
+narrow command, fixed on its branch (and checked there, above), merged
+into integration, and the tip pushed again with `--failed`; the full run
+comes once more, last. Every `claude/validate-*` push is one concurrency
+group (`validate-wave`, cancel-in-progress), so a newer validation
+cancels an older one, whichever wave or kind it was. It opens no pull request or issue and
 pushes no image but the browser suite's `e2e` ones, as a pull request's
 run does; Promote and the nightly issue follow `CI` alone. Caches are read as on any branch (main's), and a cache
 a wave saves stays on its branch.
 
 Then the wave's pull request to `main` runs tier 1 as always, and merges
 itself once "CI passed" is green. Pushing any other `claude/` branch
-starts no CI, but `claude/native-*` (the phones' own workflows).
+starts no CI, but `claude/validate-*`, `claude/validate-failed/*` and
+`claude/check-*` (this workflow) and `claude/native-*` (the phones' own
+workflows).
 
 ## What gates a merge
 

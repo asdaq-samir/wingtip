@@ -1,14 +1,22 @@
 name: Validate wave
 
-# A wave's validation on GitHub, not the Mac (decision 0054; docs/CI.md, "Validating a wave"): a push to
-# claude/validate-<wave> runs ci.yml as the night does, with `wave`; a push, as a dispatch needs main's file.
+# A wave's validation on GitHub, not the Mac (decisions 0054 and 0062; docs/CI.md, "Validating a wave"): ci.yml
+# with `wave`, the branch saying which (scripts/ci/validation.py): claude/validate-<wave> everything, the last
+# proof; claude/validate-failed/<wave>/<run> that run's reds and what the commits since reach; claude/check-<topic>
+# one branch's reach, early. A dispatch on any other branch is a check (once this file is on main).
 on:
   push:
-    branches: ["claude/validate-*"]
+    branches: ["claude/validate-*", "claude/validate-failed/**", "claude/check-*"]
+  workflow_dispatch:
+    inputs:
+      base:
+        description: The branch a check is held against (else the nearest of claude/wave*, claude/integration and main)
+        type: string
 
+# Every validation in one group, so a newer one cancels the older (they answer for the same wave); each check its own.
 concurrency:
-  group: validate-wave-${{ github.ref }}
-  cancel-in-progress: true # a new push to the branch replaces its running validation
+  group: ${{ startsWith(github.ref_name, 'claude/validate-') && 'validate-wave' || format('check-{0}', github.ref) }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

@@ -67,3 +67,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0059 | [The full NOTAM set comes from the FAA's NOTAM Management Service API](0059-notams-full-set-from-nms.md) | 2026-11-21 | Accepted |
 | 0060 | [Feature review: keep, park, cut](0060-feature-review-keep-park-cut.md) | 2026-11-21 | Accepted |
 | 0061 | [Wingtip inside Claude: a live view beside the chat, and the flight edited by tools](0061-wingtip-inside-claude.md) | 2026-11-22 | Accepted |
+| 0062 | [Validation checks each branch early, reruns only what failed, and ends with one full run](0062-smart-validation.md) | 2026-11-22 | Accepted |
