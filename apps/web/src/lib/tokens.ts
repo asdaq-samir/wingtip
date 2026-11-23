@@ -285,6 +285,7 @@ export const MAP = {
   airspaceFaded: 0.35,
   airspaceHeld: 1.8,
   airspaceLabelFaded: 0.6,
+  routeTagOffEndsNm: 2,
 } as const;
 
 export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";

@@ -120,6 +120,9 @@ export function verdictInput({
     balance: {
       pending: !nav,
       worked: !!loading && !!loaded,
+      // A POH loading with no load the pilot set: "give your load", never
+      // the POH's sample airplane as the flight's (14 CFR 91.9(a), 91.103).
+      noLoad: !!loading && !loaded,
       problems: loaded?.problems ?? [],
       takeoff: loaded ? `${grouped(loaded.takeoff.weightLb)} lb at ${armText(loaded.takeoff)}` : null,
     },

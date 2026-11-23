@@ -84,17 +84,21 @@ export function WeightBalanceSection({
   aircraft: AircraftProfile | null | undefined;
   tripFuelGal: number | null;
 }) {
-  const { loading, load, result, setLoad } = useLoad(aircraft, tripFuelGal);
+  // The editor starts from the POH's sample airplane (useLoad's draft),
+  // but only a load the pilot set is this flight's (14 CFR 91.9(a)).
+  const { loading, load, draft: result, saved, setLoad } = useLoad(aircraft, tripFuelGal);
   const missing = useNotInProfileSummary();
   const summary = !result
     ? missing
-    : `${pounds(result.takeoff.weightLb)} at ${armText(result.takeoff)}${result.problems.length ? "" : " · within limits"}`;
+    : !saved
+      ? "Not worked out: give your load"
+      : `${pounds(result.takeoff.weightLb)} at ${armText(result.takeoff)}${result.problems.length ? "" : " · within limits"}`;
   return (
     <AccordionSection
       title={WORDING.weightAndBalance}
       summary={summary}
       aside={
-        result && result.problems.length > 0 ? (
+        saved && result && result.problems.length > 0 ? (
           <Flag finding="stop" testId="wb-flag">
             Out of Limits
           </Flag>
