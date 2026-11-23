@@ -84,18 +84,19 @@ final class Plan {
     /// When the plan shown was made; nil while it is being made now.
     private(set) var plannedAt: Date?
 
-    /// The route as last taken in (remember): what an Undo puts back.
-    @ObservationIgnored private var lastState = RouteState()
+    /// The route as last taken in (remember, Plan+History): what an Undo
+    /// puts back.
+    @ObservationIgnored var lastState = RouteState()
     /// The window's, from SwiftUI's environment (RootView): shake to undo,
     /// the Edit menu's Undo and Redo and the bar's Undo (UndoToolbarItem).
     @ObservationIgnored weak var undoManager: UndoManager?
     /// The step just made that the undo bar offers to take back (UndoBar),
     /// nil once it has gone; a step that only added or changed a figure has
     /// none, though shake and the Edit menu still undo it.
-    private(set) var undoOffer: UndoOffer?
+    var undoOffer: UndoOffer?
     /// Off while a kept plan is put back at launch: that is not the
     /// pilot's change to undo.
-    @ObservationIgnored private var remembering = true
+    @ObservationIgnored var remembering = true
 
     var routed: Bool { !dep.isEmpty && !dest.isEmpty }
 
@@ -152,56 +153,11 @@ final class Plan {
     }
 
     /// What the planner said of the route, gone with it.
-    private func forgetPlanned() {
+    func forgetPlanned() {
         running?.cancel()
         course = nil; checkpoints = []; profile = nil; altitude = nil; briefing = nil; briefedAt = nil; briefingProblem = nil; hazardLegs = nil
         legs = []; totals = nil; altitudeFt = nil; stage = nil; problem = nil; planning = false; plannedAt = nil
         Kept.forget()
-    }
-
-    /// The route as it is now taken in: a change is a step the window's
-    /// UndoManager can take back, holding the route as it was, named for
-    /// what it took away ("Undo Route cleared") and said to VoiceOver
-    /// where it took something. An Undo puts the route back (put), which
-    /// comes through here again inside the UndoManager's undo, so the
-    /// step it registers is the Redo, as the system does it.
-    private func remember() {
-        guard remembering else { return }
-        let next = routeState, before = lastState
-        guard next != before else { return }
-        lastState = next
-        let note = PlanHistory.note(from: before, to: next)
-        if undoManager?.isUndoing == true || undoManager?.isRedoing == true {
-            undoOffer = nil
-        } else if let note {
-            Announce.alert(note)
-            undoOffer = UndoOffer(note)
-        }
-        guard let undoManager else { return }
-        undoManager.levelsOfUndo = PlanHistory.limit
-        undoManager.register(self, named: note ?? "Route Change") { $0.put(before) }
-    }
-
-    /// The route as it was set: planned again, or forgotten where it is
-    /// not a route, and taken in as the step to go back over.
-    private func put(_ state: RouteState) {
-        dep = state.dep; dest = state.dest; stops = state.stops; procedures = state.procedures; extras = state.extras
-        ownAltitudeFt = state.ownAltitudeFt; ownAltitudeLegal = state.ownAltitudeLegal; altitudeChoice = state.altitudeChoice
-        if routed { plan() } else { forgetPlanned() }
-        remember()
-    }
-
-    /// No steps back: a signed-out pilot's routes are not the next one's.
-    func forgetHistory() {
-        lastState = routeState
-        undoOffer = nil
-        undoManager?.forget(self)
-    }
-
-    /// The undo bar's offer put away: its time up, or Undo tapped. A later
-    /// offer in its place stays.
-    func dismissUndo(_ offer: UndoOffer) {
-        if undoOffer?.id == offer.id { undoOffer = nil }
     }
 
     /// The plan's own kept answers (Kept) shown, from `at`, or fresh again
