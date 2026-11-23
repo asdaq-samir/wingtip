@@ -1,8 +1,6 @@
 package app.wingtipmaps.android.clearance
 
 import android.Manifest
-import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -190,8 +189,8 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
     }
 }
 
-/** The clearance understood: Android's Confirm (API 30), a key tap before. */
-private val UNDERSTOOD: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+/** The clearance understood: Compose's Confirm, a key tap below API 30. */
+private val UNDERSTOOD = HapticFeedbackType.Confirm
 
 /** The four steps in a row: done in the go ink, the one now in the
  *  tint, the rest to come. */

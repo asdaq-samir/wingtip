@@ -1,8 +1,9 @@
 package app.wingtipmaps.android.map
 
 import androidx.compose.ui.graphics.toArgb
-import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.OverlayTiles
+import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.overlayArchive
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.design.generated.WingtipPalettes
@@ -91,8 +92,7 @@ object MapStyle {
      *  passes the Range on), as MapLibre Native's PMTiles source reads it:
      *  `pmtiles://` before the https address, the header and directories
      *  read from it in byte ranges (MapLibre Native 11.7 and later). */
-    fun overlayUrl(tiles: OverlayTiles): String =
-        "pmtiles://${Config.gateway}${Config.plannerPath("/api/overlay-tiles/${tiles.name}.pmtiles")}"
+    fun overlayUrl(tiles: OverlayTiles): String = "pmtiles://${Planner.overlayArchive(tiles.name)}"
 
     // ---- The FAA's inks -----------------------------------------------
 

@@ -151,19 +151,30 @@ object Format {
     }
 
     /** A visibility as a whole and a fraction of a statute mile, as a METAR
-     *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). To the sixteenth
-     *  below 3 sm (the finest a US report gives, "1/16SM") and the whole
-     *  mile from 3, always down, as the web's reportedVisibility: 5/8 was
-     *  written ".63", rounded up. */
+     *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). Always down to the
+     *  next value a US report may give, the manual column of FMH-1
+     *  (FCM-H1-2019) Table 6-1, "Reportable Visibility Values": sixteenths
+     *  to 3/8, eighths to 2, quarters to 3, whole miles to 15, then fives.
+     *  Down because a visibility rounded up is more than was seen; a value
+     *  the table has not (15/16, from 1,500 m) is never shown. The web's
+     *  reportedVisibility is the same list. */
     fun reportedVisibility(sm: Double): Pair<Int, String?> {
-        val whole = kotlin.math.floor(sm + 1e-9).toInt()
-        val sixteenths = if (sm >= 3) 0 else kotlin.math.floor((sm + 1e-9 - whole) * 16).toInt()
-        if (sixteenths == 0) return whole to null
-        var n = sixteenths
+        val seen = sm + 1e-9
+        if (seen >= 3) {
+            val whole = kotlin.math.floor(seen).toInt()
+            return (if (whole > 15) whole - whole % 5 else whole) to null
+        }
+        val sixteenths = REPORTABLE_SIXTEENTHS.last { it <= seen * 16 }
+        val whole = sixteenths / 16
+        var n = sixteenths % 16
+        if (n == 0) return whole to null
         var d = 16
         while (n % 2 == 0) { n /= 2; d /= 2 }
         return whole to "$n/$d"
     }
+
+    /** FMH-1 Table 6-1's manual values below 3 sm, in sixteenths of a mile. */
+    private val REPORTABLE_SIXTEENTHS = listOf(0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 44)
 
     /** A forecast's ceiling and visibility, as the web's
      *  ceilingAndVisibility writes them: "800 ft · 2 sm", "no ceiling · 6 sm". */

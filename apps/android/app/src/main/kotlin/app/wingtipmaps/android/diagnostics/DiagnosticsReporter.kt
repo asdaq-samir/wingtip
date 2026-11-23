@@ -3,18 +3,9 @@ package app.wingtipmaps.android.diagnostics
 import android.content.Context
 import android.os.Build
 import app.wingtipmaps.android.BuildConfig
-import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.gateway.FaultReport
 import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.encodeToString
-import okhttp3.CookieJar
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.coroutines.executeAsync
-import java.util.concurrent.TimeUnit
 
 /**
  * Posts a report to the gateway (POST /api/diagnostics), which keeps the
@@ -23,10 +14,6 @@ import java.util.concurrent.TimeUnit
  * says so by returning false, and its faults are tried again next start.
  */
 object DiagnosticsReporter {
-    /** The app's one client, without its cookies: the gateway would read
-     *  the session's cookie as the pilot's, and a report is no one's. */
-    private val client: OkHttpClient by lazy { Gateway.client.newBuilder().cookieJar(CookieJar.NO_COOKIES).callTimeout(Gateway.WRITE_TIMEOUT_S, TimeUnit.SECONDS).build() }
-
     /** Sent and taken (any answer but a server's error: a 400 would come
      *  back the same next time, so its faults are not kept for it), or
      *  not to be sent at all. */
@@ -45,11 +32,11 @@ object DiagnosticsReporter {
             metrics = metrics,
         ) ?: return true
         return try {
-            val request = Request.Builder()
-                .url(Config.gateway + "/api/diagnostics")
-                .post(Gateway.json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .build()
-            client.newCall(request).executeAsync().use { it.code < 500 }
+            // The gateway's generated call on the client without the
+            // pilot's cookies (Gateway.anonymous): a report is no one's.
+            val answer = Gateway.anonymous.report(body)
+            answer.errorBody()?.close()
+            answer.code() < 500
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

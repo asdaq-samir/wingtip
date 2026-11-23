@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.GatewayFiles
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.client.apis.GatewayApi
 import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
@@ -67,6 +68,9 @@ object NetworkModule {
 
     /** The gateway's own calls, at its root. */
     fun gateway(client: OkHttpClient): GatewayApi = retrofit(Config.gateway + "/", client).create()
+
+    /** The gateway's calls answered with a file kept whole (GatewayFiles). */
+    fun gatewayFiles(client: OkHttpClient): GatewayFiles = retrofit(Config.gateway + "/", client).create()
 
     /** The planner's calls, through the gateway's proxy (Config.plannerPath). */
     fun planner(client: OkHttpClient): PlannerApi = retrofit(Config.gateway + Config.plannerPrefix + "/", client).create()

@@ -26,3 +26,9 @@ private fun box(deg: Double): Double = Math.round(deg * 1000) / 1000.0
  *  timed from `depart` (now where none) over `eteMin`. */
 suspend fun Planner.routeBriefing(dep: String, dest: String, stops: List<String>, depart: String?, eteMin: Double?): app.wingtipmaps.android.api.generated.Briefing =
     api.briefing(dep, dest, stops.joinToString(","), depart, eteMin?.let { Math.round(it * 10) / 10.0 }).planned()
+
+/** The cycle's overlay archive (/api/overlay-tiles/{name}.pmtiles) through
+ *  the gateway's proxy, which passes the Range on: an address rather than
+ *  a call, since MapLibre's PMTiles source (MapStyle.overlayUrl) and the
+ *  copy kept for the air (OverlayStore.download) read it in byte ranges. */
+fun Planner.overlayArchive(name: String): String = PlannerPaths.address("/api/overlay-tiles/$name.pmtiles")

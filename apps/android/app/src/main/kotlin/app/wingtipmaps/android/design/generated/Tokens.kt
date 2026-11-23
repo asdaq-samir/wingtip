@@ -2,13 +2,12 @@
 
 package app.wingtipmaps.android.design.generated
 
-import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -1209,17 +1208,17 @@ object WingtipMotion {
     const val SKELETON_PULSE_MS = 1500
 }
 
-/** The taps felt on a key action, as View.performHapticFeedback's constants; one
- *  from API 30 has its fallback below that. */
+/** The taps felt on a key action, as Compose's HapticFeedbackType (LocalHapticFeedback),
+ *  which picks the older constant itself where the phone's API is older. */
 object WingtipHaptic {
     /** An altitude set: a wheel's detent, as a picker ticks. */
-    val ALTITUDE: Int get() = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_FREQUENT_TICK else HapticFeedbackConstants.CLOCK_TICK
+    val ALTITUDE: HapticFeedbackType get() = HapticFeedbackType.SegmentFrequentTick
     /** Direct To or Fly Here taken: the route has changed under the pilot. */
-    val DIRECT_TO: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+    val DIRECT_TO: HapticFeedbackType get() = HapticFeedbackType.Confirm
     /** An alert or a copilot warning shown: felt as well as seen, in a busy cockpit. */
-    val WARNING: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+    val WARNING: HapticFeedbackType get() = HapticFeedbackType.Reject
     /** The sheet settling at a detent (pill, half, full). */
-    const val DETENT = HapticFeedbackConstants.CONTEXT_CLICK
+    val DETENT: HapticFeedbackType get() = HapticFeedbackType.ContextClick
 }
 
 /** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */

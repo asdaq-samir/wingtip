@@ -109,10 +109,28 @@ class FormatTest {
         // Eighths as a METAR writes them, never rounded up: 5/8 was ".63 sm".
         assertEquals("5/8 sm", Format.visibility(0.625))
         assertEquals("1 3/8 sm", Format.visibility(1.375))
-        assertEquals(0 to "11/16", Format.reportedVisibility(0.7456))
         assertEquals(4 to null, Format.reportedVisibility(4.97))
         assertEquals("15 °C", Format.temperature(15.0))
         assertEquals("−3 °C", Format.temperature(-3.0))
+    }
+
+    /** Down to the next value FMH-1 (FCM-H1-2019) Table 6-1 lets a manual
+     *  report give, the expected values read off the table: sixteenths
+     *  only to 3/8, so 11/16 and 15/16 are never written. */
+    @Test
+    fun aVisibilityIsOneTheTableLists() {
+        assertEquals(0 to "1/16", Format.reportedVisibility(0.0625))
+        assertEquals(0 to "3/8", Format.reportedVisibility(0.45))
+        assertEquals(0 to "1/2", Format.reportedVisibility(0.5))
+        assertEquals(0 to "5/8", Format.reportedVisibility(0.7456))
+        assertEquals(0 to "7/8", Format.reportedVisibility(0.9999))
+        assertEquals(1 to null, Format.reportedVisibility(1.0))
+        assertEquals(2 to null, Format.reportedVisibility(2.2))
+        assertEquals(2 to "1/4", Format.reportedVisibility(2.25))
+        assertEquals(2 to "3/4", Format.reportedVisibility(2.99))
+        assertEquals(15 to null, Format.reportedVisibility(15.0))
+        assertEquals(15 to null, Format.reportedVisibility(19.9))
+        assertEquals(20 to null, Format.reportedVisibility(22.0))
     }
 
     /** A forecast's ceiling and visibility, as the web's ceilingAndVisibility. */

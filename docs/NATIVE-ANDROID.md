@@ -55,7 +55,18 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     stay by hand). Every model is read by `Gateway.json`
     (`ignoreUnknownKeys`, `coerceInputValues`), and enums are plain
     strings, so a field or an enum value a server adds before the app
-    knows it never fails a decode (`ApiToleranceTest`), `NavLog.kt` (the nav log's streamed lines, by hand);
+    knows it never fails a decode (`ApiToleranceTest`), `NavLog.kt` (the nav log's streamed lines, by hand).
+    Every call to the gateway is the generated `GatewayApi`'s, on the
+    client its limit asks: `api`, `writes`, `anonymous` (no cookies, for
+    the app's own diagnostics reports) and `files` (`GatewayFiles`, an
+    answer kept whole as sent, the account's export, its path held to the
+    generated one by `GatewayFilesTest`); the overlay archive's address,
+    which MapLibre and the kept copy read in byte ranges, is
+    `Planner.overlayArchive`, and the paths MapLibre fills or reads as
+    bytes (the chart and terrain tiles, the model weather's pictures, a
+    plate's picture, a cycle pack) are `PlannerPaths`, each the generated
+    operation's path (`PlannerPathsTest`). An `/api/` path written outside
+    `api/` and `Config` fails the `planner-http-by-hand-phones` Semgrep rule;
   - `Charts`, `Session`, `Plan`: the models of state, ViewModels with
     their state in flows (which chart, who is signed in, the route and
     what the planner said of it), and `Links` (the site's links the app

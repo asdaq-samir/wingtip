@@ -18,6 +18,7 @@ import app.wingtipmaps.android.api.generated.OfflineCatalog
 import app.wingtipmaps.android.api.generated.OfflineRegion
 import app.wingtipmaps.android.api.generated.PlateStateSet
 import app.wingtipmaps.android.api.generated.PlateStates
+import app.wingtipmaps.android.api.overlayArchive
 import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.CyclePacks
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -173,7 +174,7 @@ class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(ap
                 }
                 CyclePacks.of(getApplication()).keep(entry.packs.toSet())
                 _catalog.value?.overlay?.let { overlay ->
-                    val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${overlay.name}.pmtiles")).toHttpUrl()
+                    val url = Planner.overlayArchive(overlay.name).toHttpUrl()
                     val _ = runCatching { Gateway.overlayStore.download(Gateway.streaming, url, overlay.name, overlay.bytes) }
                 }
                 _problem.value = null

@@ -1,7 +1,5 @@
 package app.wingtipmaps.android.map
 
-import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -156,10 +155,9 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
     }
 }
 
-/** A frame crossed on the scrubber: Android's segment tick from API 34,
- *  the clock tick below that. */
-private val FrameTick: Int
-    get() = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_TICK else HapticFeedbackConstants.CLOCK_TICK
+/** A frame crossed on the scrubber: Compose's SegmentTick, the clock
+ *  tick below API 34. */
+private val FrameTick = HapticFeedbackType.SegmentTick
 
 /**
  * The loop's two menus in Setup's Map section (Android's map menu):

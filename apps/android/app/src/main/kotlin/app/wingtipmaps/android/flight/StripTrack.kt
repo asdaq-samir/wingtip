@@ -30,6 +30,9 @@ object StripTrack {
         if (!underway) return null
         if (magneticDeg != null) return magneticDeg
         val east = variation(fix.lat, fix.lon) ?: return null
+        // TODO(r4-aviation): the engine's magnetic_of (true degrees, place,
+        // date to magnetic; simplicity audit 2026-11-23 M2) answers this
+        // line once that branch is in; ask it and drop the subtraction.
         return ((trueDeg - east) % 360 + 360) % 360
     }
 

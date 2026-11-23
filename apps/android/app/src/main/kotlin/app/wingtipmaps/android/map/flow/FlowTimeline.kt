@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.map.flow
 
+import app.wingtipmaps.android.api.PlannerPaths
 import app.wingtipmaps.android.api.generated.FlowFrame
 import app.wingtipmaps.android.api.generated.FlowLayer
 import java.time.Duration
@@ -62,7 +63,7 @@ object FlowTimeline {
 
     /** The planner's path of a frame's picture, and its version, the run
      *  that made it, which the planner keeps for good at that version. */
-    fun picture(frame: FlowFrame, file: String): Pair<String, String?> = "/api/weather/flow/${frame.id}/$file.png" to frame.versions?.get(file)
+    fun picture(frame: FlowFrame, file: String): Pair<String, String?> = PlannerPaths.flowPicture(frame.id, file) to frame.versions?.get(file)
 
     /** A run's hour as a forecaster says it: "12Z". */
     private fun zulu(iso: String?): String? = iso?.takeIf { it.length >= 13 }?.let { "${it.substring(11, 13)}Z" }
