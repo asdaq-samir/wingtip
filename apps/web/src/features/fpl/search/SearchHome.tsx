@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { EngineGate } from "../../../lib/engine/engineGate";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../components/Favorites";
 import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
 import AddFavoriteTile from "../../../components/AddFavoriteTile";
@@ -55,7 +56,11 @@ export default function SearchHome({
   return (
     <TabPage testId="search-home">
       <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
-        <NearestStrip fields={nearStrip} located={!!nearOrigin} nearMap={nearMap} onOpen={selectPlace} refusal={refusal} />
+        {/* Each field's bearing is the engine's word (compassPoint), and the
+            nearest can answer before its .wasm is there. */}
+        <EngineGate>
+          <NearestStrip fields={nearStrip} located={!!nearOrigin} nearMap={nearMap} onOpen={selectPlace} refusal={refusal} />
+        </EngineGate>
       </PillSection>
       <FindNearby onFind={findNearby} />
       <PillSection title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
@@ -72,13 +77,16 @@ export default function SearchHome({
             onAddHome={() => askFor("home")}
             refusal={refusal}
           />
+          {/* An airplane kept with no kind is told one by the engine (keptKind). */}
           <Suspense fallback={null}>
-            <AircraftFavoriteStrip
-              onOpen={openAirplane}
-              onAddMine={() => askFor("mine")}
-              onAddFavorite={() => askFor("airplane")}
-              showAdd={false}
-            />
+            <EngineGate>
+              <AircraftFavoriteStrip
+                onOpen={openAirplane}
+                onAddMine={() => askFor("mine")}
+                onAddFavorite={() => askFor("airplane")}
+                showAdd={false}
+              />
+            </EngineGate>
           </Suspense>
           {/* One Add at the row's end, as Apple Maps' Favorites have: with
               nothing kept yet Home's and Airplane's own "Add" stand. */}
@@ -96,7 +104,9 @@ export default function SearchHome({
       <PillSection title="Recents" onMore={() => openList("recents")} testId="airport-recents">
         <RecentCards onPick={(airport) => void pickPlace(airport)} refusal={refusal} />
         <Suspense fallback={null}>
-          <AircraftRecentTiles onPick={openAirplane} />
+          <EngineGate>
+            <AircraftRecentTiles onPick={openAirplane} />
+          </EngineGate>
         </Suspense>
       </PillSection>
       <SheetFooter />

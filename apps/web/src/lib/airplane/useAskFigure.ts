@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { tailOf } from "../aircraftChoice";
+import { useTailOf } from "../aircraftChoice";
 import { usePreferences } from "../preferences";
 import { aircraftProfilesQuery } from "../queryClientRecords";
 import { figuresOfChoice, isFigureKey, needsOf, type FigureKey, type NeedsFigure } from "./figures";
@@ -34,7 +34,7 @@ export function useAskFigure(figure: NeedsFigure, tables?: Record<string, unknow
   const { data: profiles } = useQuery(aircraftProfilesQuery);
   const notNow = useProfileOpen((s) => s.notNow);
   const save = useSaveFigures();
-  const tail = tailOf(aircraft);
+  const tail = useTailOf(aircraft);
   const missing = useMemo(
     () => missingFor(figure, figuresOfChoice(aircraft, profiles).profile, tables),
     [figure, aircraft, profiles, tables],
