@@ -29,7 +29,7 @@
 use crate::sun::{solar_noon, sun_day, CIVIL_DEPRESSION_DEG, DAY_S, PASSENGER_NIGHT_MARGIN_S, SUNRISE_DEPRESSION_DEG};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
-use wingtip_core::time::{days_from_civil, days_in_month};
+use wingtip_core::time::{days_from_civil, parse_date_loose};
 
 /// Two instants of a day (UNIX seconds), or why there are none: `Err(true)`
 /// the sun stays further down all day, `Err(false)` it never goes that far.
@@ -92,14 +92,7 @@ fn period(out: &mut String, today: &Ends, next: &Ends, margin_s: f64) {
 
 /// The local date "yyyy-mm-dd" as days since 1970-01-01.
 fn date_days(name: &str, date: &str) -> Result<i64, String> {
-    let bad = || format!("{name}: \"date\" is not a date, yyyy-mm-dd: {date:?}");
-    let mut parts = date.trim().split('-');
-    let y = parts.next().and_then(|p| p.parse::<i64>().ok()).ok_or_else(bad)?;
-    let m = parts.next().and_then(|p| p.parse::<u32>().ok()).ok_or_else(bad)?;
-    let d = parts.next().and_then(|p| p.parse::<u32>().ok()).ok_or_else(bad)?;
-    if parts.next().is_some() || !(1..=12).contains(&m) || d == 0 || d > days_in_month(y, m) {
-        return Err(bad());
-    }
+    let (y, m, d) = parse_date_loose(date).ok_or_else(|| format!("{name}: \"date\" is not a date, yyyy-mm-dd: {date:?}"))?;
     Ok(days_from_civil(y, m, d))
 }
 

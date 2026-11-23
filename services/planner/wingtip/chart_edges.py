@@ -18,9 +18,7 @@ import numpy as np
 
 from .chart_kinds import Box
 from .chart_raster import WHITE_MIN_CHANNEL, read_rgb
-
-# One degree of latitude, in metres, on the sphere web mercator uses.
-_METRES_PER_DEGREE = 111_320.0
+from .units import M_PER_DEG
 
 # ---------------------------------------------------------------------------
 # Finding the chart face
@@ -166,11 +164,11 @@ def find_edge(ink: Ink, envelope: Box, res_m: float, edge: str, search: float = 
     horizontal = edge in ("s", "n")
     if horizontal:
         along = np.linspace(west + 0.2 * (east - west), east - 0.2 * (east - west), _SAMPLES_ALONG)
-        deg_per_px = res_m / _METRES_PER_DEGREE
+        deg_per_px = res_m / M_PER_DEG
         start, inward, depth = (south, 1.0, search * (north - south)) if edge == "s" else (north, -1.0, search * (north - south))
     else:
         along = np.linspace(south + 0.2 * (north - south), north - 0.2 * (north - south), _SAMPLES_ALONG)
-        deg_per_px = res_m / (_METRES_PER_DEGREE * math.cos(math.radians((south + north) / 2)))
+        deg_per_px = res_m / (M_PER_DEG * math.cos(math.radians((south + north) / 2)))
         start, inward, depth = (west, 1.0, search * (east - west)) if edge == "w" else (east, -1.0, search * (east - west))
 
     def sample_lines(at: np.ndarray) -> tuple:

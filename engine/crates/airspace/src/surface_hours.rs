@@ -250,18 +250,8 @@ pub fn now(days: &[Option<Vec<(i32, i32)>>], minute: i32) -> Option<(bool, Optio
 
 /// The date `k` days after (m, d) of `year`, -1 the day before.
 fn date_after((m, d): (u32, u32), year: i32, k: i32) -> (u32, u32) {
-    let leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
-    let length = |m: u32| -> i32 { [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][(m as usize + 11) % 12] };
-    let (mut m, mut d) = (m, d as i32 + k);
-    while d < 1 {
-        m = if m == 1 { 12 } else { m - 1 };
-        d += length(m);
-    }
-    while d > length(m) {
-        d -= length(m);
-        m = m % 12 + 1;
-    }
-    (m, d as u32)
+    let (_, m, d) = wingtip_core::time::civil_from_days(wingtip_core::time::days_from_civil(i64::from(year), m, d) + i64::from(k));
+    (m, d)
 }
 
 /// `surface_hours`: `{hours, year, month, day, weekday, minute,

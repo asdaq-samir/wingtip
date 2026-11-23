@@ -31,6 +31,7 @@
 //! outlines (Bimini) reads "other", still warned of.
 
 use std::sync::OnceLock;
+use wingtip_core::flat::to_segment;
 use wingtip_core::geo::{destination, distance_and_bearing};
 
 /// How far out from its land a country's rules reach: 91.1(b)'s 12 nm.
@@ -123,10 +124,7 @@ fn distance_within(country: &Country, lat: f64, lon: f64, within: f64) -> Option
     let mut best: Option<f64> = None;
     for band in &country.bands[band_of(lat - reach)..=band_of(lat + reach)] {
         for &[x0, y0, x1, y1] in band {
-            let (ax, ay, bx, by) = ((x0 - lon) * k, y0 - lat, (x1 - lon) * k, y1 - lat);
-            let (dx, dy) = (bx - ax, by - ay);
-            let t = if dx == 0.0 && dy == 0.0 { 0.0 } else { (-(ax * dx + ay * dy) / (dx * dx + dy * dy)).clamp(0.0, 1.0) };
-            let nm = (ax + t * dx).hypot(ay + t * dy) * NM_PER_DEG;
+            let nm = to_segment((0.0, 0.0), ((x0 - lon) * k, y0 - lat), ((x1 - lon) * k, y1 - lat)) * NM_PER_DEG;
             if nm <= within && best.is_none_or(|b| nm < b) {
                 best = Some(nm);
             }

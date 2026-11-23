@@ -7,7 +7,7 @@
 
 use crate::geo;
 use std::collections::HashSet;
-use wingtip_core::flat::Flat;
+use wingtip_core::flat::{to_segment, Flat};
 use wingtip_core::grid::{line_cells, Cell, Geom, Point};
 
 /// The grid's cells, degrees: about 15 nm, as the terrain way round's.
@@ -254,23 +254,7 @@ impl Area {
     }
 
     pub fn contains(&self, lat: f64, lon: f64) -> bool {
-        let mut inside = false;
-        for ring in &self.rings {
-            let n = ring.len();
-            if n < 3 {
-                continue;
-            }
-            let mut j = n - 1;
-            for i in 0..n {
-                let (yi, xi) = ring[i];
-                let (yj, xj) = ring[j];
-                if (yi > lat) != (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi {
-                    inside = !inside;
-                }
-                j = i;
-            }
-        }
-        inside
+        self.rings.iter().filter(|ring| geo::ring_holds_lat_lon(ring, lat, lon)).count() % 2 == 1
     }
 
     /// The least distance from a point to the area's edges, nm, on core's
@@ -283,13 +267,8 @@ impl Area {
         for ring in &self.rings {
             let n = ring.len();
             for i in 0..n {
-                let (ax, ay) = flat.nm(ring[i].0, ring[i].1);
-                let (bx, by) = flat.nm(ring[(i + 1) % n].0, ring[(i + 1) % n].1);
-                let (dx, dy) = (bx - ax, by - ay);
-                let len = dx * dx + dy * dy;
-                let t = if len > 0.0 { (-(ax * dx + ay * dy) / len).clamp(0.0, 1.0) } else { 0.0 };
-                let (px, py) = (ax + dx * t, ay + dy * t);
-                best = best.min((px * px + py * py).sqrt());
+                let (a, b) = (ring[i], ring[(i + 1) % n]);
+                best = best.min(to_segment((0.0, 0.0), flat.nm(a.0, a.1), flat.nm(b.0, b.1)));
             }
         }
         best

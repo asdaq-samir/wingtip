@@ -7,7 +7,7 @@
 use super::opt;
 use crate::figures::words::js_round;
 use crate::json::{self, Value};
-use crate::time::{days_from_civil, days_in_month};
+use crate::time::{days_from_civil, parse_date};
 use crate::xml::{self, Element};
 use wingtip_core::sort::StableSort;
 use wingtip_core::units::FT_PER_M;
@@ -68,21 +68,14 @@ pub fn iso_ms(text: &str) -> Option<f64> {
         Some(i) => (&s[..i], Some(&s[i + 1..])),
         None => (s, None),
     };
-    let mut parts = date.split('-');
-    let (y, m, d) = (parts.next()?, parts.next(), parts.next());
-    if parts.next().is_some() || y.len() != 4 {
-        return None;
-    }
-    let year = digits(y)?;
-    let month = m.map_or(Some(1), digits)?;
-    let day = d.map_or(Some(1), digits)?;
-    if m.is_some_and(|m| m.len() != 2) || d.is_some_and(|d| d.len() != 2) || !(1..=12).contains(&month) {
-        return None;
-    }
-    if day < 1 || day > days_in_month(year, month as u32) as i64 {
-        return None;
-    }
-    let mut ms = days_from_civil(year, month as u32, day as u32) as f64 * 86_400_000.0;
+    // ISO 8601's reduced precision: a year alone, or a year and a month,
+    // is its first day.
+    let (year, month, day) = match date.len() {
+        4 => parse_date(&format!("{date}-01-01"))?,
+        7 => parse_date(&format!("{date}-01"))?,
+        _ => parse_date(date)?,
+    };
+    let mut ms = days_from_civil(year, month, day) as f64 * 86_400_000.0;
     let Some(time) = time else { return Some(ms) };
     // The offset: Z, or +HH:MM / -HH:MM (or +HHMM) after the clock.
     let (clock, offset_min) = if let Some(c) = time.strip_suffix(['Z', 'z']) {

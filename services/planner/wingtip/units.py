@@ -42,3 +42,9 @@ K_AT_0C = 273.15
 #: distance is measured (wingtip.geo.box_around), never for a distance
 #: itself.
 NM_PER_DEG_LAT = 60.0
+
+#: Metres in a degree of the WGS 84 equator, 6,378,137 m times pi over 180
+#: (111,319.5 m, NGA TR8350.2 table 3.1), rounded as the web's lib/geo.ts
+#: M_PER_DEG is: a raster's metres a pixel in degrees, where a degree of
+#: latitude's 110.6 to 111.7 km (the meridian's) is near enough.
+M_PER_DEG = 111_320.0
