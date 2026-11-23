@@ -30,8 +30,13 @@ final class AirportAnnotation: NSObject, MKAnnotation {
     /// A field of the route (its ends and stops): always drawn, never
     /// dropped where marks collide (priority).
     var onRoute = false
+    /// One of the Class B fields drawn always (MapExtrasState): half size,
+    /// unnamed and giving way to every other mark below
+    /// map.zoom.class-b-named (`far`).
+    let classB: Bool
 
-    init(_ pin: AirportPin, onRoute: Bool = false) {
+    init(_ pin: AirportPin, onRoute: Bool = false, classB: Bool = false) {
+        self.classB = classB
         ident = pin.ident
         kind = pin.kind
         pinCategory = pin.flightCategory
@@ -72,6 +77,13 @@ final class AirportAnnotation: NSObject, MKAnnotation {
         guard let order else { return MKFeatureDisplayPriority(rawValue: 1) }
         return MKFeatureDisplayPriority(rawValue: Float(max(1, 990 - order / 1000)))
     }
+
+    /// Over the whole country, below map.zoom.class-b-named, a Class B
+    /// field's mark is half size with no ident and gives way to the route's
+    /// marks, a stop's pin and own ship, so the route's ends and stops are
+    /// the only words there (the owner's iPhone screenshot, 2026-11-23; the
+    /// web's ClassBGl).
+    func far(zoom: Double) -> Bool { classB && zoom < WingtipMapZoom.classBNamed }
 
     /// The field's flight category as its halo draws it (FlightCategory).
     var colour: UIColor { FlightCategory.mark(category) }
@@ -170,7 +182,8 @@ final class AirportMarkView: MKAnnotationView {
         // A stale report's disc grey (FlightCategory's no-report colour),
         // its age beside the ident; the setting Off greys every disc.
         let stale = field.weather?.heardAgo
-        let step = field.step
+        let far = field.far(zoom: Self.zoom)
+        let step = field.step * (far ? 0.5 : 1)
         box = FieldMark.side * step
         height = max(30, box + 4)
         symbol.bounds = CGRect(x: 0, y: 0, width: box, height: box)
@@ -178,13 +191,14 @@ final class AirportMarkView: MKAnnotationView {
         halo.place(round: symbol.center)
         symbol.image = FieldMark.image(space: field.airspaceClass, category: choice.style == .off || stale != nil ? nil : field.category,
                                        use: field.use, step: step)
-        label.text = stale.map { "\(field.ident) · \($0)" } ?? field.ident
+        label.text = far ? nil : stale.map { "\(field.ident) · \($0)" } ?? field.ident
+        label.isHidden = far
         // A lighter ink of its colour after dark, and the pilot's text
         // size with Larger Map Labels on (MapLabelLook).
         label.textColor = MapLabelLook.ink(ink)
         label.font = MapLabelLook.font(WingtipMapLabel.sizeNormal, weight: .bold, traits: traitCollection)
         label.sizeToFit()
-        let width = box + Self.gap + label.bounds.width
+        let width = far ? box : box + Self.gap + label.bounds.width
         let mark = CGRect(x: 0, y: 0, width: width, height: height)
         content.frame.size = mark.size
         label.frame.origin = CGPoint(x: box + Self.gap, y: (height - label.bounds.height) / 2)
@@ -211,7 +225,7 @@ final class AirportMarkView: MKAnnotationView {
         // a busy area keeps its biggest fields, the rest come in as it is
         // zoomed): no clusters, which hid O'Hare in a count over Chicago.
         let picked = field.ident == Self.selected
-        displayPriority = picked ? .required : field.priority
+        displayPriority = picked ? .required : far ? .defaultLow : field.priority
         collisionMode = .rectangle
         halo.isHidden = !picked
         zPriority = picked ? .max : .defaultUnselected
@@ -225,8 +239,11 @@ final class AirportMarkView: MKAnnotationView {
             || FarBarb.scale(zoom: zoom) != FarBarb.scale(zoom: Self.zoom)
         let turned = abs(heading - Self.heading) > 0.5
         let changed = choice != Self.choice
+        // The Class B fields' marks named and full size again, or not,
+        // across map.zoom.class-b-named (AirportAnnotation.far).
+        let named = (zoom >= WingtipMapZoom.classBNamed) != (Self.zoom >= WingtipMapZoom.classBNamed)
         Self.zoom = zoom
-        guard changed || station || turned else { return }
+        guard changed || station || turned || named else { return }
         Self.choice = choice
         Self.heading = heading
         for case let field as AirportAnnotation in map.annotations {

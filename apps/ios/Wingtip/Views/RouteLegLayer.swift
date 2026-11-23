@@ -7,6 +7,9 @@ nonisolated struct RouteLegInput {
     var legs: [RouteLegs.MapLeg] = []
     var selected: Int?
     var onSelect: ((Int) -> Void)?
+    /// The tops of climb and descent (RouteLegModel.legPoints), drawn by
+    /// the route's marks from map.zoom.route-tags (RouteMarksLayer).
+    var points: [RouteLegs.LegPoint] = []
 }
 
 /// The green either side of the selected leg's magenta, as ForeFlight
@@ -56,8 +59,9 @@ final class RouteLegLayer: NSObject, UIGestureRecognizerDelegate {
         return RouteLegs.nearest(to: at, segments: segments)
     }
 
-    func update(_ map: MKMapView, _ next: RouteLegInput, night: Bool, below edge: (any MKOverlay)?) {
+    func update(_ map: MKMapView, _ next: RouteLegInput, night: Bool, below edge: (any MKOverlay)?, marks: RouteMarksLayer) {
         input = next
+        marks.showLegPoints(next.points, on: map)
         if night != self.night {
             self.night = night
             casingRenderer?.strokeColor = NightPalette.routeGreen(night: night)

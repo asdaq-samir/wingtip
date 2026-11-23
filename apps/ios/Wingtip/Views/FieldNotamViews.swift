@@ -209,49 +209,6 @@ struct FieldNotamsSection: View {
     }
 }
 
-/// One NOTAM in full, a page of the card's stack: its kind as the title and
-/// its number under it ("NOTAM 11/439"), its badge and what, its times and
-/// where, its words written out where the what says them shorter (both the
-/// engine's, notam_read); a TFR's place, instructions and whom to call; and
-/// its text as sent, folded, never rewritten.
-struct FieldNotamPage: View {
-    let notams: FieldNotams
-    let notam: APIRankedNotam
-
-    var body: some View {
-        let number = "NOTAM \(FieldNotamWords.number(notam, idents: notams.idents))"
-        let tfr = notam.kind == "tfr"
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-                    NotamStateBadge(notam: notam)
-                    NotamWhatText(what: notams.what(notam)).font(WingtipType.title)
-                        .foregroundStyle(notam.inForce == false ? .secondary : .primary)
-                    NotamLinesView(notams: notams, notam: notam)
-                    if !tfr, let read = notams.reading(notam), read.what != nil {
-                        Text(read.words).font(WingtipType.note).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            if tfr { TfrDetailsSections(notam: notam, read: notams.tfr(notam)) }
-            Section {
-                DisclosureGroup(tfr ? "TFR as Sent" : "As Sent") {
-                    Text(notam.raw).font(.footnote.monospaced()).textSelection(.enabled)
-                }
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle(notams.heading(notam))
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationSubtitle(number)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }
-            }
-        }
-    }
-}
-
 /// The NOTAMs on one thing, from a tap on its badge or its row: one in
 /// full, several as the list's rows, each opening in full.
 struct NotamsOnPage: View {

@@ -21,6 +21,28 @@ final class RouteLegModel {
         RouteLegs.legs(RouteShare.points(plan))
     }
 
+    /// The tops of climb and descent on the map, as the web's
+    /// LegPointsGl: each leg's TOC and TOD where the planner gives one, off
+    /// the leg's ends by `offTheEndsNm` (there it sits on the field, whose
+    /// mark says as much), and none with no airplane picked, as they are
+    /// its climb and descent (the owner, 2026-11-08: "don't assume").
+    static func legPoints(_ plan: Plan) -> [RouteLegs.LegPoint] {
+        guard plan.course != nil, plan.aircraft != Plan.noAirplane else { return [] }
+        return plan.legs.flatMap { leg -> [RouteLegs.LegPoint] in
+            let out = RouteTurns.squareToCourse(leg.trueCourseDeg)
+            let off = { (along: Double) in along >= offTheEndsNm && leg.distanceNm - along >= offTheEndsNm }
+            var points: [RouteLegs.LegPoint] = []
+            if let toc = leg.toc, off(toc.alongNm) { points.append(.init(name: "TOC", lat: toc.lat, lon: toc.lon, out: out)) }
+            if let tod = leg.tod, off(tod.alongNm) { points.append(.init(name: "TOD", lat: tod.lat, lon: tod.lon, out: out)) }
+            return points
+        }
+    }
+
+    /// How near either end of its leg a top of climb or descent is not
+    /// drawn, nm: a mark's room on the map, not a figure of flight (the
+    /// web's OFF_THE_ENDS_NM).
+    static let offTheEndsNm = 2.0
+
     /// The sheet for the leg, nil where the route has changed under it.
     func sheet(plan: Plan, nextIndex: Int?) -> RouteLegs.Sheet? {
         let legs = Self.mapLegs(plan)

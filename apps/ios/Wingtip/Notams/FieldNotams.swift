@@ -30,6 +30,10 @@ final class FieldNotams {
     var opened: OpenNotams?
     private(set) var readings: [String: EngineContract.NotamReadAnswer] = [:]
     private(set) var tfrs: [String: EngineContract.TfrReadAnswer] = [:]
+    /// Each NOTAM's own card as the engine reads it from its parts
+    /// (notam_card): what happened, its category, its effect, the
+    /// procedures it takes away; none where the engine could not read it.
+    private(set) var cards: [String: EngineContract.NotamCardAnswer] = [:]
     private(set) var marks = NotamMarks()
     private var place: AirportPlace?
 
@@ -69,22 +73,26 @@ final class FieldNotams {
         problem = nil
         readings = read.readings
         tfrs = read.tfrs
+        cards = read.cards
         remark()
     }
 
     @concurrent
     private nonisolated static func read(_ notams: [APIRankedNotam], idents: [String]) async
-        -> (readings: [String: EngineContract.NotamReadAnswer], tfrs: [String: EngineContract.TfrReadAnswer]) {
+        -> (readings: [String: EngineContract.NotamReadAnswer], tfrs: [String: EngineContract.TfrReadAnswer],
+            cards: [String: EngineContract.NotamCardAnswer]) {
         var readings: [String: EngineContract.NotamReadAnswer] = [:]
         var tfrs: [String: EngineContract.TfrReadAnswer] = [:]
+        var cards: [String: EngineContract.NotamCardAnswer] = [:]
         for notam in notams {
             if notam.kind == "tfr" {
                 tfrs[notam.id] = try? FieldNotamWords.readTfr(notam)
             } else {
                 readings[notam.id] = try? Engine.notamRead(text: notam.raw, idents: idents)
+                cards[notam.id] = try? Engine.notamCard(text: notam.raw, idents: idents)
             }
         }
-        return (readings, tfrs)
+        return (readings, tfrs, cards)
     }
 
     /// What the empty list says of a field outside the NOTAM system: a
@@ -109,11 +117,20 @@ final class FieldNotams {
 
     func reading(_ notam: APIRankedNotam) -> EngineContract.NotamReadAnswer? { readings[notam.id] }
     func tfr(_ notam: APIRankedNotam) -> EngineContract.TfrReadAnswer? { tfrs[notam.id] }
+    func card(_ notam: APIRankedNotam) -> EngineContract.NotamCardAnswer? { notam.kind == "tfr" ? nil : cards[notam.id] }
 
-    /// Its first line: what it is and its condition in our words (notam_read's
-    /// what), else its words written out; a TFR's kind and rule (tfr_read).
+    /// The field's own time zone, the planner's, for a NOTAM card's times;
+    /// nil where it is not known (the times are then UTC).
+    var zone: TimeZone? { ranked?.timeZone.flatMap(TimeZone.init(identifier:)) }
+    /// The field's name, under a NOTAM card's title.
+    var fieldName: String? { place?.name }
+
+    /// Its first line: what happened in our words (notam_card's title:
+    /// notam_read's what, else what its parts say, as the web's whatOf),
+    /// else its words written out; a TFR's kind and rule (tfr_read).
     func what(_ notam: APIRankedNotam) -> String {
         if notam.kind == "tfr" { return tfr(notam)?.what ?? "TFR" }
+        if let title = card(notam)?.title { return title }
         guard let read = reading(notam) else { return NotamRows.summary(notam) }
         return read.what ?? read.words
     }
