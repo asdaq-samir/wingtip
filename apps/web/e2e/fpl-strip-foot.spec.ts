@@ -1,9 +1,21 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { grabberTo, settle, slow, typeRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.use({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
 test.beforeEach(({ page }) => pickAirplane(page));
+
+/** The route's plan in, not its estimate: the strip's last figure is the
+ *  first leg's course (Crs), which the plan carries and the estimate before
+ *  it (Trk, none) does not. Measured before, a nine-stop route on a slow
+ *  runner was still "Planning…", its rows not yet their planned height:
+ *  the route no longer than the sheet, its last row 2,423 down against the
+ *  figures' 742 (CI's desktop, run 45152106014, shard 12). Within the
+ *  test's two minutes, where the strip's ETE was waited on for three. */
+async function planIn(strip: Locator) {
+  await expect(strip.locator("dt").last()).toContainText("Crs", { timeout: slow(45_000) });
+  await expect(strip.getByTestId("navlog-ete")).toBeVisible();
+}
 
 /**
  * The route's figures stay on the sheet's foot as a long route scrolls
@@ -26,7 +38,7 @@ test("a long route scrolled at full: the figures stay at the sheet's foot, no ro
     .filter({ has: page.locator("[data-pin-foot]") })
     .first();
   const strip = page.locator("[data-pin-foot]").first();
-  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await planIn(strip);
   const room = await scroller.evaluate((el) => el.scrollHeight - el.clientHeight);
   expect(room, "the route is longer than the sheet").toBeGreaterThan(40);
   const foot = (await page.getByTestId("panel-foot").boundingBox())!;
@@ -66,7 +78,7 @@ test("the tab bar is at the sheet's foot, the figures over it, and they slide un
   await settle(page);
   await grabberTo(page, "half");
   const strip = page.locator("[data-pin-foot]").first();
-  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await planIn(strip);
   const bar = page.getByTestId("fpl-actions");
   const [s, b] = [(await strip.boundingBox())!, (await bar.boundingBox())!];
   // The bar at the very foot, the figures wholly over it, in sight.
@@ -101,7 +113,7 @@ for (const size of ["half", "full"] as const)
     await settle(page);
     await grabberTo(page, size);
     const strip = page.locator("[data-pin-foot]").first();
-    await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+    await planIn(strip);
     const scroller = page
       .locator("[data-sheet-scroll]")
       .filter({ has: page.locator("[data-pin-foot]") })
@@ -122,7 +134,7 @@ test("pulled slowly down to the pill, the figures go down with the plan, frame b
   await settle(page);
   await grabberTo(page, "half");
   const strip = page.locator("[data-pin-foot]").first();
-  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await planIn(strip);
   const grabber = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
   const x = grabber.x + grabber.width / 2;
   let y = grabber.y + grabber.height / 2;
@@ -173,7 +185,7 @@ test("stepped from the pill to half, the strip lands thin as the sheet lands, an
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
-  await expect(page.locator("[data-pin-foot]").first().getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await planIn(page.locator("[data-pin-foot]").first());
   await page.evaluate(() => document.querySelector('[data-testid="fpl-actions"]')!.setAttribute("data-probe", ""));
   await grabberTo(page, "peek");
   await page.waitForTimeout(800);
@@ -211,7 +223,7 @@ test("with the box turned into the route's field, typed in, the figures stay pin
   await settle(page);
   await grabberTo(page, "half");
   const strip = page.locator("[data-pin-foot]").first();
-  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await planIn(strip);
   await typeRoute(page);
   // Tapped past its last point, where a pilot taps to type on: its middle
   // is whatever the day's route puts there (a fuel stop's pill and the
@@ -243,7 +255,7 @@ test.describe("at 375 points and the owner's 19.65-px text", () => {
     await page.evaluate(() => (document.documentElement.style.fontSize = "19.65px"));
     await grabberTo(page, "half");
     const strip = page.locator("[data-pin-foot]").first();
-    await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+    await planIn(strip);
     for (const name of await strip.locator("dt").all()) await expect(name).toBeVisible();
     // Nothing past the screen's side.
     const box = (await strip.boundingBox())!;
