@@ -234,14 +234,24 @@ export default function RouteBox({
                 // scrolls or is cut, a pill whole on its line.
                 style={wrapped ? { overflow: "visible" } : { overflowY: "hidden" }}
                 className={cn(
-                  wrapped ? "overscroll-y-contain" : "overscroll-x-contain",
-                  "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",
-                  "data-overflow-x-start:[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
-                  "data-overflow-x-start:data-overflow-x-end:[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]",
+                  // Fades only on the one-row face: wrapped, one hid every line's right (2026-11-23).
+                  wrapped
+                    ? "overscroll-y-contain"
+                    : [
+                        "overscroll-x-contain",
+                        "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",
+                        "data-overflow-x-start:[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
+                        "data-overflow-x-start:data-overflow-x-end:[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]",
+                      ],
                 )}
                 data-testid="route-slide"
               >
-                <ScrollArea.Content ref={slideRow} className={cn("flex items-center py-1 pr-2", wrapped ? "flex-wrap" : "flex-nowrap")}>
+                {/* Wrapped, no wider than the box: Base UI's least width, fit-content, ran past its edge. */}
+                <ScrollArea.Content
+                  ref={slideRow}
+                  style={wrapped ? { minWidth: 0 } : undefined}
+                  className={cn("flex items-center py-1 pr-2", wrapped ? "flex-wrap" : "flex-nowrap")}
+                >
                   <TokenField<RouteValue>
                     aria-label={label}
                     value={value}

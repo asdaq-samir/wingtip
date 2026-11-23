@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../../lib/text";
@@ -102,7 +103,12 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
     // wrapped box's edge and was cut there (the owner's iPhone, 2026-11-23).
     // Each piece is the arrow into it and what it leads to (PIECE), so no
     // arrow is left alone at a line's end.
-    <span className="font-sans leading-normal normal-case">
+    // Between pieces a <wbr>: two inline-flex boxes side by side with no
+    // space between are one unbreakable run to WebKit, so a point and its
+    // fuel stops went on past the box's edge whole (the owner's iPhone,
+    // 2026-11-23, after the pieces were split); the field's pre-wrap made
+    // no break there either, so the token's white space is normal.
+    <span className="font-sans leading-normal whitespace-normal normal-case">
       <span className={PIECE}>
         {/* Before the first point an arrow only with no departure yet: the
           departure is asked for there, the word for it in the same button,
@@ -186,29 +192,33 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           dashed after it as the route goes on to them (FuelStopChip). */}
       {fuel.flatMap((f) =>
         f.stops.map((stop) => (
-          <span key={`fuel-${stop.ident}`} className={cn(PIECE, "ms-2")}>
-            <ArrowRight className={ARROW} aria-hidden="true" />
-            <FuelStopChip
-              ident={stop.ident}
-              reason={f.reason}
-              onAdd={
-                box.onKeepFuelStops
-                  ? () =>
-                      box.onKeepFuelStops!(
-                        point,
-                        f.stops.map((s) => s.ident),
-                      )
-                  : undefined
-              }
-              onHide={box.onHideFuelStop ? () => box.onHideFuelStop!(stop.ident) : undefined}
-            />
-          </span>
+          <Fragment key={`fuel-${stop.ident}`}>
+            <wbr />
+            <span className={cn(PIECE, "ms-2")}>
+              <ArrowRight className={ARROW} aria-hidden="true" />
+              <FuelStopChip
+                ident={stop.ident}
+                reason={f.reason}
+                onAdd={
+                  box.onKeepFuelStops
+                    ? () =>
+                        box.onKeepFuelStops!(
+                          point,
+                          f.stops.map((s) => s.ident),
+                        )
+                    : undefined
+                }
+                onHide={box.onHideFuelStop ? () => box.onHideFuelStop!(stop.ident) : undefined}
+              />
+            </span>
+          </Fragment>
         )),
       )}
       {/* After the last point: with no destination yet, an arrow on to it;
           with one, an arrow on from it while the box is typed in, at the
           pilot's ask -- what is typed there is the new destination, the old
           one a stop. */}
+      {last && (!hasDest || box.focused || box.typedAtEnd) && <wbr />}
       {last && (!hasDest || box.focused || box.typedAtEnd) && (
         <span className={cn(PIECE, "ms-2")}>
           <ArrowRight className={ARROW} aria-hidden="true" data-testid="route-arrow-on" />
