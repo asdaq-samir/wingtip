@@ -21,7 +21,14 @@ import { readFileSync } from "node:fs";
 const args = process.argv.slice(2);
 const json = args.includes("--json");
 let changed = args.filter((a) => !a.startsWith("--"));
-if (changed.length === 0 && !process.stdin.isTTY) changed = readFileSync(0, "utf8").split("\n");
+// Read as a stream: readFileSync(0) on a pipe not yet ready throws EAGAIN
+// (Node's fs on a non-blocking descriptor), which a pull request's 3,343
+// changed paths did on CI (PR #589, run 45165218062's rerun).
+if (changed.length === 0 && !process.stdin.isTTY) {
+  let piped = "";
+  for await (const chunk of process.stdin) piped += chunk;
+  changed = piped.split("\n");
+}
 const WEB = "apps/web/";
 changed = changed.map((p) => p.trim()).filter(Boolean);
 
