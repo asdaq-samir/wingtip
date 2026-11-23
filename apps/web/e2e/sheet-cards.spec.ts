@@ -48,7 +48,7 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   // mobile, run 45127491141; the nav log held 3.5 s here gives the same
   // 0.017 from the same three boxes).
   // (Its first leg's course, Crs, where the estimate's Trk had none.)
-  await expect(page.locator("[data-pin-foot]").first().locator("dt").last()).toContainText("Crs", { timeout: slow(30_000) });
+  await expect(page.locator("[data-foot-strip]").first().locator("dt").last()).toContainText("Crs", { timeout: slow(30_000) });
 
   // From the pill: the card half way up over it, the panel left at the pill.
   await expectDrawnOnce(page, () => openMapSettings(page), { card: "map-settings", maxMoves: 0 });

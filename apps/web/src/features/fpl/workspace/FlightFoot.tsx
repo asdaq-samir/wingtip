@@ -1,5 +1,7 @@
-import { Suspense, type ReactNode } from "react";
-import { RISEN_OVER } from "../../../components/sheet/insets";
+import { Suspense, type CSSProperties, type ReactNode } from "react";
+import { EDGE_ROOM } from "../../../components/sheet/insets";
+import { FOOT_BAR_PILL } from "../../../components/sheet/FootBar";
+import { useFootRest } from "../../../components/sheet/sheetMotion";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { EngineGate } from "../../../lib/engine/engineGate";
@@ -9,10 +11,11 @@ import { DirectStrip } from "../../route";
 import { DryRunFigures } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import { FplTabBar, type RouteOptions } from "./FplTabBar";
+import { figuresAway } from "./routeEditing";
 
 /** The flight's figures (TripFigures, on the one FigureStrip) in every
- *  state, and over them a Direct to's strip: on the ground under the route
- *  and, held at the foot, FPL's pill (FplRoute); at the foot (`foot`), large
+ *  state, and over them a Direct to's strip: on the ground FPL's foot over
+ *  its tab bar, and its pill (GroundFoot); at the foot (`foot`), large
  *  (`grow`), a dry run's while it plays (DryRunFigures, counting down from
  *  where the airplane is) and in flight the flight's. The figures ask the
  *  engine as they draw (figures.ts' strip_fuel), so they wait for its
@@ -62,8 +65,7 @@ export function FlightFigures({
 
 /** What is pinned at FPL's foot (PlanWorkspace's `foot`): the dry run's
  *  figures while it plays; in flight the flight's figures and Done flying;
- *  on the ground the actions' floating bar (FplTabBar), the figures being
- *  the route row's and its pill (FplRoute). */
+ *  on the ground the figures over the actions' floating bar (GroundFoot). */
 export default function FlightFoot({
   vm,
   more,
@@ -71,7 +73,7 @@ export default function FlightFoot({
   onFile,
   routes,
 }: {
-  vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "stops" | "view">;
+  vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "routeList" | "stops">;
   /** FPL's own foot, where the ground's floating bar sits (FplTabBar), and
    *  the route's ••• that ends it. */
   more?: ReactNode;
@@ -82,7 +84,6 @@ export default function FlightFoot({
   routes?: RouteOptions;
 }) {
   const { doneFlying, dryRunning, flying } = vm.flight;
-  const { panelOpen } = vm.view;
   // In flight, the one way out of flying mode (useFlyingMode): a small
   // Done flying at the figures' foot, as the canvas has the line there;
   // the tabs come back on the ground by themselves. Its words stay small,
@@ -105,32 +106,64 @@ export default function FlightFoot({
     </div>
   );
   // On the ground, on FPL's page (not at the Profile card's foot, no
-  // `more`), the actions' bar alone: the figures are the route row's, and
-  // at the pill they are the pill itself (FplRoute). At the pill the bar
-  // lies over the foot out of sight, coming into sight as a finger takes
-  // the sheet (RISEN_OVER). One wrapper at every size, only its classes
-  // changed, so the same bar stays: a wrapper there at the pill alone gave
-  // the tree another shape there, and React built the bar afresh (its
-  // toolbar, its menu, its two panes of glass) each time the sheet reached
-  // or left the pill, as the settle began (the motion review of 2026-11-22:
-  // the bar's element not the same after a trip to the pill). At the pill
-  // it lies on the foot's edge, as it rests off it (the foot, not this
-  // wrapper, its box), where on the wrapper's foot, the middle of the
-  // pill's short foot, it stood half its height higher and over the figures
-  // as a finger raised the sheet (sheet/pinAtFoot's MAKES_WAY).
-  if (more && !dryRunning && !flying) {
-    return (
-      <div className="w-full">
-        <div className={panelOpen ? undefined : cn("absolute inset-x-0 bottom-0", RISEN_OVER)}>
-          <FplTabBar vm={vm} more={more} fileable={fileable} onFile={onFile} routes={routes} />
-        </div>
-      </div>
-    );
-  }
+  // `more`), the figures over the actions' bar.
+  if (more && !dryRunning && !flying) return <GroundFoot vm={vm} more={more} fileable={fileable} onFile={onFile} routes={routes} />;
   return (
     <div className="flex min-h-0 w-full flex-col">
       <FlightFigures vm={vm} grow foot />
       {doneFlyingRow}
+    </div>
+  );
+}
+
+/**
+ * FPL's foot on the ground: the figures strip on its tab bar, one stack
+ * (iOS 26's tab bar with its bottom accessory), on a phone the fixed bar
+ * beside the sliding sheet (sheet/FootBar), beside the side panel its foot.
+ * Always the figures, the owner's rule (2026-11-16: "calculations should
+ * sit at the bottom ... and then just stay there"); what they look like is
+ * the size the sheet rests at (useFootRest), changed only once it is
+ * still: at the pill the figures alone at the pill's size, the tabs folded
+ * away; at half and all the way up the thin line (the owner, 2026-11-22:
+ * "make the figures strip very thin when fpl is half or full") over the
+ * tabs. The tabs are kept laid out while folded, not built again at each
+ * rest: React built the bar afresh (its toolbar, its menu, its two panes
+ * of glass) each time the sheet reached or left the pill (the motion
+ * review of 2026-11-22). The figures go while the route's field is open
+ * (figuresAway). One size knob (--strip-full, lib/text's PIN_FIGURE), set
+ * once at rest.
+ */
+function GroundFoot({
+  vm,
+  more,
+  fileable,
+  onFile,
+  routes,
+}: {
+  vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "routeList" | "stops">;
+  more: ReactNode;
+  fileable: boolean;
+  onFile?: () => void;
+  routes?: RouteOptions;
+}) {
+  const pill = useFootRest() === "peek";
+  return (
+    <div className="flex w-full flex-col" style={{ "--strip-full": pill ? 1 : 0 } as CSSProperties}>
+      {!figuresAway(vm) && (
+        <div
+          data-foot-strip=""
+          // At the pill the figures fill the pill's room under the grabber,
+          // centred, as the sheet's own face did; from half up a thin line
+          // just over the tabs.
+          className={cn("flex flex-col px-1", pill ? "justify-center" : "pt-1.5")}
+          style={pill ? { height: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : undefined}
+        >
+          <FlightFigures vm={vm} grow={false} thin />
+        </div>
+      )}
+      <div className={cn(pill && "hidden")}>
+        <FplTabBar vm={vm} more={more} fileable={fileable} onFile={onFile} routes={routes} />
+      </div>
     </div>
   );
 }

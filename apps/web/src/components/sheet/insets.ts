@@ -74,22 +74,12 @@ export const PILL_BODY = "invisible group-data-swiping/sheet:visible";
  *  than the pill's room and pushed the row's ✕ off the screen's foot. */
 export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible [&_[data-head-below]]:hidden`;
 
-const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none";
 /** What a sheet shows risen where its pill is not simply its top (FPL's
- *  bar and route over its figures, the pill): laid out at the pill but out
+ *  bar and route, over the foot bar's figures, the pill: sheet/FootBar): laid out at the pill but out
  *  of sight (PILL_BODY), in sight as the finger takes it and held till the
  *  sheet has settled (the popup's data-risen, SheetDrawer), all in CSS,
- *  nothing built or swapped mid-drag -- the airport card's way. Not faded:
- *  the pill's own row inside it (FplRoute's figures) is in sight at rest
- *  by its own visibility, which an opacity round it would hide. */
+ *  nothing built or swapped mid-drag -- the airport card's way. */
 export const RISEN_FACE = `${PILL_BODY} group-data-risen/sheet:visible`;
-/** And a risen face over the pill (FPL's actions' bar, under the figures
- *  held there, FlightFoot): in sight only while a finger has the
- *  sheet, not held while it settles, so settled at the pill it does not
- *  show over the figures for the settle's frames (the owner's screen
- *  recording, 2026-11-16: "Still see the flicker at the end"). */
-export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100`;
-
 /** Eight points at a bottom sheet's foot where there is no home indicator
  *  (its viewport ends over the indicator, SheetDrawer), none while the
  *  keyboard is up: the Drawer's --drawer-keyboard-inset is 0 or a

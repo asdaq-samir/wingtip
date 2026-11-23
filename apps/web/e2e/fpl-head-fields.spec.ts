@@ -24,7 +24,7 @@ for (const size of ["half", "full"] as const)
     const before = (await title.boundingBox())!;
     const scroller = page
       .locator("[data-sheet-scroll]")
-      .filter({ has: page.locator("[data-pin-foot]") })
+      .filter({ has: page.locator("[data-foot-room]") })
       .first();
     // A finger's flick up, well past the end, with the wheel too.
     const box = (await scroller.boundingBox())!;

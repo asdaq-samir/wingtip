@@ -166,6 +166,7 @@ export async function expectBack(page: Page, back: Back) {
         .or(panel.getByTestId("route-box"))
         .or(panel.getByTestId("route-empty"))
         .or(page.getByTestId("panel-foot"))
+        .or(page.getByTestId("foot-bar"))
         .filter({ visible: true })
         .first(),
     ).toBeVisible();

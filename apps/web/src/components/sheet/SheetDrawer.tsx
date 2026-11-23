@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
 import { SETTLE_MS, SHEET_SLIDE } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
 import { useSwipeRelay } from "./sheetFollow";
+import { watchSheetMotion } from "./sheetMotion";
 import { SheetViewport } from "./SheetViewport";
 
 /** The Drawer's keyboard inset, 0 or a keyboard's height. */
@@ -61,6 +62,7 @@ export function SheetDrawer({
   grabber,
   topSlot,
   cards,
+  foot,
   children,
 }: {
   fromBottom: boolean;
@@ -84,10 +86,24 @@ export function SheetDrawer({
   topSlot: boolean;
   /** The cards over it (CardStack), outside the clip of its corners, so a card can stand higher than it. */
   cards: ReactNode;
+  /** FPL's foot bar (sheet/FootBar): beside the popup, not in it, so the
+   *  sheet slides behind it and it stays still at the screen's foot. */
+  foot?: ReactNode;
   children: ReactNode;
 }) {
-  // The popup watched for its movement's few readers (sheet/sheetFollow).
-  const relayed = useSwipeRelay(popupRef);
+  // The popup watched for its movement's few readers (sheet/sheetFollow),
+  // and for whether it is moving (sheet/sheetMotion).
+  const [popupNode, setPopupNode] = useState<HTMLElement | null>(null);
+  useEffect(() => (popupNode ? watchSheetMotion(popupNode) : undefined), [popupNode]);
+  const relayed = useSwipeRelay(
+    useCallback(
+      (node: HTMLElement | null) => {
+        popupRef(node);
+        setPopupNode(node);
+      },
+      [popupRef],
+    ),
+  );
   const { shown, letGo } = useSnapFirst(snapPoint, snapped);
   // The stock Drawer's own gaps, left to it, not drawn by hand (decision
   // 0016): a sheet caught as it settles jumps to where it was going, it
@@ -199,6 +215,10 @@ export function SheetDrawer({
               <div className={cn("relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]", GIVE_WAY)}>{children}</div>
               {cards}
             </Drawer.Popup>
+            {/* Beside the popup, outside its slide: still at the viewport's
+                foot, over the home indicator and on the keyboard as the
+                sheet is (sheet/FootBar). */}
+            {foot}
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>

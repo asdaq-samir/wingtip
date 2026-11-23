@@ -22,10 +22,6 @@ function barRowPad(underGrabber: boolean) {
 /** That row's height either way, for what pins under it (--sheet-head). */
 export const BAR_HEIGHT = "4.25rem";
 
-/** The side panel's pill, a row's part alone (FPL's figures, data-pill-keeps):
- *  the rest not laid out, with no detents to rise with (the owner, 2026-11-19). */
-const DESK_PILL = "[&_[data-pill-row]>*:not([data-pill-keeps])]:hidden";
-
 /**
  * A page's first row: the one search on Search, FPL's bar on FPL (its
  * twin, FplBar), one size on both, so a turn of the page moves nothing
@@ -38,15 +34,12 @@ export function SheetBarRow(p: {
   shown: boolean;
   hairline: boolean;
   rises?: boolean;
-  /** Faded out as the figures held at the foot reach it (sheet/pinClears). */
-  clears?: boolean;
   layout: SheetLayout;
   panelSize: PanelSizeValue;
 }) {
   const { layout } = p;
   return (
     <div
-      data-pin-clears={p.clears ? "" : undefined}
       className={cn(
         "flex shrink-0 px-4",
         barRowPad(layout.fromBottom),
@@ -66,23 +59,14 @@ export function SheetBarRow(p: {
 /**
  * The route's row (or a workspace's head) and the controls under it: under
  * the search, or paged under FPL's bar.
- * `pillRow`: the side panel's pill, the row's pill part alone (DESK_PILL).
  */
-export function SheetHeadBlock(p: {
-  shownAtRest: boolean;
-  alone: boolean;
-  rises?: boolean;
-  pillRow?: boolean;
-  slots: SheetSlots;
-  layout: SheetLayout;
-}) {
+export function SheetHeadBlock(p: { shownAtRest: boolean; alone: boolean; rises?: boolean; slots: SheetSlots; layout: SheetLayout }) {
   const { slots, layout } = p;
   const { atPill } = layout;
   // Drawn at the pill too where it rises with the sheet, as at half.
   const risen = !!p.rises && !p.shownAtRest;
-  const pillRow = !!p.pillRow;
-  const shown = p.shownAtRest || risen || pillRow;
-  const content = risen || pillRow ? slots.top : atPill ? slots.compact : slots.top;
+  const shown = p.shownAtRest || risen;
+  const content = risen ? slots.top : atPill ? slots.compact : slots.top;
   const keptHere = slots.kept != null && shown && content === slots.kept;
   return (
     <div
@@ -91,7 +75,6 @@ export function SheetHeadBlock(p: {
         slots.bar && layout.barShown && (!atPill || risen) && SHEET_BELOW,
         ((!shown && slots.kept == null) || p.alone) && "hidden",
         risen && RISEN_FACE,
-        pillRow && DESK_PILL,
       )}
     >
       {(shown || slots.kept != null) && (
@@ -101,13 +84,11 @@ export function SheetHeadBlock(p: {
               ? "contents"
               : cn(
                   "@container flex items-center gap-2 print:hidden",
-                  pillRow
-                    ? "px-3"
-                    : atPill && !risen
-                      ? cn("px-2.25 pb-3", ROW_PAD)
-                      : slots.top == null
-                        ? undefined
-                        : cn("px-3 pb-1", layout.barShown ? "pt-1" : ROW_PAD),
+                  atPill && !risen
+                    ? cn("px-2.25 pb-3", ROW_PAD)
+                    : slots.top == null
+                      ? undefined
+                      : cn("px-3 pb-1", layout.barShown ? "pt-1" : ROW_PAD),
                 )
           }
         >

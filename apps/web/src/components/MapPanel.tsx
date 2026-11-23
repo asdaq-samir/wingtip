@@ -12,6 +12,8 @@ import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
 import { CARD, FLOAT_PX, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
+import { FootBar } from "./sheet/FootBar";
+import { useFootBarHeight } from "./sheet/sheetMotion";
 import { useSideGlide } from "./sheet/useSideGlide";
 import { useDrawn } from "./sheet/useDrawn";
 import { SheetParts, type PartsProps } from "./sheet/SheetParts";
@@ -124,6 +126,13 @@ export default function MapPanel(props: Props) {
   // page's own (SheetParts), beside Search's row. The pill is one fixed
   // height for every page and card (sheet/insets), which the figures fit.
   const footShown = !!foot && !covering && (!onPhone || props.state !== "peek" || flying || !!props.pages);
+  // FPL's foot on a phone's bottom sheet, on the ground: the figures and the
+  // tab bar as one fixed bar beside the Drawer's popup, not in it, the sheet
+  // sliding behind it (sheet/FootBar); in flight, a dry run, a top sheet
+  // and the side panel the foot is the sheet's own (SheetFoot).
+  const footBar = bottomSheet && !!foot && !flying && !!props.pages?.floats;
+  // In sight on FPL's page alone, as its foot was (SheetPages), and not under a card.
+  const footBarUp = footBar && footShown && props.pages?.at === 1;
   // A card or a page open is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
   const barShown = !!bar && !flying && !covering && layer === "tab";
@@ -149,7 +158,16 @@ export default function MapPanel(props: Props) {
   // The room the sheet in sight (the top card, else the sheet) leaves the
   // map, from the size it is set to: the map eases with the sheet
   // (GlMapShell, in the Drawer's time).
-  const { cover, least, most, width } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const sheetCover = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const { most, width } = sheetCover;
+  // Never less than the foot bar, which stands over the sheet's foot: it
+  // sits inside what the sheet covers at every size (the pill's room under
+  // the grabber is its height), but at a large text size its figures may
+  // stand taller than that, and the map's room ends at its top.
+  const barHeight = useFootBarHeight((b) => b.height);
+  const barRoom = footBarUp ? barHeight : 0;
+  const cover = Math.max(sheetCover.cover, barRoom);
+  const least = Math.max(sheetCover.least, barRoom);
   // The inspector's column while a card is in it: the panel's width.
   const right = inspector && cardsUp ? CARD : 0;
   // The sheet the map slides with, frame by frame (useSlidingSheet): a
@@ -212,7 +230,20 @@ export default function MapPanel(props: Props) {
   const shared: PartsProps = {
     // The pages as drawn (none in flight).
     slots: { top, kept, controls, compact, bar, foot, children, pages },
-    layout: { layer, flying, size, atPill, fromBottom: bottomSheet, onPhone, desktop, footShown, cardsUp: covering, barShown, toEdge },
+    layout: {
+      layer,
+      flying,
+      size,
+      atPill,
+      fromBottom: bottomSheet,
+      onPhone,
+      desktop,
+      footShown,
+      footBar,
+      cardsUp: covering,
+      barShown,
+      toEdge,
+    },
     panelSize,
     onFootTap: () => ask("half"),
   };
@@ -338,6 +369,13 @@ export default function MapPanel(props: Props) {
       look={look}
       grabber={!cardsUp && sheetGrabber}
       topSlot={ridingCard === null}
+      foot={
+        footBar && (
+          <FootBar size={size} shown={footBarUp}>
+            {foot}
+          </FootBar>
+        )
+      }
       cards={
         // The cards over it, inside its popup: its place.
         <>
