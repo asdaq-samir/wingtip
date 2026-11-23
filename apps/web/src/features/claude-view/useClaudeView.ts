@@ -26,9 +26,11 @@ export function useClaudeView() {
   const [, contextChanged] = useState(0);
   const views = useRef<ReturnType<typeof joinViews> | null>(null);
 
+  const answerRef = useRef<Answer | null>(null);
   const take = (structured: unknown) => {
     const next = answerOf(structured);
     if (!next) return;
+    if (!answerRef.current || newer(next.view, answerRef.current.view)) answerRef.current = next;
     setAnswer((was) => (was && !newer(next.view, was.view) ? was : next));
     views.current?.say({ createdAt: next.view.created_at, seq: next.view.seq });
   };
@@ -42,11 +44,18 @@ export function useClaudeView() {
     },
   });
 
+  // The views' channel is the server's name for it, so it is joined with
+  // the first answer, and the key that answer brought is said at once.
+  const channel = answer?.view.channel;
+  const viewId = useRef(crypto.randomUUID());
   useEffect(() => {
-    const joined = joinViews(crypto.randomUUID(), setSuperseded);
+    if (!channel) return;
+    const joined = joinViews(viewId.current, channel, setSuperseded);
     views.current = joined;
+    const said = answerRef.current?.view;
+    if (said) joined.say({ createdAt: said.created_at, seq: said.seq });
     return () => joined.leave();
-  }, []);
+  }, [channel]);
 
   const context = app?.getHostContext();
   const dark = context?.theme === "dark";

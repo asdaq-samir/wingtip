@@ -49,8 +49,14 @@ describe("what a tap in the live view asks of the connector", () => {
     expect(approachChanges({ ...active, missed: true })[1]!.args).toEqual({ airport: "KDLH", action: "suspend_missed" });
   });
 
-  it("saves a new flight, or over the saved one it came from", () => {
-    expect(saveChange(answer.flight).tool).toBe("save_flight_plan");
-    expect(saveChange({ ...answer.flight, saved_flight_id: 12 })).toMatchObject({ tool: "update_saved_flight", label: "Update Saved" });
+  it("saves a new flight, or over the saved one it came from, named by that flight's own route", () => {
+    expect(saveChange(answer.view)).toMatchObject({ tool: "save_flight_plan", label: "Save" });
+    const saved = { id: 12, departure: "KMSN", destination: "KDLH", same_route: true };
+    expect(saveChange({ ...answer.view, saved })).toMatchObject({ tool: "update_saved_flight_from_view", label: "Update KMSN–KDLH" });
+    // Another route over a saved flight is the model's to ask, never a tap.
+    expect(saveChange({ ...answer.view, saved: { ...saved, same_route: false } })).toMatchObject({
+      tool: "save_flight_plan",
+      label: "Save as New",
+    });
   });
 });

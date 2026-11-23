@@ -65,10 +65,13 @@ async def save_flight(pilot_id: str, request: dict) -> dict:
     return await _ask("POST", "/flights", pilot_id, request)
 
 
-async def replan_flight(pilot_id: str, flight_id: int, request: dict) -> dict:
+async def replan_flight(pilot_id: str, flight_id: int, request: dict, replace_route: bool = False) -> dict:
     """Replaces a saved flight's route and nav log with a new plan (the
-    gateway's SaveFlightRequest), keeping its name, notes and share link."""
-    return await _ask("PUT", f"/flights/{flight_id}", pilot_id, request)
+    gateway's SaveFlightRequest), keeping its name, notes and share link.
+    The gateway refuses a plan between other airports than the saved
+    flight's unless `replace_route` (FlightService.replan)."""
+    path = f"/flights/{flight_id}" + ("?replaceRoute=true" if replace_route else "")
+    return await _ask("PUT", path, pilot_id, request)
 
 
 async def delete_flight(pilot_id: str, flight_id: int) -> None:
