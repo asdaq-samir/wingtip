@@ -24,7 +24,7 @@ struct LoadingView: View {
                 stations(loading, load)
                 balance(loading)
                     .task(id: weighed(load)) {
-                        model.weigh(loading, load: load, tripFuelGal: plan.totals?.fuelGal, lbPerGal: model.lbPerGal(grade))
+                        model.weigh(loading, load: load, tripFuelGal: plan.totals?.fuelGal, grade: grade)
                     }
             } else if !plan.airplaneChosen || verdict.answer != nil {
                 AskFigureRow(needs: [.weightBalance], pickDetail: "Its weight and balance is worked out from its POH's loading")
@@ -38,10 +38,12 @@ struct LoadingView: View {
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
     }
 
-    /// What is weighed: every figure of the load and the trip's fuel, so a
-    /// change of any weighs it again.
+    /// What is weighed: every figure of the load, the trip's fuel and the
+    /// grade picked (its place in the menu, -1 the POH's), so a change of
+    /// any weighs it again.
     private func weighed(_ load: AirplaneLoad) -> [Double] {
-        [load.emptyWeightLb, load.emptyArmIn, load.fuelGal, plan.totals?.fuelGal ?? -1, model.lbPerGal(grade) ?? -1] + load.stationsLb
+        let picked = Double(model.grades.firstIndex { $0.grade == grade } ?? -1)
+        return [load.emptyWeightLb, load.emptyArmIn, load.fuelGal, plan.totals?.fuelGal ?? -1, picked] + load.stationsLb
     }
 
     @ViewBuilder

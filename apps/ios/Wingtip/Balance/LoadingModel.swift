@@ -49,17 +49,13 @@ final class LoadingModel {
         UserDefaults.standard.set(grade, forKey: "fuelGrade." + key)
     }
 
-    /// The pounds a gallon of the grade weighs; nil, none picked.
-    func lbPerGal(_ grade: String?) -> Double? { grades.first { $0.grade == grade }?.lbPerGal }
-
-    /// Weighs `load` against `loading`, the trip's fuel burnt by landing.
-    /// The fuel weighed at `lbPerGal` where a grade is picked, else at the
-    /// POH's figure.
-    func weigh(_ loading: PohLoading, load: AirplaneLoad, tripFuelGal: Double?, lbPerGal: Double? = nil) {
-        var loading = loading
-        if let lbPerGal { loading.fuelLbPerGal = lbPerGal }
+    /// Weighs `load` against `loading`, the trip's fuel burnt by landing,
+    /// with the fuel's `grade` as picked (nil, the POH's): which weight a
+    /// gallon wins is the engine's (gonogo_balance), as on the web and
+    /// Android.
+    func weigh(_ loading: PohLoading, load: AirplaneLoad, tripFuelGal: Double?, grade: String? = nil) {
         do {
-            balance = try Self.balance(loading, load: load, tripFuelGal: tripFuelGal)
+            balance = try Self.balance(loading, load: load, tripFuelGal: tripFuelGal, grade: grade)
             problem = nil
         } catch {
             balance = nil
@@ -69,10 +65,11 @@ final class LoadingModel {
 
     /// The engine's answer: the planner's loading read as the engine's
     /// contract has it (the same members, snake case), and the load.
-    nonisolated static func balance(_ loading: PohLoading, load: AirplaneLoad, tripFuelGal: Double?) throws -> Balance {
+    nonisolated static func balance(_ loading: PohLoading, load: AirplaneLoad, tripFuelGal: Double?, grade: String? = nil) throws -> Balance {
         let asked: EngineContract.GonogoLoading = try Engine.recoded(loading, encoder: Planner.snakeEncoder)
         let aboard = EngineContract.GonogoLoad(emptyWeightLb: load.emptyWeightLb, emptyArmIn: load.emptyArmIn,
-                                               stationsLb: load.stationsLb.map { Optional($0) }, fuelGal: load.fuelGal)
+                                               stationsLb: load.stationsLb.map { Optional($0) }, fuelGal: load.fuelGal,
+                                               fuelGrade: grade)
         return try Engine.gonogoBalance(loading: asked, load: aboard, tripFuelGal: tripFuelGal)
     }
 

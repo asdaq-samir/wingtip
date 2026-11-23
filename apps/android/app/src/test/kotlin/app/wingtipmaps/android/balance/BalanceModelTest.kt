@@ -24,15 +24,16 @@ class BalanceModelTest {
     }
 
     @Test
-    fun theProfilesOwnDensityWinsElseTheGradePicked() {
-        // FAA-H-8083-1B's avgas 6.0 and Jet A 6.8 lb/gal, as fuel_grades gives them.
-        val grades = listOf(EngineContract.FuelGradesAnswerItem("avgas", "Avgas", 6.0), EngineContract.FuelGradesAnswerItem("jet_a", "Jet A", 6.8))
-        val loading = EngineContract.GonogoLoading(2558.0, 2550.0, 2550.0, 1663.0, 64887.0, fuelArmIn = 48.0, fuelMaxGal = 53.0)
-        val state = BalanceModel.State(loading = loading, grades = grades, grade = "jet_a")
-        assertEquals(6.8, BalanceModel.weighed(state)!!.fuelLbPerGal)
-        val own = state.copy(loading = loading.copy(fuelLbPerGal = 6.7))
-        assertEquals(6.7, BalanceModel.weighed(own)!!.fuelLbPerGal)
-        assertNull(BalanceModel.weighed(BalanceModel.State()))
+    fun theGradePickedGoesToTheEngineTheLoadingAsTheProfileHasIt() {
+        // Which weight a gallon wins is the engine's (gonogo_balance, its
+        // shared cases): the load carries the pick, none for the POH's.
+        val loading = EngineContract.GonogoLoading(2558.0, 2550.0, 2550.0, 1663.0, 64887.0, fuelArmIn = 48.0, fuelMaxGal = 53.0, fuelLbPerGal = 6.0)
+        val state = BalanceModel.State(loading = loading, emptyWeightLb = 1663.0, stations = listOf("170"), fuel = "40", grade = "jet_a")
+        val load = BalanceModel.loadOf(state)
+        assertEquals("jet_a", load.fuelGrade)
+        assertEquals(listOf(170.0), load.stationsLb)
+        assertEquals(40.0, load.fuelGal, 0.0)
+        assertNull(BalanceModel.loadOf(state.copy(grade = null)).fuelGrade)
     }
 
     @Test

@@ -36,6 +36,7 @@
     <string name="balance_line">What is aboard against the airplane\'s limits and its envelope</string>
     <string name="balance_empty">Empty airplane</string>
     <string name="balance_fuel">Fuel at the start, gal</string>
+    <string name="balance_fuel_poh">As the POH says</string>
     <string name="balance_takeoff">Takeoff</string>
     <string name="balance_landing">Landing</string>
     <string name="balance_envelope">Center of gravity envelope</string>

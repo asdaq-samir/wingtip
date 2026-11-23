@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import c172Json from "../../../../data/aircraft/c172.json?raw";
 import type { Loading } from "./api/types";
-import { balance, defaultLoad, fuelGrades, lbPerGal } from "./weightBalance";
+import { balance, defaultLoad, fuelGrades } from "./weightBalance";
 import { callEngine, type EngineInput } from "./engine/engine";
 import wb from "./fixtures/weightBalance.json";
 
@@ -49,9 +49,7 @@ describe("the fuel's grade", () => {
     ]);
   });
 
-  it("weighs the fuel by the grade picked, the POH's own figure until one is", () => {
-    expect(lbPerGal(loading, null)).toBe(loading.fuel_lb_per_gal);
-    expect(lbPerGal(loading, "jet_a")).toBe(6.8);
+  it("weighs the fuel by the grade picked, the POH's own figure until one is (the engine's gonogo_balance)", () => {
     const load = { emptyWeightLb: 1642, emptyArmIn: 38.1, stationsLb: [170, 0, 0, 0], fuelGal: 50 };
     const avgas = balance(loading, load, 0).takeoff.weightLb;
     // 50 gal of Jet A is 40 lb more than of avgas (6.8 against 6 a

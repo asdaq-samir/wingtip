@@ -1504,7 +1504,10 @@ the engine's (`gonogo_balance`). The grade is a menu (`PullDown`). Its
 first choice is the POH's own weight a gallon, which counts until the
 pilot picks a grade; then come the engine's grades, each with its
 gallon's standard weight (`fuel_grades`, FAA-H-8083-1B: avgas 6, Jet A
-6.8). An airplane with no loading asks for it in place (`AskFigure`),
+6.8). The pick is sent as the load's `fuel_grade` and the engine
+chooses (the grade picked, then the POH's figure, then the airplane's
+grade's standard weight), one rule for the web and both phones. An
+airplane with no loading asks for it in place (`AskFigure`),
 with no airplane assumed.
 
 ### 6. NOTAMs

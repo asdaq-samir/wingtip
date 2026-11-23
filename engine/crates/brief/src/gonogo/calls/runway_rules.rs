@@ -155,6 +155,22 @@ pub(super) fn envelope(i: In, v: &Value) -> R<Vec<(f64, f64)>> {
 }
 
 pub(super) fn loading(i: In, v: &Value) -> R<Loading> {
+    loading_with(i, v, None)
+}
+
+/// The loading, its fuel weighed at the grade the pilot picked for the
+/// load where one is (`load.fuel_grade`), else as `loading` weighs it:
+/// gonogo_balance's, one rule for the web and the phones
+/// (wingtip_flight::fuel_weight::weighed_at).
+pub(super) fn loading_for_load(i: In, v: &Value) -> R<Loading> {
+    let picked = match i.obj(v, "load")? {
+        Some(l) => fuel_grade(i, l)?,
+        None => None,
+    };
+    loading_with(i, v, picked)
+}
+
+fn loading_with(i: In, v: &Value, picked: Option<fuel_weight::Grade>) -> R<Loading> {
     let l = i.obj(v, "loading")?.map_or_else(|| i.err("loading", "is missing"), Ok)?;
     Ok(Loading {
         max_ramp_lb: i.num(l, "max_ramp_lb")?,
@@ -170,10 +186,11 @@ pub(super) fn loading(i: In, v: &Value) -> R<Loading> {
         baggage_combined_max_lb: i.opt_num(l, "baggage_combined_max_lb")?,
         fuel_arm_in: i.num(l, "fuel_arm_in")?,
         fuel_max_gal: i.num(l, "fuel_max_gal")?,
-        // The airplane's handbook's figure, else its grade's standard
-        // weight, avgas 6 lb or Jet A 6.8 lb a gallon (FAA-H-8083-25,
-        // chapter 10; wingtip_flight::fuel_weight).
-        fuel_lb_per_gal: fuel_weight::lb_per_gal(i.opt_num(l, "fuel_lb_per_gal")?, fuel_grade(i, l)?),
+        // The grade picked for the fuel aboard, else the airplane's
+        // handbook's figure, else its grade's standard weight, avgas 6 lb
+        // or Jet A 6.8 lb a gallon (FAA-H-8083-25, chapter 10;
+        // wingtip_flight::fuel_weight).
+        fuel_lb_per_gal: fuel_weight::weighed_at(picked, i.opt_num(l, "fuel_lb_per_gal")?, fuel_grade(i, l)?),
         start_taxi_fuel_lb: i.opt_num(l, "start_taxi_fuel_lb")?.unwrap_or(0.0),
         envelope: envelope(i, l)?,
     })
@@ -197,8 +214,9 @@ pub(super) fn load(i: In, v: &Value) -> R<Load> {
     })
 }
 
-/// The loading's `fuel_grade`, "avgas" or "jet_a", None where not given:
-/// what its fuel weighs where its handbook gives no figure (fuel_weight).
+/// A `fuel_grade`, "avgas" or "jet_a", None where not given: the
+/// loading's, what its fuel weighs where its handbook gives no figure, or
+/// the load's, the grade the pilot picked (fuel_weight).
 fn fuel_grade(i: In, l: &Value) -> R<Option<fuel_weight::Grade>> {
     match i.opt_str(l, "fuel_grade")? {
         None => Ok(None),

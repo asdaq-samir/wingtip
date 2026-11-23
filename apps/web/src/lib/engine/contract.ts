@@ -8131,7 +8131,7 @@ export interface GonogoLoading {
   fuel_arm_in: number;
   fuel_max_gal: number;
   /**
-   * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
+   * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given. A grade the load picks (GonogoLoad's fuel_grade) comes first.
    */
   fuel_lb_per_gal?: number | null;
   /**
@@ -8158,6 +8158,10 @@ export interface GonogoLoad {
    */
   stations_lb: (number | null)[];
   fuel_gal: number;
+  /**
+   * The grade the pilot picked for the fuel aboard: its standard weight a gallon (fuel_grades) comes before the loading's fuel_lb_per_gal and its own fuel_grade. Null or not given, the loading's.
+   */
+  fuel_grade?: "avgas" | "jet_a" | null;
 }
 export interface GonogoBalanceAnswer {
   takeoff: {

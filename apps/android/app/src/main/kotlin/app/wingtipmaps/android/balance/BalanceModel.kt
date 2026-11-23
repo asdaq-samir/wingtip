@@ -42,8 +42,9 @@ class BalanceModel @Inject constructor() : ViewModel() {
         val stations: List<String> = emptyList(),
         val fuel: String = "",
         /** The fuel's grades and their weights (the engine's fuel_grades,
-         *  FAA-H-8083-1B), and the one picked; none to pick where the
-         *  profile gives its own density, which wins. */
+         *  FAA-H-8083-1B), and the one picked; null, the POH's own figure.
+         *  Which wins is the engine's (gonogo_balance): the grade picked,
+         *  then the POH's, as on the web and the iPhone. */
         val grades: List<EngineContract.FuelGradesAnswerItem> = emptyList(),
         val grade: String? = null,
         val balance: EngineContract.GonogoBalanceAnswer? = null,
@@ -71,7 +72,7 @@ class BalanceModel @Inject constructor() : ViewModel() {
         work()
     }
 
-    fun setGrade(grade: String) {
+    fun setGrade(grade: String?) {
         _state.update { it.copy(grade = grade) }
         work()
     }
@@ -84,24 +85,18 @@ class BalanceModel @Inject constructor() : ViewModel() {
     /** The engine's balance of the load as it stands. */
     private fun work() {
         val s = _state.value
-        val loading = weighed(s) ?: return
-        val load = EngineContract.GonogoLoad(
-            emptyWeightLb = s.emptyWeightLb, emptyArmIn = s.emptyArmIn,
-            stationsLb = s.stations.map(::pounds), fuelGal = pounds(s.fuel) ?: 0.0,
-        )
-        val answer = Engine.gonogoBalance(loading, load, tripFuelGal)
+        val loading = s.loading ?: return
+        val answer = Engine.gonogoBalance(loading, loadOf(s), tripFuelGal)
         _state.update { it.copy(balance = answer.getOrNull(), problem = answer.exceptionOrNull()?.message) }
     }
 
     companion object {
-        /** The loading with the fuel's weight a gallon: the profile's own
-         *  where it gives one, else the grade picked's (fuel_grades). */
-        fun weighed(s: State): EngineContract.GonogoLoading? {
-            val loading = s.loading ?: return null
-            if (loading.fuelLbPerGal != null) return loading
-            val picked = s.grades.firstOrNull { it.grade == s.grade } ?: return loading
-            return loading.copy(fuelLbPerGal = picked.lbPerGal)
-        }
+        /** What is aboard as the engine reads it, with the grade picked:
+         *  the fuel's weight a gallon is the engine's to choose. */
+        fun loadOf(s: State): EngineContract.GonogoLoad = EngineContract.GonogoLoad(
+            emptyWeightLb = s.emptyWeightLb, emptyArmIn = s.emptyArmIn,
+            stationsLb = s.stations.map(::pounds), fuelGal = pounds(s.fuel) ?: 0.0, fuelGrade = s.grade,
+        )
 
         /** The screen as an airplane opens it: its loading, its empty
          *  weight and arm, every station empty and the tanks full -- the
@@ -114,12 +109,11 @@ class BalanceModel @Inject constructor() : ViewModel() {
             val asked = if (own) loading.copy(sampleEmptyWeightLb = weight, sampleEmptyMomentLbIn = moment) else loading
             val empty = Engine.gonogoDefaultLoad(asked, loading.fuelMaxGal)
             val d = empty.getOrNull() ?: return State(loading = loading, problem = empty.exceptionOrNull()?.message)
-            // The grades offered only where the profile has no density of its own.
-            val grades = if (loading.fuelLbPerGal == null) Engine.fuelGrades().getOrDefault(emptyList()) else emptyList()
+            val grades = Engine.fuelGrades().getOrDefault(emptyList())
             return State(
                 loading = loading, emptyWeightLb = d.emptyWeightLb, emptyArmIn = d.emptyArmIn, emptyOwn = own,
                 stations = loading.stations.orEmpty().map { "" }, fuel = number(d.fuelGal),
-                grades = grades, grade = grades.firstOrNull()?.grade,
+                grades = grades,
             )
         }
 

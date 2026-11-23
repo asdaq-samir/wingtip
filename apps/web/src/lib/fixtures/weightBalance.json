@@ -481,6 +481,166 @@
         "problems": [],
         "takeoff_words": "2,619 lb at 86.7 in"
       }
+    },
+    {
+      "about": "A grade picked for the fuel aboard before the handbook's figure: Jet A picked for an airplane whose handbook weighs its avgas at 6.0 lb a gallon is weighed at Jet A's standard 6.8 (FAA-H-8083-25, chapter 10), as the Jet A loading with no figure of its own is, 50 gal 340 lb",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ],
+          "fuel_lb_per_gal": 6.0
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 85,
+          "stations_lb": [
+            340,
+            0,
+            50
+          ],
+          "fuel_gal": 50,
+          "fuel_grade": "jet_a"
+        },
+        "trip_fuel_gal": 20
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 2624,
+          "arm_in": 86.6844512195122
+        },
+        "landing": {
+          "weight_lb": 2488,
+          "arm_in": 86.5032154340836
+        },
+        "problems": [],
+        "takeoff_words": "2,624 lb at 86.7 in"
+      }
+    },
+    {
+      "about": "No grade picked (null): the handbook's own 6.7 lb a gallon, as with none given",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "jet_a",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ],
+          "fuel_lb_per_gal": 6.7
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 85,
+          "stations_lb": [
+            340,
+            0,
+            50
+          ],
+          "fuel_gal": 50,
+          "fuel_grade": null
+        },
+        "trip_fuel_gal": 20
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 2619,
+          "arm_in": 86.67812142038946
+        },
+        "landing": {
+          "weight_lb": 2485,
+          "arm_in": 86.4989939637827
+        },
+        "problems": [],
+        "takeoff_words": "2,619 lb at 86.7 in"
+      }
     }
   ],
   "gonogo_default_load": [
