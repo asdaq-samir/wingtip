@@ -2,6 +2,7 @@
 is refused with its reason."""
 
 import copy
+import math
 
 import pytest
 from conftest import HERE
@@ -9,6 +10,49 @@ from sim_flight import scenario
 from wingtip.units import M_PER_FT, M_PER_NM
 
 FLIGHT = HERE / "flights" / "kmsn-kosh-r36.json"
+SEATTLE = HERE / "flights" / "kbfi-kpae-rnav.json"
+FLIGHTS = sorted((HERE / "flights").glob("*.json"))
+
+
+@pytest.mark.parametrize("path", FLIGHTS, ids=lambda p: p.stem)
+def test_every_kept_flight_reads_and_names_each_airplane_once(path):
+    scn = scenario.load(path)
+    idents = [scn["own"]["callsign"]] + [t["callsign"] for t in scn["traffic"]]
+    assert len(set(idents)) == len(idents) == 2
+    assert scenario.for_plugin(scn, "path", ("127.0.0.1", 49010))["traffic"][0]["callsign"] == "N4SIM"
+
+
+def test_the_default_flight_is_the_one_the_x_plane_demo_can_fly():
+    runner = (HERE.parents[1] / "scripts" / "dev" / "sim-flight.sh").read_text()
+    assert "flights/kbfi-kpae-rnav.json}" in runner
+    assert scenario.load(SEATTLE)["scenery"]["tiles"] == ["+47-123"]
+
+
+def test_the_seattle_flight_flies_the_rnav_34l_from_raryo_to_paine_field():
+    scn = scenario.load(SEATTLE)
+    assert scn["plan"] == "/app/plan?dep=KBFI&dest=KPAE&procs=KPAE:R34L"
+    fixes = {p["name"]: p for p in scn["points"] if "lat" in p}
+    # The CIFP's legs: RARYO 3,000, USDAW (FAF) at or above 2,000, ZEREN 1,160, the threshold 629.
+    assert {k: v["alt_ft"] for k, v in fixes.items()} == {"RARYO": 3000, "USDAW": 2000, "ZEREN": 1160}
+    threshold = next(p for p in scn["points"] if p["name"] == "KPAE 34L")
+    assert threshold["alt_ft"] == 629
+    assert scn["expect"]["checkpoints"] == ["RARYO", "USDAW", "ZEREN", "KPAE"]
+    assert [(a["class"], a["name"]) for a in scn["expect"]["alerts"]] == [("B", "SEATTLE"), ("D", "EVERETT")]
+    assert scn["expect"]["route_has"] == ["BFI", "PAE"]
+
+
+def test_the_seattle_flight_descends_no_steeper_than_its_rate_allows():
+    out = scenario.for_plugin(scenario.load(SEATTLE), "path", ("127.0.0.1", 49010))
+    pts = [p for p in out["points"] if not p["ground"]]
+    for a, b in zip(pts, pts[1:]):
+        drop_m = a["alt_m"] - b["alt_m"]
+        if drop_m <= 0:
+            continue
+        # The leg's length, flat earth over a few miles, and its time at the slower end's speed.
+        dy = (b["lat"] - a["lat"]) * 60 * M_PER_NM
+        dx = (b["lon"] - a["lon"]) * 60 * M_PER_NM * math.cos(math.radians(a["lat"]))
+        seconds = math.hypot(dx, dy) / min(a["speed_mps"], b["speed_mps"])
+        assert drop_m / seconds <= out["descent_mps"], f"{a['name']} to {b['name']}"
 
 
 def test_the_kept_flight_reads_and_starts_and_ends_on_a_runway():
@@ -56,6 +100,11 @@ def broken(change):
         (lambda s: s["points"][-1].update(ground=False, alt_ft=900), "ends on the ground"),
         (lambda s: s.update(autopilot={"from": "JUMVO", "to": "Climb-out"}), "hands back after"),
         (lambda s: s["traffic"][0].update(after="Nowhere"), "after names a point"),
+        (lambda s: s["traffic"][0].update(callsign="N1SIM"), "a hex and callsign of its own"),
+        (lambda s: s["traffic"][0].update(hex="F0F0F0"), "a hex and callsign of its own"),
+        (lambda s: s["own"].pop("callsign"), "own: hex"),
+        (lambda s: s.pop("start"), "start, where"),
+        (lambda s: s.update(scenery={"tiles": ["+47-123"]}), "not the scenery.s"),
     ],
 )
 def test_a_script_that_cannot_be_flown_is_refused(change, why):

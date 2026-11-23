@@ -1,10 +1,13 @@
 # The scripted test flight
 
 A simulator flies a whole flight, and the apps follow it as they would
-follow a real one. The default flight is KMSN to KOSH: off Madison's
-runway 36, a climb to 5,500 ft, the RNAV (GPS) RWY 36 at Oshkosh from the
-WIGIH transition, a full-stop landing and a stop on the runway. It takes
-about 40 minutes.
+follow a real one. The default flight is KBFI to KPAE, which the free
+X-Plane 12 demo can fly, as its scenery is only the Seattle area's: off
+Boeing Field's runway 32L, a climb to 3,000 ft, the RNAV (GPS) RWY 34L at
+Paine Field from RARYO, a full-stop landing and a stop on the runway. It
+takes about 20 minutes. The other kept flight, KMSN to KOSH (the RNAV
+(GPS) RWY 36 at Oshkosh from WIGIH, about 40 minutes), needs the full
+X-Plane 12 (`SIM_FLIGHT=tools/sim-flight/flights/kmsn-kosh-r36.json`).
 
 On the way, a browser test checks that the in-flight features work
 together, end to end, as no unit test or spec can. It is not part of CI,
@@ -21,9 +24,9 @@ so one flight reports all of them:
 
 | Check                  | How                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The nav log's progress | FlyingHead's next checkpoint is shown in the air (90% of fixes), only moves on, takes the script's checkpoints in order (WIGIH, DOCEN, WIVLI, JUMVO, KOSH), and its distance comes down                                                                                                                                                                                                                                              |
-| The alerts ahead       | Every answer of the planner's `/airspace/ahead` is recorded, as the real planner gives it. The script's expected airspace is found in its phases: Madison's Class C on departure, Oshkosh's Class D on the arrival. What the planner finds is said over the map within 3 s (AlertsBanner). TFRs, terrain and obstacles are reported as the FAA's data has them that day: the planner's own tests (`test_alerts.py`) cover the rules. |
-| The traffic            | The script's airplane (N4SIM, crossing ahead 500 ft above) is drawn about the map (TrafficGl's `traffic-marks` probe). `/traffic` is answered with the script's traffic, since adsb.lol's sky has no simulator in it.                                                                                                                                                                                                                |
+| The nav log's progress | FlyingHead's next checkpoint is shown in the air (90% of fixes), only moves on, takes the script's checkpoints in order (RARYO, USDAW, ZEREN, KPAE; KMSN's: WIGIH, DOCEN, WIVLI, JUMVO, KOSH), and its distance comes down                                                                                                                                                                                                                                              |
+| The alerts ahead       | Every answer of the planner's `/airspace/ahead` is recorded, as the real planner gives it. The script's expected airspace is found in its phases: the Seattle Class B on departure and Everett's (Paine Field's) Class D on the arrival; Madison's Class C and Oshkosh's Class D for KMSN. What the planner finds is said over the map within 3 s (AlertsBanner). TFRs, terrain and obstacles are reported as the FAA's data has them that day: the planner's own tests (`test_alerts.py`) cover the rules. |
+| The traffic            | The script's crossing airplane, N4SIM in both flights (500 ft above, crossing ahead); own ship is N1SIM is drawn about the map (TrafficGl's `traffic-marks` probe). `/traffic` is answered with the script's traffic, since adsb.lol's sky has no simulator in it.                                                                                                                                                                                                                |
 | The wake lock          | A Screen Wake Lock is held while flying (95% of fixes) and let go a minute after landing. A stand-in for `navigator.wakeLock` records it. This needs `useScreenAwake` (claude/owner-recs).                                                                                                                                                                                                                                           |
 | The auto-logbook       | "Flight Logged" is offered after the stop, with the script's landings (one, day or night) and a route that names MSN and OSH. Nothing is logged.                                                                                                                                                                                                                                                                                     |
 | The work a fix         | The waste audit's measures (2026-11-21), counted for every fix: the engine's calls by rule at the WebAssembly boundary every `callEngine` crosses, and the page's DOM mutations. The p95 of each is held to the script's budgets once the page has settled (after 30 fixes), and so is `magnetic_variation` per fix (about one a mile).                                                                                              |
@@ -45,9 +48,12 @@ MSFS 2024 ── agent --feed (tools/msfs-agent) ──────────�
           (a Stratux's port)                             → the web app's GPS (a fake geolocation)
 ```
 
-- **The flight script** (`tools/sim-flight/flights/kmsn-kosh-r36.json`)
-  holds the plan's address, the points in order, the speeds and rates,
-  the scripted traffic and what to expect. The fixes, runway ends and
+- **The flight script** (`tools/sim-flight/flights/*.json`) holds the
+  plan's address, where X-Plane's flight starts and about how long it
+  takes, the points in order, the speeds and rates, own ship's and the
+  scripted traffic's address and call sign (each airplane one of its own,
+  named only there), the simulator's scenery tiles where it has few (the
+  demo's, which every point is checked to lie in) and what to expect. The fixes, runway ends and
   altitudes come from the FAA's CIFP, cycle 2610. The speeds are the
   test's own round figures for a 172, not figures the app states.
 - **The plugin** flies the script in one of two modes (`install --fly`):
@@ -74,12 +80,14 @@ What it needs from the owner, once:
 
 1. X-Plane 12 and XPPython3; `scripts/dev/xplane-trial.sh check` prints
    the steps. The free demo has only the Seattle area's scenery
-   (XPLANE-TRIAL.md, "The demo's limits"), so **the KMSN-KOSH flight
-   needs the full X-Plane 12**, or a flight script of your own round
-   Seattle in the demo (its 60-minute session holds a 40-minute flight).
+   (XPLANE-TRIAL.md, "The demo's limits"): the default KBFI-KPAE flight
+   is in it, and its 60-minute session holds it; **the KMSN-KOSH flight
+   needs the full X-Plane 12**. The demo's installer needs a click to
+   install (XPLANE-TRIAL.md, "Installing the demo"), and X-Plane needs
+   the Mac unlocked with its display awake.
 2. The live stack up: `scripts/dev/go-live.sh --up`.
 3. The phones, optionally: on the same Wi-Fi with Receiver on, they hear
-   N1SIM as from a Stratux.
+   own ship (N1SIM) and the crossing N4SIM as from a Stratux.
 
 Then:
 
@@ -89,10 +97,11 @@ scripts/dev/sim-flight.sh install            # or: install --fly autopilot
 scripts/dev/sim-flight.sh run                # waits for the simulator, then follows it
 ```
 
-In X-Plane: New Flight, the Cessna 172 SP at KMSN on runway 36 with the
-engine running, then Start Flight. The plugin starts 8 s after the flight
+In X-Plane: New Flight, the Cessna 172 SP at the flight's start (`install`
+names it: KBFI on runway 32L by default) with the engine running, then
+Start Flight. The plugin starts 8 s after the flight
 loads, or from Plugins › Wingtip replay › Fly the test flight. Hands off
-until the airplane has stopped at KOSH. The browser test waits up to four
+until the airplane has stopped at the destination. The browser test waits up to four
 more minutes for the logbook and one more for the wake lock.
 
 The run's folder is `~/wingtip-sim-flight/<time>-flight`:

@@ -41,8 +41,8 @@ class Identity:
     """Who own ship is in the reports: a self-assigned address (GDL 90
     3.5.1.2's type 1), as a receiver with no transponder link gives it."""
 
-    address: int = 0xF0F0F0
-    callsign: str = "N1SIM"
+    address: int
+    callsign: str
 
 
 def _report(c, address: int, callsign: str, airborne: bool, pressure_ft: float | None, address_type: int) -> gdl90.Report:
@@ -79,7 +79,7 @@ def datagram(s: State, me: Identity) -> bytes:
 class Feed:
     """The latest state and what has been sent, kept in `folder`."""
 
-    def __init__(self, folder: Path, me: Identity = Identity()) -> None:
+    def __init__(self, folder: Path, me: Identity) -> None:
         self.folder = folder
         self.me = me
         self.latest: State | None = None
