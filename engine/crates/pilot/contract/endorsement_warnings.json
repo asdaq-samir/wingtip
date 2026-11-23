@@ -1,0 +1,45 @@
+{
+  "x-call": "wingtip_pilot::pilot::endorsement_warnings::call",
+  "description": "What an instructor is warned of before signing an endorsement with these fields, never a refusal: for AC 61-65K A.13 (solo at an airport in Class B airspace, 14 CFR 61.95(b)), an airport of 14 CFR part 91 appendix D, section 4, named by its FAA or ICAO ident, where 14 CFR 91.131(b)(2) has no student, sport or recreational pilot take off or land solo. Empty where there is nothing to warn of.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "EndorsementWarningsInput",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "fields": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Words by field name."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "answer": {
+      "title": "EndorsementWarningsAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

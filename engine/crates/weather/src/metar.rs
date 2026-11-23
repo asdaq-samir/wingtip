@@ -255,29 +255,55 @@ pub fn flight_category_of(ceiling_ft: Option<f64>, ceiling_unknown: bool, visibi
 
 /// A visibility in metres (WMO No. 306) in statute miles, as US reports
 /// give it: 9999 is "10 km or more", which the AWC writes 6+. Below that,
-/// to the step a US report writes at or below it (statute_miles_down), so
-/// 1,200 m is 11/16 sm and not 0.7456, which a pilot read rounded to "3/4"
-/// or "1": a visibility rounded up is more than was seen.
+/// the reportable value at or below it (statute_miles_down), read first as
+/// the metric step that stands for it: a metric report writes 1 sm as 1,600
+/// m and 1/2 as 800, each US value's metres rounded down a little (1 sm is
+/// 1,609.344 m, so every one of them is 0.58% under), so a figure within 1%
+/// under a reportable value is that value -- 800, 1,200, 1,600, 3,200,
+/// 4,800 and 8,000 m are 1/2, 3/4, 1, 2, 3 and 5 sm. Read bare, 1,600 m
+/// was 0.994 sm, under 1 and so LIFR, and failed every 1 sm test. The 1%
+/// (16 m in a mile) is under the 50 m of a metric report's finest step,
+/// so it lifts no figure to a value a step above what was reported.
 pub fn metres_to_sm(metres: f64) -> f64 {
     if metres >= 9999.0 {
         6.0
     } else {
-        statute_miles_down(metres * SM_PER_M)
+        metric_sm(metres)
     }
 }
 
-/// A visibility in statute miles to the step at or below it that a US
-/// report writes: sixteenths of a mile below 3 sm (the finest a METAR
-/// gives, "1/16SM"), whole miles from 3 up. Always down, never up.
+/// Metres, any number of them ("18KM"), to the reportable value they stand
+/// for (metres_to_sm), with no 10 km cap.
+pub fn metric_sm(metres: f64) -> f64 {
+    /// How far under a reportable value a metric figure still reads as it.
+    const METRIC_STEP: f64 = 1.01;
+    statute_miles_down(metres * SM_PER_M * METRIC_STEP)
+}
+
+/// The Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1,
+/// "Reportable Visibility Values", the manual column, statute miles, to
+/// 15; past that every 5 (its note b). The automated column's values are
+/// all in it. FAA JO 7900.5E carries the same table.
+const REPORTABLE_SM: [f64; 38] = [
+    0.0, 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875, 2.0, 2.25,
+    2.5, 2.75, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 20.0, 25.0,
+];
+
+/// A visibility in statute miles to the reportable value at or below it
+/// (REPORTABLE_SM): "If the actual visibility falls halfway between two
+/// reportable values, the lower value shall be reported" (FMH-1 6.5.2),
+/// and a visibility rounded up is more than was seen, so always down.
+/// Sixteenths stop at 3/8: 0.7456 is 5/8, not 11/16, which no report
+/// writes.
 pub fn statute_miles_down(sm: f64) -> f64 {
-    // A hair over each step, so a figure already on one (1.5, 0.0625)
+    // A hair over each value, so a figure already on one (1.5, 0.0625)
     // stays on it and float noise does not drop it a step.
     const NOISE: f64 = 1e-9;
-    if sm >= 3.0 {
-        (sm + NOISE).floor()
-    } else {
-        ((sm + NOISE) * 16.0).floor() / 16.0
+    let sm = sm + NOISE;
+    if sm >= 25.0 {
+        return (sm / 5.0).floor() * 5.0;
     }
+    REPORTABLE_SM.iter().copied().take_while(|v| *v <= sm).last().unwrap_or(0.0)
 }
 
 mod parse;

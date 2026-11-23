@@ -21,6 +21,7 @@ use super::legs::{wind_of, wind_triangle};
 use super::{Obj, Profile, R};
 use crate::geo::py_mod;
 use crate::json::Value;
+use wingtip_core::wmm::magnetic_of;
 use wingtip_flight::flight::{density_ratio, isa_temp_c};
 
 /// One descent as with_descents placed it: where along the legs it starts
@@ -64,7 +65,7 @@ impl DescentAir {
         let (wca, gs) = wind_triangle(tc, wind_of(leg.get("wind").unwrap_or(&Value::Null))?, tas_kt);
         let true_heading = py_mod(tc + wca, 360.0);
         // East variation is least, west is best (FAA-H-8083-25C ch. 16).
-        let magnetic = leg.opt("magnetic_variation_deg")?.map(|v| py_mod(true_heading - v, 360.0));
+        let magnetic = leg.opt("magnetic_variation_deg")?.map(|v| magnetic_of(true_heading, v));
         Ok(DescentAir {
             tas_kt,
             wca_deg: wca,

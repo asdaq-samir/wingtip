@@ -9,7 +9,7 @@ import { api } from "../../lib/api/client";
 import type { EndorsementKind, Instructor, SignedEndorsement } from "../../lib/api/types";
 import { renderEndorsement } from "../../lib/checkride";
 import { callEngine } from "../../lib/engine/engine";
-import { lapseWarning, said, signatureLine } from "../../lib/endorsements";
+import { lapseWarning, said, signatureLine, signingWarnings } from "../../lib/endorsements";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
@@ -134,6 +134,9 @@ export function SignForm({
   const missing = kind.fields.filter((f) => f.required && !fields[f.key]?.trim());
   // A passed date warns and never stops the signature (lapseWarning).
   const lapsed = lapseWarning(instructor, signedOn);
+  // So does an airport no endorsement opens to a solo student (14 CFR
+  // 91.131(b)(2)): the engine's endorsement_warnings.
+  const warnings = signingWarnings(kind.code, fields);
   const sign = useMutation({
     mutationFn: () => api.instructor.sign(studentId, { code: kind.code, fields, text, signedOn, reviewId: reviewId ?? null }),
     onSuccess: (record) => {
@@ -189,13 +192,18 @@ export function SignForm({
         <ListRow
           title={<span className="font-medium text-tint">Sign as {instructor.fullName}</span>}
           description={
-            lapsed || missing.length ? (
+            lapsed || warnings.length || missing.length ? (
               <>
                 {lapsed && (
                   <span className={cn("block", FINDING_TONE.caution)} data-testid="sign-lapsed">
                     {lapsed}
                   </span>
                 )}
+                {warnings.map((w) => (
+                  <span key={w} className={cn("block", FINDING_TONE.caution)} data-testid="sign-warning">
+                    {w}
+                  </span>
+                ))}
                 {missing.length > 0 && <span className="block">Fill in {missing.map((f) => f.label.toLowerCase()).join(", ")}</span>}
               </>
             ) : undefined

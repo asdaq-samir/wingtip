@@ -104,12 +104,17 @@
             "all_day": {
               "type": "boolean",
               "description": "The sun never comes above that line this day: the whole day is in the period."
+            },
+            "rule": {
+              "type": "string",
+              "description": "What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times."
             }
           },
           "required": [
             "from_s",
             "until_s",
-            "all_day"
+            "all_day",
+            "rule"
           ]
         },
         "passenger_night": {
@@ -133,12 +138,17 @@
             "all_day": {
               "type": "boolean",
               "description": "The sun never comes above that line this day: the whole day is in the period."
+            },
+            "rule": {
+              "type": "string",
+              "description": "What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times."
             }
           },
           "required": [
             "from_s",
             "until_s",
-            "all_day"
+            "all_day",
+            "rule"
           ]
         },
         "lights": {
@@ -162,12 +172,17 @@
             "all_day": {
               "type": "boolean",
               "description": "The sun never comes above that line this day: the whole day is in the period."
+            },
+            "rule": {
+              "type": "string",
+              "description": "What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times."
             }
           },
           "required": [
             "from_s",
             "until_s",
-            "all_day"
+            "all_day",
+            "rule"
           ]
         }
       },

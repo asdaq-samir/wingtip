@@ -67,7 +67,8 @@ pub fn frd_near(fixes: &[Fix], lat: f64, lon: f64, max_nm: f64, year: f64) -> Op
     })?;
     let radial = fix.navaid && RADIAL_KINDS.contains(&fix.kind.as_str()) && fix.mag_var.is_some();
     let variation = if radial { fix.mag_var.unwrap_or(0.0) } else { wmm::declination(fix.lat, fix.lon, year) };
-    let course = (geo::py_mod(geo::bearing_deg(fix.lat, fix.lon, lat, lon) - variation, 360.0).round_ties_even() as i64).rem_euclid(360);
+    let course =
+        (wingtip_core::wmm::magnetic_of(geo::bearing_deg(fix.lat, fix.lon, lat, lon), variation).round_ties_even() as i64).rem_euclid(360);
     let distance = r1(nm);
     let ident = frd_ident(&fix.ident, course as f64, distance);
     Some(Named { base: fix.ident.clone(), course_deg: course, distance_nm: distance, radial, ident })

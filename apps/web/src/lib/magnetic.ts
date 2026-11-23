@@ -12,7 +12,7 @@
  * chapter 16).
  */
 import { callEngine, engineReady } from "./engine/engine";
-import { flatNm, normalizeDeg } from "./geo";
+import { flatNm } from "./geo";
 
 export type Declination = (lat: number, lon: number) => number;
 
@@ -52,5 +52,7 @@ export function nearVariation(now: () => Date = () => new Date()): Declination {
   };
 }
 
-/** A true direction as a magnetic one, for a variation east positive. */
-export const magneticOf = (trueDeg: number, eastDeg: number) => normalizeDeg(trueDeg - eastDeg);
+/** A true direction as a magnetic one, for a variation east positive:
+ *  the engine's magnetic_of ("east is least", FAA-H-8083-25C ch. 16), the
+ *  one copy the nav log's legs and the phones turn theirs with. */
+export const magneticOf = (trueDeg: number, eastDeg: number) => callEngine("magnetic_of", { true_deg: trueDeg, variation_deg: eastDeg });

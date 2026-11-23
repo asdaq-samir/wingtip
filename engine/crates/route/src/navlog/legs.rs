@@ -5,6 +5,7 @@
 use super::{number, object, opt_number, py_round, py_sum, Air, LegAir, Obj, Profile, R};
 use crate::geo::{distance_and_bearing, distance_nm, py_mod};
 use crate::json::Value;
+use wingtip_core::wmm::magnetic_of;
 use wingtip_flight::flight;
 
 /// One nav-log leg between two (lat, lon) points at `altitude_ft`, in the
@@ -47,7 +48,7 @@ pub fn assemble_leg(
         }
         leg.set_num("magnetic_variation_deg", variation_deg);
         leg.set("magnetic_heading_deg", Value::Null);
-        leg.set_num("magnetic_course_deg", py_mod(true_course_deg - variation_deg, 360.0));
+        leg.set_num("magnetic_course_deg", magnetic_of(true_course_deg, variation_deg));
         for field in ["groundspeed_kt", "ete_min", "fuel_gal", "tas_kt", "fuel_burn_gph", "power_pct"] {
             leg.set(field, Value::Null);
         }
@@ -59,11 +60,11 @@ pub fn assemble_leg(
     let tas_kt = cruise.tas_kt;
     let (wca_deg, gs_kt) = wind_triangle(true_course_deg, wind_of(&air.wind)?, tas_kt);
     let true_heading_deg = py_mod(true_course_deg + wca_deg, 360.0);
-    let magnetic_heading_deg = py_mod(true_heading_deg - variation_deg, 360.0);
+    let magnetic_heading_deg = magnetic_of(true_heading_deg, variation_deg);
     // The course over the ground as the compass reads it: the figure a
     // pilot sets on the course selector, and the map's Route Leg sheet
     // shows (ForeFlight's "Course 346°M").
-    let magnetic_course_deg = py_mod(true_course_deg - variation_deg, 360.0);
+    let magnetic_course_deg = magnetic_of(true_course_deg, variation_deg);
     let ete_min = if gs_kt > 0.0 { (leg_distance_nm / gs_kt) * 60.0 } else { f64::INFINITY };
     let fuel_gal = (ete_min / 60.0) * cruise.fuel_burn_gph;
     let mut leg = Obj::default();

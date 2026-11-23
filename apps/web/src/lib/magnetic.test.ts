@@ -30,7 +30,8 @@ describe("the variation at a point (WMM-2025)", () => {
 });
 
 describe("a true direction as a magnetic one", () => {
-  it("takes an east variation off and adds a west one: east is least, west is best", () => {
+  it("takes an east variation off and adds a west one: east is least, west is best", async () => {
+    await engineReady;
     expect(magneticOf(90, 10)).toBe(80);
     expect(magneticOf(90, -4)).toBe(94);
     expect(magneticOf(5, 10)).toBe(355);

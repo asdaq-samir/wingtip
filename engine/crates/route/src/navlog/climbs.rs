@@ -6,6 +6,7 @@ use super::legs::{wind_of, wind_triangle};
 use super::{py_round, Obj, Profile, R};
 use crate::geo::py_mod;
 use crate::json::Value;
+use wingtip_core::wmm::magnetic_of;
 use wingtip_flight::flight::isa_temp_c;
 use wingtip_flight::performance::{Climb, Climber};
 
@@ -150,7 +151,7 @@ impl ClimbAir {
         let (wca, gs) = wind_triangle(tc, wind_of(leg.get("wind").unwrap_or(&Value::Null))?, climb_tas);
         let true_heading = py_mod(tc + wca, 360.0);
         // East variation is least, west is best (FAA-H-8083-25C ch. 16).
-        let magnetic = leg.opt("magnetic_variation_deg")?.map(|v| py_mod(true_heading - v, 360.0));
+        let magnetic = leg.opt("magnetic_variation_deg")?.map(|v| magnetic_of(true_heading, v));
         Ok(ClimbAir {
             tas_kt: climb_tas,
             wca_deg: wca,

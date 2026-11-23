@@ -125,14 +125,17 @@ export function miles(sm: number | null | undefined, plus = false): string {
 /**
  * A visibility as a whole and a fraction of a statute mile, as a METAR
  * writes it: 1.625 is [1, "5/8"], 0.5 is [0, "1/2"], 10 is [10, null].
- * To the sixteenth below 3 sm (the finest a US report gives, "1/16SM")
- * and the whole mile from 3, always down: the engine already sends a
- * metric report so (metres_to_sm), and a visibility rounded up would be
- * more than was seen. It wrote 5/8 as "1" and 1/8 as "0".
+ * The value is the engine's (visibility_reportable): the reportable value
+ * at or below it of the Federal Meteorological Handbook No. 1's Table 6-1
+ * (sixteenths to 3/8, eighths to 2, quarters to 3, whole miles on), never
+ * up, as a visibility rounded up is more than was seen. It wrote 5/8 as
+ * "1" and 1/8 as "0", and once 11/16, which no report writes.
  */
 export function reportedVisibility(sm: number): [whole: number, fraction: string | null] {
-  const whole = Math.floor(sm + 1e-9);
-  const sixteenths = sm >= 3 ? 0 : Math.floor((sm + 1e-9 - whole) * 16);
+  const reported = callEngine("visibility_reportable", { sm });
+  const whole = Math.floor(reported + 1e-9);
+  // Every reportable value under 3 is a whole number of sixteenths.
+  const sixteenths = Math.round((reported - whole) * 16);
   if (!sixteenths) return [whole, null];
   const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
   const g = gcd(sixteenths, 16);

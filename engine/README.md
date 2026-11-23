@@ -307,12 +307,19 @@ Then the callers switch to the name and the old copy is deleted.
   for a pilot current for instrument flight in an airplane equipped for
   IFR (in Alaska by the sun's 6 degrees), 1 sm ground visibility to take
   off or land, and never at the 33 airports of part 91 appendix D, section
-  3 (`special_vfr_airports.rs`, by FAA or ICAO ident). Class G's night
+  3 (`special_vfr_airports.rs`, by FAA or ICAO ident). Section 4's 12
+  airports, where no student, sport or recreational pilot takes off or
+  lands solo (91.131(b)(2)), are in the same file: a line of the Class B
+  entry rules and the instructor's warning on an A.13 endorsement that
+  names one (`endorsement_warnings`, a warning, never a refusal). A true
+  direction turns magnetic by `magnetic_of` ("east is least",
+  FAA-H-8083-25C ch. 16), the one copy every leg, track and heading uses.
+  Class G's night
   pattern exception is `vfr_class_g_night_pattern` (91.155(b)(2)). The web
   says a surface area's special VFR on its airspace card; both are held to
   the web's fixture `specialVfr.json`. A loading's fuel is weighed at its
   handbook's figure, else its `fuel_grade`'s standard weight, avgas 6 or
-  Jet A 6.8 lb a gallon (`fuel_weight.rs`, FAA-H-8083-25 chapter 10), held
+  Jet A 6.8 lb a gallon (`fuel_weight.rs`, FAA-H-8083-25C chapter 10), held
   with the weight and balance to `weightBalance.json`, a made-up loading.
 - The few figures the shells kept for themselves are the engine's too,
   held to the web's fixture `shellFigures.json`: how often the live SWIM
