@@ -236,9 +236,11 @@ and `glOverlays.ts`):
   NotamCard (rules.md 19): its title what happened, the field and its
   number under it ("FDC 6/3373"), its category, chips (Active, Permanent,
   "Affects your departure" while in force), its effect, the procedures
-  not authorized, its times in the field's own zone ("In effect since",
-  "Until charts are updated (est. ...)"; `NotamCardTimes`) and its text as
-  sent folded; its words (`notam_read`) where the engine gives no card.
+  not authorized, its times in the field's own zone, a line each that
+  shortens rather than wraps ("In effect since 05/27 13:43 CDT", "Until
+  ...", no "local", Z or "estimated"; one the engine's `until_charts` says
+  runs until the charts change just "Permanent"; `NotamCardTimes`, the
+  owner, 2026-11-23) and its text as sent folded; its words (`notam_read`) where the engine gives no card.
 - **The map is shown as one thing**: Material's loading indicator in the
   middle of what the sheet leaves (`MapLoading`, still with the system's
   animations off) until the map is first at rest with the chart and the

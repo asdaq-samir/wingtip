@@ -9,8 +9,6 @@ import app.wingtipmaps.android.engine.generated.notamCard
 import app.wingtipmaps.android.engine.generated.notamRead
 import app.wingtipmaps.android.engine.generated.tfrRead
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
@@ -113,11 +111,6 @@ object FieldNotams {
             .getOrNull()
     }
 
-    /** "11/10 06:00": month/day and the 24-hour clock in the device's own
-     *  time, as a pilot writes it on a kneeboard, the zone not named (the
-     *  owner, 2026-11-11: "No need to mention time zone, just say local"). */
-    fun corner(at: Instant, zone: ZoneId = ZoneId.systemDefault()): String = CORNER.withZone(zone).format(at)
-
     /** How long, as ForeFlight writes it: "5m" under an hour, "5h05m"
      *  under a day, "4d16h" under ten, "18d" past them. */
     fun span(ms: Long): String {
@@ -136,13 +129,11 @@ object FieldNotams {
     /** One labelled line of a NOTAM's times. */
     enum class Label { SINCE, STARTS, ENDS, DURATION }
 
-    /** A time line: its label, its time ("11/10 06:00") or how long,
-     *  with "local" once, "(est.)", how soon ("in 18d"), or Permanent. */
+    /** A time line: its label, its time ("11/10 06:00 CST") or how long,
+     *  how soon ("in 18d"), or Permanent. */
     data class TimeLine(
         val label: Label,
         val value: String? = null,
-        val local: Boolean = false,
-        val estimated: Boolean = false,
         val soon: String? = null,
         val permanent: Boolean = false,
     )
@@ -151,19 +142,26 @@ object FieldNotams {
      * A NOTAM's times on lines of their own, as ForeFlight's NOTAM list
      * gives them (the owner's screenshots, 2026-11-11): one in force
      * "Since" its start and "Ends" with how long is left; one to come
-     * "Starts" with how soon, "Ends", and how long it lasts. An estimated
-     * end "(est.)", PERM "Permanent" (JO 7930.2 4-2-1). The times are the
-     * planner's, else the NOTAM's own as the engine reads them.
+     * "Starts" with how soon, "Ends", and how long it lasts. Each time in
+     * the field's own zone with its short name, else UTC said so
+     * (NotamCardTimes.whenOf; the owner, 2026-11-23: "no need to say the
+     * word local or Z time"), the year where either is not this year's; an
+     * EST end its time alone (the owner: "no need for the word
+     * estimated"), PERM with none "Permanent" (JO 7930.2 4-2-1). The times
+     * are the planner's, else the NOTAM's own as the engine reads them.
      */
-    fun timeLines(n: RankedNotam, read: EngineContract.NotamReadAnswer?, now: Instant = AppClock.javaNow(), zone: ZoneId = ZoneId.systemDefault()): List<TimeLine> {
+    fun timeLines(n: RankedNotam, read: EngineContract.NotamReadAnswer?, zone: String?, now: Instant = AppClock.javaNow()): List<TimeLine> {
         val starts = instantOf(n.starts ?: read?.starts)
         val ends = instantOf(n.ends ?: read?.ends)
         val active = active(n)
+        val field = NotamCardTimes.zoneOf(zone)
+        val year = NotamCardTimes.withYear(listOfNotNull(starts, ends), now)
+        fun at(t: Instant) = NotamCardTimes.whenOf(t, field, year)
         fun soon(at: Instant) = if (at.isAfter(now)) span(at.toEpochMilli() - now.toEpochMilli()) else null
         return buildList {
-            if (starts != null) add(TimeLine(if (active) Label.SINCE else Label.STARTS, corner(starts, zone), local = ends == null, soon = if (active) null else soon(starts)))
+            if (starts != null) add(TimeLine(if (active) Label.SINCE else Label.STARTS, at(starts), soon = if (active) null else soon(starts)))
             if (ends != null) {
-                add(TimeLine(Label.ENDS, corner(ends, zone), local = true, estimated = read?.estimated == true, soon = soon(ends)))
+                add(TimeLine(Label.ENDS, at(ends), soon = soon(ends)))
             } else if (read?.permanent == true) {
                 add(TimeLine(Label.ENDS, permanent = true))
             }
@@ -177,5 +175,4 @@ object FieldNotams {
     val RED = Regex("""\bclosed\b|\bout of service\b""", RegexOption.IGNORE_CASE)
 
     private const val TFR = "tfr"
-    private val CORNER = DateTimeFormatter.ofPattern("MM/dd HH:mm", Locale.US)
 }

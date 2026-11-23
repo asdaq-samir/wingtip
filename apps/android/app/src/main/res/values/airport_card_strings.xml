@@ -8,8 +8,6 @@
     <string name="notam_ends">Ends</string>
     <string name="notam_duration">Duration</string>
     <string name="notam_permanent">Permanent</string>
-    <string name="notam_local">%1$s local</string>
-    <string name="notam_estimated">%1$s (est.)</string>
     <string name="notam_in">%1$s (in %2$s)</string>
     <string name="notam_number">NOTAM %1$s</string>
     <string name="notam_heading">NOTAM</string>
@@ -40,10 +38,7 @@
     <string name="notam_card_since">In effect since %1$s</string>
     <string name="notam_card_starts">Starts %1$s</string>
     <string name="notam_card_until">Until %1$s</string>
-    <string name="notam_card_estimated">%1$s, estimated</string>
     <string name="notam_card_soon">%1$s · in %2$s</string>
-    <string name="notam_card_until_charts">Until charts are updated</string>
-    <string name="notam_card_until_charts_est">Until charts are updated (est. %1$s)</string>
 
     <!-- The runways' badges. -->
     <string name="runway_best_wind">Best Wind</string>

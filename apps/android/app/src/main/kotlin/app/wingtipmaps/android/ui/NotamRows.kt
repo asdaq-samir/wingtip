@@ -104,10 +104,10 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
                 }
                 Text(name, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = pad.padding(top = WingtipSpace.Md).animateItem())
             }
-            items(group, key = { "n-" + it.notam.id }) { s -> NotamRow(s, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
+            items(group, key = { "n-" + it.notam.id }) { s -> NotamRow(s, notams.ranked?.timeZone, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
         }
     } else {
-        items(if (long) said.take(FieldNotams.FIRST) else said, key = { "n-" + it.notam.id }) { s -> NotamRow(s, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
+        items(if (long) said.take(FieldNotams.FIRST) else said, key = { "n-" + it.notam.id }) { s -> NotamRow(s, notams.ranked?.timeZone, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
     }
     if (notams.ranked?.unchecked.orEmpty().isNotEmpty()) {
         item(key = "notams-unchecked") {
@@ -170,12 +170,12 @@ private fun NoteRow(words: String, modifier: Modifier) {
  * page ("Full card is fine"). A tap opens it there.
  */
 @Composable
-fun NotamRow(s: FieldNotams.Said, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun NotamRow(s: FieldNotams.Said, zone: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val muted = !FieldNotams.active(s.notam)
     ListItem(
         onClick = onClick,
         leadingContent = { NotamState(s.notam) },
-        supportingContent = { NotamLines(s) },
+        supportingContent = { NotamLines(s, zone) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -219,14 +219,14 @@ fun notamWhat(what: String): AnnotatedString {
 }
 
 /**
- * A NOTAM's lines under its what: its times, labelled, in the device's own
- * time (FieldNotams.timeLines), and where it is only where the engine can
+ * A NOTAM's lines under its what: its times, labelled, in the field's own
+ * time with its zone (`zone`, the planner's; FieldNotams.timeLines), and where it is only where the engine can
  * say it is not obvious (the owner, 2026-11-11: "title(what), when, where
  * ... on different lines"). An inactive one is muted throughout.
  */
 @Composable
-fun NotamLines(s: FieldNotams.Said, modifier: Modifier = Modifier) {
-    val times = FieldNotams.timeLines(s.notam, s.read)
+fun NotamLines(s: FieldNotams.Said, zone: String?, modifier: Modifier = Modifier) {
+    val times = FieldNotams.timeLines(s.notam, s.read, zone)
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val words = if (FieldNotams.active(s.notam)) MaterialTheme.colorScheme.onSurface else muted
     Column(modifier) {
@@ -253,13 +253,11 @@ fun NotamLines(s: FieldNotams.Said, modifier: Modifier = Modifier) {
     }
 }
 
-/** A time line's value: "11/12 08:32 local (est.) (in 18d)", or Permanent. */
+/** A time line's value: "11/12 08:32 CST (in 18d)", or Permanent. */
 @Composable
 private fun timeWords(t: FieldNotams.TimeLine): String {
     if (t.permanent) return stringResource(R.string.notam_permanent)
     var v = t.value.orEmpty()
-    if (t.local) v = stringResource(R.string.notam_local, v)
-    if (t.estimated) v = stringResource(R.string.notam_estimated, v)
     t.soon?.let { v = stringResource(R.string.notam_in, v, it) }
     return v
 }

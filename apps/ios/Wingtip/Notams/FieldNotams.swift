@@ -148,7 +148,7 @@ final class FieldNotams {
 
     /// Its time lines (FieldNotamWords.timeLines), now.
     func times(_ notam: APIRankedNotam, now: Date = .now) -> [FieldNotamWords.TimeLine] {
-        FieldNotamWords.timeLines(notam, read: reading(notam), now: now)
+        FieldNotamWords.timeLines(notam, read: reading(notam), now: now, zone: zone)
     }
 
     /// The NOTAMs by what they are about, the engine's heading (Runway,

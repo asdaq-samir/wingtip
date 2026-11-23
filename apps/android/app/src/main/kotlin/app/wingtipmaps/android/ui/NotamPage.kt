@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -38,7 +39,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.TfrContact
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -83,7 +87,7 @@ fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, nam
     }
     CardPage(title = stringResource(R.string.notams), subtitle = ident, exit = exit) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
-            items(notams, key = { it.notam.id }) { s -> NotamRow(s, { one = s }, Modifier.padding(horizontal = WingtipSpace.Lg)) }
+            items(notams, key = { it.notam.id }) { s -> NotamRow(s, zone, { one = s }, Modifier.padding(horizontal = WingtipSpace.Lg)) }
         }
     }
 }
@@ -130,7 +134,7 @@ private fun NotamFull(s: FieldNotams.Said, zone: String?, role: Int?) {
     val card = s.card
     val scheme = MaterialTheme.colorScheme
     val permanent = !tfr && (card?.permanent ?: (s.read?.permanent == true))
-    val times = remember(s, zone, permanent) { NotamCardTimes.lines(s.notam, s.read, permanent, zone) }
+    val times = remember(s, zone, permanent) { NotamCardTimes.lines(s.notam, s.read, permanent, zone) } // TODO(r6-backend): card.untilCharts
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         if (card?.title != null) card.category?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
@@ -142,7 +146,7 @@ private fun NotamFull(s: FieldNotams.Said, zone: String?, role: Int?) {
         if (tfr) Text(notamWhat(s.what), style = MaterialTheme.typography.titleMedium, color = ink)
         else Text(card?.effect ?: s.read?.words ?: s.notam.raw, style = MaterialTheme.typography.bodyLarge, color = ink)
         if (card != null && card.procedures.isNotEmpty()) NotAuthorized(card.procedures)
-        if (times.isNotEmpty()) Column { times.forEach { Text(cardTimeWords(it), style = MaterialTheme.typography.bodyMedium) } }
+        if (times.isNotEmpty()) Column { times.forEach { OneLine(cardTimeForms(it), MaterialTheme.typography.bodyMedium) } }
         s.where?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant) }
         if (tfr) TfrDetails(s)
         Fold(stringResource(if (tfr) R.string.tfr_as_sent else R.string.notam_as_sent)) {
@@ -164,18 +168,34 @@ private fun NotAuthorized(procedures: List<EngineContract.NotamCardAnswerProcedu
     }
 }
 
-/** A card time line in words (NotamCardTimes.Line). */
+/** A card time line in words (NotamCardTimes.Line), its forms from the
+ *  fullest: this year's year dropped first, then the time to go. */
 @Composable
-private fun cardTimeWords(line: NotamCardTimes.Line): String {
-    val at = line.at.orEmpty()
-    val said = when (line.kind) {
-        NotamCardTimes.Kind.SINCE -> stringResource(R.string.notam_card_since, at)
-        NotamCardTimes.Kind.STARTS -> stringResource(R.string.notam_card_starts, at)
-        NotamCardTimes.Kind.UNTIL -> stringResource(R.string.notam_card_until, if (line.estimated) stringResource(R.string.notam_card_estimated, at) else at)
-        NotamCardTimes.Kind.UNTIL_CHARTS ->
-            if (line.at != null) stringResource(R.string.notam_card_until_charts_est, at) else stringResource(R.string.notam_card_until_charts)
+private fun cardTimeForms(line: NotamCardTimes.Line): List<String> {
+    if (line.kind == NotamCardTimes.Kind.PERMANENT) return listOf(stringResource(R.string.notam_permanent))
+    val id = when (line.kind) {
+        NotamCardTimes.Kind.SINCE -> R.string.notam_card_since
+        NotamCardTimes.Kind.STARTS -> R.string.notam_card_starts
+        else -> R.string.notam_card_until
     }
-    return line.soon?.let { stringResource(R.string.notam_card_soon, said, it) } ?: said
+    val full = stringResource(id, line.at.orEmpty())
+    val short = stringResource(id, line.short ?: line.at.orEmpty())
+    val soon = line.soon
+    return if (soon == null) listOf(full, short).distinct()
+    else listOf(stringResource(R.string.notam_card_soon, full, soon), stringResource(R.string.notam_card_soon, short, soon), short).distinct()
+}
+
+/** The first of `forms` that fits the width on one line, else the last
+ *  cut at its end: a card's time line shortens rather than wraps (the
+ *  owner, 2026-11-23: "one line each"), at any font scale. */
+@Composable
+private fun OneLine(forms: List<String>, style: TextStyle) {
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints {
+        val width = constraints.maxWidth
+        val fits = forms.firstOrNull { measurer.measure(it, style, maxLines = 1, softWrap = false).size.width <= width } ?: forms.last()
+        Text(fits, style = style, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+    }
 }
 
 /**
