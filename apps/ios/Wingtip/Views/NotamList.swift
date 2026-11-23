@@ -129,11 +129,15 @@ enum NotamRows {
         return order.map { Place(title: $0, notams: by[$0] ?? []) }
     }
 
-    /// "In effect now", "From 1400Z", or the span "1400Z–2200Z", from the
-    /// NOTAM's own times; the engine says whether it is in force.
-    static func when(_ notam: APIRankedNotam) -> String {
-        let starts = notam.starts.flatMap(date).map(Format.zulu)
-        let ends = notam.ends.flatMap(date).map(Format.zulu)
+    /// "In effect now", "From 11/09 14:00 UTC", or the span, from the
+    /// NOTAM's own times; the engine says whether it is in force. The
+    /// route's list knows no field's zone, so UTC, said so, never a bare Z
+    /// (the owner, 2026-11-23; FieldNotamWords.when).
+    static func when(_ notam: APIRankedNotam, now: Date = .now) -> String {
+        let (s, e) = (notam.starts.flatMap(date), notam.ends.flatMap(date))
+        let year = FieldNotamWords.withYear([s, e], now: now)
+        let starts = s.map { FieldNotamWords.when($0, zone: nil, year: year) }
+        let ends = e.map { FieldNotamWords.when($0, zone: nil, year: year) }
         let span = [starts, ends].compactMap { $0 }.joined(separator: "–")
         if notam.inForce == true { return ends.map { "In effect now, until \($0)" } ?? "In effect now" }
         if let starts { return ends == nil ? "From \(starts)" : span }

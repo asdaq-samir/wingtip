@@ -134,7 +134,7 @@ private fun NotamFull(s: FieldNotams.Said, zone: String?, role: Int?) {
     val card = s.card
     val scheme = MaterialTheme.colorScheme
     val permanent = !tfr && (card?.permanent ?: (s.read?.permanent == true))
-    val times = remember(s, zone, permanent) { NotamCardTimes.lines(s.notam, s.read, permanent, zone) } // TODO(r6-backend): card.untilCharts
+    val times = remember(s, zone) { NotamCardTimes.lines(s.notam, s.read, card?.untilCharts == true, zone) }
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         if (card?.title != null) card.category?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {

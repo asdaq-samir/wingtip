@@ -43,10 +43,12 @@ object FieldNotams {
 
     /** A NOTAM's own card as the engine reads it from its parts
      *  (`notam_card`, FAA Order JO 7930.2): its title, category, effect,
-     *  permanence and the procedures it takes away; null for a TFR, and
-     *  where it fails, the card then saying the NOTAM's words (notam_read). */
+     *  permanence, whether it runs until the charts are updated (given
+     *  the feed's end, a firm one keeps it from that) and the procedures it
+     *  takes away; null for a TFR, and where it fails, the card then saying
+     *  the NOTAM's words (notam_read). */
     fun card(n: RankedNotam, ident: String): EngineContract.NotamCardAnswer? =
-        if (isTfr(n)) null else Engine.notamCard(n.raw, identsOf(ident)).getOrNull()
+        if (isTfr(n)) null else Engine.notamCard(n.raw, identsOf(ident), n.ends).getOrNull()
 
     /** A TFR read by the engine (tfr_read): its kind as a heading, its
      *  kind and rule, its levels and where it is from the field, its place. */

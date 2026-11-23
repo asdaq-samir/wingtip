@@ -97,7 +97,7 @@ private struct NotamCardBody: View {
     let role: String?
 
     var body: some View {
-        let times = FieldNotamWords.cardTimes(notam, read: notams.reading(notam), untilCharts: card.permanent, zone: notams.zone) // TODO(r6-backend): card.untilCharts
+        let times = FieldNotamWords.cardTimes(notam, read: notams.reading(notam), untilCharts: card.untilCharts, zone: notams.zone)
         VStack(alignment: .leading, spacing: WingtipSpace.md) {
             // The category is a label only where the title says what
             // happened; otherwise it is the title already.
