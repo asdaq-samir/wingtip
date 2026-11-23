@@ -77,6 +77,10 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
+    # No key for the followed airplanes' shares, no start: production
+    # sets FOLLOW_SHARE_KEY, the development stack FOLLOW_SHARE_KEY_FILE
+    # (the round 7 audit, P-M1).
+    traffic_store.require_share_key()
     # The planner's periodic work, each a job on one scheduler (wingtip.schedule):
     # the warm-up's checks once it is done (app.warm_up), and from now
     # whether the live feeds and the weather still come in (app.feeds), a

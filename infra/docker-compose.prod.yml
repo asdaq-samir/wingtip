@@ -147,6 +147,10 @@ services:
       # out (app.warm_up check_faa_editions): their own switch, on.
       FAA_DATA_AUTO_REFRESH: "1"
       CHART_TILES_URL: https://${PUBLIC_HOST}/tiles
+      # The key the followed airplanes' shares are hashed with, from the
+      # stack's FollowShareKeySecret (deploy.sh), never kept in the live
+      # store beside the shares (the round 7 audit, P-M1): no key, no start.
+      FOLLOW_SHARE_KEY: ${FOLLOW_SHARE_KEY:?set FOLLOW_SHARE_KEY in .env (deploy.sh writes it from the stack's FollowShareKeySecret; openssl rand -hex 32)}
       TZ: America/Chicago
       # One JSON object a log line, with the page's request id
       # (wingtip.log_lines), for CloudWatch Logs Insights.

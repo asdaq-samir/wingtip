@@ -73,38 +73,48 @@ fn band_of(lat: f64) -> usize {
 /// The outlines, read once from data/borders.txt: the countries, and
 /// Canada's provinces and territories, which only name where in Canada a
 /// point is.
-struct Outlines {
+pub(crate) struct Outlines {
     countries: Vec<Country>,
     provinces: Vec<Country>,
 }
 
-fn outlines() -> &'static Outlines {
-    static READ: OnceLock<Outlines> = OnceLock::new();
-    READ.get_or_init(|| read(include_str!("../data/borders.txt")))
+fn outlines() -> Result<&'static Outlines, &'static str> {
+    static READ: OnceLock<Result<Outlines, String>> = OnceLock::new();
+    READ.get_or_init(|| read(include_str!("../data/borders.txt"))).as_ref().map_err(String::as_str)
 }
 
+/// The outlines read whole, or why not: asked first by each call that
+/// reads them (jurisdiction_call, adiz_call), so a bad borders.txt fails
+/// that call alone, never with a panic that in WebAssembly takes the whole
+/// engine down (the round 7 audit, E-L4).
+pub fn outlines_read() -> Result<(), String> {
+    outlines().map(|_| ()).map_err(str::to_owned)
+}
+
+/// The countries; none where the outlines could not be read, so every
+/// point then reads "other" and is warned of, the safe side.
 fn countries() -> &'static [Country] {
-    &outlines().countries
+    outlines().map_or(&[], |all| &all.countries)
 }
 
 /// The engine's own code for one the file names, so each is a 'static str.
-/// A code the engine does not know (a new territory in borders.txt) stops
+/// A code the engine does not know (a new territory in borders.txt) fails
 /// the read, never reads as some other country: the file is built in, so
 /// the_outlines_name_only_known_places fails on it before it ships.
-fn code_of(code: &str) -> &'static str {
+fn code_of(code: &str) -> Result<&'static str, String> {
     const CODES: [&str; 17] = ["US", "CA", "MX", "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT", "BS"];
-    CODES.iter().find(|c| **c == code).copied().unwrap_or_else(|| panic!("borders.txt names {code}, which the engine does not know"))
+    CODES.iter().find(|c| **c == code).copied().ok_or_else(|| format!("borders.txt names {code}, which the engine does not know"))
 }
 
 /// The countries and the provinces borders.txt holds, in its order, for
 /// the test that every one is known.
 #[cfg(test)]
-pub(crate) fn outline_codes() -> (Vec<&'static str>, Vec<&'static str>) {
-    let all = outlines();
-    (all.countries.iter().map(|c| c.code).collect(), all.provinces.iter().map(|p| p.code).collect())
+pub(crate) fn outline_codes() -> Result<(Vec<&'static str>, Vec<&'static str>), String> {
+    let all = read(include_str!("../data/borders.txt"))?;
+    Ok((all.countries.iter().map(|c| c.code).collect(), all.provinces.iter().map(|p| p.code).collect()))
 }
 
-fn read(text: &str) -> Outlines {
+pub(crate) fn read(text: &str) -> Result<Outlines, String> {
     let mut all = Outlines { countries: Vec::new(), provinces: Vec::new() };
     let mut into_provinces = false;
     for line in text.lines().filter(|l| !l.is_empty() && !l.starts_with('#')) {
@@ -112,7 +122,7 @@ fn read(text: &str) -> Outlines {
         if let Some((code, province)) = head {
             into_provinces = province;
             let list = if province { &mut all.provinces } else { &mut all.countries };
-            list.push(Country { code: code_of(code), bands: vec![Vec::new(); BANDS] });
+            list.push(Country { code: code_of(code)?, bands: vec![Vec::new(); BANDS] });
             continue;
         }
         let list = if into_provinces { &mut all.provinces } else { &mut all.countries };
@@ -136,7 +146,7 @@ fn read(text: &str) -> Outlines {
             }
         }
     }
-    all
+    Ok(all)
 }
 
 /// Whether a point lies on a country's land: its outline crossed an odd
@@ -200,7 +210,7 @@ pub fn province_of(lat: f64, lon: f64) -> Option<&'static str> {
 
 /// province_of for a point already known to be in Canada.
 fn province_in(lat: f64, lon: f64) -> Option<&'static str> {
-    let all = &outlines().provinces;
+    let all: &[Country] = outlines().map_or(&[], |all| &all.provinces);
     let code = match all.iter().find(|p| holds(p, lat, lon)) {
         Some(p) => p.code,
         None => {
@@ -210,23 +220,24 @@ fn province_in(lat: f64, lon: f64) -> Option<&'static str> {
                 .1
         }
     };
-    Some(match code {
-        "AB" => "Alberta",
-        "BC" => "British Columbia",
-        "MB" => "Manitoba",
-        "NB" => "New Brunswick",
-        "NL" => "Newfoundland and Labrador",
-        "NS" => "Nova Scotia",
-        "NT" => "Northwest Territories",
-        "NU" => "Nunavut",
-        "ON" => "Ontario",
-        "PE" => "Prince Edward Island",
-        "QC" => "Quebec",
-        "SK" => "Saskatchewan",
-        "YT" => "Yukon",
-        // code_of lets only the codes above through as a province's.
-        other => unreachable!("{other} is no province of Canada"),
-    })
+    match code {
+        "AB" => Some("Alberta"),
+        "BC" => Some("British Columbia"),
+        "MB" => Some("Manitoba"),
+        "NB" => Some("New Brunswick"),
+        "NL" => Some("Newfoundland and Labrador"),
+        "NS" => Some("Nova Scotia"),
+        "NT" => Some("Northwest Territories"),
+        "NU" => Some("Nunavut"),
+        "ON" => Some("Ontario"),
+        "PE" => Some("Prince Edward Island"),
+        "QC" => Some("Quebec"),
+        "SK" => Some("Saskatchewan"),
+        "YT" => Some("Yukon"),
+        // code_of lets only the codes above through as a province's; a
+        // country's code in the provinces names none, never a panic.
+        _ => None,
+    }
 }
 
 /// A country's name as a pilot reads it at the head of the warning;

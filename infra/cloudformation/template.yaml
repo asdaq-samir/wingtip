@@ -263,8 +263,8 @@ Resources:
             ExpiredObjectDeleteMarker: true
 
   # ---------------------------------------------------------------------
-  # Secrets: three the stack generates, one the owner fills in
-  # (infra/server/env.example). deploy.sh reads all four.
+  # Secrets: four the stack generates, one the owner fills in
+  # (infra/server/env.example). deploy.sh reads all five.
   # ---------------------------------------------------------------------
   DbPasswordSecret:
     Type: AWS::SecretsManager::Secret
@@ -286,6 +286,15 @@ Resources:
     Properties:
       Description: The header CloudFront sends and Caddy demands, so only CloudFront reaches the server.
       GenerateSecretString: { PasswordLength: 40, ExcludePunctuation: true }
+
+  # The key the planner hashes each pilot's share of the followed airplanes
+  # with (FOLLOW_SHARE_KEY, wingtip.traffic.recorded): kept here, never in
+  # the live store beside the shares it hashes (the round 7 audit, P-M1).
+  FollowShareKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: The key the planner hashes each pilot's share of the followed airplanes with (FOLLOW_SHARE_KEY).
+      GenerateSecretString: { PasswordLength: 64, ExcludePunctuation: true }
 
   # Its keys only: the owner fills in the values in the console, and the
   # stack never writes it again unless this SecretString changes -- so
@@ -338,7 +347,7 @@ Resources:
                   - !GetAtt ChartsRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: [!Ref DbPasswordSecret, !Ref AppDbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
+                Resource: [!Ref DbPasswordSecret, !Ref AppDbPasswordSecret, !Ref OriginSecret, !Ref FollowShareKeySecret, !Ref AppSecret]
               # Reads anything (models/ comes from the owner); writes only
               # where it keeps things: backup.sh's backups/ and the ground
               # grid deploy.sh builds once (ground_grid/). So a server
@@ -498,6 +507,7 @@ Resources:
               DB_SECRET_ARN=${DbPasswordSecret}
               APP_DB_SECRET_ARN=${AppDbPasswordSecret}
               ORIGIN_SECRET_ARN=${OriginSecret}
+              FOLLOW_SHARE_KEY_SECRET_ARN=${FollowShareKeySecret}
               BACKUP_TOPIC_ARN=${BackupTopicArn}
               LOG_GROUP=${ServerLogGroup}
               MAIL_HOST=email-smtp.${AWS::Region}.amazonaws.com

@@ -126,18 +126,26 @@ public class UsageRollup {
 
     /** The text as its column takes it: whole where it fits, else its
      *  start and "#" and its SHA-256's first 16 hex digits, so two routes
-     *  alike for the first 300 characters stay two rows. */
+     *  alike for the first 300 characters stay two rows. Counted and cut
+     *  in characters (code points), as Postgres's VARCHAR counts them,
+     *  never inside a surrogate pair (the round 7 audit, G-L1). */
     static String fit(String text, int width) {
-        if (text.length() <= width) {
+        if (text.codePointCount(0, text.length()) <= width) {
             return text;
         }
         String mark = "#" + HexFormat.of().formatHex(sha256(text)).substring(0, 16);
-        return text.substring(0, width - mark.length()) + mark;
+        return head(text, width - mark.length()) + mark;
     }
 
     /** A method cut to its column: GET, POST and the rest all fit. */
-    private static String clip(String text, int width) {
-        return text.length() <= width ? text : text.substring(0, width);
+    static String clip(String text, int width) {
+        return head(text, width);
+    }
+
+    /** The text's first `width` characters, whole code points. */
+    private static String head(String text, int width) {
+        int points = text.codePointCount(0, text.length());
+        return points <= width ? text : text.substring(0, text.offsetByCodePoints(0, width));
     }
 
     private static byte[] sha256(String text) {
