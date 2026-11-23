@@ -364,17 +364,25 @@ public class SecurityConfig {
     }
 
     /** Apple issues a refresh token at every sign-in; it is kept so that
-     *  deleting the account can revoke it (App Review 5.1.1(v)). */
+     *  deleting the account can revoke it (App Review 5.1.1(v)). Then the
+     *  provider's tokens are let go of: Boot's store keeps them in memory
+     *  for as long as the app runs, past the account's deletion, and
+     *  nothing here calls Google or Apple with them again (round 4's
+     *  security review, L8). */
     private static void keepAppleRefreshToken(
             PilotService pilots,
             Optional<OAuth2AuthorizedClientService> authorizedClients,
             Authentication authentication) {
-        if (authentication instanceof OAuth2AuthenticationToken oauth
-                && "apple".equals(oauth.getAuthorizedClientRegistrationId())) {
-            authorizedClients
-                    .map(clients -> clients.<OAuth2AuthorizedClient>loadAuthorizedClient("apple", oauth.getName()))
-                    .map(OAuth2AuthorizedClient::getRefreshToken)
-                    .ifPresent(token -> pilots.keepAppleRefreshToken(authentication, token.getTokenValue()));
+        if (!(authentication instanceof OAuth2AuthenticationToken oauth) || authorizedClients.isEmpty()) {
+            return;
         }
+        OAuth2AuthorizedClientService clients = authorizedClients.get();
+        String provider = oauth.getAuthorizedClientRegistrationId();
+        OAuth2AuthorizedClient client = clients.loadAuthorizedClient(provider, oauth.getName());
+        if ("apple".equals(provider) && client != null && client.getRefreshToken() != null) {
+            pilots.keepAppleRefreshToken(
+                    authentication, client.getRefreshToken().getTokenValue());
+        }
+        clients.removeAuthorizedClient(provider, oauth.getName());
     }
 }

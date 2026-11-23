@@ -8,13 +8,17 @@ import app.wingtipmaps.gateway.dto.FullNameRequest;
 import app.wingtipmaps.gateway.dto.KnowledgeTestRequest;
 import app.wingtipmaps.gateway.dto.LessonProgressRequest;
 import app.wingtipmaps.gateway.dto.TrainingDto;
+import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
 import app.wingtipmaps.gateway.service.LogbookService;
 import app.wingtipmaps.gateway.service.TrainingService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
+import java.time.Duration;
 import java.time.Instant;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,6 +46,13 @@ public class TrainingController {
     private final InstructorService instructors;
     private final LessonService lessons;
     private final LogbookService logbook;
+
+    /** Instructors asked from one caller in a day, whichever accounts ask:
+     *  the student's own five a day alone let free accounts made in a row
+     *  mail anyone (round 4's security review, L4). */
+    static final int CALLER_ASKS_A_DAY = 10;
+
+    private final SlidingWindowLimiter asksByCaller = new SlidingWindowLimiter(Duration.ofDays(1));
 
     public TrainingController(
             TrainingService training, InstructorService instructors, LessonService lessons, LogbookService logbook) {
@@ -89,10 +100,18 @@ public class TrainingController {
     }
 
     /** An instructor asked in by address, and emailed: 400 for their own,
-     *  409 asked already, 429 past the day's asks. */
+     *  409 asked already, 429 past the day's asks, the student's or the
+     *  caller's. */
     @PostMapping("/instructors")
-    public ResponseEntity<TrainingDto> askInstructor(Pilot pilot, @Valid @RequestBody AskInstructorRequest request) {
-        instructors.ask(pilot, request.email(), Instant.now());
+    public ResponseEntity<TrainingDto> askInstructor(
+            Pilot pilot, @Valid @RequestBody AskInstructorRequest request, HttpServletRequest caller) {
+        Instant now = Instant.now();
+        if (!asksByCaller.allow("instructor:" + SlidingWindowLimiter.clientOf(caller), CALLER_ASKS_A_DAY, now)) {
+            throw new InstructorRefusedException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many instructors were asked from here today: ask again tomorrow.");
+        }
+        instructors.ask(pilot, request.email(), now);
         return ResponseEntity.ok(trainingOf(pilot));
     }
 

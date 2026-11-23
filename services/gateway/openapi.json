@@ -1274,6 +1274,9 @@
               "type" : "null"
             } ]
           },
+          "rules" : {
+            "type" : [ "string", "null" ]
+          },
           "stops" : {
             "items" : {
               "type" : "string"
@@ -1293,7 +1296,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "aircraftTailNumber", "altitudes", "checkpoints", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "required" : [ "aircraftTailNumber", "altitudes", "checkpoints", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "rules", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "FlightPlanFiled" : {
@@ -1460,6 +1463,9 @@
               "type" : "null"
             } ]
           },
+          "rules" : {
+            "type" : [ "string", "null" ]
+          },
           "share" : {
             "anyOf" : [ {
               "$ref" : "#/components/schemas/FlightShareDto"
@@ -1486,7 +1492,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "aircraftTailNumber", "altitudes", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "share", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "required" : [ "aircraftTailNumber", "altitudes", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "rules", "share", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "FlightWatchDto" : {
@@ -1528,6 +1534,7 @@
           "fullName" : {
             "maxLength" : 120,
             "minLength" : 0,
+            "pattern" : "[\\p{L}\\p{M} .,'’-]+",
             "type" : "string"
           }
         },
@@ -2480,7 +2487,7 @@
           "picks" : {
             "maxLength" : 1000,
             "minLength" : 0,
-            "pattern" : "^$|(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400}(&(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400})*",
+            "pattern" : "^$|(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min|fuel|tanks)=[A-Za-z0-9%._~+-]{0,400}(&(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min|fuel|tanks)=[A-Za-z0-9%._~+-]{0,400})*",
             "type" : [ "string", "null" ]
           },
           "plannedFor" : {
@@ -2493,6 +2500,10 @@
             }, {
               "type" : "null"
             } ]
+          },
+          "rules" : {
+            "pattern" : "VFR|IFR",
+            "type" : [ "string", "null" ]
           },
           "stops" : {
             "items" : {
@@ -2516,7 +2527,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "aircraftId", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "required" : [ "aircraftId", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "risk", "rules", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "SentReminder" : {
@@ -2583,6 +2594,9 @@
             "format" : "date-time",
             "type" : [ "string", "null" ]
           },
+          "rules" : {
+            "type" : [ "string", "null" ]
+          },
           "sharedAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -2606,7 +2620,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "aircraftTailNumber", "aircraftType", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "sharedAt", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "required" : [ "aircraftTailNumber", "aircraftType", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "rules", "sharedAt", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "SignRequest" : {

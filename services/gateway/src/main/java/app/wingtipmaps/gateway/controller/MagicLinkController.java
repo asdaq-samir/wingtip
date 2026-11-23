@@ -117,23 +117,18 @@ public class MagicLinkController {
     @PostMapping
     public ResponseEntity<Void> request(@Valid @RequestBody MagicLinkRequest body, HttpServletRequest request) {
         Instant now = Instant.now();
-        // Throttled per caller, per address from each caller and per
-        // address in all, whether or not the address has an account, so
-        // the answer still says nothing about who does -- but nobody can
-        // fill a stranger's inbox from here. The address's own limit was
-        // one count for every caller until the deep security review of
-        // 2026-11-21: five asks from anywhere locked its pilot out of
-        // signing in for the hour, and Android has no other way in. Now
-        // a caller spends only its own five for the address, and the
-        // address takes ADDRESS_CALLERS times that from all of them, so a
-        // lockout needs that many asks from as many addresses. The caller
-        // is counted first, so a caller already refused spends no
-        // address's count.
+        // Throttled whether or not the address has an account, so the
+        // answer still says nothing about who does -- but nobody can fill
+        // a stranger's inbox from here, nor lock its pilot out of signing
+        // in (Android has no other way in): SlidingWindowLimiter.allowLink.
         String address = "email:" + body.email().toLowerCase(Locale.ROOT);
-        String client = SlidingWindowLimiter.clientOf(request);
-        if (!recentRequests.allow("client:" + client, perClientPerHour, now)
-                || !recentRequests.allow(address + " from " + client, perAddressPerHour, now)
-                || !recentRequests.allow(address, perAddressPerHour * ADDRESS_CALLERS, now)) {
+        if (!recentRequests.allowLink(
+                address,
+                SlidingWindowLimiter.clientOf(request),
+                perClientPerHour,
+                perAddressPerHour,
+                ADDRESS_CALLERS,
+                now)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
         }
         magicLinks.deleteExpiredBefore(now.minus(Duration.ofDays(1)));
@@ -196,6 +191,14 @@ public class MagicLinkController {
     @PostMapping(value = "/verify", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<String> verify(
             @RequestParam String token, HttpServletRequest request, HttpServletResponse response) {
+        // Every try counted per caller, a good link's too, so the review
+        // code and a link's token cannot be guessed at speed (round 4's
+        // security review, L7): a pilot presses a link once or twice.
+        if (!recentRequests.allow(
+                "verify:" + SlidingWindowLimiter.clientOf(request), perClientPerHour, Instant.now())) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Too many sign-in links were tried from here. Try again in an hour.");
+        }
         // The review account's fixed code, where the owner turned it on for a
         // store review (ReviewSignIn): that account alone, no link used up.
         Optional<String> reviewer = review.accountFor(token);

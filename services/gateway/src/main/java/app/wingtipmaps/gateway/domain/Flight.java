@@ -72,6 +72,7 @@ public class Flight {
     @Column(length = 1000)
     private String picks;
 
+
     /** The pilot's own name for it ("Lunch at Duluth"); null where it is
      *  shown by its route. */
     @Column(length = 80)

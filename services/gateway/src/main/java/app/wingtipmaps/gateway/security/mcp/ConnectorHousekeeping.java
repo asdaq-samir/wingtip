@@ -20,6 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>A connection whose every token has run out, a day after the last
  *       did: its refresh token lasts 30 days unused, so a connection in
  *       use is never one of them.
+ *   <li>An authorization never finished -- the pilot left the consent
+ *       page, or never traded the code -- a day after it was begun: it
+ *       has no expiry to read, and a free account could grow the table
+ *       with GET /oauth2/authorize (round 4's security review, L2; V54).
  *   <li>A client nobody connected through, or whose connections have all
  *       gone, a day (app.mcp.unused-client-days) after it registered, with
  *       its consents. Claude and ChatGPT register again when they next
@@ -54,6 +58,10 @@ public class ConnectorHousekeeping {
         int connections = jdbc.update(
                 "DELETE FROM oauth2_authorization WHERE COALESCE(refresh_token_expires_at, access_token_expires_at,"
                         + " authorization_code_expires_at) < ?",
+                dayAgo);
+        connections += jdbc.update(
+                "DELETE FROM oauth2_authorization WHERE access_token_value IS NULL AND refresh_token_value IS NULL"
+                        + " AND created_at < ?",
                 dayAgo);
         int clients = jdbc.update(
                 "DELETE FROM oauth2_registered_client c WHERE c.client_id_issued_at < ? AND NOT EXISTS"

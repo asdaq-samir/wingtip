@@ -768,7 +768,7 @@ Resources:
     Type: AWS::WAFv2::WebACL
     Properties:
       Name: !Sub "${AWS::StackName}-tiles"
-      Description: Rate limit on the planner tile paths, everything else let through.
+      Description: Rate limits on the planner's tile paths and its other paths, everything else let through.
       Scope: CLOUDFRONT
       DefaultAction: { Allow: {} }
       VisibilityConfig:
@@ -779,6 +779,9 @@ Resources:
         slow-down:
           ContentType: TEXT_PLAIN
           Content: Too many tile requests from this address. Try again in a few minutes.
+        slow-down-planner:
+          ContentType: TEXT_PLAIN
+          Content: Too many requests to the planner from this address. Try again in a few minutes.
       Rules:
         - Name: tiles-per-address
           Priority: 0
@@ -810,6 +813,55 @@ Resources:
                         PositionalConstraint: STARTS_WITH
                         SearchString: /api/planner/terrain-tile/
                         TextTransformations: [{ Priority: 0, Type: NONE }]
+        # Every other planner path, anonymous ones among them: a plan,
+        # nav log or ForeFlight pack starts a corridor read per new pair of
+        # airports, the FAA PDFs and diagrams miss the cache with a query
+        # string of the caller's own, and the overlay tiles reach the
+        # planner through Caddy. The tile rule above held only the two tile
+        # paths (round 4's security review, M4; the owner took the
+        # recommendation, a second rule at about $1 a month). The same
+        # 3,000 in five minutes from one address, the tiles left to their
+        # own count: a pilot planning asks some tens a route, the overlay
+        # tiles of a whole screen some 40.
+        - Name: planner-per-address
+          Priority: 1
+          Action:
+            Block:
+              CustomResponse:
+                ResponseCode: 429
+                CustomResponseBodyKey: slow-down-planner
+                ResponseHeaders: [{ Name: Retry-After, Value: "60" }]
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${AWS::StackName}-planner-per-address"
+            SampledRequestsEnabled: true
+          Statement:
+            RateBasedStatement:
+              Limit: 3000
+              EvaluationWindowSec: 300
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                AndStatement:
+                  Statements:
+                    - ByteMatchStatement:
+                        FieldToMatch: { UriPath: {} }
+                        PositionalConstraint: STARTS_WITH
+                        SearchString: /api/planner/
+                        TextTransformations: [{ Priority: 0, Type: NONE }]
+                    - NotStatement:
+                        Statement:
+                          ByteMatchStatement:
+                            FieldToMatch: { UriPath: {} }
+                            PositionalConstraint: STARTS_WITH
+                            SearchString: /api/planner/chart-tile/
+                            TextTransformations: [{ Priority: 0, Type: NONE }]
+                    - NotStatement:
+                        Statement:
+                          ByteMatchStatement:
+                            FieldToMatch: { UriPath: {} }
+                            PositionalConstraint: STARTS_WITH
+                            SearchString: /api/planner/terrain-tile/
+                            TextTransformations: [{ Priority: 0, Type: NONE }]
 
   Distribution:
     Type: AWS::CloudFront::Distribution
