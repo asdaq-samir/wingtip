@@ -1,11 +1,12 @@
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useIsMutating, useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Check, GraduationCap, Save } from "lucide-react";
 import { done } from "../../lib/doneNote";
 import { DropdownMenuItem } from "../../components/ui/dropdown-menu";
 import { ResponsivePopoverContent } from "../../components/ResponsivePopover";
-import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
+import type { ReviewAsk } from "../../components/ReviewAsk";
+import { fromChunk } from "../../lib/fromChunk";
 import { localDay } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 import { api } from "../../lib/api/client";
@@ -109,6 +110,14 @@ export function ReviewAskItem({ flight, onAsk }: { flight: FlightToSave; onAsk: 
   );
 }
 
+/** The review's form on a chunk of its own, fetched as its sheet opens: in
+ *  the route's panel it was among a route link's first scripts, 8 KB of a
+ *  form drawn only once asked for (route-load.spec, over its budget). */
+const { Part: ReviewAskForm } = fromChunk(
+  () => import("../../components/ReviewAsk"),
+  (m) => m.ReviewAskForm,
+);
+
 /**
  * The review asked from the route itself: the plan on screen saved as a
  * flight -- with Save's own mutation, so Save says Saved after -- and put
@@ -149,12 +158,14 @@ export function ReviewAskSheet({ flight, onDone }: { flight: FlightToSave; onDon
       description="Your instructor reviews its planning and the weather, and endorses it for the airplane and the day (14 CFR 61.93(c)(3), (d))."
     >
       <div className="space-y-3">
-        <ReviewAskForm
-          instructors={theirs}
-          pending={ask.isPending || !request}
-          onAsk={(a) => ask.mutate(a)}
-          initialDay={localDay(flight.depart ? new Date(flight.depart) : new Date())}
-        />
+        <Suspense fallback={<Spinner className="mx-auto" />}>
+          <ReviewAskForm
+            instructors={theirs}
+            pending={ask.isPending || !request}
+            onAsk={(a) => ask.mutate(a)}
+            initialDay={localDay(flight.depart ? new Date(flight.depart) : new Date())}
+          />
+        </Suspense>
         {ask.error && (
           <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
             {ask.error.message}
