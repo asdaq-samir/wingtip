@@ -34,11 +34,19 @@ export const claudeViewConfig: InlineConfig = {
   build: {
     write: false,
     emptyOutDir: false,
-    // One file by design, the whole view in it (1.8 MB, 2026-11-22).
+    // One file by design, the whole view in it (1.08 MB, 2026-11-22).
     chunkSizeWarningLimit: 3000,
     rolldownOptions: {
       input: fileURLToPath(new URL("./claude-view.html", import.meta.url)),
       checks: { bundlerTimings: false },
+      // The app's own modules count as free of side effects, its CSS
+      // aside: one file inlines every dynamic import, so a barrel the view
+      // reaches for one small part (procedures/lazy's TimelineMark, plan's
+      // tripFigures) kept every module it re-exports for their top-level
+      // lazy() calls, and with them each lazy part's chunk -- MapLibre and
+      // its worker, recharts, React Aria, the route box. The page was
+      // 4.0 MB with them, 1.08 MB without (rev-perf, 2026-11-22).
+      treeshake: { moduleSideEffects: (id: string) => /\.css($|\?)/.test(id) || !id.includes("/apps/web/src/") },
       // A warning fails it, as the app's build (strictBuild), but one: a
       // dynamic import beside a static one, which says only that the
       // module stays in its chunk -- and here every module is in the one.

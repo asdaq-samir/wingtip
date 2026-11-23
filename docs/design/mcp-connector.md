@@ -319,7 +319,10 @@ opens it beside the chat (the resource asks for the side panel,
   `features/claude-view`), one self-contained file built inside the app's
   build and served by the gateway at `/app/claude-view.html`; the planner
   reads it from the gateway, keeps it five minutes, and serves it
-  (`app.mcp.view_resource`). Its CSP names Wingtip's own origin alone, for
+  (`app.mcp.view_resource`). The app's own modules are built as free of
+  side effects (`vite.claude-view.config.ts`), since one file inlines every
+  lazy chunk a barrel reaches, and the page is held to 1.3 MB
+  (`vite-plugins/claudeView.ts`; 1.08 MB on 2026-11-22, 4.0 MB before). Its CSP names Wingtip's own origin alone, for
   the chart's tiles, as images only (`resourceDomains`, no
   `connectDomains`): the view fetches nothing.
 - **The answer** is the flight (`app.mcp.flight_state`, the web's own

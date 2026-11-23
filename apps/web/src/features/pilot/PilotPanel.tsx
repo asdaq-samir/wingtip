@@ -23,7 +23,7 @@ import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
 import { SettingsPage, type HelpPages } from "../settings";
-import { DocumentsPage, DocumentsRow } from "../documents";
+import { DocumentsPage, DocumentsRow } from "../documents/lazy";
 import { ScratchpadPage, ScratchpadRow } from "../scratchpad";
 import { FlightsPanel } from "./AccountPanels";
 import { LargeFace } from "./AccountFace";

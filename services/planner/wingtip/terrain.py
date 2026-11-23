@@ -52,12 +52,14 @@ limit: a pilot's own altitude under 91.119's minimum is flown with a
 caution (the engine's cautions::floor, asked through own_altitude_caution).
 """
 
+import copy
 import math
 import threading
 from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
+from cachetools import TTLCache
 
 from . import congested, elevation, faa_data, geo, geo_boxes, ground_grid
 from .engine import ask as engine
@@ -95,6 +97,19 @@ _READING: dict[tuple, threading.Event] = {}
 _READING_LOCK = threading.Lock()
 # Longer than any one read takes, so a stuck one is not waited on forever.
 _READ_WAIT_S = 120
+
+# Each line's floors, held by the line and the obstacle file's edition: the
+# ground, the obstacles and the towns under a leg are the same whatever the
+# departure hour, airplane or forecast the altitude selection is keyed on
+# (wingtip.planning), and each new one read them all again, 1.3 to 2.0 s
+# for KPWK-KLAS's one line, most of it the towns' tree and the engine's
+# JSON (cProfile, rev-perf 2026-11-22). Per leg, so a stop added re-reads
+# only the legs it changes. Not held where the towns could not be read
+# (every point taken as congested), and for an hour, so a ground grid
+# built since is taken up.
+FLOORS_HELD_S = 3600
+_FLOORS: TTLCache = TTLCache(maxsize=1024, ttl=FLOORS_HELD_S)
+_FLOORS_LOCK = threading.Lock()
 
 
 def _elevations_m(points: list) -> dict:
@@ -141,7 +156,28 @@ def floor_profile(
 
 
 def _floors(route_start: tuple, route_end: tuple, breaks_nm: list, sample_interval_nm: float, faa_cache_dir) -> list:
-    """The MEF-style floor of each segment of the line, in feet MSL, with
+    """`_read_floors`, held (_FLOORS); a copy, so a caller's change to one
+    is not held."""
+    dof = faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir)
+    key = (
+        tuple(round(v, 5) for v in (*route_start, *route_end)),
+        tuple(round(float(b), 3) for b in breaks_nm),
+        sample_interval_nm,
+        str(dof),
+        dof.stat().st_mtime if dof.exists() else None,
+    )
+    with _FLOORS_LOCK:
+        held = _FLOORS.get(key)
+    if held is None:
+        held, known = _read_floors(route_start, route_end, breaks_nm, sample_interval_nm, dof)
+        if known:
+            with _FLOORS_LOCK:
+                _FLOORS[key] = held
+    return copy.deepcopy(held)
+
+
+def _read_floors(route_start: tuple, route_end: tuple, breaks_nm: list, sample_interval_nm: float, dof) -> tuple[list, bool]:
+    """(the MEF-style floor of each segment of the line, in feet MSL, with
     the lowest ground under it and 91.119's own minimum (the engine's
     `vfr_floors` answer, a dict a segment): one per consecutive pair
     of `breaks_nm` (along-track distances from route_start, ascending,
@@ -152,7 +188,8 @@ def _floors(route_start: tuple, route_end: tuple, breaks_nm: list, sample_interv
     route's: that is what lets a nav log step down under the shelf and
     back up past it. Each segment also sees one terrain sample beyond
     either end, and obstacles up to the corridor's half-width beyond, so
-    what sits at a boundary counts for both legs.
+    what sits at a boundary counts for both legs; whether the towns
+    could be read).
     """
     # The ground from the built grid where it covers the route (wingtip.
     # ground_grid): every cell the line crosses, its highest ground for the
@@ -179,14 +216,14 @@ def _floors(route_start: tuple, route_end: tuple, breaks_nm: list, sample_interv
     # clearance. Where the towns cannot be read the congested flags go as
     # null and the engine takes 91.119(b)'s 1,000 ft everywhere.
     bbox = geo_boxes.corridor_box(route_start, route_end, buffer_nm=OBSTACLE_READ_NM)
-    obstacles = faa_data.load_obstacles(faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir), bbox, min_agl_ft=0)
+    obstacles = faa_data.load_obstacles(dof, bbox, min_agl_ft=0)
     obstacle_lats = obstacles["lat"].to_numpy(dtype=float) if len(obstacles) else np.empty(0)
     obstacle_lons = obstacles["lon"].to_numpy(dtype=float) if len(obstacles) else np.empty(0)
     over_town = congested.congested(np.concatenate([lats, obstacle_lats]), np.concatenate([lons, obstacle_lons]))
     known = over_town is not None
     types = obstacles["type"].tolist() if len(obstacles) and "type" in obstacles else [None] * len(obstacle_lats)
     heights = obstacles["amsl_ft"].to_numpy(dtype=float) if len(obstacles) else np.empty(0)
-    return engine(
+    floors = engine(
         "vfr_floors",
         start=list(route_start),
         end=list(route_end),
@@ -208,3 +245,4 @@ def _floors(route_start: tuple, route_end: tuple, breaks_nm: list, sample_interv
             for i, (lat, lon, ft, kind) in enumerate(zip(obstacle_lats, obstacle_lons, heights, types))
         ],
     )
+    return floors, known
