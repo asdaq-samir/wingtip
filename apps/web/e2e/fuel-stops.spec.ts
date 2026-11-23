@@ -305,7 +305,8 @@ for (const width of [375, 393])
       const drawer = sideDrawer(page);
       const pill = drawer.getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
       await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
-      const oneLine = async () => {
+      // `under`: the chips on a line of their own under the words.
+      const row = async (under = false) => {
         const boxes = await Promise.all(
           [drawer.getByTestId("timeline-add-stop"), pill, drawer.getByTestId("route-type-open")].map(async (l) => (await l.boundingBox())!),
         );
@@ -324,7 +325,19 @@ for (const width of [375, 393])
           "ROW",
           JSON.stringify({ card: [card.x, card.width], boxes: boxes.map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.width)]) }),
         );
-        for (const b of boxes) expect(Math.abs(mid(b) - mid(boxes[0]!)), "one line").toBeLessThan(4);
+        const [words, ...chips] = boxes as [(typeof boxes)[0], ...typeof boxes];
+        if (under) {
+          // At 375 points and 19.65-px text "Remove Stops" does not fit on
+          // the words' line: Add a Stop's 153 and the chips' 183 (the pill's
+          // 136, the toggle's 27 and their gap-2 and inset, 9.8 each at that
+          // text) are 336 in the row's 324, 12 over; with the fuel glyph at
+          // 14, no room between it and its words and the toggle's glyph
+          // bare, still 3 over. So the chips go under the words, together,
+          // on a line of their own (TimelineAction's flex-wrap).
+          for (const b of chips) expect(Math.abs(mid(b) - mid(chips[0]!)), "the chips one line").toBeLessThan(4);
+          expect(chips[0]!.y, "the chips under the words").toBeGreaterThanOrEqual(words.y + words.height - 1);
+          expect(chips[0]!.x, "the pill inside the card").toBeGreaterThanOrEqual(card.x);
+        } else for (const b of boxes) expect(Math.abs(mid(b) - mid(words)), "one line").toBeLessThan(4);
         // The rows' gap-2 between the pill and the toggle, so their 44-point
         // areas meet and don't cross, and the toggle 8 in from the card's
         // edge, never clipped by it (the owner's iPhone, 2026-11-22).
@@ -332,10 +345,10 @@ for (const width of [375, 393])
         expect(toggle.x - (chip.x + chip.width), "8 between the pill and the toggle").toBeGreaterThanOrEqual(7.5);
         expect(card.x + card.width - (toggle.x + toggle.width), "the toggle 8 in from the card's edge").toBeGreaterThanOrEqual(7.5);
       };
-      await oneLine();
+      await row();
       await inSheet(page, pill);
       await pill.click();
       await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
-      await oneLine();
+      await row(width === 375);
     });
   });
