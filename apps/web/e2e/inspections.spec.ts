@@ -13,9 +13,14 @@ import { NO_OWN_FIGURES } from "./airplaneMocks";
  */
 
 /** The airplane's form: on a phone a card of its own over You
- *  (ResponsivePopover's SheetCard), opened half way as every card is. */
+ *  (ResponsivePopover's SheetCard), opened half way as every card is; from
+ *  the regular width up the popover beside its button, which scrolls
+ *  within the window (ResponsivePopover, the owner's one form for both,
+ *  2026-10-27). */
 const editCard = (page: Page) =>
-  page.locator("[data-sheet-card]").filter({ has: page.getByRole("heading", { name: "Edit Airplane", exact: true }) });
+  page
+    .locator("[data-sheet-card], [data-slot=popover-content]")
+    .filter({ has: page.getByRole("heading", { name: "Edit Airplane", exact: true }) });
 
 /** Tapped where a finger reaches it: the card pulled up to a row under its
  *  edge (inSheet). */
