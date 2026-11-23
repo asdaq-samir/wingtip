@@ -195,16 +195,19 @@ final class AccessibilityAuditTests: XCTestCase {
         answerTheSystemsQuestion()
         let height = app.frame.height
         let keyboard = app.keyboards.firstMatch.exists ? app.keyboards.firstMatch.frame : .null
-        // Contrast in a call of its own, the rest of the checks asked in
-        // another: the whole set in one call overran the audit's own time
-        // on CI's loaded runner ("Audit failed to complete in time", code
-        // -56, the run of 2026-11-22), the iPad's full-screen map with the
-        // most to read; in two, each pass is shorter. Every check is still
-        // asked. (One call a check found more than the set does together:
-        // an element-less "may be clipped" on the iPad's strip at the
-        // largest size, which the set never reports, so the set stays
-        // whole but for contrast.)
-        for type in [types.intersection(.contrast), types.subtracting(.contrast)] where !type.isEmpty {
+        // The checks in four calls, each a few of them: the whole set in one
+        // call, and then in two, overran the audit's own time on CI's
+        // loaded runner ("Audit failed to complete in time", code -56, runs
+        // 45113706296 and 45132823358), so each call has less to do. The
+        // text-clipped check rides with dynamic type: alone it reported an
+        // element-less "may be clipped" on the iPad's strip that the set
+        // never has. Every check asked for is still asked: what the groups
+        // do not name (.action and .parentChild, in .all) goes in a call of
+        // its own after them.
+        let named = Self.groups.reduce(XCUIAccessibilityAuditType()) { $0.union($1) }
+        for group in Self.groups + [types.subtracting(named)] {
+            let type = group.intersection(types)
+            if type.isEmpty { continue }
             try app.performAccessibilityAudit(for: type) { issue in
                 if Self.known(issue, screen: screen, screenHeight: height, keyboard: keyboard) { return true }
                 // Said as it is found: the audit throws once it is done, so a
@@ -214,6 +217,12 @@ final class AccessibilityAuditTests: XCTestCase {
             }
         }
     }
+
+    /// The checks asked in calls of their own, a few to each call; any
+    /// other check asked for (audit's `types`) goes in one call after them.
+    private static let groups: [XCUIAccessibilityAuditType] = [
+        .contrast, [.elementDetection, .sufficientElementDescription], [.hitRegion, .trait], [.dynamicType, .textClipped],
+    ]
 
     /// The sheet brought up to its full height, so the audit reads what
     /// the pilot sees there: at the pill's or half height the rest of the
