@@ -1,4 +1,5 @@
 import Foundation
+import PDFKit
 import SwiftData
 import Testing
 @testable import Wingtip
@@ -25,6 +26,33 @@ struct DeviceDocumentsTests {
         #expect(doc.bytes > 0)
         #expect(store.ownList() == [doc])
         #expect(DeviceDocuments.isPDF(store.ownFile("a")))
+    }
+
+    /// Under a folder with a space in its name, as the app's own is
+    /// (Application Support): the size read and the file found, where
+    /// URL.path() spelled the space %20 and FileManager found nothing, so
+    /// the pilot's PDF read "Zero kB" and the reader could not open it
+    /// (DocumentsIPadTests:23, 2026-11-22).
+    @Test func findsAPDFUnderAFolderWithASpace() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "Application Support \(UUID().uuidString)", directoryHint: .isDirectory)
+        let spaced = DeviceDocuments(root: root.appending(path: "Library"), cache: root.appending(path: "Caches"))
+        let doc = try spaced.addOwn(from: try samplePDF(), id: "b")
+        #expect(doc.bytes > 0)
+        let container = try Records.inMemory()
+        let defaults = try #require(UserDefaults(suiteName: "documents-\(UUID().uuidString)"))
+        let library = DocumentLibrary(store: spaced, cloud: DocumentCloud(defaults: defaults, context: { container.mainContext }),
+                                      places: ReaderPlaces(file: root.appending(path: "places.json")))
+        let (source, _) = try await library.source(for: .own("b"))
+        guard case .pdf(let file) = source else { Issue.record("not the PDF"); return }
+        #expect(file == spaced.ownFile("b"))
+    }
+
+    /// The sample's outline survives being written and kept, for the
+    /// reader's Contents (DocumentsIPadTests).
+    @Test func theSampleKeepsItsOutline() throws {
+        try store.addOwn(from: try samplePDF(), id: "c")
+        let doc = try #require(PDFDocument(url: store.ownFile("c")))
+        #expect(doc.outlineRoot?.numberOfChildren == SampleDocument.headings.count)
     }
 
     @Test func refusesAFileThatIsNoPDF() throws {

@@ -153,6 +153,10 @@ struct SplitLayout<Map: View>: View {
         // card already up when the layout first measured (a link, a kept
         // scene) left the sidebar beside it with no room for the map.
         .onChange(of: SplitRoom.Need(width: width, cardUp: nav.card != nil), initial: true) { _, need in fit(need) }
+        // The documents reader over the window, which the iPhone hangs on
+        // its card host (CardHost) and the iPad had nowhere: a library
+        // row, a cite or a link's doc= opened nothing (DocumentsIPadTests:23).
+        .modifier(ReaderCover(active: true))
         .environment(\.splitLayout, true)
         // A card's action done in the inspector (Fly Here, Fly This
         // Airplane): the card put away and the plan in the sidebar shown.

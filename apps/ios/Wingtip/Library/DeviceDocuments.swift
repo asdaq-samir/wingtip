@@ -93,7 +93,7 @@ struct DeviceDocuments: Sendable {
         try fm.createDirectory(at: folder, withIntermediateDirectories: true)
         try? fm.removeItem(at: ownFile(id))
         try fm.copyItem(at: url, to: ownFile(id))
-        let bytes = (try? fm.attributesOfItem(atPath: ownFile(id).path())[.size] as? Int) ?? 0
+        let bytes = (try? fm.attributesOfItem(atPath: ownFile(id).path(percentEncoded: false))[.size] as? Int) ?? 0
         var name = url.deletingPathExtension().lastPathComponent.trimmingCharacters(in: .whitespaces)
         if name.isEmpty { name = String(localized: "Document") }
         let doc = OwnDocument(id: id, name: name, bytes: bytes, added: added)
@@ -162,7 +162,7 @@ struct DeviceDocuments: Sendable {
             try? fm.removeItem(at: old)
         }
         try fm.createDirectory(at: folder, withIntermediateDirectories: true)
-        let bytes = (try? fm.attributesOfItem(atPath: file.path())[.size] as? Int) ?? 0
+        let bytes = (try? fm.attributesOfItem(atPath: file.path(percentEncoded: false))[.size] as? Int) ?? 0
         let record = KeptDocument(doc: entry.id, edition: edition, bytes: bytes, entry: entry)
         try fm.copyItem(at: file, to: keptFile(record))
         try Self.encoder.encode(record).write(to: folder.appending(path: "kept.json"), options: .atomic)

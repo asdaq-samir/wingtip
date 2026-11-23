@@ -1,5 +1,4 @@
 #if DEBUG
-import PDFKit
 import UIKit
 
 /// A small PDF made on the device for the UI tests (`-sample-document`,
@@ -18,6 +17,10 @@ enum SampleDocument {
         library.add([file])
     }
 
+    /// The outline is written with the pages, CoreGraphics' own
+    /// (CGPDFContextSetOutline): PDFKit's PDFDocument.write dropped an
+    /// outline set on a document read from data, and the reader's Contents
+    /// then said the guide had none (DocumentsIPadTests, 2026-11-22).
     static func make() -> URL? {
         let bounds = CGRect(x: 0, y: 0, width: 612, height: 792)
         let data = UIGraphicsPDFRenderer(bounds: bounds).pdfData { context in
@@ -26,19 +29,19 @@ enum SampleDocument {
                 heading.draw(at: CGPoint(x: 72, y: 72), withAttributes: [.font: UIFont.boldSystemFont(ofSize: 18)])
                 "Page \(i + 1) of the sample briefing guide.".draw(at: CGPoint(x: 72, y: 110), withAttributes: [.font: UIFont.systemFont(ofSize: 12)])
             }
+            // Each heading to the top of its page (pages count from 1).
+            let children: [[String: Any]] = headings.enumerated().map { i, heading in
+                ["Title": heading, "Destination": i + 1, "DestinationRect": CGRect(x: 0, y: bounds.height, width: 0, height: 0).dictionaryRepresentation]
+            }
+            CGPDFContextSetOutline(context.cgContext, ["Children": children] as CFDictionary)
         }
-        guard let doc = PDFDocument(data: data) else { return nil }
-        let root = PDFOutline()
-        for (i, heading) in headings.enumerated() {
-            guard let page = doc.page(at: i) else { continue }
-            let item = PDFOutline()
-            item.label = heading
-            item.destination = PDFDestination(page: page, at: CGPoint(x: 0, y: bounds.height))
-            root.insertChild(item, at: i)
-        }
-        doc.outlineRoot = root
         let url = FileManager.default.temporaryDirectory.appending(path: "Sample Briefing Guide.pdf")
-        return doc.write(to: url) ? url : nil
+        do {
+            try data.write(to: url, options: .atomic)
+            return url
+        } catch {
+            return nil
+        }
     }
 }
 #endif

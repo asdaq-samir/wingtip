@@ -133,7 +133,7 @@ final class DocumentLibrary {
     /// else fetched into it: a PDF a chunk at a time, a part's text whole.
     private func fetch(_ entry: LibraryEntry, edition: String, progress: @escaping @MainActor (Int) -> Void) async throws -> URL {
         let file = store.cacheFile(doc: entry.id, edition: edition, kind: entry.kind)
-        if FileManager.default.fileExists(atPath: file.path()) { return file }
+        if FileManager.default.fileExists(atPath: file.path(percentEncoded: false)) { return file }
         if entry.kind == "text" {
             let text = try await Planner.libraryText(doc: entry.id, edition: edition)
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -151,7 +151,7 @@ final class DocumentLibrary {
     func source(for place: DocPlace, progress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> (ReaderSource, edition: String?) {
         if let id = place.ownID {
             let file = store.ownFile(id)
-            guard FileManager.default.fileExists(atPath: file.path()) else { throw CocoaError(.fileNoSuchFile) }
+            guard FileManager.default.fileExists(atPath: file.path(percentEncoded: false)) else { throw CocoaError(.fileNoSuchFile) }
             return (.pdf(file), nil)
         }
         if shelf.isEmpty { await refreshShelf() }
