@@ -187,6 +187,18 @@ export function TimelineLine({
               </span>
             )
           )}
+          {/* Its procedures' pills on the ident's own line, so a field with
+              a procedure takes one line at half, as one without does (the
+              owner's iPhone, 2026-11-23: on a line of their own under KPWK
+              they pushed Add a Stop under the strip); wrapping in its room
+              when they do not fit, over the line's tap (z-10). */}
+          {pills.length > 0 && (
+            <div className="relative z-10 ml-2 flex min-w-0 flex-wrap gap-1.5 py-1" data-testid="procedure-pills">
+              {pills.map((k) => (
+                <ProcedurePill key={k} vm={vm} field={field!} kind={k} open={unfolded.includes(k)} onToggle={() => toggle(k)} />
+              ))}
+            </div>
+          )}
           <span className="flex-1" />
           <span className={cn("relative z-10 ml-auto shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}
@@ -196,13 +208,6 @@ export function TimelineLine({
           {end.grip}
           {trailing && <span className="relative z-10 flex h-11 shrink-0 items-center">{trailing}</span>}
         </div>
-        {pills.length > 0 && (
-          <div className="flex flex-wrap gap-2 pb-2" data-testid="procedure-pills">
-            {pills.map((k) => (
-              <ProcedurePill key={k} vm={vm} field={field!} kind={k} open={unfolded.includes(k)} onToggle={() => toggle(k)} />
-            ))}
-          </div>
-        )}
         <LineNotes point={point} refused={refused} />
         {opens && (
           <CollapsibleContent
