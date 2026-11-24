@@ -152,9 +152,12 @@ export default function RouteTimeline({
   // minutes to it (fixMinutes), in its field's zone where the stops say
   // theirs (the owner, 2026-11-24: "Each fix should show altitude and eta
   // on the right side to look similar to other stops").
+  // On the field's own leg: a departure's fixes on the leg out of it, an
+  // arrival's and an approach's on the leg into it.
   const fixAt = fixMinutes(routeRows);
-  const fixTimeAt = (field: string) => (fix: string) => {
-    const minutes = aircraft.none ? undefined : fixAt.get(fix);
+  const fixTimeAt = (field: string) => (fix: string, leaving: boolean) => {
+    const leg = fixAt.find((l) => sameField(leaving ? l.from : l.to, field));
+    const minutes = aircraft.none ? undefined : leg?.minutes.get(fix);
     if (minutes === undefined) return null;
     const there = zoned ? zoneOf(new Date(new Date(from).getTime() + minutes * 60_000), field) : null;
     return there ? <ZonedTime {...there} /> : etaAt(from, minutes);

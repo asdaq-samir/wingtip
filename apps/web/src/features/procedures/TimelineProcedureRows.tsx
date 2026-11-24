@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
-import { Ellipsis } from "lucide-react";
 import { cn } from "cn";
 import { fixRoles, sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
@@ -43,7 +42,7 @@ export function TimelineProcedureRows({
   field: ProcedureAirport;
   kind: Kind;
   /** Each fix's time, as the field's line has its own (TimelinePoint). */
-  fixTime: (fix: string) => ReactNode;
+  fixTime: (fix: string, leaving: boolean) => ReactNode;
   /** The route ends at its last fix: the line stops at its mark. */
   stop?: boolean;
 }) {
@@ -63,7 +62,7 @@ export function TimelineProcedureRows({
   // Deactivate. Loaded, not activated, its fixes are on a dashed line, not
   // flown and not in the nav log.
   const approach = kind === "approach";
-  const times = fixes.map((f) => fixTime(f.ident));
+  const times = fixes.map((f) => fixTime(f.ident, kind === "departure"));
   const timed = times.some((t) => t != null);
   const loaded = approach && !!placed.loaded;
   const face = <ProcedureFace kind={KIND_WORD[kind]} name={name} sub={headSub(placed)} />;
@@ -87,7 +86,7 @@ export function TimelineProcedureRows({
       corner={
         loaded && (
           <Button
-            variant="default"
+            variant="secondary"
             size="xs"
             onClick={() => vm.onApproach(field.ident, placed.id, { loaded: false })}
             data-testid="approach-activate"
@@ -110,18 +109,23 @@ export function TimelineProcedureRows({
             notFlown && !(directAt > 0 && i < directAt)
               ? [fixRoles(fix).join(" · "), "not flown"].filter(Boolean).join(" · ")
               : fixSub(fix, isDirect, skipped);
+          // A small dot on the line, not a stop's ringed "•••", so the
+          // procedure's fixes read as points along it and its fields stand
+          // out (the owner's review, 2026-11-24); its menu still a 44-point
+          // tap round it.
           const ring = (
-            <span
-              className={cn(
-                "grid size-8 place-items-center rounded-full border-2",
-                isDirect
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : skipped
-                    ? "border-dashed border-muted-foreground/50 bg-card text-muted-foreground"
-                    : "border-procedure bg-card text-procedure",
-              )}
-            >
-              <Ellipsis className="size-4" strokeWidth={2.4} aria-hidden="true" />
+            <span className="grid size-8 place-items-center">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "rounded-full ring-2 ring-card",
+                  isDirect
+                    ? "size-4 bg-primary"
+                    : skipped
+                      ? "size-3.5 border-2 border-dashed border-muted-foreground/60 bg-card"
+                      : "size-3 bg-procedure",
+                )}
+              />
             </span>
           );
           return (
@@ -157,7 +161,9 @@ export function TimelineProcedureRows({
                       row a fix (the owner's review, 2026-11-24). */}
                   {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>· {sub}</span>}
                 </BaseButton>
-                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} time={times[i] ?? "—"} />
+                {/* Not flown, its words say so and it has no time (the owner's
+                    review, 2026-11-24). */}
+                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} time={notFlown ? null : (times[i] ?? "—")} />
               </OnTheLine>
             </li>
           );

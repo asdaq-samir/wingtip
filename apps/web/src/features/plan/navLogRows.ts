@@ -185,22 +185,29 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
   return rows;
 }
 
+/** A leg's procedure fixes, each at its minutes from the departure. */
+export type LegFixMinutes = { from: string; to: string; minutes: Map<string, number> };
+
 /** The minutes from the departure to each procedure fix on the route, by
- *  ident, for FPL's list to time a fix as it times a stop (the owner,
- *  2026-11-24): the planner's minutes from its leg's start
+ *  the leg it is flown on, for FPL's list to time a fix as it times a stop
+ *  (the owner, 2026-11-24): the planner's minutes from its leg's start
  *  (LegProcedure's `fix_min`, wingtip.flight_procedures.fix_minutes) on
  *  from when the airplane starts the leg -- the row the leg ends at, less
- *  the leg's ETE. None where the plan has no time (no airplane). */
-export function fixMinutes(rows: NavLogRow[]): Map<string, number> {
-  const minutes = new Map<string, number>();
+ *  the leg's ETE. By leg, not by ident alone, so a field's fix is timed on
+ *  its own leg, where GOPAC at KPWK took the time of a later leg's GOPAC
+ *  (the owner's screen, 2026-11-24: 16:25 at a field landed at 13:41).
+ *  None where the plan has no time (no airplane). */
+export function fixMinutes(rows: NavLogRow[]): LegFixMinutes[] {
+  const legs: LegFixMinutes[] = [];
   for (const row of rows) {
     if (row.kind === "departure" || isLegPoint(row) || row.minutesFlown === null) continue;
     const leg = row.leg;
     if (!leg?.procedure?.fix_min || leg.ete_min === null) continue;
     const start = row.minutesFlown - leg.ete_min;
-    for (const [ident, min] of Object.entries(leg.procedure.fix_min)) if (!minutes.has(ident)) minutes.set(ident, start + min);
+    const minutes = new Map(Object.entries(leg.procedure.fix_min).map(([ident, min]) => [ident, start + min] as const));
+    legs.push({ from: leg.from, to: leg.to, minutes });
   }
-  return minutes;
+  return legs;
 }
 
 /** What a row's figures are: the piece of its leg that arrives at it,

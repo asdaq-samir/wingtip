@@ -292,6 +292,17 @@ def test_an_arrival_alone_goes_on_from_where_it_ends_to_the_field():
     assert leg["landing"] is True
 
 
+def test_an_arrival_alone_of_runway_transitions_alone_is_flown_by_the_one_ending_nearest_the_field():
+    """Wheeling's GOPAC3 is runway transitions alone; flown with no approach
+    (one loaded, not yet activated), it was drawn as nothing and its fixes
+    had no time (the owner's screen, 2026-11-24)."""
+    lines = [{"role": "runway", "points": [[46.6, -92.4], [46.9, -92.0]]}, {"role": "runway", "points": [[46.6, -92.4], [46.8, -92.17]]}]
+    star = {"kind": "arrival", "holds": [], "fixes": [], "lines": lines}
+    leg = flown(SOUTH_WEST, RW27, arrival=star)
+    assert any(near(p, (46.8, -92.17)) for p in leg["path"])
+    assert not any(near(p, (46.9, -92.0)) for p in leg["path"])
+
+
 def test_a_departure_is_left_by_the_runway_transition_for_the_runway_left_from():
     """St. Louis's BERYY6 left 30R by its runway 11 transition, out the
     wrong way (the audit of 2026-10-21). "RW12B" is both 12s."""

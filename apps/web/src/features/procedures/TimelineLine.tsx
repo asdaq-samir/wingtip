@@ -114,7 +114,15 @@ export function TimelineLine({
   // destination's hold, and a stop's leaving time, at its head's right.
   const phaseTray = (role: "Arrive" | "Depart") => {
     const linePart = role === "Arrive" ? landingPart : takeoffPart;
-    if (!linePart) return undefined;
+    // A straight-in approach's own runway, said and not offered, so the
+    // Landing line says where it lands (the owner's review, 2026-11-24).
+    const ownRunway = role === "Arrive" && straightIn ? approachRunway(approach?.name ?? "") : null;
+    const said = ownRunway && (
+      <span className={cn("shrink-0 font-semibold text-muted-foreground", TEXT.note)} data-testid="landing-runway">
+        RWY {ownRunway}
+      </span>
+    );
+    if (!linePart) return said || undefined;
     return (
       <span className="flex min-w-0 flex-wrap items-center justify-end gap-2" data-testid="timeline-chips" data-role={role}>
         <PartTray
@@ -124,6 +132,7 @@ export function TimelineLine({
           noRunway={role === "Arrive" && straightIn}
           beside
           trailing={[
+            ...(said ? [<span key="runway">{said}</span>] : []),
             ...linePart.add.map((k) => kindMenu(vm, field!, k, "add")),
             ...(linePart.hold
               ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]

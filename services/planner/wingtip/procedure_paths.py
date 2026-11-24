@@ -129,8 +129,8 @@ def procedure_path(drawing: dict, toward: tuple | None = None, runway: str | Non
     """An arrival or a departure as it is flown: a departure's runway
     transition, its common route and its enroute transition; an arrival's
     enroute transition and common route, then of its runway transitions
-    the one that ends nearest `toward`, the approach's first fix, where
-    one is picked. wingtip.procedures draws every runway transition of either:
+    the one that ends nearest `toward`, the approach's first fix or, with
+    none picked, the field (KPWK's GOPAC3, all runway transitions, drew none). wingtip.procedures draws every runway transition of either:
     a departure leaves by the one for the `runway` the pilot leaves from
     (St. Louis's BERYY6 flew its runway 11 transition off runway 30R, out
     the wrong way -- the audit of 2026-10-21), the first coded where none
@@ -344,7 +344,7 @@ def flown(
     # Sent direct to one of the approach's fixes, the arrival is left for it.
     direct_in = bool(approach and approach.get("direct") and _direct(app, approach) is not app)
     app = _direct(app, approach)
-    star = None if direct_in else _direct(procedure_path(arrival, app["points"][0] if app else None) if arrival else None, arrival)
+    star = None if direct_in else _direct(procedure_path(arrival, app["points"][0] if app else end) if arrival else None, arrival)
     sid = _direct(procedure_path(departure, runway=runway) if departure else None, departure)
     out = sid or takeoff_circuit
     circuit_in = None if app else landing_circuit

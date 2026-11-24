@@ -164,9 +164,10 @@ export function FoldSection({
         {trailing && (
           <span className={cn("ml-auto flex max-w-full min-w-0 shrink-0 items-center gap-1", corner && "self-start")}>{trailing}</span>
         )}
-        {/* Left of the "•••" column, beside the grey line, so the two never
-            meet at a larger text size (the owner's iPhone, 2026-11-24). */}
-        {corner && <span className="absolute right-14 bottom-1.5 z-10 flex">{corner}</span>}
+        {/* At the line's end under the "•••", beside the grey line, so the
+            two never meet at a larger text size and the column lines up
+            (the owner's iPhone, 2026-11-24). */}
+        {corner && <span className="absolute right-4 bottom-1.5 z-10 flex">{corner}</span>}
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}

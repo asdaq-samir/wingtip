@@ -306,6 +306,8 @@ describe("fixMinutes", () => {
   const flownBy = (ete: number, fixMin: Record<string, number>): Leg =>
     ({
       ...leg(ete),
+      from: "KMSN",
+      to: "KDLH",
       procedure: {
         path: [],
         ft: [],
@@ -324,11 +326,13 @@ describe("fixMinutes", () => {
   test("each fix at its leg's start plus its minutes, a stop's time on the ground counted", () => {
     const withStop = { ...ends, stops: [airport("KMSN", 43.1, -89.3)] };
     const rows = navLogRows(withStop, [], [leg(30), flownBy(40, { IAF: 25, FAF: 33.5 })]);
-    expect(Object.fromEntries(fixMinutes(rows))).toEqual({ IAF: 85, FAF: 93.5 });
+    const [flown] = fixMinutes(rows);
+    expect(Object.fromEntries(flown!.minutes)).toEqual({ IAF: 85, FAF: 93.5 });
+    expect([flown!.from, flown!.to]).toEqual(["KMSN", "KDLH"]);
   });
 
   test("none with no time", () => {
     const rows = navLogRows(ends, [], [{ ...flownBy(40, { IAF: 25 }), ete_min: null }]);
-    expect(fixMinutes(rows).size).toBe(0);
+    expect(fixMinutes(rows)).toEqual([]);
   });
 });
