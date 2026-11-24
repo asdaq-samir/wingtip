@@ -116,12 +116,18 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await openTab(page, "Nav Log");
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  // A procedure picked, its fixes on the route's line before the field's, its head row the button to pick another (the owner's option D, 2026-11-21).
+  // A procedure picked, its fixes on the route's line before the field's, its head row folds them, its round button picks another.
   // Folded to its pill on the field's line, unfolded by a tap (the owner, 2026-11-23).
   await unfoldProcedure(kdlh, "approach");
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
+  // A tap on its head folds its fixes away and back (the owner, 2026-11-24:
+  // "Tapping it should fold the procedure"); the menu is the round button.
+  await approach.getByTestId("procedure-fold").click();
+  await expect(approach.getByTestId("fix-branch-row")).toHaveCount(0);
+  await approach.getByTestId("procedure-fold").click();
+  await expect(approach.getByTestId("fix-branch-row").first()).toBeVisible();
   await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   const menu = page.getByTestId("procedure-menu");
   await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As Charted");
