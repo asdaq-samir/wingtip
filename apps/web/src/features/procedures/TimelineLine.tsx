@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
 import type { NavLogRow, ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
@@ -205,22 +205,6 @@ export function TimelineLine({
           {trailing && <span className="relative z-10 flex h-11 shrink-0 items-center">{trailing}</span>}
         </div>
         <LineNotes point={point} refused={refused} />
-        {opens && (
-          <CollapsibleContent
-            // Base UI's own panel animation: the lines under it move down as
-            // it opens rather than jumping (none with Reduce Motion, index.css).
-            // Its clip stood out by the chips' reach on three sides (a
-            // margin given back as padding), so their 44-point areas and
-            // focus rings are not cut while it is open (the r5-ui audit's L4).
-            className="-mx-2 -mt-2 h-(--collapsible-panel-height) space-y-2 overflow-hidden px-2 pt-2 pb-2 transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0"
-            data-testid="timeline-details"
-          >
-            {/* Its wind; the elevation is under the time on the line. */}
-            <div className="flex min-h-6 items-center gap-2">
-              <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
-            </div>
-          </CollapsibleContent>
-        )}
       </div>
     </Collapsible>
   );
@@ -252,6 +236,10 @@ export function TimelineLine({
               {onPast && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
             </span>
             <div className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-2", TIMELINE_END)} data-testid="timeline-chips">
+              {/* The field's wind beside its runways, where it picks them
+                  (the owner, 2026-11-24: "Wind can be next to the runway
+                  selection?"). */}
+              <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
               {chips}
             </div>
           </div>

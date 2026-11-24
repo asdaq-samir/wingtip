@@ -215,6 +215,7 @@ export default function RouteTimeline({
       lastTrailing={half && planned.dest && !vm.routeList.boxOpen ? <BoxToggle vm={vm} /> : undefined}
       addTrailing={read ? undefined : typeFuel}
       allStops={read || tall || panel === "full"}
+      half={!read && !tall && panel !== "full"}
       onAllStops={() => setPanel("full")}
     />
   );

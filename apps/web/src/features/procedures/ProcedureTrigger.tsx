@@ -25,7 +25,7 @@ const CHIP: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure
  *  runways (the owner's pick, option C); or a whole row of FPL's timeline,
  *  its words `face` (TimelineProcedureRows, the owner's option D,
  *  2026-11-21: "just tapping it should show the approaches menu"). */
-export type TriggerLook = "chip" | "button" | "add" | "row";
+export type TriggerLook = "chip" | "button" | "add" | "row" | "change";
 
 /**
  * ProcedureMenu's trigger, one element for ResponsivePopoverTrigger's
@@ -62,6 +62,19 @@ export function procedureTrigger({
         <span className="min-w-0 flex-1">{face}</span>
         <ChevronDown className="size-5 shrink-0 text-tint" aria-hidden />
         <span className="sr-only">, pick another</span>
+      </Button>
+    );
+  if (look === "change")
+    // The word, in the tint as every tappable word on the list (the owner,
+    // 2026-11-24: "Instead of the approach change icon, just make it with
+    // the word change"); its 44-point area round it.
+    return (
+      <Button variant="plain" size="inline" type="button" {...data} className="relative shrink-0 font-normal text-tint hit-x-2 hit-y-3">
+        Change
+        <span className="sr-only">
+          {" "}
+          {what}: {label ?? "none picked"}
+        </span>
       </Button>
     );
   if (look === "button")

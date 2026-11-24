@@ -33,5 +33,5 @@ test("past empty, the gallons short in words and the gauge at empty", () => {
   render(<FuelGauge gal={-11.5} usable={40} tone="low" />);
   const meter = screen.getByRole("meter");
   expect(meter.getAttribute("aria-valuenow")).toBe("0");
-  expect(meter.getAttribute("aria-valuetext")).toBe("12 gal short");
+  expect(meter.getAttribute("aria-valuetext")).toBe("−12 gal");
 });

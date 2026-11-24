@@ -108,7 +108,9 @@ export function LineIdent({
         className={cn(
           "relative min-w-0 font-normal hit-y-3 after:-left-2.5",
           fuelSet ? "after:w-[max(44px,calc(100%+19px))]" : "after:w-[max(54px,calc(100%+14px))]",
-          point.problem && "text-destructive",
+          // In the tint, as Add a Stop is: it is a tap (the owner,
+          // 2026-11-24: "each stop should have same link style as add stop").
+          point.problem ? "text-destructive" : "text-tint",
           TEXT.row,
         )}
       >

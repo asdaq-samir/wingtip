@@ -65,6 +65,7 @@ export default function TimelineRoute({
   addTrailing,
   allStops,
   onAllStops,
+  half = false,
   ...props
 }: ProceduresRouteProps & {
   points: TimelinePoint[];
@@ -84,6 +85,10 @@ export default function TimelineRoute({
   allStops: boolean;
   /** The sheet taken all the way up, where every stop is listed. */
   onAllStops: () => void;
+  /** The sheet at half: every field's line folded, its ident and its
+   *  figures alone, and one opened takes the sheet up (the owner,
+   *  2026-11-24: "In half card, all airports should fold"). */
+  half?: boolean;
 }) {
   const vm = useProceduresRoute(props);
   const { airports, routePoints, stopsFull } = vm;
@@ -93,6 +98,10 @@ export default function TimelineRoute({
   useEffect(() => {
     if (useOpenLine.getState().route !== route) useOpenLine.setState({ route, key: null });
   }, [route]);
+  // Down to half, the open line folds.
+  useEffect(() => {
+    if (half) useOpenLine.setState({ key: null });
+  }, [half]);
   const stops = points.slice(1, -1);
   // A pilot's one open stop keeps them listed; the specs' fields, each
   // open at first (openAtFirst), list them all as they work on them; a
@@ -111,6 +120,11 @@ export default function TimelineRoute({
     },
   };
   const moving = { ...vm, edit };
+  // Opened at half, the sheet goes up to show it whole.
+  const openLine = (key: string, next: boolean) => {
+    useOpenLine.setState({ key: next ? key : null, route });
+    if (next && half) onAllStops();
+  };
   const open = points.find((p) => keyOf(p) === openKey) ?? null;
   // The map: the route's points alone and the open line's centred.
   const focus = open && edit ? open.ident : null;
@@ -185,9 +199,7 @@ export default function TimelineRoute({
           // (useProceduresRoute's openAtFirst), as they work on their
           // runways and procedures; a pilot's one at a time.
           open={vm.openAtFirst ? vm.isOpen(key) : openKey === key}
-          onOpen={(next) =>
-            vm.openAtFirst ? toggleField(key, point.ident, next) : useOpenLine.setState({ key: next ? key : null, route })
-          }
+          onOpen={(next) => (vm.openAtFirst ? toggleField(key, point.ident, next) : openLine(key, next))}
         />
       ),
     };

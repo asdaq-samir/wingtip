@@ -69,7 +69,7 @@ export function TimelineProcedureRows({
   return (
     <FoldSection
       head={face}
-      trailing={kindMenu(vm, field, kind, "button")}
+      trailing={kindMenu(vm, field, kind, "change")}
       stop={stop}
       thread={thread}
       testId={loaded ? "approach-loaded" : "procedure-rows"}
