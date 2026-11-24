@@ -22,8 +22,10 @@ import type { ProceduresRouteModel } from "./useProceduresRoute";
 // 2026-11-24 each is a folding section of the field's group, on a dashed
 // line where it is not flown yet (loaded; suspended).
 
-/** Activate or Deactivate, and Remove: Remove takes the approach out by
- *  its id -- the field's list, which says a pick's kind, is not fetched
+/** An approach's Activate or Deactivate, a procedure's Change and its
+ *  Remove, an arrival's and a departure's without the first (the owner,
+ *  2026-11-24: "Arrival should also have change and remove just like
+ *  approach"): Remove takes the procedure out by its id -- the field's list, which says a pick's kind, is not fetched
  *  until a menu opens -- with the plan's Undo toast ("Procedure Removed"). Stock
  *  buttons, 36 tall, each 44 to a finger by the base layer's hit area
  *  (index.css), at gap-2 so the areas meet; nothing grows. */
@@ -37,21 +39,24 @@ export function ApproachButtons({
   vm: ProceduresRouteModel;
   field: ProcedureAirport;
   id: string;
-  loaded: boolean;
-  /** The approach's Change (its menu), in this row between the two (the
+  /** An approach's: loaded, not activated; none, no Activate. */
+  loaded?: boolean;
+  /** The procedure's Change (its menu), in this row between the two (the
    *  owner, 2026-11-24: "Change should be inline with deactivate and
    *  remove"). */
   change?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 py-1">
-      <Button
-        variant={loaded ? "default" : "secondary"}
-        onClick={() => vm.onApproach(field.ident, id, { loaded: !loaded })}
-        data-testid={loaded ? "approach-activate" : "approach-deactivate"}
-      >
-        {loaded ? "Activate" : "Deactivate"}
-      </Button>
+      {loaded !== undefined && (
+        <Button
+          variant={loaded ? "default" : "secondary"}
+          onClick={() => vm.onApproach(field.ident, id, { loaded: !loaded })}
+          data-testid={loaded ? "approach-activate" : "approach-deactivate"}
+        >
+          {loaded ? "Activate" : "Deactivate"}
+        </Button>
+      )}
       {change}
       <Button
         variant="destructive"
@@ -61,7 +66,7 @@ export function ApproachButtons({
             null,
           )
         }
-        data-testid="approach-remove"
+        data-testid={loaded !== undefined ? "approach-remove" : "procedure-remove"}
       >
         Remove
       </Button>

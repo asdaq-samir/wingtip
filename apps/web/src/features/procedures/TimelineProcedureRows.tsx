@@ -69,7 +69,6 @@ export function TimelineProcedureRows({
   return (
     <FoldSection
       head={face}
-      trailing={approach ? undefined : kindMenu(vm, field, kind, "change")}
       stop={stop}
       thread={thread}
       testId={loaded ? "approach-loaded" : "procedure-rows"}
@@ -100,7 +99,7 @@ export function TimelineProcedureRows({
             <li key={`${fix.ident}-${i}`} data-testid="fix-branch-row" data-direct={isDirect ? "" : undefined}>
               <OnTheLine
                 thread={thread}
-                stop={stop && i === fixes.length - 1 && !approach}
+                stop={false}
                 mark={
                   <PointMenu
                     bare
@@ -130,11 +129,17 @@ export function TimelineProcedureRows({
           );
         })}
       </ol>
-      {approach && (
-        <OnTheLine stop={stop} thread={thread}>
-          <ApproachButtons vm={vm} field={field} id={placed.id} loaded={loaded} change={kindMenu(vm, field, kind, "change")} />
-        </OnTheLine>
-      )}
+      {/* Change and Remove at its foot, an approach's Activate or
+          Deactivate before them. */}
+      <OnTheLine stop={stop} thread={thread}>
+        <ApproachButtons
+          vm={vm}
+          field={field}
+          id={placed.id}
+          loaded={approach ? loaded : undefined}
+          change={kindMenu(vm, field, kind, "change")}
+        />
+      </OnTheLine>
     </FoldSection>
   );
 }
