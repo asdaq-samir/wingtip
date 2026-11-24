@@ -97,11 +97,15 @@ export function PartTray({
   a,
   part,
   trailing,
+  beside = false,
 }: {
   vm: ProceduresRouteModel;
   a: ProcedureAirport;
   part: FieldPart;
   trailing: ReactNode[];
+  /** Sharing its line with what is before it (FPL's field's wind) where
+   *  both fit, rather than a line of its own. */
+  beside?: boolean;
 }) {
   // The line folds to its runway once one is picked; the pull-downs beside
   // the runway's chip while it is folded, at the owner's ask ("Can arrival
@@ -116,7 +120,11 @@ export function PartTray({
     // not fit beside the tray: at the owner's 19.65 px on a 375-point
     // phone KMSN's "22:11" ran past the card's edge, cut to "22:1" (the HIG
     // review, 2026-11-21).
-    <div className="flex w-full min-w-0 flex-wrap items-center gap-2" data-testid="field-part" data-role={part.role}>
+    <div
+      className={cn("flex min-w-0 flex-wrap items-center gap-2", beside ? "flex-1" : "w-full")}
+      data-testid="field-part"
+      data-role={part.role}
+    >
       <RunwayTray
         a={a}
         role={part.role}

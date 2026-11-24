@@ -98,6 +98,7 @@ export function TimelineLine({
         vm={vm}
         a={field!}
         part={part}
+        beside={i === 0}
         trailing={[
           ...add.map((k) => kindMenu(vm, field!, k, "add")),
           ...(hold
