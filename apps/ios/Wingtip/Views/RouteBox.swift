@@ -162,21 +162,29 @@ struct RouteBoxPill: View {
     }
 }
 
-/// A procedure picked at a field, beside its pill: its ident small in the
-/// tint, a tap the list, where it is picked and changed (the web's
-/// ProcedureChip, which opens the timeline's Procedures from the box).
+/// A procedure picked at a field, beside its pill: its short title alone,
+/// no glyph, a plain pill of the procedures' own indigo (the map's, the
+/// design token chart.procedure) on that indigo's light wash, where the
+/// points' pills are grey (the owner, 2026-11-23: "just make it a pill of
+/// a different color"; the web's ProcedureChip). The same stock small
+/// bordered capsule as a point's, so the same height and padding. A tap
+/// is the list, where it is picked and changed (the web opens the
+/// timeline's Procedures from the box).
 struct RouteBoxChip: View {
     @Environment(FlightUI.self) private var flightUI
     let pick: ProcedurePick
 
     var body: some View {
-        Button { flightUI.routeBox = false } label: { Text(pick.id).font(WingtipType.label) }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.capsule)
-            .controlSize(.mini)
-            .hitArea()
-            .accessibilityLabel("\(pick.name), in the list")
-            .accessibilityIdentifier("route-chip-\(pick.id)")
+        Button { flightUI.routeBox = false } label: {
+            Text(pick.id).font(WingtipType.row.weight(.semibold)).lineLimit(1)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .tint(Color(uiColor: WingtipColor.Chart.procedure))
+        .hitArea()
+        .accessibilityLabel("\(pick.name), in the list")
+        .accessibilityIdentifier("route-chip-\(pick.id)")
     }
 }
 
