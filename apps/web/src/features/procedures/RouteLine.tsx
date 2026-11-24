@@ -85,13 +85,18 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
         // strip's 28 (PIN_FIGURE's two lines, 1.75rem), so Routes swapping
         // the figures for the chips moves neither the bar nor the map's
         // room (the r10 audit). There the row is only as wide as its chips
-        // and takes no touch of its own, only a chip does, and a sideways
-        // swipe on one scrolls it (pan-x): the gaps, the room after the
-        // last chip and an upward drag pass to the sheet behind the bar, as
-        // the figures do (sheet/FootBar; the r10 audit's W-L1).
+        // (w-fit), so the room after the last chip passes to the sheet
+        // behind the bar, as the figures do (sheet/FootBar; the r10 audit's
+        // W-L1). The row itself takes touches, where it took none and only
+        // its chips did: iPhone's Safari would not scroll a row that takes
+        // no touch, and a sideways swipe on the chips did nothing (the
+        // owner, 2026-11-23: "Not able to slide the routes"). A sideways
+        // swipe is the row's, not the sheet's (swipe-ignore "x", as the
+        // route box's pills); an upward drag still opens the sheet.
+        data-base-ui-swipe-ignore={grouped ? "x" : undefined}
         className={cn(
           "flex justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5",
-          grouped ? "pointer-events-none -my-2 w-fit max-w-full touch-pan-x" : "w-full",
+          grouped ? "pointer-events-auto -my-2 w-fit max-w-full touch-pan-x" : "w-full",
         )}
       >
         {line.chips.map((c) => (
@@ -103,7 +108,6 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             className={cn(
               // The search's chips' pill (FilterChips), filled in the tint
               // while it is the way flown; its 44-point area round it.
-              grouped && "pointer-events-auto",
               "relative h-8 shrink-0 gap-1.5 rounded-full border border-border bg-card px-3 font-medium text-foreground",
               "hit-y-1.5",
               "data-pressed:border-tint data-pressed:bg-tint data-pressed:text-primary-foreground hover:data-pressed:bg-tint",
