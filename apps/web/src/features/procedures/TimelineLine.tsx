@@ -99,6 +99,12 @@ export function TimelineLine({
   const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
   const onPast = !last || sections > 0;
   const grouped = sections > 0 || runwaysOut;
+  // Its sections in the order they are flown to it (the owner, 2026-11-24:
+  // "It should be arrival approach and runway sections in order"): its
+  // arrival, its approach and the approach's missed approach, its runways,
+  // then its departure; the route's magenta through the runways where the
+  // route goes on past them, to the next line or into a departure.
+  const runwaysThread = !last || afterOut.length > 0;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one.
@@ -136,7 +142,7 @@ export function TimelineLine({
   const chipRow = (
     <div className={cn("relative flex", TIMELINE_GAP)}>
       <span className="relative w-8 shrink-0 self-stretch">
-        {onPast && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
+        {runwaysThread && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
       </span>
       <div
         className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-2", runwaysShown ? "pb-2" : "py-2", TIMELINE_END)}
@@ -255,21 +261,6 @@ export function TimelineLine({
       className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
     >
       {line}
-      {runwaysOut &&
-        (runwaysShown ? (
-          <FoldSection
-            head={<span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>Runways</span>}
-            stop={false}
-            thread={onPast ? "solid" : "none"}
-            testId="field-runways"
-            label={`${point.ident} runways`}
-            startOpen={!!vm.openAtFirst}
-          >
-            {chipRow}
-          </FoldSection>
-        ) : (
-          chipRow
-        ))}
       {beforeOut.map((k, i) => (
         <TimelineProcedureRows
           key={k}
@@ -281,6 +272,21 @@ export function TimelineLine({
         />
       ))}
       {missedHere && <MissedApproach vm={vm} field={field!} stop={last && afterOut.length === 0} />}
+      {runwaysOut &&
+        (runwaysShown ? (
+          <FoldSection
+            head={<span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>Runways</span>}
+            stop={false}
+            thread={runwaysThread ? "solid" : "none"}
+            testId="field-runways"
+            label={`${point.ident} runways`}
+            startOpen={!!vm.openAtFirst}
+          >
+            {chipRow}
+          </FoldSection>
+        ) : (
+          chipRow
+        ))}
       {afterOut.map((k, i) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} fixTime={point.fixTime} stop={last && i === afterOut.length - 1} />
       ))}
