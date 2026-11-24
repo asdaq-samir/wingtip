@@ -55,6 +55,8 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   // Loaded: in the address with its "L", a box of its fixes, none on the line.
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   kdlh = await destination(page);
+  // Its box behind its pill on the ground, unfolded by a tap (2026-11-23).
+  await unfoldProcedure(kdlh, "approach");
   const loaded = kdlh.getByTestId("approach-loaded");
   await expect(loaded).toContainText("ILS · RWY 09", { timeout: slow(20000) });
   await expect(loaded).toContainText("FAKER");
@@ -69,12 +71,14 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   // Deactivated: back in its box, off the line.
   await onLine.getByTestId("approach-deactivate").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
+  await unfoldProcedure(kdlh, "approach");
   await expect(kdlh.getByTestId("approach-loaded")).toBeVisible();
   // Removed, and put back by the Undo toast: from a page opened on it, as
   // edits a moment apart are one step of the plan's history (SETTLE_MS).
   await page.goto(page.url());
   await settle(page);
   kdlh = await destination(page);
+  await unfoldProcedure(kdlh, "approach");
   await kdlh.getByTestId("approach-remove").click();
   await expect(page).not.toHaveURL(/[?&]procs=/);
   const bar = page.locator("[data-slot=toast]").filter({ hasText: "Procedure Removed" });
@@ -89,6 +93,8 @@ test("an activated approach is suspended at its MAP until its missed approach is
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   const kdlh = await destination(page);
+  // On the ground its missed approach is behind the approach's pill (2026-11-23).
+  await unfoldProcedure(kdlh, "approach");
   const missed = kdlh.getByTestId("missed-approach");
   // Suspended: SUSP at the MAP, its legs dimmed in a box off the line.
   await expect(missed).toHaveAttribute("data-flown", "false", { timeout: slow(20000) });

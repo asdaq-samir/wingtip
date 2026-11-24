@@ -99,7 +99,8 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // the address, and off the map once the sheet is put away.
   await openTab(page, "Nav Log");
   await openRoute(page);
-  // Loaded: its box off the route's line, its head row the button to pick another.
+  // Loaded: its box off the route's line, behind its pill (2026-11-23), its head row the button to pick another.
+  await unfoldProcedure(kdlh, "approach");
   await expect(kdlh.getByTestId("approach-loaded")).toContainText("ILS · RWY 09");
   await kdlh.locator("[data-testid=approach-loaded] [data-testid=procedure-kind]").click();
   await page.getByTestId("procedure-menu-all").click();
@@ -169,6 +170,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   await openRoute(page);
   // Loaded, then activated onto the route's line, landed by it.
+  await unfoldProcedure(kdlh, "approach");
   await kdlh.getByTestId("approach-activate").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
   await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");

@@ -60,7 +60,7 @@ export function TimelineLine({
    *  control is (TimelineAction). */
   trailing?: ReactNode;
 }) {
-  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn } = lineModel(vm, point, row, field);
+  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn, loaded } = lineModel(vm, point, row, field);
   // Its procedures folded into pills on the line (ProcedurePill), each
   // unfolded on the line by a tap on its pill (the owner, 2026-11-23,
   // "Pill on its field"): an arrival's and an approach's rows before the
@@ -69,10 +69,21 @@ export function TimelineLine({
   const toggle = (k: (typeof before)[number]) => setUnfolded((was) => (was.includes(k) ? was.filter((x) => x !== k) : [...was, k]));
   const beforeOut = before.filter((k) => unfolded.includes(k));
   const afterOut = after.filter((k) => unfolded.includes(k));
-  const pills = field ? [...before, ...after] : [];
+  // An approach only loaded is no point on the line, but its pill is the
+  // way to its box all the same.
+  const pills = field ? [...before, ...(loaded ? (["approach"] as const) : []), ...after] : [];
+  // The approach's boxes after the field's line, its missed approach and
+  // an approach loaded, go behind its pill too, so at half the field's
+  // line is its ident and its pills (the coordinator's ask, 2026-11-23).
+  // Not in flight or a dry run, where the list is read, not edited (no
+  // `edit`, useRouteListProps): a suspended missed approach stays out
+  // there, its Unsuspend at a glance when the pilot needs it.
+  const approachOut = unfolded.includes("approach");
+  const missedShown = approachOut || !vm.edit;
   // The line runs on past the field to the next, or into a departure's
-  // fixes unfolded under it.
+  // fixes or a missed approach unfolded under it.
   const onPast = !last || afterOut.length > 0;
+  const missedThread = missedOn && missedShown;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one.
@@ -124,7 +135,7 @@ export function TimelineLine({
           under it into the next line, centred under the marks. */}
       <span className="relative flex w-8 shrink-0 justify-center">
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
-        {(onPast || missedOn) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
+        {(onPast || missedThread) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
       <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || beforeOut.length > 0) && "border-t border-border")}>
         {/* Wrapping where the ident, its fuel and its time do not fit on one
@@ -226,8 +237,8 @@ export function TimelineLine({
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
       ))}
       {line}
-      {field && !point.problem && <MissedApproach vm={vm} field={field} stop={!onPast} />}
-      {field && !point.problem && <LoadedApproach vm={vm} field={field} through={onPast} />}
+      {field && !point.problem && missedShown && <MissedApproach vm={vm} field={field} stop={!onPast} />}
+      {field && !point.problem && approachOut && <LoadedApproach vm={vm} field={field} through={onPast} />}
       {afterOut.map((k, i) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === afterOut.length - 1} />
       ))}

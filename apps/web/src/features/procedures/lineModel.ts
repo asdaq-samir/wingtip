@@ -82,5 +82,5 @@ export function lineModel(vm: ProceduresRouteModel, point: TimelinePoint, row: N
   const after = onLine("Depart");
   // Its missed approach unsuspended, the line goes on into it.
   const missedOn = !!field && !point.problem && missedOnTheLine(vm, field);
-  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn };
+  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn, loaded: loadedHere };
 }
