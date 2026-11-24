@@ -32,15 +32,15 @@ describe("insetsOf", () => {
 describe("the snap points", () => {
   it("are the same values every time, in the Drawer's own units", () => {
     expect(snapsOf(true).points).toBe(snapsOf(true).points);
-    expect(snapsOf(true).points).toEqual(["4.25rem", "23rem", 1]);
-    expect(snapsOf(false).points).toEqual(["5.25rem", "23rem", 1]);
+    expect(snapsOf(true).points).toEqual(["4.25rem", "26rem", 1]);
+    expect(snapsOf(false).points).toEqual(["5.25rem", "26rem", 1]);
   });
 
   it("give each size's height in sight as the Drawer resolves it, no taller than the popup", () => {
     // 16 px to the rem; the popup 780 tall.
     expect(shownPx("peek", true, 780, 16)).toBe(68);
     expect(shownPx("peek", false, 780, 16)).toBe(84);
-    expect(shownPx("half", true, 780, 16)).toBe(368);
+    expect(shownPx("half", true, 780, 16)).toBe(416);
     expect(shownPx("full", true, 780, 16)).toBe(780);
     // A short screen: half no taller than the popup.
     expect(shownPx("half", true, 300, 16)).toBe(300);
@@ -48,7 +48,7 @@ describe("the snap points", () => {
 
   it("map the Drawer's point back to a size by identity", () => {
     expect(sizeAt(true, "4.25rem")).toBe("peek");
-    expect(sizeAt(true, "23rem")).toBe("half");
+    expect(sizeAt(true, "26rem")).toBe("half");
     expect(sizeAt(false, 1)).toBe("full");
     expect(sizeAt(true, 0.5)).toBeUndefined();
   });
@@ -59,7 +59,7 @@ describe("the snap points", () => {
     expect(footPillPx(70.4, 17.88)).toBe(88);
     expect(footPillPx(0, 16)).toBe(0);
     expect(snapsOf(true, 88).points).toBe(snapsOf(true, 88).points);
-    expect(snapsOf(true, 88).points).toEqual(["88px", "23rem", 1]);
+    expect(snapsOf(true, 88).points).toEqual(["88px", "26rem", 1]);
     expect(snapsOf(true, 0).points).toBe(snapsOf(true).points);
     expect(shownPx("peek", true, 780, 20, 88)).toBe(88);
     expect(sizeAt(true, "88px", 88)).toBe("peek");
@@ -101,9 +101,9 @@ describe("letGo", () => {
   });
 
   it("asks for the size of the snap point the Drawer picked", () => {
-    expect(go("23rem", { at: "peek" }).ask).toHaveBeenCalledWith("half");
+    expect(go("26rem", { at: "peek" }).ask).toHaveBeenCalledWith("half");
     expect(go(1).ask).toHaveBeenCalledWith("full");
-    expect(go("23rem").ask).not.toHaveBeenCalled();
+    expect(go("26rem").ask).not.toHaveBeenCalled();
     // A settings card is parked at half, not the pill; one at half closes going lower.
     expect(go("4.25rem", { at: "full", park: "half" }).ask).toHaveBeenCalledWith("half");
     const close = vi.fn();

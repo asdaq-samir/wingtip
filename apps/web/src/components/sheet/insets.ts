@@ -37,13 +37,17 @@ export const SETTLE_MS = DRAWER_MS + 50;
  *   home indicator) is 4.1875 rem: it fits, so the pill stays the
  *   search's 4.25; a card's pill is its title row with its short line
  *   under the name (PinnedHead), as tall.
- * - Half: 23 rem, the owner's ("Let's make the half card this tall", their
- *   iPhone's sheet 368 points tall: the route's box, its chips, the side
- *   view and the figures).
+ * - Half: 26 rem. It was 23, the owner's ("Let's make the half card this
+ *   tall", their iPhone's sheet 368 points tall: the route's box, its
+ *   chips, the side view and the figures), before the fixed foot bar (the
+ *   figures' strip and the tabs, sheet/FootBar) took a row of it; one row
+ *   more, so FPL's grouped box shows whole at half, its Add a Stop in sight
+ *   over the strip (the owner's iPhone, 2026-11-23: "Add stop should show
+ *   on half card").
  * - All the way up: 1, the whole of the Drawer's viewport, which the popup's
  *   own height (MapPanel) keeps clear of the status bar.
  */
-const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: "4.25rem", half: "23rem", full: 1 };
+const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: "4.25rem", half: "26rem", full: 1 };
 const TOP_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { ...BOTTOM_SNAPS, peek: "5.25rem" };
 const BOTTOM_POINTS = [BOTTOM_SNAPS.peek, BOTTOM_SNAPS.half, BOTTOM_SNAPS.full];
 const TOP_POINTS = [TOP_SNAPS.peek, TOP_SNAPS.half, TOP_SNAPS.full];

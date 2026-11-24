@@ -91,7 +91,7 @@ for (const row of CARDS) {
       await open(page, row);
       await grabberTo(page, "half");
       const before = await scrollOf(page, row.card);
-      // Past the middle between half (23rem) and all the way up (sheet/insets'
+      // Past the middle between half (26rem) and all the way up (sheet/insets'
       // snaps), so where it settles is the drag's and not its speed: 160 was
       // a fling on a quiet machine and short of the middle on a busy one.
       await drag(page, await bodyPoint(page, row), 0, -300);
