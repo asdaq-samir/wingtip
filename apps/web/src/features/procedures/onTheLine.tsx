@@ -89,9 +89,10 @@ export function FoldSection({
    *  procedure's buttons; the owner, 2026-11-24: "the next line can be
    *  buttons when folded"). */
   foot?: (open: boolean) => ReactNode;
-  /** A phase of the flight (a field's Landing, its Takeoff): every row in
-   *  it set in under its head, its words and their hairlines, the marks
-   *  staying on the route's line, so it reads as holding them. */
+  /** A phase of the flight (a field's Landing, its Takeoff): no hairline
+   *  between the rows in it, only at its head, so it reads as one block
+   *  holding them (the owner, 2026-11-24: "No indentation, but no
+   *  separator either"). */
   nest?: boolean;
   children: ReactNode;
 }) {
@@ -129,7 +130,7 @@ export function FoldSection({
           folds (none with Reduce Motion, index.css). */}
       <CollapsibleContent
         className={cn(
-          nest && "[&_[data-words]]:ml-5",
+          nest && "[&_[data-words]]:border-t-0",
           "h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0",
         )}
       >
