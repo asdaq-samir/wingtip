@@ -12,6 +12,10 @@ export const KIND_TITLE: Record<Kind, string> = { approach: "Approaches", arriva
 /** A kind as a branch's head says it, under the procedure's name. */
 export const KIND_WORD: Record<Kind, string> = { approach: "Approach", arrival: "Arrival", departure: "Departure" };
 
+/** A kind as a chip says it, "+ APCH", and as a procedure's tag before its
+ *  name on FPL's list, "APCH RNAV (GPS) RWY 05" (the owner, 2026-11-24). */
+export const KIND_TAG: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure: "DEP" };
+
 /** "KDLH approaches": a kind's list's title. */
 export function listTitle(ident: string, kind: Kind): string {
   return `${ident} ${KIND_TITLE[kind].toLowerCase()}`;

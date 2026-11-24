@@ -287,7 +287,7 @@ export default function ProcedureMenu({
                   data-testid="procedure-menu-learn"
                 />
               )}
-              {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} />}
+              {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} data-testid="procedure-menu-none" />}
               <ListRow
                 title={ALL[kind]}
                 chevron

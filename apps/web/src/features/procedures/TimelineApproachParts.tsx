@@ -1,7 +1,5 @@
-import type { ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import type { ProcedureAirport } from "../plan";
 import { FixFigures } from "./FixList";
@@ -21,62 +19,6 @@ import type { ProceduresRouteModel } from "./useProceduresRoute";
 // goes on into it (AIM 5-4-21, the engine's procedure_missed). Since
 // 2026-11-24 each is a folding section of the field's group, on a dashed
 // line where it is not flown yet (loaded; suspended).
-
-/** An approach's Activate or Deactivate, a procedure's Change and its
- *  Remove, an arrival's and a departure's without the first (the owner,
- *  2026-11-24: "Arrival should also have change and remove just like
- *  approach"): Remove takes the procedure out by its id -- the field's list, which says a pick's kind, is not fetched
- *  until a menu opens -- with the plan's Undo toast ("Procedure Removed"). Stock
- *  buttons, 36 tall, each 44 to a finger by the base layer's hit area
- *  (index.css), at gap-2 so the areas meet; nothing grows. */
-export function ApproachButtons({
-  vm,
-  field,
-  id,
-  loaded,
-  change,
-}: {
-  vm: ProceduresRouteModel;
-  field: ProcedureAirport;
-  id: string;
-  /** An approach's: loaded, not activated; none, no Activate. */
-  loaded?: boolean;
-  /** The procedure's Change (its menu), in this row between the two (the
-   *  owner, 2026-11-24: "Change should be inline with deactivate and
-   *  remove"). */
-  change?: ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2 py-1">
-      {loaded !== undefined && (
-        <Button
-          variant={loaded ? "default" : "secondary"}
-          onClick={() => vm.onApproach(field.ident, id, { loaded: !loaded })}
-          data-testid={loaded ? "approach-activate" : "approach-deactivate"}
-        >
-          {loaded ? "Activate" : "Deactivate"}
-        </Button>
-      )}
-      {change}
-      {/* A word in the red, not a red button, the quietest of the three
-          beside Change (the owner's review, 2026-11-24); the plan's Undo
-          toast brings it back. */}
-      <Button
-        variant="ghost"
-        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={() =>
-          vm.onProcedures(
-            vm.procedures.filter((p) => !(sameField(p.ident, field.ident) && p.id === id)),
-            null,
-          )
-        }
-        data-testid={loaded !== undefined ? "approach-remove" : "procedure-remove"}
-      >
-        Remove
-      </Button>
-    </div>
-  );
-}
 
 /** The field's activated approach's missed approach, a section of its
  *  own in the field's group after the approach: its head the part and

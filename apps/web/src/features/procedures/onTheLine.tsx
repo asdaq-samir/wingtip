@@ -141,17 +141,21 @@ export function FoldSection({
   );
 }
 
-/** A section's head as its row says it: its name, then its kind in
- *  brackets in the procedure's indigo, one line, "ALEXS1 (Arrival)" (the
- *  owner, 2026-11-24: "Make the procedure in the format ALEXS1
- *  (Arrival)"); wrapping, never cut. */
-export function ProcedureFace({ word, name }: { word: string; name: string }) {
+/** A procedure's head as its row says it: its kind's tag in the
+ *  procedures' indigo, then its name, "APCH RNAV (GPS) RWY 05 · FOVOJ",
+ *  where "(Approach)" after it wrapped the line (the owner, 2026-11-24);
+ *  wrapping, never cut. */
+export function ProcedureFace({ tag, name }: { tag: string; name: string }) {
   return (
     <span className={cn("block break-words", TEXT.row)}>
+      <span
+        className={cn("mr-1.5 inline-block rounded-md bg-procedure/12 px-1.5 align-[0.1em] font-semibold text-procedure", TEXT.caption)}
+      >
+        {tag}
+      </span>
       <span className="font-semibold" data-testid="procedure-name">
         {name}
-      </span>{" "}
-      <span className="text-procedure">({word})</span>
+      </span>
     </span>
   );
 }

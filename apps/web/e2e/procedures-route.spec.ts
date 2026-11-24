@@ -120,7 +120,7 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   // Folded to its pill on the field's line, unfolded by a tap (the owner, 2026-11-23).
   await unfoldProcedure(kdlh, "approach");
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
+  await expect(approach).toContainText("ILS RWY 09", { timeout: slow(20000) });
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
   // A tap on its head folds its fixes away and back (the owner, 2026-11-24:
   // "Tapping it should fold the procedure"); the menu is the round button.
@@ -175,7 +175,7 @@ test("a procedure picked has its fixes on the route's line before its field's, a
   await expect(kdlh.locator("[data-testid=procedure-rows]")).toHaveCount(0);
   await unfoldProcedure(kdlh, "approach");
   const box = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(box.getByTestId("procedure-name")).toHaveText("ILS · RWY 09");
+  await expect(box.getByTestId("procedure-name")).toHaveText("ILS RWY 09");
   // Unfolded: its kind over its name, a section of KDLH's group under
   // the field's line (the owner, 2026-11-24: "that airport should be the
   // heading"), then a row a fix; no branch of FixBranch's on the timeline.

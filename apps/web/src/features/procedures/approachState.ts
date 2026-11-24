@@ -18,7 +18,9 @@ export function headName(placed: ProceduresRouteModel["inRoute"][number]) {
   // Its transition after a dot, as the route box says it, "RNAV (GPS) -B ·
   // OBK" (the owner, 2026-11-24); a Direct to's fix is on its fixes' line.
   const from = placed.transition && !placed.direct ? ` · ${placed.transition}` : "";
-  return `${own ? `${short} · RWY ${own}` : short}${from}`;
+  // "RNAV (GPS) RWY 05", as the chart titles it, one dot after it alone:
+  // the transition's (the owner, 2026-11-24).
+  return `${own ? `${short} RWY ${own}` : short}${from}`;
 }
 
 /** The approach picked at a field, as the route list has it. */

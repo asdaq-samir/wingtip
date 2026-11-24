@@ -114,7 +114,7 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   // Folded to its pill on the field's line, unfolded by a tap (the owner, 2026-11-23).
   await unfoldProcedure(kdlh, "approach");
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
+  await expect(approach).toContainText("ILS RWY 09", { timeout: slow(20000) });
   await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   await page.getByTestId("procedure-menu").getByTestId("procedure-menu-learn").click();
 

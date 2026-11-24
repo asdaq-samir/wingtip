@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { ArrowLeftRight, ChevronDown } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, Ellipsis } from "lucide-react";
 import IconButton from "../../components/IconButton";
 import { Button } from "../../components/ui/button";
 import type { ProcedureSummary } from "../../lib/api/types";
 import { chipLook } from "./chipLook";
+import { KIND_TAG } from "./procedureWords";
 
 type Kind = ProcedureSummary["kind"];
 
@@ -16,7 +17,6 @@ const SHORT: Record<Kind, string> = { approach: "Approach", arrival: "Arrive", d
  *  Contractions: ARR, APCH, DEP), at the owner's ask (2026-11-17: "shorten
  *  arrival to ARR and approach to APCH") so the row stays on one line. A
  *  reader still hears the whole word (its aria-label). */
-const CHIP: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure: "DEP" };
 
 /** How a kind's pull-down (ProcedureMenu) is opened: a chip; a round
  *  button at the right of the procedure's branch, to pick another
@@ -25,7 +25,7 @@ const CHIP: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure
  *  runways (the owner's pick, option C); or a whole row of FPL's timeline,
  *  its words `face` (TimelineProcedureRows, the owner's option D,
  *  2026-11-21: "just tapping it should show the approaches menu"). */
-export type TriggerLook = "chip" | "button" | "add" | "row" | "change";
+export type TriggerLook = "chip" | "button" | "add" | "row" | "more";
 
 /**
  * ProcedureMenu's trigger, one element for ResponsivePopoverTrigger's
@@ -64,19 +64,14 @@ export function procedureTrigger({
         <span className="sr-only">, pick another</span>
       </Button>
     );
-  if (look === "change")
-    // The word on a stock grey button, as a missed approach's Unsuspend
-    // (the owner, 2026-11-24: "Instead of the approach change icon, just
-    // make it with the word change"; "Change should like the Unsuspend
-    // button"); 44 points to a finger by the base layer's hit area.
+  if (look === "more")
+    // A round "•••" at a procedure's head on FPL's list, its menu: another
+    // of the kind, Direct to, its plate and No Approach to take it out (the
+    // owner, 2026-11-24, where Change and Remove were a row of their own).
     return (
-      <Button variant="secondary" type="button" {...data} className="shrink-0">
-        Change
-        <span className="sr-only">
-          {" "}
-          {what}: {label ?? "none picked"}
-        </span>
-      </Button>
+      <IconButton round label={`${what}: ${label ?? "none picked"}, options`} {...data}>
+        <Ellipsis className="size-5" strokeWidth={2.4} />
+      </IconButton>
     );
   if (look === "button")
     // The one picked's name kept in it for a reader, unseen: the branch's
@@ -97,9 +92,9 @@ export function procedureTrigger({
       size="chip"
       {...data}
       className={chipLook(look === "add")}
-      aria-label={look === "add" ? `+ ${CHIP[kind]}, ${what}: none picked` : `${label ?? SHORT[kind]}, ${what}`}
+      aria-label={look === "add" ? `+ ${KIND_TAG[kind]}, ${what}: none picked` : `${label ?? SHORT[kind]}, ${what}`}
     >
-      {look === "add" ? <span>+ {CHIP[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
+      {look === "add" ? <span>+ {KIND_TAG[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
       {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}
     </Button>
   );

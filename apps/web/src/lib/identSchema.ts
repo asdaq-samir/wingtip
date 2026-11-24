@@ -108,7 +108,7 @@ export function nameOwnPoints(stops: readonly string[]) {
 /** The name the route gives a present position, POS0, as a GPS does, the
  *  pilot's own points going on from it (the owner, 2026-11-24: "Replace my
  *  location to POS0"); the search's action to pick it keeps POSITION_NAME. */
-export const POSITION_POINT = "POS0";
+const POSITION_POINT = "POS0";
 
 /** A point's name as the route shows it: a present position as POS0
  *  (POSITION_POINT), the pilot's own points POS1 on (nameOwnPoints), the

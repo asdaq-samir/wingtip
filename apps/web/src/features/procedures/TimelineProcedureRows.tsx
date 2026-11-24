@@ -8,13 +8,13 @@ import type { ProcedureAirport } from "../plan";
 import { PointMenu } from "../route/lazy";
 import { kindMenu } from "./fieldParts";
 import { FixFigures } from "./FixList";
-import { fixSub, KIND_WORD } from "./procedureWords";
-import { ApproachButtons } from "./TimelineApproachParts";
+import { fixSub, KIND_TAG } from "./procedureWords";
+import { Button } from "../../components/ui/button";
 import { headName } from "./approachState";
 import { FoldSection, OnTheLine, ProcedureFace } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
-type Kind = keyof typeof KIND_WORD;
+type Kind = keyof typeof KIND_TAG;
 
 /**
  * A procedure picked at a field on FPL's timeline, its fixes points on
@@ -59,14 +59,14 @@ export function TimelineProcedureRows({
       procedures.map((p) => (p === chosen ? { ...p, direct: fix } : p)),
       null,
     );
-  // An approach says at its foot whether it is activated, with Activate or
-  // Deactivate and Remove (TimelineApproachParts). Loaded, not activated,
-  // its fixes are on a dashed line, not flown and not in the nav log.
+  // An approach says at its head whether it is activated, Activate or
+  // Deactivate. Loaded, not activated, its fixes are on a dashed line, not
+  // flown and not in the nav log.
   const approach = kind === "approach";
   const times = fixes.map((f) => fixTime(f.ident));
   const timed = times.some((t) => t != null);
   const loaded = approach && !!placed.loaded;
-  const face = <ProcedureFace word={KIND_WORD[kind]} name={name} />;
+  const face = <ProcedureFace tag={KIND_TAG[kind]} name={name} />;
   const thread = loaded ? "dashed" : "solid";
   return (
     <FoldSection
@@ -77,21 +77,24 @@ export function TimelineProcedureRows({
       label={loaded ? `${placed.label}, loaded` : placed.label}
       data={{ "data-kind": kind }}
       startOpen={!!vm.openAtFirst}
-      // Change and Remove, an approach's Activate or Deactivate before
-      // them: at its fixes' foot, under its head while folded.
-      foot={(open) => (
-        // One block with the head while folded, no hairline between
-        // (the owner's review, 2026-11-24).
-        <OnTheLine stop={stop} thread={thread} rule={open}>
-          <ApproachButtons
-            vm={vm}
-            field={field}
-            id={placed.id}
-            loaded={approach ? loaded : undefined}
-            change={kindMenu(vm, field, kind, "change")}
-          />
-        </OnTheLine>
-      )}
+      // Its menu a "•••" at its head's end (another, Direct to, its plate,
+      // No Approach to take it out), an approach's Activate or Deactivate
+      // before it, so a procedure is one row folded (the owner, 2026-11-24).
+      trailing={
+        <>
+          {approach && (
+            <Button
+              variant={loaded ? "default" : "secondary"}
+              size="sm"
+              onClick={() => vm.onApproach(field.ident, placed.id, { loaded: !loaded })}
+              data-testid={loaded ? "approach-activate" : "approach-deactivate"}
+            >
+              {loaded ? "Activate" : "Deactivate"}
+            </Button>
+          )}
+          {kindMenu(vm, field, kind, "more")}
+        </>
+      }
     >
       <ol aria-label={`${name}, its fixes`}>
         {fixes.map((fix, i) => {

@@ -58,7 +58,7 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   // Its box behind its pill on the ground, unfolded by a tap (2026-11-23).
   await unfoldProcedure(kdlh, "approach");
   const loaded = kdlh.getByTestId("approach-loaded");
-  await expect(loaded).toContainText("ILS · RWY 09", { timeout: slow(20000) });
+  await expect(loaded).toContainText("ILS RWY 09", { timeout: slow(20000) });
   await expect(loaded).toContainText("FAKER");
   await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toHaveCount(0);
   // Activated: on the magenta line, its fixes points of the route.
@@ -79,7 +79,9 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   await settle(page);
   kdlh = await destination(page);
   await unfoldProcedure(kdlh, "approach");
-  await kdlh.getByTestId("approach-remove").click();
+  // Taken out by its menu's No Approach, the "•••" at its head (2026-11-24).
+  await kdlh.locator("[data-kind=approach] [data-testid=procedure-kind]").first().click();
+  await page.getByTestId("procedure-menu-none").click();
   await expect(page).not.toHaveURL(/[?&]procs=/);
   const bar = page.locator("[data-slot=toast]").filter({ hasText: "Procedure Removed" });
   await bar.getByRole("button", { name: "Undo" }).click();
