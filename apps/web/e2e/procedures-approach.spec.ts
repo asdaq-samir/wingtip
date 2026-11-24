@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { procedureRuns as runs } from "./marks";
 import { pickAirplane } from "./startState";
-import { circuitsOf, openRunways, LIST, DRAWN, ARRIVAL_DRAWN } from "./procedureStubs";
+import { circuitsOf, openRunways, LIST, DRAWN, ARRIVAL_DRAWN, unfoldProcedure } from "./procedureStubs";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -172,6 +172,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await kdlh.getByTestId("approach-activate").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
   await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");
+  await unfoldProcedure(kdlh, "approach");
   await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toContainText("ILS · RWY 09");
   // The field's arrival, a pull-down beside it once the list is in.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=arrival]").click();
@@ -181,7 +182,8 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   await openRoute(page);
   // The plate switched off from the approach's pull-down, and on again:
-  // the procedure's head row, the button to pick another.
+  // the procedure's head row, the button to pick another, its pill unfolded.
+  await unfoldProcedure(kdlh, "approach");
   await kdlh.locator("[data-testid=procedure-rows][data-kind=approach] [data-testid=procedure-kind]").click();
   // The one picked is the stock listbox's selected option, as a reader
   // hears it; the arrow keys move between the choices without picking.

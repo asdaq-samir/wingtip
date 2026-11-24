@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
-import { LIST, DRAWN } from "./procedureStubs";
+import { LIST, DRAWN, unfoldProcedure } from "./procedureStubs";
 import { hold } from "./pacing";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -117,6 +117,8 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   // A procedure picked, its fixes on the route's line before the field's, its head row the button to pick another (the owner's option D, 2026-11-21).
+  // Folded to its pill on the field's line, unfolded by a tap (the owner, 2026-11-23).
+  await unfoldProcedure(kdlh, "approach");
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
@@ -131,6 +133,7 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
   await openRoute(page);
+  await unfoldProcedure(kdlh, "approach");
   await expect(approach.getByTestId("fix-branch-row").filter({ hasText: "FAKER" })).toContainText("direct to");
   // Back as charted, from the procedure's head row.
   await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
@@ -161,10 +164,14 @@ test("a procedure picked has its fixes on the route's line before its field's, a
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
+  // Folded to a pill on the field's line, its title alone; a tap unfolds
+  // it (the owner, 2026-11-23, "Pill on its field").
+  await expect(kdlh.locator("[data-testid=procedure-pill][data-kind=approach]")).toHaveText("ILS · RWY 09", { timeout: slow(20000) });
+  await unfoldProcedure(kdlh, "approach");
   const box = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(box.getByTestId("procedure-name")).toHaveText("ILS · RWY 09", { timeout: slow(20000) });
-  // Shown, no pill to tap (the owner, 2026-11-21): its kind and field over
-  // its name, then a row a fix; no branch of FixBranch's on the timeline.
+  await expect(box.getByTestId("procedure-name")).toHaveText("ILS · RWY 09");
+  // Unfolded: its kind and field over its name, then a row a fix; no
+  // branch of FixBranch's on the timeline.
   await expect(box).toContainText("Approach · KDLH");
   await expect(box.getByTestId("fix-branch-row").first()).toBeVisible();
   await expect(kdlh.getByTestId("fix-branch")).toHaveCount(0);

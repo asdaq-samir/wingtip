@@ -123,3 +123,14 @@ export const ARRIVAL_DRAWN = {
   holds: [],
   fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.4, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
 };
+
+/** A procedure picked at a field, unfolded from its pill on the field's
+ *  line (ProcedurePill: folded by default, so the route fits the sheet at
+ *  half; the owner, 2026-11-23, "Pill on its field"), its rows then on the
+ *  line. A no-op where it is already unfolded. */
+export async function unfoldProcedure(field: Locator, kind: "approach" | "arrival" | "departure") {
+  const pill = field.locator(`[data-testid=procedure-pill][data-kind=${kind}]`);
+  await expect(pill).toBeVisible({ timeout: slow(20000) });
+  if ((await pill.getAttribute("aria-expanded")) !== "true") await pill.click();
+  await expect(field.locator(`[data-testid=procedure-rows][data-kind=${kind}]`)).toBeVisible();
+}

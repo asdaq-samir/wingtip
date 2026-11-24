@@ -49,13 +49,7 @@ interface LinePart {
  * field's parts, and the procedures' fixes on the route's line before and
  * after it.
  */
-export function lineModel(
-  vm: ProceduresRouteModel,
-  point: TimelinePoint,
-  row: NavLogRow | undefined,
-  field: ProcedureAirport | undefined,
-  last: boolean,
-) {
+export function lineModel(vm: ProceduresRouteModel, point: TimelinePoint, row: NavLogRow | undefined, field: ProcedureAirport | undefined) {
   // Never opened to land at before the field is known open (decision 0043).
   const opens = !!field && !!vm.edit && !point.problem && !point.checking;
   // A move of this point refused, why under it (useRouteListEdit).
@@ -88,6 +82,5 @@ export function lineModel(
   const after = onLine("Depart");
   // Its missed approach unsuspended, the line goes on into it.
   const missedOn = !!field && !point.problem && missedOnTheLine(vm, field);
-  const onPast = !last || after.length > 0;
-  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn, onPast };
+  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn };
 }

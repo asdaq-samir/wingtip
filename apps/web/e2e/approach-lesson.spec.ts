@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { closeCard, drawn, grabberTo, openTab, settle, slow, openRoute } from "./helpers";
+import { unfoldProcedure } from "./procedureStubs";
 
 /**
  * An approach taught (ApproachLesson), at the owner's ask ("do it all",
@@ -110,6 +111,8 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   // A procedure picked, its fixes on the route's line before the field's, its head row the button to pick another (the owner's option D, 2026-11-21).
+  // Folded to its pill on the field's line, unfolded by a tap (the owner, 2026-11-23).
+  await unfoldProcedure(kdlh, "approach");
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
   await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();

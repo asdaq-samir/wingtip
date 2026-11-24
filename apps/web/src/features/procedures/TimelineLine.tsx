@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -12,7 +12,7 @@ import { PartTray } from "./RunwayTray";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
-import { TimelineProcedureRows } from "./TimelineProcedureRows";
+import { ProcedurePill, TimelineProcedureRows } from "./TimelineProcedureRows";
 import { LoadedApproach, MissedApproach } from "./TimelineApproachParts";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
@@ -60,7 +60,19 @@ export function TimelineLine({
    *  control is (TimelineAction). */
   trailing?: ReactNode;
 }) {
-  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn, onPast } = lineModel(vm, point, row, field, last);
+  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn } = lineModel(vm, point, row, field);
+  // Its procedures folded into pills on the line (ProcedurePill), each
+  // unfolded on the line by a tap on its pill (the owner, 2026-11-23,
+  // "Pill on its field"): an arrival's and an approach's rows before the
+  // field's line, a departure's after it, as when they were always out.
+  const [unfolded, setUnfolded] = useState<(typeof before)[number][]>([]);
+  const toggle = (k: (typeof before)[number]) => setUnfolded((was) => (was.includes(k) ? was.filter((x) => x !== k) : [...was, k]));
+  const beforeOut = before.filter((k) => unfolded.includes(k));
+  const afterOut = after.filter((k) => unfolded.includes(k));
+  const pills = field ? [...before, ...after] : [];
+  // The line runs on past the field to the next, or into a departure's
+  // fixes unfolded under it.
+  const onPast = !last || afterOut.length > 0;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one.
@@ -114,7 +126,7 @@ export function TimelineLine({
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
         {(onPast || missedOn) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
-      <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || before.length > 0) && "border-t border-border")}>
+      <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || beforeOut.length > 0) && "border-t border-border")}>
         {/* Wrapping where the ident, its fuel and its time do not fit on one
             line, the time going under them at the right: at the owner's
             19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
@@ -173,6 +185,13 @@ export function TimelineLine({
           {end.grip}
           {trailing && <span className="relative z-10 flex h-11 shrink-0 items-center">{trailing}</span>}
         </div>
+        {pills.length > 0 && (
+          <div className="flex flex-wrap gap-2 pb-2" data-testid="procedure-pills">
+            {pills.map((k) => (
+              <ProcedurePill key={k} vm={vm} field={field!} kind={k} open={unfolded.includes(k)} onToggle={() => toggle(k)} />
+            ))}
+          </div>
+        )}
         <LineNotes point={point} refused={refused} />
         {opens && (
           <CollapsibleContent
@@ -203,14 +222,14 @@ export function TimelineLine({
   // from field to field.
   return (
     <div role={parts[0] ? "region" : undefined} aria-label={parts[0] ? `${point.ident} · ${parts[0].part.role}` : undefined}>
-      {before.map((k) => (
+      {beforeOut.map((k) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
       ))}
       {line}
       {field && !point.problem && <MissedApproach vm={vm} field={field} stop={!onPast} />}
       {field && !point.problem && <LoadedApproach vm={vm} field={field} through={onPast} />}
-      {after.map((k, i) => (
-        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === after.length - 1} />
+      {afterOut.map((k, i) => (
+        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === afterOut.length - 1} />
       ))}
     </div>
   );
