@@ -69,7 +69,7 @@ export function TimelineProcedureRows({
   return (
     <FoldSection
       head={face}
-      trailing={kindMenu(vm, field, kind, "change")}
+      trailing={approach ? undefined : kindMenu(vm, field, kind, "change")}
       stop={stop}
       thread={thread}
       testId={loaded ? "approach-loaded" : "procedure-rows"}
@@ -131,7 +131,7 @@ export function TimelineProcedureRows({
       </ol>
       {approach && (
         <OnTheLine stop={stop} thread={thread}>
-          <ApproachButtons vm={vm} field={field} id={placed.id} loaded={loaded} />
+          <ApproachButtons vm={vm} field={field} id={placed.id} loaded={loaded} change={kindMenu(vm, field, kind, "change")} />
         </OnTheLine>
       )}
     </FoldSection>

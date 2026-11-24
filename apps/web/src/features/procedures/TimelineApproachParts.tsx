@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { sameField } from "../../lib/procedures";
@@ -31,11 +32,16 @@ export function ApproachButtons({
   field,
   id,
   loaded,
+  change,
 }: {
   vm: ProceduresRouteModel;
   field: ProcedureAirport;
   id: string;
   loaded: boolean;
+  /** The approach's Change (its menu), in this row between the two (the
+   *  owner, 2026-11-24: "Change should be inline with deactivate and
+   *  remove"). */
+  change?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 py-1">
@@ -46,6 +52,7 @@ export function ApproachButtons({
       >
         {loaded ? "Activate" : "Deactivate"}
       </Button>
+      {change}
       <Button
         variant="destructive"
         onClick={() =>
