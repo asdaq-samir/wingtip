@@ -63,7 +63,10 @@ export function PointFigures({
       {time != null && <span className="font-semibold text-foreground">{time}</span>}
       {altitude != null && (
         <span
-          className={kind === "set" ? "font-semibold text-tint" : "text-muted-foreground"}
+          // At the wind's size under the fuel, the two lines of a point's
+          // figures matching across its line (the owner, 2026-11-24:
+          // "Altitude should be same text size as winds").
+          className={cn(TEXT.note, kind === "set" ? "font-semibold text-tint" : "text-muted-foreground")}
           data-testid="point-altitude-figure"
           data-kind={kind}
         >
