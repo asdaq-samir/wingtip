@@ -263,6 +263,7 @@ export function TimelineLine({
             thread={onPast ? "solid" : "none"}
             testId="field-runways"
             label={`${point.ident} runways`}
+            startOpen={!!vm.openAtFirst}
           >
             {chipRow}
           </FoldSection>

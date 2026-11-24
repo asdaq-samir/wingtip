@@ -13,6 +13,10 @@ export const circuitsOf = (page: Page) => async () => [...new Set((await drawn(p
  *  (PatternChips), at the owner's ask ("can the runway line collapse to
  *  the selected runway?"). */
 export async function openRunways(field: Locator) {
+  // Its Runways section folded at first under the field's line (the owner,
+  // 2026-11-24: "Tapping shouldn't unfold all of the subsections"): opened.
+  const runways = field.locator("[data-testid=field-runways][data-section-folded]");
+  if (await runways.count()) await runways.getByTestId("section-fold").first().click();
   // The field's runways in first: the list is drawn again as a sheet over
   // it closes, the field gone from it for a moment.
   await expect(field.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
@@ -136,6 +140,11 @@ export async function unfoldProcedure(field: Locator, kind: "approach" | "arriva
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   // The field and its procedures one group, the box round them both.
   await expect(field).toHaveAttribute("data-testid", "field-group");
+  // Its sections folded at first (2026-11-24): the kind's opened by its head.
+  const section = field.locator(`[data-kind=${kind}]`).first();
+  await expect(section).toBeVisible();
+  if ((await section.getAttribute("data-section-folded")) !== null) await section.getByTestId("section-fold").first().click();
+  await expect(section).not.toHaveAttribute("data-section-folded", "");
   // Its rows out, where it has rows on the line (an approach only loaded
   // has its box instead).
   if (kind !== "approach") await expect(field.locator(`[data-testid=procedure-rows][data-kind=${kind}]`)).toBeVisible();

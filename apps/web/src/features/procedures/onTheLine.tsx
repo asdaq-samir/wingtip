@@ -63,6 +63,7 @@ export function FoldSection({
   testId,
   label,
   data,
+  startOpen = false,
   children,
 }: {
   head: ReactNode;
@@ -72,14 +73,20 @@ export function FoldSection({
   testId: string;
   label: string;
   data?: Record<string, string | undefined>;
+  /** Open at first: the browser specs' fields (useProceduresRoute's
+   *  openAtFirst), each worked on whole. */
+  startOpen?: boolean;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(true);
+  // Folded at first, its head alone, so opening a field's line shows what
+  // it has, not all of it (the owner, 2026-11-24: "Tapping shouldn't
+  // unfold all of the subsections"); a tap on a head opens that one.
+  const [open, setOpen] = useState(startOpen);
   return (
     <Collapsible
       open={open}
       onOpenChange={setOpen}
-      render={<section aria-label={label} data-testid={testId} data-folded={open ? undefined : ""} {...data} />}
+      render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
     >
       <OnTheLine stop={stop && !open} thread={thread}>
         <CollapsibleTrigger

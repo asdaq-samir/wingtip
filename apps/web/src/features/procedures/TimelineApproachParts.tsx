@@ -109,6 +109,7 @@ export function MissedApproach({ vm, field, stop }: { vm: ProceduresRouteModel; 
       testId="missed-approach"
       label={flown ? `${field.ident} missed approach` : `${field.ident} missed approach, suspended`}
       data={{ "data-flown": String(flown) }}
+      startOpen={!!vm.openAtFirst}
     >
       <ol aria-label={`${field.ident} missed approach, its fixes`}>
         {fixes.map((fix, i) => (

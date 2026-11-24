@@ -75,6 +75,7 @@ export function TimelineProcedureRows({
       testId={loaded ? "approach-loaded" : "procedure-rows"}
       label={loaded ? `${placed.label}, loaded` : placed.label}
       data={{ "data-kind": kind }}
+      startOpen={!!vm.openAtFirst}
     >
       <ol aria-label={`${name}, its fixes`}>
         {fixes.map((fix, i) => {
