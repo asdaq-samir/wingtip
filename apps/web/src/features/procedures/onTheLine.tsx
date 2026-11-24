@@ -214,65 +214,47 @@ export function ProcedureFace({
   );
 }
 
-/** How far a field's Landing and Takeoff cards sit in from its line, and
- *  so the route's magenta in them from the line's own: 20. */
-const CARD_IN = 20;
-/** The mark's column's middle, where the magenta runs (a w-8 column). */
-const MID = 16;
-/** The height of the magenta's bend into the cards and back out. */
-const BEND = 20;
-
-/** The route's magenta bending from the field's line into its cards'
- *  column (`way` "in") or back out of it to the next field's ("out"), on
- *  past the field's box to that field's mark. */
-function Bend({ way }: { way: "in" | "out" }) {
-  // Straight down first where it comes in, over the 12 the field's own
-  // line runs on under its row (TIMELINE_THREAD), then the bend; out, the
-  // bend and then straight on down into the next field's mark.
-  const d = way === "in" ? `M ${MID} 0 V 12 L ${MID + CARD_IN} ${BEND + 12}` : `M ${MID + CARD_IN} 0 L ${MID} ${BEND} V ${BEND + 24}`;
+/** The route's magenta on through a gap between a field's line and its
+ *  cards, or between the two, in the marks' column, a point over each
+ *  card's edge so it runs on unbroken; `on` into the next field's row as
+ *  far as a row's own line runs (TIMELINE_THREAD's 12). */
+function Gap({ line, on = false }: { line: boolean; on?: boolean }) {
   return (
-    <svg
-      aria-hidden="true"
-      className="block overflow-visible"
-      width={MID * 2 + CARD_IN}
-      height={way === "in" ? BEND + 12 : BEND}
-      data-testid={`phase-bend-${way}`}
-    >
-      <path d={d} className="fill-none stroke-course" strokeWidth={3} strokeLinejoin="round" />
-    </svg>
+    <div className="relative h-2">
+      {line && (
+        <span
+          aria-hidden="true"
+          className={cn("absolute -top-px left-4 -translate-x-1/2 border-l-[3px] border-course", on ? "-bottom-3" : "-bottom-px")}
+        />
+      )}
+    </div>
   );
 }
 
 /**
- * A field's Landing and Takeoff, each a card of its own set in from the
- * field's line inside its box, the route's magenta bending in to them,
- * straight on from one to the other, and back out after them to the next
- * field (the owner, 2026-11-24: "two indented cards within airport id, one
- * for landing and another for takeoff. The magenta line comes in at an
- * angle to join the procedures"). `into` where the line goes on into them,
- * `out` where it goes on past them.
+ * A field's Landing and Takeoff, each a card of its own under the field's
+ * line, as wide as the field's rows, the route's magenta straight down
+ * through them in the marks' column (the owner, 2026-11-24: "two cards
+ * within airport id, one for landing and another for takeoff"; "Maybe we
+ * can make them not indented but as wide as the airport cards? So the
+ * magenta line connects straight down?"). `into` where the line goes on
+ * into them, `out` where it goes on past them to the next field.
  */
 export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode; takeoff: ReactNode; into: boolean; out: boolean }) {
-  // A card's first row has no hairline over it: the card's own edge; its
-  // rows 8 in from its end, not the list's 16, so Takeoff's runway and
-  // leaving time keep its label's line at 390.
   // The stock Card (shadcn's), its padding, gap and shadow off: its rows
-  // are the list's own.
+  // are the list's own. Out 8 past the marks' column and in 8 from the
+  // list's edge (7 inside its 1-point edge), so its marks keep the field's
+  // column, the line unbroken, and its corners show;
+  // its first row has no hairline over it, the card's own edge.
   const card =
-    "relative gap-0 border-procedure/20 py-0 shadow-none [&_[data-words]]:pr-2 [&>section>div:first-child>[data-words]]:border-t-0";
+    "relative -ml-2 mr-2 gap-0 border-procedure/20 py-0 pl-[7px] shadow-none [&>section>div:first-child>[data-words]]:border-t-0";
   return (
-    <div className="pb-2" data-testid="phase-cards">
-      {into ? <Bend way="in" /> : <div className="h-2" />}
-      <div className="mr-3.5 flex flex-col" style={{ marginLeft: CARD_IN }}>
-        {landing && <Card className={card}>{landing}</Card>}
-        {landing && takeoff && (
-          <div className="relative h-3">
-            {into && <span aria-hidden="true" className="absolute inset-y-0 left-4 -translate-x-1/2 border-l-[3px] border-course" />}
-          </div>
-        )}
-        {takeoff && <Card className={card}>{takeoff}</Card>}
-      </div>
-      {out && <Bend way="out" />}
+    <div data-testid="phase-cards">
+      <Gap line={into} />
+      {landing && <Card className={card}>{landing}</Card>}
+      {landing && takeoff && <Gap line={into} />}
+      {takeoff && <Card className={card}>{takeoff}</Card>}
+      <Gap line={out} on />
     </div>
   );
 }
