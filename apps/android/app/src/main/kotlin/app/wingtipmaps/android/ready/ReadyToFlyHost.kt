@@ -53,7 +53,7 @@ fun ReadyToFlyHost(plan: Plan, ownShipOn: Boolean, underway: Boolean, onSetRoute
         val key = ReadyFacts.flightKey(planned)
         if (key == shownFor) return@LaunchedEffect
         val local = withContext(Dispatchers.Default) { ReadyDevice.local(context, plan, brief.state.value.fetchedAtMs) }
-        model.check(planned, ReadyFacts.cruise(planned.legs.map { it.altitudeFt }), local)
+        model.check(planned, ReadyFacts.cruise(planned), local)
         if (model.state.value.caution) {
             shownFor = key
             open = true
