@@ -89,7 +89,7 @@ export function FoldSection({
               size="inline"
               type="button"
               data-testid="section-fold"
-              className="min-h-11 min-w-0 flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal pointer-coarse:active:bg-muted"
+              className="min-h-11 min-w-0 flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted"
             />
           }
         >
