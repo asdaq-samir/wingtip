@@ -136,12 +136,25 @@ export function FoldSection({
               // is narrower: its controls go under it rather than squeeze a
               // long approach's name to three lines (the owner's iPhone,
               // 2026-11-24, "RNAV (GPS) RWY 05 · FOVOJ" beside Activate).
-              className="min-h-11 min-w-[min(100%,11rem)] flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted"
+              // A phase's head (`nest`) as narrow as its label, its runway and
+              // time on its line.
+              className={cn(
+                "min-h-11 flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted",
+                nest ? "min-w-0" : "min-w-[min(100%,11rem)]",
+              )}
             />
           }
         >
+          {/* A phase's chevron before its label, its runway and time at the
+              line's end; a section's after its words. */}
+          {chevron && nest && (
+            <ChevronDown
+              className={cn("size-4 shrink-0 text-procedure transition-transform duration-(--motion-fade)", !open && "-rotate-90")}
+              aria-hidden
+            />
+          )}
           <span className="min-w-0 flex-1">{head}</span>
-          {chevron && (
+          {chevron && !nest && (
             <ChevronDown
               className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)", !open && "-rotate-90")}
               aria-hidden
