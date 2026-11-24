@@ -20,11 +20,15 @@ export function OnTheLine({
   mark,
   stop,
   thread = "solid",
+  rule = true,
   children,
 }: {
   mark?: ReactNode;
   stop: boolean;
   thread?: Thread;
+  /** The hairline over its words; none where it is one block with the
+   *  row above (a folded procedure's buttons under its head). */
+  rule?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -38,7 +42,7 @@ export function OnTheLine({
       {/* 44 points under its hairline, as a point's line is (TimelineLine's
           row under its border): with the border inside the 44 a fix's
           button was 43 tall (the HIG review's P1, 2026-11-21). */}
-      <div className={cn("box-content flex min-h-11 min-w-0 flex-1 items-center gap-2 border-t border-border", TIMELINE_END)}>
+      <div className={cn("box-content flex min-h-11 min-w-0 flex-1 items-center gap-2", rule && "border-t border-border", TIMELINE_END)}>
         {children}
       </div>
     </div>
@@ -80,7 +84,7 @@ export function FoldSection({
   /** After its rows, in sight folded too, the line under its head then (a
    *  procedure's buttons; the owner, 2026-11-24: "the next line can be
    *  buttons when folded"). */
-  foot?: ReactNode;
+  foot?: (open: boolean) => ReactNode;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -118,7 +122,7 @@ export function FoldSection({
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0">
         {children}
       </CollapsibleContent>
-      {foot}
+      {foot?.(open)}
     </Collapsible>
   );
 }

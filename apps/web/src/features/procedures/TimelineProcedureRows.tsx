@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { Ellipsis } from "lucide-react";
 import { cn } from "cn";
-import { sameField } from "../../lib/procedures";
+import { fixRoles, sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import type { ProcedureAirport } from "../plan";
 import { PointMenu } from "../route/lazy";
@@ -63,6 +63,8 @@ export function TimelineProcedureRows({
   // Deactivate and Remove (TimelineApproachParts). Loaded, not activated,
   // its fixes are on a dashed line, not flown and not in the nav log.
   const approach = kind === "approach";
+  const times = fixes.map((f) => fixTime(f.ident));
+  const timed = times.some((t) => t != null);
   const loaded = approach && !!placed.loaded;
   const face = <ProcedureFace word={loaded ? `${KIND_WORD[kind]} loaded` : KIND_WORD[kind]} name={name} />;
   const thread = loaded ? "dashed" : "solid";
@@ -77,8 +79,10 @@ export function TimelineProcedureRows({
       startOpen={!!vm.openAtFirst}
       // Change and Remove, an approach's Activate or Deactivate before
       // them: at its fixes' foot, under its head while folded.
-      foot={
-        <OnTheLine stop={stop} thread={thread}>
+      foot={(open) => (
+        // One block with the head while folded, no hairline between
+        // (the owner's review, 2026-11-24).
+        <OnTheLine stop={stop} thread={thread} rule={open}>
           <ApproachButtons
             vm={vm}
             field={field}
@@ -87,13 +91,21 @@ export function TimelineProcedureRows({
             change={kindMenu(vm, field, kind, "change")}
           />
         </OnTheLine>
-      }
+      )}
     >
       <ol aria-label={`${name}, its fixes`}>
         {fixes.map((fix, i) => {
-          const skipped = directAt > 0 && i < directAt;
           const isDirect = i === directAt;
-          const sub = fixSub(fix, isDirect, skipped);
+          // Not flown: left out by a Direct to, or by the path the plan
+          // flies where it times the procedure's other fixes and not this
+          // one (a course reversal flown in its place: KDLH's CFBSJ),
+          // dimmed on a dashed ring (the owner's review, 2026-11-24).
+          const notFlown = !isDirect && times[i] == null && timed;
+          const skipped = (directAt > 0 && i < directAt) || notFlown;
+          const sub =
+            notFlown && !(directAt > 0 && i < directAt)
+              ? [fixRoles(fix).join(" · "), "not flown"].filter(Boolean).join(" · ")
+              : fixSub(fix, isDirect, skipped);
           const ring = (
             <span
               className={cn(
@@ -127,16 +139,21 @@ export function TimelineProcedureRows({
               >
                 <BaseButton
                   onClick={() => onFix(field.ident, kind, fix.ident)}
-                  className={cn("flex min-w-0 flex-1 flex-col justify-center self-stretch py-1 text-left", skipped && "opacity-50")}
+                  className={cn(
+                    "flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5 self-stretch py-1 content-center text-left",
+                    skipped && "opacity-50",
+                  )}
                 >
                   {/* In the regular weight, as the route's points are on the same
                       line (the owner, 2026-11-20: "Stops font can be
                       non-bold"); the procedure's name over them stays its
                       head's bold. */}
                   <span className={cn("font-normal", TEXT.row, isDirect && "font-semibold text-tint")}>{fix.ident}</span>
-                  {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>{sub}</span>}
+                  {/* Its parts on its own line after its name, "DL · IAF", a
+                      row a fix (the owner's review, 2026-11-24). */}
+                  {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>· {sub}</span>}
                 </BaseButton>
-                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} time={fixTime(fix.ident)} />
+                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} time={times[i] ?? "—"} />
               </OnTheLine>
             </li>
           );

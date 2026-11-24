@@ -155,7 +155,7 @@ export default function RouteTimeline({
   const fixAt = fixMinutes(routeRows);
   const fixTimeAt = (field: string) => (fix: string) => {
     const minutes = aircraft.none ? undefined : fixAt.get(fix);
-    if (minutes === undefined) return "—";
+    if (minutes === undefined) return null;
     const there = zoned ? zoneOf(new Date(new Date(from).getTime() + minutes * 60_000), field) : null;
     return there ? <ZonedTime {...there} /> : etaAt(from, minutes);
   };

@@ -11,7 +11,7 @@ import { stopsNames, stopsTitle } from "./stopsRow";
  *  next line, centred under the marks (TimelineLine's and the rows here);
  *  solid where it was dotted, at the owner's word (2026-11-19: "Replace
  *  doted magenta with solid on timeline"), as the route's line on the map. */
-export const TIMELINE_THREAD = "absolute top-10 -bottom-1 left-1/2 -translate-x-1/2 border-l-[3px] border-solid border-course";
+export const TIMELINE_THREAD = "absolute top-10 -bottom-3 left-1/2 -translate-x-1/2 border-l-[3px] border-solid border-course";
 
 // The rows of FPL's timeline that are an action rather than a point
 // (TimelineRoute's card): the stops below full, Add a Stop, an end of the

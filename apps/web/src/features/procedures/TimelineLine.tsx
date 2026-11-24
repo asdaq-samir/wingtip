@@ -105,6 +105,24 @@ export function TimelineLine({
   // then its departure; the route's magenta through the runways where the
   // route goes on past them, to the next line or into a departure.
   const runwaysThread = !last || afterOut.length > 0;
+  // Its runways' head says them, folded or not, "RWY 9 (Landing)", a
+  // stop's two one after the other; none picked yet, "Runways".
+  const picked = shownParts.filter((p) => p.part.line.chosen && !(p.part.role === "Arrive" && straightIn));
+  const runwaysHead = (
+    <span className={cn("block break-words", TEXT.row)}>
+      {picked.length === 0 ? (
+        <span className="text-procedure">Runways</span>
+      ) : (
+        picked.map((p, i) => (
+          <span key={p.part.role}>
+            {i > 0 && " · "}
+            <span className="font-semibold">RWY {p.part.line.chosen}</span>{" "}
+            <span className="text-procedure">({p.part.role === "Arrive" ? "Landing" : "Takeoff"})</span>
+          </span>
+        ))
+      )}
+    </span>
+  );
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one.
@@ -279,7 +297,7 @@ export function TimelineLine({
       {runwaysOut &&
         (runwaysShown ? (
           <FoldSection
-            head={<span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>Runways</span>}
+            head={runwaysHead}
             stop={false}
             thread={runwaysThread ? "solid" : "none"}
             testId="field-runways"
