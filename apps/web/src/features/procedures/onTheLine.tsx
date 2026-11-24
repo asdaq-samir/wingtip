@@ -119,7 +119,7 @@ export function FoldSection({
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}
-      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0">
+      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0">
         {children}
       </CollapsibleContent>
       {foot?.(open)}

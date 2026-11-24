@@ -18,6 +18,7 @@ import { MissedApproach } from "./TimelineApproachParts";
 import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
+import { FoldSection } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** No procedure's rows out: one list, not a new one each render. */
@@ -130,7 +131,6 @@ export function TimelineLine({
           data-testid="timeline-chips"
           data-role={role}
         >
-          <span className={cn("shrink-0 font-semibold text-procedure", TEXT.row)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
           {linePart && (
             <PartTray
               vm={vm}
@@ -150,6 +150,67 @@ export function TimelineLine({
       </section>
     );
   };
+  // Landing and Takeoff, each a section that folds, its name and a chevron
+  // its head and its runway's pill under it, then its procedures (the
+  // owner, 2026-11-24: "Landing/Takeoff should be the title with Chevron
+  // and the pills below it"); folded at first, as every section. In flight
+  // or a dry run, where the list is read, the procedures alone.
+  const landingRows = (
+    <>
+      {landingPart && blockRow("Arrive", beforeOut.length > 0 || missedHere || takeoffOut || !last)}
+      {beforeOut.map((k, i) => (
+        <TimelineProcedureRows
+          key={k}
+          vm={vm}
+          field={field!}
+          kind={k}
+          fixTime={point.fixTime}
+          stop={last && !missedHere && afterOut.length === 0 && i === beforeOut.length - 1}
+        />
+      ))}
+      {missedHere && <MissedApproach vm={vm} field={field!} stop={last && afterOut.length === 0} />}
+    </>
+  );
+  const takeoffRows = (
+    <>
+      {takeoffPart && blockRow("Depart", afterOut.length > 0 || !last)}
+      {afterOut.map((k, i) => (
+        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} fixTime={point.fixTime} stop={last && i === afterOut.length - 1} />
+      ))}
+    </>
+  );
+  const blockHead = (role: "Arrive" | "Depart") => (
+    <span className={cn("block font-semibold text-procedure", TEXT.row)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
+  );
+  const landingFlown = beforeOut.length > 0 || missedHere;
+  const landing = landingOut ? (
+    <FoldSection
+      head={blockHead("Arrive")}
+      stop={last && !takeoffOut}
+      thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
+      testId="field-landing"
+      label={`${point.ident} landing`}
+      startOpen={!!vm.openAtFirst}
+    >
+      {landingRows}
+    </FoldSection>
+  ) : (
+    landingRows
+  );
+  const takeoff = takeoffOut ? (
+    <FoldSection
+      head={blockHead("Depart")}
+      stop={last}
+      thread={afterOut.length > 0 || !last ? "solid" : "none"}
+      testId="field-takeoff"
+      label={`${point.ident} takeoff`}
+      startOpen={!!vm.openAtFirst}
+    >
+      {takeoffRows}
+    </FoldSection>
+  ) : (
+    takeoffRows
+  );
   const line = (
     <Collapsible
       open={opens && open}
@@ -263,22 +324,8 @@ export function TimelineLine({
       className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
     >
       {line}
-      {landingOut && blockRow("Arrive", beforeOut.length > 0 || missedHere || takeoffOut || !last)}
-      {beforeOut.map((k, i) => (
-        <TimelineProcedureRows
-          key={k}
-          vm={vm}
-          field={field!}
-          kind={k}
-          fixTime={point.fixTime}
-          stop={last && !missedHere && afterOut.length === 0 && i === beforeOut.length - 1}
-        />
-      ))}
-      {missedHere && <MissedApproach vm={vm} field={field!} stop={last && afterOut.length === 0} />}
-      {takeoffOut && blockRow("Depart", afterOut.length > 0 || !last)}
-      {afterOut.map((k, i) => (
-        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} fixTime={point.fixTime} stop={last && i === afterOut.length - 1} />
-      ))}
+      {landing}
+      {takeoff}
     </div>
   );
 }
