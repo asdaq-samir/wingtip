@@ -34,3 +34,13 @@ def test_a_fix_off_the_path_has_no_time():
     away = {"ident": "AWAY", "lat": 47.5, "lon": -90.0, "missed": False}
     got = fix_minutes(_path(), (None, {"fixes": [away]}, None), ete_min=20.0, groundspeed_kt=120.0)
     assert got == {}
+
+
+def test_a_fix_where_the_one_before_is_is_timed_on_the_pass_after_the_turn():
+    # Out to the 20 nm point and back (a course reversal): the initial fix
+    # at 10 nm on the way out, the final approach fix there on the way back.
+    there_and_back = [PATH[0], PATH[1], PATH[2], PATH[1], PATH[0]]
+    approach = {"fixes": [_fix("IAF", 1), _fix("FAF", 1)]}
+    got = fix_minutes(_path(there_and_back), (None, None, approach), ete_min=20.0, groundspeed_kt=120.0)
+    # 40 nm flown, 20 minutes at 120 kt: the IAF 10 nm in, the FAF 30.
+    assert got == {"IAF": 5.0, "FAF": 15.0}

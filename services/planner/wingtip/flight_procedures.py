@@ -152,21 +152,34 @@ def fix_minutes(path: dict, picks, ete_min: float, groundspeed_kt: float) -> dic
     a departure's fixes from the leg's start, where the airplane is at its
     time, an arrival's and an approach's back from the leg's end, where it
     is at the leg's ETE, so the climb out of the field, flown slower than
-    the ground speed, is not counted in their times. Where the path passes
-    a fix twice (a course reversal round it), its first time; a fix not on
-    the path (left out by a Direct to) and a missed approach's, none."""
+    the ground speed, is not counted in their times. Each where the path
+    passes it after the fix before it, so a fix flown twice round a course
+    reversal is timed on the pass it is flown for; a fix not on the path
+    (left out by a Direct to, or by a course reversal flown in its place)
+    and a missed approach's, none."""
     points = path["path"]
     total = path["nm"]
     minutes: dict[str, float] = {}
+
+    def hit(fix: dict, start: int) -> int | None:
+        near = (i for i in range(start, len(points)) if geo.distance_nm(*points[i], fix["lat"], fix["lon"]) < procedure_paths.SAME_PLACE_NM)
+        return next(near, None)
+
+    last = 0
     for which, drawing in zip(("departure", "arrival", "approach"), picks):
         for fix in (drawing or {}).get("fixes", []):
             if fix.get("missed") or fix["ident"] in minutes:
                 continue
-            at = next(
-                (i for i, p in enumerate(points) if geo.distance_nm(*p, fix["lat"], fix["lon"]) < procedure_paths.SAME_PLACE_NM), None
-            )
+            # In the order they are flown: past the fix before it, so a
+            # final approach fix where the initial one is (KDLH's PYKLA at
+            # DL, its course reversal between) is timed after the turn;
+            # else where that fix is, the path's one point for both.
+            at = hit(fix, last + 1) if minutes else hit(fix, 0)
+            if at is None and minutes:
+                at = hit(fix, last)
             if at is None:
                 continue
+            last = at
             along = procedure_paths.length_nm(points[: at + 1])
             flown = along / groundspeed_kt * 60 if which == "departure" else ete_min - (total - along) / groundspeed_kt * 60
             minutes[fix["ident"]] = round(max(0.0, min(flown, ete_min)), 1)
