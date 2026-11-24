@@ -117,7 +117,7 @@ test("My Location put down in the middle of the route stays where it was, and it
   const list = sideDrawer(page).getByTestId("procedures");
   const grip = list.getByTestId("route-grip").first();
   await draggable(page);
-  await expect(list.getByTestId("timeline-ident").first()).toHaveText("My Location");
+  await expect(list.getByTestId("timeline-ident").first()).toHaveText("POS0");
   await onGrip(grip);
   await page.keyboard.press("Enter");
   const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");

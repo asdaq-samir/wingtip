@@ -105,11 +105,16 @@ export function nameOwnPoints(stops: readonly string[]) {
   ownPointNames = new Map(own.map((stop, i) => [stop, `POS${i + 1}`]));
 }
 
-/** A point's name as the route shows it: a present position as "My
- *  Location" (POSITION_NAME), the
- *  pilot's own points POS1 on (nameOwnPoints), the rest by their idents. */
+/** The name the route gives a present position, POS0, as a GPS does, the
+ *  pilot's own points going on from it (the owner, 2026-11-24: "Replace my
+ *  location to POS0"); the search's action to pick it keeps POSITION_NAME. */
+export const POSITION_POINT = "POS0";
+
+/** A point's name as the route shows it: a present position as POS0
+ *  (POSITION_POINT), the pilot's own points POS1 on (nameOwnPoints), the
+ *  rest by their idents. */
 export function pointName(ident: string): string {
-  return isPosition(ident) ? POSITION_NAME : (ownPointNames.get(ident) ?? ident);
+  return isPosition(ident) ? POSITION_POINT : (ownPointNames.get(ident) ?? ident);
 }
 
 /** A point's name where it is told after the flight -- a saved or recent

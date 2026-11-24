@@ -120,7 +120,7 @@ test("a point is changed from its mark's menu by the one search, the departure, 
   await settle(page);
   await openPanel(page);
   const here = sideDrawer(page).getByTestId("timeline-line").first();
-  await expect(here.getByTestId("timeline-ident")).toHaveText("My Location", { timeout: slow(30_000) });
+  await expect(here.getByTestId("timeline-ident")).toHaveText("POS0", { timeout: slow(30_000) });
   // My Location has no second row.
   await expect(here.getByTestId("timeline-toggle")).toHaveCount(0);
   await here.getByTestId("point-menu").click();

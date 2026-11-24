@@ -102,7 +102,7 @@ describe("the pilot's own point off a fix", () => {
 describe("the route's points as named", () => {
   test("a present position is \"My Location\", the pilot's own points POS1 on in the route's order, the rest by their idents", () => {
     nameOwnPoints(["KJVL", "DLH/090/30", "VPBNG/180/5", "DLH/090/30"]);
-    expect(pointName("@42.2333,-87.9883")).toBe("My Location");
+    expect(pointName("@42.2333,-87.9883")).toBe("POS0");
     expect(pointName("DLH/090/30")).toBe("POS1");
     expect(pointName("VPBNG/180/5")).toBe("POS2");
     expect(pointName("KJVL")).toBe("KJVL");

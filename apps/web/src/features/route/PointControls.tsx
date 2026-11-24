@@ -57,7 +57,10 @@ export function PointFigures({
 }) {
   return (
     <span className={cn("flex shrink-0 flex-col items-end tabular-nums leading-tight", TEXT.detail)} data-testid={testId}>
-      {typeof time === "string" ? <span className="font-semibold">{time}</span> : time}
+      {/* The time in the text's own black, bold, a zone's or a picker's
+          own look inside it (the owner, 2026-11-24: "Eta should be black,
+          not grey for each stop"). */}
+      {time != null && <span className="font-semibold text-foreground">{time}</span>}
       {altitude != null && (
         <span
           className={kind === "set" ? "font-semibold text-tint" : "text-muted-foreground"}

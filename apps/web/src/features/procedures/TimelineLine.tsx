@@ -199,7 +199,11 @@ export function TimelineLine({
               }
             />
           )}
-          <div className="flex min-w-0 shrink flex-col">
+          {/* At least four letters wide at the name's own size, so every
+              line's fuel and wind start in one column (the owner,
+              2026-11-24: "Fuel and winds should line up for all the
+              stops"); a longer name pushes them on. */}
+          <div className={cn("flex min-w-[3.2em] shrink flex-col", TEXT.row)}>
             <LineIdent point={point} change={end.change} onInfo={() => vm.onInfo(point.ident)} fuelSet={!!fuelSet} />
           </div>
           {/* The fuel right after the ident, the time at the right (the

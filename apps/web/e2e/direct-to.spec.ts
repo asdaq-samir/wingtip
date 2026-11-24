@@ -31,5 +31,5 @@ test("Fly Here goes direct from the present position, not from Home", async ({ p
   // its box from the present position: put away, the pill is the route's
   // figures alone.
   await typeRoute(page);
-  await expect(page.getByTestId("route-dep")).toContainText("My Location");
+  await expect(page.getByTestId("route-dep")).toContainText("POS0");
 });
