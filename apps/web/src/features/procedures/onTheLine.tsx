@@ -64,6 +64,7 @@ export function FoldSection({
   label,
   data,
   startOpen = false,
+  foot,
   children,
 }: {
   head: ReactNode;
@@ -76,6 +77,10 @@ export function FoldSection({
   /** Open at first: the browser specs' fields (useProceduresRoute's
    *  openAtFirst), each worked on whole. */
   startOpen?: boolean;
+  /** After its rows, in sight folded too, the line under its head then (a
+   *  procedure's buttons; the owner, 2026-11-24: "the next line can be
+   *  buttons when folded"). */
+  foot?: ReactNode;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -88,7 +93,7 @@ export function FoldSection({
       onOpenChange={setOpen}
       render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
     >
-      <OnTheLine stop={stop && !open} thread={thread}>
+      <OnTheLine stop={stop && !open && !foot} thread={thread}>
         <CollapsibleTrigger
           render={
             <Button
@@ -113,21 +118,22 @@ export function FoldSection({
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0">
         {children}
       </CollapsibleContent>
+      {foot}
     </Collapsible>
   );
 }
 
-/** A section's head as its row says it: its kind in the procedure's
- *  indigo, small capitals ("APPROACH"; the field is the group's heading),
- *  over its name, wrapping, never cut. */
+/** A section's head as its row says it: its name, then its kind in
+ *  brackets in the procedure's indigo, one line, "ALEXS1 (Arrival)" (the
+ *  owner, 2026-11-24: "Make the procedure in the format ALEXS1
+ *  (Arrival)"); wrapping, never cut. */
 export function ProcedureFace({ word, name }: { word: string; name: string }) {
   return (
-    <>
-      <span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>{word}</span>
-      {/* Wrapping, never cut: all of the name at any text size. */}
-      <span className={cn("block font-semibold break-words", TEXT.row)} data-testid="procedure-name">
+    <span className={cn("block break-words", TEXT.row)}>
+      <span className="font-semibold" data-testid="procedure-name">
         {name}
-      </span>
-    </>
+      </span>{" "}
+      <span className="text-procedure">({word})</span>
+    </span>
   );
 }

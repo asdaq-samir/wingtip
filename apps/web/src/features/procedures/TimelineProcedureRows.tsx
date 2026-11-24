@@ -75,6 +75,19 @@ export function TimelineProcedureRows({
       label={loaded ? `${placed.label}, loaded` : placed.label}
       data={{ "data-kind": kind }}
       startOpen={!!vm.openAtFirst}
+      // Change and Remove, an approach's Activate or Deactivate before
+      // them: at its fixes' foot, under its head while folded.
+      foot={
+        <OnTheLine stop={stop} thread={thread}>
+          <ApproachButtons
+            vm={vm}
+            field={field}
+            id={placed.id}
+            loaded={approach ? loaded : undefined}
+            change={kindMenu(vm, field, kind, "change")}
+          />
+        </OnTheLine>
+      }
     >
       <ol aria-label={`${name}, its fixes`}>
         {fixes.map((fix, i) => {
@@ -129,17 +142,6 @@ export function TimelineProcedureRows({
           );
         })}
       </ol>
-      {/* Change and Remove at its foot, an approach's Activate or
-          Deactivate before them. */}
-      <OnTheLine stop={stop} thread={thread}>
-        <ApproachButtons
-          vm={vm}
-          field={field}
-          id={placed.id}
-          loaded={approach ? loaded : undefined}
-          change={kindMenu(vm, field, kind, "change")}
-        />
-      </OnTheLine>
     </FoldSection>
   );
 }
