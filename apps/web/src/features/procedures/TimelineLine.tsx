@@ -18,7 +18,7 @@ import { MissedApproach } from "./TimelineApproachParts";
 import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
-import { FoldSection } from "./onTheLine";
+import { FoldSection, PhaseCards } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** No procedure's rows out: one list, not a new one each render. */
@@ -323,8 +323,14 @@ export function TimelineLine({
       className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
     >
       {line}
-      {landing}
-      {takeoff}
+      {landingOut || takeoffOut ? (
+        <PhaseCards landing={landingOut && landing} takeoff={takeoffOut && takeoff} into={onPast} out={!last} />
+      ) : (
+        <>
+          {landing}
+          {takeoff}
+        </>
+      )}
     </div>
   );
 }

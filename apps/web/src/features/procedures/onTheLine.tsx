@@ -212,3 +212,61 @@ export function ProcedureFace({
     </span>
   );
 }
+
+/** How far a field's Landing and Takeoff cards sit in from its line, and
+ *  so the route's magenta in them from the line's own: 24. */
+const CARD_IN = 24;
+/** The mark's column's middle, where the magenta runs (a w-8 column). */
+const MID = 16;
+/** The height of the magenta's bend into the cards and back out. */
+const BEND = 20;
+
+/** The route's magenta bending from the field's line into its cards'
+ *  column (`way` "in") or back out of it to the next field's ("out"), on
+ *  past the field's box to that field's mark. */
+function Bend({ way }: { way: "in" | "out" }) {
+  // Straight down first where it comes in, over the 12 the field's own
+  // line runs on under its row (TIMELINE_THREAD), then the bend; out, the
+  // bend and then straight on down into the next field's mark.
+  const d = way === "in" ? `M ${MID} 0 V 12 L ${MID + CARD_IN} ${BEND + 12}` : `M ${MID + CARD_IN} 0 L ${MID} ${BEND} V ${BEND + 24}`;
+  return (
+    <svg
+      aria-hidden="true"
+      className="block overflow-visible"
+      width={MID * 2 + CARD_IN}
+      height={way === "in" ? BEND + 12 : BEND}
+      data-testid={`phase-bend-${way}`}
+    >
+      <path d={d} className="fill-none stroke-course" strokeWidth={3} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * A field's Landing and Takeoff, each a card of its own set in from the
+ * field's line inside its box, the route's magenta bending in to them,
+ * straight on from one to the other, and back out after them to the next
+ * field (the owner, 2026-11-24: "two indented cards within airport id, one
+ * for landing and another for takeoff. The magenta line comes in at an
+ * angle to join the procedures"). `into` where the line goes on into them,
+ * `out` where it goes on past them.
+ */
+export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode; takeoff: ReactNode; into: boolean; out: boolean }) {
+  // A card's first row has no hairline over it: the card's own edge.
+  const card = "relative rounded-xl bg-card ring-1 ring-procedure/20 [&>section>div:first-child>[data-words]]:border-t-0";
+  return (
+    <div className="pb-2" data-testid="phase-cards">
+      {into ? <Bend way="in" /> : <div className="h-2" />}
+      <div className="mr-2 flex flex-col" style={{ marginLeft: CARD_IN }}>
+        {landing && <div className={card}>{landing}</div>}
+        {landing && takeoff && (
+          <div className="relative h-3">
+            {into && <span aria-hidden="true" className="absolute inset-y-0 left-4 -translate-x-1/2 border-l-[3px] border-course" />}
+          </div>
+        )}
+        {takeoff && <div className={card}>{takeoff}</div>}
+      </div>
+      {out && <Bend way="out" />}
+    </div>
+  );
+}
