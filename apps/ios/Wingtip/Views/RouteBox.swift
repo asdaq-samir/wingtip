@@ -29,6 +29,10 @@ struct RouteBoxSection: View {
         let unknown = plan.unknownPoint
         Section {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                // The toggle in the box's lower right, level with the
+                // pills' last line (the web's RouteBox since r13): the
+                // flow keeps its width free at the end of that line, so no
+                // pill is under it and no blank row is added for it.
                 FlowLayout {
                     ForEach(points) { point in
                         let closed = point.field ? cards.problem(point.ident) : nil
@@ -39,12 +43,12 @@ struct RouteBoxSection: View {
                         if let flight = suggested(point) { FuelStopFold(flight: flight) }
                     }
                     field
+                    Color.clear
+                        .frame(width: WingtipSize.tapTarget, height: WingtipSize.rowBadge)
+                        .accessibilityHidden(true)
                 }
-                HStack(alignment: .top, spacing: WingtipSpace.sm) {
-                    if let problem { ProblemLine(problem) }
-                    Spacer(minLength: WingtipSpace.sm)
-                    RouteBoxToggle()
-                }
+                .overlay(alignment: .bottomTrailing) { RouteBoxToggle() }
+                if let problem { ProblemLine(problem) }
             }
             .padding(.vertical, WingtipSpace.xs)
         } header: {
