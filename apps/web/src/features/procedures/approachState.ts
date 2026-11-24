@@ -1,4 +1,4 @@
-import { procedureTitle, sameField } from "../../lib/procedures";
+import { procedureTitle, sameField, transitionWords } from "../../lib/procedures";
 import type { ProcedureAirport } from "../plan";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
@@ -23,7 +23,10 @@ export function headName(placed: ProceduresRouteModel["inRoute"][number]) {
 /** What goes small under a procedure's name: the fix ATC sent the
  *  airplane direct to, else its transition (the owner, 2026-11-24). */
 export function headSub(placed: ProceduresRouteModel["inRoute"][number]): string | null {
-  return placed.direct ? `Direct ${placed.direct}` : (placed.transition ?? null);
+  // An approach with no transition is flown from vectors to final.
+  return placed.direct
+    ? `Direct ${placed.direct}`
+    : (placed.transition ?? (placed.kind === "approach" ? transitionWords("approach", null) : null));
 }
 
 /** The approach picked at a field, as the route list has it. */

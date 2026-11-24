@@ -81,20 +81,18 @@ export function TimelineProcedureRows({
       // Its menu a "•••" at its head's end (another, Direct to, its plate,
       // No Approach to take it out), an approach's Activate or Deactivate
       // before it, so a procedure is one row folded (the owner, 2026-11-24).
-      trailing={
-        <>
-          {approach && (
-            <Button
-              variant={loaded ? "default" : "secondary"}
-              size="xs"
-              onClick={() => vm.onApproach(field.ident, placed.id, { loaded: !loaded })}
-              data-testid={loaded ? "approach-activate" : "approach-deactivate"}
-            >
-              {loaded ? "Activate" : "Deactivate"}
-            </Button>
-          )}
-          {kindMenu(vm, field, kind, "more")}
-        </>
+      trailing={kindMenu(vm, field, kind, "more")}
+      corner={
+        approach && (
+          <Button
+            variant={loaded ? "default" : "secondary"}
+            size="xs"
+            onClick={() => vm.onApproach(field.ident, placed.id, { loaded: !loaded })}
+            data-testid={loaded ? "approach-activate" : "approach-deactivate"}
+          >
+            {loaded ? "Activate" : "Deactivate"}
+          </Button>
+        )
       }
     >
       <ol aria-label={`${name}, its fixes`}>

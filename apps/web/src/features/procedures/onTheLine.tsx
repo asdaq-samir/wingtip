@@ -83,6 +83,7 @@ export function FoldSection({
   foot,
   nest = false,
   chevron = true,
+  corner,
   children,
 }: {
   head: ReactNode;
@@ -107,6 +108,10 @@ export function FoldSection({
   /** Its chevron; none on a procedure's head, whose "•••" is beside it,
    *  its title the tap that folds it (the owner, 2026-11-24). */
   chevron?: boolean;
+  /** A control at the head's bottom right, beside the short line under its
+   *  title (an approach's Activate beside its transition), so a long name
+   *  keeps its line (the owner, 2026-11-24). */
+  corner?: ReactNode;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -143,7 +148,8 @@ export function FoldSection({
             />
           )}
         </CollapsibleTrigger>
-        {trailing && <span className="ml-auto flex shrink-0 items-center gap-1">{trailing}</span>}
+        {trailing && <span className={cn("ml-auto flex shrink-0 items-center gap-1", corner && "self-start")}>{trailing}</span>}
+        {corner && <span className="absolute right-4 bottom-1.5 z-10 flex">{corner}</span>}
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}
