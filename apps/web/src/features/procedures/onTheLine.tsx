@@ -214,8 +214,8 @@ export function ProcedureFace({
 }
 
 /** How far a field's Landing and Takeoff cards sit in from its line, and
- *  so the route's magenta in them from the line's own: 24. */
-const CARD_IN = 24;
+ *  so the route's magenta in them from the line's own: 20. */
+const CARD_IN = 20;
 /** The mark's column's middle, where the magenta runs (a w-8 column). */
 const MID = 16;
 /** The height of the magenta's bend into the cards and back out. */
@@ -252,12 +252,15 @@ function Bend({ way }: { way: "in" | "out" }) {
  * `out` where it goes on past them.
  */
 export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode; takeoff: ReactNode; into: boolean; out: boolean }) {
-  // A card's first row has no hairline over it: the card's own edge.
-  const card = "relative rounded-xl bg-card ring-1 ring-procedure/20 [&>section>div:first-child>[data-words]]:border-t-0";
+  // A card's first row has no hairline over it: the card's own edge; its
+  // rows 12 in from its end, not the list's 16, so Takeoff's runway and
+  // leaving time keep its label's line at 390.
+  const card =
+    "relative rounded-xl bg-card ring-1 ring-procedure/20 [&_[data-words]]:pr-3 [&>section>div:first-child>[data-words]]:border-t-0";
   return (
     <div className="pb-2" data-testid="phase-cards">
       {into ? <Bend way="in" /> : <div className="h-2" />}
-      <div className="mr-2 flex flex-col" style={{ marginLeft: CARD_IN }}>
+      <div className="mr-1.5 flex flex-col" style={{ marginLeft: CARD_IN }}>
         {landing && <div className={card}>{landing}</div>}
         {landing && takeoff && (
           <div className="relative h-3">
