@@ -47,6 +47,13 @@ class RouteProcedures @Inject constructor() : ViewModel() {
         }
     }
 
+    /** A field's procedures, those had already or asked now: the route
+     *  box's typed SIDs and STARs are found among them (TypedRoute.picks). */
+    suspend fun listed(ident: String): ProcedureList? {
+        val key = ident.uppercase()
+        return _lists.value[key] ?: quietly { Planner.api.airportProcedures(key).planned() }?.also { list -> _lists.update { it + (key to list) } }
+    }
+
     /** Each pick's drawing, its transition's, asked once. */
     fun loadDrawings(picks: List<PlanProcedures.Pick>) {
         val wanted = picks.filter { asked.add("drawing:${drawingKey(it)}") }

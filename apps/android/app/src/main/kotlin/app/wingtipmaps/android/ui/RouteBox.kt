@@ -15,10 +15,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +34,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,16 +49,22 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.FuelStopSuggestion
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.plan.PlanTanks
 import app.wingtipmaps.android.plan.RouteFieldFacts
+import app.wingtipmaps.android.plan.RouteProcedures
 import app.wingtipmaps.android.route.RoutePointMenu
 import app.wingtipmaps.android.route.RoutePoints
+import app.wingtipmaps.android.route.TypedRoute
 import app.wingtipmaps.android.route.addFuelStops
+import app.wingtipmaps.android.route.clearRoute
+import app.wingtipmaps.android.route.hasPoints
 import app.wingtipmaps.android.route.typeRoute
+import kotlinx.coroutines.launch
 
 /**
  * The route as ForeFlight's is, the web's route box (RouteBox, RouteToken;
@@ -71,7 +78,10 @@ import app.wingtipmaps.android.route.typeRoute
  * 91.151(a), 91.167(a); warn, never limit); a flight's suggested fuel stops
  * are one pill after its departure, "+3 fuel stops", a tap putting them in.
  * After the last pill the field: what is typed there is read by the engine
- * (TypedRoute) and goes on at the route's end, a whole route on an empty box.
+ * (TypedRoute) and goes on at the route's end, a whole route on an empty box,
+ * a SID or STAR typed among the points picked as the route's procedure and a
+ * level group's cruise the plan's; while the route is not yet whole, a ✕
+ * after it clears what there is.
  * At its lower right the round toggle back to the grouped list, where the
  * list has it (TypeRouteToggle), so it stays under the finger.
  */
@@ -82,12 +92,16 @@ fun RouteBox(
     onAddStopAfter: (String) -> Unit,
     onToggle: () -> Unit,
     model: RouteFieldFacts = hiltViewModel(),
+    procedures: RouteProcedures = hiltViewModel(),
 ) {
     val facts by model.facts.collectAsStateWithLifecycle()
     val points = (listOf(state.dep) + state.stops + state.dest).filter { it.isNotEmpty() }
     LaunchedEffect(points) { model.load(points) }
     val field = rememberTextFieldState()
-    var unread by rememberSaveable { mutableStateOf<String?>(null) }
+    // What went wrong with the last typing, said under the box where it was
+    // typed: the words the engine could not read, or the typed procedures
+    // neither end publishes.
+    var said by remember { mutableStateOf<Pair<String, TypedRoute.Outcome>?>(null) }
     val focus = remember { FocusRequester() }
     // Turned to before the route is whole, the field is what the pilot came
     // for: its keyboard up at once, as the web focuses it in the tap.
@@ -95,11 +109,13 @@ fun RouteBox(
     val read = {
         val text = field.text.toString()
         if (text.isNotBlank()) {
-            if (plan.typeRoute(text)) {
-                unread = null
-                field.clearText()
-            } else {
-                unread = text.trim()
+            field.clearText()
+            // On the plan's own scope, so typing read as the toggle turns the
+            // box back to the list is not dropped with the box.
+            plan.viewModelScope.launch {
+                val outcome = plan.typeRoute(text, procedures::listed)
+                said = if (outcome == TypedRoute.Outcome.Done) null else text.trim() to outcome
+                if (outcome == TypedRoute.Outcome.Unread) field.setTextAndPlaceCursorAtEnd(text.trim())
             }
         }
     }
@@ -120,8 +136,14 @@ fun RouteBox(
                     fuelFold(state, ident, points.getOrNull(i + 1))?.let { flight -> FuelFold(flight) { plan.addFuelStops(flight) } }
                 }
                 RouteField(field, empty = points.isEmpty(), focus = focus, onDone = read, modifier = Modifier.weight(1f).widthIn(min = WingtipSpace.Xxl * 3))
+                // Half a route cleared by the stock ✕ at the box's end (the
+                // web's onClear, the owner, 2026-11-18); a whole route is
+                // cleared by the plan's own ✕. Undone from its Snackbar.
+                if (state.hasPoints && !state.routed) {
+                    IconButton(onClick = { plan.clearRoute() }) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.route_box_clear)) }
+                }
             }
-            unread?.let { ProblemLine(stringResource(R.string.route_box_unread, it)) }
+            said?.let { (text, outcome) -> ProblemLine(saidWords(text, outcome)) }
             // The toggle's own row under the last line, never over a pill.
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TypeRouteToggle(typing = true) {
@@ -131,6 +153,13 @@ fun RouteBox(
             }
         }
     }
+}
+
+/** The typing's trouble in words: the web's and the iPhone's. */
+@Composable
+private fun saidWords(text: String, outcome: TypedRoute.Outcome): String = when (outcome) {
+    is TypedRoute.Outcome.Missed -> pluralStringResource(R.plurals.route_box_missed, outcome.names.size, outcome.names.joinToString(" and "), outcome.dep, outcome.dest)
+    else -> stringResource(R.string.route_box_unread, text)
 }
 
 /** The round tinted toggle between the grouped list and the route box (the

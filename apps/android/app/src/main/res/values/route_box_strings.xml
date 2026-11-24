@@ -10,6 +10,13 @@
     <string name="route_box_field">The route: type a point to go on to, or a whole route, as KPWK V100 KLAS</string>
     <!-- A point the engine could not read as a route. -->
     <string name="route_box_unread">“%1$s” could not be read as a route.</string>
+    <!-- Typed SIDs or STARs neither end of the route publishes (the web's and the iPhone's words). -->
+    <plurals name="route_box_missed">
+        <item quantity="one">%1$s is not a departure from %2$s or an arrival into %3$s. A SID is typed after the departure and a STAR before the destination, as in a filed route.</item>
+        <item quantity="other">%1$s are not departures from %2$s or arrivals into %3$s. A SID is typed after the departure and a STAR before the destination, as in a filed route.</item>
+    </plurals>
+    <!-- The box's ✕ while the route is not yet whole: what there is of it cleared. -->
+    <string name="route_box_clear">Clear the route</string>
     <!-- A field NASR lists closed, on its pill (decision 0043). -->
     <string name="route_box_closed">%1$s Closed</string>
     <!-- A pill read aloud: its point and its menu; a caution said with it. -->
