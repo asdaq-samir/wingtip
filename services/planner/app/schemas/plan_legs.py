@@ -38,6 +38,10 @@ class LegProcedure(BaseModel):
     final_at: int | None = None
     map_at: int | None = None
     missed: MissedApproachPath | None = None
+    #: The minutes from the leg's start to each of its procedures' fixes,
+    #: by ident (wingtip.flight_procedures.fix_minutes); none with no
+    #: airplane.
+    fix_min: dict[str, float] = {}
     more_nm: float
     more_min: float | None
     more_gal: float | None

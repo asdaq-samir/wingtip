@@ -10,7 +10,7 @@ import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
 import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
-import { etaAt } from "../../plan";
+import { etaAt, fixMinutes } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
 import { BoxToggle, MissingEnd } from "./RouteStart";
@@ -133,18 +133,11 @@ export default function RouteTimeline({
         if (there) return <ZonedTime {...there} />;
       }
       const here = zoned ? clockIn(new Date(from), null) : null;
-      if (!read) return <DepartPicker value={depart} onChange={changeDepart} look="time" zone={here?.zone} />;
-      if (!depart)
-        return here ? (
-          <span className="inline-flex flex-col items-end">
-            Now
-            <span className={`font-normal ${TEXT.caption}`}>
-              <ZonedTime {...here} />
-            </span>
-          </span>
-        ) : (
-          "Now"
-        );
+      // "Now" alone, its field's elevation under it as every line's
+      // altitude is (the owner, 2026-11-24: "Under now just put altitude
+      // instead of time to match others"), its zone after it.
+      if (!read) return <DepartPicker value={depart} onChange={changeDepart} look="time" zone={here?.zone} clock={false} />;
+      if (!depart) return here ? <ZonedTime time="Now" zone={here.zone} /> : "Now";
       const leave = leaveWhen(new Date(depart));
       return here ? <ZonedTime time={leave} zone={here.zone} /> : leave;
     }
@@ -154,6 +147,17 @@ export default function RouteTimeline({
     // zone said, once any point keeps another than the departure's.
     const there = zoned ? zoneOf(arrival.at, ident) : null;
     return there ? <ZonedTime {...there} /> : etaAt(from, arrival.minutes);
+  };
+  // A procedure fix's time as a stop's is written, from the planner's
+  // minutes to it (fixMinutes), in its field's zone where the stops say
+  // theirs (the owner, 2026-11-24: "Each fix should show altitude and eta
+  // on the right side to look similar to other stops").
+  const fixAt = fixMinutes(routeRows);
+  const fixTimeAt = (field: string) => (fix: string) => {
+    const minutes = aircraft.none ? undefined : fixAt.get(fix);
+    if (minutes === undefined) return "—";
+    const there = zoned ? zoneOf(new Date(new Date(from).getTime() + minutes * 60_000), field) : null;
+    return there ? <ZonedTime {...there} /> : etaAt(from, minutes);
   };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
@@ -173,6 +177,7 @@ export default function RouteTimeline({
       seen,
       visit,
       time: timeOf(ident, role, seen),
+      fixTime: fixTimeAt(ident),
       category: unknown || !field ? null : metarCategory(ident),
       problem: unknown ?? (status.closed ? `${status.closed}. Pick another field.` : status.failed),
       checking: status.checking,

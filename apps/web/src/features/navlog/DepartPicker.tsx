@@ -34,6 +34,9 @@ interface Props {
   /** A chip of glass, or the time in the tint as the departure's step in
    *  FPL's list says it ("09:00"), where the owner moved it. */
   look?: "chip" | "time";
+  /** The time look's clock under "Now"; FPL's list puts the field's
+   *  elevation there instead, as its other lines' altitudes. */
+  clock?: boolean;
   /** What it is the time of: the flight's departure, or a stop's leaving
    *  again ("Departure from KMSN"). */
   label?: string;
@@ -74,6 +77,7 @@ export default function DepartPicker({
   label = "Departure",
   testId = "depart-date",
   leavesNow = true,
+  clock = true,
   earliest,
   latest,
   zone,
@@ -122,12 +126,17 @@ export default function DepartPicker({
                 {leaveWhen(date)}
                 {zone ? <span className={cn("ml-1 font-normal text-foreground", TEXT.caption)}>{zone}</span> : null}
               </span>
-            ) : (
-              // Each line at its own size's leading (TEXT.detail's), as
-              // the iOS audit's P3 asks: tightened, "Now" sat on 18.8.
+            ) : // Each line at its own size's leading (TEXT.detail's), as
+            // the iOS audit's P3 asks: tightened, "Now" sat on 18.8.
+            clock ? (
               <span className="flex flex-col items-end">
                 Now
                 <NowTime zone={zone} />
+              </span>
+            ) : (
+              <span className="whitespace-nowrap">
+                Now
+                {zone ? <span className={cn("ml-1 font-normal text-foreground", TEXT.caption)}>{zone}</span> : null}
               </span>
             )}
             <span className="sr-only">: change</span>

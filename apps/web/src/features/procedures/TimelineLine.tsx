@@ -192,8 +192,12 @@ export function TimelineLine({
             )
           )}
           <span className="flex-1" />
-          <span className={cn("relative z-10 ml-auto shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
-            {point.time}
+          {/* Its time over its altitude, as a procedure's fixes have theirs
+              (the owner, 2026-11-24: "Under now just put altitude instead of
+              time to match others"): a field's elevation, a waypoint's
+              altitude flown, the pilot's own where set. */}
+          <span className="relative z-10 ml-auto flex shrink-0 items-center" data-testid="timeline-time">
+            {end.figures}
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
               the chevrons"): the line itself is the tap that opens it. */}
@@ -211,11 +215,9 @@ export function TimelineLine({
             className="-mx-2 -mt-2 h-(--collapsible-panel-height) space-y-2 overflow-hidden px-2 pt-2 pb-2 transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0"
             data-testid="timeline-details"
           >
-            {/* The elevation under the time (the owner, 2026-11-17: "the
-                elevation should be under the time"). */}
-            <div className="flex min-h-6 items-center justify-between gap-2">
+            {/* Its wind; the elevation is under the time on the line. */}
+            <div className="flex min-h-6 items-center gap-2">
               <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
-              {end.elevation}
             </div>
           </CollapsibleContent>
         )}
@@ -261,12 +263,13 @@ export function TimelineLine({
           vm={vm}
           field={field!}
           kind={k}
+          fixTime={point.fixTime}
           stop={last && !missedHere && afterOut.length === 0 && i === beforeOut.length - 1}
         />
       ))}
       {missedHere && <MissedApproach vm={vm} field={field!} stop={last && afterOut.length === 0} />}
       {afterOut.map((k, i) => (
-        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === afterOut.length - 1} />
+        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} fixTime={point.fixTime} stop={last && i === afterOut.length - 1} />
       ))}
     </div>
   );

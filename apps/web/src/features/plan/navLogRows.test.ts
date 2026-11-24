@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { Airport, Candidate, Leg } from "../../lib/api/types";
 import {
   firstFlown,
+  fixMinutes,
   flownNmOf,
   groundMinAt,
   phaseOf,
@@ -92,6 +93,7 @@ describe("a leg flown by a procedure", () => {
         more_nm: more.nm,
         more_min: more.min,
         more_gal: 0.4,
+        fix_min: {},
       },
     }) as Leg;
 
@@ -294,5 +296,39 @@ describe("routeLegs", () => {
     const legs = routeLegs(navLogRows(ends, [], []));
     expect(legs).toHaveLength(1);
     expect(legs[0]).toMatchObject({ key: "destination", leg: undefined });
+  });
+});
+
+describe("fixMinutes", () => {
+  // A procedure's fixes timed from their leg's start by the planner
+  // (fix_min), on from when the airplane starts the leg: after the 30
+  // minutes to KMSN and its 30 on the ground, 60 minutes in.
+  const flownBy = (ete: number, fixMin: Record<string, number>): Leg =>
+    ({
+      ...leg(ete),
+      procedure: {
+        path: [],
+        ft: [],
+        nm: 30,
+        landing: true,
+        final_at: null,
+        map_at: null,
+        missed: null,
+        more_nm: 0,
+        more_min: 0,
+        more_gal: 0,
+        fix_min: fixMin,
+      },
+    }) as Leg;
+
+  test("each fix at its leg's start plus its minutes, a stop's time on the ground counted", () => {
+    const withStop = { ...ends, stops: [airport("KMSN", 43.1, -89.3)] };
+    const rows = navLogRows(withStop, [], [leg(30), flownBy(40, { IAF: 25, FAF: 33.5 })]);
+    expect(Object.fromEntries(fixMinutes(rows))).toEqual({ IAF: 85, FAF: 93.5 });
+  });
+
+  test("none with no time", () => {
+    const rows = navLogRows(ends, [], [{ ...flownBy(40, { IAF: 25 }), ete_min: null }]);
+    expect(fixMinutes(rows).size).toBe(0);
   });
 });

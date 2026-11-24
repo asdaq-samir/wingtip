@@ -36,6 +36,7 @@ const point = (over: Partial<TimelinePoint> = {}): TimelinePoint => ({
   seen: 0,
   visit: undefined,
   time: null,
+  fixTime: () => null,
   category: "VFR",
   problem: null,
   checking: false,

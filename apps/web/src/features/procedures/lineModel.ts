@@ -17,6 +17,9 @@ export interface TimelinePoint {
   visit: number | undefined;
   /** Its time: the departure's leave time, the others' arrival. */
   time: ReactNode;
+  /** A procedure fix's time at this field, as a stop's is written, "—"
+   *  where the plan has none (no airplane; RouteTimeline's fixTime). */
+  fixTime: (fix: string) => ReactNode;
   /** Its flight category from its latest METAR; none with no report. */
   category: string | null;
   /** Why it cannot be flown to, in red under it: a point the planner does

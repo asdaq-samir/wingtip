@@ -6021,6 +6021,9 @@ data class LegProcedure (
     @SerialName("final_at")
     val finalAt: Int? = null,
 
+    @SerialName("fix_min")
+    val fixMin: Map<String, Double>? = null,
+
     val ft: List<Double?>,
     val landing: Boolean,
 

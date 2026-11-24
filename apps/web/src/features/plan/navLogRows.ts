@@ -185,6 +185,24 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
   return rows;
 }
 
+/** The minutes from the departure to each procedure fix on the route, by
+ *  ident, for FPL's list to time a fix as it times a stop (the owner,
+ *  2026-11-24): the planner's minutes from its leg's start
+ *  (LegProcedure's `fix_min`, wingtip.flight_procedures.fix_minutes) on
+ *  from when the airplane starts the leg -- the row the leg ends at, less
+ *  the leg's ETE. None where the plan has no time (no airplane). */
+export function fixMinutes(rows: NavLogRow[]): Map<string, number> {
+  const minutes = new Map<string, number>();
+  for (const row of rows) {
+    if (row.kind === "departure" || isLegPoint(row) || row.minutesFlown === null) continue;
+    const leg = row.leg;
+    if (!leg?.procedure?.fix_min || leg.ete_min === null) continue;
+    const start = row.minutesFlown - leg.ete_min;
+    for (const [ident, min] of Object.entries(leg.procedure.fix_min)) if (!minutes.has(ident)) minutes.set(ident, start + min);
+  }
+  return minutes;
+}
+
 /** What a row's figures are: the piece of its leg that arrives at it,
  *  the whole leg where nothing cuts it; the departure has none. */
 export const legOf = (row: NavLogRow): Leg | undefined => (row.kind === "departure" ? undefined : (row.part ?? row.leg));

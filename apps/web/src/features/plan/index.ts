@@ -49,6 +49,7 @@ export {
   type RouteEnds,
   type RouteLeg,
   firstFlown,
+  fixMinutes,
   flownNmOf,
   groundMinAt,
   isLegPoint,

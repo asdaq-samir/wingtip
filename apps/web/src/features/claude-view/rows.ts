@@ -14,6 +14,7 @@ export function markOf(point: ViewPoint, index: number): TimelinePoint {
     seen: 0,
     visit: undefined,
     time: null,
+    fixTime: () => null,
     category: null,
     problem: null,
     checking: false,

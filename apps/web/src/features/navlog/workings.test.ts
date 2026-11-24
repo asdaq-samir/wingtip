@@ -81,6 +81,7 @@ describe("a leg worked out", () => {
         more_nm: 3.4,
         more_min: 2.3,
         more_gal: 0.33,
+        fix_min: {},
       },
     } as Leg)!;
     expect(w.climb!.min).toBeCloseTo(1.98, 1);

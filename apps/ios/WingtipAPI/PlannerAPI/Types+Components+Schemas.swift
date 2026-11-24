@@ -11923,6 +11923,26 @@ extension Components {
         public struct LegProcedure: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/LegProcedure/final_at`.
             public var finalAt: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/LegProcedure/fix_min`.
+            public struct FixMinPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: [String: Swift.Double]
+                /// Creates a new `FixMinPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: [String: Swift.Double] = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/LegProcedure/fix_min`.
+            public var fixMin: Components.Schemas.LegProcedure.FixMinPayload?
             /// - Remark: Generated from `#/components/schemas/LegProcedure/ft`.
             public var ft: [Swift.Double?]
             /// - Remark: Generated from `#/components/schemas/LegProcedure/landing`.
@@ -11945,6 +11965,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - finalAt:
+            ///   - fixMin:
             ///   - ft:
             ///   - landing:
             ///   - mapAt:
@@ -11956,6 +11977,7 @@ extension Components {
             ///   - path:
             public init(
                 finalAt: Swift.Int? = nil,
+                fixMin: Components.Schemas.LegProcedure.FixMinPayload? = nil,
                 ft: [Swift.Double?],
                 landing: Swift.Bool,
                 mapAt: Swift.Int? = nil,
@@ -11967,6 +11989,7 @@ extension Components {
                 path: [[Swift.Double]]
             ) {
                 self.finalAt = finalAt
+                self.fixMin = fixMin
                 self.ft = ft
                 self.landing = landing
                 self.mapAt = mapAt
@@ -11979,6 +12002,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case finalAt = "final_at"
+                case fixMin = "fix_min"
                 case ft
                 case landing
                 case mapAt = "map_at"

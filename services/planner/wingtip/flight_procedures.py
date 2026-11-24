@@ -9,7 +9,7 @@ import logging
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
-from . import airports, faa_data, pattern, planning, procedure_paths, runway_wind, weather
+from . import airports, faa_data, geo, pattern, planning, procedure_paths, runway_wind, weather
 from .config import DATA_DIR
 from .engine import ask as engine
 from .procedure_legs import bare_field, legs_flown_by
@@ -137,8 +137,40 @@ def with_procedures(
             "more_nm": round(more_nm, 1),
             "more_min": round(more_min, 1),
             "more_gal": round(more_gal, 2),
+            "fix_min": fix_minutes(path, picks, leg["ete_min"], leg["groundspeed_kt"]),
         }
     return replace(outcome, legs=[leg for legs in hops for leg in legs], by_hop=tuple(hops) if outcome.by_hop else ())
+
+
+def fix_minutes(path: dict, picks, ete_min: float, groundspeed_kt: float) -> dict[str, float]:
+    """The minutes from a leg's start to each fix of the procedures it is
+    flown by (`picks`, legs_flown_by's departure, arrival and approach), by
+    ident, for FPL's list to give each fix its time as it gives a stop's
+    (the owner, 2026-11-24: "Each fix should show altitude and eta on the
+    right side to look similar to other stops"). Along the flown path at
+    the leg's ground speed, as its miles more are timed (with_procedures):
+    a departure's fixes from the leg's start, where the airplane is at its
+    time, an arrival's and an approach's back from the leg's end, where it
+    is at the leg's ETE, so the climb out of the field, flown slower than
+    the ground speed, is not counted in their times. Where the path passes
+    a fix twice (a course reversal round it), its first time; a fix not on
+    the path (left out by a Direct to) and a missed approach's, none."""
+    points = path["path"]
+    total = path["nm"]
+    minutes: dict[str, float] = {}
+    for which, drawing in zip(("departure", "arrival", "approach"), picks):
+        for fix in (drawing or {}).get("fixes", []):
+            if fix.get("missed") or fix["ident"] in minutes:
+                continue
+            at = next(
+                (i for i, p in enumerate(points) if geo.distance_nm(*p, fix["lat"], fix["lon"]) < procedure_paths.SAME_PLACE_NM), None
+            )
+            if at is None:
+                continue
+            along = procedure_paths.length_nm(points[: at + 1])
+            flown = along / groundspeed_kt * 60 if which == "departure" else ete_min - (total - along) / groundspeed_kt * 60
+            minutes[fix["ident"]] = round(max(0.0, min(flown, ete_min)), 1)
+    return minutes
 
 
 #: How far ahead a field's time is before its runway is taken from a

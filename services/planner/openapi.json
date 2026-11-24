@@ -13279,6 +13279,14 @@
             "default": null,
             "title": "Final At"
           },
+          "fix_min": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "default": {},
+            "title": "Fix Min",
+            "type": "object"
+          },
           "ft": {
             "items": {
               "anyOf": [

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { Ellipsis } from "lucide-react";
 import { cn } from "cn";
@@ -35,11 +36,14 @@ export function TimelineProcedureRows({
   vm,
   field,
   kind,
+  fixTime,
   stop = false,
 }: {
   vm: ProceduresRouteModel;
   field: ProcedureAirport;
   kind: Kind;
+  /** Each fix's time, as the field's line has its own (TimelinePoint). */
+  fixTime: (fix: string) => ReactNode;
   /** The route ends at its last fix: the line stops at its mark. */
   stop?: boolean;
 }) {
@@ -119,7 +123,7 @@ export function TimelineProcedureRows({
                   <span className={cn("font-normal", TEXT.row, isDirect && "font-semibold text-tint")}>{fix.ident}</span>
                   {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>{sub}</span>}
                 </BaseButton>
-                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} />
+                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} time={fixTime(fix.ident)} />
               </OnTheLine>
             </li>
           );
