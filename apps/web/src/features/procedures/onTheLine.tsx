@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
@@ -255,19 +256,21 @@ export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode
   // A card's first row has no hairline over it: the card's own edge; its
   // rows 8 in from its end, not the list's 16, so Takeoff's runway and
   // leaving time keep its label's line at 390.
+  // The stock Card (shadcn's), its padding, gap and shadow off: its rows
+  // are the list's own.
   const card =
-    "relative rounded-xl bg-card ring-1 ring-procedure/20 [&_[data-words]]:pr-2 [&>section>div:first-child>[data-words]]:border-t-0";
+    "relative gap-0 border-procedure/20 py-0 shadow-none [&_[data-words]]:pr-2 [&>section>div:first-child>[data-words]]:border-t-0";
   return (
     <div className="pb-2" data-testid="phase-cards">
       {into ? <Bend way="in" /> : <div className="h-2" />}
       <div className="mr-1.5 flex flex-col" style={{ marginLeft: CARD_IN }}>
-        {landing && <div className={card}>{landing}</div>}
+        {landing && <Card className={card}>{landing}</Card>}
         {landing && takeoff && (
           <div className="relative h-3">
             {into && <span aria-hidden="true" className="absolute inset-y-0 left-4 -translate-x-1/2 border-l-[3px] border-course" />}
           </div>
         )}
-        {takeoff && <div className={card}>{takeoff}</div>}
+        {takeoff && <Card className={card}>{takeoff}</Card>}
       </div>
       {out && <Bend way="out" />}
     </div>
