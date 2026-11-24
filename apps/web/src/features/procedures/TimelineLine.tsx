@@ -18,7 +18,6 @@ import { MissedApproach } from "./TimelineApproachParts";
 import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
-import { FoldSection } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** No procedure's rows out: one list, not a new one each render. */
@@ -91,85 +90,66 @@ export function TimelineLine({
   // of them goes.
   const straightIn = !!approach && approachRunway(approach.name ?? "") !== null;
   const shownParts = parts.filter((p) => !(p.part.role === "Arrive" && straightIn && p.add.length === 0 && !p.hold));
-  const runwaysShown = shownParts.some((p) => !(p.part.role === "Arrive" && straightIn));
   const windShown = !!field && !point.problem && (end.direct || !!windWords(reported));
-  const runwaysOut = opens && open && shownParts.length > 0;
-  // The route's own magenta goes on past the field's sections to the next
-  // line where it is not the last, or ends at the last section's last row.
+  // Two blocks under the field's line, Landing and Takeoff, each its row
+  // with its runway's pill beside its name, a stop both, the destination
+  // Landing, the departure Takeoff (the owner, 2026-11-24: "Maybe each stop
+  // should have two sections, Landing and Takeoff. No need for runways in
+  // the section title because that can be seen from the pill"): Landing's
+  // arrival, approach and missed approach under its row, Takeoff's
+  // departure under its.
+  const editing = opens && open;
+  const partOf = (role: "Arrive" | "Depart") => (editing ? shownParts.find((p) => p.part.role === role) : undefined);
+  const landingPart = partOf("Arrive");
+  const takeoffPart = partOf("Depart");
+  const landingOut = editing && (!!landingPart || beforeOut.length > 0 || missedHere);
+  const takeoffOut = editing && (!!takeoffPart || afterOut.length > 0);
+  // The route's own magenta goes on past the field's rows to the next line
+  // where it is not the last, or ends at the last one's last row.
   const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
-  const onPast = !last || sections > 0;
-  const grouped = sections > 0 || runwaysOut;
-  // Its sections in the order they are flown to it (the owner, 2026-11-24:
-  // "It should be arrival approach and runway sections in order"): its
-  // arrival, its approach and the approach's missed approach, its runways,
-  // then its departure; the route's magenta through the runways where the
-  // route goes on past them, to the next line or into a departure.
-  const runwaysThread = !last || afterOut.length > 0;
-  // Its runways' head says them, folded or not, "RWY 9 (Landing)", a
-  // stop's two one after the other; none picked yet, "Runways".
-  const picked = shownParts.filter((p) => p.part.line.chosen && !(p.part.role === "Arrive" && straightIn));
-  const runwaysHead = (
-    <span className={cn("block break-words", TEXT.row)}>
-      {picked.length === 0 ? (
-        <span className="text-procedure">Runways</span>
-      ) : (
-        picked.map((p, i) => (
-          <span key={p.part.role}>
-            {i > 0 && " · "}
-            <span className="font-semibold">RWY {p.part.line.chosen}</span>{" "}
-            <span className="text-procedure">({p.part.role === "Arrive" ? "Landing" : "Takeoff"})</span>
-          </span>
-        ))
-      )}
-    </span>
-  );
-  // Each part's tray, a stop's takeoff a region of its own as the list
-  // read in flight names it ("KMSN · Depart"); a kind not picked as
-  // "+ APCH"; the destination's hold last, once it has one.
-  const chips = shownParts.map(({ part, add, hold }, i) => {
-    const tray = (
-      <PartTray
-        key={part.role}
-        vm={vm}
-        a={field!}
-        part={part}
-        noRunway={part.role === "Arrive" && straightIn}
-        trailing={[
-          ...add.map((k) => kindMenu(vm, field!, k, "add")),
-          ...(hold
-            ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
-            : []),
-        ]}
-      />
-    );
-    return i === 0 ? (
-      tray
-    ) : (
-      // The chips row's width and no wider, as the first part's field-part
-      // is: a flex item of its own, a stop's Depart line took its runways'
-      // whole width, KMSN's six ran 126 past a phone's 390 and its 32 was
-      // out of reach under the summary's clip (stops.spec).
-      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className="w-full min-w-0">
-        {tray}
+  const onPast = !last || sections > 0 || (takeoffOut && !last);
+  const grouped = sections > 0 || landingOut || takeoffOut;
+  // A block's row: its name in the procedures' indigo, then its runway's
+  // pill, its pull-downs not yet picked ("+ STAR") and the destination's
+  // hold, the route's magenta by in the marks' column where anything
+  // follows it on the line.
+  const blockRow = (role: "Arrive" | "Depart", through: boolean) => {
+    const linePart = role === "Arrive" ? landingPart : takeoffPart;
+    return (
+      <section
+        aria-label={`${point.ident} · ${role}`}
+        className={cn("relative flex", TIMELINE_GAP)}
+        data-testid="field-block"
+        data-role={role}
+      >
+        <span className="relative w-8 shrink-0 self-stretch">
+          {through && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
+        </span>
+        <div
+          className={cn("flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-2 border-t border-border py-1.5", TIMELINE_END)}
+          data-testid="timeline-chips"
+          data-role={role}
+        >
+          <span className={cn("shrink-0 font-semibold text-procedure", TEXT.row)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
+          {linePart && (
+            <PartTray
+              vm={vm}
+              a={field!}
+              part={linePart.part}
+              noRunway={role === "Arrive" && straightIn}
+              beside
+              trailing={[
+                ...linePart.add.map((k) => kindMenu(vm, field!, k, "add")),
+                ...(linePart.hold
+                  ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
+                  : []),
+              ]}
+            />
+          )}
+        </div>
       </section>
     );
-  });
-  // The section's chips in the words' column, the route's magenta by in
-  // the marks' column where it goes on; with no runway to pick, the
-  // pull-downs and hold alone, with no head.
-  const chipRow = (
-    <div className={cn("relative flex", TIMELINE_GAP)}>
-      <span className="relative w-8 shrink-0 self-stretch">
-        {runwaysThread && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
-      </span>
-      <div
-        className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-2", runwaysShown ? "pb-2" : "py-2", TIMELINE_END)}
-        data-testid="timeline-chips"
-      >
-        {chips}
-      </div>
-    </div>
-  );
+  };
   const line = (
     <Collapsible
       open={opens && open}
@@ -283,6 +263,7 @@ export function TimelineLine({
       className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
     >
       {line}
+      {landingOut && blockRow("Arrive", beforeOut.length > 0 || missedHere || takeoffOut || !last)}
       {beforeOut.map((k, i) => (
         <TimelineProcedureRows
           key={k}
@@ -294,21 +275,7 @@ export function TimelineLine({
         />
       ))}
       {missedHere && <MissedApproach vm={vm} field={field!} stop={last && afterOut.length === 0} />}
-      {runwaysOut &&
-        (runwaysShown ? (
-          <FoldSection
-            head={runwaysHead}
-            stop={false}
-            thread={runwaysThread ? "solid" : "none"}
-            testId="field-runways"
-            label={`${point.ident} runways`}
-            startOpen={!!vm.openAtFirst}
-          >
-            {chipRow}
-          </FoldSection>
-        ) : (
-          chipRow
-        ))}
+      {takeoffOut && blockRow("Depart", afterOut.length > 0 || !last)}
       {afterOut.map((k, i) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} fixTime={point.fixTime} stop={last && i === afterOut.length - 1} />
       ))}
