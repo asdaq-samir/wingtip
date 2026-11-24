@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -53,7 +54,9 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.FuelStopSuggestion
+import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.plan.PlanTanks
 import app.wingtipmaps.android.plan.RouteFieldFacts
 import app.wingtipmaps.android.plan.RouteProcedures
@@ -95,6 +98,7 @@ fun RouteBox(
     procedures: RouteProcedures = hiltViewModel(),
 ) {
     val facts by model.facts.collectAsStateWithLifecycle()
+    val picks by PlanProcedures.state.collectAsStateWithLifecycle()
     val points = (listOf(state.dep) + state.stops + state.dest).filter { it.isNotEmpty() }
     LaunchedEffect(points) { model.load(points) }
     val field = rememberTextFieldState()
@@ -128,11 +132,19 @@ fun RouteBox(
             FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+                verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 points.forEachIndexed { i, ident ->
                     val closed = facts[ident.uppercase()]?.closed == true
+                    // A field's procedures once, at its first pill: those it is
+                    // landed by before it, those it is left by after it, as
+                    // they are flown (the web's RouteToken). A tap is the list's
+                    // face, where the procedure's own rows and menu are.
+                    val first = points.indexOfFirst { it.equals(ident, ignoreCase = true) } == i
+                    if (first) PlanProcedures.at(picks, ident, PlanProcedures.ARRIVING).forEach { ProcedurePill(it, onToggle) }
                     RoutePointMenu(ident, plan, onAddStopAfter, anchor = { open -> RoutePill(ident, closed, shortFrom(state, ident), open) })
+                    if (first) PlanProcedures.at(picks, ident, PlanProcedures.LEAVING).forEach { ProcedurePill(it, onToggle) }
                     fuelFold(state, ident, points.getOrNull(i + 1))?.let { flight -> FuelFold(flight) { plan.addFuelStops(flight) } }
                 }
                 RouteField(field, empty = points.isEmpty(), focus = focus, onDone = read, modifier = Modifier.weight(1f).widthIn(min = WingtipSpace.Xxl * 3))
@@ -192,9 +204,27 @@ private fun RoutePill(ident: String, closed: Boolean, caution: Boolean, onClick:
                 containerColor = if (closed) ink.errorContainer else ink.onSurface.copy(alpha = PILL_FILL),
                 labelColor = if (closed) ink.onErrorContainer else ink.onSurface,
             ),
-            modifier = Modifier.semantics { contentDescription = said },
+            modifier = Modifier.height(PILL_HEIGHT).semantics { contentDescription = said },
         )
     }
+}
+
+/** A procedure picked at a point, beside its pill: its short title alone,
+ *  no glyph, in a pill of the procedures' indigo on a wash of it, the
+ *  points' pill in its own colour (the web's ProcedureChip; the owner,
+ *  2026-11-23: "just make it a pill of a different color"). */
+@Composable
+private fun ProcedurePill(pick: PlanProcedures.Pick, onClick: () -> Unit) {
+    val indigo = WingtipColors.Chart.Procedure
+    val said = stringResource(R.string.route_box_procedure_said, pick.name)
+    SuggestionChip(
+        onClick = onClick,
+        label = { Text(pick.name, fontWeight = FontWeight.SemiBold, maxLines = 1) },
+        shape = CircleShape,
+        border = null,
+        colors = SuggestionChipDefaults.suggestionChipColors(containerColor = indigo.copy(alpha = PROCEDURE_WASH), labelColor = indigo),
+        modifier = Modifier.height(PILL_HEIGHT).semantics { contentDescription = said },
+    )
 }
 
 /** A flight's suggested fuel stops as one pill: its ident where one, else
@@ -259,3 +289,10 @@ private fun shortFrom(state: Plan.State, ident: String): Boolean = state.totals?
 
 /** The pills' fill over the box, the web's foreground at 8 percent. */
 private const val PILL_FILL = 0.08f
+
+/** A procedure's pill's wash of its indigo, the web's at 12 percent. */
+private const val PROCEDURE_WASH = 0.12f
+
+/** The pills' height, the web's 28 (h-7): Material's own 48-dp touch area
+ *  round each, the pill not grown to it. */
+private val PILL_HEIGHT = WingtipSpace.Xl + WingtipSpace.Xs

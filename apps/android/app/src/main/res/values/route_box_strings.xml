@@ -22,6 +22,8 @@
     <!-- A pill read aloud: its point and its menu; a caution said with it. -->
     <string name="route_box_pill_said">%1$s, menu</string>
     <string name="route_box_pill_caution">%1$s, with a caution, menu</string>
+    <!-- A procedure's pill read aloud: a tap turns the box to the list, where its rows are. -->
+    <string name="route_box_procedure_said">%1$s, the route\'s procedures</string>
     <!-- A flight's suggested fuel stops folded into one pill, a tap putting them in. -->
     <plurals name="route_box_fuel_fold">
         <item quantity="one">+%1$d fuel stop</item>
