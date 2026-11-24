@@ -189,10 +189,20 @@ export function FoldSection({
  *  procedures' indigo, then its name, "APCH RNAV (GPS) RWY 05 · FOVOJ",
  *  where "(Approach)" after it wrapped the line (the owner, 2026-11-24);
  *  wrapping, never cut. */
-export function ProcedureFace({ kind, name, sub }: { kind: string; name: string; sub: string | null }) {
+export function ProcedureFace({
+  kind,
+  name,
+  sub,
+  testId = "procedure-name",
+}: {
+  kind: string;
+  name: string;
+  sub: string | null;
+  testId?: string;
+}) {
   return (
     <span className="block min-w-0">
-      <span className={cn("block font-semibold break-words", TEXT.row)} data-testid="procedure-name">
+      <span className={cn("block font-semibold break-words", TEXT.row)} data-testid={testId}>
         {name}
       </span>
       {/* Its transition, or the fix it was sent direct to, then its kind,

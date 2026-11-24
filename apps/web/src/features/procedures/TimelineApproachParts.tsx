@@ -4,7 +4,7 @@ import { TEXT } from "../../lib/text";
 import type { ProcedureAirport } from "../plan";
 import { FixFigures } from "./FixList";
 import { approachAt } from "./approachState";
-import { FoldSection, OnTheLine } from "./onTheLine";
+import { FoldSection, OnTheLine, ProcedureFace } from "./onTheLine";
 import { fixSub } from "./procedureWords";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
@@ -32,17 +32,30 @@ export function MissedApproach({ vm, field, stop }: { vm: ProceduresRouteModel; 
   if (!placed || placed.loaded || fixes.length === 0) return null;
   const flown = !!placed.missed;
   const at = placed.suspendAt ?? null;
-  // One line, as a procedure's head: "SUSP at RW09 (Missed approach)".
+  // Its state as a procedure's name, "SUSP at RW09", the part small and
+  // grey under it as a procedure's kind is (the owner's review,
+  // 2026-11-24), where "(Missed approach)" in the indigo after it broke
+  // its line.
   const head = (
-    <span className={cn("block break-words", TEXT.row)}>
-      <span className="font-semibold" data-testid="missed-state">
-        {flown ? "Flown on from the MAP" : `SUSP${at ? ` at ${at}` : ""}`}
-      </span>{" "}
-      <span className="text-procedure">(Missed approach)</span>
-    </span>
+    <ProcedureFace
+      kind="Missed approach"
+      name={flown ? "Flown on from the MAP" : `SUSP${at ? ` at ${at}` : ""}`}
+      sub={null}
+      testId="missed-state"
+    />
   );
+  // A small dot as the procedures' fixes are, hollow and dashed while
+  // the missed approach is suspended.
   const ring = (
-    <span className={cn("grid size-8 place-items-center rounded-full border-2 border-procedure bg-card", !flown && "border-dashed")} />
+    <span className="grid size-8 place-items-center">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "rounded-full ring-2 ring-card",
+          flown ? "size-3 bg-procedure" : "size-3.5 border-2 border-dashed border-procedure bg-card",
+        )}
+      />
+    </span>
   );
   return (
     <FoldSection
