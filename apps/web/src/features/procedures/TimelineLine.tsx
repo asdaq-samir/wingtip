@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -12,11 +12,14 @@ import { PartTray } from "./RunwayTray";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
-import { ProcedurePill, TimelineProcedureRows } from "./TimelineProcedureRows";
+import { TimelineProcedureRows } from "./TimelineProcedureRows";
 import { LoadedApproach, MissedApproach } from "./TimelineApproachParts";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
+
+/** No procedure's rows out: one list, not a new one each render. */
+const NONE: readonly never[] = [];
 
 /**
  * One line of FPL's timeline (TimelineRoute): its mark (its menu), the
@@ -60,26 +63,21 @@ export function TimelineLine({
    *  control is (TimelineAction). */
   trailing?: ReactNode;
 }) {
-  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn, loaded } = lineModel(vm, point, row, field);
-  // Its procedures folded into pills on the line (ProcedurePill), each
-  // unfolded on the line by a tap on its pill (the owner, 2026-11-23,
-  // "Pill on its field"): an arrival's and an approach's rows before the
-  // field's line, a departure's after it, as when they were always out.
-  const [unfolded, setUnfolded] = useState<(typeof before)[number][]>([]);
-  const toggle = (k: (typeof before)[number]) => setUnfolded((was) => (was.includes(k) ? was.filter((x) => x !== k) : [...was, k]));
-  const beforeOut = before.filter((k) => unfolded.includes(k));
-  const afterOut = after.filter((k) => unfolded.includes(k));
-  // An approach only loaded is no point on the line, but its pill is the
-  // way to its box all the same.
-  const pills = field ? [...before, ...(loaded ? (["approach"] as const) : []), ...after] : [];
-  // The approach's boxes after the field's line, its missed approach and
-  // an approach loaded, go behind its pill too, so at half the field's
-  // line is its ident and its pills (the coordinator's ask, 2026-11-23).
-  // Not in flight or a dry run, where the list is read, not edited (no
-  // `edit`, useRouteListProps): a suspended missed approach stays out
-  // there, its Unsuspend at a glance when the pilot needs it.
-  const approachOut = unfolded.includes("approach");
-  const missedShown = approachOut || !vm.edit;
+  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn } = lineModel(vm, point, row, field);
+  // Its procedures out of sight with its runways, under the line's own
+  // tap (the owner, 2026-11-23: "Keep the pill hidden like runway"), so at
+  // half a field's line is its ident alone: an arrival's and an approach's
+  // rows before the line, a departure's after it, and the approach's boxes
+  // (its missed approach, an approach loaded) after it, all while the line
+  // is open. A line that does not open shows them, as before. Not in
+  // flight or a dry run, where the list is read, not edited (no `edit`,
+  // useRouteListProps): a suspended missed approach stays out there, its
+  // Unsuspend at a glance when the pilot needs it.
+  const out = opens ? open : true;
+  const beforeOut = out ? before : NONE;
+  const afterOut = out ? after : NONE;
+  const approachOut = out;
+  const missedShown = out || !vm.edit;
   // The line runs on past the field to the next, or into a departure's
   // fixes or a missed approach unfolded under it.
   const onPast = !last || afterOut.length > 0;
@@ -186,18 +184,6 @@ export function TimelineLine({
                 <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
               </span>
             )
-          )}
-          {/* Its procedures' pills on the ident's own line, so a field with
-              a procedure takes one line at half, as one without does (the
-              owner's iPhone, 2026-11-23: on a line of their own under KPWK
-              they pushed Add a Stop under the strip); wrapping in its room
-              when they do not fit, over the line's tap (z-10). */}
-          {pills.length > 0 && (
-            <div className="relative z-10 ml-2 flex min-w-0 flex-wrap gap-1.5 py-1" data-testid="procedure-pills">
-              {pills.map((k) => (
-                <ProcedurePill key={k} vm={vm} field={field!} kind={k} open={unfolded.includes(k)} onToggle={() => toggle(k)} />
-              ))}
-            </div>
           )}
           <span className="flex-1" />
           <span className={cn("relative z-10 ml-auto shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">

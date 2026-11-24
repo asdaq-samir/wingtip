@@ -1,7 +1,6 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { Ellipsis } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "../../components/ui/button";
 import { sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import type { ProcedureAirport } from "../plan";
@@ -120,49 +119,5 @@ export function TimelineProcedureRows({
         </OnTheLine>
       )}
     </section>
-  );
-}
-
-/**
- * A procedure picked at a field, as a pill on the field's own line: its
- * short title alone in the procedures' indigo, the pill the route box
- * draws (RouteChips' ProcedureChip), so the whole route fits the sheet at
- * half (the owner, 2026-11-23: "How do we make it compact on half with
- * procedures?", then the pick "Pill on its field"). A tap unfolds its
- * rows on the line (TimelineProcedureRows: its head, whose tap is the
- * kind's menu to change or remove it, and its fixes); again, folds them.
- */
-export function ProcedurePill({
-  vm,
-  field,
-  kind,
-  open,
-  onToggle,
-}: {
-  vm: ProceduresRouteModel;
-  field: ProcedureAirport;
-  kind: Kind;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const placed = vm.inRoute.find((p) => sameField(p.ident, field.ident) && p.kind === kind);
-  if (!placed) return null;
-  const name = headName(vm, field, placed);
-  return (
-    <Button
-      variant="ghost"
-      size="xs"
-      onClick={onToggle}
-      aria-expanded={open}
-      aria-label={`${KIND_WORD[kind]} ${name}: its fixes`}
-      data-testid="procedure-pill"
-      data-kind={kind}
-      className={cn(
-        "relative h-7 max-w-full rounded-full bg-procedure/12 px-2.5 font-semibold text-procedure hit-x-1 hit-y-2 hover:bg-procedure/18 hover:text-procedure aria-expanded:bg-procedure/18",
-        TEXT.note,
-      )}
-    >
-      <span className="truncate">{name}</span>
-    </Button>
   );
 }

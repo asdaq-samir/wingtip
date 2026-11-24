@@ -124,14 +124,17 @@ export const ARRIVAL_DRAWN = {
   fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.4, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
 };
 
-/** A procedure picked at a field, unfolded from its pill on the field's
- *  line (ProcedurePill: folded by default, so the route fits the sheet at
- *  half; the owner, 2026-11-23, "Pill on its field"): its rows then on the
- *  line, or an approach's boxes after it (loaded, its missed approach). A
- *  no-op where it is already unfolded. */
+/** A procedure picked at a field, out on the field's line once the line
+ *  is opened, as its runways are (the owner, 2026-11-23: "Keep the pill
+ *  hidden like runway"): `field` the field's region ("KDLH · Arrive"),
+ *  its rows then on the line, or an approach's boxes after it (loaded,
+ *  its missed approach). A no-op where the line is already open. */
 export async function unfoldProcedure(field: Locator, kind: "approach" | "arrival" | "departure") {
-  const pill = field.locator(`[data-testid=procedure-pill][data-kind=${kind}]`);
-  await expect(pill).toBeVisible({ timeout: slow(20000) });
-  if ((await pill.getAttribute("aria-expanded")) !== "true") await pill.click();
-  await expect(pill).toHaveAttribute("aria-expanded", "true");
+  const toggle = field.getByTestId("timeline-toggle");
+  await expect(toggle).toBeVisible({ timeout: slow(20000) });
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  // Its rows out, where it has rows on the line (an approach only loaded
+  // has its box instead).
+  if (kind !== "approach") await expect(field.locator(`[data-testid=procedure-rows][data-kind=${kind}]`)).toBeVisible();
 }

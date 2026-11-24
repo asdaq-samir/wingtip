@@ -164,9 +164,9 @@ test("a procedure picked has its fixes on the route's line before its field's, a
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  // Folded to a pill on the field's line, its title alone; a tap unfolds
-  // it (the owner, 2026-11-23, "Pill on its field").
-  await expect(kdlh.locator("[data-testid=procedure-pill][data-kind=approach]")).toHaveText("ILS · RWY 09", { timeout: slow(20000) });
+  // Out of sight with the field's runways till its line is opened (the
+  // owner, 2026-11-23: "Keep the pill hidden like runway").
+  await expect(kdlh.locator("[data-testid=procedure-rows]")).toHaveCount(0);
   await unfoldProcedure(kdlh, "approach");
   const box = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(box.getByTestId("procedure-name")).toHaveText("ILS · RWY 09");
