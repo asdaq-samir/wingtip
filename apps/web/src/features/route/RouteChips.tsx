@@ -158,15 +158,18 @@ export function SuggestedPill(p: {
 }
 
 /** A procedure picked at a point, beside its pill: its kind's glyph and its
- *  short title in the approaches' indigo, as the map draws it
+ *  short title in a pill of the approaches' indigo, as the map draws it
  *  (ProceduresGl), whole: pieces wrap whole (RouteToken), so its title is
  *  never cut ("RNAV (GPS) Y RWY 2…", the r7 audit's W-L1); only one wider
  *  than the box itself is, at the box's width. */
 export function ProcedureChip({ procedure, onOpen }: { procedure: RouteProcedure; onOpen?: () => void }) {
   const Glyph = PROCEDURE_GLYPH[procedure.kind];
   return (
-    // The stock Button, plain, as words in the approaches' indigo: no fill,
-    // 28 tall as the pills are, a finger's 44 by its pseudo-element.
+    // The stock Button, a filled pill as the points' are (RoutePill), 28
+    // tall, in the approaches' indigo on a wash of it, so it reads as a
+    // piece of the route and as a procedure (the owner, 2026-11-23:
+    // "Procedures are not showing as pills"); a finger's 44 by its
+    // pseudo-element.
     <Button
       variant="ghost"
       size="xs"
@@ -174,7 +177,7 @@ export function ProcedureChip({ procedure, onOpen }: { procedure: RouteProcedure
       data-testid="route-procedure"
       aria-label={`${procedure.spoken}: the route's procedures`}
       className={cn(
-        "relative h-7 max-w-full gap-1 rounded-full px-1 font-semibold text-procedure hit-x-0.5 hit-y-2 hover:text-procedure native:text-procedure",
+        "relative h-7 max-w-full gap-1 rounded-full bg-procedure/12 px-2.5 font-semibold text-procedure hit-x-1 hit-y-2 hover:bg-procedure/18 hover:text-procedure native:text-procedure",
         TEXT.note,
       )}
     >
