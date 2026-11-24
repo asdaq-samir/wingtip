@@ -14,6 +14,7 @@ import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
 import { TimelineProcedureRows } from "./TimelineProcedureRows";
 import { LoadedApproach, MissedApproach } from "./TimelineApproachParts";
+import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
@@ -82,6 +83,15 @@ export function TimelineLine({
   // fixes or a missed approach unfolded under it.
   const onPast = !last || afterOut.length > 0;
   const missedThread = missedOn && missedShown;
+  // A field with its procedures out is one group on the list, the field's
+  // line and every procedure flown to or from it in one indigo-washed box
+  // the route's magenta runs through, in the order they are flown (the
+  // owner, 2026-11-24: "Redesign the layout for all procedures so they
+  // visually look grouped for the airport that they are for"): on their
+  // own, an approach's rows over a field's line read as the route's own
+  // points before it.
+  const approachShown = !!field && !point.problem && !!approachAt(vm, field) && (approachOut || missedShown);
+  const grouped = beforeOut.length > 0 || afterOut.length > 0 || approachShown;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one.
@@ -135,7 +145,7 @@ export function TimelineLine({
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
         {(onPast || missedThread) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
-      <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || beforeOut.length > 0) && "border-t border-border")}>
+      <div className={cn("min-w-0 flex-1", TIMELINE_END, ((!first && !grouped) || beforeOut.length > 0) && "border-t border-border")}>
         {/* Wrapping where the ident, its fuel and its time do not fit on one
             line, the time going under them at the right: at the owner's
             19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
@@ -223,7 +233,14 @@ export function TimelineLine({
   // read in flight names its step ("KDLH · Arrive"), so VoiceOver goes
   // from field to field.
   return (
-    <div role={parts[0] ? "region" : undefined} aria-label={parts[0] ? `${point.ident} · ${parts[0].part.role}` : undefined}>
+    <div
+      role={parts[0] ? "region" : undefined}
+      aria-label={parts[0] ? `${point.ident} · ${parts[0].part.role}` : undefined}
+      data-testid={grouped ? "field-group" : undefined}
+      // Out to the card's leading inset and in from its edge by as much, so
+      // the marks keep their column and the box shows its corners all round.
+      className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
+    >
       {beforeOut.map((k) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
       ))}

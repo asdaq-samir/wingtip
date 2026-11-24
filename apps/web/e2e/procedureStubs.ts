@@ -134,6 +134,8 @@ export async function unfoldProcedure(field: Locator, kind: "approach" | "arriva
   await expect(toggle).toBeVisible({ timeout: slow(20000) });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  // The field and its procedures one group, the box round them both.
+  await expect(field).toHaveAttribute("data-testid", "field-group");
   // Its rows out, where it has rows on the line (an approach only loaded
   // has its box instead).
   if (kind !== "approach") await expect(field.locator(`[data-testid=procedure-rows][data-kind=${kind}]`)).toBeVisible();
