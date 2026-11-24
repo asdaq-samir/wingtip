@@ -120,7 +120,11 @@ export function useProcedurePicks({
           id: d.id,
           runway: d.kind === "approach" ? approachRunway(d.name) : null,
           name: d.name,
-          label: `${d.name.replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` · ${d.transition}` : ""}`,
+          // Its transition said in words, "RNAV (GPS)-B from OBK", a
+          // departure's "to" where it ends (the owner, 2026-11-24: "Yes just
+          // put the transition also next to approach").
+          label: `${d.name.replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` ${d.kind === "departure" ? "to" : "from"} ${d.transition}` : ""}`,
+          transition: d.transition ?? null,
           spoken: `${d.name}, ${direct ? `direct ${direct}` : transitionWords(d.kind, d.transition ?? null, true)}`,
           direct,
           fixes: d.fixes

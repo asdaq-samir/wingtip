@@ -82,7 +82,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // the timeline's.
   await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-procedure");
-  await expect(chip).toHaveText("ILS 09 · DLH");
+  await expect(chip).toHaveText("ILS 09 from DLH");
   // Before the destination's pill, as it is flown into the field.
   const dest = sideDrawer(page).getByTestId("route-dest");
   expect((await chip.boundingBox())!.x).toBeLessThan((await dest.boundingBox())!.x);

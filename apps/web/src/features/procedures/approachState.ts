@@ -15,7 +15,10 @@ export function headName(placed: ProceduresRouteModel["inRoute"][number]) {
   if (placed.kind !== "approach" || !placed.name) return placed.label;
   const own = /\bRWY\s*(\S+)$/i.exec(placed.name)?.[1] ?? null;
   const short = placed.name.replace(/\s*RWY\s*\S+$/i, "");
-  return own ? `${short} · RWY ${own}` : short;
+  // Its transition after it, as the route box says it, "RNAV (GPS)-B from
+  // OBK" (the owner, 2026-11-24); a Direct to's fix is on its fixes' line.
+  const from = placed.transition && !placed.direct ? ` from ${placed.transition}` : "";
+  return `${own ? `${short} · RWY ${own}` : short}${from}`;
 }
 
 /** The approach picked at a field, as the route list has it. */

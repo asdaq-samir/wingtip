@@ -77,6 +77,8 @@ interface ProcedurePicks {
     runway: string | null;
     name?: string;
     label: string;
+    /** The transition picked, none from vectors (RouteProcedure). */
+    transition?: string | null;
     fixes?: BranchFix[];
     direct?: string | null;
     /** Loaded, not flown; activated, its missed approach unsuspended; its

@@ -28,6 +28,8 @@ export interface RouteProcedure {
    *  route says it, with its transition or the fix it was sent to. */
   name?: string;
   label: string;
+  /** The transition picked ("OBK"), none from vectors or its common route. */
+  transition?: string | null;
   spoken: string;
   /** The fix ATC sent the airplane direct to, and the procedure's fixes it
    *  could be sent to (ProcedureMenu). */
