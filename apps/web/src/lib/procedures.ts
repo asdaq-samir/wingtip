@@ -50,6 +50,14 @@ export function transitionWords(kind: "approach" | "arrival" | "departure", tran
   return inLine ? words.charAt(0).toLowerCase() + words.slice(1) : words;
 }
 
+/** A procedure's name as the route shows it: a circling-only approach's
+ *  letter set apart from its kind, "RNAV (GPS) -B", "VOR -A", where the
+ *  FAA's list runs them together (the owner, 2026-11-24: "you need a space
+ *  before -B"). */
+export function procedureTitle(name: string): string {
+  return name.replace(/(\S)-([A-Z])$/, "$1 -$2");
+}
+
 /** The runway an approach lands on, as a pattern's chip names it: "ILS
  *  RWY 09L" is "9L"; a circling-only approach ("VOR-A", "RNAV (GPS)-B")
  *  has none. */

@@ -6,6 +6,7 @@ import {
   altitudeLines,
   approachRunway,
   flownPicks,
+  procedureTitle,
   proceduresOf,
   proceduresParam,
   sameField,
@@ -152,5 +153,14 @@ describe("none picked", () => {
   it("writes what the engine writes for none, without asking it", async () => {
     const { callEngine } = await import("./engine/engine");
     expect(proceduresParam([])).toBe(callEngine("procedures_write", { picks: [] }));
+  });
+});
+
+describe("procedureTitle", () => {
+  it("sets a circling-only approach's letter apart, and leaves the rest", () => {
+    expect(procedureTitle("RNAV (GPS)-B")).toBe("RNAV (GPS) -B");
+    expect(procedureTitle("VOR-A")).toBe("VOR -A");
+    expect(procedureTitle("ILS RWY 09")).toBe("ILS RWY 09");
+    expect(procedureTitle("RNAV (GPS) Y RWY 27")).toBe("RNAV (GPS) Y RWY 27");
   });
 });

@@ -1,4 +1,4 @@
-import { sameField } from "../../lib/procedures";
+import { procedureTitle, sameField } from "../../lib/procedures";
 import type { ProcedureAirport } from "../plan";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
@@ -14,10 +14,10 @@ import type { ProceduresRouteModel } from "./useProceduresRoute";
 export function headName(placed: ProceduresRouteModel["inRoute"][number]) {
   if (placed.kind !== "approach" || !placed.name) return placed.label;
   const own = /\bRWY\s*(\S+)$/i.exec(placed.name)?.[1] ?? null;
-  const short = placed.name.replace(/\s*RWY\s*\S+$/i, "");
-  // Its transition after it, as the route box says it, "RNAV (GPS)-B from
+  const short = procedureTitle(placed.name.replace(/\s*RWY\s*\S+$/i, ""));
+  // Its transition after a dot, as the route box says it, "RNAV (GPS) -B ·
   // OBK" (the owner, 2026-11-24); a Direct to's fix is on its fixes' line.
-  const from = placed.transition && !placed.direct ? ` from ${placed.transition}` : "";
+  const from = placed.transition && !placed.direct ? ` · ${placed.transition}` : "";
   return `${own ? `${short} · RWY ${own}` : short}${from}`;
 }
 

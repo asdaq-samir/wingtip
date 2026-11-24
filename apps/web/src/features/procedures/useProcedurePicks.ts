@@ -7,6 +7,7 @@ import { feel } from "../../lib/haptics";
 import { showError } from "../../lib/problems";
 import {
   approachRunway,
+  procedureTitle,
   proceduresOf,
   proceduresParam,
   sameField,
@@ -120,10 +121,9 @@ export function useProcedurePicks({
           id: d.id,
           runway: d.kind === "approach" ? approachRunway(d.name) : null,
           name: d.name,
-          // Its transition said in words, "RNAV (GPS)-B from OBK", a
-          // departure's "to" where it ends (the owner, 2026-11-24: "Yes just
-          // put the transition also next to approach").
-          label: `${d.name.replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` ${d.kind === "departure" ? "to" : "from"} ${d.transition}` : ""}`,
+          // Its transition after a dot, "RNAV (GPS) -B · OBK" (the owner,
+          // 2026-11-24: "No need for the word from, instead a dot is fine").
+          label: `${procedureTitle(d.name).replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` · ${d.transition}` : ""}`,
           transition: d.transition ?? null,
           spoken: `${d.name}, ${direct ? `direct ${direct}` : transitionWords(d.kind, d.transition ?? null, true)}`,
           direct,
