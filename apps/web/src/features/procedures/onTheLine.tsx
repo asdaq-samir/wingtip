@@ -82,6 +82,7 @@ export function FoldSection({
   startOpen = false,
   foot,
   nest = false,
+  chevron = true,
   children,
 }: {
   head: ReactNode;
@@ -103,6 +104,9 @@ export function FoldSection({
    *  holding them (the owner, 2026-11-24: "No indentation, but no
    *  separator either"). */
   nest?: boolean;
+  /** Its chevron; none on a procedure's head, whose "•••" is beside it,
+   *  its title the tap that folds it (the owner, 2026-11-24). */
+  chevron?: boolean;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -132,10 +136,12 @@ export function FoldSection({
           }
         >
           <span className="min-w-0 flex-1">{head}</span>
-          <ChevronDown
-            className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)", !open && "-rotate-90")}
-            aria-hidden
-          />
+          {chevron && (
+            <ChevronDown
+              className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)", !open && "-rotate-90")}
+              aria-hidden
+            />
+          )}
         </CollapsibleTrigger>
         {trailing && <span className="ml-auto flex shrink-0 items-center gap-1">{trailing}</span>}
       </OnTheLine>
@@ -158,16 +164,27 @@ export function FoldSection({
  *  procedures' indigo, then its name, "APCH RNAV (GPS) RWY 05 · FOVOJ",
  *  where "(Approach)" after it wrapped the line (the owner, 2026-11-24);
  *  wrapping, never cut. */
-export function ProcedureFace({ tag, name }: { tag: string; name: string }) {
+export function ProcedureFace({ tag, name, sub }: { tag: string; name: string; sub: string | null }) {
   return (
-    <span className={cn("block break-words", TEXT.row)}>
+    <span className="flex min-w-0 items-start gap-2">
+      {/* One width for ARR, APCH and DEP, so every name starts in one
+          column, as the lines' fuel and wind do. */}
       <span
-        className={cn("mr-1.5 inline-block rounded-md bg-procedure/12 px-1.5 align-[0.1em] font-semibold text-procedure", TEXT.caption)}
+        className={cn(
+          "mt-[0.2em] inline-block w-[3.6em] shrink-0 rounded-md bg-procedure/12 py-px text-center font-semibold text-procedure",
+          TEXT.caption,
+        )}
       >
         {tag}
       </span>
-      <span className="font-semibold" data-testid="procedure-name">
-        {name}
+      <span className="min-w-0">
+        <span className={cn("block font-semibold break-words", TEXT.row)} data-testid="procedure-name">
+          {name}
+        </span>
+        {/* Its transition, or the fix it was sent direct to, small under
+            it, where after a dot it broke a long name's line (the owner's
+            iPhone, 2026-11-24, "RWY 05 · / FOVOJ"). */}
+        {sub && <span className={cn("block text-muted-foreground", TEXT.note)}>{sub}</span>}
       </span>
     </span>
   );

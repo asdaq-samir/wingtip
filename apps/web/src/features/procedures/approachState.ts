@@ -12,15 +12,18 @@ import type { ProceduresRouteModel } from "./useProceduresRoute";
  *  approach"); an arrival's and a departure's with their transition, as
  *  the route says them. */
 export function headName(placed: ProceduresRouteModel["inRoute"][number]) {
-  if (placed.kind !== "approach" || !placed.name) return placed.label;
+  if (!placed.name) return placed.label;
+  if (placed.kind !== "approach") return procedureTitle(placed.name);
   const own = /\bRWY\s*(\S+)$/i.exec(placed.name)?.[1] ?? null;
   const short = procedureTitle(placed.name.replace(/\s*RWY\s*\S+$/i, ""));
-  // Its transition after a dot, as the route box says it, "RNAV (GPS) -B ·
-  // OBK" (the owner, 2026-11-24); a Direct to's fix is on its fixes' line.
-  const from = placed.transition && !placed.direct ? ` · ${placed.transition}` : "";
-  // "RNAV (GPS) RWY 05", as the chart titles it, one dot after it alone:
-  // the transition's (the owner, 2026-11-24).
-  return `${own ? `${short} RWY ${own}` : short}${from}`;
+  // "RNAV (GPS) RWY 05", as the chart titles it.
+  return own ? `${short} RWY ${own}` : short;
+}
+
+/** What goes small under a procedure's name: the fix ATC sent the
+ *  airplane direct to, else its transition (the owner, 2026-11-24). */
+export function headSub(placed: ProceduresRouteModel["inRoute"][number]): string | null {
+  return placed.direct ? `Direct ${placed.direct}` : (placed.transition ?? null);
 }
 
 /** The approach picked at a field, as the route list has it. */

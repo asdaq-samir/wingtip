@@ -10,7 +10,7 @@ import { kindMenu } from "./fieldParts";
 import { FixFigures } from "./FixList";
 import { fixSub, KIND_TAG } from "./procedureWords";
 import { Button } from "../../components/ui/button";
-import { headName } from "./approachState";
+import { headName, headSub } from "./approachState";
 import { FoldSection, OnTheLine, ProcedureFace } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
@@ -66,7 +66,7 @@ export function TimelineProcedureRows({
   const times = fixes.map((f) => fixTime(f.ident));
   const timed = times.some((t) => t != null);
   const loaded = approach && !!placed.loaded;
-  const face = <ProcedureFace tag={KIND_TAG[kind]} name={name} />;
+  const face = <ProcedureFace tag={KIND_TAG[kind]} name={name} sub={headSub(placed)} />;
   const thread = loaded ? "dashed" : "solid";
   return (
     <FoldSection
@@ -77,6 +77,7 @@ export function TimelineProcedureRows({
       label={loaded ? `${placed.label}, loaded` : placed.label}
       data={{ "data-kind": kind }}
       startOpen={!!vm.openAtFirst}
+      chevron={false}
       // Its menu a "•••" at its head's end (another, Direct to, its plate,
       // No Approach to take it out), an approach's Activate or Deactivate
       // before it, so a procedure is one row folded (the owner, 2026-11-24).
@@ -85,7 +86,7 @@ export function TimelineProcedureRows({
           {approach && (
             <Button
               variant={loaded ? "default" : "secondary"}
-              size="sm"
+              size="xs"
               onClick={() => vm.onApproach(field.ident, placed.id, { loaded: !loaded })}
               data-testid={loaded ? "approach-activate" : "approach-deactivate"}
             >
