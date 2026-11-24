@@ -78,7 +78,7 @@ interface Props {
  * stock sheet with its own motion, gestures and behaviour): open and
  * non-modal, so the map stays the map's; the pill, half and all the way
  * up its snap points, fixed in the Drawer's own units (sheet/insets'
- * snapsOf: the pill's rem or FPL's foot bar's px, 26 rem, 1), which it measures itself; a
+ * snapsOf: the pill's rem or FPL's foot bar's px, 23 rem, 1), which it measures itself; a
  * bottom or a top sheet by the pilot's Layout (swipeDirection down or up). The Drawer follows the finger, reads the
  * throw, picks the snap point and eases there on its own curve; a swipe
  * past the pill is refused and lands on the pill. What the stock sheet
