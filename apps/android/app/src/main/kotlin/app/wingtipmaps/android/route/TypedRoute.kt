@@ -1,33 +1,47 @@
 package app.wingtipmaps.android.route
 
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.api.generated.ProcedureList
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.routeProcedures
 import app.wingtipmaps.android.engine.generated.routeRead
+import app.wingtipmaps.android.plan.PlanProcedures
 
 /**
  * What is typed in the route box, read as the web's route field and the
  * iPhone's TypedRoute read it: word by word by the engine's `route_read`
  * (item 15 of FAA Form 7233-4, AIM Appendix 4: DCT taken out, a speed and
- * level group not a point), a position's "@42.1,-88.2" kept whole where
- * the reader splits on its comma, and the SIDs and STARs the engine's
- * `route_procedures` names taken out, as they are procedures, not points.
- * Which word is a point is the engine's, never the app's.
+ * level group the cruise's, the rest the points), a position's
+ * "@42.1,-88.2" kept whole where the reader splits on its comma, and the
+ * SIDs and STARs the engine's `route_procedures` names taken out of the
+ * points, each with the points typed either side of it, to be picked as
+ * the route's procedures. Which word is which is the engine's, never the app's.
  */
 object TypedRoute {
-    /** The points the words name, in order, upper case; null where the
-     *  engine cannot read them. */
-    fun points(text: String): List<String>? = runCatching {
+    data class Read(
+        val points: List<String>,
+        /** The cruise a level group asked for, feet MSL; null for none or VFR's. */
+        val cruiseFt: Double?,
+        val procedures: List<EngineContract.RouteProceduresAnswerItem>,
+    )
+
+    /** What the words say; null where the engine cannot read them. */
+    fun read(text: String): Read? = runCatching {
         val points = mutableListOf<String>()
+        var cruiseFt: Double? = null
         for (word in text.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }) {
             if (word.contains(",")) {
                 points += word.uppercase()
                 continue
             }
-            points += Engine.routeRead(word).getOrThrow().points
+            val read = Engine.routeRead(word).getOrThrow()
+            cruiseFt = cruiseFt ?: read.cruiseFt
+            points += read.points
         }
-        val named = Engine.routeProcedures(points).getOrThrow().map { it.name }.toSet()
-        points.filterNot { it in named }
+        val procedures = Engine.routeProcedures(points).getOrThrow()
+        val named = procedures.map { it.name }.toSet()
+        Read(points.filterNot { it in named }, cruiseFt, procedures)
     }.getOrNull()
 
     /**
@@ -44,15 +58,66 @@ object TypedRoute {
         if (all.size == 1) return RouteEdits.Route(all.first(), emptyList(), "")
         return RouteEdits.Route(all.first(), all.drop(1).dropLast(1), all.last())
     }
+
+    /**
+     * The typed SIDs and STARs as picks, each found among its field's
+     * procedures as the iPhone's TypedRoute.picks and the web's
+     * typedProcedure find it: a departure from `dep`, its transition the
+     * point typed after it where the procedure has that transition, else an
+     * arrival into `dest` by the point typed before it. The names neither
+     * field publishes come back as missed. `list` is a field's procedures,
+     * null where they could not be had.
+     */
+    suspend fun picks(read: Read, dep: String, dest: String, list: suspend (String) -> ProcedureList?): Pair<List<PlanProcedures.Pick>, List<String>> {
+        val picks = mutableListOf<PlanProcedures.Pick>()
+        val missed = mutableListOf<String>()
+        val lists = mutableMapOf<String, ProcedureList?>()
+        for (typed in read.procedures) {
+            var found: PlanProcedures.Pick? = null
+            for ((field, kind, join) in listOf(Triple(dep, "departure", typed.after), Triple(dest, "arrival", typed.before))) {
+                if (field.isEmpty()) continue
+                val listed = lists.getOrPut(field) { list(field) } ?: continue
+                val procedure = listed.procedures.firstOrNull { it.kind == kind && it.id == typed.name } ?: continue
+                val transition = join?.takeIf { it in procedure.transitions }
+                found = PlanProcedures.Pick(field, procedure.id, kind, procedure.name, transition)
+                break
+            }
+            val picked = found
+            if (picked != null) {
+                picks.removeAll { it.ident == picked.ident && it.kind == picked.kind }
+                picks += picked
+            } else {
+                missed += typed.name
+            }
+        }
+        return picks to missed
+    }
+
+    /** How the typing went, for the box to say where it was typed. */
+    sealed interface Outcome {
+        data object Done : Outcome
+        data object Unread : Outcome
+
+        /** Typed procedures neither end publishes, by name, and the ends. */
+        data class Missed(val names: List<String>, val dep: String, val dest: String) : Outcome
+    }
 }
 
-/** What is typed put on the route and planned, its Undo "Route Replaced"
- *  where an end changed (replaceRoute). False where the engine could not
- *  read it, for the box to say so where it was typed. */
-fun Plan.typeRoute(text: String): Boolean {
-    val typed = TypedRoute.points(text) ?: return false
+/**
+ * What is typed put on the route and planned: the typed SIDs and STARs
+ * picked in place of their fields' picks of that kind, the cruise a level
+ * group asks for the pilot's own (as a clearance's "maintain" is), and the
+ * route's Undo "Route Replaced" where an end changed (replaceRoute).
+ */
+suspend fun Plan.typeRoute(text: String, list: suspend (String) -> ProcedureList?): TypedRoute.Outcome {
+    val read = TypedRoute.read(text) ?: return TypedRoute.Outcome.Unread
     val s = state.value
-    val next = TypedRoute.extended(RouteEdits.Route(s.dep, s.stops, s.dest), typed) ?: return true
-    replaceRoute(next.dep, next.dest, next.stops)
-    return true
+    val next = TypedRoute.extended(RouteEdits.Route(s.dep, s.stops, s.dest), read.points)
+    val dep = next?.dep ?: s.dep
+    val dest = next?.dest ?: s.dest
+    val (picks, missed) = TypedRoute.picks(read, dep, dest, list)
+    picks.forEach { PlanProcedures.pick(it.ident, it.kind, it) }
+    read.cruiseFt?.let { setAltitude(it) }
+    if (next != null) replaceRoute(next.dep, next.dest, next.stops) else if (picks.isNotEmpty()) plan()
+    return if (missed.isEmpty()) TypedRoute.Outcome.Done else TypedRoute.Outcome.Missed(missed, dep, dest)
 }
