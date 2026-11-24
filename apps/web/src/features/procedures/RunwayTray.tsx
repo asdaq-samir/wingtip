@@ -97,15 +97,15 @@ export function PartTray({
   a,
   part,
   trailing,
-  beside = false,
+  noRunway = false,
 }: {
   vm: ProceduresRouteModel;
   a: ProcedureAirport;
   part: FieldPart;
   trailing: ReactNode[];
-  /** Sharing its line with what is before it (FPL's field's wind) where
-   *  both fit, rather than a line of its own. */
-  beside?: boolean;
+  /** Its pull-downs and hold alone, no runway to pick: a straight-in
+   *  approach picked lands on its own (FPL's list). */
+  noRunway?: boolean;
 }) {
   // The line folds to its runway once one is picked; the pull-downs beside
   // the runway's chip while it is folded, at the owner's ask ("Can arrival
@@ -120,19 +120,19 @@ export function PartTray({
     // not fit beside the tray: at the owner's 19.65 px on a 375-point
     // phone KMSN's "22:11" ran past the card's edge, cut to "22:1" (the HIG
     // review, 2026-11-21).
-    <div
-      className={cn("flex min-w-0 flex-wrap items-center gap-2", beside ? "flex-1" : "w-full")}
-      data-testid="field-part"
-      data-role={part.role}
-    >
-      <RunwayTray
-        a={a}
-        role={part.role}
-        lineKey={part.line.key}
-        foldable={foldable}
-        lineOpen={vm.openLines.includes(part.line.key)}
-        chips={part.chips(trailing.length > 0 ? trailing : null)}
-      />
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2" data-testid="field-part" data-role={part.role}>
+      {noRunway ? (
+        trailing
+      ) : (
+        <RunwayTray
+          a={a}
+          role={part.role}
+          lineKey={part.line.key}
+          foldable={foldable}
+          lineOpen={vm.openLines.includes(part.line.key)}
+          chips={part.chips(trailing.length > 0 ? trailing : null)}
+        />
+      )}
       {/* When it leaves again at the line's right, under the landing's time
           (the owner, 2026-11-20: "11:33 can be right aligned"). */}
       {part.leaves && <span className="ml-auto shrink-0">{part.leaves}</span>}

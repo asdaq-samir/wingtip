@@ -65,11 +65,12 @@ export function procedureTrigger({
       </Button>
     );
   if (look === "change")
-    // The word, in the tint as every tappable word on the list (the owner,
-    // 2026-11-24: "Instead of the approach change icon, just make it with
-    // the word change"); its 44-point area round it.
+    // The word on a stock grey button, as a missed approach's Unsuspend
+    // (the owner, 2026-11-24: "Instead of the approach change icon, just
+    // make it with the word change"; "Change should like the Unsuspend
+    // button"); 44 points to a finger by the base layer's hit area.
     return (
-      <Button variant="plain" size="inline" type="button" {...data} className="relative shrink-0 font-normal text-tint hit-x-2 hit-y-3">
+      <Button variant="secondary" type="button" {...data} className="shrink-0">
         Change
         <span className="sr-only">
           {" "}

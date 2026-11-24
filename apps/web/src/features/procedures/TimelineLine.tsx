@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { approachRunway } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import type { NavLogRow, ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
@@ -82,7 +83,17 @@ export function TimelineLine({
   const afterOut = out ? after : NONE;
   const approach = field && !point.problem ? approachAt(vm, field) : undefined;
   const missedHere = out && !!approach && !approach.loaded && (approach.missedFixes?.length ?? 0) > 0;
-  const runwaysOut = opens && open && parts.length > 0;
+  // A straight-in approach picked lands on its own runway, so the landing's
+  // runway is not offered beside it; a circling-only one ("VOR-A") lands on
+  // any, and keeps it (the owner, 2026-11-24: "Changing runway would
+  // conflict with the selected approach. So runway section can hide unless
+  // a circling approach?"). Its pull-downs and hold stay, a part with none
+  // of them goes.
+  const straightIn = !!approach && approachRunway(approach.name ?? "") !== null;
+  const shownParts = parts.filter((p) => !(p.part.role === "Arrive" && straightIn && p.add.length === 0 && !p.hold));
+  const runwaysShown = shownParts.some((p) => !(p.part.role === "Arrive" && straightIn));
+  const windShown = !!field && !point.problem && (end.direct || !!windWords(reported));
+  const runwaysOut = opens && open && shownParts.length > 0;
   // The route's own magenta goes on past the field's sections to the next
   // line where it is not the last, or ends at the last section's last row.
   const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
@@ -91,14 +102,14 @@ export function TimelineLine({
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one.
-  const chips = parts.map(({ part, add, hold }, i) => {
+  const chips = shownParts.map(({ part, add, hold }, i) => {
     const tray = (
       <PartTray
         key={part.role}
         vm={vm}
         a={field!}
         part={part}
-        beside={i === 0}
+        noRunway={part.role === "Arrive" && straightIn}
         trailing={[
           ...add.map((k) => kindMenu(vm, field!, k, "add")),
           ...(hold
@@ -119,6 +130,22 @@ export function TimelineLine({
       </section>
     );
   });
+  // The section's chips in the words' column, the route's magenta by in
+  // the marks' column where it goes on; with no runway to pick, the
+  // pull-downs and hold alone, with no head.
+  const chipRow = (
+    <div className={cn("relative flex", TIMELINE_GAP)}>
+      <span className="relative w-8 shrink-0 self-stretch">
+        {onPast && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
+      </span>
+      <div
+        className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-2", runwaysShown ? "pb-2" : "py-2", TIMELINE_END)}
+        data-testid="timeline-chips"
+      >
+        {chips}
+      </div>
+    </div>
+  );
   const line = (
     <Collapsible
       open={opens && open}
@@ -175,23 +202,29 @@ export function TimelineLine({
           {/* Tapped to set the fuel leaving a field (FuelSet), where the
               list edits the route: the departure's on board, a stop's after
               fuelling; the destination's and a waypoint's read only. */}
-          {fuelSet && tank ? (
-            <FuelSet
-              tank={tank}
-              ident={fuelSet.ident}
-              stop={fuelSet.stop}
-              tone={tank.low ? "low" : undefined}
-              onSet={(gallons) => vm.onTanks?.(fuelSet.ident, gallons)}
-            />
-          ) : (
-            // As far from the ident as a gauge that is a control (FuelSet's
-            // 18), so every line's gauge stands in one place.
-            tank && (
-              <span className="ml-2.5 flex shrink-0">
-                <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
-              </span>
-            )
-          )}
+          {/* The fuel over the field's wind, as the time over the altitude
+              at the right (the owner, 2026-11-24: "Fuel and wind can be over
+              each other like the eta and alt"). */}
+          <span className="flex shrink-0 flex-col items-start">
+            {fuelSet && tank ? (
+              <FuelSet
+                tank={tank}
+                ident={fuelSet.ident}
+                stop={fuelSet.stop}
+                tone={tank.low ? "low" : undefined}
+                onSet={(gallons) => vm.onTanks?.(fuelSet.ident, gallons)}
+              />
+            ) : (
+              // As far from the ident as a gauge that is a control (FuelSet's
+              // 18), so every line's gauge stands in one place.
+              tank && (
+                <span className="ml-2.5 flex shrink-0">
+                  <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
+                </span>
+              )
+            )}
+            {windShown && <WindLine className="ml-2.5" direct={end.direct} wind={windWords(reported)} reported={reported} />}
+          </span>
           <span className="flex-1" />
           {/* Its time over its altitude, as a procedure's fixes have theirs
               (the owner, 2026-11-24: "Under now just put altitude instead of
@@ -222,30 +255,20 @@ export function TimelineLine({
       className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
     >
       {line}
-      {runwaysOut && (
-        <FoldSection
-          head={<span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>Runways</span>}
-          stop={false}
-          thread={onPast ? "solid" : "none"}
-          testId="field-runways"
-          label={`${point.ident} runways`}
-        >
-          {/* In the words' column under the head, the route's magenta by
-              in the marks' column where it goes on. */}
-          <div className={cn("relative flex", TIMELINE_GAP)}>
-            <span className="relative w-8 shrink-0 self-stretch">
-              {onPast && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
-            </span>
-            <div className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-2", TIMELINE_END)} data-testid="timeline-chips">
-              {/* The field's wind beside its runways, where it picks them
-                  (the owner, 2026-11-24: "Wind can be next to the runway
-                  selection?"). */}
-              <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
-              {chips}
-            </div>
-          </div>
-        </FoldSection>
-      )}
+      {runwaysOut &&
+        (runwaysShown ? (
+          <FoldSection
+            head={<span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>Runways</span>}
+            stop={false}
+            thread={onPast ? "solid" : "none"}
+            testId="field-runways"
+            label={`${point.ident} runways`}
+          >
+            {chipRow}
+          </FoldSection>
+        ) : (
+          chipRow
+        ))}
       {beforeOut.map((k, i) => (
         <TimelineProcedureRows
           key={k}
