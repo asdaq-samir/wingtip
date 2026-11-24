@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, X } from "lucide-react";
+import { Coffee, Fuel, Plus, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import {
@@ -42,8 +42,6 @@ export interface RouteProcedure {
   missedFixes?: BranchFix[];
   suspendAt?: string | null;
 }
-
-const PROCEDURE_GLYPH = { approach: PlaneLanding, arrival: Route, departure: PlaneTakeoff } as const;
 
 /** A suggested stop's look, one or a flight's folded (SuggestedPill, below). */
 const FUEL_CHIP =
@@ -157,13 +155,13 @@ export function SuggestedPill(p: {
   );
 }
 
-/** A procedure picked at a point, beside its pill: its kind's glyph and its
- *  short title in a pill of the approaches' indigo, as the map draws it
+/** A procedure picked at a point, beside its pill: its short title alone,
+ *  no glyph, in a pill of the approaches' indigo (the owner, 2026-11-23:
+ *  "just make it a pill of a different color"), as the map draws it
  *  (ProceduresGl), whole: pieces wrap whole (RouteToken), so its title is
  *  never cut ("RNAV (GPS) Y RWY 2…", the r7 audit's W-L1); only one wider
  *  than the box itself is, at the box's width. */
 export function ProcedureChip({ procedure, onOpen }: { procedure: RouteProcedure; onOpen?: () => void }) {
-  const Glyph = PROCEDURE_GLYPH[procedure.kind];
   return (
     // The stock Button, a filled pill as the points' are (RoutePill), 28
     // tall, in the approaches' indigo on a wash of it, so it reads as a
@@ -181,7 +179,6 @@ export function ProcedureChip({ procedure, onOpen }: { procedure: RouteProcedure
         TEXT.note,
       )}
     >
-      <Glyph className="size-3.5 shrink-0" aria-hidden="true" />
       <span className="truncate">{procedure.label}</span>
     </Button>
   );
