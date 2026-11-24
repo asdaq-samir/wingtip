@@ -21,6 +21,7 @@ export function OnTheLine({
   stop,
   thread = "solid",
   rule = true,
+  wrap = false,
   children,
 }: {
   mark?: ReactNode;
@@ -29,6 +30,9 @@ export function OnTheLine({
   /** The hairline over its words; none where it is one block with the
    *  row above (a folded procedure's buttons under its head). */
   rule?: boolean;
+  /** Its words' controls going under them, at the line's end, where both
+   *  do not fit on one line (a section's head and its buttons). */
+  wrap?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -43,7 +47,12 @@ export function OnTheLine({
           row under its border): with the border inside the 44 a fix's
           button was 43 tall (the HIG review's P1, 2026-11-21). */}
       <div
-        className={cn("box-content flex min-h-11 min-w-0 flex-1 items-center gap-2", rule && "border-t border-border", TIMELINE_END)}
+        className={cn(
+          "box-content flex min-h-11 min-w-0 flex-1 items-center gap-2",
+          wrap && "flex-wrap",
+          rule && "border-t border-border",
+          TIMELINE_END,
+        )}
         data-words=""
       >
         {children}
@@ -106,7 +115,7 @@ export function FoldSection({
       onOpenChange={setOpen}
       render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
     >
-      <OnTheLine stop={stop && !open && !foot} thread={thread}>
+      <OnTheLine stop={stop && !open && !foot} thread={thread} wrap={!!trailing}>
         <CollapsibleTrigger
           render={
             <Button
@@ -114,7 +123,11 @@ export function FoldSection({
               size="inline"
               type="button"
               data-testid="section-fold"
-              className="min-h-11 min-w-0 flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted"
+              // At least 11rem for its words, or the line's whole where it
+              // is narrower: its controls go under it rather than squeeze a
+              // long approach's name to three lines (the owner's iPhone,
+              // 2026-11-24, "RNAV (GPS) RWY 05 · FOVOJ" beside Activate).
+              className="min-h-11 min-w-[min(100%,11rem)] flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted"
             />
           }
         >
@@ -124,7 +137,7 @@ export function FoldSection({
             aria-hidden
           />
         </CollapsibleTrigger>
-        {trailing}
+        {trailing && <span className="ml-auto flex shrink-0 items-center gap-1">{trailing}</span>}
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}

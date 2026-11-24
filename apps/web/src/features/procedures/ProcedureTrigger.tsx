@@ -69,7 +69,7 @@ export function procedureTrigger({
     // of the kind, Direct to, its plate and No Approach to take it out (the
     // owner, 2026-11-24, where Change and Remove were a row of their own).
     return (
-      <IconButton round label={`${what}: ${label ?? "none picked"}, options`} {...data}>
+      <IconButton label={`${what}: ${label ?? "none picked"}, options`} className="text-tint" {...data}>
         <Ellipsis className="size-5" strokeWidth={2.4} />
       </IconButton>
     );
