@@ -148,8 +148,12 @@ export function FoldSection({
             />
           )}
         </CollapsibleTrigger>
-        {trailing && <span className={cn("ml-auto flex shrink-0 items-center gap-1", corner && "self-start")}>{trailing}</span>}
-        {corner && <span className="absolute right-4 bottom-1.5 z-10 flex">{corner}</span>}
+        {trailing && (
+          <span className={cn("ml-auto flex max-w-full min-w-0 shrink-0 items-center gap-1", corner && "self-start")}>{trailing}</span>
+        )}
+        {/* Left of the "•••" column, beside the grey line, so the two never
+            meet at a larger text size (the owner's iPhone, 2026-11-24). */}
+        {corner && <span className="absolute right-14 bottom-1.5 z-10 flex">{corner}</span>}
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}
@@ -170,28 +174,16 @@ export function FoldSection({
  *  procedures' indigo, then its name, "APCH RNAV (GPS) RWY 05 · FOVOJ",
  *  where "(Approach)" after it wrapped the line (the owner, 2026-11-24);
  *  wrapping, never cut. */
-export function ProcedureFace({ tag, name, sub }: { tag: string; name: string; sub: string | null }) {
+export function ProcedureFace({ kind, name, sub }: { kind: string; name: string; sub: string | null }) {
   return (
-    <span className="flex min-w-0 items-start gap-2">
-      {/* One width for ARR, APCH and DEP, so every name starts in one
-          column, as the lines' fuel and wind do. */}
-      <span
-        className={cn(
-          "mt-[0.2em] inline-block w-[3.6em] shrink-0 rounded-md bg-procedure/12 py-px text-center font-semibold text-procedure",
-          TEXT.caption,
-        )}
-      >
-        {tag}
+    <span className="block min-w-0">
+      <span className={cn("block font-semibold break-words", TEXT.row)} data-testid="procedure-name">
+        {name}
       </span>
-      <span className="min-w-0">
-        <span className={cn("block font-semibold break-words", TEXT.row)} data-testid="procedure-name">
-          {name}
-        </span>
-        {/* Its transition, or the fix it was sent direct to, small under
-            it, where after a dot it broke a long name's line (the owner's
-            iPhone, 2026-11-24, "RWY 05 · / FOVOJ"). */}
-        {sub && <span className={cn("block text-muted-foreground", TEXT.note)}>{sub}</span>}
-      </span>
+      {/* Its transition, or the fix it was sent direct to, then its kind,
+          small and grey under it, "FILLZ · Approach", where a tag before
+          the name took its line's start (the owner, 2026-11-24). */}
+      <span className={cn("block text-muted-foreground", TEXT.note)}>{sub ? `${sub} · ${kind}` : kind}</span>
     </span>
   );
 }

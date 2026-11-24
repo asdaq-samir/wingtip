@@ -51,6 +51,7 @@ export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Ki
       onPick={(next) => pick(a.ident, kind, next)}
       onAll={() => onAt({ ident: a.ident, kind })}
       onLearn={kind === "approach" ? () => setLesson(pickOf(a.ident, kind)) : undefined}
+      onDeactivate={kind === "approach" && placed && !placed.loaded ? () => vm.onApproach(a.ident, placed.id, { loaded: true }) : undefined}
     />
   );
 }

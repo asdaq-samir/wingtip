@@ -56,6 +56,7 @@ export default function ProcedureMenu({
   onPick,
   onAll,
   onLearn,
+  onDeactivate,
 }: {
   ident: string;
   kind: Kind;
@@ -86,6 +87,9 @@ export default function ProcedureMenu({
   /** The approach picked taught (ApproachLesson): its brief, flown with
    *  coaching, and a quiz. An approach's menu alone. */
   onLearn?: () => void;
+  /** An approach activated, put back to loaded: off the route's line, not
+   *  flown (its Activate on FPL's list beside it). */
+  onDeactivate?: () => void;
 }) {
   const all = (list?.procedures ?? []).filter((p) => p.kind === kind);
   const plates = usePreferences((s) => s.plates);
@@ -285,6 +289,16 @@ export default function ProcedureMenu({
                     onLearn();
                   }}
                   data-testid="procedure-menu-learn"
+                />
+              )}
+              {onDeactivate && (
+                <ListRow
+                  title="Deactivate"
+                  onClick={() => {
+                    toggle(false);
+                    onDeactivate();
+                  }}
+                  data-testid="procedure-menu-deactivate"
                 />
               )}
               {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} data-testid="procedure-menu-none" />}

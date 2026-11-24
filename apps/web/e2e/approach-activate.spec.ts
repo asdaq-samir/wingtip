@@ -68,8 +68,9 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   const onLine = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(onLine.getByTestId("fix-branch-row").filter({ hasText: "FAKER" })).toBeVisible();
   await expect(kdlh.getByTestId("approach-loaded")).toHaveCount(0);
-  // Deactivated: back in its box, off the line.
-  await onLine.getByTestId("approach-deactivate").click();
+  // Deactivated from its menu, the "•••" at its head (2026-11-24): back off the line, dashed.
+  await onLine.getByTestId("procedure-kind").first().click();
+  await page.getByTestId("procedure-menu-deactivate").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   await unfoldProcedure(kdlh, "approach");
   await expect(kdlh.getByTestId("approach-loaded")).toBeVisible();

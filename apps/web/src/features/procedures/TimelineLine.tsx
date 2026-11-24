@@ -110,55 +110,37 @@ export function TimelineLine({
   const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
   const onPast = !last || sections > 0 || (takeoffOut && !last);
   const grouped = sections > 0 || landingOut || takeoffOut;
-  // A block's row: its name in the procedures' indigo, then its runway's
-  // pill, its pull-downs not yet picked ("+ STAR") and the destination's
-  // hold, the route's magenta by in the marks' column where anything
-  // follows it on the line.
-  const blockRow = (role: "Arrive" | "Depart", through: boolean) => {
+  // A phase's runway, its pull-downs not yet picked ("+ STAR") and the
+  // destination's hold, and a stop's leaving time, at its head's right.
+  const phaseTray = (role: "Arrive" | "Depart") => {
     const linePart = role === "Arrive" ? landingPart : takeoffPart;
+    if (!linePart) return undefined;
     return (
-      <section
-        aria-label={`${point.ident} · ${role}`}
-        className={cn("relative flex", TIMELINE_GAP)}
-        data-testid="field-block"
-        data-role={role}
-      >
-        <span className="relative w-8 shrink-0 self-stretch">
-          {through && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
-        </span>
-        <div
-          className={cn("flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-2 border-t border-border py-1.5", TIMELINE_END)}
-          data-testid="timeline-chips"
-          data-role={role}
-          data-words=""
-        >
-          {linePart && (
-            <PartTray
-              vm={vm}
-              a={field!}
-              part={linePart.part}
-              noRunway={role === "Arrive" && straightIn}
-              beside
-              trailing={[
-                ...linePart.add.map((k) => kindMenu(vm, field!, k, "add")),
-                ...(linePart.hold
-                  ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
-                  : []),
-              ]}
-            />
-          )}
-        </div>
-      </section>
+      <span className="flex min-w-0 flex-wrap items-center justify-end gap-2" data-testid="timeline-chips" data-role={role}>
+        <PartTray
+          vm={vm}
+          a={field!}
+          part={linePart.part}
+          noRunway={role === "Arrive" && straightIn}
+          beside
+          trailing={[
+            ...linePart.add.map((k) => kindMenu(vm, field!, k, "add")),
+            ...(linePart.hold
+              ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
+              : []),
+          ]}
+        />
+      </span>
     );
   };
-  // Landing and Takeoff, each a section that folds, its name and a chevron
-  // its head and its runway's pill under it, then its procedures (the
-  // owner, 2026-11-24: "Landing/Takeoff should be the title with Chevron
-  // and the pills below it"); folded at first, as every section. In flight
-  // or a dry run, where the list is read, the procedures alone.
+  // Landing and Takeoff, each a section that folds: its head a small label,
+  // its runway's pill and a stop's leaving time on the same line at the
+  // right, so folded it says them, and its procedures under it (the
+  // owner, 2026-11-24, "Ok let's try it", of the redesign on KPWK); folded
+  // at first, as every section. In flight or a dry run, where the list is
+  // read, the procedures alone.
   const landingRows = (
     <>
-      {landingPart && blockRow("Arrive", beforeOut.length > 0 || missedHere || takeoffOut || !last)}
       {beforeOut.map((k, i) => (
         <TimelineProcedureRows
           key={k}
@@ -174,19 +156,22 @@ export function TimelineLine({
   );
   const takeoffRows = (
     <>
-      {takeoffPart && blockRow("Depart", afterOut.length > 0 || !last)}
       {afterOut.map((k, i) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} fixTime={point.fixTime} stop={last && i === afterOut.length - 1} />
       ))}
     </>
   );
-  const blockHead = (role: "Arrive" | "Depart") => (
-    <span className={cn("block font-semibold text-procedure", TEXT.row)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
+  const phaseHead = (role: "Arrive" | "Depart") => (
+    <span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>
+      {role === "Arrive" ? "Landing" : "Takeoff"}
+    </span>
   );
   const landingFlown = beforeOut.length > 0 || missedHere;
   const landing = landingOut ? (
     <FoldSection
-      head={blockHead("Arrive")}
+      head={phaseHead("Arrive")}
+      trailing={phaseTray("Arrive")}
+      chevron={landingFlown}
       stop={last && !takeoffOut}
       thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
       testId="field-landing"
@@ -201,7 +186,9 @@ export function TimelineLine({
   );
   const takeoff = takeoffOut ? (
     <FoldSection
-      head={blockHead("Depart")}
+      head={phaseHead("Depart")}
+      trailing={phaseTray("Depart")}
+      chevron={afterOut.length > 0}
       stop={last}
       thread={afterOut.length > 0 || !last ? "solid" : "none"}
       testId="field-takeoff"

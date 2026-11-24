@@ -8,13 +8,13 @@ import type { ProcedureAirport } from "../plan";
 import { PointMenu } from "../route/lazy";
 import { kindMenu } from "./fieldParts";
 import { FixFigures } from "./FixList";
-import { fixSub, KIND_TAG } from "./procedureWords";
+import { fixSub, KIND_WORD } from "./procedureWords";
 import { Button } from "../../components/ui/button";
 import { headName, headSub } from "./approachState";
 import { FoldSection, OnTheLine, ProcedureFace } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
-type Kind = keyof typeof KIND_TAG;
+type Kind = keyof typeof KIND_WORD;
 
 /**
  * A procedure picked at a field on FPL's timeline, its fixes points on
@@ -66,7 +66,7 @@ export function TimelineProcedureRows({
   const times = fixes.map((f) => fixTime(f.ident));
   const timed = times.some((t) => t != null);
   const loaded = approach && !!placed.loaded;
-  const face = <ProcedureFace tag={KIND_TAG[kind]} name={name} sub={headSub(placed)} />;
+  const face = <ProcedureFace kind={KIND_WORD[kind]} name={name} sub={headSub(placed)} />;
   const thread = loaded ? "dashed" : "solid";
   return (
     <FoldSection
@@ -82,15 +82,17 @@ export function TimelineProcedureRows({
       // No Approach to take it out), an approach's Activate or Deactivate
       // before it, so a procedure is one row folded (the owner, 2026-11-24).
       trailing={kindMenu(vm, field, kind, "more")}
+      // A loaded approach's Activate beside its grey line; activated, its
+      // Deactivate is in its menu (the owner, 2026-11-24).
       corner={
-        approach && (
+        loaded && (
           <Button
-            variant={loaded ? "default" : "secondary"}
+            variant="default"
             size="xs"
-            onClick={() => vm.onApproach(field.ident, placed.id, { loaded: !loaded })}
-            data-testid={loaded ? "approach-activate" : "approach-deactivate"}
+            onClick={() => vm.onApproach(field.ident, placed.id, { loaded: false })}
+            data-testid="approach-activate"
           >
-            {loaded ? "Activate" : "Deactivate"}
+            Activate
           </Button>
         )
       }
