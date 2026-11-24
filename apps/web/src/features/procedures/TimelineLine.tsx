@@ -130,6 +130,7 @@ export function TimelineLine({
           className={cn("flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-2 border-t border-border py-1.5", TIMELINE_END)}
           data-testid="timeline-chips"
           data-role={role}
+          data-words=""
         >
           {linePart && (
             <PartTray
@@ -189,6 +190,7 @@ export function TimelineLine({
       stop={last && !takeoffOut}
       thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
       testId="field-landing"
+      nest
       label={`${point.ident} landing`}
       startOpen={!!vm.openAtFirst}
     >
@@ -203,6 +205,7 @@ export function TimelineLine({
       stop={last}
       thread={afterOut.length > 0 || !last ? "solid" : "none"}
       testId="field-takeoff"
+      nest
       label={`${point.ident} takeoff`}
       startOpen={!!vm.openAtFirst}
     >

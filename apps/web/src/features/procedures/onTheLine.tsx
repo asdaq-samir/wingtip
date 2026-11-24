@@ -42,7 +42,10 @@ export function OnTheLine({
       {/* 44 points under its hairline, as a point's line is (TimelineLine's
           row under its border): with the border inside the 44 a fix's
           button was 43 tall (the HIG review's P1, 2026-11-21). */}
-      <div className={cn("box-content flex min-h-11 min-w-0 flex-1 items-center gap-2", rule && "border-t border-border", TIMELINE_END)}>
+      <div
+        className={cn("box-content flex min-h-11 min-w-0 flex-1 items-center gap-2", rule && "border-t border-border", TIMELINE_END)}
+        data-words=""
+      >
         {children}
       </div>
     </div>
@@ -69,6 +72,7 @@ export function FoldSection({
   data,
   startOpen = false,
   foot,
+  nest = false,
   children,
 }: {
   head: ReactNode;
@@ -85,6 +89,10 @@ export function FoldSection({
    *  procedure's buttons; the owner, 2026-11-24: "the next line can be
    *  buttons when folded"). */
   foot?: (open: boolean) => ReactNode;
+  /** A phase of the flight (a field's Landing, its Takeoff): every row in
+   *  it set in under its head, its words and their hairlines, the marks
+   *  staying on the route's line, so it reads as holding them. */
+  nest?: boolean;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -119,7 +127,12 @@ export function FoldSection({
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}
-      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0">
+      <CollapsibleContent
+        className={cn(
+          nest && "[&_[data-words]]:ml-5",
+          "h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0",
+        )}
+      >
         {children}
       </CollapsibleContent>
       {foot?.(open)}
