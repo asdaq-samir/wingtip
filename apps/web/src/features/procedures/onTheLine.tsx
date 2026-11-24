@@ -253,10 +253,10 @@ function Bend({ way }: { way: "in" | "out" }) {
  */
 export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode; takeoff: ReactNode; into: boolean; out: boolean }) {
   // A card's first row has no hairline over it: the card's own edge; its
-  // rows 12 in from its end, not the list's 16, so Takeoff's runway and
+  // rows 8 in from its end, not the list's 16, so Takeoff's runway and
   // leaving time keep its label's line at 390.
   const card =
-    "relative rounded-xl bg-card ring-1 ring-procedure/20 [&_[data-words]]:pr-3 [&>section>div:first-child>[data-words]]:border-t-0";
+    "relative rounded-xl bg-card ring-1 ring-procedure/20 [&_[data-words]]:pr-2 [&>section>div:first-child>[data-words]]:border-t-0";
   return (
     <div className="pb-2" data-testid="phase-cards">
       {into ? <Bend way="in" /> : <div className="h-2" />}
