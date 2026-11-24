@@ -49,18 +49,23 @@ export function figuresAway(vm: PlanSlices<"flight" | "route" | "routeList">): b
   return routeEditing(vm) && !(routeTyped(vm) && vm.route.wholeRoute);
 }
 
-/** Whether FPL offers its suggested routes (ShareMenu's Route Options): there are ways
- *  to suggest, on the ground, not in a dry run, and the route's field not
- *  open -- the ways change the route rather than edit it, so the toggle
- *  went on doing nothing while the field was open, and a dry run flies the
- *  route as it is, its ways no more than clutter on its map. */
-export function routesOffered(vm: PlanSlices<"flight" | "routeList">): boolean {
-  return !!vm.routeList.routeLine && !vm.flight.flying && !vm.flight.dryRunning && !routeEditing(vm);
+/** Whether FPL offers its suggested routes (the tab bar's Routes): there
+ *  are ways to suggest, on the ground, not in a dry run, and the flight's
+ *  figures out (figuresAway), whose strip Routes swaps for the ways'
+ *  chips. So the route box its toggle turned from the grouped box offers
+ *  them as the folded route does, the figures under both (the owner's
+ *  iPhone, 2026-11-23: Routes greyed under the route box, "Not able to
+ *  slide the routes"); a field opened to type a route in, whose figures
+ *  are put away, does not -- the ways change the route rather than edit
+ *  it -- and a dry run flies the route as it is, its ways no more than
+ *  clutter on its map. */
+export function routesOffered(vm: PlanSlices<"flight" | "route" | "routeList">): boolean {
+  return !!vm.routeList.routeLine && !vm.flight.flying && !vm.flight.dryRunning && !figuresAway(vm);
 }
 
 /** Whether the suggested routes are out: their pills over the route
  *  (FplRoute) and their ways on the map (PlanMap), one switch for both. */
-export function routesOut(vm: PlanSlices<"flight" | "routeList">): boolean {
+export function routesOut(vm: PlanSlices<"flight" | "route" | "routeList">): boolean {
   return vm.routeList.routesShown && routesOffered(vm);
 }
 
@@ -71,6 +76,6 @@ const NO_WAYS: Ways = [];
 /** The suggested routes' ways the map draws beside the course (PlanMap):
  *  all of them while they are out (routesOut), none otherwise -- not the
  *  route as typed's, nor a way picked, which the course itself is. */
-export function waysOnMap(vm: PlanSlices<"flight" | "routeList">): Ways {
+export function waysOnMap(vm: PlanSlices<"flight" | "route" | "routeList">): Ways {
   return routesOut(vm) ? vm.routeList.wayLines : NO_WAYS;
 }
