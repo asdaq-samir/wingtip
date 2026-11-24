@@ -184,8 +184,8 @@ internal fun ReadyCheck(plan: Plan, fixer: ReadyFixer, model: ReadyToFlyModel) {
     val live = picture?.receiver?.live == true
     var resumed by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumed++ }
-    LaunchedEffect(state.dep, state.dest, state.stops, state.aircraft, state.course, state.totals, briefed.fetchedAtMs, kept, heard, live, fixer.done, resumed) {
+    LaunchedEffect(state.dep, state.dest, state.stops, state.aircraft, state.course, state.totals, state.altitudeFt, briefed.fetchedAtMs, kept, heard, live, fixer.done, resumed) {
         val local = withContext(Dispatchers.Default) { ReadyDevice.local(context, plan, briefed.fetchedAtMs) }
-        model.check(state, ReadyFacts.cruise(state.legs.map { it.altitudeFt }), local)
+        model.check(state, ReadyFacts.cruise(state), local)
     }
 }

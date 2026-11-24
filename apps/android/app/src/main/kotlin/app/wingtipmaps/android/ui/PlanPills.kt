@@ -1,12 +1,10 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.SplitButtonLayout
@@ -45,8 +43,11 @@ import app.wingtipmaps.android.plan.FlightChoices
  * Profile; and when the flight leaves, one button showing the time that
  * opens the hours and the minutes. Each is Material's split button --
  * the pill's word the leading button, its glyph the trailing one, two
- * targets of their own -- in a row that scrolls sideways on a narrow
- * phone rather than squeezing a pill (the owner's larger text). With no
+ * targets of their own -- in a row that wraps on a narrow phone, each
+ * pill whole on its line, rather than squeezing or cutting one: a long
+ * first-flight airplane pill once pushed the altitude's FL-065 past the
+ * sheet's edge (the owner, 2026-11-23), as the web's and the iPhone's
+ * head keep the altitude's figures whole. With no
  * airplane the pill says so and is the way to pick one (decision 0011),
  * on the first flight in words: "Add Your Airplane for Times and Fuel".
  *
@@ -63,9 +64,10 @@ fun PlanPills(plan: Plan, state: Plan.State, onAltitude: () -> Unit, modifier: M
     // errors-and-onboarding audit, 2026-11-21); then "No Airplane".
     val firstFlight = !remember(context) { FplTip.of(context) }.closed.collectAsStateWithLifecycle().value
     val airplane = tail ?: state.own?.type?.ifEmpty { null }?.uppercase() ?: state.aircraft.uppercase().ifEmpty { null }
-    Row(
-        modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+    FlowRow(
+        modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
     ) {
         val info = stringResource(R.string.airplane_info)
         Pill(
