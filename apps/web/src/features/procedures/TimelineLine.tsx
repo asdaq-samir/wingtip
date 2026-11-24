@@ -233,7 +233,7 @@ export function TimelineLine({
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
         {onPast && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
-      <div className={cn("min-w-0 flex-1", TIMELINE_END, !first && !grouped && "border-t border-border")}>
+      <div className={cn("min-w-0 flex-1", TIMELINE_END, !first && "border-t border-border")}>
         {/* Wrapping where the ident, its fuel and its time do not fit on one
             line, the time going under them at the right: at the owner's
             19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
@@ -318,9 +318,10 @@ export function TimelineLine({
       role={parts[0] ? "region" : undefined}
       aria-label={parts[0] ? `${point.ident} · ${parts[0].part.role}` : undefined}
       data-testid={grouped ? "field-group" : undefined}
-      // Out to the card's leading inset and in from its edge by as much, so
-      // the marks keep their column and the box shows its corners all round.
-      className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
+      // No box of its own: the field is a line as every other is, its
+      // separator over it, and its Landing and Takeoff the cards under it
+      // (the owner, 2026-11-24: "The airport should not become a card, just
+      // keep the separated. Only the landing and takeoff are cards").
     >
       {line}
       {landingOut || takeoffOut ? (

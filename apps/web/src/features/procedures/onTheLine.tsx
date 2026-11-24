@@ -263,7 +263,7 @@ export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode
   return (
     <div className="pb-2" data-testid="phase-cards">
       {into ? <Bend way="in" /> : <div className="h-2" />}
-      <div className="mr-1.5 flex flex-col" style={{ marginLeft: CARD_IN }}>
+      <div className="mr-3.5 flex flex-col" style={{ marginLeft: CARD_IN }}>
         {landing && <Card className={card}>{landing}</Card>}
         {landing && takeoff && (
           <div className="relative h-3">
