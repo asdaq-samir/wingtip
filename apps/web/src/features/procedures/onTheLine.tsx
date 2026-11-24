@@ -124,7 +124,7 @@ export function FoldSection({
       onOpenChange={setOpen}
       render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
     >
-      <OnTheLine stop={stop && !open && !foot} thread={thread} wrap={!!trailing}>
+      <OnTheLine stop={stop && !open && !foot} thread={thread} wrap={nest && !!trailing}>
         <CollapsibleTrigger
           render={
             <Button
@@ -132,15 +132,16 @@ export function FoldSection({
               size="inline"
               type="button"
               data-testid="section-fold"
-              // At least 11rem for its words, or the line's whole where it
-              // is narrower: its controls go under it rather than squeeze a
-              // long approach's name to three lines (the owner's iPhone,
-              // 2026-11-24, "RNAV (GPS) RWY 05 · FOVOJ" beside Activate).
-              // A phase's head (`nest`) as narrow as its label, its runway and
-              // time on its line.
+              // A procedure's words take the line but its "•••", wrapping
+              // beside it, so the menu keeps its head's line at a larger
+              // text size, where 11rem kept for the name sent the "•••"
+              // under it (the owner's text size, 2026-11-24). A phase's head
+              // (`nest`) as wide as its label and never narrower, its runway
+              // and time going under it where they do not fit beside it,
+              // where the pill covered TAKEOFF.
               className={cn(
                 "min-h-11 flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted",
-                nest ? "min-w-0" : "min-w-[min(100%,11rem)]",
+                nest ? "shrink-0" : "min-w-0",
               )}
             />
           }
