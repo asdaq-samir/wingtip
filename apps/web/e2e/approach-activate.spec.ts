@@ -105,9 +105,10 @@ test("an activated approach is suspended at its MAP until its missed approach is
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}M(&|$)/);
   await expect(missed).toHaveAttribute("data-flown", "true");
   await expect(missed.getByTestId("missed-fix-row").filter({ hasText: "MISSA" })).toBeVisible();
-  // Suspended again: off the line, the route ending at the runway.
+  // Suspended again: its fixes on a dashed line, not flown (the owner,
+  // 2026-11-24: "maybe a dashed line when not activated").
   await missed.getByTestId("missed-suspend").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
   await expect(missed).toHaveAttribute("data-flown", "false");
-  await expect(missed.getByTestId("missed-fix-row")).toHaveCount(0);
+  await expect(missed.getByTestId("missed-fix-row").first().locator("[data-thread]")).toHaveAttribute("data-thread", "dashed");
 });

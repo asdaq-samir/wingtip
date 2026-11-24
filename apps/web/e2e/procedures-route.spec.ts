@@ -124,9 +124,9 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
   // A tap on its head folds its fixes away and back (the owner, 2026-11-24:
   // "Tapping it should fold the procedure"); the menu is the round button.
-  await approach.getByTestId("procedure-fold").click();
+  await approach.getByTestId("section-fold").click();
   await expect(approach.getByTestId("fix-branch-row")).toHaveCount(0);
-  await approach.getByTestId("procedure-fold").click();
+  await approach.getByTestId("section-fold").click();
   await expect(approach.getByTestId("fix-branch-row").first()).toBeVisible();
   await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   const menu = page.getByTestId("procedure-menu");
@@ -176,9 +176,12 @@ test("a procedure picked has its fixes on the route's line before its field's, a
   await unfoldProcedure(kdlh, "approach");
   const box = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(box.getByTestId("procedure-name")).toHaveText("ILS · RWY 09");
-  // Unfolded: its kind and field over its name, then a row a fix; no
-  // branch of FixBranch's on the timeline.
-  await expect(box).toContainText("Approach · KDLH");
+  // Unfolded: its kind over its name, a section of KDLH's group under
+  // the field's line (the owner, 2026-11-24: "that airport should be the
+  // heading"), then a row a fix; no branch of FixBranch's on the timeline.
+  await expect(box).toContainText("Approach");
+  const head = (await kdlh.getByTestId("timeline-line").boundingBox())!;
+  expect((await box.boundingBox())!.y).toBeGreaterThan(head.y);
   await expect(box.getByTestId("fix-branch-row").first()).toBeVisible();
   await expect(kdlh.getByTestId("fix-branch")).toHaveCount(0);
   // FAKER's card from the map: direct to it, then as charted again.

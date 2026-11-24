@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { sameField } from "../../lib/procedures";
 import type { NavLogRow, ProcedureAirport, ProcedureKind } from "../plan";
 import { missedOnTheLine } from "./approachState";
 import { fieldParts, kindPicked, type FieldPart } from "./fieldParts";
@@ -68,19 +67,16 @@ export function lineModel(vm: ProceduresRouteModel, point: TimelinePoint, row: N
     add: field ? part.kinds.filter((k) => !kindPicked(vm, field, k)) : [],
     hold: point.role === "Destination" && part.role === "Arrive" && !!vm.holdOn(point.ident),
   }));
-  // A kind picked is no chip: its fixes are points on the route's line
-  // (TimelineProcedureRows), at the owner's pick (option D, 2026-11-21):
-  // an arrival's and an approach's before the field's line, a departure's
-  // after it. An approach only loaded is no point on the line: its box
-  // sits after the field's line, off it (LoadedApproach).
-  const loadedHere = !!field && vm.inRoute.some((p) => p.kind === "approach" && !!p.loaded && sameField(p.ident, field.ident));
+  // A kind picked is no chip: its fixes are a section of the field's group
+  // under its line (TimelineProcedureRows; the owner, 2026-11-24: "that
+  // airport should be the heading"), an arrival's and an approach's for
+  // its arriving, a departure's for its leaving; an approach only loaded
+  // is one too, on a dashed line.
   const onLine = (role: FieldPart["role"]) =>
-    field && !point.problem
-      ? (split.find((p) => p.role === role)?.kinds ?? []).filter((k) => kindPicked(vm, field, k) && !(k === "approach" && loadedHere))
-      : [];
+    field && !point.problem ? (split.find((p) => p.role === role)?.kinds ?? []).filter((k) => kindPicked(vm, field, k)) : [];
   const before = onLine("Arrive");
   const after = onLine("Depart");
   // Its missed approach unsuspended, the line goes on into it.
   const missedOn = !!field && !point.problem && missedOnTheLine(vm, field);
-  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn, loaded: loadedHere };
+  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn };
 }

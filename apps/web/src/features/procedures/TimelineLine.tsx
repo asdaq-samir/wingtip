@@ -13,10 +13,11 @@ import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
 import { TimelineProcedureRows } from "./TimelineProcedureRows";
-import { LoadedApproach, MissedApproach } from "./TimelineApproachParts";
+import { MissedApproach } from "./TimelineApproachParts";
 import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
+import { FoldSection } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** No procedure's rows out: one list, not a new one each render. */
@@ -64,34 +65,29 @@ export function TimelineLine({
    *  control is (TimelineAction). */
   trailing?: ReactNode;
 }) {
-  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn } = lineModel(vm, point, row, field);
-  // Its procedures out of sight with its runways, under the line's own
-  // tap (the owner, 2026-11-23: "Keep the pill hidden like runway"), so at
-  // half a field's line is its ident alone: an arrival's and an approach's
-  // rows before the line, a departure's after it, and the approach's boxes
-  // (its missed approach, an approach loaded) after it, all while the line
-  // is open. A line that does not open shows them, as before. Not in
-  // flight or a dry run, where the list is read, not edited (no `edit`,
-  // useRouteListProps): a suspended missed approach stays out there, its
-  // Unsuspend at a glance when the pilot needs it.
+  const { opens, refused, tank, fuelSet, reported, parts, before, after } = lineModel(vm, point, row, field);
+  // The field the heading of its group (the owner, 2026-11-24: "that
+  // airport should be the heading and than it should have the folding
+  // runways and folding procedures inside, which should connect with
+  // magenta line when unfolded"): under its line, while the line is open,
+  // its runways, then its arrival, its approach, the approach's missed
+  // approach and its departure, each a section that folds (FoldSection),
+  // the route's magenta running down through them. Out of sight with the
+  // line shut (the owner, 2026-11-23: "Keep the pill hidden like runway"),
+  // so at half a field's line is its ident alone. A line that does not
+  // open, in flight or a dry run where the list is read, not edited, shows
+  // its procedures, a suspended missed approach's Unsuspend at a glance.
   const out = opens ? open : true;
   const beforeOut = out ? before : NONE;
   const afterOut = out ? after : NONE;
-  const approachOut = out;
-  const missedShown = out || !vm.edit;
-  // The line runs on past the field to the next, or into a departure's
-  // fixes or a missed approach unfolded under it.
-  const onPast = !last || afterOut.length > 0;
-  const missedThread = missedOn && missedShown;
-  // A field with its procedures out is one group on the list, the field's
-  // line and every procedure flown to or from it in one indigo-washed box
-  // the route's magenta runs through, in the order they are flown (the
-  // owner, 2026-11-24: "Redesign the layout for all procedures so they
-  // visually look grouped for the airport that they are for"): on their
-  // own, an approach's rows over a field's line read as the route's own
-  // points before it.
-  const approachShown = !!field && !point.problem && !!approachAt(vm, field) && (approachOut || missedShown);
-  const grouped = beforeOut.length > 0 || afterOut.length > 0 || approachShown;
+  const approach = field && !point.problem ? approachAt(vm, field) : undefined;
+  const missedHere = out && !!approach && !approach.loaded && (approach.missedFixes?.length ?? 0) > 0;
+  const runwaysOut = opens && open && parts.length > 0;
+  // The route's own magenta goes on past the field's sections to the next
+  // line where it is not the last, or ends at the last section's last row.
+  const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
+  const onPast = !last || sections > 0;
+  const grouped = sections > 0 || runwaysOut;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one.
@@ -143,9 +139,9 @@ export function TimelineLine({
           under it into the next line, centred under the marks. */}
       <span className="relative flex w-8 shrink-0 justify-center">
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
-        {(onPast || missedThread) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
+        {onPast && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
-      <div className={cn("min-w-0 flex-1", TIMELINE_END, ((!first && !grouped) || beforeOut.length > 0) && "border-t border-border")}>
+      <div className={cn("min-w-0 flex-1", TIMELINE_END, !first && !grouped && "border-t border-border")}>
         {/* Wrapping where the ident, its fuel and its time do not fit on one
             line, the time going under them at the right: at the owner's
             19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
@@ -221,9 +217,6 @@ export function TimelineLine({
               <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
               {end.elevation}
             </div>
-            <div className="flex flex-wrap items-center gap-2" data-testid="timeline-chips">
-              {chips}
-            </div>
           </CollapsibleContent>
         )}
       </div>
@@ -241,12 +234,37 @@ export function TimelineLine({
       // the marks keep their column and the box shows its corners all round.
       className={cn(grouped && "my-1 mr-2 -ml-2 rounded-xl bg-procedure/8 pl-2 ring-1 ring-procedure/25 ring-inset")}
     >
-      {beforeOut.map((k) => (
-        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
-      ))}
       {line}
-      {field && !point.problem && missedShown && <MissedApproach vm={vm} field={field} stop={!onPast} />}
-      {field && !point.problem && approachOut && <LoadedApproach vm={vm} field={field} through={onPast} />}
+      {runwaysOut && (
+        <FoldSection
+          head={<span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>Runways</span>}
+          stop={false}
+          thread={onPast ? "solid" : "none"}
+          testId="field-runways"
+          label={`${point.ident} runways`}
+        >
+          {/* In the words' column under the head, the route's magenta by
+              in the marks' column where it goes on. */}
+          <div className={cn("relative flex", TIMELINE_GAP)}>
+            <span className="relative w-8 shrink-0 self-stretch">
+              {onPast && <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0")} />}
+            </span>
+            <div className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-2", TIMELINE_END)} data-testid="timeline-chips">
+              {chips}
+            </div>
+          </div>
+        </FoldSection>
+      )}
+      {beforeOut.map((k, i) => (
+        <TimelineProcedureRows
+          key={k}
+          vm={vm}
+          field={field!}
+          kind={k}
+          stop={last && !missedHere && afterOut.length === 0 && i === beforeOut.length - 1}
+        />
+      ))}
+      {missedHere && <MissedApproach vm={vm} field={field!} stop={last && afterOut.length === 0} />}
       {afterOut.map((k, i) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === afterOut.length - 1} />
       ))}
