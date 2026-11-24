@@ -279,7 +279,12 @@ export default function RouteBox({
                         // wrapping a piece one place early (the r8 audit's nit).
                         wrapped ? "-me-2 w-[calc(100%+--spacing(2))] whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
                         TEXT.row,
-                        "leading-7 pointer-coarse:leading-7",
+                        // Wrapped, its lines 36 apart, the 28 of a pill and the 8
+                        // between two on a line, so the gap between lines is the
+                        // gap between pills, where at 28 two lines' pills all
+                        // but touched, 2 apart (the owner, 2026-11-24: "check
+                        // the pills and spacing between them").
+                        wrapped ? "leading-9 pointer-coarse:leading-9" : "leading-7 pointer-coarse:leading-7",
                       )}
                     >
                       {(segment) => (
