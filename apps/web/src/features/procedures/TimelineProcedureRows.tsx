@@ -22,7 +22,7 @@ type Kind = keyof typeof KIND_WORD;
  * owner's pick (option D, 2026-11-21, of the canvas NgAKy71YahLtp5mZtMDAoH),
  * a section of its field's group under the field's line (FoldSection).
  * Its head the kind in the procedure's indigo, small capitals
- * ("APPROACH"), over its name ("RNAV (GPS)-B · RWY 24"), wrapping, never
+ * ("APPROACH"), over its name ("RNAV (GPS)-B"), wrapping, never
  * cut: a tap folds its fixes away under it and back (the owner,
  * 2026-11-24: "Tapping it should fold the procedure"), the kind's menu to
  * pick another (ProcedureMenu) a round button at its end. An approach
@@ -52,7 +52,7 @@ export function TimelineProcedureRows({
   const chosen = placed && procedures.find((p) => sameField(p.ident, field.ident) && p.id === placed.id);
   if (!placed || !chosen) return null;
   const fixes = placed.fixes ?? [];
-  const name = headName(vm, field, placed);
+  const name = headName(placed);
   const directAt = placed.direct ? fixes.findIndex((f) => f.ident === placed.direct) : -1;
   const onDirect = (fix: string | null) =>
     onProcedures(
@@ -66,7 +66,7 @@ export function TimelineProcedureRows({
   const times = fixes.map((f) => fixTime(f.ident));
   const timed = times.some((t) => t != null);
   const loaded = approach && !!placed.loaded;
-  const face = <ProcedureFace word={loaded ? `${KIND_WORD[kind]} loaded` : KIND_WORD[kind]} name={name} />;
+  const face = <ProcedureFace word={KIND_WORD[kind]} name={name} />;
   const thread = loaded ? "dashed" : "solid";
   return (
     <FoldSection
