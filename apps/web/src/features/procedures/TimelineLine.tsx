@@ -133,7 +133,14 @@ export function TimelineLine({
           beside
           trailing={[
             ...(said ? [<span key="runway">{said}</span>] : []),
-            ...linePart.add.map((k) => kindMenu(vm, field!, k, "add")),
+            // Beside a phase's label at a note's size and 8 in, so a stop
+            // with none picked yet keeps "RWY 5 + ARR + APCH" on its
+            // Landing line at 390, where at a detail's they went under it.
+            ...linePart.add.map((k) => (
+              <span key={k} className="contents [&_button]:px-2 [&_button]:text-(length:--type-note)">
+                {kindMenu(vm, field!, k, "add")}
+              </span>
+            )),
             ...(linePart.hold
               ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
               : []),
@@ -171,9 +178,7 @@ export function TimelineLine({
     </>
   );
   const phaseHead = (role: "Arrive" | "Depart") => (
-    <span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>
-      {role === "Arrive" ? "Landing" : "Takeoff"}
-    </span>
+    <span className={cn("block font-semibold text-procedure uppercase", TEXT.note)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
   );
   const landingFlown = beforeOut.length > 0 || missedHere;
   const landing = landingOut ? (
