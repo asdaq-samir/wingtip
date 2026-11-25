@@ -79,7 +79,7 @@ export function TimelineProcedureRows({
   const thread = loaded ? "dashed" : "solid";
   return (
     <FoldSection
-      pill={kindMenu(vm, field, kind, "wide", face)}
+      pill={(fold) => kindMenu(vm, field, kind, "wide", face, fold)}
       stop={stop}
       thread={thread}
       testId={loaded ? "approach-loaded" : "procedure-rows"}
@@ -90,7 +90,8 @@ export function TimelineProcedureRows({
       // to be like route box where they open a menu for their selection
       // ... Then we won't need ... at the end"); a loaded approach's
       // Activate in the pill before its chevron; activated, its
-      // Deactivate is in the menu.
+      // Deactivate is in the menu, as is Show Fixes (no chevron: the
+      // owner, 2026-11-25, "do we need the chevrons?").
       trailing={
         loaded && (
           <Button

@@ -150,7 +150,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openRoute(page);
   const procedures = page.getByTestId("procedures");
   const kdlh = procedures.getByRole("region", { name: "KDLH · Arrive" });
-  await expect(kdlh.getByRole("button", { name: /^Runway 27/ })).toHaveAttribute("aria-pressed", "true", { timeout: slow(20000) });
+  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(/: Runway 27/, { timeout: slow(20000) });
   await expect.poll(circuitsOf(page), { timeout: slow(10000) }).toContain("pattern-at-KDLH");
   // The ILS to 9 added from its pull-down, from DLH: the runway is 9,
   // landed straight in, and no pattern drawn.
@@ -158,10 +158,9 @@ test("an approach puts its field's runway on its own, and another is let only wh
   const menu = page.getByTestId("procedure-menu");
   await expect(menu.getByText("Runway 9", { exact: false })).toBeVisible({ timeout: slow(10000) });
   await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
-  // Its transitions in the menu's own place, on the screen: side by side,
-  // a phone's ran off its edge (the owner's screenshot).
-  if (page.viewportSize()!.width >= 660) await expect(menu.getByTestId("procedure-menu-close")).toHaveAccessibleName("Back");
-  const placed = (await menu.boundingBox())!;
+  // Its transitions a submenu, on the screen: a phone's ran off its edge
+  // once (the owner's screenshot).
+  const placed = (await page.getByTestId("procedure-menu-transition").first().boundingBox())!;
   expect(placed.x + placed.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.getByTestId("procedure-menu-transition").filter({ hasText: "From DLH" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
@@ -173,7 +172,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await unfoldProcedure(kdlh, "approach");
   await kdlh.getByTestId("approach-activate").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
-  await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(/: Runway 9\b/);
   await unfoldProcedure(kdlh, "approach");
   await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toContainText("ILS RWY 09");
   // The field's arrival, a pull-down beside it once the list is in.
@@ -187,11 +186,8 @@ test("an approach puts its field's runway on its own, and another is let only wh
   // its pill on Landing's runway row, the button to pick another.
   await unfoldProcedure(kdlh, "approach");
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
-  // The one picked is the stock listbox's selected option, as a reader
-  // hears it; the arrow keys move between the choices without picking.
-  const ils = page.getByTestId("procedure-menu").getByRole("option", { name: /^ILS/ }).first();
-  await expect(ils).toHaveAttribute("aria-selected", "true");
-  await ils.focus();
+  // The arrow keys move between the stock menu's items without picking.
+  await expect(page.getByTestId("procedure-menu").getByTestId("procedure-menu-item").filter({ hasText: /^ILS/ })).toBeVisible();
   await page.keyboard.press("ArrowDown");
   await expect(page.getByTestId("procedure-menu")).toBeVisible();
   await expect(page).toHaveURL(/KDLH(%3A|:)I09(%3A|:)DLH/);

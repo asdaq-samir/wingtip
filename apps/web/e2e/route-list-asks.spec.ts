@@ -26,6 +26,6 @@ test("a field's approaches that could not be fetched are said so in place, never
   await approach.click();
   const menu = page.getByTestId("procedure-menu");
   await expect(menu.getByText("The FAA's procedures could not be fetched.")).toBeVisible({ timeout: slow(15000) });
-  await expect(menu.getByTestId("query-retry")).toBeVisible();
+  await expect(menu.getByTestId("procedure-menu-retry")).toBeVisible();
   await expect(menu.getByText("None published")).toHaveCount(0);
 });

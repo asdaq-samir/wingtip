@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import {
@@ -74,7 +73,6 @@ export function RunwayPill({
       >
         <span>RWY</span>
         {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>—</span>}
-        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup value={chosen ?? ""} onValueChange={(v) => v && onPick(String(v))}>

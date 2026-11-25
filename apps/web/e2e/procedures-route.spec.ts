@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
-import { LIST, DRAWN, unfoldProcedure } from "./procedureStubs";
+import { LIST, DRAWN, toggleFixes, unfoldProcedure } from "./procedureStubs";
 import { hold } from "./pacing";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -122,11 +122,11 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(approach).toContainText("ILS RWY 09", { timeout: slow(20000) });
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
-  // A tap on its head folds its fixes away and back (the owner, 2026-11-24:
-  // "Tapping it should fold the procedure"); the menu is the round button.
-  await approach.getByTestId("section-fold").click();
+  // Its menu folds its fixes away and back (the owner, 2026-11-25: "do we
+  // need the chevrons?"), its pill with none.
+  await toggleFixes(approach);
   await expect(approach.getByTestId("fix-branch-row")).toHaveCount(0);
-  await approach.getByTestId("section-fold").click();
+  await toggleFixes(approach);
   await expect(approach.getByTestId("fix-branch-row").first()).toBeVisible();
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");

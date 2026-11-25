@@ -117,6 +117,13 @@ export const ARRIVAL_DRAWN = {
   fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.4, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
 };
 
+/** A picked procedure's fixes shown or hidden: its pill's menu's first
+ *  item (ProcedureDropdown's Show Fixes). */
+export async function toggleFixes(section: Locator) {
+  await section.getByTestId("procedure-kind").first().click();
+  await section.page().getByTestId("procedure-menu-fixes").click();
+}
+
 /** A procedure picked at a field, out on the field's line once the line
  *  is opened, as its runways are (the owner, 2026-11-23: "Keep the pill
  *  hidden like runway"): `field` the field's region ("KDLH · Arrive"),
@@ -129,10 +136,11 @@ export async function unfoldProcedure(field: Locator, kind: "approach" | "arriva
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   // The field and its procedures one group, the box round them both.
   await expect(field).toHaveAttribute("data-testid", "field-group");
-  // Its sections folded at first (2026-11-24): the kind's opened by its head.
+  // Its sections folded at first (2026-11-24): the kind's fixes shown from
+  // its pill's menu (2026-11-25, no chevron).
   const section = field.locator(`[data-kind=${kind}]`).first();
   await expect(section).toBeVisible();
-  if ((await section.getAttribute("data-section-folded")) !== null) await section.getByTestId("section-fold").first().click();
+  if ((await section.getAttribute("data-section-folded")) !== null) await toggleFixes(section);
   await expect(section).not.toHaveAttribute("data-section-folded", "");
   // Its rows out, where it has rows on the line (an approach only loaded
   // has its box instead).

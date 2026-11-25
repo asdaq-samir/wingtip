@@ -4,6 +4,7 @@ import { sameField } from "../../lib/procedures";
 import { groundMinAt, type Landing, type NavLogRow, type ProcedureAirport, type ProcedureKind, type RunwayEnd } from "../plan";
 import { DepartPicker } from "../navlog/lazy";
 import ProcedureMenu from "./ProcedureMenu";
+import { ProcedureDropdown, type Fold } from "./ProcedureDropdown";
 import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
 import { RunwayPill } from "./RunwayPill";
@@ -31,31 +32,36 @@ export type FieldPart = {
  *  on it, "+ Approach" where none is picked (`add`). The same menu for the
  *  list read in flight (FieldStep) and FPL's timeline (TimelineRoute),
  *  a row's words its `face`. */
-export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Kind, look: TriggerLook, face?: ReactNode) {
+export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Kind, look: TriggerLook, face?: ReactNode, fold?: Fold) {
   const { airports, lists, inRoute, windOf, pickOf, chosenAt, ask, pick, onAt, setLesson } = vm;
   const i = airports.findIndex((f) => sameField(f.ident, a.ident));
   const wind = windOf(a.ident);
   const placed = inRoute.find((p) => sameField(p.ident, a.ident) && p.kind === kind);
-  return (
-    <ProcedureMenu
-      key={kind}
-      ident={a.ident}
-      kind={kind}
-      list={lists[i]?.data}
-      query={lists[i]}
-      look={look}
-      face={face}
-      picked={pickOf(a.ident, kind)}
-      label={placed?.label ?? null}
-      fixes={placed?.fixes?.map((f) => f.ident)}
-      runway={chosenAt(a.ident)}
-      windward={wind && !wind.calm ? wind.ident : null}
-      onOpen={() => ask(a.ident)}
-      onPick={(next) => pick(a.ident, kind, next)}
-      onAll={() => onAt({ ident: a.ident, kind })}
-      onLearn={kind === "approach" ? () => setLesson(pickOf(a.ident, kind)) : undefined}
-      onDeactivate={kind === "approach" && placed && !placed.loaded ? () => vm.onApproach(a.ident, placed.id, { loaded: true }) : undefined}
-    />
+  const props: Parameters<typeof ProcedureMenu>[0] = {
+    ident: a.ident,
+    kind,
+    list: lists[i]?.data,
+    query: lists[i],
+    look,
+    face,
+    picked: pickOf(a.ident, kind),
+    label: placed?.label ?? null,
+    fixes: placed?.fixes?.map((f) => f.ident),
+    runway: chosenAt(a.ident),
+    windward: wind && !wind.calm ? wind.ident : null,
+    onOpen: () => ask(a.ident),
+    onPick: (next) => pick(a.ident, kind, next),
+    onAll: () => onAt({ ident: a.ident, kind }),
+    onLearn: kind === "approach" ? () => setLesson(pickOf(a.ident, kind)) : undefined,
+    onDeactivate: kind === "approach" && placed && !placed.loaded ? () => vm.onApproach(a.ident, placed.id, { loaded: true }) : undefined,
+  };
+  // FPL's Landing and Takeoff pills pick from the stock dropdown, as their
+  // runway's does (ProcedureDropdown); the list read in flight keeps the
+  // sheet of pages.
+  return look === "slim" || look === "wide" ? (
+    <ProcedureDropdown key={kind} {...props} fold={fold} />
+  ) : (
+    <ProcedureMenu key={kind} {...props} />
   );
 }
 
