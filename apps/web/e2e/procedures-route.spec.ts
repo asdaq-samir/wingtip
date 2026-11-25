@@ -237,9 +237,10 @@ test("the destination's hold is added from its menu, no \"+ HOLD\" chip, and its
   await expect(page).toHaveURL(/[?&]holds=KDLH(%3A|:)270(%3A|:)R(%3A|:)5N(%3A|:)2T(&|$)/);
   await expect(hold).toHaveText("Hold 270° R");
   await expect(hold).toHaveAttribute("data-look", "chip");
-  // Last, after the procedures' chips.
+  // Last, after the procedures' chips, on the Landing card's foot (the
+  // redesign of 2026-11-25).
   const order = await kdlh
-    .getByTestId("timeline-chips")
+    .getByTestId("timeline-add")
     .locator("[data-testid=procedure-kind], [data-testid=hold-chip]")
     .evaluateAll((chips) => chips.map((c) => c.getAttribute("data-testid")));
   expect(order.at(-1)).toBe("hold-chip");

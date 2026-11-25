@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
+import { PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -18,7 +19,7 @@ import { MissedApproach } from "./TimelineApproachParts";
 import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
-import { FoldSection, PhaseCards } from "./onTheLine";
+import { FoldSection, OnTheLine, PhaseCards, PhaseMark } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** No procedure's rows out: one list, not a new one each render. */
@@ -110,43 +111,49 @@ export function TimelineLine({
   const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
   const onPast = !last || sections > 0 || (takeoffOut && !last);
   const grouped = sections > 0 || landingOut || takeoffOut;
-  // A phase's runway, its pull-downs not yet picked ("+ STAR") and the
-  // destination's hold, and a stop's leaving time, at its head's right.
+  // A phase's head (the redesign of 2026-11-25): its runway's pill at the
+  // line's end, and a stop's leaving time after it, in the column of the
+  // fields' times; a straight-in approach's own runway in the pill's shape,
+  // said, not offered (the owner's review, 2026-11-24). Its pull-downs not
+  // yet picked ("+ ARR") and the destination's hold go on a row of their
+  // own at the card's foot (addRow), so the head never wraps.
+  const ownRunway = straightIn ? approachRunway(approach?.name ?? "") : null;
   const phaseTray = (role: "Arrive" | "Depart") => {
     const linePart = role === "Arrive" ? landingPart : takeoffPart;
-    // A straight-in approach's own runway, said and not offered, so the
-    // Landing line says where it lands (the owner's review, 2026-11-24).
-    const ownRunway = role === "Arrive" && straightIn ? approachRunway(approach?.name ?? "") : null;
-    const said = ownRunway && (
-      <span className={cn("shrink-0 font-semibold text-muted-foreground", TEXT.note)} data-testid="landing-runway">
-        RWY {ownRunway}
-      </span>
-    );
-    if (!linePart) return said || undefined;
+    if (role === "Arrive" && ownRunway)
+      return (
+        <span
+          className={cn("flex h-[2.375rem] shrink-0 items-center rounded-full bg-card px-3 font-semibold text-muted-foreground", TEXT.note)}
+          data-testid="landing-runway"
+        >
+          RWY {ownRunway}
+        </span>
+      );
+    if (!linePart) return undefined;
     return (
       <span className="flex min-w-0 flex-wrap items-center justify-end gap-1" data-testid="timeline-chips" data-role={role}>
-        <PartTray
-          vm={vm}
-          a={field!}
-          part={linePart.part}
-          noRunway={role === "Arrive" && straightIn}
-          beside
-          trailing={[
-            ...(said ? [<span key="runway">{said}</span>] : []),
-            // Beside a phase's label at a note's size and 8 in, so a stop
-            // with none picked yet keeps "RWY 5 + ARR + APCH" on its
-            // Landing line at 390, where at a detail's they went under it.
-            ...linePart.add.map((k) => (
-              <span key={k} className="contents [&_button]:px-2 [&_button]:text-(length:--type-note)">
-                {kindMenu(vm, field!, k, "add")}
-              </span>
-            )),
-            ...(linePart.hold
-              ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
-              : []),
-          ]}
-        />
+        <PartTray vm={vm} a={field!} part={linePart.part} beside trailing={[]} />
       </span>
+    );
+  };
+  // The card's foot: what can still be added, from the line's start, 12
+  // apart so their areas meet (the iOS rule's gap-3), as Add a Stop is at
+  // the list's foot; in sight with the card folded.
+  const addRow = (role: "Arrive" | "Depart", on: boolean) => {
+    const linePart = role === "Arrive" ? landingPart : takeoffPart;
+    const chips = [
+      ...(linePart?.add ?? []).map((k) => <Fragment key={k}>{kindMenu(vm, field!, k, "add")}</Fragment>),
+      ...(linePart?.hold
+        ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
+        : []),
+    ];
+    if (!chips.length) return undefined;
+    return () => (
+      <OnTheLine stop={false} thread={on ? "solid" : "none"} rule={false}>
+        <div className="flex min-w-0 flex-wrap items-center gap-3 pb-1.5" data-testid="timeline-add" data-role={role}>
+          {chips}
+        </div>
+      </OnTheLine>
     );
   };
   // Landing and Takeoff, each a section that folds: its head a small label,
@@ -177,14 +184,18 @@ export function TimelineLine({
       ))}
     </>
   );
+  // Its title in the list's own row type, as a field's ident is, not a
+  // small coloured label (the redesign of 2026-11-25).
   const phaseHead = (role: "Arrive" | "Depart") => (
-    <span className={cn("block font-semibold text-procedure uppercase", TEXT.note)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
+    <span className={cn("block font-semibold text-foreground", TEXT.row)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
   );
   const landingFlown = beforeOut.length > 0 || missedHere;
   const landing = landingOut ? (
     <FoldSection
       head={phaseHead("Arrive")}
+      mark={<PhaseMark icon={<PlaneLanding />} />}
       trailing={phaseTray("Arrive")}
+      foot={addRow("Arrive", takeoffOut || !last)}
       chevron={landingFlown}
       stop={last && !takeoffOut}
       thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
@@ -201,7 +212,9 @@ export function TimelineLine({
   const takeoff = takeoffOut ? (
     <FoldSection
       head={phaseHead("Depart")}
+      mark={<PhaseMark icon={<PlaneTakeoff />} />}
       trailing={phaseTray("Depart")}
+      foot={addRow("Depart", !last)}
       chevron={afterOut.length > 0}
       stop={last}
       thread={afterOut.length > 0 || !last ? "solid" : "none"}

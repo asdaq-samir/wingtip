@@ -85,6 +85,7 @@ export function FoldSection({
   nest = false,
   chevron = true,
   corner,
+  mark,
   children,
 }: {
   head: ReactNode;
@@ -113,6 +114,8 @@ export function FoldSection({
    *  title (an approach's Activate beside its transition), so a long name
    *  keeps its line (the owner, 2026-11-24). */
   corner?: ReactNode;
+  /** Its mark in the marks' column, on the route's line (a phase's glyph). */
+  mark?: ReactNode;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -125,7 +128,7 @@ export function FoldSection({
       onOpenChange={setOpen}
       render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
     >
-      <OnTheLine stop={stop && !open && !foot} thread={thread} wrap={nest && !!trailing}>
+      <OnTheLine mark={mark} stop={stop && !open && !foot} thread={thread} wrap={nest && !!trailing}>
         <CollapsibleTrigger
           render={
             <Button
@@ -147,18 +150,16 @@ export function FoldSection({
             />
           }
         >
-          {/* A phase's chevron before its label, its runway and time at the
-              line's end; a section's after its words. */}
-          {chevron && nest && (
-            <ChevronDown
-              className={cn("size-4 shrink-0 text-procedure transition-transform duration-(--motion-fade)", !open && "-rotate-90")}
-              aria-hidden
-            />
-          )}
+          {/* The chevron after the words, a phase's right after its title
+              (iOS's section header that folds), its runway at the line's end. */}
           <span className="min-w-0 flex-1">{head}</span>
-          {chevron && !nest && (
+          {chevron && (
             <ChevronDown
-              className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)", !open && "-rotate-90")}
+              className={cn(
+                "shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)",
+                nest ? "size-4 self-center" : "size-5",
+                !open && "-rotate-90",
+              )}
               aria-hidden
             />
           )}
@@ -252,15 +253,30 @@ function Gap({ line, on = false }: { line: boolean; on?: boolean }) {
  * magenta line connects straight down?"). `into` where the line goes on
  * into them, `out` where it goes on past them to the next field.
  */
+/** A phase's mark on the route's line, Landing's or Takeoff's glyph in a
+ *  disc of the list's colour, so the line runs through each phase as it
+ *  runs through each field (the redesign of 2026-11-25). */
+export function PhaseMark({ icon }: { icon: ReactNode }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-7 place-items-center rounded-full bg-card text-procedure shadow-xs ring-1 ring-border [&_svg]:size-4"
+    >
+      {icon}
+    </span>
+  );
+}
+
 export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode; takeoff: ReactNode; into: boolean; out: boolean }) {
   // The stock Card (shadcn's), its padding, gap and shadow off: its rows
-  // are the list's own. Out 8 past the marks' column and in 8 from the
-  // list's edge (7 inside its 1-point edge), so its marks keep the field's
-  // column, the line unbroken, and its corners show;
-  // its first row has no hairline over it, the card's own edge; its rows
-  // 8 from its end, not the list's 16, for Landing's runway and pull-downs.
+  // are the list's own. Filled, not outlined, iOS's grouped cell inside the
+  // list (the redesign of 2026-11-25: an outline inside the outlined list
+  // read as a box in a box). Out 8 past the marks' column and in 8 from
+  // the list's edge (7 inside its 1-point edge, now clear), so its marks
+  // keep the field's column, the line unbroken, and its corners show; its
+  // first row has no hairline over it, its rows 12 from its end.
   const card =
-    "relative -ml-2 mr-2 gap-0 border-procedure/20 py-0 pl-[7px] shadow-none [&_[data-words]]:pr-2 [&>section>div:first-child>[data-words]]:border-t-0";
+    "relative -ml-2 mr-2 gap-0 border-transparent bg-muted/60 py-0 pl-[7px] shadow-none [&_[data-words]]:pr-3 [&>section>div:first-child>[data-words]]:border-t-0";
   return (
     <div data-testid="phase-cards">
       <Gap line={into} />
