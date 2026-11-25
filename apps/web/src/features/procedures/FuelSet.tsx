@@ -172,7 +172,7 @@ export function FuelSet({
       type="button"
       aria-label={stop ? `${words}, fuel at ${ident}: change` : `${words}, fuel on board: change`}
       data-testid={stop ? "fuel-set-stop" : "fuel-set-departure"}
-      className="relative z-10 ml-2.5 shrink-0 hit-x-[9px] hit-y-[13px] after:-top-[11px] after:-bottom-[15px]"
+      className="relative z-10 ml-1 shrink-0 hit-x-[9px] hit-y-[13px] after:-top-[11px] after:-bottom-[15px]"
       onClick={phone ? () => openWith(true) : undefined}
     >
       <FuelGauge gal={tank.gal} usable={tank.usable} tone={tone} />

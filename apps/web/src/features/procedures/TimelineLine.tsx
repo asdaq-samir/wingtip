@@ -298,9 +298,12 @@ export function TimelineLine({
               />
             ) : (
               // As far from the ident as a gauge that is a control (FuelSet's
-              // 18), so every line's gauge stands in one place.
+              // 12, the row's gap and its ml-1: closer since the wind left
+              // the rows, the owner, 2026-11-25: "Can those fuel tanks be
+              // moved a bit to the left"), so every line's gauge stands in
+              // one place.
               tank && (
-                <span className="ml-2.5 flex shrink-0">
+                <span className="ml-1 flex shrink-0">
                   <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
                 </span>
               )
