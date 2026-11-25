@@ -19,6 +19,7 @@ import {
 import type { ProcedureSummary } from "../../lib/api/types";
 import { usePreferences } from "../../lib/preferences";
 import { transitionWords } from "../../lib/procedures";
+import { TEXT } from "../../lib/text";
 import { WORDING } from "../../lib/wording/generated/wording";
 import type ProcedureMenu from "./ProcedureMenu";
 import { PROCEDURES_FAILED } from "./ProcedureMenu";
@@ -26,6 +27,12 @@ import { ALL, approachGroups, NONE, shortName } from "./procedureWords";
 import { procedureTrigger, TITLE } from "./ProcedureTrigger";
 
 type MenuProps = Parameters<typeof ProcedureMenu>[0];
+
+/** A runway's page's title, its name: a row's 17, semibold, in the words'
+ *  colour, as iOS titles a submenu opened in place, where a group's grey
+ *  13 left the page's one heading the least thing on it (the owner,
+ *  2026-11-25: "runway heading seem too small"; "Yes"). */
+const PAGE_TITLE = cn(TEXT.row, "font-semibold text-foreground");
 
 /**
  * A kind's procedures on FPL's Landing and Takeoff, picked from the stock
@@ -104,7 +111,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
       <>
         {toRunways}
         <DropdownMenuGroup>
-          <DropdownMenuLabel>{runwayName(page)}</DropdownMenuLabel>
+          <DropdownMenuLabel className={PAGE_TITLE}>{runwayName(page)}</DropdownMenuLabel>
           <Choices procedures={byRunway.get(page) ?? []} m={m} />
         </DropdownMenuGroup>
       </>
@@ -149,7 +156,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
               ))}
             {kind === "approach" && first !== null && (
               <DropdownMenuGroup>
-                <DropdownMenuLabel>{runwayName(first)}</DropdownMenuLabel>
+                <DropdownMenuLabel className={PAGE_TITLE}>{runwayName(first)}</DropdownMenuLabel>
                 <Choices procedures={byRunway.get(first)!} m={m} />
               </DropdownMenuGroup>
             )}
