@@ -106,7 +106,9 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
   // airplane's demonstrated, and its length against the distance needed,
   // marked on its chip, at the owner's ask.
   const card = cards[airports.findIndex((f) => sameField(f.ident, a.ident))]?.data;
-  const reportedWind = card?.metar ?? card?.nearby_metar?.metar ?? null;
+  // The wind the runway is picked into, the forecast's where there is one
+  // (useFieldWinds' fitWindOf), not the METAR's alone.
+  const fitWind = vm.fitWindOf(a.ident);
   const fitOf = (kind: "takeoff" | "landing") => (runway: Runway, end: RunwayEnd) =>
     fit
       ? endFit({
@@ -114,11 +116,7 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
           runway,
           end,
           kind,
-          wind: reportedWind && {
-            dirTrueDeg: reportedWind.wind_dir_true_deg,
-            speedKt: reportedWind.wind_speed_kt,
-            gustKt: reportedWind.wind_gust_kt,
-          },
+          wind: fitWind,
           elevationFt: a.elevationFt ?? null,
           altimeterInHg: card?.metar?.altimeter_in_hg,
           tempC: card?.metar?.temp_c,

@@ -5,6 +5,7 @@ import { zuluTime } from "../../lib/format";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { airportQuery } from "../../lib/queryClient";
 import { sameField } from "../../lib/procedures";
+import type { FitWind } from "./runwayFit";
 import { windPick, type WindPick, reportedWind, type ReportedWind, type NavLogRow, type ProcedureAirport } from "../plan";
 
 /** How far off a field's time must be for its runway to be picked into
@@ -133,5 +134,19 @@ export function useFieldWinds({ airports, rows, depart }: { airports: ProcedureA
     const m = card?.metar ?? card?.nearby_metar?.metar;
     return m ? reportedWind(m.wind_dir_true_deg, m.wind_speed_kt, m.wind_gust_kt) : null;
   };
-  return { cards, forecastFor, forecasts, startMs, landedAt, windOf, reportedOf };
+  // The same wind as each end's fit's (runwayFit: its crosswind, its
+  // tailwind, its distances' headwind): the forecast's for the landing
+  // where the runway is picked into it, else the report's. The fit read
+  // the METAR alone, so with a forecast it judged another wind than the
+  // pick's: KLAS's 26R "into the wind" of the forecast's 250 at 5 and
+  // "Tailwind 2 kt" of the METAR's 050 at 3, at once (2026-11-25).
+  const fitWindOf = (ident: string): FitWind | null => {
+    const i = airports.findIndex((a) => sameField(a.ident, ident));
+    const forecast = forecastFor[i] != null ? forecasts[i]?.data : null;
+    if (forecast) return { dirTrueDeg: forecast.dir_true_deg, speedKt: forecast.speed_kt, gustKt: forecast.gust_kt };
+    const card = cards[i]?.data;
+    const m = card?.metar ?? card?.nearby_metar?.metar;
+    return m ? { dirTrueDeg: m.wind_dir_true_deg, speedKt: m.wind_speed_kt, gustKt: m.wind_gust_kt } : null;
+  };
+  return { cards, forecastFor, forecasts, startMs, landedAt, windOf, reportedOf, fitWindOf };
 }

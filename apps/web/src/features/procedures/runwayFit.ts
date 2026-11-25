@@ -14,7 +14,7 @@ import { callEngine } from "../../lib/engine/engine";
 import type { RunwayEnd } from "../plan";
 
 /** A wind as a METAR reports it: true, in knots. */
-interface FitWind {
+export interface FitWind {
   dirTrueDeg: number | null | undefined;
   speedKt: number | null | undefined;
   gustKt: number | null | undefined;
