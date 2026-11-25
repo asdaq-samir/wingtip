@@ -72,7 +72,12 @@ export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Ki
   // FPL's Landing and Takeoff pills pick from the stock dropdown, as their
   // runway's does (ProcedureDropdown); the list read in flight keeps the
   // sheet of pages.
-  return look === "slim" || look === "wide" ? <ProcedureDropdown key={kind} {...props} /> : <ProcedureMenu key={kind} {...props} />;
+  if (look !== "slim" && look !== "wide") return <ProcedureMenu key={kind} {...props} />;
+  const reported = vm.reportedOf(a.ident);
+  const wordsOfWind = kind === "approach" ? windWords(reported) : null;
+  return (
+    <ProcedureDropdown key={kind} {...props} windHead={wordsOfWind && <WindLine direct={false} wind={wordsOfWind} reported={reported} />} />
+  );
 }
 
 /** Whether the procedure of a kind at a field is picked into the route. */

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import {
@@ -41,7 +41,8 @@ type MenuProps = Parameters<typeof ProcedureMenu>[0];
  * the lesson, none of the kind, and the field's whole list. A picked
  * one's menu is its pill's chip; the pill folds its fixes (FoldSection).
  */
-export function ProcedureDropdown(m: MenuProps) {
+/** The field's wind (fieldParts' WindLine), at the head of All Runways as at the runway menu's (RunwayPill). */
+export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
   const { kind, list, query, picked, fixes = [], look = "slim" } = m;
   const all = (list?.procedures ?? []).filter((p) => p.kind === kind);
   const plates = usePreferences((s) => s.plates);
@@ -79,13 +80,26 @@ export function ProcedureDropdown(m: MenuProps) {
   );
   const paged =
     page === "runways" ? (
-      runways.map((r) => (
-        <DropdownMenuItem key={r} closeOnClick={false} onClick={() => setPage(r === first ? null : r)} data-testid="procedure-menu-runway">
-          {runwayName(r)}
-          <span className="ml-auto pl-3 text-muted-foreground">{aside(r)}</span>
-          <ChevronRight className="text-muted-foreground" />
-        </DropdownMenuItem>
-      ))
+      <>
+        {/* The wind over the runways, as the runway's own menu has it (the owner, 2026-11-25). */}
+        {m.windHead && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-foreground">{m.windHead}</DropdownMenuLabel>
+          </DropdownMenuGroup>
+        )}
+        {runways.map((r) => (
+          <DropdownMenuItem
+            key={r}
+            closeOnClick={false}
+            onClick={() => setPage(r === first ? null : r)}
+            data-testid="procedure-menu-runway"
+          >
+            {runwayName(r)}
+            <span className="ml-auto pl-3 text-muted-foreground">{aside(r)}</span>
+            <ChevronRight className="text-muted-foreground" />
+          </DropdownMenuItem>
+        ))}
+      </>
     ) : page !== null ? (
       <>
         {toRunways}
