@@ -54,7 +54,15 @@ export function ProcedureDropdown(m: MenuProps) {
   // "‹ All Runways" at its top in the tint; and every runway, the landed
   // on's first, a tap opening its page, where it was three deep (the
   // landed on's, the others, one of them) with Back to the one before.
-  const [page, setPage] = useState<"runways" | string | null>(null);
+  const [page, setPaged] = useState<"runways" | string | null>(null);
+  // A page turned under a finger lit the row that came under it (iOS
+  // fires its hover where the tap was), reading as picked (the owner's
+  // iPhone, 2026-11-25): no row lit till the next press or a mouse moves.
+  const [turned, setTurned] = useState(false);
+  const setPage = (to: "runways" | string | null) => {
+    setPaged(to);
+    setTurned(true);
+  };
   const runways = first === null ? others : [first, ...others];
   // What a runway's row says at its right: the approach picked there, else its approaches' kinds.
   const aside = (r: string) => {
@@ -64,7 +72,8 @@ export function ProcedureDropdown(m: MenuProps) {
   };
   const toRunways = runways.length > 1 && (
     <DropdownMenuItem closeOnClick={false} onClick={() => setPage("runways")} className="text-tint" data-testid="procedure-menu-back">
-      <ChevronLeft className="-ml-1" />
+      {/* The chevron's stroke in the rows' words' column, the words close after it, as iOS's Back. */}
+      <ChevronLeft className="-mr-1 -ml-1.5" />
       All Runways
     </DropdownMenuItem>
   );
@@ -89,12 +98,22 @@ export function ProcedureDropdown(m: MenuProps) {
   return (
     <DropdownMenu
       onOpenChange={(open) => {
-        setPage(null);
+        setPaged(null);
+        setTurned(false);
         if (open) m.onOpen();
       }}
     >
       <DropdownMenuTrigger render={procedureTrigger({ look, ident: m.ident, kind, label: m.label, face: m.face })} />
-      <DropdownMenuContent align="start" className={cn("min-w-60", look === "slim" && "w-auto")} data-testid="procedure-menu">
+      <DropdownMenuContent
+        align="start"
+        className={cn("min-w-60 data-turned:[&_[data-highlighted]]:bg-transparent!", look === "slim" && "w-auto")}
+        data-turned={turned || undefined}
+        onPointerDown={() => setTurned(false)}
+        onPointerMove={(e) => {
+          if (e.pointerType === "mouse") setTurned(false);
+        }}
+        data-testid="procedure-menu"
+      >
         {paged}
         {!paged && !list && query?.isError && (
           <DropdownMenuItem closeOnClick={false} onClick={() => void query.refetch()} data-testid="procedure-menu-retry">
