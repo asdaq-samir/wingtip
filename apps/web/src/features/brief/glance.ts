@@ -37,7 +37,7 @@ export interface FieldGlance {
    *  caution can be the runway's length past the POH's tables alone. */
   crosswindOver: boolean;
   /** The first station called or listened to there (features/plan/radio). */
-  radio: { to: string; mhz: number } | null;
+  radio: { to: string; mhz: number; ctaf: boolean } | null;
   finding: Finding;
 }
 

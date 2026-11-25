@@ -229,6 +229,9 @@ pub struct Call {
     pub words: String,
     pub note: Option<String>,
     pub listen: bool,
+    /// Called on the field's CTAF ("Campbell traffic", AIM 4-1-9), so a
+    /// page labels it so from this, never from the name's last word.
+    pub ctaf: bool,
 }
 
 pub struct Phase {
@@ -239,7 +242,12 @@ pub struct Phase {
 }
 
 fn call(to: String, mhz: Option<f64>, words: String) -> Call {
-    Call { to, mhz, words, note: None, listen: false }
+    Call { to, mhz, words, note: None, listen: false, ctaf: false }
+}
+
+/// A call to the field's traffic on its CTAF (AIM 4-1-9, AC 90-66C).
+fn ctaf_call(field: &str, mhz: Option<f64>, words: String) -> Call {
+    Call { ctaf: true, ..call(format!("{field} traffic"), mhz, words) }
 }
 
 fn of<'a>(f: &'a [Frequency], types: &[&str]) -> Option<&'a Frequency> {

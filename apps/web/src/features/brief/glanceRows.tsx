@@ -15,9 +15,10 @@ import CategoryBadge from "./CategoryBadge";
 import type { BriefGlance, FieldGlance } from "./glance";
 
 const DASH = "—";
-/** Whom a frequency is for, in a word over it: "Campbell traffic" is the
- *  field's CTAF, "Duluth ATIS" its ATIS. */
-const radioLabel = (to: string) => (/traffic$/i.test(to) ? "CTAF" : (to.split(" ").at(-1) ?? to));
+/** Whom a frequency is for, in a word over it: a call on the field's CTAF
+ *  as the engine marks it (radio_script), where the name's "traffic" was
+ *  read for it here; else the station's last word, "Duluth ATIS" its ATIS. */
+const radioLabel = (radio: { to: string; ctaf: boolean }) => (radio.ctaf ? "CTAF" : (radio.to.split(" ").at(-1) ?? radio.to));
 /** A clock time with its zone, "04:17 CST", as the nav log heads its ETAs:
  *  a bare "04:17" on the Depart row read as Z or local (WEB-9). In the
  *  field's own zone (the planner's `time_zone`), as FPL's timeline gives
@@ -181,7 +182,7 @@ export function FieldRow({
                 finding={field.finding === "stop" ? "stop" : undefined}
               />
             )}
-            {field.radio && <Stat label={radioLabel(field.radio.to)} value={mhzText(field.radio.mhz)} />}
+            {field.radio && <Stat label={radioLabel(field.radio)} value={mhzText(field.radio.mhz)} />}
           </Figures>
         ) : undefined
       }

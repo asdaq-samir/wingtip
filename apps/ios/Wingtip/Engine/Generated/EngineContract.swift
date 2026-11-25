@@ -10460,6 +10460,8 @@ nonisolated enum EngineContract {
         var words: String
         var note: String?
         var listen: Bool?
+        /// Called on the field's CTAF (AIM 4-1-9): the page's label for it.
+        var ctaf: Bool?
     }
 
     nonisolated struct RadioScriptInput: Codable, Equatable, Sendable {

@@ -81,7 +81,7 @@ export function buildGlance({
       wind: metar && metar.wind_speed_kt != null ? windLine(metar) : null,
       crosswindKt: check ? Math.round(check.crosswindKt) : null,
       crosswindOver: !!check?.crosswindOver,
-      radio: call ? { to: call.to, mhz: call.mhz! } : null,
+      radio: call ? { to: call.to, mhz: call.mhz!, ctaf: !!call.ctaf } : null,
       // A field not checked (no elevation, no runway length) is not known, never fine; one past
       // the POH's tables is a caution (the engine's runways finding says the same).
       finding:

@@ -10751,6 +10751,10 @@ object EngineContract {
         val words: String,
         val note: String? = null,
         val listen: Boolean? = null,
+        /**
+         * Called on the field's CTAF (AIM 4-1-9): the page's label for it.
+         */
+        val ctaf: Boolean? = null,
     )
 
     @Serializable

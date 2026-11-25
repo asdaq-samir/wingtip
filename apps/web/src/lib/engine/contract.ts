@@ -895,6 +895,10 @@ export type RadioScriptAnswer = {
     words: string;
     note?: string;
     listen?: boolean;
+    /**
+     * Called on the field's CTAF (AIM 4-1-9): the page's label for it.
+     */
+    ctaf?: boolean;
   }[];
 }[];
 /**

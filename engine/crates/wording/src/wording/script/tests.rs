@@ -29,3 +29,12 @@ fn a_facility_is_called_by_its_own_name() {
     assert_eq!(facility_name(&f("TWR"), "Waukegan"), "Waukegan");
     assert_eq!(facility_name(&f("ROCKFORD TWR"), "X"), "Rockford");
 }
+
+#[test]
+fn a_call_to_the_fields_traffic_is_marked_the_ctaf() {
+    // The page labels it "CTAF" from this mark, not from the name's last word.
+    let c = ctaf_call("Campbell", Some(122.8), "Campbell traffic, taxiing.".into());
+    assert!(c.ctaf);
+    assert_eq!(c.to, "Campbell traffic");
+    assert!(!call("Waukegan Tower".into(), Some(120.0), String::new()).ctaf);
+}
