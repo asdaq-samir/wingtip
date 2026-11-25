@@ -18,13 +18,16 @@ export function runwayEnds(a: ProcedureAirport) {
  *  amber, a ring, the chip not grown -- said in its words to a reader. */
 export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, fitOf: (runway: Runway, end: RunwayEnd) => EndFit | null) {
   const id = runwayNumber(end.ident);
-  const windward = into === id;
   const fitted = fitOf(runway, end);
   // A tailwind said as a caution (AIM 4-3-6: land and take off into the
   // wind where it can be; the engine's runway_end_fit), as a crosswind past
   // the demonstrated is: an ILS to the downwind end showed nothing (the
   // owner's screenshot, 2026-11-25, KUGN 23 with the wind on 5).
   const tail = fitted && fitted.tailwindKt > 0 ? fitted.tailwindKt : 0;
+  // Never "into the wind" with the wind behind it: the pick's best end
+  // where only one end has a heading can have it (the aviation audit,
+  // 2026-11-25).
+  const windward = into === id && !tail;
   const ring = fitted?.short
     ? "ring-2 ring-destructive"
     : fitted && (fitted.crosswindOver || fitted.close || tail > 0)

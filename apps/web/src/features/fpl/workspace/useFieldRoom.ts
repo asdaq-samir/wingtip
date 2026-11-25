@@ -1,5 +1,4 @@
 import { useLayoutEffect, type RefObject } from "react";
-import { panelNow } from "../../plan";
 
 /** The toggle's row under the pills (RouteEditor, h-11) and eight clear of the bar. */
 const UNDER_PILLS_PX = 44 + 8;
@@ -37,9 +36,13 @@ export function useFieldRoom(field: RefObject<HTMLElement | null>, on: boolean) 
       const bar = document.querySelector<HTMLElement>("[data-foot-bar]");
       const pills = el.querySelector<HTMLElement>('[data-testid="route-slide"]');
       let next = "";
-      if (bar && pills && panelNow.current !== "full") {
-        const rest = parseFloat(popup.style.getPropertyValue("--drawer-snap-point-offset")) || 0;
-        const top = rest + pills.getBoundingClientRect().top - popup.getBoundingClientRect().top;
+      // All the way up the offset is 0 (the full snap point), read here and
+      // not from the plan's panel, set in an effect after this may run.
+      const rest = parseFloat(popup.style.getPropertyValue("--drawer-snap-point-offset")) || 0;
+      if (bar && pills && rest > 1) {
+        // The popup's own top unslid (offsetTop: the status bar's room and
+        // 8 over it, SheetDrawer), the rest under it, the pills' place in it.
+        const top = popup.offsetTop + rest + pills.getBoundingClientRect().top - popup.getBoundingClientRect().top;
         const fits = Math.round(bar.getBoundingClientRect().top - UNDER_PILLS_PX - top);
         next = `${Math.max(LEAST_PX, fits)}px`;
       }
@@ -51,7 +54,15 @@ export function useFieldRoom(field: RefObject<HTMLElement | null>, on: boolean) 
     // As it opens, as its lines grow, and as the sheet comes to a new rest.
     const grows = new ResizeObserver(check);
     grows.observe(el);
-    const rests = new MutationObserver(check);
+    // Base UI writes the finger's movement on the popup's style at every
+    // move: measured only when the rest itself changes, not per frame.
+    let at = popup.style.getPropertyValue("--drawer-snap-point-offset");
+    const rests = new MutationObserver(() => {
+      const now = popup.style.getPropertyValue("--drawer-snap-point-offset");
+      if (now === at) return;
+      at = now;
+      check();
+    });
     rests.observe(popup, { attributes: true, attributeFilter: ["style"] });
     return () => {
       grows.disconnect();

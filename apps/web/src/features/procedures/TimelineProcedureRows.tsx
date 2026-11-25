@@ -20,11 +20,10 @@ type Kind = keyof typeof KIND_WORD;
  * the route's magenta line itself in the order they are flown, at the
  * owner's pick (option D, 2026-11-21, of the canvas NgAKy71YahLtp5mZtMDAoH),
  * a section of its field's group under the field's line (FoldSection).
- * Its head the kind in the procedure's indigo, small capitals
- * ("APPROACH"), over its name ("RNAV (GPS)-B"), wrapping, never
+ * Its head a pill as wide as the card, its name ("RNAV (GPS)-B"), never
  * cut: a tap folds its fixes away under it and back (the owner,
- * 2026-11-24: "Tapping it should fold the procedure"), the kind's menu to
- * pick another (ProcedureMenu) a round button at its end. An approach
+ * 2026-11-24: "Tapping it should fold the procedure"), the chip at its
+ * end the kind's menu to pick another (ProcedureDropdown). An approach
  * loaded, not activated, is the same on a dashed line. Then a row a fix, its mark a ring in
  * the indigo with "•••", its menu (Direct To, its altitude and card, as
  * FixList's •••), its name -- a tap opens its card (FixCard) -- the parts
@@ -98,9 +97,8 @@ export function TimelineProcedureRows({
       // Its menu is its pill's (the owner, 2026-11-25: "design these pills
       // to be like route box where they open a menu for their selection
       // ... Then we won't need ... at the end"); a loaded approach's
-      // Activate in the pill before its chevron; activated, its
-      // Deactivate is in the menu, as is Show Fixes (no chevron: the
-      // owner, 2026-11-25, "do we need the chevrons?").
+      // Activate in the pill before its chip; activated, its Deactivate
+      // is in the menu.
       trailing={
         loaded && (
           // Filled in the tint, the one action on the pill, apart from the
@@ -108,6 +106,8 @@ export function TimelineProcedureRows({
           <Button
             variant="default"
             size="xs"
+            // Its 44-point area round the 24 it is, as the chip's beside it.
+            className="relative hit-y-2.5"
             onClick={() => vm.onApproach(field.ident, placed.id, { loaded: false })}
             data-testid="approach-activate"
           >

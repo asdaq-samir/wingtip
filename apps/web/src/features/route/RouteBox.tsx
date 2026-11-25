@@ -216,11 +216,12 @@ export default function RouteBox({
             {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
                owner, 2026-11-04: "FPL can be fixed as one row, in which ids can slide"), as ForeFlight's flight plan
                box does; the end faded where it runs on (Base UI's ScrollArea says so on its viewport), so a point past
-               it reads as there. A drag up or down on it is the sheet's (the Drawer's swipe), across is the row's. */}
+               it reads as there. A drag up or down on it is the sheet's (the Drawer's swipe), across is the row's; wrapped
+               past the room above the foot bar (--route-room), up or down scrolls its lines. */}
             <ScrollArea.Root overflowEdgeThreshold={RUNS_ON_PX} className="min-w-0 flex-1 basis-24">
               <ScrollArea.Viewport
                 ref={slide}
-                // Out of the tab order; a drag up or down is the sheet's.
+                // Out of the tab order.
                 tabIndex={-1}
                 // Wrapped, the box grown to hold every line, a pill whole on its
                 // line, up to the room above FPL's foot bar (--route-room,
@@ -229,8 +230,10 @@ export default function RouteBox({
                 style={wrapped ? { overflowX: "hidden", overflowY: "auto", maxHeight: "var(--route-room, none)" } : { overflowY: "hidden" }}
                 className={cn(
                   // Fades only on the one-row face: wrapped, one hid every line's right (2026-11-23).
+                  // Wrapped, 4 of padding past each side, where the clip of its
+                  // scroll would cut a side pill's 44-point area (hit-*).
                   wrapped
-                    ? "overscroll-y-contain"
+                    ? "-mx-1 overscroll-y-contain px-1"
                     : [
                         "overscroll-x-contain",
                         "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",

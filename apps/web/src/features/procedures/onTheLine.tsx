@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -68,10 +67,10 @@ export function OnTheLine({
  * its heading (the owner, 2026-11-24: "that airport should be the heading
  * and than it should have the folding runways and folding procedures
  * inside"): its head a stock Collapsible's trigger, a tap folding its rows
- * away under it and back, its chevron turning to say which; `trailing` at
- * the head's end (a missed approach's Unsuspend, an approach's Activate).
- * A procedure picked is a pill as wide as the card instead (`pill`, the
- * owner, 2026-11-25): its words open its menu, its chevron folds its fixes.
+ * away under it and back; `trailing` at the head's end (a missed
+ * approach's Unsuspend, an approach's Activate). A procedure picked is a
+ * pill as wide as the card instead (`pill`, the owner, 2026-11-25): a tap
+ * on it folds its fixes, the chip at its end opens its menu.
  * Folded, the route's line stops at the head where it would have ended at
  * the section's last row.
  */
@@ -85,7 +84,6 @@ export function FoldSection({
   label,
   data,
   startOpen = false,
-  chevron = true,
   children,
 }: {
   head?: ReactNode;
@@ -104,15 +102,12 @@ export function FoldSection({
   /** Open at first: the browser specs' fields (useProceduresRoute's
    *  openAtFirst), each worked on whole. */
   startOpen?: boolean;
-  /** Its chevron; none where its title is the tap that folds it. */
-  chevron?: boolean;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
   // it has, not all of it (the owner, 2026-11-24: "Tapping shouldn't
   // unfold all of the subsections"); a tap on a head opens that one.
   const [open, setOpen] = useState(startOpen);
-  const turn = cn("shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)", !open && "-rotate-90");
   return (
     <Collapsible
       open={open}
@@ -174,7 +169,6 @@ export function FoldSection({
               }
             >
               <span className="min-w-0 flex-1">{head}</span>
-              {chevron && <ChevronDown className={cn(turn, "size-5")} aria-hidden />}
             </CollapsibleTrigger>
             {trailing && <span className="ml-auto flex max-w-full min-w-0 shrink-0 items-center gap-1">{trailing}</span>}
           </>
@@ -292,15 +286,6 @@ function Gap({ line, on = false }: { line: boolean; on?: boolean }) {
   );
 }
 
-/**
- * A field's Landing and Takeoff, each a card of its own under the field's
- * line, as wide as the field's rows, the route's magenta straight down
- * through them in the marks' column (the owner, 2026-11-24: "two cards
- * within airport id, one for landing and another for takeoff"; "Maybe we
- * can make them not indented but as wide as the airport cards? So the
- * magenta line connects straight down?"). `into` where the line goes on
- * into them, `out` where it goes on past them to the next field.
- */
 /** A phase's mark on the route's line, Landing's or Takeoff's glyph in a
  *  disc of the list's colour, so the line runs through each phase as it
  *  runs through each field (the redesign of 2026-11-25). */
@@ -315,6 +300,15 @@ export function PhaseMark({ icon }: { icon: ReactNode }) {
   );
 }
 
+/**
+ * A field's Landing and Takeoff, each a card of its own under the field's
+ * line, as wide as the field's rows, the route's magenta straight down
+ * through them in the marks' column (the owner, 2026-11-24: "two cards
+ * within airport id, one for landing and another for takeoff"; "Maybe we
+ * can make them not indented but as wide as the airport cards? So the
+ * magenta line connects straight down?"). `into` where the line goes on
+ * into them, `out` where it goes on past them to the next field.
+ */
 export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode; takeoff: ReactNode; into: boolean; out: boolean }) {
   // The stock Card (shadcn's), its padding, gap and shadow off: its rows
   // are the list's own. No fill (the owner, 2026-11-25: "Go ahead", of the

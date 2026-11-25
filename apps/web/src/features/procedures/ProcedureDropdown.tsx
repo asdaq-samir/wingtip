@@ -47,8 +47,9 @@ const PAGE_TITLE = cn(TEXT.row, "font-semibold text-foreground");
  * the user go back to see other procedures"); then Direct To, the plate,
  * the lesson, none of the kind, and the field's whole list. A picked
  * one's menu is its pill's chip; the pill folds its fixes (FoldSection).
+ * `windHead`, the field's wind (fieldParts' WindLine), heads All Runways
+ * as it heads the runway's own menu (RunwayPill).
  */
-/** The field's wind (fieldParts' WindLine), at the head of All Runways as at the runway menu's (RunwayPill). */
 export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
   const { kind, list, query, picked, fixes = [], look = "slim" } = m;
   const all = (list?.procedures ?? []).filter((p) => p.kind === kind);
@@ -71,6 +72,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
     setPaged(to);
     setTurned(true);
   };
+  // approachGroups' first is a runway whenever there is an approach.
   const runways = first === null ? others : [first, ...others];
   // What a runway's row says at its right: the approach picked there, else its approaches' kinds.
   const aside = (r: string) => {
@@ -119,9 +121,12 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
   return (
     <DropdownMenu
       onOpenChange={(open) => {
+        // As it opens, at its first page: reset as it closed, the page
+        // flipped back under its fade.
+        if (!open) return;
         setPaged(null);
         setTurned(false);
-        if (open) m.onOpen();
+        m.onOpen();
       }}
     >
       <DropdownMenuTrigger render={procedureTrigger({ look, ident: m.ident, kind, label: m.label, face: m.face })} />
@@ -130,6 +135,8 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
         className={cn("min-w-60 data-turned:[&_[data-highlighted]]:bg-transparent!", look === "slim" && "w-auto")}
         data-turned={turned || undefined}
         onPointerDown={() => setTurned(false)}
+        // The arrows light their row again (Full Keyboard Access, an iPad's keyboard).
+        onKeyDown={() => setTurned(false)}
         onPointerMove={(e) => {
           if (e.pointerType === "mouse") setTurned(false);
         }}
@@ -145,15 +152,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
         {!paged && (
           <>
             {list && all.length === 0 && <DropdownMenuItem disabled>None published</DropdownMenuItem>}
-            {kind === "approach" &&
-              (first === null && others.length > 0 ? (
-                <DropdownMenuItem closeOnClick={false} onClick={() => setPage("runways")} data-testid="procedure-menu-others">
-                  Runways
-                  <ChevronRight className="ml-auto text-muted-foreground" />
-                </DropdownMenuItem>
-              ) : (
-                toRunways
-              ))}
+            {kind === "approach" && toRunways}
             {kind === "approach" && first !== null && (
               <DropdownMenuGroup>
                 <DropdownMenuLabel className={PAGE_TITLE}>{runwayName(first)}</DropdownMenuLabel>
