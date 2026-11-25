@@ -260,7 +260,8 @@ test("under IFR the Weather tab says whether an alternate is needed, files one w
   await openSection(page, "Alternate");
   const section = page.getByTestId("alternate");
   await expect(section.getByTestId("alternate-destination")).toContainText("An alternate is required", { timeout: slow(90000) });
-  await section.getByTestId("alternate-suggestion-KMSN").click();
+  // Its row folds open what is known of it; its File chip files it.
+  await section.getByTestId("alternate-file-KMSN").click();
   await expect(page).toHaveURL(/[?&]alternate=KMSN/);
   await expect(section.getByTestId("alternate-filed")).toContainText("Meets 600-2");
   await expect.poll(() => navlogs.at(-1), { timeout: slow(30000) }).toBe("KMSN");

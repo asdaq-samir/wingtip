@@ -2,7 +2,7 @@ import { useContext, useId, type ComponentProps, type ReactNode } from "react";
 import { cn } from "cn";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { TEXT } from "../lib/text";
-import { SectionsOpen } from "./sectionLayout";
+import { InSection, SectionsOpen } from "./sectionLayout";
 import SectionTitle from "./SectionTitle";
 
 /**
@@ -75,7 +75,7 @@ export default function AccordionSection({
           {aside}
         </div>
         {description && <div className={cn("text-muted-foreground", TEXT.note)}>{description}</div>}
-        {children}
+        <InSection.Provider value>{children}</InSection.Provider>
       </section>
     );
   }
@@ -115,7 +115,7 @@ export default function AccordionSection({
       />
       <AccordionContent className={TEXT.prose}>
         {description && <div className={cn("text-muted-foreground", TEXT.note)}>{description}</div>}
-        {children}
+        <InSection.Provider value>{children}</InSection.Provider>
       </AccordionContent>
     </AccordionItem>
   );

@@ -7,7 +7,7 @@ import { useTicked, usePreflight } from "./preflight";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import type { VerdictItem, Where } from "../../lib/verdict";
-import { GoToTab, LEGS } from "../plan";
+import { GoToTab } from "../plan";
 
 /** A check the planner does not make, and where the pilot makes it: the
  *  FAA's NOTAM and flow-control feeds need an operator's credentials. */
@@ -23,24 +23,31 @@ interface Elsewhere {
 
 /** 14 CFR 91.103's other three, beside the Go / No-Go's seven: NOTAMs
  *  ("all available information", AIM 5-1-3), known ATC delays and the
- *  alternatives if the flight cannot be completed (91.103(a)). */
-// After the Go / No-Go's, the alternates first, beside the route's
-// findings, then the two read on the FAA's own pages (option A).
-const ELSEWHERE: Elsewhere[] = [
-  { key: "alternatives", label: "Alternates", detail: "Divert from any leg", at: { tab: "enroute", section: LEGS } },
-  { key: "notams", label: "NOTAMs", detail: "1800wxbrief.com", href: "https://www.1800wxbrief.com" },
-  { key: "delays", label: "ATC Delays", detail: "fly.faa.gov", href: "https://www.fly.faa.gov" },
-];
+ *  alternatives if the flight cannot be completed (91.103(a)). Each opens
+ *  in the Brief where it can (the owner, 2026-11-25: "a simple briefing
+ *  with pages... it should be very clear what's happening with the
+ *  tap"): the NOTAMs on this page, the one meaning the overview's NOTAMs
+ *  row has; the alternate on Arrive, where an IFR flight files one
+ *  (91.169) -- a VFR flight has no such section, so no row. The delays
+ *  alone are read on the FAA's own page, the row marked as leaving. */
+const NOTAMS: Elsewhere = { key: "notams", label: "NOTAMs", detail: "Those that matter", at: { tab: "preflight", section: "NOTAMs" } };
+const ALTERNATE: Elsewhere = {
+  key: "alternatives",
+  label: "Alternate",
+  detail: "Filed on Arrive",
+  at: { tab: "arrive", section: "Alternate" },
+};
+const DELAYS: Elsewhere = { key: "delays", label: "ATC Delays", detail: "fly.faa.gov", href: "https://www.fly.faa.gov" };
 
 /**
  * Preflight's checks, at the owner's pick of option A (2026-11-19): one
  * grouped list, as Settings and the Brief's overview are, a row a check
  * -- the Go / No-Go's (lib/verdict: the weather, the airspace, the
  * altitude, the fuel, the runways, the loading and the risk), in the
- * engine's order, then 14 CFR 91.103's other three -- each with its mark
+ * engine's order, then 14 CFR 91.103's others -- each with its mark
  * and its finding, opening where it is said in full: a section of the
- * Brief (`onOpen`, for one on this page, folded until then), FPL's legs,
- * or the FAA's own page. Whether to go is over it, under the Brief's name
+ * Brief (`onOpen`, for one on this page, folded until then) or, for the
+ * delays alone, the FAA's own page. Whether to go is over it, under the Brief's name
  * (VerdictPill). A row opened is a check looked at, counted beside the
  * list's title for this flight (features/brief/preflight's ticks: another
  * route or time starts again). They were tiles, two to a row.
@@ -48,12 +55,15 @@ const ELSEWHERE: Elsewhere[] = [
 export default function BriefChecks({
   items,
   flight,
+  ifr,
   here,
   onOpen,
 }: {
   items: VerdictItem[];
   /** The flight the looks are for: its route and time. */
   flight: string;
+  /** Under IFR, where an alternate is filed (Arrive's Alternate). */
+  ifr: boolean;
   /** The sections of this page a row opens, by their titles. */
   here: string[];
   /** A section of this page opened, before it is scrolled to. */
@@ -62,7 +72,10 @@ export default function BriefChecks({
   const go = useContext(GoToTab);
   const looked = useTicked(flight);
   const tick = usePreflight((s) => s.tick);
-  const keys = [...items.map((i) => i.key), ...ELSEWHERE.map((e) => e.key)];
+  // After the Go / No-Go's, the alternate first, beside the route's
+  // findings, then the NOTAMs and the delays.
+  const elsewhere = ifr ? [ALTERNATE, NOTAMS, DELAYS] : [NOTAMS, DELAYS];
+  const keys = [...items.map((i) => i.key), ...elsewhere.map((e) => e.key)];
   const seen = keys.filter((key) => looked[key]).length;
   const open = (key: string, at: Where | undefined) => {
     tick(flight, key, true);
@@ -99,7 +112,7 @@ export default function BriefChecks({
             data-looked={looked[i.key] || undefined}
           />
         ))}
-        {ELSEWHERE.map((e) => (
+        {elsewhere.map((e) => (
           <ListRow
             key={e.key}
             media={<Info className="size-5 text-muted-foreground" aria-hidden />}
@@ -110,6 +123,7 @@ export default function BriefChecks({
               </>
             }
             value={e.detail}
+            // A link out wears ListRow's outbound glyph, not the chevron.
             href={e.href}
             chevron={!e.href}
             onClick={() => (e.href ? tick(flight, e.key, true) : open(e.key, e.at))}

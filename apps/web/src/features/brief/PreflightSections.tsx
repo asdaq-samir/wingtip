@@ -5,6 +5,7 @@ import AccordionSection from "../../components/AccordionSection";
 import AfterPaint from "../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { NumberField as StockNumberField } from "../../components/ui/number-field";
+import { Button } from "../../components/ui/button";
 import type { AircraftProfile, Briefing, Course, Loading } from "../../lib/api/types";
 import { runwayChecks, type RunwayDistance } from "./runwayCheck";
 import { useRunwayPicks, phasesOf, type Phase } from "../plan/lazy";
@@ -117,8 +118,15 @@ export function WeightBalanceSection({
                 title={ownEmpty ? "Your airplane's empty weight" : "The POH's sample airplane"}
                 description={`${ownEmpty ? "With" : "Not yours, with"} a sample pilot and full tanks: change what differs, then use it.`}
                 data-testid="wb-sample"
-              />
-              <ListRow title="Use This Load" onClick={accept} data-testid="wb-use-load" />
+              >
+                {/* The section's one filled button: it makes the sample the
+                    pilot's load (14 CFR 91.9(a)), as Activate is the
+                    approach's one (the owner, 2026-11-25: "it should be very
+                    clear what's happening with the tap"). */}
+                <Button variant="default" size="xs" className="relative hit-y-2.5" onClick={accept} data-testid="wb-use-load">
+                  Use This Load
+                </Button>
+              </ListRow>
             </ListGroup>
           )}
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
@@ -307,9 +315,12 @@ export function TakeoffLandingSection({
                   description={
                     !c.runway ? undefined : c.runway.wind ? (
                       <span className={cn(c.crosswindOver && FINDING_TONE.caution)} data-testid="runway-wind-check">
+                        {/* The pilot's pick said as theirs, the wind's favourite
+                            or not: where it is also the end most into the
+                            wind, that is said after. */}
                         {c.picked && c.end !== c.runway.wind.end
                           ? `Picked in FPL: ${Math.abs(c.headwindKt)} kt ${c.headwindKt < 0 ? "tailwind" : "headwind"}, ${c.crosswindKt} kt across`
-                          : `${c.picked && c.end !== c.runway.wind.end ? "Picked in FPL" : "Most into the wind"}: ${windOnRunway(c.runway.wind)}`}
+                          : `${c.picked ? "Picked in FPL, most into the wind" : "Most into the wind"}: ${windOnRunway(c.runway.wind)}`}
                         {c.crosswindOver && demonstrated && `, over the ${demonstrated.demonstrated_kt} kt the POH demonstrates`}
                       </span>
                     ) : c.picked ? (

@@ -3,7 +3,6 @@ import { wholeNm } from "../../lib/format";
 import { hoverTfr, mouseHover } from "../../lib/map/marks/mapHover";
 import AccordionSection from "../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import SectionTitle from "../../components/SectionTitle";
 import type { NavLogAltitude, Totals } from "../../lib/api/types";
 import type { FlightBriefing } from "./useFlightBriefing";
 import { ceilingAndVisibility } from "../plan";
@@ -53,6 +52,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
       <BriefChecks
         items={items}
         flight={`${landings.join("-")}|${depart}`}
+        ifr={ifr}
         here={TILE_SECTIONS}
         onOpen={(section) => setFolds((open) => (open.includes(section) ? open : [...open, section]))}
       />
@@ -64,8 +64,10 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
       {/* What a row opens, and what is done before leaving -- the
           paperwork, the passengers -- a row each, at the owner's pick
           of the redesign: they were laid open, ten screens of them
-          under the Go / No-Go. */}
-      <SectionTitle className="mt-2 px-1 print:hidden">Before You Go</SectionTitle>
+          under the Go / No-Go. No heading of their own: "Before You Go"
+          is the overview's row that opens the checks, and a second one
+          here named another thing (the owner, 2026-11-25: "it should be
+          very clear what's happening with the tap"). */}
       <SectionsOpen.Provider value={printing}>
         <Accordion multiple value={folds} onValueChange={(v) => setFolds(v as string[])} data-testid="before-you-go">
           <AirspaceSection vm={vm} />

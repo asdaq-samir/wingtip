@@ -28,8 +28,8 @@ test("the passengers are briefed as 91.107 asks, and sent the flight", async ({ 
   await expect(section).toContainText("Brief them · 1 of 7");
   // Sent once the nav log has the time in the air.
   await expect(section).toContainText("in the air", { timeout: slow(90000) });
-  // What is sent under the row that sends it, where it was a footnote.
-  await expect(section.getByTestId("passenger-send")).toContainText("KMSN to");
+  // What is sent, a row of its own, its Send a chip at the row's end.
+  await expect(section.getByTestId("passenger-message")).toContainText("KMSN to");
   await section.getByTestId("passenger-send").click();
   await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   const text = await page.evaluate(() => navigator.clipboard.readText());

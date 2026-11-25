@@ -1,4 +1,4 @@
-import { Children, Fragment, useId, type ComponentProps, type ReactNode } from "react";
+import { Children, Fragment, useContext, useId, type ComponentProps, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Check, ChevronRight, ExternalLink } from "lucide-react";
 import { Button as BaseButton } from "@base-ui/react/button";
@@ -8,9 +8,10 @@ import { cn } from "cn";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "./ui/item";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
-import { TEXT } from "../lib/text";
+import { GROUP_LABEL, TEXT } from "../lib/text";
 import { safeHref } from "../lib/safeHref";
 import SectionTitle from "./SectionTitle";
+import { InSection } from "./sectionLayout";
 
 // A group's box, plain on a sheet or translucent on a glass card.
 const GROUP_BASE = "gap-0 has-data-[size=sm]:gap-0 has-data-[size=xs]:gap-0";
@@ -53,6 +54,9 @@ export function ListGroup({
   className?: string;
 }) {
   const id = useId();
+  // Under a section's title its title is a group's label (GROUP_LABEL); a
+  // page's or a card's own groups keep the section title's 20.
+  const inSection = useContext(InSection);
   const rows = Children.toArray(children).filter(Boolean);
   return (
     <section aria-labelledby={title ? id : undefined} className={className}>
@@ -62,7 +66,9 @@ export function ListGroup({
               sixteen-point inset (the sheet audit's F-B3), where four more
               put the titles out of line with the card's name. */}
           <div className="flex items-center gap-2 pb-1.5">
-            <SectionTitle id={id}>{title}</SectionTitle>
+            <SectionTitle id={id} className={inSection ? GROUP_LABEL : undefined}>
+              {title}
+            </SectionTitle>
             {badge}
           </div>
           {action}

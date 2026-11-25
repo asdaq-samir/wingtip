@@ -79,6 +79,13 @@ export const TEXT = {
  *  caps", 2026-10-23). */
 export const SECTION_TITLE = `font-medium text-foreground ${TEXT.heading}`;
 
+/** A list group's title inside a section (ListGroup in AccordionSection):
+ *  a label, as iOS heads a group in a grouped list and as a menu labels
+ *  its part (MENU_LABEL) -- a note's 13, medium, grey, in the title's own
+ *  words -- where it was the section's 20 too, three headings deep at one
+ *  size (Risk Assessment over "From the Briefing and Your Logbook"). */
+export const GROUP_LABEL = `font-medium text-muted-foreground ${TEXT.note}`;
+
 /** A group's heading, as iOS's grouped lists set one: a note's size,
  *  semibold, in capitals, spaced out and grey. Over a list's box
  *  (ListGroup), the nav log's columns, a popover's parts -- one look,

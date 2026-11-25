@@ -127,7 +127,10 @@ export default function DepartureWindowStrip() {
             </Carousel>
           </ToggleGroup>
           {m.selected && (
-            <div className="flex flex-col gap-1 rounded-xl bg-muted/60 px-3.5 py-2.5" data-testid="departure-window-detail">
+            // Plain words under the strip, no box of their own (the owner,
+            // 2026-11-25: "a simple briefing with pages"): a grey box read
+            // as one more thing to tap.
+            <div className="flex flex-col gap-1 px-4" data-testid="departure-window-detail">
               <div className={cn("flex items-center gap-2 font-medium", TEXT.row)}>
                 <FindingIcon finding={HOUR_FINDING[m.selected.verdict]} className="size-5" />
                 <span className={FINDING_TONE[HOUR_FINDING[m.selected.verdict]]}>

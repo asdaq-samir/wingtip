@@ -1,5 +1,6 @@
 import AccordionSection from "../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../components/GroupedList";
+import { Button } from "../../components/ui/button";
 import { done as confirm } from "../../lib/doneNote";
 import { cancelled, shareOrCopy } from "../../lib/share";
 import { passengerItems } from "./passengers";
@@ -43,14 +44,16 @@ export default function PassengerBriefing({ flight, message }: { flight: string;
             />
           ))}
         </ListGroup>
-        {/* What is sent, under the row that sends it, where it was a footnote. */}
-        <ListGroup>
-          <ListRow
-            title="Send the Flight to Your Passengers"
-            description={message.split("\n").join(" ")}
-            onClick={(event) => void send(event.currentTarget)}
-            data-testid="passenger-send"
-          />
+        {/* What is sent, a plain row, and its Send a quiet chip at the
+            row's end, plainly the one thing on it that acts (the owner,
+            2026-11-25: "it should be very clear what's happening with the
+            tap"), where the whole row was the button. */}
+        <ListGroup title="For Your Passengers">
+          <ListRow title="The Flight" description={message.split("\n").join(" ")} data-testid="passenger-message">
+            <Button variant="secondary" size="chip" onClick={(event) => void send(event.currentTarget)} data-testid="passenger-send">
+              Send
+            </Button>
+          </ListRow>
         </ListGroup>
       </div>
     </AccordionSection>
