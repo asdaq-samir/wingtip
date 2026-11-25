@@ -124,7 +124,11 @@ export async function inSheet(page: Page, locator: Locator) {
   await settled(panel);
   const under = await locator.evaluate((el) => {
     const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
-    if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
+    // A card in the inspector's column (a wide iPad, MapPanel) is the
+    // window's height with no grabber: scrolled to, never raised (the
+    // night's iOS audit, 2026-11-24: Practice's pages waited on a grabber
+    // that is not there).
+    if (!sheet || sheet.getAttribute("data-panel") === "full" || sheet.closest("[data-slot=map-inspector]")) return false;
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
     // either way above the route's figures pinned at its foot, and above

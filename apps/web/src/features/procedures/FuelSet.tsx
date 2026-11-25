@@ -159,7 +159,12 @@ export function FuelSet({
   // tap that opens the field (z-10, as the ident's). The gauge is 18 tall,
   // so 13 above and below make the 44 (it was 12, 42 in all: the HIG
   // review); 18 from the ident, the two areas meeting 9 out from each
-  // (TimelineLine's ident), so neither takes the other's taps.
+  // (TimelineLine's ident), so neither takes the other's taps. The 44 is
+  // 11 above and 15 below: the gauge is the first field's top line, 4
+  // under the list's edge, and 13 above reached past it into the head's
+  // airplane pill's (the night's iOS audit, 2026-11-24: the N-number and
+  // its info button lost 1-2 probes each to the gauge); below it is the
+  // wind, no control.
   const gauge = (
     <Button
       variant="plain"
@@ -167,7 +172,7 @@ export function FuelSet({
       type="button"
       aria-label={stop ? `${words}, fuel at ${ident}: change` : `${words}, fuel on board: change`}
       data-testid={stop ? "fuel-set-stop" : "fuel-set-departure"}
-      className="relative z-10 ml-2.5 shrink-0 hit-x-[9px] hit-y-[13px]"
+      className="relative z-10 ml-2.5 shrink-0 hit-x-[9px] hit-y-[13px] after:-top-[11px] after:-bottom-[15px]"
       onClick={phone ? () => openWith(true) : undefined}
     >
       <FuelGauge gal={tank.gal} usable={tank.usable} tone={tone} />

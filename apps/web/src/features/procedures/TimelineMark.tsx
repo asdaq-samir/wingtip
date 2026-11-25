@@ -104,9 +104,12 @@ export function LineIdent({
         // the gauge is one (FuelSet) the two meet in the middle of
         // the 18 between them, 9 past the name, so neither takes
         // the other's taps (the HIG review, 2026-11-21: the gauge
-        // took 2-3 of "C81: change it"'s probes).
+        // took 2-3 of "C81: change it"'s probes). Its line is 24, so 10
+        // above and below make the 44: 12 made 48, and with the fields'
+        // lines 45 apart each ident took 3 of the next's probes and the
+        // last field's took Add a Stop's (the night's iOS audit, 2026-11-24).
         className={cn(
-          "relative min-w-0 font-normal hit-y-3 after:-left-2.5",
+          "relative min-w-0 font-normal hit-y-2.5 after:-left-2.5",
           fuelSet ? "after:w-[max(44px,calc(100%+19px))]" : "after:w-[max(54px,calc(100%+14px))]",
           // In the tint, as Add a Stop is: it is a tap (the owner,
           // 2026-11-24: "each stop should have same link style as add stop").

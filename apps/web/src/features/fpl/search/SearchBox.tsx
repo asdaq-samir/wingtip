@@ -107,8 +107,8 @@ export default function SearchBox({
       />
       {/* Base UI's own clear: shown while something is typed, the
           words cleared through the root's onValueChange, the focus kept.
-          Its 44-point area (12 round its 20) meets the mic's (4 round its
-          36) rather than overlapping it: 16 apart, where the row's gap of
+          Its 44-point area (12 round its 20) stays clear of the mic's (its
+          own 44) rather than overlapping it: 16 apart, where the row's gap of
           8 let a tap just right of the ✕ start the mic (the HIG audit of
           2026-11-23, L4). */}
       <CommandClear aria-label="Clear the search" data-testid="search-clear" className="mr-2" />
@@ -131,7 +131,9 @@ export default function SearchBox({
           // their room: at a large text size the row's round buttons grow
           // with the text, and at twice the size the field was 0 wide and
           // took no typing (card-scroll.spec's text size test, 2026-11-20).
-          className="size-9 @max-[180px]/search:hidden"
+          // A round icon button is 44, as Apple Maps' are, inside the
+          // field's 49 (the night's iOS audit, 2026-11-24: it was 36).
+          className="size-11 @max-[180px]/search:hidden"
         />
       )}
     </label>

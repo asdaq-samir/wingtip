@@ -36,13 +36,16 @@ const SELECTED_NIGHT = "dark:bg-foreground/5 dark:hover:bg-foreground/5 dark:foc
 function courseWords(leg: Leg, airplane: boolean): ReactNode {
   const heading = airplane ? leg.magnetic_heading_deg : null;
   // The abbreviation says what it means on a tap (Explain), nothing added.
+  // Over the next line: the leg's words are 8 from its line's foot, so its
+  // 44 reaches 4 into the next line's, which drew over it and took the
+  // taps there (the night's iOS audit, 2026-11-24).
   return heading != null ? (
     <>
-      <Explain term="MH" /> {bearing(heading)}
+      <Explain term="MH" className="z-10" /> {bearing(heading)}
     </>
   ) : (
     <>
-      <Explain term="MC" /> {bearing(leg.magnetic_course_deg)}
+      <Explain term="MC" className="z-10" /> {bearing(leg.magnetic_course_deg)}
     </>
   );
 }
