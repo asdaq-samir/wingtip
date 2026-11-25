@@ -6,6 +6,7 @@ import { Card } from "../../components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
+import { WIDE_PILL } from "./routeListStyle";
 
 /** How the route's magenta runs through a row: solid where it is flown,
  *  dashed where it is not flown yet (an approach loaded, not activated; a
@@ -68,12 +69,15 @@ export function OnTheLine({
  * and than it should have the folding runways and folding procedures
  * inside"): its head a stock Collapsible's trigger, a tap folding its rows
  * away under it and back, its chevron turning to say which; `trailing` at
- * the head's end (a procedure's menu, a missed approach's Unsuspend).
+ * the head's end (a missed approach's Unsuspend, an approach's Activate).
+ * A procedure picked is a pill as wide as the card instead (`pill`, the
+ * owner, 2026-11-25): its words open its menu, its chevron folds its fixes.
  * Folded, the route's line stops at the head where it would have ended at
  * the section's last row.
  */
 export function FoldSection({
   head,
+  pill,
   trailing,
   stop,
   thread,
@@ -81,14 +85,13 @@ export function FoldSection({
   label,
   data,
   startOpen = false,
-  foot,
-  nest = false,
   chevron = true,
-  mark,
-  sub,
   children,
 }: {
-  head: ReactNode;
+  head?: ReactNode;
+  /** Its pill's words, the menu's trigger (ProcedureTrigger's `wide`), in
+   *  place of the head: the chevron after them in the pill folds it. */
+  pill?: ReactNode;
   trailing?: ReactNode;
   stop: boolean;
   thread: Thread;
@@ -98,94 +101,116 @@ export function FoldSection({
   /** Open at first: the browser specs' fields (useProceduresRoute's
    *  openAtFirst), each worked on whole. */
   startOpen?: boolean;
-  /** After its rows, in sight folded too, the line under its head then (a
-   *  procedure's buttons; the owner, 2026-11-24: "the next line can be
-   *  buttons when folded"). */
-  foot?: (open: boolean) => ReactNode;
-  /** A phase of the flight (a field's Landing, its Takeoff): no hairline
-   *  between the rows in it, only at its head, so it reads as one block
-   *  holding them (the owner, 2026-11-24: "No indentation, but no
-   *  separator either"). */
-  nest?: boolean;
-  /** Its chevron; none on a procedure's head, whose "•••" is beside it,
-   *  its title the tap that folds it (the owner, 2026-11-24). */
+  /** Its chevron; none where its title is the tap that folds it. */
   chevron?: boolean;
-  /** Its mark in the marks' column, on the route's line (a phase's glyph). */
-  mark?: ReactNode;
-  /** A row right under its head, in sight folded too (a phase's runway and
-   *  what can still be added). */
-  sub?: ReactNode;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
   // it has, not all of it (the owner, 2026-11-24: "Tapping shouldn't
   // unfold all of the subsections"); a tap on a head opens that one.
   const [open, setOpen] = useState(startOpen);
+  const turn = cn("shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)", !open && "-rotate-90");
   return (
     <Collapsible
       open={open}
       onOpenChange={setOpen}
       render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
     >
-      <OnTheLine mark={mark} stop={stop && !open && !foot && !sub} thread={thread} wrap={nest && !!trailing}>
-        <CollapsibleTrigger
-          render={
-            <Button
-              variant="plain"
-              size="inline"
-              type="button"
-              data-testid="section-fold"
-              // A procedure's words take the line but its "•••", wrapping
-              // beside it, so the menu keeps its head's line at a larger
-              // text size, where 11rem kept for the name sent the "•••"
-              // under it (the owner's text size, 2026-11-24). A phase's head
-              // (`nest`) as wide as its label and never narrower, its runway
-              // and time going under it where they do not fit beside it,
-              // where the pill covered TAKEOFF.
-              className={cn(
-                "min-h-11 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted",
-                nest ? "flex-none self-start" : "min-w-0 flex-1",
-              )}
-            />
-          }
-        >
-          {/* The chevron after the words, a phase's right after its title
-              (iOS's section header that folds), its runway at the line's end. */}
-          <span className="min-w-0 flex-1">{head}</span>
-          {chevron && (
-            <ChevronDown
-              className={cn(
-                "shrink-0 text-muted-foreground transition-transform duration-(--motion-fade)",
-                nest ? "size-4 self-center" : "size-5",
-                !open && "-rotate-90",
-              )}
-              aria-hidden
-            />
-          )}
-        </CollapsibleTrigger>
-        {trailing && (
-          // A phase's runway, pull-downs and time take the rest of its line,
-          // wrapping inside it, the pill first, so the label's line keeps
-          // its runway where the pull-downs do not all fit (KUGN at 390,
-          // 2026-11-24).
-          <span className={cn("flex min-w-0 items-center gap-1", nest ? "flex-1 justify-end" : "ml-auto max-w-full shrink-0")}>
+      <OnTheLine stop={stop && !open} thread={thread}>
+        {pill ? (
+          <span className={WIDE_PILL}>
+            {pill}
             {trailing}
+            {/* 44 across and 36 tall, 4 over and under it its 44: the
+                menu's words beside it end where it starts. */}
+            <CollapsibleTrigger
+              render={
+                <Button
+                  variant="plain"
+                  size="inline"
+                  type="button"
+                  data-testid="section-fold"
+                  aria-label={`${label}: ${open ? "hide" : "show"} its fixes`}
+                  className="relative h-9 w-11 shrink-0 justify-center rounded-full hit-y-1 aria-expanded:bg-transparent pointer-coarse:active:bg-muted"
+                />
+              }
+            >
+              <ChevronDown className={cn(turn, "size-5")} aria-hidden />
+            </CollapsibleTrigger>
           </span>
+        ) : (
+          <>
+            <CollapsibleTrigger
+              render={
+                <Button
+                  variant="plain"
+                  size="inline"
+                  type="button"
+                  data-testid="section-fold"
+                  className="min-h-11 min-w-0 flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted"
+                />
+              }
+            >
+              <span className="min-w-0 flex-1">{head}</span>
+              {chevron && <ChevronDown className={cn(turn, "size-5")} aria-hidden />}
+            </CollapsibleTrigger>
+            {trailing && <span className="ml-auto flex max-w-full min-w-0 shrink-0 items-center gap-1">{trailing}</span>}
+          </>
         )}
       </OnTheLine>
-      {sub}
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}
-      <CollapsibleContent
-        className={cn(
-          nest && "[&_[data-words]]:border-t-0",
-          "h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0",
-        )}
-      >
+      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0">
         {children}
       </CollapsibleContent>
-      {foot?.(open)}
     </Collapsible>
+  );
+}
+
+/**
+ * A field's Landing or Takeoff in its card (PhaseCards): one line, its
+ * mark on the route's line, its title, then its pills -- its runway's and
+ * a kind's "+ ARR" not yet picked, slim, each opening its menu -- and a
+ * stop's leaving time at the end (the owner, 2026-11-25: "landing or
+ * takeoff should have pills in front of the title"), then each procedure
+ * picked, a pill as wide as the card. It does not fold: each procedure
+ * folds its own fixes. No hairline between its rows, so it reads as one
+ * block (the owner, 2026-11-24: "No indentation, but no separator either").
+ */
+export function PhaseSection({
+  mark,
+  title,
+  pills,
+  time,
+  thread,
+  testId,
+  label,
+  phase,
+  children,
+}: {
+  mark: ReactNode;
+  title: string;
+  pills: ReactNode;
+  time?: ReactNode;
+  thread: Thread;
+  testId: string;
+  label: string;
+  phase: "Arrive" | "Depart";
+  children: ReactNode;
+}) {
+  return (
+    <section aria-label={label} data-testid={testId}>
+      <OnTheLine mark={mark} stop={false} thread={thread} wrap>
+        <span className={cn("shrink-0 py-2.5 font-semibold", TEXT.row)}>{title}</span>
+        {/* Its pills 8 apart, their 44s meeting (gap-2), wrapping under the
+            first where they do not all fit. */}
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-2.5" data-testid="timeline-chips" data-role={phase}>
+          {pills}
+        </span>
+        {time && <span className="ml-auto flex shrink-0 items-center">{time}</span>}
+      </OnTheLine>
+      <div className="[&_[data-words]]:border-t-0">{children}</div>
+    </section>
   );
 }
 

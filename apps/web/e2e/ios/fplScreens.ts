@@ -72,7 +72,7 @@ export const FPL_SCREENS: Screen[] = [
       await settle(page);
       await openTab(page, "Nav Log");
       await openRoute(page);
-      await expect(page.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(30000) });
+      await expect(page.getByTestId("runway-pill").first()).toBeVisible({ timeout: slow(30000) });
     },
   },
   // The route's Procedures with an approach's own page open, as ForeFlight

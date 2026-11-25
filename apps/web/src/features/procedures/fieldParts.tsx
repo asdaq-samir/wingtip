@@ -6,6 +6,7 @@ import { DepartPicker } from "../navlog/lazy";
 import ProcedureMenu from "./ProcedureMenu";
 import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
+import { RunwayPill } from "./RunwayPill";
 import { patternNote } from "./procedureWords";
 import { endFit } from "./runwayFit";
 import { DAY_MIN, type ProceduresRouteModel } from "./useProceduresRoute";
@@ -19,7 +20,9 @@ type Kind = ProcedureKind;
 export type FieldPart = {
   role: "Arrive" | "Depart";
   kinds: Kind[];
-  chips: (trailing: ReactNode) => ReactNode;
+  /** Its runway's chips, with what follows them; or, on FPL's Landing and
+   *  Takeoff (`pill`), its runway's slim pill and its menu (RunwayPill). */
+  chips: (trailing: ReactNode, pill?: boolean) => ReactNode;
   leaves: ReactNode;
   line: { key: string; chosen: string | null };
 };
@@ -113,19 +116,31 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
       pick: (end: string) => void,
       label?: string,
     ) =>
-    (trailing: ReactNode) => (
-      <PatternChips
-        airport={a}
-        wind={wind}
-        chosen={chosen}
-        landing={landing}
-        label={label}
-        onPick={pick}
-        fitOf={fitOf(kind)}
-        note={note}
-        trailing={trailing}
-      />
-    );
+    (trailing: ReactNode, pill?: boolean) =>
+      pill ? (
+        <RunwayPill
+          airport={a}
+          wind={wind}
+          chosen={chosen}
+          landing={landing}
+          fitOf={fitOf(kind)}
+          label={label ?? `${a.ident} runway`}
+          note={note}
+          onPick={pick}
+        />
+      ) : (
+        <PatternChips
+          airport={a}
+          wind={wind}
+          chosen={chosen}
+          landing={landing}
+          label={label}
+          onPick={pick}
+          fitOf={fitOf(kind)}
+          note={note}
+          trailing={trailing}
+        />
+      );
   const landingChips = chips(
     "landing",
     chosenAt(a.ident),

@@ -6,10 +6,11 @@ import { TEXT } from "../../lib/text";
 import type { ProcedureAirport } from "../plan";
 import { PointMenu } from "../route/lazy";
 import { FixFigures } from "./FixList";
-import { fixSub, KIND_WORD } from "./procedureWords";
+import { fixSub, KIND_TAG, KIND_WORD } from "./procedureWords";
+import { kindMenu } from "./fieldParts";
 import { Button } from "../../components/ui/button";
 import { headName, headSub } from "./approachState";
-import { FoldSection, OnTheLine, ProcedureFace } from "./onTheLine";
+import { FoldSection, OnTheLine } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 type Kind = keyof typeof KIND_WORD;
@@ -64,23 +65,32 @@ export function TimelineProcedureRows({
   const times = fixes.map((f) => fixTime(f.ident, kind === "departure"));
   const timed = times.some((t) => t != null);
   const loaded = approach && !!placed.loaded;
-  const face = <ProcedureFace kind={KIND_WORD[kind]} name={name} sub={headSub(placed)} />;
+  // Its pill's words on one line: its kind's tag small and grey, its name,
+  // then its transition or the fix it goes direct to, grey, cut short
+  // where the card is narrower (its fixes, opened, say them whole).
+  const sub = headSub(placed);
+  const face = (
+    <span className="flex min-w-0 flex-1 items-baseline gap-1.5 truncate" data-testid="procedure-name">
+      <span className={cn("shrink-0 text-muted-foreground", TEXT.note)}>{KIND_TAG[kind]}</span>
+      <span className={cn("min-w-0 truncate font-semibold", TEXT.row)}>{name}</span>
+      {sub && <span className={cn("min-w-0 shrink-[3] truncate text-muted-foreground", TEXT.note)}>{sub}</span>}
+    </span>
+  );
   const thread = loaded ? "dashed" : "solid";
   return (
     <FoldSection
-      head={face}
+      pill={kindMenu(vm, field, kind, "wide", face)}
       stop={stop}
       thread={thread}
       testId={loaded ? "approach-loaded" : "procedure-rows"}
       label={loaded ? `${placed.label}, loaded` : placed.label}
       data={{ "data-kind": kind }}
       startOpen={!!vm.openAtFirst}
-      chevron={false}
-      // Its menu is its pill on the phase's runway row (the owner,
-      // 2026-11-25: "design these pills to be like route box where they
-      // open a menu for their selection ... Then we won't need ... at the
-      // end"), so no "•••" here; a loaded approach's Activate at its head's
-      // end, where it stood; activated, its Deactivate is in that menu.
+      // Its menu is its pill's (the owner, 2026-11-25: "design these pills
+      // to be like route box where they open a menu for their selection
+      // ... Then we won't need ... at the end"); a loaded approach's
+      // Activate in the pill before its chevron; activated, its
+      // Deactivate is in the menu.
       trailing={
         loaded && (
           <Button

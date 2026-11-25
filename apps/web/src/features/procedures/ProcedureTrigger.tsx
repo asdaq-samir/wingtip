@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import IconButton from "../../components/IconButton";
+import { SLIM_PILL } from "./routeListStyle";
 import { Button } from "../../components/ui/button";
 import type { ProcedureSummary } from "../../lib/api/types";
 import { chipLook } from "./chipLook";
@@ -25,7 +26,7 @@ const SHORT: Record<Kind, string> = { approach: "Approach", arrival: "Arrive", d
  *  runways (the owner's pick, option C); or a whole row of FPL's timeline,
  *  its words `face` (TimelineProcedureRows, the owner's option D,
  *  2026-11-21: "just tapping it should show the approaches menu"). */
-export type TriggerLook = "chip" | "button" | "add" | "row";
+export type TriggerLook = "chip" | "button" | "add" | "row" | "slim" | "wide";
 
 /**
  * ProcedureMenu's trigger, one element for ResponsivePopoverTrigger's
@@ -62,6 +63,31 @@ export function procedureTrigger({
         <span className="min-w-0 flex-1">{face}</span>
         <ChevronDown className="size-5 shrink-0 text-tint" aria-hidden />
         <span className="sr-only">, pick another</span>
+      </Button>
+    );
+  if (look === "slim")
+    // "+ ARR" on a Landing's or Takeoff's line on FPL's list, the route
+    // box's slim pill (the owner, 2026-11-25); once one is picked it is a
+    // pill of its own under the line (`wide`).
+    return (
+      <Button variant="plain" size="inline" {...data} className={SLIM_PILL} aria-label={`+ ${KIND_TAG[kind]}, ${what}: none picked`}>
+        + {KIND_TAG[kind]}
+      </Button>
+    );
+  if (look === "wide")
+    // The one picked, its pill as wide as the card: its words (`face`) the
+    // tap that opens its menu, as every pill's do; its fold's chevron is
+    // the pill's own, beside them (FoldSection's `pill`).
+    return (
+      <Button
+        variant="plain"
+        size="inline"
+        {...data}
+        className="relative h-9 min-w-0 flex-1 justify-start gap-1.5 rounded-full pl-3 text-left font-normal hit-y-1 pointer-coarse:active:bg-muted"
+        aria-label={`${label ?? SHORT[kind]}, ${what}: pick another`}
+      >
+        {face}
+        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </Button>
     );
   if (look === "button")

@@ -9,36 +9,25 @@ export const circuitsOf = (page: Page) => async () => [...new Set((await drawn(p
  * The route's Procedures (ProceduresRoute), FPL's list, at the pilot's ask: a field's
  * traffic pattern picked by its runway, kept in the address, and drawn on the map round the runway with its 45° entry (PatternLayer).
  */
-/** A field's runway line opened where it is folded to the runway picked
- *  (PatternChips), at the owner's ask ("can the runway line collapse to
- *  the selected runway?"). */
+/** A field's runway menu opened from its pill on FPL's list (RunwayPill;
+ *  the owner, 2026-11-25: "we don't need the folding runways"): its
+ *  runways each a radio item, the one picked checked. */
 export async function openRunways(field: Locator) {
-  // Its Runways section folded at first under the field's line (the owner,
-  // 2026-11-24: "Tapping shouldn't unfold all of the subsections"): opened.
-  const runways = field.locator("[data-testid=field-runways][data-section-folded]");
-  if (await runways.count()) await runways.getByTestId("section-fold").first().click();
-  // The field's runways in first: the list is drawn again as a sheet over
-  // it closes, the field gone from it for a moment.
-  await expect(field.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
-  // The runway into the wind may be picked for the pilot after the line
-  // shows, folding it as it comes (ProceduresRoute's intoWind): opened again
-  // until it stays open.
-  const folded = field.locator("[data-folded]");
-  // That pick waited for first, where the field has a wind to pick into:
-  // a line opened before it is folded by it, as the owner asked
-  // (e6d13391), and on a slow runner it came after the loop below had
-  // seen the line open and gone on, the runway then clicked gone under the
-  // finger (the mobile project, CI 2026-10-28, and here on the merged
-  // bundle). Calm, nothing is picked, and the line is open already.
-  await folded
-    .first()
-    .waitFor({ timeout: slow(10000) })
-    .catch(() => {});
-  await expect(async () => {
-    if (await folded.count()) await folded.click();
-    await expect(folded).toHaveCount(0, { timeout: 1500 });
-  }).toPass({ timeout: slow(20000) });
+  const pill = field.getByTestId("runway-pill").first();
+  await expect(pill).toBeVisible({ timeout: slow(20000) });
+  await pill.click();
+  await expect(runwayOptions(field.page()).first()).toBeVisible();
 }
+
+/** The runway menu's runways, open (openRunways). */
+export const runwayOptions = (page: Page) => page.getByTestId("runway-option");
+
+/** A runway in the open menu the pilot may pick and has not. */
+export const otherRunway = (page: Page) =>
+  runwayOptions(page).and(page.locator(':not([data-disabled]):not([aria-checked="true"])')).first();
+
+/** A runway option's number, from its name ("Runway 9, into the wind"). */
+export const runwayOf = async (option: Locator) => /^Runway (\w+)/.exec((await option.getAttribute("aria-label")) ?? "")![1]!;
 
 // KDLH's ILS as the planner would send it (wingtip.procedures), stubbed: the
 // FAA's file is not read on CI's runner.

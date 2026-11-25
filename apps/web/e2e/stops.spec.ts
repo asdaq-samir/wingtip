@@ -17,6 +17,7 @@ import {
   slow,
 } from "./helpers";
 import { stopsAre } from "./stopsParam";
+import { otherRunway, runwayOf } from "./procedureStubs";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
 import { departTime, fillTime } from "./ariaFields";
@@ -74,25 +75,22 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   const leave = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KMSN · Depart" });
   await expect(arrive).toBeVisible();
   await expect(leave).toBeVisible();
-  const takeoff = leave.getByRole("group", { name: "KMSN takeoff runway" });
-  await expect(takeoff).toBeVisible();
-  const runway = takeoff.getByTestId("procedure-pattern").and(page.locator(":not([disabled])")).last();
-  const name = (await runway.innerText()).trim();
+  // Its takeoff runway a pill of its own on Takeoff's line, its runways in
+  // its menu (RunwayPill, 2026-11-25).
+  const takeoff = leave.getByTestId("runway-pill");
+  await expect(takeoff).toHaveAccessibleName(/^KMSN takeoff runway: /);
   // The runway into the wind may be picked for the pilot as the wind comes
-  // in, folding the line to it under the finger (ProceduresRoute's
-  // intoWind): opened again and the runway picked until it is the one.
-  const folded = leave.locator("[data-folded]");
+  // in (ProceduresRoute's intoWind): another picked until the address
+  // keeps it.
   await expect(async () => {
-    if (await folded.count()) await folded.click();
-    const chip = takeoff
-      .getByTestId("procedure-pattern")
-      .filter({ hasText: new RegExp(`^${name}$`) })
-      .first();
     // Under the half sheet's edge, below FPL's pinned figures, the card
     // pulled up to it first, as a finger does: at half its body does not
     // scroll (rules.md's "Grow, then scroll").
-    await inSheet(page, chip);
-    await chip.click({ timeout: 2000 });
+    await inSheet(page, takeoff);
+    await takeoff.click({ timeout: 2000 });
+    const other = otherRunway(page);
+    const name = await runwayOf(other);
+    await other.click({ timeout: 2000 });
     await expect(page).toHaveURL(new RegExp(`[?&]takeoff=[^&]*KMSN(%3A|:)${name}(%2C|,|&|$)`), { timeout: 2000 });
   }).toPass({ timeout: slow(20000) });
   // The figures to the next landing, KMSN, its time that flight's; a tap on To, the destination and the whole route's distance.

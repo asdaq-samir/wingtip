@@ -5,12 +5,12 @@ import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { approachRunway } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
-import type { NavLogRow, ProcedureAirport } from "../plan";
+import { landingRunway, type NavLogRow, type ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
 import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
-import { kindMenu, kindPicked, windWords } from "./fieldParts";
-import { PartTray } from "./RunwayTray";
+import { kindMenu, windWords } from "./fieldParts";
+import { SLIM_PILL } from "./routeListStyle";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
@@ -19,7 +19,7 @@ import { MissedApproach } from "./TimelineApproachParts";
 import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
-import { FoldSection, OnTheLine, PhaseCards, PhaseMark } from "./onTheLine";
+import { PhaseCards, PhaseMark, PhaseSection } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** No procedure's rows out: one list, not a new one each render. */
@@ -110,61 +110,47 @@ export function TimelineLine({
   const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
   const onPast = !last || sections > 0 || (takeoffOut && !last);
   const grouped = sections > 0 || landingOut || takeoffOut;
-  // A phase's head (the redesign of 2026-11-25) its title alone, and a
-  // stop's leaving time at its end in the column of the fields' times.
-  // Under it one row, in sight folded too: its runway's pill, then what can
-  // still be added ("+ ARR", "+ APCH", "+ DEP", the hold), from the line's
-  // start, 12 apart so their areas meet (the owner, 2026-11-25: "Can runway
-  // selection be on the same row as the procedures?"); a straight-in
-  // approach's own runway in the pill's shape, said, not offered (the
-  // owner's review, 2026-11-24).
-  const ownRunway = straightIn ? approachRunway(approach?.name ?? "") : null;
-  const phaseTime = (role: "Arrive" | "Depart") => (role === "Depart" ? takeoffPart?.part.leaves || undefined : undefined);
-  const runwayRow = (role: "Arrive" | "Depart", on: boolean) => {
+  // A phase's pills on its line after its title, each the route box's slim
+  // pill opening its menu (the owner, 2026-11-25: "landing or takeoff
+  // should have pills in front of the title. Old pills style should be
+  // replaced with the slimmer route box pill style ... we don't need the
+  // folding runways"): its runway's (RunwayPill), then "+ ARR", "+ APCH"
+  // or "+ DEP" for a kind not yet picked -- one picked is a pill as wide as
+  // the card under the line (TimelineProcedureRows) -- and the
+  // destination's hold. A straight-in approach's own runway in the pill's
+  // shape, said, not offered (the owner's review, 2026-11-24).
+  // Said alone only where it may land on no other: a plate with circling
+  // minimums lets it circle to another (AIM 5-4-20; the engine's
+  // landing_runway), and the runway's menu stays, the others it may not
+  // land on greyed in it.
+  const circles = landingRunway(vm.landingOf(point.ident), null, false).othersAllowed;
+  const ownRunway = straightIn && !circles ? approachRunway(approach?.name ?? "") : null;
+  const phasePills = (role: "Arrive" | "Depart") => {
     const linePart = role === "Arrive" ? landingPart : takeoffPart;
-    const said = role === "Arrive" && ownRunway && (
-      <span
-        key="runway"
-        className={cn("flex h-[2.375rem] shrink-0 items-center rounded-full bg-card px-3 font-semibold text-muted-foreground", TEXT.note)}
-        data-testid="landing-runway"
-      >
-        RWY {ownRunway}
-      </span>
-    );
-    const chips = [
-      // Each of its kinds a pill opening its menu, "+ ARR" until one is
-      // picked, then the one picked and a chevron, as the route box's are:
-      // another, Direct to, its plate or none from there (the owner,
-      // 2026-11-25).
-      ...(linePart?.part.kinds ?? []).map((k) => (
-        <Fragment key={k}>{kindMenu(vm, field!, k, kindPicked(vm, field!, k) ? "chip" : "add")}</Fragment>
-      )),
-      ...(linePart?.hold
-        ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
-        : []),
-    ];
-    if (!linePart && !said) return undefined;
     return (
-      <OnTheLine stop={false} thread={on ? "solid" : "none"} rule={false}>
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 pb-1.5" data-testid="timeline-chips" data-role={role}>
-          {linePart && !said ? (
-            <PartTray vm={vm} a={field!} part={{ ...linePart.part, leaves: null }} short trailing={chips} />
-          ) : (
-            <>
-              {said}
-              {chips}
-            </>
-          )}
-        </div>
-      </OnTheLine>
+      <>
+        {role === "Arrive" && ownRunway ? (
+          <span
+            className={cn(SLIM_PILL, "flex items-center")}
+            data-testid="landing-runway"
+            role="img"
+            aria-label={`Runway ${ownRunway}, straight in`}
+          >
+            RWY <span className="font-semibold">{ownRunway}</span>
+          </span>
+        ) : (
+          linePart?.part.chips(null, true)
+        )}
+        {(linePart?.add ?? []).map((k) => (
+          <Fragment key={k}>{kindMenu(vm, field!, k, "slim")}</Fragment>
+        ))}
+        {linePart?.hold && <HoldChip ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />}
+      </>
     );
   };
-  // Landing and Takeoff, each a section that folds: its head a small label,
-  // its runway's pill and a stop's leaving time on the same line at the
-  // right, so folded it says them, and its procedures under it (the
-  // owner, 2026-11-24, "Ok let's try it", of the redesign on KPWK); folded
-  // at first, as every section. In flight or a dry run, where the list is
-  // read, the procedures alone.
+  // Landing's procedures and missed approach, Takeoff's departure, each
+  // a pill as wide as the card that folds its fixes (FoldSection's pill).
+  // In flight or a dry run, where the list is read, the procedures alone.
   const landingRows = (
     <>
       {beforeOut.map((k, i) => (
@@ -187,47 +173,35 @@ export function TimelineLine({
       ))}
     </>
   );
-  // Its title in the list's own row type, as a field's ident is, not a
-  // small coloured label (the redesign of 2026-11-25).
-  const phaseHead = (role: "Arrive" | "Depart") => (
-    <span className={cn("block font-semibold text-foreground", TEXT.row)}>{role === "Arrive" ? "Landing" : "Takeoff"}</span>
-  );
   const landingFlown = beforeOut.length > 0 || missedHere;
   const landing = landingOut ? (
-    <FoldSection
-      head={phaseHead("Arrive")}
+    <PhaseSection
       mark={<PhaseMark icon={<PlaneLanding />} />}
-      trailing={phaseTime("Arrive")}
-      sub={runwayRow("Arrive", landingFlown || takeoffOut || !last)}
-      chevron={landingFlown}
-      stop={last && !takeoffOut}
+      title="Landing"
+      pills={phasePills("Arrive")}
       thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
       testId="field-landing"
-      nest
       label={`${point.ident} landing`}
-      startOpen={!!vm.openAtFirst}
+      phase="Arrive"
     >
       {landingRows}
-    </FoldSection>
+    </PhaseSection>
   ) : (
     landingRows
   );
   const takeoff = takeoffOut ? (
-    <FoldSection
-      head={phaseHead("Depart")}
+    <PhaseSection
       mark={<PhaseMark icon={<PlaneTakeoff />} />}
-      trailing={phaseTime("Depart")}
-      sub={runwayRow("Depart", afterOut.length > 0 || !last)}
-      chevron={afterOut.length > 0}
-      stop={last}
+      title="Takeoff"
+      pills={phasePills("Depart")}
+      time={takeoffPart?.part.leaves || undefined}
       thread={afterOut.length > 0 || !last ? "solid" : "none"}
       testId="field-takeoff"
-      nest
       label={`${point.ident} takeoff`}
-      startOpen={!!vm.openAtFirst}
+      phase="Depart"
     >
       {takeoffRows}
-    </FoldSection>
+    </PhaseSection>
   ) : (
     takeoffRows
   );

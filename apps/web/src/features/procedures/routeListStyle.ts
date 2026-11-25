@@ -31,3 +31,21 @@ export const FIELD_GAP = "mb-3";
  *  picked filled (GLASS_PICKED), its 44-point hit area a pseudo-element
  *  six round it. */
 export const CHIP = cn(CAPSULE_HIT, "h-8 min-w-11 justify-center px-3 font-normal", GLASS_PICKED, TEXT.detail);
+
+/** The slim pill of a field's Landing and Takeoff on FPL's list (the owner,
+ *  2026-11-25: "Old pills style should be replaced with the slimmer route
+ *  box pill style"): the route box's N-number and altitude pills'
+ *  (navlog/pillLook's PILL) 24 tall, its fill and round ends, its words
+ *  the row's at 16 on a phone, black, as theirs are; 10 above and below
+ *  make its 44 (index.css's hit-y), nothing grown that is seen. */
+export const SLIM_PILL = cn(
+  "relative h-6 shrink-0 gap-1 rounded-full bg-foreground/8 px-2.5 font-normal text-foreground hit-y-2.5 dark:bg-foreground/8",
+  TEXT.row,
+  "pointer-coarse:text-[length:1rem]",
+);
+
+/** A procedure picked, its pill as wide as the card (the owner,
+ *  2026-11-25: "if a procedure is selected then it becomes a card width
+ *  pill that can be expanded to show the fixes"): the slim pill's fill
+ *  and ends, 36 tall, its name and its fold's chevron in it. */
+export const WIDE_PILL = "flex h-9 min-w-0 flex-1 items-center rounded-full bg-foreground/8 dark:bg-foreground/8";

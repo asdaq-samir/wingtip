@@ -13,16 +13,10 @@ import type { FieldPart } from "./fieldParts";
  *  tray reads "Land RWY 24" (the owner's option D, 2026-11-21; it was
  *  "RWY" alone, 2026-11-17: "instead of the landing glyph, just use RWY");
  *  a reader hears which it is, a landing's or a takeoff's. */
-function RunwayWord({ role, short }: { role: "Arrive" | "Depart"; short: boolean }) {
+function RunwayWord({ role }: { role: "Arrive" | "Depart" }) {
   return (
-    <span
-      role="img"
-      aria-label={role === "Arrive" ? "landing" : "takeoff"}
-      // A note's size under a phase's title (`short`), the runway the pill's
-      // figure, so the label's line keeps it (FPL's cards, 2026-11-24).
-      className={cn(short ? TEXT.note : TEXT.detail, "font-semibold whitespace-nowrap")}
-    >
-      {short ? "RWY" : `${role === "Arrive" ? "Land" : "Takeoff"} RWY`}
+    <span role="img" aria-label={role === "Arrive" ? "landing" : "takeoff"} className={cn(TEXT.detail, "font-semibold whitespace-nowrap")}>
+      {role === "Arrive" ? "Land" : "Takeoff"} RWY
     </span>
   );
 }
@@ -36,7 +30,6 @@ function RunwayTray({
   foldable,
   lineOpen,
   chips,
-  short = false,
 }: {
   a: ProcedureAirport;
   role: "Arrive" | "Depart";
@@ -45,9 +38,6 @@ function RunwayTray({
   lineOpen: boolean;
   /** The runway chips, with the pull-downs after them as their trailing part. */
   chips: ReactNode;
-  /** "RWY" alone at its head, its Landing or Takeoff said over it (FPL's
-   *  field's blocks; the owner, 2026-11-24). */
-  short?: boolean;
 }) {
   const folded = foldable && !lineOpen && !!a.runways?.length;
   // The head and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
@@ -82,16 +72,16 @@ function RunwayTray({
               data-disclosure=""
               // Its name starts with the "Land RWY" it shows (WCAG 2.5.3, Label in Name: a
               // voice user says what they see), then the field and what a tap does.
-              aria-label={`${short ? "" : role === "Arrive" ? "Land " : "Takeoff "}RWY, ${a.ident}: ${lineOpen ? "fold the runways" : "all the runways"}`}
+              aria-label={`${role === "Arrive" ? "Land" : "Takeoff"} RWY, ${a.ident}: ${lineOpen ? "fold the runways" : "all the runways"}`}
               className={cn("justify-start text-inherit", TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
             />
           }
         >
-          <RunwayWord role={role} short={short} />
+          <RunwayWord role={role} />
         </CollapsibleTrigger>
       ) : (
         <span className={cn(TRAY_HEAD, a.runways?.length === 0 && "rounded-r-full")}>
-          <RunwayWord role={role} short={short} />
+          <RunwayWord role={role} />
         </span>
       )}
       <div className={cn(folded ? "contents" : "min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
@@ -107,19 +97,11 @@ export function PartTray({
   a,
   part,
   trailing,
-  noRunway = false,
-  short = false,
 }: {
   vm: ProceduresRouteModel;
   a: ProcedureAirport;
   part: FieldPart;
   trailing: ReactNode[];
-  /** Its pull-downs and hold alone, no runway to pick: a straight-in
-   *  approach picked lands on its own (FPL's list). */
-  noRunway?: boolean;
-  /** "RWY" alone at the runway's head, its Landing or Takeoff said over it
-   *  (FPL's phase cards). */
-  short?: boolean;
 }) {
   // The line folds to its runway once one is picked; the pull-downs beside
   // the runway's chip while it is folded, at the owner's ask ("Can arrival
@@ -134,20 +116,15 @@ export function PartTray({
     // not fit beside the tray: at the owner's 19.65 px on a 375-point
     // phone KMSN's "22:11" ran past the card's edge, cut to "22:1" (the HIG
     // review, 2026-11-21).
-    <div className={cn("flex min-w-0 flex-wrap items-center", "w-full gap-2")} data-testid="field-part" data-role={part.role}>
-      {noRunway ? (
-        trailing
-      ) : (
-        <RunwayTray
-          a={a}
-          role={part.role}
-          lineKey={part.line.key}
-          foldable={foldable}
-          lineOpen={vm.openLines.includes(part.line.key)}
-          chips={part.chips(trailing.length > 0 ? trailing : null)}
-          short={short}
-        />
-      )}
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2" data-testid="field-part" data-role={part.role}>
+      <RunwayTray
+        a={a}
+        role={part.role}
+        lineKey={part.line.key}
+        foldable={foldable}
+        lineOpen={vm.openLines.includes(part.line.key)}
+        chips={part.chips(trailing.length > 0 ? trailing : null)}
+      />
       {/* When it leaves again at the line's right, under the landing's time
           (the owner, 2026-11-20: "11:33 can be right aligned"). */}
       {part.leaves && <span className="ml-auto shrink-0">{part.leaves}</span>}

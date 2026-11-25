@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
-import { ChevronRight, Wind } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { CollapsibleContent } from "../../components/ui/collapsible";
@@ -11,6 +11,7 @@ import type { EndFit } from "./runwayFit";
 import { setRunwayLine, useOpenRunwayLines } from "./useProceduresRoute";
 import { CHIP } from "./routeListStyle";
 import { Chips, NONE, TRAY_BODY } from "./RunwayChips";
+import { endChoice, runwayEnds } from "./runwayChoice";
 
 /** Where each runway line's pull-downs stood at its last drawing, by the
  *  line's key, and whether it was open: for them to glide from there as it
@@ -66,10 +67,7 @@ export function PatternChips({
   landing: Landing | null;
   onPick: (end: string) => void;
 }) {
-  const ends = (a.runways ?? [])
-    .filter((r) => !r.closed)
-    .flatMap((r) => (r.runway_ends ?? []).filter((e) => e.heading_true_deg != null).map((e) => ({ runway: r, end: e })))
-    .sort((x, y) => x.end.ident.localeCompare(y.end.ident));
+  const ends = runwayEnds(a);
   const into = wind && !wind.calm ? wind.ident : null;
   // With an approach, the chip is the runway landed on: the approach's
   // own, straight in, or another only where the plate publishes circling
@@ -87,33 +85,7 @@ export function PatternChips({
   const key = `${a.ident}:${label ?? ""}`;
   const open = useOpenRunwayLines((s) => s.open.includes(key));
   const setOpen = (next: boolean) => setRunwayLine(key, next);
-  const chip = (runway: Runway, end: RunwayEnd) => {
-    const id = runwayNumber(end.ident);
-    const windward = into === id;
-    // Too short in red, a crosswind past the demonstrated or a length
-    // inside the margin in amber: a ring, the chip not grown.
-    const fitted = fitOf(runway, end);
-    const ring = fitted?.short
-      ? "ring-2 ring-destructive"
-      : fitted && (fitted.crosswindOver || fitted.close)
-        ? "ring-2 ring-caution"
-        : undefined;
-    const said = fitted?.short ? ", too short today" : fitted?.close ? ", little to spare in length" : "";
-    const words = `Runway ${id}${windward ? ", into the wind" : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : ""}${said}`;
-    const fit = fitted?.short ? "short" : fitted?.crosswindOver ? "crosswind" : fitted?.close ? "close" : undefined;
-    return {
-      id,
-      ring,
-      words,
-      fit,
-      face: (
-        <>
-          {windward && <Wind className="size-4" strokeWidth={2.2} aria-hidden />}
-          {id}
-        </>
-      ),
-    };
-  };
+  const chip = (runway: Runway, end: RunwayEnd) => endChoice(runway, end, into, fitOf);
   const picked = chosen !== null ? ends.find((e) => runwayNumber(e.end.ident) === chosen) : undefined;
   // The pull-downs after the runways ("+ Arrival", "+ Approach") glide to
   // where the line puts them as it opens and folds, as the runways slide
