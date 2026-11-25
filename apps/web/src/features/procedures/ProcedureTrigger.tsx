@@ -84,7 +84,7 @@ export function procedureTrigger({
         variant="plain"
         size="inline"
         {...data}
-        className="relative h-9 min-w-0 flex-1 justify-start gap-1.5 rounded-full pl-3 text-left font-normal hit-y-1 pointer-coarse:active:bg-muted"
+        className="relative h-9 min-w-0 flex-1 justify-start gap-1.5 rounded-full pr-1.5 pl-3 text-left font-normal hit-y-1 pointer-coarse:active:bg-muted"
         aria-label={`${label ?? SHORT[kind]}, ${what}: pick another`}
       >
         {face}
