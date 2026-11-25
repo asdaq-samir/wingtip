@@ -58,7 +58,7 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   // Its box behind its pill on the ground, unfolded by a tap (2026-11-23).
   await unfoldProcedure(kdlh, "approach");
   const loaded = kdlh.getByTestId("approach-loaded");
-  await expect(loaded).toContainText("ILS RWY 09", { timeout: slow(20000) });
+  await expect(loaded).toContainText(/\bILS\b/, { timeout: slow(20000) });
   await expect(loaded).toContainText("FAKER");
   await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toHaveCount(0);
   // Activated: on the magenta line, its fixes points of the route.

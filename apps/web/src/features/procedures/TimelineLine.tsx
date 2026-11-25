@@ -10,7 +10,6 @@ import { FuelGauge } from "./FuelGauge";
 import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
 import { kindMenu, windWords } from "./fieldParts";
-import { SLIM_PILL } from "./routeListStyle";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
@@ -127,18 +126,33 @@ export function TimelineLine({
   // land on greyed in it.
   const circles = landingRunway(vm.landingOf(point.ident), null, false).othersAllowed;
   const ownRunway = straightIn && !circles ? approachRunway(approach?.name ?? "") : null;
+  const ownChoice = ownRunway ? (landingPart?.part.choiceOf?.(ownRunway) ?? null) : null;
   const phasePills = (role: "Arrive" | "Depart") => {
     const linePart = role === "Arrive" ? landingPart : takeoffPart;
     return (
       <>
         {role === "Arrive" && ownRunway ? (
+          // Words, not a pill: it is no control, the approach fixing it
+          // (the owner, 2026-11-25: "Fix them", of "RWY 23 looks tappable
+          // but isn't"); with how it fits a landing today, a tailwind in
+          // amber (the engine's runway_end_fit; AIM 4-3-6).
           <span
-            className={cn(SLIM_PILL, "flex items-center")}
+            className={cn("flex items-center gap-1.5 py-0.5", TEXT.row, "pointer-coarse:text-[length:1rem]")}
             data-testid="landing-runway"
             role="img"
-            aria-label={`Runway ${ownRunway}, straight in`}
+            aria-label={`${ownChoice?.words ?? `Runway ${ownRunway}`}, straight in`}
           >
             RWY <span className="font-semibold">{ownRunway}</span>
+            {ownChoice?.note && (
+              <span
+                className={cn(
+                  TEXT.note,
+                  ownChoice.fit === "short" ? "text-destructive" : ownChoice.fit ? "text-caution" : "text-muted-foreground",
+                )}
+              >
+                {ownChoice.note}
+              </span>
+            )}
           </span>
         ) : (
           linePart?.part.chips(null, true)
@@ -299,7 +313,11 @@ export function TimelineLine({
               time to match others"): a field's elevation, a waypoint's
               altitude flown, the pilot's own where set. */}
           <span className="relative z-10 ml-auto flex shrink-0 items-center" data-testid="timeline-time">
-            {end.figures}
+            {/* A field's row its time alone: its elevation is its card's
+                (place-fact-elevation), so each airport is one line (the
+                owner, 2026-11-25: "Fix them", of option 2's rows); an
+                altitude set or flown to it stays. */}
+            {end.elevOnly ? end.time : end.figures}
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
               the chevrons"): the line itself is the tap that opens it. */}

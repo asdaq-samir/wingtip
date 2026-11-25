@@ -38,6 +38,8 @@ export interface EndFit {
   unknown: boolean;
   /** The distance was read past the POH's table. */
   beyond: boolean;
+  /** The steady wind's tailwind on the end, whole knots, 0 for none. */
+  tailwindKt: number;
 }
 
 export function endFit({
@@ -88,5 +90,6 @@ export function endFit({
     close: fit.close,
     unknown: fit.unknown,
     beyond: fit.beyond,
+    tailwindKt: fit.tailwind_kt,
   };
 }

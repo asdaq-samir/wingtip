@@ -120,7 +120,7 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   // Folded to its pill on the field's line, unfolded by a tap (the owner, 2026-11-23).
   await unfoldProcedure(kdlh, "approach");
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(approach).toContainText("ILS RWY 09", { timeout: slow(20000) });
+  await expect(approach).toContainText(/\bILS\b/, { timeout: slow(20000) });
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
   // Its menu folds its fixes away and back (the owner, 2026-11-25: "do we
   // need the chevrons?"), its pill with none.

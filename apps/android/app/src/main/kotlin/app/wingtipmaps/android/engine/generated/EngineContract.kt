@@ -12563,6 +12563,11 @@ object EngineContract {
          * The distance was read past the POH's table (higher, hotter, heavier or more tailwind than it goes): its edge's figures.
          */
         val beyond: Boolean,
+        /**
+         * The steady wind's tailwind on the end, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
+         */
+        @SerialName("tailwind_kt")
+        val tailwindKt: Double,
     )
 
     @Serializable

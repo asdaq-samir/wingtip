@@ -1,13 +1,22 @@
 import type { ReactNode } from "react";
 import type { Runway } from "../../lib/api/types";
 import { sameField } from "../../lib/procedures";
-import { groundMinAt, type Landing, type NavLogRow, type ProcedureAirport, type ProcedureKind, type RunwayEnd } from "../plan";
+import {
+  groundMinAt,
+  runwayNumber,
+  type Landing,
+  type NavLogRow,
+  type ProcedureAirport,
+  type ProcedureKind,
+  type RunwayEnd,
+} from "../plan";
 import { DepartPicker } from "../navlog/lazy";
 import ProcedureMenu from "./ProcedureMenu";
 import { ProcedureDropdown, type Fold } from "./ProcedureDropdown";
 import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
 import { RunwayPill } from "./RunwayPill";
+import { endChoice, runwayEnds } from "./runwayChoice";
 import { WindLine } from "./FieldHead";
 import { patternNote } from "./procedureWords";
 import { endFit } from "./runwayFit";
@@ -27,6 +36,10 @@ export type FieldPart = {
   chips: (trailing: ReactNode, pill?: boolean) => ReactNode;
   leaves: ReactNode;
   line: { key: string; chosen: string | null };
+  /** A runway end of the field by its number ("23") as a choice
+   *  (endChoice): how it fits a landing today, for a straight-in
+   *  approach's own runway, said where it is not offered. */
+  choiceOf?: (id: string) => ReturnType<typeof endChoice> | null;
 };
 
 /** A kind's pull-down at a field (ProcedureMenu): the one in the route said
@@ -176,6 +189,10 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
     chips: landingChips,
     leaves: null,
     line: landingLine,
+    choiceOf: (id) => {
+      const at = runwayEnds(a).find((e) => runwayNumber(e.end.ident) === id);
+      return at ? endChoice(at.runway, at.end, wind && !wind.calm ? wind.ident : null, fitOf("landing")) : null;
+    },
   };
   if (a.role === "Departure") {
     // A round trip's departure is left from its own runway (`takeoff`),

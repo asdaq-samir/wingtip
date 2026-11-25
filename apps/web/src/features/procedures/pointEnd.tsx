@@ -104,6 +104,9 @@ export function pointEnd(
     // line, the elevation on its wind's.
     time: <PointFigures time={at.time} altitude={null} kind={kind} />,
     elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
+    /** Its altitude only a field's elevation, which FPL's list leaves to
+     *  the airport's card (2026-11-25): no altitude set or flown to it. */
+    elevOnly: kind === "elev",
     // Behind a face of its own (`face`; `bare`, FPL's timeline's filled
     // mark), else the "⋯" (PointMenu).
     menu: (face: ReactNode, bare = false) => (

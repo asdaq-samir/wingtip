@@ -101,7 +101,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await openRoute(page);
   // Loaded: its box off the route's line, its pill on Landing's runway row the button to pick another (2026-11-25).
   await unfoldProcedure(kdlh, "approach");
-  await expect(kdlh.getByTestId("approach-loaded")).toContainText("ILS RWY 09");
+  await expect(kdlh.getByTestId("approach-loaded")).toContainText(/\bILS\b/);
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   await page.getByTestId("procedure-menu-all").click();
   const ils = page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" });
@@ -174,7 +174,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
   await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(/: Runway 9\b/);
   await unfoldProcedure(kdlh, "approach");
-  await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toContainText("ILS RWY 09");
+  await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toContainText(/\bILS\b/);
   // The field's arrival, a pull-down beside it once the list is in.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=arrival]").click();
   await page.getByTestId("procedure-menu").getByTestId("procedure-menu-item").filter({ hasText: "SKETC1" }).click();

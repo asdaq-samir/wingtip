@@ -20,25 +20,32 @@ export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, f
   const id = runwayNumber(end.ident);
   const windward = into === id;
   const fitted = fitOf(runway, end);
+  // A tailwind said as a caution (AIM 4-3-6: land and take off into the
+  // wind where it can be; the engine's runway_end_fit), as a crosswind past
+  // the demonstrated is: an ILS to the downwind end showed nothing (the
+  // owner's screenshot, 2026-11-25, KUGN 23 with the wind on 5).
+  const tail = fitted && fitted.tailwindKt > 0 ? fitted.tailwindKt : 0;
   const ring = fitted?.short
     ? "ring-2 ring-destructive"
-    : fitted && (fitted.crosswindOver || fitted.close)
+    : fitted && (fitted.crosswindOver || fitted.close || tail > 0)
       ? "ring-2 ring-caution"
       : undefined;
   const said = fitted?.short ? ", too short today" : fitted?.close ? ", little to spare in length" : "";
-  const words = `Runway ${id}${windward ? ", into the wind" : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : ""}${said}`;
-  const fit = fitted?.short ? "short" : fitted?.crosswindOver ? "crosswind" : fitted?.close ? "close" : undefined;
+  const words = `Runway ${id}${windward ? ", into the wind" : ""}${tail ? `, tailwind ${tail} knots` : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : ""}${said}`;
+  const fit = fitted?.short ? "short" : fitted?.crosswindOver ? "crosswind" : tail ? "tailwind" : fitted?.close ? "close" : undefined;
   // How it fits in a few words, for a menu's row: the chip's ring has no
   // room for them.
   const note = fitted?.short
     ? "Too short today"
     : fitted?.crosswindOver
       ? `Crosswind ${fitted.crosswindKt} kt`
-      : fitted?.close
-        ? "Little to spare"
-        : windward
-          ? "Into the wind"
-          : null;
+      : tail
+        ? `Tailwind ${tail} kt`
+        : fitted?.close
+          ? "Little to spare"
+          : windward
+            ? "Into the wind"
+            : null;
   return {
     id,
     ring,

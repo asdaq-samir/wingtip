@@ -46,6 +46,7 @@ export const SLIM_PILL = cn(
 
 /** A procedure picked, its pill as wide as the card (the owner,
  *  2026-11-25: "if a procedure is selected then it becomes a card width
- *  pill that can be expanded to show the fixes"): the slim pill's fill
- *  and ends, 36 tall, its name and its fold's chevron in it. */
-export const WIDE_PILL = "flex h-9 min-w-0 flex-1 items-center rounded-full bg-foreground/8 dark:bg-foreground/8";
+ *  pill that can be expanded to show the fixes"): 36 tall, round, a
+ *  hairline and no fill, so the airports' rows lead the list and not the
+ *  procedures (2026-11-25, "Fix them"). */
+export const WIDE_PILL = "flex h-9 min-w-0 flex-1 items-center rounded-full ring-1 ring-foreground/12 ring-inset";

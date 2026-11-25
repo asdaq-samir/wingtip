@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
-import { fixRoles, sameField } from "../../lib/procedures";
+import { approachRunway, fixRoles, sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
-import type { ProcedureAirport } from "../plan";
+import { landingRunway, type ProcedureAirport } from "../plan";
 import { PointMenu } from "../route/lazy";
 import { FixFigures } from "./FixList";
 import { fixSub, KIND_TAG, KIND_WORD } from "./procedureWords";
@@ -51,7 +51,13 @@ export function TimelineProcedureRows({
   const chosen = placed && procedures.find((p) => sameField(p.ident, field.ident) && p.id === placed.id);
   if (!placed || !chosen) return null;
   const fixes = placed.fixes ?? [];
-  const name = headName(placed);
+  // An approach's runway left off its pill where Land's line says it --
+  // its own, straight in, or the runway picked -- so "ILS" and its
+  // transition fit beside Activate ("ILS RWY …" was cut, the owner's
+  // screenshot, 2026-11-25).
+  const own = kind === "approach" ? approachRunway(placed.name ?? "") : null;
+  const said = own !== null && (own === vm.chosenAt(field.ident) || !landingRunway(vm.landingOf(field.ident), null, false).othersAllowed);
+  const name = said ? headName(placed).replace(/\s*RWY\s*\S+$/i, "") : headName(placed);
   const directAt = placed.direct ? fixes.findIndex((f) => f.ident === placed.direct) : -1;
   const onDirect = (fix: string | null) =>
     onProcedures(
@@ -72,7 +78,7 @@ export function TimelineProcedureRows({
   const face = (
     <span className="flex min-w-0 flex-1 items-baseline gap-1.5 truncate" data-testid="procedure-name">
       <span className={cn("shrink-0 text-muted-foreground", TEXT.note)}>{KIND_TAG[kind]}</span>
-      <span className={cn("min-w-0 truncate font-semibold", TEXT.row)}>{name}</span>
+      <span className={cn("min-w-0 truncate font-medium", TEXT.row)}>{name}</span>
       {sub && <span className={cn("min-w-0 shrink-[3] truncate text-muted-foreground", TEXT.note)}>{sub}</span>}
     </span>
   );

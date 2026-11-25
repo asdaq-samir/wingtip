@@ -262,6 +262,8 @@ pub struct EndFit {
     pub unknown: bool,
     /// The distance was read past the POH's table (Distances::beyond).
     pub beyond: bool,
+    /// The steady wind's tailwind on the end, whole knots, 0 for none (AIM 4-3-6).
+    pub tailwind_kt: f64,
 }
 
 /// JavaScript's truth of a number: there, and not 0 or NaN.
@@ -332,6 +334,7 @@ pub fn end_fit(
         close,
         unknown: needed_ft.is_none() || length_ft.is_none(),
         beyond: distances.as_ref().is_some_and(Distances::beyond),
+        tailwind_kt: js_round((-headwind).max(0.0)),
     }
 }
 
@@ -389,6 +392,9 @@ pub(crate) fn end_fit_rule(i: In, v: &Value) -> Result<String, String> {
     json::opt_number(&mut out, f.needed_ft);
     out.push_str(",\"length_ft\":");
     json::opt_number(&mut out, f.length_ft);
-    out.push_str(&format!(",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{}}}", f.short, f.close, f.unknown, f.beyond));
+    out.push_str(&format!(",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{}", f.short, f.close, f.unknown, f.beyond));
+    out.push_str(",\"tailwind_kt\":");
+    json::number(&mut out, f.tailwind_kt);
+    out.push('}');
     Ok(out)
 }
