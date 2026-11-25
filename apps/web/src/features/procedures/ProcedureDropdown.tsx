@@ -35,7 +35,7 @@ type MenuProps = Parameters<typeof ProcedureMenu>[0];
  * still opens (ProcedureMenu): each one a radio item picked at one tap,
  * from vectors or its common route, its transition then picked from the
  * picked one's menu (Transition ›); an approach's the runway landed on's
- * alone, every other runway's behind one "Other Runways ›" (the owner,
+ * alone, every other runway's behind one "Other Runways ›" at its top (the owner,
  * 2026-11-25: "make this all about the selected runway and then also let
  * the user go back to see other procedures"); then Direct To, the plate,
  * the lesson, none of the kind, and the field's whole list. A picked
@@ -101,18 +101,26 @@ export function ProcedureDropdown(m: MenuProps) {
         {!paged && (
           <>
             {list && all.length === 0 && <DropdownMenuItem disabled>None published</DropdownMenuItem>}
+            {/* At the top, in the tint, where a runway's own page has its
+                Back to the runways (the owner, 2026-11-25: "show other
+                runways on top for selected runway just like the other"). */}
+            {kind === "approach" && others.length > 0 && (
+              <DropdownMenuItem
+                closeOnClick={false}
+                onClick={() => setPage("runways")}
+                className="text-tint"
+                data-testid="procedure-menu-others"
+              >
+                {first === null ? "Runways" : "Other Runways"}
+                <span className="ml-auto pl-3 text-muted-foreground">{pickedOn ? shortName(pickedOn) : ""}</span>
+                <ChevronRight />
+              </DropdownMenuItem>
+            )}
             {kind === "approach" && first !== null && (
               <DropdownMenuGroup>
                 <DropdownMenuLabel>{runwayName(first)}</DropdownMenuLabel>
                 <Choices procedures={byRunway.get(first)!} m={m} />
               </DropdownMenuGroup>
-            )}
-            {kind === "approach" && others.length > 0 && (
-              <DropdownMenuItem closeOnClick={false} onClick={() => setPage("runways")} data-testid="procedure-menu-others">
-                {first === null ? "Runways" : "Other Runways"}
-                <span className="ml-auto pl-3 text-muted-foreground">{pickedOn ? shortName(pickedOn) : ""}</span>
-                <ChevronRight className="text-muted-foreground" />
-              </DropdownMenuItem>
             )}
             {kind !== "approach" && all.length > 0 && <Choices procedures={all} m={m} />}
             <DropdownMenuSeparator />
