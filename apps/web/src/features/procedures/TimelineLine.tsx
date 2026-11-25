@@ -317,11 +317,10 @@ export function TimelineLine({
               time to match others"): a field's elevation, a waypoint's
               altitude flown, the pilot's own where set. */}
           <span className="relative z-10 ml-auto flex shrink-0 items-center" data-testid="timeline-time">
-            {/* A field's row its time alone: its elevation is its card's
-                (place-fact-elevation), so each airport is one line (the
-                owner, 2026-11-25: "Fix them", of option 2's rows); an
-                altitude set or flown to it stays. */}
-            {end.elevOnly ? end.time : end.figures}
+            {/* Its time over its elevation, or the altitude set or flown to
+                it (the owner, 2026-11-25: "Sure do it", the elevation back
+                under each stop's time). */}
+            {end.figures}
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
               the chevrons"): the line itself is the tap that opens it. */}
