@@ -629,7 +629,10 @@ off by default (the owner, 2026-11-13).
    turns the same box into the route's field and back, its size and shape
    kept at the least and the route wrapped in it, each pill and chip whole,
    never cut at the edge, the box growing to hold every
-   line and the toggle's row under the last (the owner's iPhone,
+   line and the toggle's row under the last, below full no further than
+   the room above the foot bar, past which its lines scroll inside the
+   box with the toggle's row kept in sight, the sheet left where it is
+   (`useFieldRoom`, the owner, 2026-11-25) (the owner's iPhone,
    2026-11-23; the row takes no tap but on its own two controls, the
    field's last line under it the field's), pressed while it is the field,
    with no "Route" row and no Done (the owner, 2026-11-22: "It should make

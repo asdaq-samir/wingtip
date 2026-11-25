@@ -8,7 +8,7 @@ import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
 import { TypeRouteButton } from "../../procedures/lazy";
 import { FuelPill } from "./FuelPill";
-import { useFieldRise } from "./useFieldRise";
+import { useFieldRoom } from "./useFieldRoom";
 import { coursePoints } from "../../../lib/course";
 import { sameField } from "../../../lib/procedures";
 
@@ -70,9 +70,9 @@ export default function RouteEditor({
       />
     </div>
   );
-  // Too long for the room above FPL's foot bar, the sheet raised all the way up, once.
+  // Too long for the room above FPL's foot bar, its pills scroll in the box.
   const field = useRef<HTMLDivElement>(null);
-  useFieldRise(field, inPlace, setPanel);
+  useFieldRoom(field, inPlace);
   return (
     <div
       ref={field}

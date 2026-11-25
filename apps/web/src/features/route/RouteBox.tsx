@@ -222,9 +222,11 @@ export default function RouteBox({
                 ref={slide}
                 // Out of the tab order; a drag up or down is the sheet's.
                 tabIndex={-1}
-                // Wrapped, every line in sight, the box grown to hold them: nothing
-                // scrolls or is cut, a pill whole on its line.
-                style={wrapped ? { overflow: "visible" } : { overflowY: "hidden" }}
+                // Wrapped, the box grown to hold every line, a pill whole on its
+                // line, up to the room above FPL's foot bar (--route-room,
+                // useFieldRoom); past it the lines scroll here, the toggle's
+                // row under them kept in sight (the owner, 2026-11-25).
+                style={wrapped ? { overflowX: "hidden", overflowY: "auto", maxHeight: "var(--route-room, none)" } : { overflowY: "hidden" }}
                 className={cn(
                   // Fades only on the one-row face: wrapped, one hid every line's right (2026-11-23).
                   wrapped
