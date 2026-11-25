@@ -49,4 +49,4 @@ export const SLIM_PILL = cn(
  *  pill that can be expanded to show the fixes"): 36 tall, round, a
  *  hairline and no fill, so the airports' rows lead the list and not the
  *  procedures (2026-11-25, "Fix them"). */
-export const WIDE_PILL = "flex h-9 min-w-0 flex-1 items-center rounded-full ring-1 ring-foreground/12 ring-inset";
+export const WIDE_PILL = "flex h-9 min-w-0 flex-1 items-center gap-1 rounded-full pr-1.5 ring-1 ring-foreground/12 ring-inset";

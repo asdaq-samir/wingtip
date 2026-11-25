@@ -117,11 +117,10 @@ export const ARRIVAL_DRAWN = {
   fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.4, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
 };
 
-/** A picked procedure's fixes shown or hidden: its pill's menu's first
- *  item (ProcedureDropdown's Show Fixes). */
+/** A picked procedure's fixes shown or hidden: a tap on its pill, its
+ *  chip at the end being its menu (2026-11-25). */
 export async function toggleFixes(section: Locator) {
-  await section.getByTestId("procedure-kind").first().click();
-  await section.page().getByTestId("procedure-menu-fixes").click();
+  await section.getByTestId("section-fold").first().click();
 }
 
 /** A procedure picked at a field, out on the field's line once the line
@@ -136,8 +135,8 @@ export async function unfoldProcedure(field: Locator, kind: "approach" | "arriva
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   // The field and its procedures one group, the box round them both.
   await expect(field).toHaveAttribute("data-testid", "field-group");
-  // Its sections folded at first (2026-11-24): the kind's fixes shown from
-  // its pill's menu (2026-11-25, no chevron).
+  // Its sections folded at first (2026-11-24): the kind's fixes shown by a
+  // tap on its pill (2026-11-25).
   const section = field.locator(`[data-kind=${kind}]`).first();
   await expect(section).toBeVisible();
   if ((await section.getAttribute("data-section-folded")) !== null) await toggleFixes(section);

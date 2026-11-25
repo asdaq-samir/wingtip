@@ -27,8 +27,6 @@ import { ALL, approachGroups, NONE, shortName } from "./procedureWords";
 import { procedureTrigger, TITLE } from "./ProcedureTrigger";
 
 type MenuProps = Parameters<typeof ProcedureMenu>[0];
-/** A procedure's fixes shown or folded under its pill (FoldSection's). */
-export type Fold = { open: boolean; set: (open: boolean) => void };
 
 /**
  * A kind's procedures on FPL's Landing and Takeoff, picked from the stock
@@ -38,11 +36,10 @@ export type Fold = { open: boolean; set: (open: boolean) => void };
  * still opens (ProcedureMenu): each one a radio item, one with transitions
  * a submenu of them; an approach's by runway, the runway landed on first
  * and the others each a submenu; then Direct To, the plate, the lesson,
- * none of the kind, and the field's whole list. A picked one's menu shows
- * or hides its fixes first, the pill having no chevron of its own (the
- * owner: "do we need the chevrons?").
+ * none of the kind, and the field's whole list. A picked one's menu is its
+ * pill's chip; the pill folds its fixes (FoldSection).
  */
-export function ProcedureDropdown({ fold, ...m }: MenuProps & { fold?: Fold }) {
+export function ProcedureDropdown(m: MenuProps) {
   const { kind, list, query, picked, fixes = [], look = "slim" } = m;
   const all = (list?.procedures ?? []).filter((p) => p.kind === kind);
   const plates = usePreferences((s) => s.plates);
@@ -56,14 +53,6 @@ export function ProcedureDropdown({ fold, ...m }: MenuProps & { fold?: Fold }) {
     <DropdownMenu onOpenChange={(open) => open && m.onOpen()}>
       <DropdownMenuTrigger render={procedureTrigger({ look, ident: m.ident, kind, label: m.label, face: m.face })} />
       <DropdownMenuContent align="start" className={cn("min-w-60", look === "slim" && "w-auto")} data-testid="procedure-menu">
-        {fold && (
-          <>
-            <DropdownMenuItem onClick={() => fold.set(!fold.open)} data-testid="procedure-menu-fixes">
-              {fold.open ? "Hide Fixes" : "Show Fixes"}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
         {!list && query?.isError && (
           <DropdownMenuItem closeOnClick={false} onClick={() => void query.refetch()} data-testid="procedure-menu-retry">
             {PROCEDURES_FAILED} Try again

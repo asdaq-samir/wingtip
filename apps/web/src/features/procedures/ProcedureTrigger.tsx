@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import IconButton from "../../components/IconButton";
+import { cn } from "cn";
+import { TEXT } from "../../lib/text";
 import { SLIM_PILL } from "./routeListStyle";
 import { Button } from "../../components/ui/button";
 import type { ProcedureSummary } from "../../lib/api/types";
@@ -75,19 +77,19 @@ export function procedureTrigger({
       </Button>
     );
   if (look === "wide")
-    // The one picked, its pill as wide as the card: its words (`face`) the
-    // tap that opens its menu, as the route box's pills' are, with no
-    // chevron of their own -- the pill's one chevron folds its fixes
-    // (FoldSection's `pill`), and two side by side read as one.
+    // The one picked's chip at its pill's right end, its kind's tag
+    // ("APCH"), the look of a button: it opens its menu, a tap on the rest
+    // of the pill folds its fixes (FoldSection). 24 tall, its 44 by
+    // hit-y-2.5 and hit-x-1.
     return (
       <Button
         variant="plain"
         size="inline"
         {...data}
-        className="relative h-9 min-w-0 flex-1 justify-start gap-1.5 rounded-full pr-1.5 pl-3 text-left font-normal hit-y-1 pointer-coarse:active:bg-muted"
-        aria-label={`${label ?? SHORT[kind]}, ${what}: pick another`}
+        className={cn("relative h-6 shrink-0 rounded-full bg-foreground/8 px-2 font-medium hit-x-1 hit-y-2.5", TEXT.note)}
+        aria-label={`${KIND_TAG[kind]}, ${what}: ${label ?? "none picked"}, pick another`}
       >
-        {face}
+        {KIND_TAG[kind]}
       </Button>
     );
   if (look === "button")

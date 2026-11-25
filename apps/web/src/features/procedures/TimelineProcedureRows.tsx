@@ -6,7 +6,7 @@ import { TEXT } from "../../lib/text";
 import { landingRunway, type ProcedureAirport } from "../plan";
 import { PointMenu } from "../route/lazy";
 import { FixFigures } from "./FixList";
-import { fixSub, KIND_TAG, KIND_WORD } from "./procedureWords";
+import { fixSub, KIND_WORD } from "./procedureWords";
 import { kindMenu } from "./fieldParts";
 import { Button } from "../../components/ui/button";
 import { headName, headSub } from "./approachState";
@@ -73,24 +73,22 @@ export function TimelineProcedureRows({
   const loaded = approach && !!placed.loaded;
   // Its pill's words on one line: its name, then its transition or the
   // fix it goes direct to, grey, cut short where the card is narrower (its
-  // fixes, opened, say them whole); its kind's tag a small filled chip at
-  // the pill's right end, the look of a button, the menu's way in (the
-  // owner, 2026-11-25: "Instead of putting ARR first, just put that as
-  // button right aligned on the pill").
+  // fixes, opened, say them whole). A tap on it folds its fixes; its
+  // kind's tag a chip at the pill's right end opens its menu (the owner,
+  // 2026-11-25: "Instead of putting ARR first, just put that as button
+  // right aligned on the pill"; "Tapping the pill should fold/unfold").
   const sub = headSub(placed);
   const face = (
     <span className="flex min-w-0 flex-1 items-baseline gap-1.5 truncate" data-testid="procedure-name">
       <span className={cn("min-w-0 truncate font-medium", TEXT.row)}>{name}</span>
       {sub && <span className={cn("min-w-0 shrink-[3] truncate text-muted-foreground", TEXT.note)}>{sub}</span>}
-      <span className={cn("ml-auto shrink-0 self-center rounded-full bg-foreground/8 px-2 py-0.5 font-medium text-foreground", TEXT.note)}>
-        {KIND_TAG[kind]}
-      </span>
     </span>
   );
   const thread = loaded ? "dashed" : "solid";
   return (
     <FoldSection
-      pill={(fold) => kindMenu(vm, field, kind, "wide", face, fold)}
+      head={face}
+      pill={kindMenu(vm, field, kind, "wide")}
       stop={stop}
       thread={thread}
       testId={loaded ? "approach-loaded" : "procedure-rows"}

@@ -12,7 +12,7 @@ import {
 } from "../plan";
 import { DepartPicker } from "../navlog/lazy";
 import ProcedureMenu from "./ProcedureMenu";
-import { ProcedureDropdown, type Fold } from "./ProcedureDropdown";
+import { ProcedureDropdown } from "./ProcedureDropdown";
 import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
 import { RunwayPill } from "./RunwayPill";
@@ -46,7 +46,7 @@ export type FieldPart = {
  *  on it, "+ Approach" where none is picked (`add`). The same menu for the
  *  list read in flight (FieldStep) and FPL's timeline (TimelineRoute),
  *  a row's words its `face`. */
-export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Kind, look: TriggerLook, face?: ReactNode, fold?: Fold) {
+export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Kind, look: TriggerLook, face?: ReactNode) {
   const { airports, lists, inRoute, windOf, pickOf, chosenAt, ask, pick, onAt, setLesson } = vm;
   const i = airports.findIndex((f) => sameField(f.ident, a.ident));
   const wind = windOf(a.ident);
@@ -72,11 +72,7 @@ export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Ki
   // FPL's Landing and Takeoff pills pick from the stock dropdown, as their
   // runway's does (ProcedureDropdown); the list read in flight keeps the
   // sheet of pages.
-  return look === "slim" || look === "wide" ? (
-    <ProcedureDropdown key={kind} {...props} fold={fold} />
-  ) : (
-    <ProcedureMenu key={kind} {...props} />
-  );
+  return look === "slim" || look === "wide" ? <ProcedureDropdown key={kind} {...props} /> : <ProcedureMenu key={kind} {...props} />;
 }
 
 /** Whether the procedure of a kind at a field is picked into the route. */

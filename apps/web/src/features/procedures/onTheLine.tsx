@@ -1,4 +1,3 @@
-import type { Fold } from "./ProcedureDropdown";
 import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
@@ -90,10 +89,12 @@ export function FoldSection({
   children,
 }: {
   head?: ReactNode;
-  /** Its pill, the menu's trigger (ProcedureTrigger's `wide`), in place
-   *  of the head: its menu shows or hides the fixes (ProcedureDropdown's
-   *  `fold`), the pill with no chevron of its own. */
-  pill?: (fold: Fold) => ReactNode;
+  /** Drawn as a pill as wide as the card: the head the tap that folds it,
+   *  then `trailing`, then this at its right end, the menu's chip
+   *  (ProcedureTrigger's `wide`; the owner, 2026-11-25: "Tapping the pill
+   *  should fold/unfold. And the button at the end can be used for
+   *  selection"). */
+  pill?: ReactNode;
   trailing?: ReactNode;
   stop: boolean;
   thread: Thread;
@@ -121,8 +122,22 @@ export function FoldSection({
       <OnTheLine stop={stop && !open} thread={thread}>
         {pill ? (
           <span className={WIDE_PILL}>
-            {pill({ open, set: setOpen })}
+            <CollapsibleTrigger
+              render={
+                <Button
+                  variant="plain"
+                  size="inline"
+                  type="button"
+                  data-testid="section-fold"
+                  aria-label={`${label}: ${open ? "hide" : "show"} its fixes`}
+                  className="relative h-9 min-w-0 flex-1 justify-start rounded-full pl-3 text-left font-normal hit-y-1 aria-expanded:bg-transparent pointer-coarse:active:bg-muted"
+                />
+              }
+            >
+              {head}
+            </CollapsibleTrigger>
             {trailing}
+            {pill}
           </span>
         ) : (
           <>
