@@ -124,7 +124,7 @@ export function TimelineLine({
     );
     if (!linePart) return said || undefined;
     return (
-      <span className="flex min-w-0 flex-wrap items-center justify-end gap-1.5" data-testid="timeline-chips" data-role={role}>
+      <span className="flex min-w-0 flex-wrap items-center justify-end gap-1" data-testid="timeline-chips" data-role={role}>
         <PartTray
           vm={vm}
           a={field!}

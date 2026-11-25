@@ -142,7 +142,7 @@ export function FoldSection({
               // where the pill covered TAKEOFF.
               className={cn(
                 "min-h-11 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted",
-                nest ? "flex-none" : "min-w-0 flex-1",
+                nest ? "flex-none self-start" : "min-w-0 flex-1",
               )}
             />
           }

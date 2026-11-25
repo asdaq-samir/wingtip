@@ -135,7 +135,7 @@ export function PartTray({
     // phone KMSN's "22:11" ran past the card's edge, cut to "22:1" (the HIG
     // review, 2026-11-21).
     <div
-      className={cn("flex min-w-0 flex-wrap items-center", beside ? "flex-1 gap-1.5" : "w-full gap-2")}
+      className={cn("flex min-w-0 flex-wrap items-center", beside ? "flex-1 justify-end gap-1" : "w-full gap-2")}
       data-testid="field-part"
       data-role={part.role}
     >
