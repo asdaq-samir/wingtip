@@ -50,6 +50,7 @@ function RunwayTray({
   short?: boolean;
 }) {
   const folded = foldable && !lineOpen && !!a.runways?.length;
+  const bare = short && folded;
   // The head and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
   //  JMQabZH2W33kzmvUuahbad): "RWY" at its head (RunwayWord; it was the landing's or the takeoff's glyph), the runway picked after it
   //  with its arrow while it is folded, every runway in it while it is open. The head is the line's button
@@ -70,9 +71,24 @@ function RunwayTray({
       // pull-downs are laid out in this row itself (PatternChips' folded
       // line, `contents`), wrapping from its leading edge -- beside a
       // phase's label (`short`), from its trailing edge, under the pill.
-      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3", short && "justify-end")} />}
+      // Beside a phase's label, folded, no "RWY" head: the label says what
+      // the runway is for and the picked runway's chip is the number, a tap
+      // on it opening the line as the head's did, so Landing's "+ ARR" and
+      // "+ APCH" keep its line (the owner's pick, 2026-11-25, KUGN at their
+      // 19.65 px: they wrapped under it, 17 short). Its tray's body rounded
+      // at both ends, the head's padding its own.
+      render={
+        <div
+          className={cn(
+            "flex min-w-0 flex-auto items-start",
+            folded && "flex-wrap gap-y-3",
+            short && "justify-end",
+            bare && "[&_[data-slot=toggle-group]]:rounded-l-full [&_[data-slot=toggle-group]]:pl-0.75",
+          )}
+        />
+      }
     >
-      {foldable ? (
+      {bare ? null : foldable ? (
         <CollapsibleTrigger
           render={
             <Button
