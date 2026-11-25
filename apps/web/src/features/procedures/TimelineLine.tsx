@@ -177,7 +177,10 @@ export function TimelineLine({
   const landing = landingOut ? (
     <PhaseSection
       mark={<PhaseMark icon={<PlaneLanding />} />}
-      title="Landing"
+      // "Land", not "Landing", so its pills keep its line (the owner,
+      // 2026-11-25), as the runway tray's head read "Land RWY"; a reader
+      // still hears "landing" (its label).
+      title="Land"
       pills={phasePills("Arrive")}
       thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
       testId="field-landing"
