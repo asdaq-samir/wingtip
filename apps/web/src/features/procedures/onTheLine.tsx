@@ -137,7 +137,7 @@ export function FoldSection({
       {pill && open && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-0 right-3 bottom-0 left-12 rounded-[18px] ring-1 ring-foreground/12 ring-inset"
+          className="pointer-events-none absolute top-0 right-3 bottom-0 left-12 rounded-(--radius-card) ring-1 ring-foreground/12 ring-inset"
         />
       )}
       <OnTheLine stop={stop && !open} thread={thread}>
@@ -325,7 +325,7 @@ export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode
   // rows 12 from it, the procedures' cards 8 wider than in the grey one;
   // its first row has no hairline over it.
   const card =
-    "relative -ml-2 gap-0 border-transparent bg-transparent py-0 pl-[7px] shadow-none [&_[data-words]]:pr-3 [&>section>div:first-child>[data-words]]:border-t-0";
+    "relative -ml-2 gap-0 border-0 bg-transparent py-0 pl-2 shadow-none [&_[data-words]]:pr-3 [&>section>div:first-child>[data-words]]:border-t-0";
   return (
     <div data-testid="phase-cards">
       <Gap line={into} />
