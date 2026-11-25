@@ -80,7 +80,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
           <SheetScroller
             band={
               <>
-                <SheetBarRow bar={bar} shown={planShown} hairline={false} rises={rises} layout={layout} panelSize={panelSize} />
+                <SheetBarRow bar={bar} shown={planShown} hairline={false} rises={rises} pinned layout={layout} panelSize={panelSize} />
                 <SheetHeadBlock shownAtRest={routeShown} alone={false} rises={rises} slots={slots} layout={layout} />
               </>
             }
@@ -91,6 +91,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
             cut={footShown && !pages.floats}
             endRoom={layout.footBar ? "bar" : undefined}
             rises={rises}
+            bandScrolls
             {...parts}
           />
           {foot}

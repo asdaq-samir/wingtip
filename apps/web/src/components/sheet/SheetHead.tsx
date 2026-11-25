@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize } from "../../lib/mapChrome";
 import { RISEN_FACE } from "./insets";
-import { ROW_PAD, SHEET_BELOW, type PanelSizeValue, type SheetLayout, type SheetSlots } from "./sheetLayout";
+import { FULL_BAND, ROW_PAD, SHEET_BELOW, type PanelSizeValue, type SheetLayout, type SheetSlots } from "./sheetLayout";
 
 /** The route's box under FPL's chips: the gap between groups (space.group,
  *  16; the owner, 2026-11-23), less what the bar's row already leaves under
@@ -39,6 +39,9 @@ export function SheetBarRow(p: {
   shown: boolean;
   hairline: boolean;
   rises?: boolean;
+  /** Pinned over a band that always scrolls (FPL's, SheetScroller's
+   *  bandScrolls). */
+  pinned?: boolean;
   layout: SheetLayout;
   panelSize: PanelSizeValue;
 }) {
@@ -52,8 +55,13 @@ export function SheetBarRow(p: {
         // All the way up on a phone the search alone is pinned at the
         // top, a hairline under it, as Apple Maps' is.
         p.hairline && layout.onPhone && layout.size === "full" && "border-b border-border",
-        // Stuck in a band too tall to stick (bandFits), as iOS keeps a sheet's header (FPL's went off the top, 2026-11-21).
-        "in-data-band-tall:sticky in-data-band-tall:top-0 in-data-band-tall:z-20 in-data-band-tall:frost-head",
+        // Stuck in a band too tall to stick (bandFits), and in FPL's, which
+        // always scrolls (bandScrolls), as iOS keeps a sheet's header
+        // (FPL's went off the top, 2026-11-21): frosted where the body
+        // scrolls under it, a phone's settled all the way up (FULL_BAND),
+        // solid where it does not or the sheet moves, as the band was.
+        "in-data-band-tall:sticky in-data-band-tall:top-0 in-data-band-tall:z-20",
+        !p.pinned || !layout.onPhone ? "in-data-band-tall:frost-head" : layout.size === "full" ? FULL_BAND : "bg-(--sheet)",
       )}
     >
       <PanelSize.Provider value={p.panelSize}>{p.bar}</PanelSize.Provider>

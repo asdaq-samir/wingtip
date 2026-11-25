@@ -5,7 +5,7 @@ import { AT_PILL, PILL_BODY, SHEET_SLIDE } from "./insets";
 import { SWIPE_READER } from "./sheetFollow";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { bandFits } from "./bandFits";
-import { SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayout";
+import { FULL_BAND, SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayout";
 
 /** The head band's ground where nothing scrolls under it: a phone's sheet
  *  at the pill and half, whose body does not scroll (index.css's one
@@ -16,18 +16,6 @@ import { SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayout";
  *  idents smeared (the owner's iPhone, 2026-11-17). Frosted all the way
  *  up, where the body scrolls on under it. */
 const SOLID_BAND = "bg-(--sheet)";
-/** The band all the way up: frosted only settled there, where the body
- *  scrolls under it, and the sheet's solid ground while it moves -- a
- *  finger on it (Base UI's data-swiping) and on till it has settled
- *  (data-risen, SheetDrawer). Picked by the settled size alone, a slow
- *  drag down from all the way up kept the frost, the backdrop-filter
- *  Safari redraws under the card every frame of a slide, the stripes'
- *  cause (the owner's list, 2026-11-18). */
-const FULL_BAND = cn(
-  "frost-head",
-  "group-data-swiping/sheet:bg-(--sheet) group-data-swiping/sheet:[-webkit-backdrop-filter:none] group-data-swiping/sheet:[backdrop-filter:none]",
-  "group-data-risen/sheet:bg-(--sheet) group-data-risen/sheet:[-webkit-backdrop-filter:none] group-data-risen/sheet:[backdrop-filter:none]",
-);
 /** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
 const RISEN_BAND =
   "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
@@ -74,6 +62,16 @@ interface ScrollerProps {
   endRoom?: "bar";
   /** Its band risen with the sheet from the pill (FPL's), frosted as at half from the finger's first move. */
   rises?: boolean;
+  /** Its band always scrolls with the body, its title row alone pinned
+   *  (SheetHead's in-data-band-tall): FPL's, whose band holds the whole
+   *  route. Left to bandFits, the band went from sticky to scrolling and
+   *  back each time the route's height crossed the scroller's -- a card
+   *  folding open, a line opening, the end room coming and going -- and
+   *  the list jumped by the difference at every crossing, the sheet seen
+   *  shaking as it scrolled and as cards opened (the owner's iPhone,
+   *  2026-11-25: "The fpl sheet is shaking when scrolling and opening
+   *  cards"). */
+  bandScrolls?: boolean;
   layout: SheetLayout;
   onFootTap: () => void;
 }
@@ -109,8 +107,10 @@ export function SheetScroller(p: ScrollerProps) {
     >
       <PointerTapDiv
         data-head-band=""
-        // In the flow while taller than the scroller (bandFits), where sticking it hid the body.
-        ref={bandFits}
+        // In the flow while taller than the scroller (bandFits), where
+        // sticking it hid the body; FPL's always (bandScrolls).
+        ref={p.bandScrolls ? undefined : bandFits}
+        data-band-tall={p.bandScrolls ? "" : undefined}
         style={CORNER_VARS}
         // Risen from a pill that is a row of it (FPL's figures, held at the
         // foot), a tap on that row raises the sheet to half, as on the foot.
@@ -122,7 +122,12 @@ export function SheetScroller(p: ScrollerProps) {
         // while it moves (FULL_BAND).
         className={cn(
           "sticky top-0 flex shrink-0 flex-col data-band-tall:static",
-          !atPill ? cn("z-20", !onPhone ? "frost-head" : size !== "full" ? SOLID_BAND : FULL_BAND) : p.rises && RISEN_BAND,
+          // Scrolling with the body (bandScrolls), no frost of its own: its
+          // pinned title row has it (SheetHead), not a backdrop-filter the
+          // route's whole height for Safari to redraw as it scrolls.
+          !atPill
+            ? cn("z-20", p.bandScrolls ? undefined : !onPhone ? "frost-head" : size !== "full" ? SOLID_BAND : FULL_BAND)
+            : p.rises && RISEN_BAND,
         )}
       >
         {p.band}

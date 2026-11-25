@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import type { MouseEvent, ReactNode } from "react";
 import type { PanelState } from "../../lib/mapChrome";
 import type { SheetPages } from "../../lib/sheetPages";
@@ -53,3 +54,16 @@ export const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [
 export function tapOpens(event: MouseEvent, open: () => void) {
   if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) open();
 }
+
+/** The band all the way up: frosted only settled there, where the body
+ *  scrolls under it, and the sheet's solid ground while it moves -- a
+ *  finger on it (Base UI's data-swiping) and on till it has settled
+ *  (data-risen, SheetDrawer). Picked by the settled size alone, a slow
+ *  drag down from all the way up kept the frost, the backdrop-filter
+ *  Safari redraws under the card every frame of a slide, the stripes'
+ *  cause (the owner's list, 2026-11-18). */
+export const FULL_BAND = cn(
+  "frost-head",
+  "group-data-swiping/sheet:bg-(--sheet) group-data-swiping/sheet:[-webkit-backdrop-filter:none] group-data-swiping/sheet:[backdrop-filter:none]",
+  "group-data-risen/sheet:bg-(--sheet) group-data-risen/sheet:[-webkit-backdrop-filter:none] group-data-risen/sheet:[backdrop-filter:none]",
+);
