@@ -160,7 +160,7 @@ export function usePlanRoute() {
   const holdsParamText = address.holds;
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);
   // The fuel the pilot set in the tanks leaving a field (`tanks`,
-  // "KOSH:30,KJVL:0"), from FPL's gauges (FuelSet); one not named, full.
+  // "KOSH:30,KJVL:0"), an address's own; one not named, full.
   const tanksParamText = address.tanks;
   const tanks = useMemo(() => tanksOf(tanksParamText), [tanksParamText]);
   // The runway each departure picked is left from ("KSTL:30R"): the

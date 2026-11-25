@@ -23,7 +23,6 @@ const vm = (over: Partial<Record<string, unknown>> = {}) =>
   ({
     edit: {},
     tanks: new Map([["departure", tank]]),
-    onTanks: () => {},
     inRoute: [],
     holdOn: () => null,
     reportedOf: () => null,
@@ -57,23 +56,6 @@ describe("a line opens", () => {
     expect(lineModel(vm(), point({ checking: true }), departure, field).opens).toBe(false);
     expect(lineModel(vm(), point({ field: false }), departure, undefined).opens).toBe(false);
     expect(lineModel(vm({ edit: null }), point(), departure, field).opens).toBe(false);
-  });
-});
-
-describe("its fuel is set there", () => {
-  it("at the departure and a stop, where the list edits the route", () => {
-    expect(lineModel(vm(), point(), departure, field).fuelSet).not.toBeNull();
-    const stop = { ...departure, kind: "stop", key: "stop-1" } as unknown as NavLogRow;
-    const stops = vm({ tanks: new Map([["stop-1", tank]]) });
-    expect(lineModel(stops, point({ role: "Stop" }), stop, field).fuelSet).not.toBeNull();
-  });
-
-  it("read only at the destination, a field it cannot land at, or with no tanks to set", () => {
-    const destination = { ...departure, kind: "destination", key: "destination" } as unknown as NavLogRow;
-    const there = vm({ tanks: new Map([["destination", tank]]) });
-    expect(lineModel(there, point({ role: "Destination" }), destination, field).fuelSet).toBeNull();
-    expect(lineModel(vm(), point({ problem: "Closed" }), departure, field).fuelSet).toBeNull();
-    expect(lineModel(vm({ onTanks: undefined }), point(), departure, field).fuelSet).toBeNull();
   });
 });
 

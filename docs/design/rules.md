@@ -529,22 +529,10 @@ off by default (the owner, 2026-11-13).
    it, and Add a Stop saying "Up to 16 stops" when the route is full (the
    grouped box's audit, 2026-11-20); after a hairline inset to the
    text its ident (a link to its card), the fuel in the tanks there (past empty the gallons short, "12 gal short" in the short's red, 2026-11-23; it was "−12 gal", the owner, 2026-11-20) right
-   after it -- at the departure and at a stop the gauge is a button
-   (the owner, 2026-11-21: "can we set the fuel tank by tapping on it?";
-   `procedures/FuelSet`), named with its gallons ("36 gal, fuel on
-   board: change"; its 44-point area 13 above and below, meeting the
-   ident's 9 past the name so neither takes the other's taps), opening a
-   stock Popover from a tablet's width up and on a phone a card over FPL
-   (the stock Drawer's nested drawer, `SheetCard`) with Cancel and Done in
-   its head, so FPL and the gauge stay in sight under it (the HIG review,
-   2026-11-21; iOS stacks a sheet over a sheet), its gallons field 44 tall
-   with "gal" at the figure's size: at the departure the fuel on board at engine start,
-   Full (the airplane's usable fuel) or the gallons; at a stop what the
-   tanks are fuelled to, Full, No fuel (what it lands with, kept) or the
-   gallons -- a segmented control and a number field, no Tabs pick, as
-   no airplane profile carries a tabs figure and none is assumed. More
-   than the tanks hold is kept, said under the field (warn, never
-   limit). The figure is the address's `tanks` ("C81:20,KMSN:0"), the
+   after it -- a gauge to read, no control (the owner, 2026-11-25:
+   "Tapping fuel tanks should not do anything"; it set the fuel at the
+   departure and after a stop from 2026-11-21). The figure is the
+   address's `tanks` ("C81:20,KMSN:0"), the
    engine's `fuel_in_tanks` walks the gauges from it and the planner's
    fuel check, fuel stops and loading fly the same (its `tanks` query,
    `navlog_fuel_plan`'s `on_board_gal`). A gauge is red under the reserve

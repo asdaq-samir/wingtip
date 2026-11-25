@@ -154,10 +154,9 @@ interface StopPlans {
    *  check); none known, no fuel shown. */
   fuel?: { usableGal: number; taxiGal: number; reservesGal: (number | null)[]; alternateGal?: number | null } | null;
   /** The pilot's own fuel leaving a field, gallons by its ident (the
-   *  address's `tanks`), and setting it from the field's gauge (FuelSet);
-   *  null back to full. None, the gauges are read only. */
+   *  address's `tanks`); the gauges read only (the owner, 2026-11-25:
+   *  "Tapping fuel tanks should not do anything"). */
   tanks?: Record<string, number>;
-  onTanks?: (ident: string, gallons: number | null) => void;
 }
 
 /** What FPL's route list (ProceduresRoute) is given: the route's data, and

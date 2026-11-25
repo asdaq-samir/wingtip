@@ -53,7 +53,6 @@ fpl-head-fields.spec.ts
 fpl-one-layout.spec.ts
 fpl-strip-foot.spec.ts
 frequency-copy.spec.ts
-fuel-gauge.spec.ts
 fuel-stops.spec.ts
 fullscreen.spec.ts
 hazard-legs.spec.ts

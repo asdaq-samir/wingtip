@@ -60,18 +60,7 @@ export function TimelineMark({ point, position }: { point: TimelinePoint; positi
  * point where the list edits the route (pointEnd's, the one search with
  * its suggestions), else open the airport's card -- and words where not.
  */
-export function LineIdent({
-  point,
-  change,
-  onInfo,
-  fuelSet,
-}: {
-  point: TimelinePoint;
-  change: (() => void) | undefined;
-  onInfo: () => void;
-  /** The fuel's gauge after it is a control (FuelSet): their areas meet. */
-  fuelSet: boolean;
-}) {
+export function LineIdent({ point, change, onInfo }: { point: TimelinePoint; change: (() => void) | undefined; onInfo: () => void }) {
   if (!change && !(point.field && !point.problem))
     return (
       <span className={cn("min-w-0 truncate font-normal", point.problem && "text-destructive", TEXT.row)} data-testid="timeline-ident">
@@ -100,17 +89,15 @@ export function LineIdent({
         // 10 before the name, where the mark's ends (6 past the
         // marks' column, PointMenu's `bare`, in the line's 16),
         // and runs right to 44 wide at the least, over the fuel's
-        // gauge after a short name where it is no control. Where
-        // the gauge is one (FuelSet) the two meet in the middle of
-        // the 18 between them, 9 past the name, so neither takes
-        // the other's taps (the HIG review, 2026-11-21: the gauge
-        // took 2-3 of "C81: change it"'s probes). Its line is 24, so 10
+        // gauge after a short name, the gauge no control (the owner,
+        // 2026-11-25: "Tapping fuel tanks should not do anything").
+        // Its line is 24, so 10
         // above and below make the 44: 12 made 48, and with the fields'
         // lines 45 apart each ident took 3 of the next's probes and the
         // last field's took Add a Stop's (the night's iOS audit, 2026-11-24).
         className={cn(
           "relative min-w-0 font-normal hit-y-2.5 after:-left-2.5",
-          fuelSet ? "after:w-[max(44px,calc(100%+19px))]" : "after:w-[max(54px,calc(100%+14px))]",
+          "after:w-[max(54px,calc(100%+14px))]",
           // In the tint, as Add a Stop is: it is a tap (the owner,
           // 2026-11-24: "each stop should have same link style as add stop").
           point.problem ? "text-destructive" : "text-tint",

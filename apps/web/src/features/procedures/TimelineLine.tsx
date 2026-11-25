@@ -7,7 +7,6 @@ import { approachRunway } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import { landingRunway, type NavLogRow, type ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
-import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
 import { kindMenu, windWords } from "./fieldParts";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
@@ -66,7 +65,7 @@ export function TimelineLine({
    *  control is (TimelineAction). */
   trailing?: ReactNode;
 }) {
-  const { opens, refused, tank, fuelSet, reported, parts, before, after } = lineModel(vm, point, row, field);
+  const { opens, refused, tank, reported, parts, before, after } = lineModel(vm, point, row, field);
   // The field the heading of its group (the owner, 2026-11-24: "that
   // airport should be the heading and than it should have the folding
   // runways and folding procedures inside, which should connect with
@@ -277,37 +276,25 @@ export function TimelineLine({
               ids"), where it was four letters wide at least so the fuel and
               the wind, since gone from the rows, lined up. */}
           <div className={cn("flex shrink flex-col", TEXT.row)}>
-            <LineIdent point={point} change={end.change} onInfo={() => vm.onInfo(point.ident)} fuelSet={!!fuelSet} />
+            <LineIdent point={point} change={end.change} onInfo={() => vm.onInfo(point.ident)} />
           </div>
           {/* The fuel right after the ident, the time at the right (the
               owner, 2026-11-17: "Fuel should go right after airport"; kept
               as the gauge, 2026-11-20: "I like the previous fuel tanks"). */}
-          {/* Tapped to set the fuel leaving a field (FuelSet), where the
-              list edits the route: the departure's on board, a stop's after
-              fuelling; the destination's and a waypoint's read only. */}
+          {/* A gauge to read, no control (the owner, 2026-11-25: "Tapping
+              fuel tanks should not do anything"), where it set the fuel
+              leaving the departure and a stop. */}
           {/* The fuel over the field's wind, as the time over the altitude
               at the right (the owner, 2026-11-24: "Fuel and wind can be over
               each other like the eta and alt"). */}
           <span className="flex shrink-0 flex-col items-start">
-            {fuelSet && tank ? (
-              <FuelSet
-                tank={tank}
-                ident={fuelSet.ident}
-                stop={fuelSet.stop}
-                tone={tank.low ? "low" : undefined}
-                onSet={(gallons) => vm.onTanks?.(fuelSet.ident, gallons)}
-              />
-            ) : (
-              // As far from the ident as a gauge that is a control (FuelSet's
-              // 12, the row's gap and its ml-1: closer since the wind left
-              // the rows, the owner, 2026-11-25: "Can those fuel tanks be
-              // moved a bit to the left"), so every line's gauge stands in
-              // one place.
-              tank && (
-                <span className="ml-1 flex shrink-0">
-                  <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
-                </span>
-              )
+            {/* 12 from the ident, the row's gap and its ml-1 (the owner,
+                2026-11-25: "Can those fuel tanks be moved a bit to the
+                left"). */}
+            {tank && (
+              <span className="ml-1 flex shrink-0">
+                <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
+              </span>
             )}
             {windShown && <WindLine className="ml-2.5" direct={end.direct} wind={windWords(reported)} reported={reported} />}
           </span>

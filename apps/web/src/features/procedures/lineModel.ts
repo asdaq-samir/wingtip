@@ -58,13 +58,6 @@ export function lineModel(vm: ProceduresRouteModel, point: TimelinePoint, row: N
   // A move of this point refused, why under it (useRouteListEdit).
   const refused = vm.edit?.refusal?.index === point.index ? vm.edit.refusal.note : null;
   const tank = point.role === "Departure" ? vm.tanks.get("departure") : row ? vm.tanks.get(row.key) : undefined;
-  // The gauge is a control where the fuel leaving the field is set there
-  // (FuelSet): the departure's and a stop's, where the list edits the
-  // route; the field it is set at, null where it is read only.
-  const fuelSet =
-    tank && vm.onTanks && row && point.field && !point.problem && (row.kind === "departure" || row.kind === "stop")
-      ? { ident: row.airport.ident, stop: row.kind === "stop" }
-      : null;
   const split = field ? fieldParts(vm, field, row) : [];
   const parts: LinePart[] = split.map((part) => ({
     part,
@@ -82,5 +75,5 @@ export function lineModel(vm: ProceduresRouteModel, point: TimelinePoint, row: N
   const after = onLine("Depart");
   // Its missed approach unsuspended, the line goes on into it.
   const missedOn = !!field && !point.problem && missedOnTheLine(vm, field);
-  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn };
+  return { opens, refused, tank, reported: vm.reportedOf(point.ident), parts, before, after, missedOn };
 }
