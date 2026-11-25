@@ -79,8 +79,10 @@ export function RunwayPill({
           />
         }
       >
-        <span>RWY</span>
-        {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>—</span>}
+        {/* The runway alone, "≋26R", no "RWY" before it (the owner,
+            2026-11-25, so Land's and Takeoff's pills keep their line at
+            KLAS); its name still says "Runway 26R" to a reader. */}
+        {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>RWY —</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {windHead && (

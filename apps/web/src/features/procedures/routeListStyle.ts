@@ -39,7 +39,7 @@ export const CHIP = cn(CAPSULE_HIT, "h-8 min-w-11 justify-center px-3 font-norma
  *  the row's at 16 on a phone, black, as theirs are; 10 above and below
  *  make its 44 (index.css's hit-y), nothing grown that is seen. */
 export const SLIM_PILL = cn(
-  "relative h-6 shrink-0 gap-1 rounded-full bg-foreground/8 px-2.5 font-normal text-foreground hit-y-2.5 dark:bg-foreground/8",
+  "relative h-6 shrink-0 gap-0.5 rounded-full bg-foreground/8 px-2 font-normal text-foreground hit-y-2.5 dark:bg-foreground/8",
   TEXT.row,
   "pointer-coarse:text-[length:1rem]",
 );

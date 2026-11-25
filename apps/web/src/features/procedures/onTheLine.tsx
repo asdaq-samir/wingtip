@@ -203,9 +203,11 @@ export function PhaseSection({
     <section aria-label={label} data-testid={testId}>
       <OnTheLine mark={mark} stop={false} thread={thread} wrap>
         <span className={cn("shrink-0 py-2.5 font-semibold", TEXT.row)}>{title}</span>
-        {/* Its pills 8 apart, their 44s meeting (gap-2), wrapping under the
+        {/* Its pills 6 apart (the owner, 2026-11-25: tighter, so a field's
+            pills keep the title's line; their areas are 44 tall, hit-y,
+            not wide, so none overlap), wrapping under the
             first where they do not all fit. */}
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-2.5" data-testid="timeline-chips" data-role={phase}>
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 py-2.5" data-testid="timeline-chips" data-role={phase}>
           {pills}
         </span>
         {time && <span className="ml-auto flex shrink-0 items-center">{time}</span>}
