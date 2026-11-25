@@ -88,10 +88,9 @@ export function TimelineLine({
   // runway is not offered beside it; a circling-only one ("VOR-A") lands on
   // any, and keeps it (the owner, 2026-11-24: "Changing runway would
   // conflict with the selected approach. So runway section can hide unless
-  // a circling approach?"). Its pull-downs and hold stay, a part with none
-  // of them goes.
+  // a circling approach?"). Its procedures' pills stay, the approach's
+  // among them, so the part always shows (the owner, 2026-11-25).
   const straightIn = !!approach && approachRunway(approach.name ?? "") !== null;
-  const shownParts = parts.filter((p) => !(p.part.role === "Arrive" && straightIn && p.add.length === 0 && !p.hold));
   const windShown = !!field && !point.problem && (end.direct || !!windWords(reported));
   // Two blocks under the field's line, Landing and Takeoff, each its row
   // with its runway's pill beside its name, a stop both, the destination
@@ -101,7 +100,7 @@ export function TimelineLine({
   // arrival, approach and missed approach under its row, Takeoff's
   // departure under its.
   const editing = opens && open;
-  const partOf = (role: "Arrive" | "Depart") => (editing ? shownParts.find((p) => p.part.role === role) : undefined);
+  const partOf = (role: "Arrive" | "Depart") => (editing ? parts.find((p) => p.part.role === role) : undefined);
   const landingPart = partOf("Arrive");
   const takeoffPart = partOf("Depart");
   const landingOut = editing && (!!landingPart || beforeOut.length > 0 || missedHere);
