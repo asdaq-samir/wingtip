@@ -141,8 +141,8 @@ export function FoldSection({
               // and time going under it where they do not fit beside it,
               // where the pill covered TAKEOFF.
               className={cn(
-                "min-h-11 flex-1 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted",
-                nest ? "shrink-0" : "min-w-0",
+                "min-h-11 gap-2 py-1.5 text-left font-normal whitespace-normal aria-expanded:bg-transparent pointer-coarse:active:bg-muted",
+                nest ? "flex-none" : "min-w-0 flex-1",
               )}
             />
           }
@@ -164,7 +164,19 @@ export function FoldSection({
           )}
         </CollapsibleTrigger>
         {trailing && (
-          <span className={cn("ml-auto flex max-w-full min-w-0 shrink-0 items-center gap-1", corner && "self-start")}>{trailing}</span>
+          // A phase's runway, pull-downs and time take the rest of its line,
+          // wrapping inside it, the pill first, so the label's line keeps
+          // its runway where the pull-downs do not all fit (KUGN at 390,
+          // 2026-11-24).
+          <span
+            className={cn(
+              "flex min-w-0 items-center gap-1",
+              nest ? "flex-1 justify-end" : "ml-auto max-w-full shrink-0",
+              corner && "self-start",
+            )}
+          >
+            {trailing}
+          </span>
         )}
         {/* At the line's end under the "•••", beside the grey line, so the
             two never meet at a larger text size and the column lines up
@@ -245,9 +257,10 @@ export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode
   // are the list's own. Out 8 past the marks' column and in 8 from the
   // list's edge (7 inside its 1-point edge), so its marks keep the field's
   // column, the line unbroken, and its corners show;
-  // its first row has no hairline over it, the card's own edge.
+  // its first row has no hairline over it, the card's own edge; its rows
+  // 8 from its end, not the list's 16, for Landing's runway and pull-downs.
   const card =
-    "relative -ml-2 mr-2 gap-0 border-procedure/20 py-0 pl-[7px] shadow-none [&>section>div:first-child>[data-words]]:border-t-0";
+    "relative -ml-2 mr-2 gap-0 border-procedure/20 py-0 pl-[7px] shadow-none [&_[data-words]]:pr-2 [&>section>div:first-child>[data-words]]:border-t-0";
   return (
     <div data-testid="phase-cards">
       <Gap line={into} />

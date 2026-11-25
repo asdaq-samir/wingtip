@@ -15,7 +15,13 @@ import type { FieldPart } from "./fieldParts";
  *  a reader hears which it is, a landing's or a takeoff's. */
 function RunwayWord({ role, short }: { role: "Arrive" | "Depart"; short: boolean }) {
   return (
-    <span role="img" aria-label={role === "Arrive" ? "landing" : "takeoff"} className={cn(TEXT.detail, "font-semibold whitespace-nowrap")}>
+    <span
+      role="img"
+      aria-label={role === "Arrive" ? "landing" : "takeoff"}
+      // A note's size beside a phase's label (`short`), the runway the pill's
+      // figure, so the label's line keeps it (FPL's cards, 2026-11-24).
+      className={cn(short ? TEXT.note : TEXT.detail, "font-semibold whitespace-nowrap")}
+    >
       {short ? "RWY" : `${role === "Arrive" ? "Land" : "Takeoff"} RWY`}
     </span>
   );
