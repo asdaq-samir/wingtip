@@ -272,11 +272,11 @@ export function TimelineLine({
               }
             />
           )}
-          {/* At least four letters wide at the name's own size, so every
-              line's fuel and wind start in one column (the owner,
-              2026-11-24: "Fuel and winds should line up for all the
-              stops"); a longer name pushes them on. */}
-          <div className={cn("flex min-w-[3.2em] shrink flex-col", TEXT.row)}>
+          {/* As wide as its name, the fuel right after it (the owner,
+              2026-11-25: "Fuel tanks move to the left next to airport
+              ids"), where it was four letters wide at least so the fuel and
+              the wind, since gone from the rows, lined up. */}
+          <div className={cn("flex shrink flex-col", TEXT.row)}>
             <LineIdent point={point} change={end.change} onInfo={() => vm.onInfo(point.ident)} fuelSet={!!fuelSet} />
           </div>
           {/* The fuel right after the ident, the time at the right (the
