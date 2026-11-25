@@ -76,8 +76,9 @@ export function procedureTrigger({
     );
   if (look === "wide")
     // The one picked, its pill as wide as the card: its words (`face`) the
-    // tap that opens its menu, as every pill's do; its fold's chevron is
-    // the pill's own, beside them (FoldSection's `pill`).
+    // tap that opens its menu, as the route box's pills' are, with no
+    // chevron of their own -- the pill's one chevron folds its fixes
+    // (FoldSection's `pill`), and two side by side read as one.
     return (
       <Button
         variant="plain"
@@ -87,7 +88,6 @@ export function procedureTrigger({
         aria-label={`${label ?? SHORT[kind]}, ${what}: pick another`}
       >
         {face}
-        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </Button>
     );
   if (look === "button")
