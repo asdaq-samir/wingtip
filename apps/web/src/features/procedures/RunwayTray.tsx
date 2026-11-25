@@ -110,6 +110,7 @@ export function PartTray({
   trailing,
   noRunway = false,
   beside = false,
+  short = beside,
 }: {
   vm: ProceduresRouteModel;
   a: ProcedureAirport;
@@ -121,6 +122,9 @@ export function PartTray({
   /** On the line of what is before it (FPL's Landing or Takeoff), taking
    *  the room after it, not a line of its own. */
   beside?: boolean;
+  /** "RWY" alone at the runway's head, its Landing or Takeoff said over it
+   *  (FPL's phase cards); beside a phase's label too. */
+  short?: boolean;
 }) {
   // The line folds to its runway once one is picked; the pull-downs beside
   // the runway's chip while it is folded, at the owner's ask ("Can arrival
@@ -150,7 +154,7 @@ export function PartTray({
           foldable={foldable}
           lineOpen={vm.openLines.includes(part.line.key)}
           chips={part.chips(trailing.length > 0 ? trailing : null)}
-          short={beside}
+          short={short}
         />
       )}
       {/* When it leaves again at the line's right, under the landing's time

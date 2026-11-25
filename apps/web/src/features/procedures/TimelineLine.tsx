@@ -111,47 +111,45 @@ export function TimelineLine({
   const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
   const onPast = !last || sections > 0 || (takeoffOut && !last);
   const grouped = sections > 0 || landingOut || takeoffOut;
-  // A phase's head (the redesign of 2026-11-25): its runway's pill at the
-  // line's end, and a stop's leaving time after it, in the column of the
-  // fields' times; a straight-in approach's own runway in the pill's shape,
-  // said, not offered (the owner's review, 2026-11-24). Its pull-downs not
-  // yet picked ("+ ARR") and the destination's hold go on a row of their
-  // own at the card's foot (addRow), so the head never wraps.
+  // A phase's head (the redesign of 2026-11-25) its title alone, and a
+  // stop's leaving time at its end in the column of the fields' times.
+  // Under it one row, in sight folded too: its runway's pill, then what can
+  // still be added ("+ ARR", "+ APCH", "+ DEP", the hold), from the line's
+  // start, 12 apart so their areas meet (the owner, 2026-11-25: "Can runway
+  // selection be on the same row as the procedures?"); a straight-in
+  // approach's own runway in the pill's shape, said, not offered (the
+  // owner's review, 2026-11-24).
   const ownRunway = straightIn ? approachRunway(approach?.name ?? "") : null;
-  const phaseTray = (role: "Arrive" | "Depart") => {
+  const phaseTime = (role: "Arrive" | "Depart") => (role === "Depart" ? takeoffPart?.part.leaves || undefined : undefined);
+  const runwayRow = (role: "Arrive" | "Depart", on: boolean) => {
     const linePart = role === "Arrive" ? landingPart : takeoffPart;
-    if (role === "Arrive" && ownRunway)
-      return (
-        <span
-          className={cn("flex h-[2.375rem] shrink-0 items-center rounded-full bg-card px-3 font-semibold text-muted-foreground", TEXT.note)}
-          data-testid="landing-runway"
-        >
-          RWY {ownRunway}
-        </span>
-      );
-    if (!linePart) return undefined;
-    return (
-      <span className="flex min-w-0 flex-wrap items-center justify-end gap-1" data-testid="timeline-chips" data-role={role}>
-        <PartTray vm={vm} a={field!} part={linePart.part} beside trailing={[]} />
+    const said = role === "Arrive" && ownRunway && (
+      <span
+        key="runway"
+        className={cn("flex h-[2.375rem] shrink-0 items-center rounded-full bg-card px-3 font-semibold text-muted-foreground", TEXT.note)}
+        data-testid="landing-runway"
+      >
+        RWY {ownRunway}
       </span>
     );
-  };
-  // The card's foot: what can still be added, from the line's start, 12
-  // apart so their areas meet (the iOS rule's gap-3), as Add a Stop is at
-  // the list's foot; in sight with the card folded.
-  const addRow = (role: "Arrive" | "Depart", on: boolean) => {
-    const linePart = role === "Arrive" ? landingPart : takeoffPart;
     const chips = [
       ...(linePart?.add ?? []).map((k) => <Fragment key={k}>{kindMenu(vm, field!, k, "add")}</Fragment>),
       ...(linePart?.hold
         ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
         : []),
     ];
-    if (!chips.length) return undefined;
-    return () => (
+    if (!linePart && !said) return undefined;
+    return (
       <OnTheLine stop={false} thread={on ? "solid" : "none"} rule={false}>
-        <div className="flex min-w-0 flex-wrap items-center gap-3 pb-1.5" data-testid="timeline-add" data-role={role}>
-          {chips}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 pb-1.5" data-testid="timeline-chips" data-role={role}>
+          {linePart && !said ? (
+            <PartTray vm={vm} a={field!} part={{ ...linePart.part, leaves: null }} short trailing={chips} />
+          ) : (
+            <>
+              {said}
+              {chips}
+            </>
+          )}
         </div>
       </OnTheLine>
     );
@@ -194,8 +192,8 @@ export function TimelineLine({
     <FoldSection
       head={phaseHead("Arrive")}
       mark={<PhaseMark icon={<PlaneLanding />} />}
-      trailing={phaseTray("Arrive")}
-      foot={addRow("Arrive", takeoffOut || !last)}
+      trailing={phaseTime("Arrive")}
+      sub={runwayRow("Arrive", landingFlown || takeoffOut || !last)}
       chevron={landingFlown}
       stop={last && !takeoffOut}
       thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
@@ -213,8 +211,8 @@ export function TimelineLine({
     <FoldSection
       head={phaseHead("Depart")}
       mark={<PhaseMark icon={<PlaneTakeoff />} />}
-      trailing={phaseTray("Depart")}
-      foot={addRow("Depart", !last)}
+      trailing={phaseTime("Depart")}
+      sub={runwayRow("Depart", afterOut.length > 0 || !last)}
       chevron={afterOut.length > 0}
       stop={last}
       thread={afterOut.length > 0 || !last ? "solid" : "none"}

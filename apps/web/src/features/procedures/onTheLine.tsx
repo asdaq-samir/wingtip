@@ -86,6 +86,7 @@ export function FoldSection({
   chevron = true,
   corner,
   mark,
+  sub,
   children,
 }: {
   head: ReactNode;
@@ -116,6 +117,9 @@ export function FoldSection({
   corner?: ReactNode;
   /** Its mark in the marks' column, on the route's line (a phase's glyph). */
   mark?: ReactNode;
+  /** A row right under its head, in sight folded too (a phase's runway and
+   *  what can still be added). */
+  sub?: ReactNode;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -128,7 +132,7 @@ export function FoldSection({
       onOpenChange={setOpen}
       render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
     >
-      <OnTheLine mark={mark} stop={stop && !open && !foot} thread={thread} wrap={nest && !!trailing}>
+      <OnTheLine mark={mark} stop={stop && !open && !foot && !sub} thread={thread} wrap={nest && !!trailing}>
         <CollapsibleTrigger
           render={
             <Button
@@ -184,6 +188,7 @@ export function FoldSection({
             (the owner's iPhone, 2026-11-24). */}
         {corner && <span className="absolute right-4 bottom-1.5 z-10 flex">{corner}</span>}
       </OnTheLine>
+      {sub}
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}
       <CollapsibleContent
