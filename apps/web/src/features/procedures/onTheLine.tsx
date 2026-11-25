@@ -117,11 +117,32 @@ export function FoldSection({
     <Collapsible
       open={open}
       onOpenChange={setOpen}
-      render={<section aria-label={label} data-testid={testId} data-section-folded={open ? undefined : ""} {...data} />}
+      render={
+        <section
+          aria-label={label}
+          data-testid={testId}
+          data-section-folded={open ? undefined : ""}
+          className={cn(pill && "relative", pill && open && "mb-1.5 pb-1.5")}
+          {...data}
+        />
+      }
     >
+      {/* Unfolded, the pill grows into a card round its fixes (the owner,
+          2026-11-25: "Can the pills expand to a card when showing fixes?"):
+          one hairline outline from the pill's top round every fix's words,
+          its corners the pill's own, the route's dots left of it on the
+          line. Over the words' column only: the marks' 32 and their 16 gap
+          (w-8, TIMELINE_GAP) to its left, the card's 12 (PhaseCards' pr-3)
+          to its right, as the pill is. */}
+      {pill && open && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 right-3 bottom-0 left-12 rounded-[18px] ring-1 ring-foreground/12 ring-inset"
+        />
+      )}
       <OnTheLine stop={stop && !open} thread={thread}>
         {pill ? (
-          <span className={WIDE_PILL}>
+          <span className={cn(WIDE_PILL, open && "ring-0")}>
             <CollapsibleTrigger
               render={
                 <Button
@@ -161,7 +182,13 @@ export function FoldSection({
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
           folds (none with Reduce Motion, index.css). */}
-      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0">
+      <CollapsibleContent
+        className={cn(
+          // Inside the card the fixes' words are inset 12 from its sides.
+          pill && "[&_[data-words]]:pl-3 [&_[data-words]]:pr-6!",
+          "h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0",
+        )}
+      >
         {children}
       </CollapsibleContent>
     </Collapsible>
