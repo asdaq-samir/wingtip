@@ -1,8 +1,11 @@
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -36,6 +39,7 @@ export function RunwayPill({
   label,
   note,
   onPick,
+  windHead,
 }: {
   airport: ProcedureAirport;
   wind: WindPick | null;
@@ -48,6 +52,10 @@ export function RunwayPill({
    *  "Circle to land", its pattern's side and height). */
   note: string | null;
   onPick: (end: string) => void;
+  /** The field's wind at the menu's head (WindLine), where its row said it
+   *  under the ident (the owner's option 1, 2026-11-25: fuel and wind off
+   *  the rows' second line, the wind beside the runway it picks). */
+  windHead?: ReactNode;
 }) {
   if (a.runways === null) return <Skeleton aria-label="Fetching the runways" className="h-6 w-20 rounded-full" />;
   const ends = runwayEnds(a);
@@ -75,6 +83,11 @@ export function RunwayPill({
         {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>—</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
+        {windHead && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-foreground">{windHead}</DropdownMenuLabel>
+          </DropdownMenuGroup>
+        )}
         <DropdownMenuRadioGroup value={chosen ?? ""} onValueChange={(v) => v && onPick(String(v))}>
           {ends.map(({ runway, end }) => {
             const c = endChoice(runway, end, into, fitOf);

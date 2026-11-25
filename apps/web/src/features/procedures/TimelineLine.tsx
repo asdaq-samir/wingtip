@@ -91,7 +91,9 @@ export function TimelineLine({
   // a circling approach?"). Its procedures' pills stay, the approach's
   // among them, so the part always shows (the owner, 2026-11-25).
   const straightIn = !!approach && approachRunway(approach.name ?? "") !== null;
-  const windShown = !!field && !point.problem && (end.direct || !!windWords(reported));
+  // Only "Direct to" under the ident: the field's wind is at the head of
+  // its runway's menu (the owner's option 1, 2026-11-25).
+  const windShown = !!field && !point.problem && end.direct;
   // Two blocks under the field's line, Landing and Takeoff, each its row
   // with its runway's pill beside its name, a stop both, the destination
   // Landing, the departure Takeoff (the owner, 2026-11-24: "Maybe each stop

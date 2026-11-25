@@ -55,9 +55,10 @@ test("each line is its ident and time, no city; a tap opens its wind and elevati
   }
   await openLine(page, "C81");
   const dep = timelineLine(page, "C81");
-  await expect(dep.getByTestId("field-wind")).toBeVisible({ timeout: slow(30_000) });
   await expect(dep.getByTestId("point-figures")).toBeVisible();
   await expect(dep.getByTestId("timeline-chips").getByTestId("runway-pill")).toBeVisible({ timeout: slow(30_000) });
+  // Its wind at the head of the runway's menu, not under its ident (2026-11-25).
+  await expect(dep.getByTestId("field-wind")).toHaveCount(0);
   // Another line opened folds the first.
   await openLine(page, "KDLH");
   await expect(dep).not.toHaveAttribute("data-open", "");

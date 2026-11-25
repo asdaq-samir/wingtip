@@ -50,8 +50,16 @@ export function fixSub(fix: BranchFix, isDirect: boolean, skipped: boolean): str
   return isDirect ? `${lead}direct to` : skipped ? `${lead}skipped` : roles;
 }
 
-/** A kind's menu's last rows: the field's whole list, and none of it. */
-export const ALL: Record<Kind, string> = { approach: "All approaches…", arrival: "All arrivals…", departure: "All departures…" };
+/** A kind's menu's last rows. The field's whole list, each with its fixes
+ *  on the map and its plate, to look at before picking (ProcedureSheet):
+ *  "Preview", where "All arrivals…" read as the menu's list again (the
+ *  owner, 2026-11-25: "why is procedure menu showing 'all' at the
+ *  bottom?"); and none of it. */
+export const ALL: Record<Kind, string> = {
+  approach: "Preview Approaches…",
+  arrival: "Preview Arrivals…",
+  departure: "Preview Departures…",
+};
 export const NONE: Record<Kind, string> = { approach: "No Approach", arrival: "No Arrival", departure: "No Departure" };
 
 /** An approach's name in its runway's group, the runway said by the group:

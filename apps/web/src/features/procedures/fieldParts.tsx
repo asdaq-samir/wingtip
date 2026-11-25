@@ -8,6 +8,7 @@ import { ProcedureDropdown, type Fold } from "./ProcedureDropdown";
 import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
 import { RunwayPill } from "./RunwayPill";
+import { WindLine } from "./FieldHead";
 import { patternNote } from "./procedureWords";
 import { endFit } from "./runwayFit";
 import { DAY_MIN, type ProceduresRouteModel } from "./useProceduresRoute";
@@ -89,6 +90,8 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
   const { airports, cards, fit, ground, startMs, windOf, chosenAt, takeoffAt, hasKind, landingOf, landedAt } = vm;
   const { onPick, onTakeoff, onGround } = vm;
   const wind = windOf(a.ident);
+  const reported = vm.reportedOf(a.ident);
+  const wordsOfWind = windWords(reported);
   const has = (kind: Kind) => hasKind(a.ident, kind) || kindPicked(vm, a, kind);
   // Each runway end's fit today (runwayFit): its crosswind against the
   // airplane's demonstrated, and its length against the distance needed,
@@ -133,6 +136,7 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
           label={label ?? `${a.ident} runway`}
           note={note}
           onPick={pick}
+          windHead={wordsOfWind && <WindLine direct={false} wind={wordsOfWind} reported={reported} />}
         />
       ) : (
         <PatternChips
