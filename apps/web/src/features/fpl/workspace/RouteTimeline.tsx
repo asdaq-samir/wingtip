@@ -159,8 +159,11 @@ export default function RouteTimeline({
     const leg = fixAt.find((l) => sameField(leaving ? l.from : l.to, field));
     const minutes = aircraft.none ? undefined : leg?.minutes.get(fix);
     if (minutes === undefined) return null;
+    // Its time without the zone: a procedure's fixes are timed in their
+    // field's zone, said once on the field's own line (the owner,
+    // 2026-11-25: "PST" on every fix).
     const there = zoned ? zoneOf(new Date(new Date(from).getTime() + minutes * 60_000), field) : null;
-    return there ? <ZonedTime {...there} /> : etaAt(from, minutes);
+    return there ? <span className="whitespace-nowrap">{there.time}</span> : etaAt(from, minutes);
   };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =

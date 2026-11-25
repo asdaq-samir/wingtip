@@ -181,7 +181,7 @@ export function TimelineProcedureRows({
                 </BaseButton>
                 {/* Not flown, its words say so and it has no time (the owner's
                     review, 2026-11-24). */}
-                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} time={notFlown ? null : (times[i] ?? "—")} />
+                <FixFigures fix={fix} own={crossings[fix.ident] ?? null} time={notFlown ? null : (times[i] ?? null)} />
               </OnTheLine>
             </li>
           );

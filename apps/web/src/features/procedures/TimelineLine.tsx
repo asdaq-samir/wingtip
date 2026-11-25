@@ -155,7 +155,8 @@ export function TimelineLine({
             )}
           </span>
         ) : (
-          linePart?.part.chips(null, true)
+          // "RWY" before the runway where nothing else is on its line.
+          linePart?.part.chips(null, true, !linePart.add.length && !linePart.hold)
         )}
         {(linePart?.add ?? []).map((k) => (
           <Fragment key={k}>{kindMenu(vm, field!, k, "slim")}</Fragment>

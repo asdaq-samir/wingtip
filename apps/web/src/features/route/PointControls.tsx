@@ -76,7 +76,11 @@ export function PointFigures({
               set with the arrow up, at the owner's ask ("Elevation can have
               an icon like wind does"). */}
           <span aria-hidden="true" className="inline-flex items-center gap-0.5">
-            {kind === "elev" ? <Mountain className="size-3.5 shrink-0" /> : <ArrowUp className="size-3.5 shrink-0" />}
+            {/* A charted crossing has no arrow: its line over or under the
+                figure says at or above, at or below, as the FAA's charts
+                draw it, and an arrow up on a descent read as a climb (the
+                owner, 2026-11-25). */}
+            {kind === "elev" ? <Mountain className="size-3.5 shrink-0" /> : kind !== "pub" && <ArrowUp className="size-3.5 shrink-0" />}
             {altitude} ft
           </span>
           <span className="sr-only">
