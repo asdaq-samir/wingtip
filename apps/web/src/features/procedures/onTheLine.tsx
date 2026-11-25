@@ -184,8 +184,11 @@ export function FoldSection({
           folds (none with Reduce Motion, index.css). */}
       <CollapsibleContent
         className={cn(
-          // Inside the card the fixes' words are inset 12 from its sides.
-          pill && "[&_[data-words]]:pl-3 [&_[data-words]]:pr-6!",
+          // Inside the card the fixes' words are inset 12 from its sides,
+          // each row 40 tall, its tap 44 (TimelineProcedureRows' hit-y-0.5;
+          // the owner, 2026-11-25: "Go ahead", rows of 48 for a name and
+          // an altitude).
+          pill && "[&_[data-words]]:min-h-10 [&_[data-words]]:pl-3 [&_[data-words]]:pr-6!",
           "h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0",
         )}
       >
@@ -314,14 +317,15 @@ export function PhaseMark({ icon }: { icon: ReactNode }) {
 
 export function PhaseCards({ landing, takeoff, into, out }: { landing: ReactNode; takeoff: ReactNode; into: boolean; out: boolean }) {
   // The stock Card (shadcn's), its padding, gap and shadow off: its rows
-  // are the list's own. Filled, not outlined, iOS's grouped cell inside the
-  // list (the redesign of 2026-11-25: an outline inside the outlined list
-  // read as a box in a box). Out 8 past the marks' column and in 8 from
-  // the list's edge (7 inside its 1-point edge, now clear), so its marks
-  // keep the field's column, the line unbroken, and its corners show; its
-  // first row has no hairline over it, its rows 12 from its end.
+  // are the list's own. No fill (the owner, 2026-11-25: "Go ahead", of the
+  // grey card, the procedure's outlined card and its chip three boxes
+  // deep): each procedure's own outline groups it, the phase its title
+  // line and mark. Out 8 past the marks' column, so its marks keep the
+  // field's column and the line is unbroken, and to the list's edge, its
+  // rows 12 from it, the procedures' cards 8 wider than in the grey one;
+  // its first row has no hairline over it.
   const card =
-    "relative -ml-2 mr-2 gap-0 border-transparent bg-muted/60 py-0 pl-[7px] shadow-none [&_[data-words]]:pr-3 [&>section>div:first-child>[data-words]]:border-t-0";
+    "relative -ml-2 gap-0 border-transparent bg-transparent py-0 pl-[7px] shadow-none [&_[data-words]]:pr-3 [&>section>div:first-child>[data-words]]:border-t-0";
   return (
     <div data-testid="phase-cards">
       <Gap line={into} />

@@ -103,8 +103,10 @@ export function TimelineProcedureRows({
       // owner, 2026-11-25, "do we need the chevrons?").
       trailing={
         loaded && (
+          // Filled in the tint, the one action on the pill, apart from the
+          // grey chip that opens the menu (the owner, 2026-11-25).
           <Button
-            variant="secondary"
+            variant="default"
             size="xs"
             onClick={() => vm.onApproach(field.ident, placed.id, { loaded: false })}
             data-testid="approach-activate"
@@ -166,7 +168,7 @@ export function TimelineProcedureRows({
                 <BaseButton
                   onClick={() => onFix(field.ident, kind, fix.ident)}
                   className={cn(
-                    "flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5 self-stretch py-1 content-center text-left",
+                    "relative flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5 self-stretch py-1 content-center text-left hit-y-0.5",
                     skipped && "opacity-50",
                   )}
                 >
