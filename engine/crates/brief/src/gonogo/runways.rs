@@ -18,6 +18,7 @@ pub use crate::runway::performance::{
 pub use crate::runway::pick::{
     available_ft, bare_ident, picked_end, runway_flown, runway_in_use, runway_number, End, Flown, Picks, Runway,
 };
+use crate::runway::wind::{headwind_kt, js_round};
 use wingtip_core::sort::StableSort;
 
 /// A field's current report, as much as the check reads of it.
@@ -86,6 +87,9 @@ pub struct Check {
     pub temp_c: Option<f64>,
     /// The temperature and altimeter were reported (a METAR).
     pub reported: bool,
+    /// The wind along that runway's end, negative for a tailwind: the
+    /// steady headwind, but a tailwind's gusts where they are more behind
+    /// the end (along_shown_kt), as its crosswind's are.
     pub headwind_kt: f64,
     /// The crosswind on that runway, its gusts' where they are more.
     pub crosswind_kt: f64,
@@ -106,8 +110,30 @@ struct OnRunway {
     runway: Option<usize>,
     end: Option<String>,
     picked: bool,
+    /// The steady headwind, what the distances are corrected by.
     headwind: f64,
+    /// The headwind shown (along_shown_kt).
+    shown_headwind: f64,
     crosswind: f64,
+}
+
+/// The wind along a runway's end as the check shows it, negative for a
+/// tailwind: the steady headwind, but behind the end the steady or the
+/// gusts' tailwind, whichever is more, as FPL's runway list counts it
+/// (runway::performance runway_end_fit's tailwind_kt) -- a pilot meets the
+/// gust's tailwind on the roll and in the flare, so the stronger is shown,
+/// as steady_or_gust_kt takes the crosswind's (a design choice erring
+/// toward the stronger wind; AIM 4-3-6 on the wind's components). A
+/// steady 9 kt behind gusting 16 shows 16, where it said 9. The distances
+/// keep the steady headwind (the POH's wind correction).
+pub fn along_shown_kt(steady_headwind_kt: f64, gust_headwind_kt: Option<f64>) -> f64 {
+    let gust = gust_headwind_kt.filter(|g| g.is_finite()).unwrap_or(steady_headwind_kt);
+    let tailwind = js_round((-steady_headwind_kt).max(-gust).max(0.0));
+    if tailwind > 0.0 {
+        -tailwind
+    } else {
+        steady_headwind_kt
+    }
 }
 
 /// Every airport the flight takes off from or lands at, the distances it
@@ -151,6 +177,14 @@ pub fn runway_checks(
                 Some(w) => w.headwind_kt,
                 None => 0.0,
             };
+            // The gusts along the end flown, from the report's wind and the
+            // end's true heading (both true): None for a VRB or no gust.
+            let heading = runway.zip(end.as_ref()).and_then(|(r, e)| runways[r].ends.iter().find(|x| x.ident == *e)?.heading_true_deg);
+            let gust_along = match (metar, heading) {
+                (Some(m), Some(h)) => m.wind_dir_true_deg.zip(m.wind_gust_kt).map(|(d, g)| headwind_kt(d, g, h)),
+                _ => None,
+            };
+            let shown_headwind = if w.is_some() { along_shown_kt(headwind, gust_along) } else { headwind };
             // A variable wind (VRB, AIM 7-1-28) gives the planner no runway
             // components (wingtip.runway_wind): all of it may be across, gusts
             // included, as the minimums take it.
@@ -161,7 +195,7 @@ pub fn runway_checks(
                 }
                 _ => 0.0,
             };
-            OnRunway { runway, end, picked, headwind, crosswind }
+            OnRunway { runway, end, picked, headwind, shown_headwind, crosswind }
         };
         // The field's air from its elevation. Without one the distances are
         // not worked out: taken as sea level (as they once were) a high
@@ -226,7 +260,7 @@ pub fn runway_checks(
             density_alt_ft: air.map(|a| density_altitude_ft(a.0, a.1)),
             temp_c: air.map(|a| a.1).or(metar.and_then(|m| m.temp_c)),
             reported: metar.is_some(),
-            headwind_kt: first.headwind,
+            headwind_kt: first.shown_headwind,
             crosswind_kt: crosswind_shown(first.crosswind, first.crosswind.round_ties_even(), airplane.demonstrated_kt),
             crosswind_over: airplane.demonstrated_kt.is_some_and(|d| first.crosswind > d),
             grass: soft_surface(first.runway.map(|r| &runways[r])),
@@ -302,3 +336,7 @@ pub fn checks_json(checks: &[Check]) -> String {
     out.push(']');
     out
 }
+
+#[cfg(test)]
+#[path = "runways_tests.rs"]
+mod tests;

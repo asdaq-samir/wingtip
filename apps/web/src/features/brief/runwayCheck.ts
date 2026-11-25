@@ -57,6 +57,8 @@ interface RunwayCheck {
   /** The temperature and altimeter were reported (a METAR), not a
    *  standard day's. */
   reported: boolean;
+  /** Along the end, negative for a tailwind: a tailwind its gusts' where
+   *  they are more, as the crosswind's (the engine's along_shown_kt). */
   headwindKt: number;
   /** The crosswind on that runway, its gusts' where they are more. */
   crosswindKt: number;

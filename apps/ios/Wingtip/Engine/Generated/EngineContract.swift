@@ -5776,6 +5776,7 @@ nonisolated enum EngineContract {
         var tempC: Double?
         /// A METAR gave the temperature and altimeter.
         var reported: Bool
+        /// The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind.
         var headwindKt: Double
         var crosswindKt: Double
         /// Past the POH's demonstrated crosswind.

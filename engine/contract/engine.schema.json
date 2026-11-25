@@ -14264,7 +14264,8 @@
                 "description": "A METAR gave the temperature and altimeter."
               },
               "headwind_kt": {
-                "type": "number"
+                "type": "number",
+                "description": "The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind."
               },
               "crosswind_kt": {
                 "type": "number"

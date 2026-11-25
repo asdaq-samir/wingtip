@@ -482,6 +482,9 @@ export type GonogoRunwayChecksAnswer = {
    * A METAR gave the temperature and altimeter.
    */
   reported: boolean;
+  /**
+   * The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind.
+   */
   headwind_kt: number;
   crosswind_kt: number;
   /**
