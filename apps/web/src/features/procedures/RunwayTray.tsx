@@ -18,7 +18,7 @@ function RunwayWord({ role, short }: { role: "Arrive" | "Depart"; short: boolean
     <span
       role="img"
       aria-label={role === "Arrive" ? "landing" : "takeoff"}
-      // A note's size beside a phase's label (`short`), the runway the pill's
+      // A note's size under a phase's title (`short`), the runway the pill's
       // figure, so the label's line keeps it (FPL's cards, 2026-11-24).
       className={cn(short ? TEXT.note : TEXT.detail, "font-semibold whitespace-nowrap")}
     >
@@ -45,7 +45,7 @@ function RunwayTray({
   lineOpen: boolean;
   /** The runway chips, with the pull-downs after them as their trailing part. */
   chips: ReactNode;
-  /** "RWY" alone at its head, its Landing or Takeoff said beside it (FPL's
+  /** "RWY" alone at its head, its Landing or Takeoff said over it (FPL's
    *  field's blocks; the owner, 2026-11-24). */
   short?: boolean;
 }) {
@@ -68,9 +68,8 @@ function RunwayTray({
       // As wide as its chips, sharing its line with a stop's leaving time
       // where both fit (PartTray). Folded, the runway picked and the
       // pull-downs are laid out in this row itself (PatternChips' folded
-      // line, `contents`), wrapping from its leading edge -- beside a
-      // phase's label (`short`), from its trailing edge, under the pill.
-      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3", short && "justify-end")} />}
+      // line, `contents`), wrapping from its leading edge.
+      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3")} />}
     >
       {foldable ? (
         <CollapsibleTrigger
@@ -109,8 +108,7 @@ export function PartTray({
   part,
   trailing,
   noRunway = false,
-  beside = false,
-  short = beside,
+  short = false,
 }: {
   vm: ProceduresRouteModel;
   a: ProcedureAirport;
@@ -119,11 +117,8 @@ export function PartTray({
   /** Its pull-downs and hold alone, no runway to pick: a straight-in
    *  approach picked lands on its own (FPL's list). */
   noRunway?: boolean;
-  /** On the line of what is before it (FPL's Landing or Takeoff), taking
-   *  the room after it, not a line of its own. */
-  beside?: boolean;
   /** "RWY" alone at the runway's head, its Landing or Takeoff said over it
-   *  (FPL's phase cards); beside a phase's label too. */
+   *  (FPL's phase cards). */
   short?: boolean;
 }) {
   // The line folds to its runway once one is picked; the pull-downs beside
@@ -139,11 +134,7 @@ export function PartTray({
     // not fit beside the tray: at the owner's 19.65 px on a 375-point
     // phone KMSN's "22:11" ran past the card's edge, cut to "22:1" (the HIG
     // review, 2026-11-21).
-    <div
-      className={cn("flex min-w-0 flex-wrap items-center", beside ? "flex-1 justify-end gap-1" : "w-full gap-2")}
-      data-testid="field-part"
-      data-role={part.role}
-    >
+    <div className={cn("flex min-w-0 flex-wrap items-center", "w-full gap-2")} data-testid="field-part" data-role={part.role}>
       {noRunway ? (
         trailing
       ) : (
