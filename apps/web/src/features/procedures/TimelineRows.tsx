@@ -217,7 +217,11 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
       data-testid="timeline-fuel-stops"
       style={CHIP_44}
       data-look={added ? "remove" : "add"}
-      className={ROW_CHIP}
+      // The stock chip's own size, its words and padding, at the owner's
+      // ask (2026-11-25: "Add fuel stops pill can be standard size?"),
+      // where it was a note's size and 4 a side to keep Add a Stop's row
+      // one line at the owner's 19.65 px; its area 44 (CHIP_44, hit-1.5).
+      className="shrink-0"
     >
       <Fuel className="size-4" aria-hidden="true" />
       {added ? "Remove Stops" : "Add Stops"}
@@ -243,13 +247,6 @@ export function NoFuelStopNote({ flight }: { flight: { name: string; onBoard: bo
  *  default text, where the chip's hit-1.5 made 42): the area's reach over
  *  and under the chip, as a pseudo-element, so nothing that is seen grows. */
 const CHIP_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
-
-/** The last row's two chips, closer and in a note's size, so Add a Stop, the
- *  fuel stops' pill and the route's toggle are one line at the owner's
- *  19.65-px text on a 375- or 393-point iPhone (measured: "Remove Stops"
- *  wrapped by 27 points at 393, 15 at 375): their areas stay 44 (CHIP_44,
- *  hit-1.5), overlapping where the chips are closer than 12. */
-const ROW_CHIP = cn("shrink-0 gap-0.5 px-1", TEXT.note);
 
 /** Type the Route, at the box's own bottom right on every face, in its
  *  last row (Add a Stop's, the empty route's Destination, half a route's
