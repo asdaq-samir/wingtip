@@ -68,8 +68,9 @@ function RunwayTray({
       // As wide as its chips, sharing its line with a stop's leaving time
       // where both fit (PartTray). Folded, the runway picked and the
       // pull-downs are laid out in this row itself (PatternChips' folded
-      // line, `contents`), wrapping from its leading edge.
-      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3")} />}
+      // line, `contents`), wrapping from its leading edge -- beside a
+      // phase's label (`short`), from its trailing edge, under the pill.
+      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3", short && "justify-end")} />}
     >
       {foldable ? (
         <CollapsibleTrigger
