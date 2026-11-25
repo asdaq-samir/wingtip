@@ -117,6 +117,16 @@ export const ARRIVAL_DRAWN = {
   fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.4, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
 };
 
+/** A picked procedure's transition, from its menu's Transition › (the
+ *  dropdown picks a procedure at one tap, from vectors or its common
+ *  route; 2026-11-25). */
+export async function pickTransition(field: Locator, kind: "approach" | "arrival" | "departure", words: string) {
+  await field.locator(`[data-testid=procedure-kind][data-kind=${kind}]`).click();
+  const page = field.page();
+  await page.getByTestId("procedure-menu-transitions").click();
+  await page.getByTestId("procedure-menu-transition").filter({ hasText: words }).click();
+}
+
 /** A picked procedure's fixes shown or hidden: a tap on its pill, its
  *  chip at the end being its menu (2026-11-25). */
 export async function toggleFixes(section: Locator) {

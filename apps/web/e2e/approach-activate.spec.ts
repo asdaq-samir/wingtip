@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { openRoute, openTab, settle, settled, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
-import { DRAWN, LIST, unfoldProcedure } from "./procedureStubs";
+import { DRAWN, LIST, pickTransition, unfoldProcedure } from "./procedureStubs";
 
 // The owner's load-then-activate (2026-11-22), as a GPS navigator has it:
 // an approach picked loads as a box off the route's line, Activate joins it
@@ -51,7 +51,8 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");
   await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
-  await page.getByTestId("procedure-menu-transition").filter({ hasText: "From DLH" }).click();
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09/);
+  await pickTransition(kdlh, "approach", "From DLH");
   // Loaded: in the address with its "L", a box of its fixes, none on the line.
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   kdlh = await destination(page);

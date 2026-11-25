@@ -157,9 +157,13 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");
   await expect(menu.getByText("Runway 9", { exact: false })).toBeVisible({ timeout: slow(10000) });
+  // Picked at one tap, from vectors; its transition then from its menu's
+  // Transition › (2026-11-25), a submenu on the screen: a phone's ran off
+  // its edge once (the owner's screenshot).
   await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
-  // Its transitions a submenu, on the screen: a phone's ran off its edge
-  // once (the owner's screenshot).
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09/);
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
+  await page.getByTestId("procedure-menu-transitions").click();
   const placed = (await page.getByTestId("procedure-menu-transition").first().boundingBox())!;
   expect(placed.x + placed.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.getByTestId("procedure-menu-transition").filter({ hasText: "From DLH" }).click();
