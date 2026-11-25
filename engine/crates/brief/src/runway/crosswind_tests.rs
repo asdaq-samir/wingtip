@@ -45,9 +45,14 @@ fn the_minimums_judge_the_unrounded_crosswind_where_the_wind_carries_it() {
 #[test]
 fn an_end_with_the_wind_behind_it_has_its_tailwind_and_one_into_it_none() {
     // 080° true at 10 kt on a runway heading 230° true: 10 × cos 150° is
-    // 8.66 kt behind, 9 whole; heading 050°, 10 × cos 30° ahead, none.
-    let wind = FitWind { dir_true_deg: Some(80.0), speed_kt: Some(10.0), gust_kt: Some(19.0) };
+    // 8.66 kt behind, 9 whole; gusting 19, 16.45 behind, 16, the stronger
+    // said (the aviation audit, 2026-11-25); heading 050°, ahead, none.
     let field = FieldReport { elevation_ft: None, altimeter_in_hg: None, temp_c: None };
-    assert_eq!(end_fit(None, None, &Runway::default(), Some(230.0), Some(&wind), &field, None, None).tailwind_kt, 9.0);
-    assert_eq!(end_fit(None, None, &Runway::default(), Some(50.0), Some(&wind), &field, None, None).tailwind_kt, 0.0);
+    let fit = |gust_kt, heading| {
+        let wind = FitWind { dir_true_deg: Some(80.0), speed_kt: Some(10.0), gust_kt };
+        end_fit(None, None, &Runway::default(), Some(heading), Some(&wind), &field, None, None).tailwind_kt
+    };
+    assert_eq!(fit(None, 230.0), 9.0);
+    assert_eq!(fit(Some(19.0), 230.0), 16.0);
+    assert_eq!(fit(Some(19.0), 50.0), 0.0);
 }

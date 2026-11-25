@@ -13454,7 +13454,7 @@ export interface RunwayEndFitAnswer {
    */
   beyond: boolean;
   /**
-   * The steady wind's tailwind on the end, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
+   * The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
    */
   tailwind_kt: number;
 }

@@ -247,8 +247,7 @@ pub struct FitWind {
 pub struct EndFit {
     /// The crosswind on the end, its gusts' where they are more, knots.
     pub crosswind_kt: f64,
-    /// Past the most the POH demonstrates (not a limitation, but beyond
-    /// what was flown).
+    /// Past the most the POH demonstrates (not a limitation, but beyond what was flown).
     pub crosswind_over: bool,
     /// The distance over a 50 ft obstacle, and the runway's length.
     pub needed_ft: Option<f64>,
@@ -262,7 +261,8 @@ pub struct EndFit {
     pub unknown: bool,
     /// The distance was read past the POH's table (Distances::beyond).
     pub beyond: bool,
-    /// The steady wind's tailwind on the end, whole knots, 0 for none (AIM 4-3-6).
+    /// The tailwind on the end, its gusts' where more (as the crosswind's,
+    /// erring toward the stronger wind), whole knots, 0 for none (AIM 4-3-6).
     pub tailwind_kt: f64,
 }
 
@@ -296,21 +296,21 @@ pub fn end_fit(
     field: &FieldReport, weight_lb: Option<f64>, landing_end: Option<&End>,
 ) -> EndFit {
     // Along and across the end (wingtip.runway_wind.components_kt): none with
-    // no wind. A variable one (VRB, reported with no direction, AIM 7-1-28)
-    // may blow straight across, so all of it, gusts included, is
-    // crosswind, as the minimums' best crosswind takes it: a VRB15G25
-    // showed 0 kt across and never passed the demonstrated crosswind (the
-    // aviation check, 2026-10-27). It gives no headwind.
+    // no wind. A variable one (VRB, reported with no direction, AIM 7-1-28) may blow
+    // straight across, so all of it, gusts included, is crosswind, as the minimums'
+    // best crosswind takes it: a VRB15G25 showed 0 kt across and never passed the
+    // demonstrated crosswind (the aviation check, 2026-10-27). It gives no headwind.
     let dir = heading_true_deg.and(wind.and_then(|w| w.dir_true_deg));
     let across = |kt: Option<f64>| match (said(kt), heading_true_deg, dir) {
         (Some(kt), Some(h), Some(d)) => crosswind_kt(d, kt, h),
         (Some(kt), Some(_), None) => kt.abs(),
         _ => 0.0,
     };
-    let headwind = match (dir, said(wind.and_then(|w| w.speed_kt)), heading_true_deg) {
-        (Some(d), Some(speed), Some(h)) => headwind_kt(d, speed, h),
+    let along = |kt: Option<f64>| match (dir, said(kt), heading_true_deg) {
+        (Some(d), Some(kt), Some(h)) => headwind_kt(d, kt, h),
         _ => 0.0,
     };
+    let headwind = along(wind.and_then(|w| w.speed_kt));
     // Judged unrounded against the demonstrated crosswind, rounded for the
     // page only (wind::crosswind_shown; the aviation audit's AV-10).
     let judged = steady_or_gust_kt(across(wind.and_then(|w| w.speed_kt)), Some(across(wind.and_then(|w| w.gust_kt))));
@@ -334,7 +334,7 @@ pub fn end_fit(
         close,
         unknown: needed_ft.is_none() || length_ft.is_none(),
         beyond: distances.as_ref().is_some_and(Distances::beyond),
-        tailwind_kt: js_round((-headwind).max(0.0)),
+        tailwind_kt: js_round((-headwind).max(-along(wind.and_then(|w| w.gust_kt))).max(0.0)),
     }
 }
 
