@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowLeftRight, ChevronDown, Ellipsis } from "lucide-react";
+import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import IconButton from "../../components/IconButton";
 import { Button } from "../../components/ui/button";
 import type { ProcedureSummary } from "../../lib/api/types";
@@ -25,7 +25,7 @@ const SHORT: Record<Kind, string> = { approach: "Approach", arrival: "Arrive", d
  *  runways (the owner's pick, option C); or a whole row of FPL's timeline,
  *  its words `face` (TimelineProcedureRows, the owner's option D,
  *  2026-11-21: "just tapping it should show the approaches menu"). */
-export type TriggerLook = "chip" | "button" | "add" | "row" | "more";
+export type TriggerLook = "chip" | "button" | "add" | "row";
 
 /**
  * ProcedureMenu's trigger, one element for ResponsivePopoverTrigger's
@@ -63,15 +63,6 @@ export function procedureTrigger({
         <ChevronDown className="size-5 shrink-0 text-tint" aria-hidden />
         <span className="sr-only">, pick another</span>
       </Button>
-    );
-  if (look === "more")
-    // A round "•••" at a procedure's head on FPL's list, its menu: another
-    // of the kind, Direct to, its plate and No Approach to take it out (the
-    // owner, 2026-11-24, where Change and Remove were a row of their own).
-    return (
-      <IconButton label={`${what}: ${label ?? "none picked"}, options`} className="text-tint" {...data}>
-        <Ellipsis className="size-5" strokeWidth={2.4} />
-      </IconButton>
     );
   if (look === "button")
     // The one picked's name kept in it for a reader, unseen: the branch's

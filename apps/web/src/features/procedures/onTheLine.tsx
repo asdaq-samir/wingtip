@@ -84,7 +84,6 @@ export function FoldSection({
   foot,
   nest = false,
   chevron = true,
-  corner,
   mark,
   sub,
   children,
@@ -111,10 +110,6 @@ export function FoldSection({
   /** Its chevron; none on a procedure's head, whose "•••" is beside it,
    *  its title the tap that folds it (the owner, 2026-11-24). */
   chevron?: boolean;
-  /** A control at the head's bottom right, beside the short line under its
-   *  title (an approach's Activate beside its transition), so a long name
-   *  keeps its line (the owner, 2026-11-24). */
-  corner?: ReactNode;
   /** Its mark in the marks' column, on the route's line (a phase's glyph). */
   mark?: ReactNode;
   /** A row right under its head, in sight folded too (a phase's runway and
@@ -173,20 +168,10 @@ export function FoldSection({
           // wrapping inside it, the pill first, so the label's line keeps
           // its runway where the pull-downs do not all fit (KUGN at 390,
           // 2026-11-24).
-          <span
-            className={cn(
-              "flex min-w-0 items-center gap-1",
-              nest ? "flex-1 justify-end" : "ml-auto max-w-full shrink-0",
-              corner && "self-start",
-            )}
-          >
+          <span className={cn("flex min-w-0 items-center gap-1", nest ? "flex-1 justify-end" : "ml-auto max-w-full shrink-0")}>
             {trailing}
           </span>
         )}
-        {/* At the line's end under the "•••", beside the grey line, so the
-            two never meet at a larger text size and the column lines up
-            (the owner's iPhone, 2026-11-24). */}
-        {corner && <span className="absolute right-4 bottom-1.5 z-10 flex">{corner}</span>}
       </OnTheLine>
       {sub}
       {/* Base UI's own panel animation, the rows under it moving up as it

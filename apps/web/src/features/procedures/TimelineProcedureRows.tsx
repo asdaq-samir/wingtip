@@ -5,7 +5,6 @@ import { fixRoles, sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import type { ProcedureAirport } from "../plan";
 import { PointMenu } from "../route/lazy";
-import { kindMenu } from "./fieldParts";
 import { FixFigures } from "./FixList";
 import { fixSub, KIND_WORD } from "./procedureWords";
 import { Button } from "../../components/ui/button";
@@ -77,13 +76,12 @@ export function TimelineProcedureRows({
       data={{ "data-kind": kind }}
       startOpen={!!vm.openAtFirst}
       chevron={false}
-      // Its menu a "•••" at its head's end (another, Direct to, its plate,
-      // No Approach to take it out), an approach's Activate or Deactivate
-      // before it, so a procedure is one row folded (the owner, 2026-11-24).
-      trailing={kindMenu(vm, field, kind, "more")}
-      // A loaded approach's Activate beside its grey line; activated, its
-      // Deactivate is in its menu (the owner, 2026-11-24).
-      corner={
+      // Its menu is its pill on the phase's runway row (the owner,
+      // 2026-11-25: "design these pills to be like route box where they
+      // open a menu for their selection ... Then we won't need ... at the
+      // end"), so no "•••" here; a loaded approach's Activate at its head's
+      // end, where it stood; activated, its Deactivate is in that menu.
+      trailing={
         loaded && (
           <Button
             variant="secondary"

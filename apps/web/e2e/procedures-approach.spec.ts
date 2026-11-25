@@ -99,10 +99,10 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // the address, and off the map once the sheet is put away.
   await openTab(page, "Nav Log");
   await openRoute(page);
-  // Loaded: its box off the route's line, behind its pill (2026-11-23), its head row the button to pick another.
+  // Loaded: its box off the route's line, its pill on Landing's runway row the button to pick another (2026-11-25).
   await unfoldProcedure(kdlh, "approach");
   await expect(kdlh.getByTestId("approach-loaded")).toContainText("ILS RWY 09");
-  await kdlh.locator("[data-testid=approach-loaded] [data-testid=procedure-kind]").click();
+  await kdlh.locator("[data-testid=timeline-chips] [data-testid=procedure-kind][data-kind=approach]").click();
   await page.getByTestId("procedure-menu-all").click();
   const ils = page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" });
   await expect(ils).toContainText("In the route, from DLH");
@@ -184,9 +184,9 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   await openRoute(page);
   // The plate switched off from the approach's pull-down, and on again:
-  // the procedure's head row, the button to pick another, its pill unfolded.
+  // its pill on Landing's runway row, the button to pick another.
   await unfoldProcedure(kdlh, "approach");
-  await kdlh.locator("[data-testid=procedure-rows][data-kind=approach] [data-testid=procedure-kind]").click();
+  await kdlh.locator("[data-testid=timeline-chips] [data-testid=procedure-kind][data-kind=approach]").click();
   // The one picked is the stock listbox's selected option, as a reader
   // hears it; the arrow keys move between the choices without picking.
   const ils = page.getByTestId("procedure-menu").getByRole("option", { name: /^ILS/ }).first();

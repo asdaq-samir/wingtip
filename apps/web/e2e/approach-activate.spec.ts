@@ -80,8 +80,8 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   await settle(page);
   kdlh = await destination(page);
   await unfoldProcedure(kdlh, "approach");
-  // Taken out by its menu's No Approach, the "•••" at its head (2026-11-24).
-  await kdlh.locator("[data-kind=approach] [data-testid=procedure-kind]").first().click();
+  // Taken out by its menu's No Approach, its pill on Landing's runway row (2026-11-25).
+  await kdlh.locator("[data-testid=timeline-chips] [data-testid=procedure-kind][data-kind=approach]").click();
   await page.getByTestId("procedure-menu-none").click();
   await expect(page).not.toHaveURL(/[?&]procs=/);
   const bar = page.locator("[data-slot=toast]").filter({ hasText: "Procedure Removed" });

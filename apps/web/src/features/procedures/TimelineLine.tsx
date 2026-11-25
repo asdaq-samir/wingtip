@@ -9,7 +9,7 @@ import type { NavLogRow, ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
 import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
-import { kindMenu, windWords } from "./fieldParts";
+import { kindMenu, kindPicked, windWords } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
@@ -133,7 +133,13 @@ export function TimelineLine({
       </span>
     );
     const chips = [
-      ...(linePart?.add ?? []).map((k) => <Fragment key={k}>{kindMenu(vm, field!, k, "add")}</Fragment>),
+      // Each of its kinds a pill opening its menu, "+ ARR" until one is
+      // picked, then the one picked and a chevron, as the route box's are:
+      // another, Direct to, its plate or none from there (the owner,
+      // 2026-11-25).
+      ...(linePart?.part.kinds ?? []).map((k) => (
+        <Fragment key={k}>{kindMenu(vm, field!, k, kindPicked(vm, field!, k) ? "chip" : "add")}</Fragment>
+      )),
       ...(linePart?.hold
         ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
         : []),
