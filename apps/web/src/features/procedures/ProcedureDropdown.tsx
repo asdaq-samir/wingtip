@@ -35,7 +35,7 @@ type MenuProps = Parameters<typeof ProcedureMenu>[0];
  * still opens (ProcedureMenu): each one a radio item picked at one tap,
  * from vectors or its common route, its transition then picked from the
  * picked one's menu (Transition ›); an approach's the runway landed on's
- * alone, every other runway's behind one "Other Runways ›" at its top (the owner,
+ * alone, every runway behind "‹ All Runways" at its top (the owner,
  * 2026-11-25: "make this all about the selected runway and then also let
  * the user go back to see other procedures"); then Direct To, the plate,
  * the lesson, none of the kind, and the field's whole list. A picked
@@ -47,35 +47,39 @@ export function ProcedureDropdown(m: MenuProps) {
   const plates = usePreferences((s) => s.plates);
   const { byRunway, first, others } = approachGroups(all, kind, m.runway, m.windward);
   const runwayName = (r: string) => (r === "Circling" ? "Circling" : `Runway ${r}${r === m.windward ? " · into the wind" : ""}`);
-  const pickedOn = others.map((r) => byRunway.get(r)?.find((p) => p.id === picked?.id)).find(Boolean);
   const pickedOne = all.find((p) => p.id === picked?.id);
-  // Other runways a page of the menu in its place, each runway a page of
-  // its approaches, Back at the top to the one before (the owner,
-  // 2026-11-25: "Other runways should go back in menu to pick a runway"),
-  // where they were a submenu beside it, every runway's approaches at once.
+  // Two pages (the owner, 2026-11-25: "Keep the approach menu to two pages
+  // one for all the runways and then when a runway is selected"): a
+  // runway's approaches, the one landed on's as the menu opens, each with
+  // "‹ All Runways" at its top in the tint; and every runway, the landed
+  // on's first, a tap opening its page, where it was three deep (the
+  // landed on's, the others, one of them) with Back to the one before.
   const [page, setPage] = useState<"runways" | string | null>(null);
-  const kinds = (r: string) => [...new Set((byRunway.get(r) ?? []).map((p) => shortName(p).split(" ")[0]))].join(", ");
-  const back = (to: "runways" | null) => (
-    <DropdownMenuItem closeOnClick={false} onClick={() => setPage(to)} className="text-tint" data-testid="procedure-menu-back">
+  const runways = first === null ? others : [first, ...others];
+  // What a runway's row says at its right: the approach picked there, else its approaches' kinds.
+  const aside = (r: string) => {
+    const there = byRunway.get(r) ?? [];
+    const on = there.find((p) => p.id === picked?.id);
+    return on ? shortName(on) : [...new Set(there.map((p) => shortName(p).split(" ")[0]))].join(", ");
+  };
+  const toRunways = runways.length > 1 && (
+    <DropdownMenuItem closeOnClick={false} onClick={() => setPage("runways")} className="text-tint" data-testid="procedure-menu-back">
       <ChevronLeft className="-ml-1" />
-      {to === null ? runwayName(first ?? "") : "Other Runways"}
+      All Runways
     </DropdownMenuItem>
   );
   const paged =
     page === "runways" ? (
-      <>
-        {back(null)}
-        {others.map((r) => (
-          <DropdownMenuItem key={r} closeOnClick={false} onClick={() => setPage(r)} data-testid="procedure-menu-runway">
-            {runwayName(r)}
-            <span className="ml-auto pl-3 text-muted-foreground">{kinds(r)}</span>
-            <ChevronRight className="text-muted-foreground" />
-          </DropdownMenuItem>
-        ))}
-      </>
+      runways.map((r) => (
+        <DropdownMenuItem key={r} closeOnClick={false} onClick={() => setPage(r === first ? null : r)} data-testid="procedure-menu-runway">
+          {runwayName(r)}
+          <span className="ml-auto pl-3 text-muted-foreground">{aside(r)}</span>
+          <ChevronRight className="text-muted-foreground" />
+        </DropdownMenuItem>
+      ))
     ) : page !== null ? (
       <>
-        {back("runways")}
+        {toRunways}
         <DropdownMenuGroup>
           <DropdownMenuLabel>{runwayName(page)}</DropdownMenuLabel>
           <Choices procedures={byRunway.get(page) ?? []} m={m} />
@@ -101,21 +105,15 @@ export function ProcedureDropdown(m: MenuProps) {
         {!paged && (
           <>
             {list && all.length === 0 && <DropdownMenuItem disabled>None published</DropdownMenuItem>}
-            {/* At the top, in the tint, where a runway's own page has its
-                Back to the runways (the owner, 2026-11-25: "show other
-                runways on top for selected runway just like the other"). */}
-            {kind === "approach" && others.length > 0 && (
-              <DropdownMenuItem
-                closeOnClick={false}
-                onClick={() => setPage("runways")}
-                className="text-tint"
-                data-testid="procedure-menu-others"
-              >
-                {first === null ? "Runways" : "Other Runways"}
-                <span className="ml-auto pl-3 text-muted-foreground">{pickedOn ? shortName(pickedOn) : ""}</span>
-                <ChevronRight />
-              </DropdownMenuItem>
-            )}
+            {kind === "approach" &&
+              (first === null && others.length > 0 ? (
+                <DropdownMenuItem closeOnClick={false} onClick={() => setPage("runways")} data-testid="procedure-menu-others">
+                  Runways
+                  <ChevronRight className="ml-auto text-muted-foreground" />
+                </DropdownMenuItem>
+              ) : (
+                toRunways
+              ))}
             {kind === "approach" && first !== null && (
               <DropdownMenuGroup>
                 <DropdownMenuLabel>{runwayName(first)}</DropdownMenuLabel>
