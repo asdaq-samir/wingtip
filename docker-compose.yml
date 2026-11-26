@@ -329,6 +329,11 @@ services:
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
       # adsb.lol's API key, where there is one (wingtip.traffic.common).
       ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
+      # The contact Planespotters.net's photo API asks a server to name in
+      # its User-Agent (wingtip.aircraft_photo): the site's support page,
+      # no one's own address; unset, the airplane card had no photo, the
+      # API answering 403 to a request without one (2026-11-26).
+      PLANESPOTTERS_CONTACT: ${PLANESPOTTERS_CONTACT:-https://wingtipmaps.app/support/}
       # The FAA's radar from SWIM shown with no LADD list kept: this stack
       # is the owner's own, not public (wingtip.traffic.ladd; production
       # keeps the default, 1, and shows none until a list is saved).
