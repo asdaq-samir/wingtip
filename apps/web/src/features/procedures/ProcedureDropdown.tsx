@@ -74,6 +74,12 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
   };
   // approachGroups' first is a runway whenever there is an approach.
   const runways = first === null ? others : [first, ...others];
+  // The runway landed on has none (KPWK's 12): the menu opens on every
+  // runway's, saying so, where it opened on the one most into the wind's
+  // as if it were the runway's own (the owner's iPhone, 2026-11-26: "Why
+  // are approaches being shown for runway 16, when 12 is selected?").
+  const noneHere = kind === "approach" && m.runway !== null && !byRunway.has(m.runway) && runways.length > 0;
+  const opening = noneHere ? "runways" : null;
   // What a runway's row says at its right: the approach picked there, else its approaches' kinds.
   const aside = (r: string) => {
     const there = byRunway.get(r) ?? [];
@@ -94,6 +100,13 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
         {m.windHead && (
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-foreground">{m.windHead}</DropdownMenuLabel>
+          </DropdownMenuGroup>
+        )}
+        {noneHere && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-muted-foreground" data-testid="procedure-menu-none-here">
+              No approaches to Runway {m.runway}
+            </DropdownMenuLabel>
           </DropdownMenuGroup>
         )}
         {runways.map((r) => (
@@ -124,7 +137,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
         // As it opens, at its first page: reset as it closed, the page
         // flipped back under its fade.
         if (!open) return;
-        setPaged(null);
+        setPaged(opening);
         setTurned(false);
         m.onOpen();
       }}
