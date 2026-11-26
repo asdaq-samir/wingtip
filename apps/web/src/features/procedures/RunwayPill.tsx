@@ -57,7 +57,7 @@ export function RunwayPill({
    *  under the ident (the owner's option 1, 2026-11-25: fuel and wind off
    *  the rows' second line, the wind beside the runway it picks). */
   windHead?: ReactNode;
-  /** Alone on its line: "RWY" before the runway, as there is room. */
+  /** Room on its line (one chip beside it at most): "RWY" before the runway. */
   roomy?: boolean;
 }) {
   if (a.runways === null) return <Skeleton aria-label="Fetching the runways" className="h-6 w-20 rounded-full" />;
@@ -84,8 +84,8 @@ export function RunwayPill({
       >
         {/* The runway alone, "≋26R", no "RWY" before it (the owner,
             2026-11-25, so Land's and Takeoff's pills keep their line at
-            KLAS), but where it is alone on its line (`roomy`; the owner:
-            "Rwy back when have space"); its name says "Runway 26R". */}
+            KLAS), but where its line has room (`roomy`, TimelineLine; the
+            owner: "Rwy back when have space"); its name says "Runway 26R". */}
         {(roomy || !shown) && <span>RWY</span>}
         {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>—</span>}
       </DropdownMenuTrigger>
