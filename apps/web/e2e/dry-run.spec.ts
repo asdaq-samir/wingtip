@@ -1,5 +1,17 @@
 import { test, expect, type Locator } from "@playwright/test";
-import { chartZoom, frontSheet, grabberTo, openPanel, openProfile, pressDryRunStart, settle, settled, sideDrawer, slow } from "./helpers";
+import {
+  chartZoom,
+  frontSheet,
+  grabberTo,
+  openPanel,
+  openProfile,
+  pressDryRunStart,
+  settle,
+  settled,
+  sideDrawer,
+  sheetFoot,
+  slow,
+} from "./helpers";
 import { pickAirplane } from "./startState";
 import { middleOfFront, shipAt } from "./ownShipProbes";
 import { steady } from "./pacing";
@@ -137,7 +149,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
-  const line = sideDrawer(page).getByTestId("flight-line");
+  const line = sheetFoot(page).getByTestId("flight-line");
   // Each figure's name as shown: TripFigures' dt also holds the words a
   // screen reader hears ("To KDLH"), hidden from sight (sr-only), and a
   // name that explains itself is a button (Explain), not a hidden span.

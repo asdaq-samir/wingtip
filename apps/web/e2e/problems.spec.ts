@@ -166,6 +166,9 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
   // Red in place, its menu saying why (RoutePill).
   await expect(page.getByTestId("route-dest")).toHaveAttribute("aria-invalid", "true");
+  // The field's pills below the half sheet's edge under the timeline and
+  // its words: brought into sight, as a finger would.
+  await inSheet(page, page.getByTestId("route-dest"));
   await page.getByTestId("route-dest").click();
   await expect(page.getByTestId("pill-menu-note")).toContainText("KZZZ isn't an airport or waypoint we know");
   await page.keyboard.press("Escape");

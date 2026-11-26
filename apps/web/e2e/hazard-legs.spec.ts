@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { drawn, grabberTo, openSection, openTab, settle, sideDrawer, slow } from "./helpers";
+import { drawn, frontSheet, grabberTo, inSheet, openSection, openTab, settle, sideDrawer, slow } from "./helpers";
 import { openSettingsPage } from "./mapCard";
 
 /**
@@ -70,6 +70,11 @@ test("a SIGMET says its legs and times, and a tap shows the legs on the map", as
   await expect.poll(highlighted).toBeGreaterThan(0);
   await expect(row).toHaveAttribute("data-shown", "true");
   await expect(row).toContainText("Hide");
+  // Shown from the Brief all the way up, the Brief comes down to half so
+  // the map is in sight (OnRouteRow; the owner, 2026-11-26): the row is
+  // brought back into sight for the second tap, as a finger would.
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  await inSheet(page, row);
   await row.click();
   await expect.poll(highlighted).toBe(0);
   await page.unrouteAll({ behavior: "ignoreErrors" });

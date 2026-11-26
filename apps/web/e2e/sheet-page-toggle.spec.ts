@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
+import { consoleSheet, grabberTo, settle, settled, sideDrawer, sheetFoot, frontSheet } from "./helpers";
 import { expectPage, expectSearchInUse, expectShown, openAirport, showPage, toggle } from "./sheetPages";
 import { extrasOn } from "./extras";
 import { hold } from "./pacing";
@@ -238,7 +238,7 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await expect(foot).toBeVisible();
   await grabberTo(page, "peek");
   await expect(foot).toBeVisible();
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
   // Half way up, FPL's bar is back with the route's row under it.
   await grabberTo(page, "half");

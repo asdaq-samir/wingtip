@@ -93,7 +93,10 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   const search = page.getByTestId("search-airports");
   await expect(search).not.toBeFocused();
   await expect(search).toHaveAttribute("placeholder", "Search");
-  await expect(search).toHaveAccessibleName(/destination/i);
+  // The destination asked once the field is used (lib/oneSearch's
+  // pickInUse, the owner's iPhone, 2026-11-23): at rest it is the one
+  // search, and a tile tapped opens its card.
+  await expect(search).toHaveAccessibleName("Search airports and airplanes");
   // At rest until it is tapped: the page toggle, no Cancel (the owner,
   // 2026-11-19: "I see cancel on fresh load").
   await expect(page.getByTestId("one-search-cancel")).toHaveCount(0);
@@ -102,8 +105,10 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   // Oshkosh picked: planned from the nearest field to the fix (Campbell),
   // FPL up with the route; the tip on the toggle once it shows FPL.
   await search.click();
-  // Tapped, the field in use: its Cancel where the toggle rode.
+  // Tapped, the field in use: its Cancel where the toggle rode, and the
+  // destination asked.
   await expectSearchInUse(page);
+  await expect(search).toHaveAccessibleName(/destination/i);
   await search.fill("KOSH");
   await searchAirports(page)
     .filter({ hasText: "KOSH" })
@@ -175,13 +180,14 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   await expect(tip).toHaveCount(0);
 });
 
-test("on the first flight a Nearest airport tapped is the destination, the ask held till the route is made, never its card", async ({
+test("on the first flight a Nearest airport tapped opens its card, and Fly Here plans the first route from where the airplane is", async ({
   page,
 }) => {
-  // The owner, 2026-11-22: "When I select a nearest airport, it shows
-  // destination search the first time but then selecting again shows the
-  // airport card." The ask was let go at the first tap while the fix was
-  // waited for, so the next tap opened the card.
+  // The owner, 2026-11-23: "I see this when I tap nearest airport after
+  // fresh load" -- a "Destination" picker out of nowhere. The first
+  // flight's ask waits for the field to be used (lib/oneSearch's
+  // pickInUse); until then a tile opens the airport's card, as outside a
+  // pick (rules.md, the one search), and its Fly Here makes the route.
   test.setTimeout(slow(90_000));
   await page.goto("/app/plan");
   await settle(page);
@@ -189,12 +195,13 @@ test("on the first flight a Nearest airport tapped is the destination, the ask h
   // Fields off where the airplane is (C81, the departure).
   const fields = page.getByTestId("nearest-strip-field").filter({ hasNotText: /C81/ });
   await expect(fields.nth(1)).toBeVisible({ timeout: slow(30_000) });
-  // Tapped, the ask held while the fix is waited for: the search still
-  // asks for the destination, so a second tap would pick again.
   await fields.first().click();
-  const search = page.getByTestId("search-airports");
-  if (!/dest=/.test(page.url())) await expect(search).toHaveAccessibleName(/destination/i);
-  // Planned to it, from C81, where the airplane is: no card.
+  const card = page.getByTestId("place-card");
+  await expect(card).toBeVisible({ timeout: slow(15_000) });
+  await expect(page).not.toHaveURL(/dest=/);
+  await card.getByTestId("fly-here").click();
+  // Planned to it, from where the airplane is (its position, or the field
+  // it is at), and no card left over the route.
   await expect(page).toHaveURL(/dest=(?!C81)[A-Z0-9]+/, { timeout: slow(30_000) });
-  await expect(page.getByTestId("place-card")).toHaveCount(0);
+  await expect(page).toHaveURL(/[?&]dep=(C81|%40|@)/);
 });

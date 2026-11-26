@@ -10,6 +10,7 @@ import {
   routeOptionsItem,
   settle,
   sideDrawer,
+  sheetFoot,
   slow,
   suggestedRoutes,
 } from "./helpers";
@@ -125,11 +126,11 @@ test.describe("/app/plan", () => {
     // Each line one 44-point row while folded.
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
     await expect(timeline.getByTestId("timeline-add-stop")).toBeVisible();
-    await expect(drawer.getByTestId("flight-line")).toBeVisible();
+    await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
     // The suggested routes behind the bar's Routes, out in the figures' place.
-    await expect(drawer.getByTestId("route-group")).toHaveCount(0);
+    await expect(sheetFoot(page).getByTestId("route-group")).toHaveCount(0);
     await (await suggestedRoutes(page)).first().waitFor();
-    await expect(drawer.getByTestId("route-group")).toBeVisible();
+    await expect(sheetFoot(page).getByTestId("route-group")).toBeVisible();
     await (await routeOptionsItem(page)).click();
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
@@ -234,21 +235,22 @@ test.describe("/app/plan", () => {
     await expect(stops).toBeVisible();
   });
 
-  test('a Direct To from where the airplane is reads "My Location", its Direct to line and Cancel folded and open', async ({ page }) => {
-    // The owner's iPhone, 2026-11-17: the folded line read "POS0" over
-    // "Present position". One name, Apple Maps' "My Location", everywhere.
+  test('a Direct To from where the airplane is reads "POS0", its Direct to line and Cancel folded and open', async ({ page }) => {
+    // A present position on the route is POS0, as a GPS names it, the
+    // pilot's own points going on from it (the owner, 2026-11-24: "Replace
+    // my location to POS0"); said once, not over "Present position".
     await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KUGN&direct=KUGN&was=C81%7C%7CKUGN");
     await settle(page);
     await fromRest(page);
     await openPanel(page);
     const drawer = sideDrawer(page);
     const timeline = drawer.getByTestId("route-summary");
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["My Location", "KUGN"], { timeout: slow(30_000) });
-    await expect(timeline).not.toContainText("POS0");
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["POS0", "KUGN"], { timeout: slow(30_000) });
+    await expect(timeline).not.toContainText("Present position");
     // The Direct to line over the figures.
-    const direct = drawer.getByTestId("direct-strip");
+    const direct = sheetFoot(page).getByTestId("direct-strip");
     await expect(direct).toBeVisible();
-    await expect(drawer).not.toContainText("POS0");
+    await expect(drawer).not.toContainText("Present position");
     // Cancel gives the route back as it was; brought into sight first, the
     // airplane's strip over the route since FPL's title took the first row
     // (the owner, 2026-11-19), so at half it can be under the floating bar.
@@ -294,7 +296,7 @@ test.describe("/app/plan", () => {
 
     // The route's ••• keeps three items, and no Show Route As.
     await controlsInSight(page);
-    await drawer.getByTestId("share-route").locator("visible=true").first().click();
+    await sheetFoot(page).getByTestId("share-route").locator("visible=true").first().click();
     await expect(page.getByTestId("share-link")).toBeVisible();
     await expect(page.getByText("Show Route As")).toHaveCount(0);
   });
@@ -307,7 +309,7 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const drawer = sideDrawer(page);
     const here = drawer.getByTestId("timeline-line").first();
-    await expect(here.getByTestId("timeline-ident")).toHaveText("My Location", { timeout: slow(30_000) });
+    await expect(here.getByTestId("timeline-ident")).toHaveText("POS0", { timeout: slow(30_000) });
     await here.getByTestId("point-menu").click();
     await expect(page.getByTestId("point-menu-change")).toBeVisible();
     await expect(page.getByTestId("point-menu-move-down")).toHaveCount(0);
@@ -321,7 +323,7 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const drawer = sideDrawer(page);
     await suggestedRoutes(page);
-    await expect(drawer.getByTestId("route-group")).toBeVisible();
+    await expect(sheetFoot(page).getByTestId("route-group")).toBeVisible();
     await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
     // A new route typed in the same page, no reload: its suggested routes
@@ -338,6 +340,6 @@ test.describe("/app/plan", () => {
       await expect(item).toBeVisible({ timeout: 2000 });
       await expect(item).toHaveAttribute("aria-pressed", "false");
     }).toPass({ timeout: slow(30_000) });
-    await expect(drawer.getByTestId("route-group")).toHaveCount(0);
+    await expect(sheetFoot(page).getByTestId("route-group")).toHaveCount(0);
   });
 });

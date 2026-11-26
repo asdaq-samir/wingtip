@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, settle, slow } from "./helpers";
+import { drawn, mapStill, settle, slow } from "./helpers";
 import { drawnMarks } from "./marks";
 
 /**
@@ -65,7 +65,19 @@ async function openPlateCard(page: Page, plate: typeof PLATE) {
   // Drawn on the map's canvas, as the tags' probe says (PlateTagsGl).
   const tags = () => drawnMarks(page, "plate-tags");
   const tag = async (ident: string) => (await tags()).find((t) => t.ident === ident) ?? null;
-  await expect.poll(() => tag("POBER"), { timeout: slow(20_000) }).not.toBeNull();
+  // The tags are drawn from the procedures' words' zoom (map.zoom.
+  // procedure-words, 9; PlatesGl, the owner's iPhone, 2026-11-23): where
+  // the route is fitted farther out, a phone's whole C81-KOSH, the map is
+  // zoomed in on Oshkosh, as a pilot pinches in on the field.
+  await expect(async () => {
+    if (await tag("POBER")) return;
+    const kosh = (await drawnMarks(page, "route-marks")).find((m) => m.text === "KOSH");
+    expect(kosh, "KOSH's mark on the map").toBeTruthy();
+    await page.mouse.move(kosh!.x, kosh!.y);
+    await page.mouse.wheel(0, -400);
+    await mapStill(page);
+    expect(await tag("POBER")).not.toBeNull();
+  }).toPass({ timeout: slow(30_000) });
 
   // A tap on the page west of the final, half way to its edge, clear of
   // the marks: its card. Where that is on the screen is worked out from

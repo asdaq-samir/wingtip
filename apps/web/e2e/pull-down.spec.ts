@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, grabberTo, sideDrawer, slow } from "./helpers";
+import { controlsInSight, grabberTo, sheetFoot, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -14,7 +14,7 @@ test("a pick-one is the pull-down: a list of the choices, the picked one's tick 
   test.skip(info.project.name !== "mobile", "judged as a phone");
   await page.goto("/app/plan?dep=C81&dest=C81");
   await grabberTo(page, "full");
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
   await controlsInSight(page);
 
   const trigger = page.getByTestId("local-duration");

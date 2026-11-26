@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, openBrief, openPanel, openProfile, settle, sideDrawer, sheetFoot, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 
 /**
@@ -19,7 +19,7 @@ test("the Brief's Before You Go says what is left to do, and opens Ready to Fly 
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   // The plan in, with no airplane: its distance, never a fuel figure.
-  await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/DIST/i, { timeout: slow(120_000) });
+  await expect(sheetFoot(page).getByTestId("flight-line")).toContainText(/DIST/i, { timeout: slow(120_000) });
   await openBrief(page);
   // Before You Go's value, the count of the engine's checks not done.
   const glance = sideDrawer(page).getByTestId("brief-glance");

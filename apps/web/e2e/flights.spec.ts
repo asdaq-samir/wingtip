@@ -180,7 +180,8 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   await library(page, "Flights");
   // The row opens the flight's page; Open on the map is the way in, and
   // it puts the console away.
-  await page.getByRole("button", { name: /^KMSP → KDLH/ }).click();
+  // Named by its route, its fuel stop among its points.
+  await page.getByRole("button", { name: /^KMSP → KMSN → KDLH/ }).click();
   await page.getByTestId("flight-open").click();
   await expect(page).toHaveURL(/dep=KMSP/);
   await expect(consoleSheet(page)).toHaveCount(0);

@@ -43,7 +43,9 @@ export const SETTLE_MS = DRAWER_MS + 50;
  * - All the way up: 1, the whole of the Drawer's viewport, which the popup's
  *   own height (MapPanel) keeps clear of the status bar.
  */
-const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: "4.25rem", half: "23rem", full: 1 };
+/** The pill: a card's title row with its room, as the search's band. */
+export const PILL_HEIGHT = "4.25rem";
+const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: PILL_HEIGHT, half: "23rem", full: 1 };
 const TOP_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { ...BOTTOM_SNAPS, peek: "5.25rem" };
 const BOTTOM_POINTS = [BOTTOM_SNAPS.peek, BOTTOM_SNAPS.half, BOTTOM_SNAPS.full];
 const TOP_POINTS = [TOP_SNAPS.peek, TOP_SNAPS.half, TOP_SNAPS.full];

@@ -24,6 +24,9 @@ async function changeDestination(page: Page) {
   await typeRoute(page);
   await page.getByTestId("route-dest").click();
   await page.getByTestId("pill-menu-change").click();
+  // Change asks for what goes in the point's place, Apple Maps' Change
+  // Stop (RouteToken's changePoint, 2026-11-23): "Search for an airport in
+  // place of KMSP", its ident in the field to start.
 }
 
 async function slowSearch(page: Page, heldFor: string) {
@@ -51,15 +54,16 @@ test(
     await slowSearch(page, "KDLH");
     await page.goto("/app/plan?dep=C81&dest=KMSP");
     await openPanel(page);
-    const destination = page.getByLabel(/^(\S+, )?Destination$/);
+    // The destination's pill, named "Destination KMSP" (RoutePill).
+    const destination = page.getByTestId("route-dest");
     await changeDestination(page);
-    const box = page.getByLabel("Search for a destination");
+    const box = page.getByLabel("Search for an airport in place of KMSP");
     await box.fill("KD");
     await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
 
     await box.pressSequentially("LH");
     await box.press("Enter");
-    await expect(destination).toContainText("KDLH");
+    await expect(destination).toHaveAccessibleName(/^Destination KDLH\b/);
   },
 );
 
@@ -67,15 +71,16 @@ test("once the rows answer the box, Enter takes the highlighted row", async ({ p
   await slowSearch(page, "");
   await page.goto("/app/plan?dep=C81&dest=KMSP");
   await openPanel(page);
-  const destination = page.getByLabel(/^(\S+, )?Destination$/);
+  // The destination's pill, named "Destination KMSP" (RoutePill).
+  const destination = page.getByTestId("route-dest");
   await changeDestination(page);
-  const box = page.getByLabel("Search for a destination");
+  const box = page.getByLabel("Search for an airport in place of KMSP");
   await box.fill("KD");
   await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
   await expect(page.getByRole("listbox")).not.toHaveAttribute("aria-busy", "true");
 
   await box.press("Enter");
-  await expect(destination).toContainText("KDAA");
+  await expect(destination).toHaveAccessibleName(/^Destination KDAA\b/);
 });
 
 /** How a search's row is drawn: its height, its ident's weight, its two
@@ -130,6 +135,6 @@ test("a stop from a route pill's Insert Before and the route's ends are picked i
   await page.goto("/app/plan?dep=C81&dest=KMSP");
   await openPanel(page);
   await changeDestination(page);
-  await expect(page.getByTestId("search-airports")).toHaveAccessibleName("Search for a destination");
+  await expect(page.getByTestId("search-airports")).toHaveAccessibleName("Search for an airport in place of KMSP");
   await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
 });

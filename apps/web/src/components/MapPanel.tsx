@@ -10,7 +10,7 @@ import { useKeyboardUp, useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { CARD, FLOAT_PX, footPillPx, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
+import { CARD, FLOAT_PX, PILL_HEIGHT, footPillPx, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { FootBar } from "./sheet/FootBar";
 import { useFootBarHeight } from "./sheet/sheetMotion";
@@ -350,6 +350,9 @@ export default function MapPanel(props: Props) {
           style={{
             top: `max(${FLOAT_PX}px, env(safe-area-inset-top))`,
             bottom: size === "peek" ? undefined : `max(${FLOAT_PX}px, env(safe-area-inset-bottom))`,
+            // Put in under a card, the card's pill (its title row and ✕), where
+            // with no route's figures the panel shrank to its grabber's 16.
+            minHeight: covering && size === "peek" ? PILL_HEIGHT : undefined,
             borderRadius: PILL_RADIUS,
           }}
         >

@@ -56,7 +56,9 @@ test("each line is its ident and time, no city; a tap opens its wind and elevati
   await openLine(page, "C81");
   const dep = timelineLine(page, "C81");
   await expect(dep.getByTestId("point-figures")).toBeVisible();
-  await expect(dep.getByTestId("timeline-chips").getByTestId("runway-pill")).toBeVisible({ timeout: slow(30_000) });
+  // Its Land or Takeoff under the line, beside it in the field's group, not
+  // in it (TimelineLine's PhaseCards, the owner, 2026-11-24).
+  await expect(dep.locator("..").getByTestId("timeline-chips").getByTestId("runway-pill")).toBeVisible({ timeout: slow(30_000) });
   // Its wind at the head of the runway's menu, not under its ident (2026-11-25).
   await expect(dep.getByTestId("field-wind")).toHaveCount(0);
   // Another line opened folds the first.
@@ -85,8 +87,10 @@ test("a stop opens to its landing and its takeoff, and a fuel stop wears the pum
   await expect(stop.getByRole("img", { name: "fuel stop" })).toHaveCount(1);
   await expect(sideDrawer(page).getByTestId("route-summary")).not.toContainText("Fuel stop");
   await openLine(page, "KMSN");
-  await expect(stop.getByRole("img", { name: "landing" })).toBeVisible({ timeout: slow(30_000) });
-  await expect(stop.getByRole("img", { name: "takeoff" })).toBeVisible();
+  // Its Land and its Takeoff, each a section under the line in the field's
+  // group (TimelineLine's PhaseCards, the owner, 2026-11-24).
+  await expect(stop.locator("..").getByRole("region", { name: "KMSN landing" })).toBeVisible({ timeout: slow(30_000) });
+  await expect(stop.locator("..").getByRole("region", { name: "KMSN takeoff" })).toBeVisible();
   // A stop of the pilot's own: no pump.
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
   await openPanel(page);

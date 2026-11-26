@@ -11,6 +11,7 @@ import {
   showPlan,
   showTabs,
   sideDrawer,
+  sheetFoot,
   slow,
   stripShows,
 } from "../helpers";
@@ -54,7 +55,7 @@ export const FPL_SCREENS: Screen[] = [
       await settle(page);
       await openPanel(page);
       await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible({ timeout: slow(30000) });
-      await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+      await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
     },
   },
   // The route's Procedures, its fields down a line in the order they are

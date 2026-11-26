@@ -85,8 +85,11 @@ export function RunwayPill({
         {/* The runway alone, "≋26R", no "RWY" before it (the owner,
             2026-11-25, so Land's and Takeoff's pills keep their line at
             KLAS), but where its line has room, measured (`roomy`, LineRoom;
-            the owner: "Rwy back when have space"); its name says "Runway 26R". */}
-        {(roomy || !shown) && <span data-rwy="">RWY</span>}
+            the owner: "Rwy back when have space"); its name says "Runway 26R".
+            The word drawn, not text: as text it was words the pill's name
+            ("…: Runway 26R, pick another") does not hold, which axe calls a
+            label not in its name (label-content-name-mismatch, serious). */}
+        {(roomy || !shown) && <span data-rwy="" aria-hidden="true" className="before:content-['RWY']" />}
         {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>—</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

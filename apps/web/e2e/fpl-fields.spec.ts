@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, grabberTo, settle, sideDrawer } from "./helpers";
+import { controlsInSight, grabberTo, settle, sheetFoot } from "./helpers";
 
 /**
  * FPL's own fields as the UI audit of 2026-11-17 found them: the airplane's
@@ -59,7 +59,7 @@ test("FPL's actions float see-through over the route, as the airport card's bar 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
-  const bar = sideDrawer(page).getByTestId("fpl-actions");
+  const bar = sheetFoot(page).getByTestId("fpl-actions");
   await expect(bar).toBeVisible();
   await expect(bar).toHaveCSS("background-image", "none");
   await expect(bar).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");

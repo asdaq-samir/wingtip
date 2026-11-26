@@ -1,6 +1,17 @@
 import { expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
-import { slow, sideDrawer, showTabs, openPanel, grabberTo, sheetUpToType, expectDrawerOpen, frontSheet, settled } from "./sheetHelpers";
+import {
+  slow,
+  sideDrawer,
+  sheetFoot,
+  showTabs,
+  openPanel,
+  grabberTo,
+  sheetUpToType,
+  expectDrawerOpen,
+  frontSheet,
+  settled,
+} from "./sheetHelpers";
 import { closeBrief } from "./routeHelpers";
 import { watchFor } from "./pacing";
 
@@ -10,7 +21,7 @@ export async function openBrief(page: Page) {
   const card = sideDrawer(page).getByTestId("brief-card");
   if (await card.isVisible().catch(() => false)) return;
   await openPanel(page);
-  await sideDrawer(page)
+  await sheetFoot(page)
     .getByTestId("route-brief")
     .click({ timeout: slow(30000) });
   await expect(card).toBeVisible();
@@ -81,7 +92,7 @@ export async function openNavLog(page: Page) {
   const sheet = navLogSheet(page);
   // A tile under the route (FplActions; the owner's pick A, 2026-11-15).
   if (!(await sheet.isVisible())) {
-    await sideDrawer(page)
+    await sheetFoot(page)
       .getByTestId("route-navlog")
       .click({ timeout: slow(60_000) });
   }

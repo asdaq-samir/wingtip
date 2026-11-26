@@ -8,6 +8,7 @@ export {
   slow,
   settle,
   sideDrawer,
+  sheetFoot,
   cardHost,
   frontSheet,
   showTabs,

@@ -1,5 +1,16 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, navLogScroller, closeNavLog, grabberTo } from "./helpers";
+import {
+  controlsInSight,
+  settle,
+  sideDrawer,
+  sheetFoot,
+  slow,
+  openNavLog,
+  navLogSheet,
+  navLogScroller,
+  closeNavLog,
+  grabberTo,
+} from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -121,8 +132,8 @@ test("a long trip's figures keep their full size on one line in the strip, exact
   await page.goto("/app/plan?dep=C81&dest=KLAS");
   await controlsInSight(page);
   await expect(sideDrawer(page).getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
-  const figures = sideDrawer(page).getByTestId("flight-line").locator("dd");
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
+  const figures = sheetFoot(page).getByTestId("flight-line").locator("dd");
   // Its unit after a no-break space, the Dist a button to the nav log
   // (TripFigures): whole miles with their thousands' comma, as every
   // summary writes them (the owner's list, 2026-11-17).
@@ -159,7 +170,7 @@ test("a long trip's figures keep their full size on one line in the strip, exact
         dds.map((dd) => dd.querySelector<HTMLElement>("span.truncate") ?? dd).filter((el) => el.scrollWidth > el.clientWidth + 1).length,
     );
     expect(cut, `figures cut short at a root of ${root || "16px"}`).toBe(0);
-    await expect(sideDrawer(page).getByTestId("navlog-ete")).not.toHaveText(/\d\.\dh$/);
+    await expect(sheetFoot(page).getByTestId("navlog-ete")).not.toHaveText(/\d\.\dh$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 });

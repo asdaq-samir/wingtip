@@ -5,7 +5,7 @@ import { pickAirplane } from "./startState";
 /**
  * A route through Canada (the owner's pick of 2026-11-21, decision 0053):
  * every figure is worked out by the FAA's rules, so where a leg crosses
- * Canada the timeline, on that leg, and the nav log say "The leg to KBUF
+ * Canada the nav log says, on that leg, "The leg to KBUF
  * crosses Canada (Ontario): Canadian rules not checked — figures use US
  * rules", never as the US field's at its end, and the Brief says it once
  * among its findings. Warn, never limit: the route is planned as any other.
@@ -34,9 +34,9 @@ test("a route from Detroit to Buffalo across Ontario is planned and warned of wh
   await settle(page);
   // Planned as any route: its figures come.
   await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
-  // On the leg, under the departure's line, down to Buffalo; Buffalo,
-  // in New York, is not said to be in Canada.
-  await expect(sideDrawer(page).getByTestId("timeline-leg-caution")).toHaveText(LEG);
+  // Not in FPL's timeline, where room is short (the owner, 2026-11-23;
+  // decision 0053): the nav log and the Brief say it.
+  await expect(sideDrawer(page).getByTestId("timeline-leg-caution")).toHaveCount(0);
   await expect(sideDrawer(page).getByTestId("timeline-caution")).toHaveCount(0);
   // The nav log: once, on the leg after the departure's row, never on every row.
   await openNavLog(page);
