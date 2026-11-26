@@ -40,7 +40,9 @@ Compose. Nothing here is built by hand where a stock part does it.
    (`components/sheet/CardStack`), with the sheet's sizes, grabber and
    swipe and the map's buttons on its top. The welcome (`WelcomeSheet`)
    stays its own sheet; questions stay the stock alert (7), menus
-   Popovers, and a plate or diagram full screen its viewer. The page
+   Popovers (on the web a finger's drag down from the top of a menu's
+   list closes it, as a sheet's does: `components/ui/dragClose`, every
+   DropdownMenu and ContextMenu; the owner, 2026-11-26), and a plate or diagram full screen its viewer. The page
    toggle stays in sight over any card, riding the front card's top, and
    a tap on it closes the cards and turns the page (the owner,
    2026-11-13: "airport card hides the fpl toggle"; §4a, §7).

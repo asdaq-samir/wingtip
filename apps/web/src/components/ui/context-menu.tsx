@@ -3,9 +3,16 @@ import { cn } from "cn";
 import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_ITEM, MENU_LABEL, MENU_SEPARATOR } from "./menuLook";
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
 import { ChevronRightIcon, CheckIcon } from "lucide-react";
+import { MenuActions, useDragClose, useMenuActions } from "./dragClose";
 
-function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
-  return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
+function ContextMenu({ actionsRef, ...props }: ContextMenuPrimitive.Root.Props) {
+  // Its close for its popup's drag down (useDragClose).
+  const actions = useMenuActions(actionsRef);
+  return (
+    <MenuActions.Provider value={actions}>
+      <ContextMenuPrimitive.Root data-slot="context-menu" actionsRef={actions} {...props} />
+    </MenuActions.Provider>
+  );
 }
 
 function ContextMenuTrigger({ className, ...props }: ContextMenuPrimitive.Trigger.Props) {
@@ -36,6 +43,7 @@ function ContextMenuContent({
   sideOffset = 0,
   ...props
 }: ContextMenuPrimitive.Popup.Props & Pick<ContextMenuPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">) {
+  const dragClose = useDragClose();
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Positioner
@@ -46,6 +54,7 @@ function ContextMenuContent({
         sideOffset={sideOffset}
       >
         <ContextMenuPrimitive.Popup
+          ref={dragClose}
           data-slot="context-menu-content"
           // Eight under the pointer (alignOffset, beside it on the right and
           // aligned at its start, so the offset is down): the menu's rows

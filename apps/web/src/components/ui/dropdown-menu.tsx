@@ -5,9 +5,16 @@ import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_ITEM, MENU_LABEL, MENU_
 import { Menu as DropdownMenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { useEdgeRoom } from "../../hooks/use-viewport";
+import { MenuActions, useDragClose, useMenuActions } from "./dragClose";
 
-function DropdownMenu({ ...props }: DropdownMenuPrimitive.Root.Props) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+function DropdownMenu({ actionsRef, ...props }: DropdownMenuPrimitive.Root.Props) {
+  // Its close for its popup's drag down (useDragClose).
+  const actions = useMenuActions(actionsRef);
+  return (
+    <MenuActions.Provider value={actions}>
+      <DropdownMenuPrimitive.Root data-slot="dropdown-menu" actionsRef={actions} {...props} />
+    </MenuActions.Provider>
+  );
 }
 
 function DropdownMenuPortal({ ...props }: DropdownMenuPrimitive.Portal.Props) {
@@ -36,6 +43,7 @@ function DropdownMenuContent({
   // Clear of the status bar, the notch and the home indicator, 8 past
   // them (useEdgeRoom), not Base UI's 5 from the very edge.
   const edgeRoom = useEdgeRoom();
+  const dragClose = useDragClose();
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Positioner
@@ -49,6 +57,7 @@ function DropdownMenuContent({
         render={anchorHiddenRender(onAnchorHidden)}
       >
         <DropdownMenuPrimitive.Popup
+          ref={dragClose}
           data-slot="dropdown-menu-content"
           // No wider than the room beside it (Base UI's --available-width,
           // as the stock Combobox's popup is): a menu of its own width (the
