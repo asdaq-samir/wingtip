@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
@@ -272,9 +272,9 @@ type Snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPo
  * snap point the finger picked held here at once, a render of the Drawer
  * alone, and the page told (`snapped`, MapPanel's letGo, whose new size
  * re-renders the whole workspace) once the slide's first frame is drawn
- * (a frame, then a task). Told within the let-go, that render held the
- * sheet still where the finger left it for 164 ms and it then set off with
- * a 17.5 px step (the animation audit of 2026-11-23, M1). The pick is held
+ * (a frame, then a task), as a transition: told within the let-go, that
+ * render held the sheet still for 164 ms at 4x CPU (the animation audit of
+ * 2026-11-23, M1). The pick is held
  * only while the page's own snap point is the one it had when picked, so
  * the page's answer rules as soon as it comes; let go past the pill (no
  * snap point) the page is told at once, as it refuses the close there.
@@ -296,9 +296,14 @@ function useSnapFirst(snapPoint: Drawer.Root.SnapPoint, snapped: Snapped) {
     choose({ point, from: snapPoint });
     later.current.frame = requestAnimationFrame(() => {
       later.current.task = window.setTimeout(() => {
-        snapped(point, details);
-        // Let go once the page has answered, in a task of its own.
-        later.current.task = window.setTimeout(() => choose(null), 0);
+        // In a transition, so React yields while it draws the page anew and
+        // what follows the slide on the main thread (the map's room, the
+        // body's cut) keeps its frames; the pick let go in the same commit
+        // as the page's answer, so the sheet never shows the old size.
+        startTransition(() => {
+          snapped(point, details);
+          choose(null);
+        });
       }, 0);
     });
   };

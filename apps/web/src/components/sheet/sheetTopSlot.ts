@@ -3,6 +3,7 @@ import type { PanelState } from "../../lib/mapChrome";
 import { coverCard, useSheetCards } from "../../lib/sheetCards";
 import { shownPx } from "./insets";
 import { timing } from "../../lib/motion";
+import { snapOffset } from "./sheetMotion";
 
 /** The room over a phone's bottom sheet's top edge, while there is one:
  *  the riding buttons' one container (OnSheetTop's portal), put in the
@@ -41,8 +42,7 @@ export function useRidingCard(): string | null {
  *  CardStack's cards are placed from it), where a card opening now comes
  *  up from; none with no bottom sheet. */
 export function frontOffset(): string | undefined {
-  const popup = useSheetTop.getState().slot?.parentElement?.parentElement;
-  return popup?.style.getPropertyValue("--drawer-snap-point-offset") || undefined;
+  return snapOffset(useSheetTop.getState().slot?.parentElement?.parentElement);
 }
 
 /** Where the sheet in front will be once card `id` has gone (the
@@ -55,7 +55,7 @@ export function frontUnder(id: string): string | undefined {
   const popup = viewport
     ? viewport.querySelector<HTMLElement>("[data-sheet-card]")
     : document.querySelector<HTMLElement>('[data-slot="map-panel"]');
-  return popup?.style.getPropertyValue("--drawer-snap-point-offset") || undefined;
+  return snapOffset(popup);
 }
 
 /** The one container the riding buttons are drawn in, moved from slot to
