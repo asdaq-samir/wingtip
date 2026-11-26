@@ -23,7 +23,7 @@ export interface AirplaneHit {
   fly?: () => void;
   /** Whether it is in the air, said in place as the live find answers (lib/airplane/lookup). */
   live?: { text: string; problem: boolean };
-  /** In the air: its flight's card, tracked (FlightCard). */
+  /** In the air: its card by its ICAO address, tracked (features/airplane). */
   track?: () => void;
 }
 

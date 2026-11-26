@@ -70,8 +70,10 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   await notHeard(page);
   await page.goto("/app/plan?flight=a89c1e");
   await settle(page);
-  const card = page.getByTestId("flight-card");
-  await expect(page.getByTestId("flight-name")).toHaveText("N654FL", { timeout: slow(15_000) });
+  // One card for it (the owner's design, 2026-11-26), its N-number's, opened on its Flight tab.
+  const card = page.getByTestId("airplane-profile");
+  await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
+  await expect(card.getByTestId("airplane-tab-flight")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("flight-registration")).toContainText("N654FL");
   await expect(card.getByTestId("flight-type")).toHaveText("Piper PA-28-140 · 1971");
 
@@ -97,7 +99,8 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   // Scrolled to its end, its last row is in sight: the card pulled up
   // first, as a pilot does, since at half a card's body does not scroll
   // (it opens at half, rules.md's "Detents" and "Grow, then scroll").
-  const last = card.getByTestId("faa-airworthiness");
+  // Its FAA registration in full is Info's now; the Flight tab ends with its callsign.
+  const last = card.getByTestId("flight-details").getByText("Callsign", { exact: true });
   await inSheet(page, last);
   await expect(last).toBeInViewport();
 });

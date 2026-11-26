@@ -8,6 +8,7 @@ import { track, useTracking } from "../../lib/map/position/tracking";
 import { usePickAirplaneRequest } from "./usePickAirplaneRequest";
 import { riseToSee } from "./panelNow";
 import { useMapPickOwner } from "../../lib/map/mapPick";
+import { closeAirplaneProfile } from "../../lib/airplane/profileStore";
 
 /**
  * What the planner's sheet shows under its one search (the owner's
@@ -79,8 +80,8 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
   // them, at the pilot's ask. An airport opened from it
   // is a layer over it, its close back to the list.
   const nearOpen = address.near;
-  // Or one airplane tracked (FlightCard), by its ICAO address:
-  // `?flight=a0b7d8`, a card over the place it was opened from.
+  // Or one airplane tracked (the airplane card, features/airplane), by its
+  // ICAO address: `?flight=a0b7d8`, a card over the place it was opened from.
   const flight = address.flight;
   // And one of its past flights (PastFlightCard), by its takeoff's time:
   // `?past=1791723840` -- a layer over the airplane's card, its close back
@@ -101,15 +102,18 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
   const selectFlight = useCallback(
     (hex: string | null, plane?: TrafficAircraft) => {
       track(hex, plane);
+      // One card an airplane (features/airplane's AirplaneCard, by its N-number or this address):
+      // another airplane, or none, puts away the N-number's card open; the same one keeps it.
+      if (hex !== flight) closeAirplaneProfile();
       // An airplane's card half way, wherever it is opened from, as an
-      // airport's is (the owner's ask; FlightCard's `opens`). The sheet
+      // airport's is (the owner's ask). The sheet
       // under it is left at its size, as selectPlace leaves it: `view`
       // holds the sheet all the way up (MapPage), and clearing it here
       // dropped a list out at full to the pill under the card, so its close
       // came back to the map, not the list.
       void setAddress({ flight: hex || null, place: null, at: null, near: null, nearAt: null, nearName: null, past: null });
     },
-    [setAddress],
+    [setAddress, flight],
   );
   const selectPast = useCallback(
     (id: number | null) => {
@@ -122,6 +126,7 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
   // its past flight's alone, what is under them left as it is.
   useMapPickOwner("flight", !!flight, () => {
     track(null);
+    closeAirplaneProfile();
     void setAddress({ flight: null, past: null });
   });
   // The address's flight and list into the tracking the map draws from

@@ -11,7 +11,7 @@ import type { OneSearchModel } from "../search/useOneSearch";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
 import { loadRecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../search";
-import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
+import { AirspaceCard, PastFlightCard, PlaceCard } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import type { KeptAircraft } from "../../../lib/preferences";
 import { afterRouteDrawn } from "../../../lib/routeDrawn";
@@ -75,7 +75,6 @@ export default function PlanSidebar({
     airportRecentsOpen,
     approachesOf,
     cardUp,
-    closeFlight,
     closeList,
     closePlace,
     favoritesOpen,
@@ -113,15 +112,12 @@ export default function PlanSidebar({
       recentRoutesPage.prefetch();
     }, 1500);
   }, []);
-  // An airplane's card, over whichever place is up, as an airport's is; a past flight's only
-  // where its history is offered (useAirplaneHistory: the pilot's own, or Other Airplanes on).
+  // An airplane's past flight, over its card (the one airplane card, features/airplane, which the
+  // page holds), only where its history is offered (useAirplaneHistory: the pilot's own, or Other
+  // Airplanes on).
   const history = useAirplaneHistory(flight);
   const flightCard =
-    flight && past && history ? (
-      <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
-    ) : flight ? (
-      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={selectPlace} />
-    ) : null;
+    flight && past && history ? <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} /> : null;
   // A stop asked for (FPL's Add a Stop) while the card is up, opened from
   // the search's page or the map: its Add Stop is the pick, put in where
   // the pilot asked, as a row tapped in the search would be.

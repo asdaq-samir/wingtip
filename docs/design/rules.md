@@ -312,11 +312,11 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    yellow (Figure A-27): the owner's to change.
    The airplane cards are laid out the same way, with the same parts (the
    owner, 2026-11-14: "make sure the airplane card looks similar to
-   airport card"): an N-number's card and a tracked flight's have their
-   facts in the strip (Type, Year, Seats, Engines, Registration, Owner)
-   and their photos as the same picture tiles at the head of their Info
-   tab alone, and their tabs (Flights, Info,
-   Figures, icons too: History, Info, Gauge; a flight's Info and Flights) in the same floating glass bar. On
+   airport card"; one card an airplane since the owner's design of
+   2026-11-26): its facts in the strip (Type, Year, Seats, Engines,
+   Registration, Owner) and its photo as the same picture tiles at the
+   head of its Info tab alone, and its tabs (Flight, Flights, Info,
+   Figures, icons too: Plane, History, Info, Gauge) in the same floating glass bar. On
    Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision
@@ -427,29 +427,46 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   Stop, filled, in Fly Here's place, then Call, Favorite and Address (the
   owner, 2026-11-18; the web first); an airplane its profile with Fly This Airplane; an
   action runs.
-- **The airplane card** (its profile), however it is reached (the search,
-  the plan's Airplane, a link, the pickers), the pilot's own airplanes
-  too, is laid out as the airport card is (the owner's pick of P1,
-  2026-11-14, "Ok I take your rec"; canvas
-  <https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>): its N-number and,
-  under it, the registry's make, model and year ("Piper PA-28-140, 1971");
-  one row of four buttons, the first filled -- Fly This, Follow (the
-  flight card's alerts: takes off, lands, comes near), Favorite and Share,
-  Follow and Favorite greyed where the registry gives no ICAO address;
-  one status line under them; and the tabs, Info's page starting with
-  the facts in a sideways strip, as the airport card's (Type, Year, Seats,
-  Engines, Registration, Owner), and its photo as the airport card's
-  picture tiles (the owner, 2026-11-14); the tabs **Flights ·
-  Info · Figures** in that order in the airport card's floating glass bar
-  at the card's foot (C1; the owner, 2026-11-14: "make sure the airplane
-  card looks similar to airport card"), Flights first with its count as
-  the hint. The status line says "In the air · 4,500 ft · 112 kt" from
-  the live find, else "On the ground · landed KPWK 2h ago" from its last
-  flight, else "Not heard in the last 6 weeks", and "Checking whether
-  it's in the air…" while the find is out. Flights is the flight card's
-  list of past flights (the last ten, more on asking, a day picked), each
-  ▶ opening its replay over the card (the owner, 2026-11-14: "How do I
-  see the flights of airplane and play them?"); Info the airplane's
+- **The airplane card** is one card an airplane, however it is reached:
+  by its N-number (the search, the plan's Airplane and its ⓘ, a link's
+  `airplane=`, the pickers), the pilot's own airplanes too, or by its ICAO
+  address (traffic tapped on the map, a link's `flight=`). The owner's
+  design of 2026-11-26 (mockups Main, Ground, Figures and Unregistered)
+  merged the airplane card and the traffic card into it: the registry
+  gives an N-number's address and adsb.lol's detail an address's US
+  registration, so a flight with an N-number is that N-number's card, and
+  its "In the air" opens nothing more. Laid out as the airport card is:
+  Share at the head's start, the title, ✕ at its end; the title its
+  N-number, else its call sign; under it its call sign while it flies and
+  what it is ("Piper PA-28-181, 1998", else its ICAO type). Three action
+  tiles, the first filled, by its state: in the air **Track** (the map
+  keeps it in sight, a switch), **Alerts** (takes off, lands, comes near)
+  and **Favorite**; on the ground **Fly This** ("Flying This", greyed,
+  once it is the plan's airplane), Alerts and Favorite. Fly This is hidden
+  while it flies, and offered only for an airplane the planner can fly
+  (one the FAA's registry holds, or the pilot's own). Alerts is offered
+  where its history is, greyed where the registry gives no ICAO address.
+  Always in sight under the tiles: in the air its flight (the status
+  badge, its ends with the bar of the way flown, height, speed and track,
+  how far and how high from own ship); on the ground one line ("On the
+  ground · landed KPWK 2h ago", "Not heard in the last 6 weeks",
+  "Checking whether it's in the air…" while the live find is out). Opened
+  by its N-number while it flies, it is tracked without the map moving.
+  The tabs in the airport card's floating glass bar at its foot:
+  **Flight · Flights · Info · Figures**. Flight is this flight (the
+  sketch of where it has flown, its registration, type, squawk, operator,
+  ICAO address, call sign, the tower's departure event, its scheduled
+  route); Flights its past flights with their count as the hint (the
+  last ten, more on asking, a day picked), each ▶ opening its replay and
+  debrief over the card (the owner, 2026-11-14: "How do I see the flights
+  of airplane and play them?"); Info its facts strip, photo and public
+  record; Figures every planning figure, edited in place, a missing one
+  asked for there, for an airplane the planner can fly. Traffic the FAA's
+  registry does not hold is the same card titled with its call sign, its
+  tabs Flight and Flights alone, its registration row saying it is not in
+  the FAA's registry. It opens on Flight from traffic or while it flies,
+  on Figures from the plan's N-number's ⓘ or a figure asked for, else on
+  Info. Info is the airplane's
   public record in groups, in this order -- Registration (owner, owner
   type, town, co-owners, issued and expires, last action, FAA region,
   fractional), Airplane (type, category, builder certification, seats,
@@ -463,8 +480,7 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   then other airplanes that held the N-number) and Documents filed with
   any reservation -- each group saying in place where it has nothing; its
   Planespotters.net photo in the card's pictures once one is found, the
-  photographer named on it and the picture a link to its page; Figures every
-  planning figure, edited in place, a missing one asked for there.
+  photographer named on it and the picture a link to its page.
 - **The owner rule:** the FAA aircraft registry is public data, so Info's
   Owner group always shows the registry's owner for every airplane --
   name, town and state, kind of owner and co-owners -- as the FAA
@@ -1332,7 +1348,7 @@ Receiver, Other Airplanes, Model Weather, Training Tools. Android: ATC
 Copilot, ADS-B Receiver, Other Airplanes, Model Weather, Ask. Off, a
 feature's controls are not drawn, nothing of it starts or is fetched,
 and a setting inside it saved on acts as off; the pilot's own airplane
-keeps its history, Follow and flights whatever Other Airplanes says.
+keeps its history, Alerts and flights whatever Other Airplanes says.
 What each hides is in [../navigation.md](../navigation.md), "Settings'
 Extras"; why, in [../store/feature-review.md](../store/feature-review.md).
 A parked feature gets its switch here, never a second home.

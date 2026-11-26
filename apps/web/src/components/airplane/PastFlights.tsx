@@ -25,7 +25,6 @@ import { WORDING } from "../../lib/wording/generated/wording";
 export default function PastFlights({
   hex,
   onOpen,
-  nowShown = false,
   untitled = false,
   type = null,
   play = false,
@@ -33,9 +32,6 @@ export default function PastFlights({
   hex: string;
   /** Opens a flight's own card (PastFlightCard), over this one. */
   onOpen: (id: number) => void;
-  /** The flight it is on is the summary over the list (FlightCard): the
-   *  list is the ones before it, and leaves that one out. */
-  nowShown?: boolean;
   /** Under a section's own title (the airplane card's Earlier flights):
    *  its list untitled but for a day picked. */
   untitled?: boolean;
@@ -61,7 +57,7 @@ export default function PastFlights({
   const pages = data?.pages ?? [];
   // A page without its list (an older planner's answer, a stand-in) is no
   // flights, not a fault that takes the card down.
-  const flights = pages.flatMap((page) => page.flights ?? []).filter((f) => !(nowShown && f.in_air));
+  const flights = pages.flatMap((page) => page.flights ?? []);
   const unread = pages.reduce((n, page) => n + (page.unread_days ?? 0), 0);
   // None found yet, and older days left: on back by itself, a fortnight
   // at a time, until one is found or the archive ends -- "the last 10
@@ -77,9 +73,7 @@ export default function PastFlights({
       <ListGroup
         // No footnote under it, at the owner's ask ("Avoid putting so many
         // footnotes for pilots experience"): the rows say it.
-        title={
-          from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : untitled ? undefined : nowShown ? "Earlier" : "Last Flights"
-        }
+        title={from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : untitled ? undefined : "Last Flights"}
       >
         {(!data || looking) && !isError && (
           <ListRow

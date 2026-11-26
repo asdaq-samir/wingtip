@@ -223,10 +223,10 @@ export const SCREENS: Screen[] = [
       );
       await page.goto("/app/plan?flight=a89c1e");
       await settle(page);
-      // Half way, as it opens.
-      await expect(sideDrawer(page).getByTestId("flight-now")).toBeAttached({ timeout: slow(30000) });
+      // Half way, as it opens: not heard now, its one line under the actions.
+      await expect(sideDrawer(page).getByTestId("airplane-status")).toBeAttached({ timeout: slow(30000) });
       if (part === "Alert menu") {
-        await sideDrawer(page).getByTestId("flight-alert").click();
+        await sideDrawer(page).getByTestId("airplane-alerts").click();
         await expect(page.getByTestId("flight-alert-menu")).toBeVisible();
       }
       if (part === "card all the way up") {

@@ -5,7 +5,7 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  * An airplane's facts in the sideways strip under its card's actions, as
  * the airport card has its own (PlaceFacts; the owner, 2026-11-14: "make
  * sure the airplane card looks similar to airport card"): the N-number's
- * card (AirplaneProfileSheet) and a tracked flight's (FlightCard). From
+ * card (AirplaneCard's Info). From
  * the FAA aircraft registry's record (wingtip.registry), its reference
  * model's figures over the record's own where the card has them, each only
  * where there is one:

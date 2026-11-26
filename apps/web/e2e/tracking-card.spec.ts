@@ -15,13 +15,15 @@ test("an airplane opened is in the Aircraft card's Recents, and one starred on i
   await sky(page);
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  const card = page.getByTestId("flight-card");
-  await expect(page.getByTestId("flight-name")).toHaveText("UAL2088", { timeout: slow(15_000) });
-  const star = card.getByTestId("flight-favorite");
+  // One card for it (the owner's design, 2026-11-26), titled with its N-number, its call sign under it.
+  const card = page.getByTestId("airplane-profile");
+  await expect(card).toContainText("N14511", { timeout: slow(15_000) });
+  await expect(card).toContainText("UAL2088");
+  const star = card.getByTestId("airplane-favorite");
   await expect(star).toHaveAttribute("aria-pressed", "false");
   await star.click();
   await expect(star).toHaveAttribute("aria-pressed", "true");
-  await closeCard(page, "flight-close");
+  await closeCard(page, "sheet-card-close");
   await page.goto("/app/plan");
   await settle(page);
   // The one search's page: the airplane in its Favorites and its Recents,
@@ -36,7 +38,7 @@ test("an airplane opened is in the Aircraft card's Recents, and one starred on i
   await inSheet(page, home.getByTestId("pill-aircraft-favorite"));
   await home.getByTestId("pill-aircraft-favorite").click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
-  await expect(page.getByTestId("flight-card").getByTestId("flight-favorite")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("airplane-profile").getByTestId("airplane-favorite")).toHaveAttribute("aria-pressed", "true");
 });
 
 test("an airplane's card is still open after the account page and back", async ({ page }) => {
@@ -45,15 +47,15 @@ test("an airplane's card is still open after the account page and back", async (
   await sky(page);
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  const card = page.getByTestId("flight-card");
-  await expect(card.getByTestId("flight-favorite")).toBeVisible({ timeout: slow(15_000) });
+  const card = page.getByTestId("airplane-profile");
+  await expect(card.getByTestId("airplane-favorite")).toBeVisible({ timeout: slow(15_000) });
   // The card is the whole sheet, no title row over it (Apple Maps' card, 2026-11-10): the account page by its link.
   await page.goto("/app/plan?flight=a0b7d8&open=setup");
   await expect(sideDrawer(page).getByTestId("setup-page")).toBeVisible({ timeout: slow(15_000) });
   await sideDrawer(page).getByTestId("console-close").click();
   await expect(sideDrawer(page).getByTestId("setup-page")).toBeHidden();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
-  await expect(card.getByTestId("flight-favorite")).toBeVisible();
+  await expect(card.getByTestId("airplane-favorite")).toBeVisible();
 });
 
 test("the card's sketch of where an airplane has flown is in its heights' colours, as the map's path, with the fields it left and is bound for", async ({
@@ -76,7 +78,8 @@ test("the card's sketch of where an airplane has flown is in its heights' colour
   );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  const sketch = page.getByTestId("flight-card").getByTestId("trail-sketch");
+  // On its Flight tab, opened from traffic (the owner's design, 2026-11-26).
+  const sketch = page.getByTestId("airplane-profile").getByTestId("trail-sketch");
   await expect(sketch).toBeVisible({ timeout: slow(15_000) });
   // The fields, each its dot and its ident.
   await expect(sketch.locator('[data-sketch-field="TJSJ"]')).toHaveText("TJSJ");
@@ -88,81 +91,59 @@ test("the card's sketch of where an airplane has flown is in its heights' colour
   for (const colour of colours) expect(colour).toMatch(/^hsl\(\d+ 85% 45%\)$/);
 });
 
-test("an airplane's card is laid out as an airport's: its pictures across the top and four actions under them, at the same places", async ({
-  page,
-}) => {
+test("an airplane's card is laid out as an airport's: its actions the same size, in one row under its head", async ({ page }) => {
   // The owner's ask: "Do airport and aircraft cards have same layouts?",
-  // and their pick of the two cards' redesign (A2): the same head, the
-  // same row of actions.
+  // and their pick of the two cards' redesign (A2): the same row of actions.
   await sky(page, { ...DETAIL, description: "PIPER PA-28-140/150/160/180 CHEROKEE" });
-  const panel = sideDrawer(page);
-  // Where the actions are from the pictures' top, half way.
-  const places = async (head: string, action: string) => {
+  const tile = async (action: string) => {
     await grabberTo(page, "half");
-    const [top, tile, sheet] = await Promise.all(
-      [page.getByTestId(head), page.getByTestId(action).first(), panel].map(async (l) => (await l.boundingBox())!),
-    );
-    return {
-      head: Math.round(top.y - sheet.y),
-      height: Math.round(top.height),
-      actions: Math.round(tile.y - top.y),
-      size: Math.round(tile.height),
-    };
+    return Math.round((await page.getByTestId(action).first().boundingBox())!.height);
   };
   await page.goto("/app/plan?place=C81");
   await settle(page);
   await expect(page.getByTestId("fly-here")).toBeEnabled({ timeout: slow(15_000) });
-  const airport = await places("place-head", "place-call");
+  const airport = await tile("place-call");
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  await expect(page.getByTestId("flight-alert")).toBeVisible({ timeout: slow(15_000) });
-  const airplane = await places("flight-head", "flight-alert");
-  expect(airplane).toEqual(airport);
-  // The long model whole in its two lines over the pictures' foot.
-  const what = page.getByTestId("flight-what");
-  await expect(what).toContainText("Cherokee");
-  const [line, head] = await Promise.all([what, page.getByTestId("flight-head")].map(async (l) => (await l.boundingBox())!));
-  expect(line.y + line.height).toBeLessThanOrEqual(head.y + head.height);
+  await expect(page.getByTestId("airplane-alerts")).toBeVisible({ timeout: slow(15_000) });
+  expect(await tile("airplane-alerts")).toEqual(airport);
+  // What it is under its name, its call sign first while it flies.
+  await expect(page.getByTestId("airplane-profile")).toContainText("UAL2088 · ");
 });
 
-test("an airplane's card has Follow, Alert, Debrief and Favorite in a row, Share and the close alone in its head, its flight's state and height in its summary, and its airport a tap away", async ({
+test("an airplane's card in the air has Track, Alerts and Favorite in a row, Share and the close in its head, its flight's state and height in sight, and its airport a tap away", async ({
   page,
 }) => {
-  // The owner's pick of the redesign (A2): the actions a row under the
-  // pictures, Follow filled, as Maps' are under a place's -- four since the
-  // star became a tile, the head holding Share and the close alone
-  // (2026-11-11), as the airport card's.
+  // The owner's design of 2026-11-26: in the air Track filled, Alerts and
+  // Favorite; no Fly This while it flies; Share at the head's start, ✕ at its end.
   await sky(page, { ...DETAIL, departed: { ident: "C81", name: "Campbell Airport", at: Date.now() / 1000 - 3600 } });
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  const card = page.getByTestId("flight-card");
-  await expect(card.getByTestId("flight-follow")).toBeVisible({ timeout: slow(15_000) });
+  const card = page.getByTestId("airplane-profile");
+  await expect(card.getByTestId("airplane-track")).toBeVisible({ timeout: slow(15_000) });
+  await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
   await settled(frontSheet(page)); // measured once it has slid up, not on its way
   const row = await Promise.all(
-    ["flight-follow", "flight-alert", "flight-debrief", "flight-favorite"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
+    ["airplane-track", "airplane-alerts", "airplane-favorite"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
   );
   for (let i = 1; i < row.length; i++) {
     expect(Math.abs(row[i]!.y - row[0]!.y), "one row").toBeLessThan(1);
     expect(Math.abs(row[i]!.width - row[0]!.width), "equal").toBeLessThan(1);
     expect(row[i]!.x, "each beside the one before").toBeGreaterThan(row[i - 1]!.x + row[i - 1]!.width);
   }
-  // Following it as it opens, said on its action.
-  await expect(card.getByTestId("flight-follow")).toHaveAttribute("aria-pressed", "true");
-  await expect(card.getByTestId("flight-follow")).toContainText("Following");
-  // Share and the close alone in the head, the bar's out of the pill: Share
-  // at the left, the close at the right, the star a tile (2026-11-11).
-  const head = (await card.getByTestId("flight-head").boundingBox())!;
+  // Tracked as it opens from traffic, said on its action, its word the same either way.
+  await expect(card.getByTestId("airplane-track")).toHaveAttribute("aria-pressed", "true");
+  await expect(card.getByTestId("airplane-track")).toContainText("Track");
+  // Share at the left of its head, the close at the right, both over the actions.
+  const box = (await card.boundingBox())!;
   const [share, close] = await Promise.all(
-    ["flight-share", "flight-close"].map(async (id) => {
-      const button = (await card.getByTestId(id).boundingBox())!;
-      expect(button.y >= head.y && button.y + button.height <= head.y + head.height, `${id} on the pictures`).toBe(true);
-      return button;
-    }),
+    ["airplane-share", "sheet-card-close"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
   );
-  expect(share!.x + share!.width, "Share at the left").toBeLessThan(head.x + head.width / 2);
-  expect(close!.x, "the close at the right").toBeGreaterThan(head.x + head.width / 2);
-  await expect(card.getByTestId("flight-share")).toHaveAccessibleName("Share UAL2088");
-  // Descending 1,200 ft a minute, at 7,000 ft and 250 kt: said in its summary.
+  expect(share!.x + share!.width, "Share at the left").toBeLessThan(box.x + box.width / 2);
+  expect(close!.x, "the close at the right").toBeGreaterThan(box.x + box.width / 2);
+  expect(share!.y + share!.height, "Share over the actions").toBeLessThanOrEqual(row[0]!.y);
+  await expect(card.getByTestId("airplane-share")).toHaveAccessibleName("Share N14511");
+  // Descending 1,200 ft a minute, at 7,000 ft and 250 kt: said in its flight's box.
   await expect(card.getByTestId("flight-state")).toHaveText("DES");
   await expect(card.getByTestId("flight-altitude")).toHaveText("7,000 ft ↓ 1,200 fpm · 250 kt · 090° true");
   // Its airport: the field it left, its card over the airplane's, and its
@@ -175,10 +156,12 @@ test("an airplane's card has Follow, Alert, Debrief and Favorite in a row, Share
   await closeCard(page, "place-close");
   await expect(page).not.toHaveURL(/[?&]place=/);
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
-  await expect(page.getByTestId("flight-card")).toBeVisible();
+  await expect(page.getByTestId("airplane-profile")).toBeVisible();
 });
 
-test("an airplane not heard now has its last flight sketched, on the ground where it landed, and Debrief opens it", async ({ page }) => {
+test("an airplane not heard now has its last flight sketched, on the ground where it landed, and its Flights row opens its replay and debrief", async ({
+  page,
+}) => {
   // The owner's ask: "if it's not flying now, sketch the last flight."
   const off = Date.now() / 1000 - 30 * 3600;
   const lci = { ident: "LCI", name: "Laconia Municipal Airport", city: "Laconia", region: "US-NH" };
@@ -213,16 +196,17 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   );
   await page.goto("/app/plan?flight=a89c1e");
   await settle(page);
-  const card = page.getByTestId("flight-card");
-  await expect(card.getByTestId("flight-chip")).toHaveText(/^Landed LWM \d{1,2} [A-Z][a-z]{2}$/, { timeout: slow(15_000) });
-  await expect(card.getByTestId("flight-state")).toHaveText("GND");
-  // No photo of it on Planespotters: its last flight sketched, the one
-  // picture of its strip.
+  // One card for it, its N-number's (the owner's design, 2026-11-26): on the
+  // ground one line under its actions, where it landed.
+  const card = page.getByTestId("airplane-profile");
+  await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
+  await expect(card.getByTestId("airplane-track")).toHaveCount(0);
+  // No photo of it on Planespotters: its last flight sketched on its Flight tab.
   await expect(card.getByTestId("flight-photo-open")).toHaveCount(0);
   await expect(card.getByTestId("trail-sketch")).toBeAttached();
-  // Its airport: where it landed.
-  await expect(card.getByTestId("flight-airport")).toContainText("LWM");
-  await card.getByTestId("flight-debrief").click();
+  // Debrief is in its Flights: each row its replay and debrief.
+  await card.getByTestId("airplane-tab-flights").click();
+  await card.getByTestId("past-flight").first().click();
   await expect(page).toHaveURL(new RegExp(`[?&]past=${Math.floor(off)}`));
   await expect(page.getByTestId("past-flight-card").getByTestId("past-flight-name")).toHaveText("LCI → LWM");
 });

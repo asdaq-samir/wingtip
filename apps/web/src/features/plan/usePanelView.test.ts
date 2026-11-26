@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { withNuqsTestingAdapter } from "nuqs/adapters/testing";
 import { describe, expect, it, vi } from "vitest";
 import { useAddress } from "../../lib/address";
+import { openAirplaneProfile, useProfileOpen } from "../../lib/airplane/profileStore";
 import { useAddressCards, usePanelView } from "./usePanelView";
 
 /** The two hooks over an address of their own, as the planner has them. */
@@ -11,7 +12,7 @@ function setUp(start: string, hasRoute: boolean) {
     ({ route }) => {
       const [address, setAddress] = useAddress();
       const cards = useAddressCards(address, setAddress, vi.fn());
-      return { address, ...usePanelView({ cards, route, hasRoute: route !== "", address, setAddress }) };
+      return { address, cards, ...usePanelView({ cards, route, hasRoute: route !== "", address, setAddress }) };
     },
     { initialProps: { route: hasRoute ? "KMSN||KOSH" : "" }, wrapper: withNuqsTestingAdapter({ searchParams: start, hasMemory: true }) },
   );
@@ -72,5 +73,16 @@ describe("the place under the one search", () => {
     act(() => hook.result.current.pickView("plan"));
     expect(hook.result.current.address.flight).toBe("a0b7d8");
     expect(hook.result.current.address.past).toBe(1794536008);
+  });
+
+  it("keeps one airplane card: another airplane picked puts the N-number's away, the same one keeps it", () => {
+    // The owner's design of 2026-11-26: one card an airplane, by its N-number or its ICAO address.
+    const hook = setUp("flight=a0b7d8", false);
+    openAirplaneProfile("N606FR");
+    act(() => hook.result.current.cards.selectFlight("a0b7d8"));
+    expect(useProfileOpen.getState().open?.tail).toBe("N606FR");
+    act(() => hook.result.current.cards.selectFlight("abc123"));
+    expect(useProfileOpen.getState().open).toBeNull();
+    expect(hook.result.current.address.flight).toBe("abc123");
   });
 });

@@ -4,11 +4,8 @@ import { airplaneDetailsQuery, airplanePhotoQuery } from "../../lib/airplane/det
 import { useTailLookup } from "../../lib/airplane/lookup";
 import { useAirplaneHistory } from "../../lib/airplane/ownAirplane";
 import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
-import { useAddress } from "../../lib/address";
 import { aircraftKind } from "../../lib/aircraftKind";
-import { useTracking } from "../../lib/map/position/tracking";
-import { usePreferences, type KeptAircraft } from "../../lib/preferences";
-import { shareOrCopy } from "../../lib/share";
+import type { KeptAircraft } from "../../lib/preferences";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { statusLine } from "./airplaneStatus";
 
@@ -17,19 +14,20 @@ import { statusLine } from "./airplaneStatus";
  * airport card is (the owner's P1, 2026-11-14, "Ok I take your rec"; the
  * canvas https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253): its FAA record
  * for the line under its name and the Info tab, its flights by the address
- * the registry gives its N-number, the actions Follow, Favorite and Share
- * as the flight card has them, and the one status line. Every N-number,
- * the pilot's own airplanes' too.
+ * the registry gives its N-number, what it is kept as, and the one
+ * status line on the ground. Every N-number, the pilot's own airplanes'
+ * too; the flight in the air is the card's other half (useFlightLive).
  */
-export function useAirplaneCard(tail: string) {
+export function useAirplaneCard(tail: string, known: string | null = null) {
   const lookup = useTailLookup(tail || null);
-  const { record, hex, inAir } = lookup;
-  const [, setAddress] = useAddress();
+  const { record, inAir } = lookup;
+  // Its ICAO address the registry's, else the one the card was opened by (traffic's).
+  const hex = lookup.hex ?? known;
   // The rest of its public record and its photo, for Info: by its N-number, apart from the record
   // above, so the card never waits on them (lib/airplane/details).
   const details = useQuery({ ...airplaneDetailsQuery(tail), enabled: !!tail });
   const photo = useQuery({ ...airplanePhotoQuery(tail), enabled: !!tail });
-  // Its flights, Follow and history: the pilot's own always, another's while Other Airplanes is
+  // Its flights, Alerts and history: the pilot's own always, another's while Other Airplanes is
   // on in Settings' Extras (lib/airplane/ownAirplane), else neither offered nor fetched.
   const history = useAirplaneHistory(hex, tail);
   // Its flights, newest first: the Flights tab's list (PastFlights, the same query) and the status
@@ -37,12 +35,11 @@ export function useAirplaneCard(tail: string) {
   const past = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex && history });
   const listed = past.data?.pages.flatMap((page) => page.flights ?? []);
   const flights = listed?.length || (past.data && !past.hasNextPage) ? listed : undefined;
-  // Kept as the flight card keeps one (FlightCard's Favorite): by its address, its N-number its name.
+  // Kept as traffic is kept (useFlightLive): by its address, its N-number its name.
   const kept = useMemo<KeptAircraft | null>(
     () => (hex ? { hex, name: tail, type: record?.model ?? null, kind: aircraftKind({ faa: record ?? undefined }) } : null),
     [hex, tail, record],
   );
-  const starred = usePreferences((s) => !!hex && s.favoriteAircraft.some((a) => a.hex === hex));
   // "landed 20m ago" as of this minute: the compiler keeps a call's answer
   // while its inputs are the same, so a Date.now() inside it froze the age.
   const now = useMinuteClock();
@@ -53,29 +50,15 @@ export function useAirplaneCard(tail: string) {
     detailsFailed: details.isError,
     photo: photo.isError ? null : photo.data,
     hex,
-    /** Whether its Follow, flights and history are offered (useAirplaneHistory). */
+    /** Whether its Alerts, flights and history are offered (useAirplaneHistory). */
     history,
     /** Under its name: "Piper PA-28-140, 1971", the registry's; null where it has none. */
     line,
     status: statusLine(inAir, flights, now),
-    /** In the air: its flight's card, tracked (FlightCard). */
-    track: inAir.state === "flying" ? () => useTracking.getState().pick?.(inAir.plane.hex, inAir.plane) : null,
-    airborne: inAir.state === "flying",
+    /** In the air by the live find: its report, for the card to track it (AirplaneCard). */
+    flyingPlane: inAir.state === "flying" ? inAir.plane : null,
     /** The flights found so far, the Flights tab's hint. */
     flightCount: listed?.length ?? null,
     kept,
-    starred,
-    toggleFavorite: () => {
-      if (kept) usePreferences.getState().toggleFavoriteAircraft(kept);
-    },
-    /** The card's link, shared where the device can, copied where not, as the flight card's. */
-    share: () =>
-      void shareOrCopy({ title: tail, url: `${location.origin}/app/plan?airplane=${tail}` }).catch(() => {
-        /* put away, or not allowed: nothing to say */
-      }),
-    /** One of its past flights' cards, its replay, over this one (PastFlightCard, `?flight=&past=`). */
-    openPast: (id: number) => {
-      if (hex && history) void setAddress({ flight: hex, past: id, place: null, at: null, near: null, nearAt: null, nearName: null });
-    },
   };
 }

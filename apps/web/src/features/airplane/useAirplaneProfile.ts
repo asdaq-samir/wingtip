@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { choiceOf, profileOfRegistered, tailChoice, useTailOf } from "../../lib/aircraftChoice";
 import { airplaneFigures, bookOf, handbookOf, type FigureKey } from "../../lib/airplane/figures";
 import { readFigure } from "../../lib/airplane/figureWords";
-import { closeAirplaneProfile, useProfileOpen } from "../../lib/airplane/profileStore";
 import { fromDevice, type FigureChanges } from "../../lib/airplane/saveFigures";
 import { useSaveFigures } from "../../lib/airplane/useSaveFigures";
 import { wantScreen } from "../../lib/navigation/wanted";
@@ -31,11 +30,10 @@ function without<T>(map: Partial<Record<FigureKey, T>>, key: FigureKey): Partial
  * figure changed is kept as the pilot's for this N-number alone
  * (useSaveFigures: their record, made at the first edit on the type's book
  * figures, or this device signed out); "Reset to book figure" puts the
- * book's back. The view (AirplaneProfileSheet) only draws this.
+ * book's back. The view (AirplaneCard, its Figures tab) only draws this;
+ * `tail` empty for traffic the FAA's registry does not hold.
  */
-export function useAirplaneProfile() {
-  const open = useProfileOpen((s) => s.open);
-  const tail = open?.tail ?? "";
+export function useAirplaneProfile(tail: string, hex: string | null = null) {
   const { data: pilot } = useQuery(pilotQuery);
   const { data: list } = useQuery({ ...aircraftListQuery, enabled: !!pilot });
   const { data: profiles } = useQuery(aircraftProfilesQuery);
@@ -45,7 +43,7 @@ export function useAirplaneProfile() {
   const record = list?.find((a) => a.tailNumber.toUpperCase() === tail) ?? null;
   // What the card says of the airplane itself (useAirplaneCard): the FAA's record, for its type
   // too (the picker's own lookup, FlightInputs), its flights and whether it is in the air.
-  const card = useAirplaneCard(tail);
+  const card = useAirplaneCard(tail, hex);
   const registered = card.record;
   const profileName = record
     ? choiceOf(record, profiles ?? []).profile
@@ -110,17 +108,15 @@ export function useAirplaneProfile() {
     usePreferences
       .getState()
       .setAircraft(record ? choiceOf(record, profiles ?? []) : tailChoice(tail, profileName, usePreferences.getState().tailFigures[tail]));
-    closeAirplaneProfile();
     wantScreen("fpl");
   };
   const photo = usePhotoRead((typed) => setDrafts((d) => ({ ...d, ...typed })));
   return {
-    open: !!open,
-    close: closeAirplaneProfile,
     flying,
+    /** On the pilot's own list of airplanes. */
+    owned: !!record,
     fly,
     tail,
-    focus: open?.focus ?? null,
     type: typeWords(record, registered, book?.type),
     rows: figures.figures.map((f) => ({ ...f, key: f.key as FigureKey, resettable: resettable(f) })),
     drafts,

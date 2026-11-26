@@ -120,7 +120,6 @@ export const BriefCard = fromRoutePanel("BriefCard");
 // The cards for an airplane or a point held on the map are drawn only at a
 // tap, so they are on chunks of their own rather than the first load.
 export const AirspaceCard = placePanel.part("AirspaceCard");
-export const FlightCard = cardsPanel.part("FlightCard");
 export const PastFlightCard = cardsPanel.part("PastFlightCard");
 // An airport's card and the dry run's panel too, each drawn at a tap: with
 // the React Compiler on, the first load was 11 KB past CI's 1.10 MB; and

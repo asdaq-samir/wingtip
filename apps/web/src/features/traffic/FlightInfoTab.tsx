@@ -6,14 +6,12 @@ import { PillSection } from "../../components/Favorites";
 import { RowBadge } from "../../components/RowBadge";
 import { SkeletonLine } from "../../components/QueryState";
 import type { FlightDetail, FlightRoute, TrafficAircraft } from "../../lib/api/types";
-import { openAirplaneProfile } from "../../lib/airplane/profileStore";
 import { departuresQuery } from "../../lib/liveReports";
 import { BADGE } from "../../lib/rowBadges";
 import { TEXT } from "../../lib/text";
 import { departureLine } from "./departureWords";
 import { nameCase } from "./nameCase";
 import { squawkMeaning } from "./squawks";
-import FaaRegistration from "./FaaRegistration";
 
 /** A row's value from the airplane's record: its words as a name is
  *  written, a line to come while the record is asked for, else a dash. */
@@ -24,13 +22,12 @@ const recordValue = (text: string | null | undefined, loading: boolean, testId: 
 );
 
 /**
- * The tracked flight's card's Info tab (FlightCard; the owner, 2026-11-14:
- * "make sure the airplane card looks similar to airport card"), what was
- * its one scroll's middle: what it is -- its N-number (which opens its
- * profile, features/airplane), type, year and squawk, who it is registered
- * to, its model, operator, ICAO address, callsign and the tower's departure
- * event -- then its flight number's scheduled route and its FAA
- * registration (FaaRegistration).
+ * The airplane card's Flight tab's details (FlightTab; the owner's design
+ * of 2026-11-26): what it is -- its registration, type, year and squawk,
+ * who it is registered to, its model, operator, ICAO address, callsign and
+ * the tower's departure event -- then its flight number's scheduled route.
+ * Its FAA registration in full is the card's Info tab (AirplaneInfo), one
+ * card for the airplane, so its N-number here opens nothing more.
  */
 export default function FlightInfoTab({
   hex,
@@ -59,10 +56,14 @@ export default function FlightInfoTab({
     <>
       <PillSection title="Details" testId="flight-details">
         <ListGroup>
+          {/* Traffic the FAA's registry does not hold says so (the design's "Unregistered"). */}
           <ListRow
             title="Registration"
-            value={<span className="font-semibold text-tint">{registration ?? "—"}</span>}
-            onClick={registration ? () => openAirplaneProfile(registration) : undefined}
+            value={
+              <span className="font-semibold text-foreground">
+                {[registration, detail && !detail.faa ? "Not in the FAA's registry" : null].filter(Boolean).join(" · ") || "—"}
+              </span>
+            }
             data-testid="flight-registration"
           />
           <ListRow
@@ -126,7 +127,6 @@ export default function FlightInfoTab({
           />
         </ListGroup>
       )}
-      {detail?.faa && <FaaRegistration faa={detail.faa} />}
     </>
   );
 }

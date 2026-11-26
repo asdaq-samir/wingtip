@@ -27,7 +27,7 @@ export const pastFlightsQuery = (hex: string, from: string | null) =>
 
 /** One of those flights' reports (wingtip.traffic.past_flight): its path on
  *  the map (PastFlightPath) and, where it is the airplane's last and it is
- *  not heard now, the card's sketch (FlightCard). A past flight does not
+ *  not heard now, the card's sketch (useFlightLive). A past flight does not
  *  change: asked once. */
 export const pastFlightQuery = (hex: string, id: number) =>
   queryOptions({
