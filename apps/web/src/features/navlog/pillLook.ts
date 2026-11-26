@@ -72,15 +72,18 @@ export const PILL_END_ADDON = cn(
  * a 20 glyph (the iOS audit's P18, the owner's "make all buttons same size
  * as Apple Maps", 2026-11-20), where it was 20 by 24 round a 16: its box
  * seen by nothing (no fill, no edge, its corner under half its side so it
- * is not the round 44), and laid in the pill's 20 by 24 alone (-mx-2,
- * -my-1.5), so both pills still fit the head at the owner's 19.65 px text.
- * The box reaches 8 into the field before it, the field's own empty end
- * (its 5ch and 0.5rem, the words at most 5ch), never over its words, and 8
- * past the pill's end; its area (index.css's rule, a pseudo-element) 4 more
- * past that and 4 over and under, 44 tall and 12 past the pill in all,
- * over the 4 to the next pill and that pill's own empty 8 before its "FL-".
+ * is not the round 44), 32 wide and 36 tall, laid in the pill (-ml-2,
+ * -my-1.5) with the glyph 6 in from the pill's end, where the box ran 8
+ * past it and put the glyph on the pill's very edge (the owner, 2026-11-26:
+ * "the icon buttons are too close to the pill border"); 4 wider a pill
+ * than then, so both still fit the head at the owner's 19.65 px text. The
+ * box reaches 8 into the field before it, the field's own empty end (its
+ * 5ch and 0.5rem, the words at most 5ch), never over its words; its area
+ * (index.css's rule, a pseudo-element) 4 past its end and 4 over and
+ * under, 44 tall, over the 4 to the next pill and that pill's own empty 8
+ * before its "FL-".
  */
 export const PILL_END = cn(
-  "relative z-20 -mx-2 -my-1.5 size-9 rounded-md border-0 hover:bg-transparent hover:text-tint aria-expanded:bg-transparent [&_svg]:size-5!",
+  "relative z-20 -my-1.5 -ml-2 h-9 w-8 rounded-md border-0 hover:bg-transparent hover:text-tint aria-expanded:bg-transparent [&_svg]:size-5!",
   "hit-y-1 after:left-0 after:-right-1",
 );

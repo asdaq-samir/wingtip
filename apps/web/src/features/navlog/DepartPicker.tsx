@@ -150,7 +150,7 @@ export default function DepartPicker({
             size="sm"
             // Over the head under it (z-10), whose row starts inside its
             // 44-point area's foot, and 4 more after the pill before it,
-            // whose end's glyph's area runs 12 past that pill (pillLook's
+            // whose end's glyph's area runs 4 past that pill (pillLook's
             // PILL_END): its own area's edge clear of both (the iOS
             // audit's P1, "Departure date" 57×32 on a local flight).
             className={cn("relative z-10 ml-1 rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
