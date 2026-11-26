@@ -48,11 +48,17 @@ export function useLineRoom(): [boolean, (row: HTMLElement | null) => (() => voi
       fit();
     });
     pills.observe(row, { childList: true });
+    // And as a menu of the line opens or closes: held while it is open,
+    // the line is measured again as it closes, a resize skipped meanwhile
+    // (an iPad turned with the menu open) taken then.
+    const menus = new MutationObserver(fit);
+    menus.observe(row, { subtree: true, attributes: true, attributeFilter: ["data-popup-open"] });
     follow();
     fit();
     return () => {
       watch.disconnect();
       pills.disconnect();
+      menus.disconnect();
     };
   }, []);
   return [roomy, measure];

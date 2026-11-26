@@ -52,7 +52,9 @@ export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, f
         : fitted?.close
           ? "Little to spare"
           : windward
-            ? "Into the wind"
+            ? across
+              ? `Into the wind · Crosswind ${across} kt`
+              : "Into the wind"
             : across
               ? `Crosswind ${across} kt`
               : null;

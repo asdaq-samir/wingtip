@@ -44,7 +44,10 @@ export function useDragClose(): (node: HTMLElement | null) => (() => void) | und
         dragging = false;
       };
       const move = (event: TouchEvent) => {
-        if (!atTop || event.touches.length !== 1) return;
+        // Not once the list has scrolled under the finger: a scroll begun
+        // cannot be taken back (its touchmove no longer cancelable), and
+        // the menu moved while its list scrolled.
+        if (!atTop || event.touches.length !== 1 || (!dragging && (!event.cancelable || node.scrollTop > 0))) return;
         by = event.touches[0]!.clientY - from;
         if (by <= 0) {
           // Back up past where it began: the list's own scroll again.

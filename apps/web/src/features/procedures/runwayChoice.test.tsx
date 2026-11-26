@@ -39,7 +39,10 @@ describe("a runway end's note in its menu", () => {
 
   it("a tailwind and into the wind are said before a crosswind", () => {
     expect(endChoice(runway, end, "05", () => fit({ tailwindKt: 10 })).note).toBe("Tailwind 10 kt");
-    expect(endChoice(runway, end, "14", () => fit({ crosswindKt: 3 })).note).toBe("Into the wind");
+    expect(endChoice(runway, end, "14", () => fit({ crosswindKt: 0 })).note).toBe("Into the wind");
+    // Into the wind with the wind across it too, both said: a field of one
+    // runway, its windward end 25 across in the gusts.
+    expect(endChoice(runway, end, "14", () => fit({})).note).toBe("Into the wind · Crosswind 25 kt");
   });
 
   it("no crosswind, nothing said", () => {

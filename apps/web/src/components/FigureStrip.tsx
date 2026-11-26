@@ -56,7 +56,8 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
  * Every figure at its full size, never shrunk to fit (the owner,
  * 2026-11-21, at 19.65 px: "1,320 nm" and "⚠ 111.3 gal" read smaller than
  * "262 nm" and "23.1 gal"): the columns are as wide as their content,
- * 20 apart and together in the strip's middle, every figure centred in
+ * 20 apart and together in the strip's middle (FPL's foot spread over
+ * its width, 8 apart at the least), every figure centred in
  * its own (the owner, 2026-11-26), and only where even that is too wide is a figure cut short with "…",
  * the figures always exact, never a rounded form in their place.
  *
@@ -127,7 +128,7 @@ export default function FigureStrip({
         // more on a short one (the owner, 2026-11-26: "we should pick a
         // small gap that looks nice for small figures size"); useFiguresFit
         // reads it, a figure dropped where even that does not fit. FPL's
-        // foot (`spread`) spreads them over its whole width, 20 apart at
+        // foot (`spread`) spreads them over its whole width, 8 apart at
         // the least (the owner, 2026-11-26: "For the pill size, span the
         // full width for the figures", "for small size, span the width of
         // tabs bar").

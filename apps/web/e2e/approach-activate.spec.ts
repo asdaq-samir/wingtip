@@ -50,7 +50,13 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   let kdlh = await destination(page);
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");
-  await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
+  // Where the runway the wind picked has no approach the menu opens on
+  // every runway's (2026-11-26): Runway 9's page first.
+  const ils = menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" });
+  const runway9 = menu.getByTestId("procedure-menu-runway").filter({ hasText: "Runway 9" });
+  await expect(ils.or(runway9)).toBeVisible({ timeout: slow(10000) });
+  if (await runway9.isVisible()) await runway9.click();
+  await ils.click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09/);
   await pickTransition(kdlh, "approach", "From DLH");
   // Loaded: in the address with its "L", a box of its fixes, none on the line.

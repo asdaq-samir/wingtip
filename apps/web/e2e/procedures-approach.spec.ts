@@ -156,7 +156,10 @@ test("an approach puts its field's runway on its own, and another is let only wh
   // landed straight in, and no pattern drawn.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");
-  await expect(menu.getByText("Runway 9", { exact: false })).toBeVisible({ timeout: slow(10000) });
+  // 27 has none: the menu opens on every runway's and says so (2026-11-26),
+  // Runway 9's page a tap on.
+  await expect(menu.getByTestId("procedure-menu-none-here")).toHaveText("No approaches to Runway 27", { timeout: slow(10000) });
+  await menu.getByTestId("procedure-menu-runway").filter({ hasText: "Runway 9" }).click();
   // Picked at one tap, from vectors; its transition then from its menu's
   // Transition › (2026-11-25), a submenu on the screen: a phone's ran off
   // its edge once (the owner's screenshot).

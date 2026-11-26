@@ -16,7 +16,6 @@ import { FULL_BAND, SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayou
  *  idents smeared (the owner's iPhone, 2026-11-17). Frosted all the way
  *  up, where the body scrolls on under it. */
 const SOLID_BAND = "bg-(--sheet)";
-/** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
 /** At the pill no control of the band's row takes a tap: a press on the
  *  pill marks the sheet as dragged (Base UI's data-swiping) before any
  *  move, which brings the row up into sight under the finger, and the tap
@@ -26,6 +25,7 @@ const SOLID_BAND = "bg-(--sheet)";
  *  raises it to half (tapOpens); a drag still moves it. */
 const PILL_HEAD_UNTAPPED = "[&_:is(button,a,input,[role=button],[role=combobox])]:pointer-events-none";
 
+/** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
 const RISEN_BAND =
   "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
 
