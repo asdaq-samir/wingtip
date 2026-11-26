@@ -5,6 +5,7 @@ import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
 import { SheetCard } from "../../components/SheetCard";
 import { CardAction } from "../../components/CardAction";
+import IconButton from "../../components/IconButton";
 import { ACTION } from "../../lib/cardActions";
 import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -161,6 +162,15 @@ export default function AirplaneProfileSheet() {
       // The registry's make, model and year under its name, as the airport card has its town there.
       description={card.line ?? vm.type ?? "Type not known"}
       onClose={vm.close}
+      // Share at the start of its head, ✕ at the end, as the airport's and a
+      // flight's cards have it (CardTitle), not a tile among its actions
+      // (the owner, 2026-11-26: "it should be similar to airport card").
+      leading={
+        <IconButton round label={`Share ${vm.tail}`} onClick={card.share} data-testid="airplane-share">
+          <Share />
+        </IconButton>
+      }
+      closeButton
       testId="airplane-profile"
       // On the figure it was opened for, where it was one.
       initialFocus={() => {
@@ -169,11 +179,11 @@ export default function AirplaneProfileSheet() {
         return field ?? true;
       }}
     >
-      {/* One row of four (three where Follow is not offered, useAirplaneHistory), the first filled, as
+      {/* One row of three (two where Follow is not offered, useAirplaneHistory), the first filled, as
           the airport card's (CardAction). Follow is the
           flight card's alerts -- takes off, lands, comes near -- and Favorite its star, both by
           the ICAO address the registry gives: greyed where it gives none. */}
-      <div className={cn("grid gap-2", card.history ? "grid-cols-4" : "grid-cols-3")} data-testid="airplane-actions">
+      <div className={cn("grid gap-2", card.history ? "grid-cols-3" : "grid-cols-2")} data-testid="airplane-actions">
         <CardAction
           icon={<ACTION.flyHere.icon />}
           label={vm.flying ? "Flying This" : "Fly This"}
@@ -197,7 +207,6 @@ export default function AirplaneProfileSheet() {
           <CardAction icon={<Bell />} label="Follow" disabled testId="airplane-follow" />
         )}
         <FavoriteTile on={card.starred} disabled={!card.kept} onToggle={card.toggleFavorite} testId="airplane-favorite" />
-        <CardAction icon={<Share />} label="Share" onClick={card.share} testId="airplane-share" spoken={`Share ${vm.tail}`} />
       </div>
       {/* Its one status line under the actions, as the flight card's alerts line: in the air from
           the live find, else where its last flight ended, else none heard (airplaneStatus). */}
