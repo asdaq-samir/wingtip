@@ -4,7 +4,7 @@ import type { ExpressionSpecification, Map as MlMap } from "maplibre-gl";
 /** The map's global state holding the NASR idents (the tiles' `faa_id`) of
  *  the fields drawn on the map now: the tile airports MapLibre placed and
  *  the route's own fields and stops, which wear their own marks. */
-export const PLACED_FIELDS = "placedFields";
+const PLACED_FIELDS = "placedFields";
 
 /** A Class C's or D's ring drawn only where its primary field is drawn (the
  *  airspace's `ident`, NASR's IDENT, the field's ARPT_ID), so no ring

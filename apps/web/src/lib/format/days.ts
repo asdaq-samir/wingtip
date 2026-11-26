@@ -13,7 +13,7 @@
  */
 import { clockTime, twoFigures as two } from "./time";
 
-export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** A value made the first time it is asked for, then kept. */
 function lazy<T>(make: () => T): () => T {

@@ -778,7 +778,7 @@ Resources:
     Type: AWS::WAFv2::WebACL
     Properties:
       Name: !Sub "${AWS::StackName}-tiles"
-      Description: Rate limits on the planner's tile paths and its other paths, everything else let through.
+      Description: Rate limits on the tile paths of the planner and its other paths, everything else let through.
       Scope: CLOUDFRONT
       DefaultAction: { Allow: {} }
       VisibilityConfig:
