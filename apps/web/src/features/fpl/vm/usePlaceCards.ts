@@ -26,7 +26,7 @@ export function usePlaceCards({
   // (usePanelView), the airport's opened here (selectPlace), which the
   // route's Approaches ask for too.
   const cards = useAddressCards(address, setAddress, setPanel);
-  const { place, heldPoint, nearOpen, flight, selectFlight } = cards;
+  const { place, heldPoint, nearOpen, flight } = cards;
   const cardOpen = !!place || !!heldPoint || !!flight;
   // FPL's Brief, a card over it (BriefCard): `?brief=1`, kept for FPL as
   // its other cards are (usePanelView).
@@ -64,8 +64,6 @@ export function usePlaceCards({
   // An airport's card closed: the card under it, an airplane's or
   // Nearest's, at the size it was left at (its own drawer's).
   const closePlace = useCallback(() => selectPlace(null), [selectPlace]);
-  // An airplane's card closed: the place under it as it was.
-  const closeFlight = useCallback(() => selectFlight(null), [selectFlight]);
   const selectPlaceOnChart = useCallback(
     (ident: string | null) => {
       // A tap on the chart past Nearest's list leaves it: its own drawer
@@ -93,5 +91,5 @@ export function usePlaceCards({
   // Each put away by another kind's pick or a tap on the chart (GlMapShell).
   useMapPickOwner("place", !!place, closePlace);
   useMapPickOwner("held", !!heldPoint, () => void setAddress({ at: null }));
-  return { cards, cardOpen, briefOpen, approachesOf, setApproachesOf, selectPlace, closePlace, closeFlight, selectPlaceOnChart, holdPoint };
+  return { cards, cardOpen, briefOpen, approachesOf, setApproachesOf, selectPlace, closePlace, selectPlaceOnChart, holdPoint };
 }

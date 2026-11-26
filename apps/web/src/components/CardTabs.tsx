@@ -7,7 +7,7 @@ import { PINNED_BELOW } from "./PinnedHead";
  * A card's tab pages, laid out after Apple Maps' place card (C1, the owner,
  * 2026-11-14): the page of the tab picked, then the tabs in a glass bar
  * floating at the card's foot (CardTabBar). The airport card's
- * (PlaceCard), and the airplane cards' (AirplaneProfileSheet, FlightCard;
+ * (PlaceCard), and the airplane cards' (AirplaneCard;
  * the owner the same day: "make sure the airplane card looks similar to
  * airport card"). The route's pages are the same stock Tabs (PanelTabs).
  *

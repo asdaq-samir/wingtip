@@ -15,12 +15,14 @@ import type { FigureKey } from "./figures";
 interface ProfileOpen {
   tail: string;
   focus: FigureKey | null;
+  /** Opened on its Figures tab: a figure asked for, or the plan's N-number's ⓘ (the owner's design, 2026-11-26). */
+  figures: boolean;
 }
 
 export const useProfileOpen = create<{ open: ProfileOpen | null; notNow: string[] }>(() => ({ open: null, notNow: [] }));
 
-export const openAirplaneProfile = (tail: string, focus: FigureKey | null = null) =>
-  useProfileOpen.setState({ open: { tail: tail.toUpperCase(), focus } });
+export const openAirplaneProfile = (tail: string, focus: FigureKey | null = null, figures = focus !== null) =>
+  useProfileOpen.setState({ open: { tail: tail.toUpperCase(), focus, figures } });
 
 export const closeAirplaneProfile = () => useProfileOpen.setState({ open: null });
 

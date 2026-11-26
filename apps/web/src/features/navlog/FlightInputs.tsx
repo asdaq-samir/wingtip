@@ -257,14 +257,15 @@ export default function FlightInputs({
           </InputGroupAddon>
           {/* Its ⓘ after the number (the owner, 2026-11-20: "can N number
               show an info button"): the airplane's card, the one any
-              N-number opens (lib/airplane/profileStore); with none picked,
+              N-number opens (lib/airplane/profileStore), on its Figures
+              (the owner's design, 2026-11-26); with none picked,
               the field, as a tap on the pill asks for one. */}
           <InputGroupAddon align="inline-end" className={PILL_END_ADDON}>
             <InputGroupButton
               size="icon-xs"
               className={PILL_END}
               aria-label="Airplane info"
-              onClick={() => (tailNow ? openAirplaneProfile(tailNow) : field.current?.focus())}
+              onClick={() => (tailNow ? openAirplaneProfile(tailNow, null, true) : field.current?.focus())}
               data-testid="aircraft-info"
             >
               {/* Filled, iOS's info.circle.fill (the owner, 2026-11-26): the
