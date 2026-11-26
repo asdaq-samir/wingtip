@@ -169,7 +169,7 @@ function GroundFoot({
         <div
           data-foot-strip=""
           // At the pill the figures fill the pill's room under the grabber,
-          // centred, as the sheet's own face did, one row of at most four
+          // centred, as the sheet's own face did, one row of all that fit
           // (TripFigures' `pill`); the room its least, so a larger text
           // size grows the bar rather than spilling over the map, and the
           // bar's measured height, the map's room, follows (the r6 UI

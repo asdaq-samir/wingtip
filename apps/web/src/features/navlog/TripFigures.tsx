@@ -65,15 +65,6 @@ const AREA = "relative z-10 max-w-full hit-x-2 hover:no-underline hover:opacity-
 // 2026-11-23, M5). The figure itself never grows.
 const AREA_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
 
-/** How many figures the pill's one row shows. */
-const PILL_FIGURES = 4;
-
-/** At most `most` figures, the GPS altitude dropped first, then from the end. */
-function atMost(most: number, figures: StripFigure[]): StripFigure[] {
-  const kept = figures.length > most ? figures.filter((f) => f.name !== "GPS") : figures;
-  return kept.slice(0, most);
-}
-
 /** A figure an airplane makes (the time, the fuel), with none picked: a
  *  dash, said as what it waits for. */
 function wantsAirplane(f: StripFigure): StripFigure {
@@ -116,9 +107,9 @@ export default function TripFigures({
   grow?: boolean;
   /** FPL's pinned figures, thin above the pill and full size as it (FigureStrip's `pin`). */
   thin?: boolean;
-  /** FPL's pill, one row of the pill's height: at most four figures, the
-   *  GPS altitude the first to go, then the last; never two by two
-   *  (FigureStrip's `row`), the last dropped where four are too wide, none cut short. */
+  /** FPL's pill, one row of the pill's height: every figure that fits at
+   *  its full size, the GPS altitude (the last) the first to go, then from
+   *  the end; never two by two (FigureStrip's `row`), none cut short. */
   pill?: boolean;
   /** The magnetic course of the leg the strip shows (the nav log's), the Course while not at flying speed. */
   legCourseDeg?: number | null;
@@ -264,13 +255,15 @@ export default function TripFigures({
   // row at a phone's width as the thin line (the owner, 2026-11-22: "Show
   // the labels even for thin strip"); "Leg" and "Dest" are short already.
   const short = thin ? ours.map((f) => (SHORT[f.name] ? { ...f, label: SHORT[f.name] } : f)) : ours;
-  // The pill's one row holds four: five stacked two by two stood three
-  // rows tall in a bar one row high, over the map and past the home
-  // indicator (the r6 UI audit's H1).
-  const shown = pill ? atMost(PILL_FIGURES, short) : short;
+  // The pill's one row holds every figure that fits, the GPS altitude too
+  // (the owner, 2026-11-26: "GPS alt doesnt show on the pill size?"),
+  // where it held four at most and left the GPS out first: five then
+  // stacked two by two, three rows tall in a bar one row high (the r6 UI
+  // audit's H1), which the strip's `row` now never does, dropping from the
+  // end only what does not fit.
   return (
     <FigureStrip
-      figures={shown}
+      figures={short}
       size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"}
       tap={tap}
       still={flying || !!flown}
