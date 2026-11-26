@@ -53,6 +53,7 @@ export default function PlanCards({
   const {
     briefHere,
     closeBrief,
+    closeNavLogCard,
     closeProfileCard,
     closeStops,
     navLogShown,
@@ -89,7 +90,7 @@ export default function PlanCards({
         />
       )}
       {navLogDrawn && routed && (
-        <CardLayer open={navLogShown}>
+        <CardLayer open={navLogShown} onSwipeClose={closeNavLogCard}>
           {/* Its room over its head the grabber's, as every card's (SheetCard).
                 The head is the whole log's own child (NavLogView): in a box of
                 its own it stuck only within it and scrolled away, the title and
@@ -103,7 +104,9 @@ export default function PlanCards({
         </CardLayer>
       )}
       {profileDrawn && routed && (
-        <CardLayer open={profileShown}>
+        // In flight or a dry run the side view and its way out stay up, as
+        // Apple Maps' navigation card does; planning, a swipe closes it.
+        <CardLayer open={profileShown} onSwipeClose={dryRunning || flying ? undefined : closeProfileCard}>
           <ProfileCard
             name="Profile"
             sub={<ProfileLine vm={vm} />}
@@ -153,7 +156,7 @@ export default function PlanCards({
       )}
       {stopsDrawn && (
         // Its id for its pins' taps, which bring it up from the pill (useFplCards).
-        <CardLayer open={stopsShown} cardId={STOPS_CARD}>
+        <CardLayer open={stopsShown} cardId={STOPS_CARD} onSwipeClose={closeStops}>
           <StopsCard
             at={stopsAt}
             route={stopsRoute}

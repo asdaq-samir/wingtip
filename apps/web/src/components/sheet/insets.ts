@@ -167,11 +167,11 @@ export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint, pillPx
  * Drawer tells it (onSnapPointChange): the size of the snap point it
  * picked, one of ours, asked for. Let go past the pill (no snap point),
  * the Drawer reads a close, refused here before it starts one, and the
- * surface goes to the pill (`park`: half for a settings card) -- let
+ * surface goes to the pill (`park`: half for a card a swipe closes) -- let
  * through, the close had begun, the card faded out and dropped off the
  * screen's foot before onOpenChange took it back, and it faded in again
- * at the pill (the flicker audit, 2026-11-14, FL-3). A settings card at
- * half (`close`) is the one that closes on a swipe down, the Drawer's own
+ * at the pill (the flicker audit, 2026-11-14, FL-3). A card at half with
+ * a swipe's close (`close`, all but Emergency) closes on a swipe down, the Drawer's own
  * close carrying it, and down to a lower size too.
  */
 export function letGo(

@@ -46,7 +46,6 @@ export function SheetCard({
   closeButton,
   onClose,
   fullScreen = false,
-  swipeCloses = false,
   cardId,
   testId,
   returnFocus,
@@ -85,10 +84,6 @@ export function SheetCard({
   /** Emergency, the one card all the way up as it opens (the card rule's 4);
    *  every other card opens at half. */
   fullScreen?: boolean;
-  /** A settings card (the Map card): a swipe down from half closes it, as
-   *  its ✕ does, and from all the way up brings it to half, where a content
-   *  card parks at the pill (CardStack). */
-  swipeCloses?: boolean;
   /** Its id among the open cards where its owner sizes it (useCardSize). */
   cardId?: string;
   testId?: string;
@@ -192,7 +187,11 @@ export function SheetCard({
           testId,
           labelledBy: headingId,
           dismiss,
-          onSwipeClose: swipeCloses ? () => onClose?.() : undefined,
+          // Every card but Emergency, which its ✕ alone closes: a swipe down
+          // from half closes it, as its ✕ does, and from all the way up
+          // brings it to half (CardStack; the owner, 2026-11-26, where only
+          // the settings cards did).
+          onSwipeClose: onClose && !fullScreen ? () => onClose() : undefined,
           initialFocus: opening,
           finalFocus: finalFocus ?? toOpener,
         }

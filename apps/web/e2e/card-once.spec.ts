@@ -29,9 +29,9 @@ import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
  * the pill ("Flashing when I tap account button"): opened again it came
  * back at the size it was put away at, not at half as every card opens.
  * Apple Maps closes its account and settings sheets on a swipe down (the
- * owner, 2026-11-14): You and the Map card close so from half, come to
- * half from all the way up, and a content card parks at the pill (the
- * card rule's 10).
+ * owner, 2026-11-14), and since 2026-11-26 every card but Emergency does:
+ * closed so from half, brought to half from all the way up (the card
+ * rule's 10).
  */
 test.use({ hasTouch: true, geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"] });
 
@@ -145,7 +145,7 @@ test.describe("by a pointer's drag", () => {
       "a phone's detents; the owner, 2026-11-19, desktop cards keep one height",
     );
   });
-  test("a swipe down closes You, a settings card, and parks an airport's card at the pill", async ({ page }) => {
+  test("a swipe down from half closes You and an airport's card alike", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
     await showPage(page, 0);
@@ -160,8 +160,7 @@ test.describe("by a pointer's drag", () => {
     const drawer = page.locator("[data-sheet-card]").filter({ has: card });
     await expect(drawer).toHaveAttribute("data-panel", "half");
     await swipeDown(page);
-    await expect(drawer).toHaveAttribute("data-panel", "peek");
-    await expect(card).toHaveCount(1);
+    await expect(card).toHaveCount(0);
   });
 
   // A settings card closes on a swipe down only from half: all the way up,
