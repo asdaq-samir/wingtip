@@ -351,7 +351,16 @@ function CardScroller({
         ref={slot}
         data-sheet-scroll=""
         data-panel-body=""
-        className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", below, pill && AT_PILL)}
+        // What is scrolled into sight comes to rest under the card's pinned
+        // head (PinnedHead: the grabber's room and its 3.5rem row), not
+        // under it, a focused control included (WCAG 2.4.11): at twice the
+        // text size the Brief's last control was scrolled to under its head
+        // (card-scroll.spec, the wave's validation, 2026-11-26).
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-y-auto scroll-pt-[calc(var(--corner-inset,0.75rem)+3.5rem)] print:overflow-visible",
+          below,
+          pill && AT_PILL,
+        )}
       />
     </PointerTapDiv>
   );
