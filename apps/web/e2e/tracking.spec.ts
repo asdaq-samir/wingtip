@@ -42,11 +42,10 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   await expect(card.getByTestId("flight-departed")).toContainText("TJSJ");
   await expect(card.getByTestId("flight-bound")).toContainText("KORD");
   await expect(card.getByTestId("flight-altitude")).toContainText("7,000 ft");
-  // What it is, on its Flight tab: its make and model and who flies it, and
-  // its flight number's route, at the pilot's ask.
+  // On its Flight tab who flies it and its flight number's route, at the
+  // pilot's ask; its make and model are its Info tab's.
   await expect(card.getByTestId("flight-route")).toContainText("TJSJ → KORD");
   await expect(card.getByTestId("flight-route")).toContainText("San Juan to Chicago");
-  await expect(card.getByTestId("flight-model")).toHaveText("Airbus A-321neo");
   await expect(card.getByTestId("flight-operator")).toHaveText("United Airlines Inc");
   // Tracked, the map on it, as it is opened from the search.
   await expect(card.getByTestId("airplane-track")).toHaveAttribute("aria-pressed", "true");

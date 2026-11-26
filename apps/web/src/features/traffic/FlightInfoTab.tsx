@@ -36,6 +36,7 @@ export default function FlightInfoTab({
   detailLoading,
   registered,
   route,
+  registry = true,
 }: {
   hex: string;
   plane: TrafficAircraft | null;
@@ -44,6 +45,11 @@ export default function FlightInfoTab({
   /** The registry's make and model, where no trace names its type. */
   registered: string | null;
   route: FlightRoute | null | undefined;
+  /** Its registration, type, owner and model: only where the card
+   *  has no Info tab to hold them (traffic the FAA's registry does not
+   *  hold); an N-number's card says them once, under Info, where the Flight
+   *  tab repeated them, blank once it had landed (2026-11-26). */
+  registry?: boolean;
 }) {
   const registration = detail?.registration ?? plane?.registration ?? null;
   const squawk = plane?.squawk ?? null;
@@ -57,23 +63,27 @@ export default function FlightInfoTab({
       <PillSection title="Details" testId="flight-details">
         <ListGroup>
           {/* Traffic the FAA's registry does not hold says so (the design's "Unregistered"). */}
-          <ListRow
-            title="Registration"
-            value={
-              <span className="font-semibold text-foreground">
-                {[registration, detail && !detail.faa ? "Not in the FAA's registry" : null].filter(Boolean).join(" · ") || "—"}
-              </span>
-            }
-            data-testid="flight-registration"
-          />
-          <ListRow
-            title="Type"
-            value={
-              <span className="font-semibold text-foreground" data-testid="flight-type">
-                {[detail?.type ?? plane?.type ?? registered, detail?.year].filter(Boolean).join(" · ") || "—"}
-              </span>
-            }
-          />
+          {registry && (
+            <>
+              <ListRow
+                title="Registration"
+                value={
+                  <span className="font-semibold text-foreground">
+                    {[registration, detail && !detail.faa ? "Not in the FAA's registry" : null].filter(Boolean).join(" · ") || "—"}
+                  </span>
+                }
+                data-testid="flight-registration"
+              />
+              <ListRow
+                title="Type"
+                value={
+                  <span className="font-semibold text-foreground" data-testid="flight-type">
+                    {[detail?.type ?? plane?.type ?? registered, detail?.year].filter(Boolean).join(" · ") || "—"}
+                  </span>
+                }
+              />
+            </>
+          )}
           {squawk && (
             <ListRow
               title="Squawk"
@@ -90,8 +100,13 @@ export default function FlightInfoTab({
               the record is asked for and a dash where it has none: the
               rows came in as it answered and the card under them jumped
               (the flicker audit's FL-10). */}
-          <ListRow title="Registered To" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
-          <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
+          {registry && (
+            <>
+              <ListRow title="Registered To" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
+              <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
+            </>
+          )}
+          {/* Who flies it, this flight's, on every card. */}
           <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />
           <ListRow
             title="ICAO Address"

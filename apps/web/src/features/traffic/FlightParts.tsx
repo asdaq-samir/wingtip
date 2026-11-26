@@ -66,21 +66,26 @@ export function FlightTab({ hex, live, photo }: { hex: string; live: FlightLive;
           ),
         }
       : null,
-    {
-      key: "trail",
-      label: `Where ${name} has flown`,
-      picture: (
-        <LiveSketch
-          latest={live.latest}
-          points={trail}
-          // Its track now, or, not heard, its last flight's last way.
-          trackDeg={plane?.track_deg ?? (geo && trail.length > 1 ? geo.bearingDeg(trail.at(-2)!, trail.at(-1)!) : null)}
-          from={live.fromField}
-          to={live.toField}
-          empty={live.sketchNote}
-        />
-      ),
-    },
+    // Where it has flown, sketched while it is heard or between the fields it
+    // flew, not a bare line on white an hour after (the owner's screenshot,
+    // 2026-11-26).
+    live.plane || live.fromField || live.toField
+      ? {
+          key: "trail",
+          label: `Where ${name} has flown`,
+          picture: (
+            <LiveSketch
+              latest={live.latest}
+              points={trail}
+              // Its track now, or, not heard, its last flight's last way.
+              trackDeg={plane?.track_deg ?? (geo && trail.length > 1 ? geo.bearingDeg(trail.at(-2)!, trail.at(-1)!) : null)}
+              from={live.fromField}
+              to={live.toField}
+              empty={live.sketchNote}
+            />
+          ),
+        }
+      : null,
   ];
   return (
     <>
@@ -92,6 +97,7 @@ export function FlightTab({ hex, live, photo }: { hex: string; live: FlightLive;
         detailLoading={live.detailLoading}
         registered={live.registered}
         route={live.route}
+        registry={photo}
       />
     </>
   );

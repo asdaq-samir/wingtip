@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAddress } from "../../lib/address";
 import { closeAirplaneProfile } from "../../lib/airplane/profileStore";
 import { useTailLookup } from "../../lib/airplane/lookup";
+import { profileOfRegistered } from "../../lib/aircraftChoice";
 import { useAirplaneHistory } from "../../lib/airplane/ownAirplane";
 import { track, useTracking } from "../../lib/map/position/tracking";
 import { usePreferences } from "../../lib/preferences";
@@ -56,12 +57,15 @@ export function useAirplaneCardModel({
   }, [openHex, flyingPlane, setAddress]);
   const airborne = !!live.plane || !!flyingPlane;
   const following = useTracking((s) => s.follow) && !!live.plane;
-  // Fly This only for an airplane the planner can fly: one the FAA's
-  // registry holds, or the pilot's own (their list, the plan's airplane).
-  const flyable = !!tail && (!!card.record || vm.owned || vm.flying);
+  // Fly This only for an airplane the planner can fly: one whose make and
+  // model the engine has a handbook for (registered_profile), or the
+  // pilot's own (their list, the plan's airplane) -- not any the registry
+  // holds, which offered an A321's Fly This and Figures (the owner's
+  // screenshot, 2026-11-26, N606FR).
+  const flyable = !!tail && ((!!card.record && profileOfRegistered(card.record) !== null) || vm.owned || vm.flying);
   // Each tab opening at its own top (useTabScroll).
   const [picked, pick] = useState<AirplaneTab | null>(null);
-  const { tabs, tab } = airplaneTabs({ hex, tail, history, flyable, figures, fromTraffic: !!openHex, airborne, picked });
+  const { tabs, tab } = airplaneTabs({ hex, tail, history, flyable, figures, airborne, picked });
   const [, setTop] = useTabScroll(tab);
   const kept = card.kept ?? live.kept;
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));
