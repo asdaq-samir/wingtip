@@ -76,6 +76,10 @@ test.afterEach(async ({ page }) => {
 });
 
 test("a fuel stop the planner suggests is dashed in the route's box and pinned on the map", async ({ page }) => {
+  // No checkpoints: the route's own marks are placed first and a stop's pin
+  // gives way to them (StopMarksGl), and C81-KDLH's checkpoint 18 stands
+  // where KRPD's pin would at this zoom.
+  await noCheckpoints(page);
   await suggested(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -91,6 +95,8 @@ test("a stop suggested on a flight from a present position is dashed in the rout
   // The owner's screenshot (2026-10-22): from a present position, the stop
   // was missing, the departure there no field to follow.
   // Named as the route's box names the position, as the planner sends it.
+  // No checkpoints, as above: the pin gives way to the route's own marks.
+  await noCheckpoints(page);
   await suggested(page, "@42.2333,-87.9883");
   await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KDLH");
   await settle(page);
@@ -303,8 +309,15 @@ test("a flight short with no stop offered says why where the pill would be", asy
 for (const width of [375, 393])
   test.describe(`at ${width} points and the owner's 19.65-px text`, () => {
     test.use({ viewport: { width, height: 852 } });
-    test("Add a Stop, the fuel stops' pill and the route's toggle are one line, to add and to remove", async ({ page }) => {
+    test("the fuel stops' pill and the route's toggle keep together, on a line under Add a Stop, to add and to remove", async ({
+      page,
+    }) => {
       // The owner, 2026-11-22: "Remove fuel stops goes to the next line."
+      // Since the pill is the stock chip's own size again (the owner,
+      // 2026-11-25: "Add fuel stops pill can be standard size?"), at
+      // 19.65-px text even "Add Stops" (129) with the toggle (32) and their
+      // gaps is past what Add a Stop's 153 leaves of a 375- or 393-point
+      // row, so both chips go under the words together.
       await suggested(page);
       await page.goto("/app/plan?dep=C81&dest=KDLH");
       await settle(page);
@@ -353,10 +366,10 @@ for (const width of [375, 393])
         expect(toggle.x - (chip.x + chip.width), "8 between the pill and the toggle").toBeGreaterThanOrEqual(7.5);
         expect(card.x + card.width - (toggle.x + toggle.width), "the toggle 8 in from the card's edge").toBeGreaterThanOrEqual(7.5);
       };
-      await row();
+      await row(true);
       await inSheet(page, pill);
       await pill.click();
       await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
-      await row(width === 375);
+      await row(true);
     });
   });

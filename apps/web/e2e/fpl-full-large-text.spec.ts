@@ -19,11 +19,19 @@ const scroller = (page: Page) =>
     .filter({ has: page.locator("[data-foot-room]") })
     .first();
 
-/** Whether the point is the element's own: in sight, not under the bar or off the sheet. */
+/** Whether the point is the element's own: in sight, not under the bar or
+ *  off the sheet. The foot bar's ground and its figures take no touch, only
+ *  its buttons do (sheet/FootBar), and a hit test passes over what takes
+ *  none: for the reading alone the bar takes them, so what is drawn on top
+ *  is what is found. */
 async function ownsPoint(target: Locator) {
   return target.evaluate((el) => {
+    const hits = document.createElement("style");
+    hits.textContent = "[data-foot-bar], [data-foot-bar] * { pointer-events: auto !important; }";
+    document.head.append(hits);
     const box = el.getBoundingClientRect();
     const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    hits.remove();
     return !!hit && (el.contains(hit) || hit.contains(el));
   });
 }

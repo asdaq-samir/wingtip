@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clearTheRoute, grabberTo, settle, sideDrawer, frontSheet, slow } from "./helpers";
+import { clearTheRoute, grabberTo, settle, sideDrawer, sheetFoot, frontSheet, slow } from "./helpers";
 import { expectPage, expectSearchInUse, expectShown, openAirport, showPage } from "./sheetPages";
 
 /**
@@ -22,7 +22,7 @@ test.describe("cards over the pages", () => {
     await sideDrawer(page).getByTestId("place-card").getByTestId("fly-here").click();
     await expect(page).toHaveURL(/[?&]dest=KOSH/, { timeout: slow(15_000) });
     await expectShown(page, 1);
-    await expect(sideDrawer(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30_000) });
+    await expect(sheetFoot(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30_000) });
   });
 
   test("an airport's card opened on Search over a route and closed leaves Search in sight", async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe("cards over the pages", () => {
     await expect(page).toHaveURL(/[?&]dest=KOSH/, { timeout: slow(15_000) });
     // Flown to from where the airplane is, a whole route: cleared from its
     // ••• (half a route has the route box's own ✕, the owner, 2026-11-18).
-    await expect(sideDrawer(page).getByTestId("timeline-ident")).toHaveText(["My Location", "KOSH"], { timeout: slow(15_000) });
+    await expect(sideDrawer(page).getByTestId("timeline-ident")).toHaveText(["POS0", "KOSH"], { timeout: slow(15_000) });
     await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
     await expectShown(page, 1);

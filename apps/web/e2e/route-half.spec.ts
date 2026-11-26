@@ -92,7 +92,7 @@ test("the timeline's Departure asks for it in the search, where the airplane is 
   await expect(here).toBeVisible({ timeout: slow(10_000) });
   await here.click();
   await expect(page).toHaveURL(/dep=%40|dep=@/);
-  await expect(sideDrawer(page).getByTestId("timeline-line").first().getByTestId("timeline-ident")).toHaveText("My Location", {
+  await expect(sideDrawer(page).getByTestId("timeline-line").first().getByTestId("timeline-ident")).toHaveText("POS0", {
     timeout: slow(30_000),
   });
 });
