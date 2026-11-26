@@ -33,7 +33,7 @@ export type FieldPart = {
   kinds: Kind[];
   /** Its runway's chips, with what follows them; or, on FPL's Landing and
    *  Takeoff (`pill`), its runway's slim pill and its menu (RunwayPill). */
-  chips: (trailing: ReactNode, pill?: boolean, roomy?: boolean) => ReactNode;
+  chips: (trailing: ReactNode, pill?: boolean) => ReactNode;
   leaves: ReactNode;
   line: { key: string; chosen: string | null };
   /** A runway end of the field by its number ("23") as a choice
@@ -137,7 +137,7 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
       pick: (end: string) => void,
       label?: string,
     ) =>
-    (trailing: ReactNode, pill?: boolean, roomy?: boolean) =>
+    (trailing: ReactNode, pill?: boolean) =>
       pill ? (
         <RunwayPill
           airport={a}
@@ -149,7 +149,6 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
           note={note}
           onPick={pick}
           windHead={wordsOfWind && <WindLine direct={false} wind={wordsOfWind} reported={reported} />}
-          roomy={roomy}
         />
       ) : (
         <PatternChips

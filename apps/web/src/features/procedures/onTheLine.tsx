@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../compo
 import { TEXT } from "../../lib/text";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { WIDE_PILL } from "./routeListStyle";
+import { LineRoom, useLineRoom } from "./lineRoom";
 
 /** How the route's magenta runs through a row: solid where it is flown,
  *  dashed where it is not flown yet (an approach loaded, not activated; a
@@ -229,6 +230,8 @@ export function PhaseSection({
   phase: "Arrive" | "Depart";
   children: ReactNode;
 }) {
+  // "RWY" before its runway while its line has room (useLineRoom).
+  const [roomy, measure] = useLineRoom();
   return (
     <section aria-label={label} data-testid={testId}>
       <OnTheLine mark={mark} stop={false} thread={thread} wrap>
@@ -237,8 +240,13 @@ export function PhaseSection({
             pills keep the title's line; their areas are 44 tall, hit-y,
             not wide, so none overlap), wrapping under the
             first where they do not all fit. */}
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 py-2.5" data-testid="timeline-chips" data-role={phase}>
-          {pills}
+        <span
+          ref={measure}
+          className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 py-2.5"
+          data-testid="timeline-chips"
+          data-role={phase}
+        >
+          <LineRoom.Provider value={roomy}>{pills}</LineRoom.Provider>
         </span>
         {time && <span className="ml-auto flex shrink-0 items-center">{time}</span>}
       </OnTheLine>

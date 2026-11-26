@@ -154,11 +154,10 @@ export function TimelineLine({
             )}
           </span>
         ) : (
-          // "RWY" before the runway where its line has room: one chip
-          // beside it at most, "Land RWY 16 + ARR" (the owner, 2026-11-26:
-          // "When there is space, add the RWY"); two or more, as KLAS's
-          // ARR and APCH, keep the runway alone so the line does not wrap.
-          linePart?.part.chips(null, true, linePart.add.length + (linePart.hold ? 1 : 0) <= 1)
+          // "RWY" before the runway where its line has room, measured
+          // (PhaseSection's useLineRoom; the owner, 2026-11-26: "When there
+          // is space, add the RWY").
+          linePart?.part.chips(null, true)
         )}
         {(linePart?.add ?? []).map((k) => (
           <Fragment key={k}>{kindMenu(vm, field!, k, "slim")}</Fragment>

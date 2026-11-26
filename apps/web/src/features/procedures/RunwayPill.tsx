@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useContext, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import {
@@ -18,6 +18,7 @@ import { landingRunway, runwayNumber, type Landing, type ProcedureAirport, type 
 import type { EndFit } from "./runwayFit";
 import { endChoice, runwayEnds } from "./runwayChoice";
 import { SLIM_PILL } from "./routeListStyle";
+import { LineRoom } from "./lineRoom";
 
 /**
  * A field's runway on its Landing or Takeoff line on FPL's list, a slim
@@ -40,7 +41,6 @@ export function RunwayPill({
   note,
   onPick,
   windHead,
-  roomy = false,
 }: {
   airport: ProcedureAirport;
   wind: WindPick | null;
@@ -57,9 +57,9 @@ export function RunwayPill({
    *  under the ident (the owner's option 1, 2026-11-25: fuel and wind off
    *  the rows' second line, the wind beside the runway it picks). */
   windHead?: ReactNode;
-  /** Room on its line (one chip beside it at most): "RWY" before the runway. */
-  roomy?: boolean;
 }) {
+  // Room on its line, as measured (PhaseSection's useLineRoom).
+  const roomy = useContext(LineRoom);
   if (a.runways === null) return <Skeleton aria-label="Fetching the runways" className="h-6 w-20 rounded-full" />;
   const ends = runwayEnds(a);
   if (!ends.length) return null;
@@ -84,9 +84,9 @@ export function RunwayPill({
       >
         {/* The runway alone, "≋26R", no "RWY" before it (the owner,
             2026-11-25, so Land's and Takeoff's pills keep their line at
-            KLAS), but where its line has room (`roomy`, TimelineLine; the
-            owner: "Rwy back when have space"); its name says "Runway 26R". */}
-        {(roomy || !shown) && <span>RWY</span>}
+            KLAS), but where its line has room, measured (`roomy`, LineRoom;
+            the owner: "Rwy back when have space"); its name says "Runway 26R". */}
+        {(roomy || !shown) && <span data-rwy="">RWY</span>}
         {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>—</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
