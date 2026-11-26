@@ -13,7 +13,7 @@ apps/ios/Wingtip/Views/ChartOverlays.swift 712
 apps/ios/Wingtip/Views/InFlightViews.swift 418
 apps/ios/Wingtip/Views/InstructorView.swift 406
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 464
-scripts/build/design_tokens.py 551
+scripts/build/design_tokens.py 543
 scripts/build/engine-contract-apps.mjs 435
 services/ingest/ingest/swim.py 403
 services/jobs/charts/tests/test_overlays.py 791

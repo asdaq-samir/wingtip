@@ -303,18 +303,8 @@ IOS_STYLES = {
     "caption": ".caption",
     "caption2": ".caption2",
 }
-UIKIT_STYLES = {
-    "title": ".title1",
-    "title2": ".title2",
-    "title3": ".title3",
-    "headline": ".headline",
-    "body": ".body",
-    "callout": ".callout",
-    "subheadline": ".subheadline",
-    "footnote": ".footnote",
-    "caption": ".caption1",
-    "caption2": ".caption2",
-}
+# UIKit's names are SwiftUI's but for two.
+UIKIT_STYLES = {**IOS_STYLES, "title": ".title1", "caption": ".caption1"}
 WEIGHTS = {400: "regular", 500: "medium", 600: "semibold", 700: "bold"}
 
 # The size each iOS text style has at the default (Large) text size: a role

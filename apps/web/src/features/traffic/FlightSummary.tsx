@@ -15,6 +15,8 @@ import { squawkMeaning } from "./squawks";
 import { lasted } from "../../components/airplane/pastFlightFormat";
 import { End, EndPending } from "./FlightEnds";
 import { SkeletonLine } from "../../components/QueryState";
+import { useEngineReady } from "../../lib/engine/useEngineReady";
+import { arrivalOf } from "./arrival";
 
 /** The summary's corner: climbing, level or descending in the air; on the
  *  ground; or an emergency's code (AIM 6-2-2, 6-3-4, 6-4-2). */
@@ -53,7 +55,7 @@ export function FlightNow({
   fields,
   fix,
   ...rest
-}: Omit<Parameters<typeof FlightSummary>[0], "now" | "progress" | "fromYou" | "cpa"> & {
+}: Omit<Parameters<typeof FlightSummary>[0], "now" | "progress" | "fromYou" | "cpa" | "arrives"> & {
   latest: Latest;
   fields: { from: LatLon | null; to: LatLon | null; landed: boolean };
 }) {
@@ -71,6 +73,10 @@ export function FlightNow({
       ? 1
       : null;
   const cpa = fix && plane && here ? closestApproach(fix, { ...plane, ...here }) : null;
+  // When it reaches the field it is bound for, direct at its ground speed
+  // (the engine's in_flight, arrivalOf); none until the engine is in.
+  const engine = useEngineReady();
+  const arrives = engine && plane && here && fields.to ? arrivalOf(here, plane, fields.to, now) : null;
   return (
     <FlightSummary
       {...rest}
@@ -79,6 +85,7 @@ export function FlightNow({
       progress={progress}
       fromYou={geo && fix && here ? awayFrom(geo, fix, here) : null}
       cpa={cpa}
+      arrives={arrives}
     />
   );
 }
@@ -109,6 +116,7 @@ function FlightSummary({
   fix,
   fromYou,
   cpa,
+  arrives,
   onOpenAirport,
   airport,
   pending = false,
@@ -130,6 +138,8 @@ function FlightSummary({
   fix: Fix | null;
   fromYou: string | null;
   cpa: { inMin: number; nm: number; aboveFt: number | null } | null;
+  /** When it reaches the field it is bound for, Unix seconds (arrivalOf). */
+  arrives: number | null;
   onOpenAirport?: (ident: string) => void;
   /** The field the airport tap was for: the card's Airport tile's. */
   airport: string | null;
@@ -222,7 +232,14 @@ function FlightSummary({
           {/* ADS-B's track is over the ground and true, not magnetic. */}
           {plane.track_deg != null && ` · ${bearing(plane.track_deg)} true`}
         </span>
-      ) : chip ? (
+      ) : null}
+      {plane && arrives !== null && to ? (
+        // Its arrival, direct at the speed it is making (the owner's design, 2026-11-26).
+        <span className={cn("text-muted-foreground tabular-nums", TEXT.detail)} data-testid="flight-arrives">
+          {`Arrives ${to.ident} ${clockTime(new Date(arrives * 1000))} · in ${lasted(arrives - now / 1000)}`}
+        </span>
+      ) : null}
+      {plane ? null : chip ? (
         <span className={cn("font-semibold text-foreground", TEXT.detail)} data-testid="flight-chip">
           {chip}
         </span>
