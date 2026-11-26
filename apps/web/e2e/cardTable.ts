@@ -155,9 +155,10 @@ export const CARDS: CardRow[] = [
     not: { sideways: "no sideways row", position: "nothing opens inside a leg", scroll: "a leg's card is shorter than the half sheet" },
   },
   {
+    // One card an airplane (the owner's design, 2026-11-26), opened by its ICAO address or its N-number.
     name: "an airplane's card",
-    card: "flight-card",
-    close: "flight-close",
+    card: "airplane-profile",
+    close: "sheet-card-close",
     entries: [
       {
         name: "link (flight=)",
@@ -168,21 +169,12 @@ export const CARDS: CardRow[] = [
         // With no route, the one search's own page under it.
         back: "search-home",
       },
+      { name: "link (airplane=)", open: (p) => go(p, "/app/plan?airplane=N14511"), back: "map" },
     ],
     not: {
       sideways: "the stub gives it no photo, so no picture slides; its facts strip is the airport card's CardFacts, checked there",
-      position: "checked on the airport's card, the same CardTitle and SheetCard",
+      position: "checked on the airport's card, the same SheetCard",
       searchHidden: "a card hides the one search as any other (checked on the airport)",
-    },
-  },
-  {
-    name: "airplane profile",
-    card: "airplane-profile",
-    close: "sheet-card-close",
-    entries: [{ name: "link (airplane=)", open: (p) => go(p, "/app/plan?airplane=N14511"), back: "map" }],
-    not: {
-      sideways: "no photo stubbed; its facts strip is the airport card's CardFacts, checked there",
-      position: "nothing opens inside it",
     },
   },
   {

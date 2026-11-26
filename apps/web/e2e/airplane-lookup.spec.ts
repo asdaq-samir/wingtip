@@ -110,20 +110,23 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   answer({ aircraft: [], checked: true, source: "ADS-B Exchange", license: "ADS-B Exchange terms" });
   await expect(row.getByTestId("search-airplane-live")).toHaveText("Not in the air now", { timeout: slow(10_000) });
 
-  // Its card, as the airport card's (P1, then C1): make, model and year under its name, Share at the
-  // head's start, three buttons, one status line, and the tabs Flights, Info and Figures in the bar at
-  // its foot, its facts Info's alone.
+  // Its card, the one airplane card (the owner's design, 2026-11-26): make, model and year under its
+  // name, Share at the head's start, on the ground Fly This, Alerts and Favorite, one status line, and
+  // the tabs Flight, Flights, Info and Figures in the bar at its foot, opened from the search on Info.
   await row.click();
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("Piper PA-28-140, 1971", { timeout: slow(15_000) });
-  for (const id of ["fly-this-airplane", "airplane-follow", "airplane-favorite"])
+  for (const id of ["fly-this-airplane", "airplane-alerts", "airplane-favorite"])
     await expect(card.getByTestId("airplane-actions").getByTestId(id)).toBeVisible();
+  await expect(card.getByTestId("airplane-track")).toHaveCount(0);
   await expect(page.getByTestId("airplane-share")).toBeVisible();
   await expect(card.getByTestId("airplane-actions").getByTestId("airplane-share")).toHaveCount(0);
-  for (const tab of ["flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
-  await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
+  for (const tab of ["flight", "flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
+  await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
-  await expect(card.getByTestId("airplane-facts")).toBeHidden(); // on Info alone (the owner, 2026-11-14)
+  await expect(card.getByTestId("airplane-facts")).toBeVisible(); // Info's head alone (the owner, 2026-11-14)
+  await card.getByTestId("airplane-tab-flights").click();
+  await expect(card.getByTestId("airplane-facts")).toBeHidden();
   // Flights: its past flights, each ▶ its replay over this card.
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });
@@ -227,7 +230,7 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(card.locator("[data-figure]").first()).toBeVisible();
 });
 
-test("an N-number in the air says so, with its height and speed, and Track opens its flight", async ({ page }) => {
+test("an N-number in the air says so, with its height and speed, and Track opens its one card on its flight", async ({ page }) => {
   const answer = await stubbed(page);
   await page.goto("/app/plan");
   await settle(page);
@@ -250,6 +253,14 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   await expect(row.getByTestId("search-airplane-live")).toHaveText("In the air 4,500 ft · 108 kt", { timeout: slow(10_000) });
   await row.getByTestId("search-airplane-track").click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
+  // One card for it (the owner's design, 2026-11-26): its N-number's, in the air Track first, no Fly
+  // This, on its Flight tab with the flight's box in sight.
+  const card = page.getByTestId("airplane-profile");
+  await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
+  await expect(card.getByTestId("airplane-track")).toBeVisible();
+  await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
+  await expect(card.getByTestId("airplane-tab-flight")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("airplane-profile")).toHaveCount(1);
 });
 
 test("the FPL's airplane field suggests as it is typed: the pilot's own, the type-the-rest row, the registry's, and a pick flies it", async ({
