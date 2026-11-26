@@ -43,6 +43,11 @@ export async function settle(page: Page) {
  *  Its `data-panel` is its own size, under a card too (a card's is on its
  *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
+/** The panel with FPL's foot -- its figures and its tab bar (Brief, Nav
+ *  Log, Routes, More): on a phone's sheet the foot is a fixed bar beside
+ *  the sliding popup, not in it (sheet/FootBar, data-foot-bar), elsewhere
+ *  the panel's own foot. */
+export const sheetFoot = (page: Page) => page.locator('[data-slot="map-panel"], [data-foot-bar]');
 /** Where the cards open: over the side panel, or, on a touch screen as
  *  wide as an iPad on its side, in the inspector at the map's right
  *  (MapPanel, useInspector), the plan staying in the side panel. */

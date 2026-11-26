@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { planFromSearch } from "./oneSearch";
-import { closeCard, grabberTo, inSheet, openPanel, settled, sideDrawer, slow } from "./sheetHelpers";
+import { closeCard, grabberTo, inSheet, openPanel, settled, sideDrawer, sheetFoot, slow } from "./sheetHelpers";
 
 /**
  * The route in the map's sheet: its field and FPL's timeline, its
@@ -102,7 +102,7 @@ export async function controlsInSight(page: Page) {
  *  owner, 2026-11-22: "route option can show in the tab bar"), which says
  *  whether the suggested routes are out (aria-pressed). */
 export async function routeOptionsItem(page: Page): Promise<Locator> {
-  return sideDrawer(page).getByTestId("routes-toggle");
+  return sheetFoot(page).getByTestId("routes-toggle");
 }
 
 /** The suggested routes' chips, put out in the foot's figures' place by

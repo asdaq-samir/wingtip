@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, openNavLog, navLogSheet, settle, sideDrawer, slow } from "./helpers";
+import { grabberTo, openNavLog, navLogSheet, settle, sideDrawer, sheetFoot, slow } from "./helpers";
 
 /**
  * With no airplane picked, the plan shows what the route is -- its
@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 test("no airplane picked: the strip is To and Dist, the nav log its courses and miles, and nothing of a C172", async ({ page }) => {
   await page.goto("/app/plan?dep=KUGN&dest=KOSH");
   await settle(page);
-  const strip = sideDrawer(page).getByTestId("flight-line");
+  const strip = sheetFoot(page).getByTestId("flight-line");
   await expect(strip).toContainText(/DIST/i, { timeout: slow(60000) });
   await expect(strip.getByTestId("navlog-ete")).toHaveCount(0);
   await expect(strip.getByTestId("navlog-fuel")).toHaveCount(0);

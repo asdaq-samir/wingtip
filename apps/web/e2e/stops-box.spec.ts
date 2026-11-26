@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, openPanel, settle, sideDrawer, slow, openRoute, typeRoute, openBriefMenu } from "./helpers";
+import { controlsInSight, openPanel, settle, sideDrawer, sheetFoot, slow, openRoute, typeRoute, openBriefMenu } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -65,8 +65,8 @@ test("the route's box is round, one line tall for a short route and the panel's 
   const boxAt = (await box.boundingBox())!,
     panelAt = (await sideDrawer(page).boundingBox())!;
   expect(panelAt.x + panelAt.width - (boxAt.x + boxAt.width)).toBeLessThanOrEqual(16);
-  const brief = (await sideDrawer(page).getByTestId("route-brief").boundingBox())!;
-  const share = (await sideDrawer(page).getByTestId("share-route").boundingBox())!;
+  const brief = (await sheetFoot(page).getByTestId("route-brief").boundingBox())!;
+  const share = (await sheetFoot(page).getByTestId("share-route").boundingBox())!;
   // Share sits below the box, as the Brief does.
   expect(share.y).toBeGreaterThanOrEqual(boxAt.y + boxAt.height);
   expect(brief.y).toBeGreaterThanOrEqual(boxAt.y + boxAt.height);

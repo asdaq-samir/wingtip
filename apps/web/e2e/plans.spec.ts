@@ -13,6 +13,7 @@ import {
   openTab,
   settle,
   sideDrawer,
+  sheetFoot,
   slow,
   openPanel,
 } from "./helpers";
@@ -269,14 +270,14 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   // The figures at half, under its profile (on a phone the pill is the
   // one row since the fixed snap points): the book's time, marked "≈".
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
 
   // All the way up: the cruising altitude's chip red, and no line under
   // the route.
   await grabberTo(page, "full");
   // The figures stay, the book's marked "≈", where why stood in their
   // place in red; why is the Brief's, its Go / No-Go's altitude red.
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
   await openTab(page, "Brief");
   const altitude = sideDrawer(page).getByTestId("verdict-altitude");
   await expect(altitude).toHaveAttribute("data-finding", "stop");

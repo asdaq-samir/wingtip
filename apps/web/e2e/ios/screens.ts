@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { controlsInSight, openNavLog, grabberTo, openSection, openTab, settle, sideDrawer, slow } from "../helpers";
+import { controlsInSight, openNavLog, grabberTo, openSection, openTab, settle, sideDrawer, sheetFoot, slow } from "../helpers";
 import { markWith } from "../marks";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
@@ -37,7 +37,7 @@ export const SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("route-editor").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
         timeout: slow(30000),
       });
-      await expect(sideDrawer(page).getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
+      await expect(sheetFoot(page).getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
     },
   },
   {
@@ -46,7 +46,7 @@ export const SCREENS: Screen[] = [
     name: "route panel, half way",
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=full`);
-      await expect(sideDrawer(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
+      await expect(sheetFoot(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
       await controlsInSight(page);
       // The plan in, its figures whole: not judged fading in.
       await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(30000) });

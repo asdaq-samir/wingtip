@@ -7,6 +7,7 @@ import {
   openPanel,
   settle,
   sideDrawer,
+  sheetFoot,
   slow,
   tapTheChart,
   grabberTo,
@@ -33,7 +34,7 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   // two different airports.
   await page.goto("/app/plan?dep=C81&dest=C81");
   await grabberTo(page, "full");
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
   // Its name as shown, "Aloft", and in full words to a screen reader
   // (TripFigures' dt: the shorthand hidden from it, the said words beside).
   const aloft = sideDrawer(page).locator('[data-slot="section-summary"] dt').nth(1);
@@ -47,7 +48,7 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   await page.getByTestId("local-duration").click();
   await page.getByRole("option", { name: "2h", exact: true }).click();
   await expect(page).toHaveURL(/[?&]local_min=120/);
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("2h", { timeout: slow(30000) });
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText("2h", { timeout: slow(30000) });
 });
 
 test("plan page: every popup the map opens dismisses the same way", async ({ page }) => {

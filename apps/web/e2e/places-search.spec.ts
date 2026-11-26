@@ -1,5 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { clearTheRoute, closeCard, grabberTo, inSheet, searchAirports, settle, showTabs, sideDrawer, slow, frontSheet } from "./helpers";
+import {
+  clearTheRoute,
+  closeCard,
+  grabberTo,
+  inSheet,
+  searchAirports,
+  settle,
+  showTabs,
+  sideDrawer,
+  sheetFoot,
+  slow,
+  frontSheet,
+} from "./helpers";
 import { card, cardWeather, holdPlannerSearch } from "./placeCard";
 import { ownHomeBase, showPage } from "./oneSearch";
 
@@ -114,7 +126,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await grabberTo(page, "peek");
   await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/dep=/);
@@ -124,7 +136,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   // 2026-11-18): the first row is the airplane's strip alone; the route
   // just cleared comes back by the toast's Undo, no Undo of the box's own
   // (the owner, 2026-11-23: "No undo needed next to toggle").
-  await expect(sideDrawer(page).getByTestId("share-route")).toHaveCount(0);
+  await expect(sheetFoot(page).getByTestId("share-route")).toHaveCount(0);
   await expect(sideDrawer(page).getByTestId("route-undo")).toHaveCount(0);
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");

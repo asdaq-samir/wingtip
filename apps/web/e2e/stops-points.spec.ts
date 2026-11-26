@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, sheetFoot, slow, openRoute, typeRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -71,13 +71,13 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
   await page.getByTestId("point-menu-direct").click();
   await expect(page).toHaveURL(/[?&]direct=KDLH(&|$)/);
   await expect(page).not.toHaveURL(/[?&]stops=/);
-  await expect(sideDrawer(page).getByTestId("direct-strip")).toContainText("Direct to KDLH");
+  await expect(sheetFoot(page).getByTestId("direct-strip")).toContainText("Direct to KDLH");
   await expect(route.getByRole("region", { name: "KMSN · Arrive" })).toHaveCount(0);
   await expect(duluth).toContainText("Direct To");
-  await sideDrawer(page).getByTestId("direct-cancel").click();
+  await sheetFoot(page).getByTestId("direct-cancel").click();
   await expect(page).toHaveURL(stopsAre("KMSN"));
   await expect(page).not.toHaveURL(/[?&](direct|was)=/);
-  await expect(sideDrawer(page).getByTestId("direct-strip")).toHaveCount(0);
+  await expect(sheetFoot(page).getByTestId("direct-strip")).toHaveCount(0);
 
   // Taken out from its menu: the route without it.
   await inSheet(page, madison.getByTestId("point-menu"));

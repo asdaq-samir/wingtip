@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer, frontSheet, grabberTo } from "./helpers";
+import { settle, sideDrawer, sheetFoot, frontSheet, grabberTo } from "./helpers";
 import { watchFor } from "./pacing";
 
 /**
@@ -79,10 +79,10 @@ test("on a phone a route's figures stay in sight at the sheet's foot from half a
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   // At the pill the figures are the pill, in the route's row's place (the
   // owner, 2026-11-11, the canvas's b; sheet-page-toggle.spec), and from half on.
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));
     for (const f of seen) {

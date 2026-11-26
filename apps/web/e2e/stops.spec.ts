@@ -14,6 +14,7 @@ import {
   settle,
   showTabs,
   sideDrawer,
+  sheetFoot,
   slow,
 } from "./helpers";
 import { stopsAre } from "./stopsParam";
@@ -94,17 +95,17 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
     await expect(page).toHaveURL(new RegExp(`[?&]takeoff=[^&]*KMSN(%3A|:)${name}(%2C|,|&|$)`), { timeout: 2000 });
   }).toPass({ timeout: slow(20000) });
   // The figures to the next landing, KMSN, its time that flight's; a tap on To, the destination and the whole route's distance.
-  await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KMSN", { timeout: slow(30000) });
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
+  await expect(sheetFoot(page).getByTestId("navlog-to")).toHaveText("KMSN", { timeout: slow(30000) });
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
   await expect(sideDrawer(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Leg, /);
   await sideDrawer(page).getByTestId("to-toggle").click();
-  await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KDLH");
+  await expect(sheetFoot(page).getByTestId("navlog-to")).toHaveText("KDLH");
   await expect(sideDrawer(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Dest, /);
   await sideDrawer(page).getByTestId("to-toggle").click();
 
   // At half (a phone's pill is one row), the figures: the distance among them.
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+/);
+  await expect(sheetFoot(page).getByTestId("flight-line")).toContainText(/\d+/);
 
   // Taken off again from its menu, a tap on its pill (RoutePill): the
   // route as it was, opened again to edit (at half it folds).
