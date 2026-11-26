@@ -175,7 +175,13 @@ export function FoldSection({
         )}
       </OnTheLine>
       {/* Base UI's own panel animation, the rows under it moving up as it
-          folds (none with Reduce Motion, index.css). */}
+          folds (none with Reduce Motion, index.css). Clipped while it
+          grows and from the first frame it shrinks, open to the route's
+          line past its foot only once grown: overflow, a discrete
+          property, turns visible a fold's time after it opens. Base UI
+          marks only the first frame (data-starting-style), so the fixes
+          were drawn whole over the Takeoff row under them while the room
+          for them grew (the owner's iPhone recording, 2026-11-26). */}
       <CollapsibleContent
         className={cn(
           // Inside the card the fixes' words are inset 12 from its sides,
@@ -183,7 +189,7 @@ export function FoldSection({
           // the owner, 2026-11-25: "Go ahead", rows of 48 for a name and
           // an altitude).
           pill && "[&_[data-words]]:min-h-10 [&_[data-words]]:pl-3 [&_[data-words]]:pr-6!",
-          "h-(--collapsible-panel-height) overflow-hidden [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0",
+          "h-(--collapsible-panel-height) overflow-hidden [transition:height_var(--motion-fade)_var(--motion-sheet-ease),overflow_0s_var(--motion-fade)] [transition-behavior:allow-discrete] [&[data-open]:not([data-starting-style]):not([data-ending-style])]:overflow-visible data-ending-style:h-0 data-ending-style:[transition:height_var(--motion-fade)_var(--motion-sheet-ease),overflow_0s] data-starting-style:h-0",
         )}
       >
         {children}
