@@ -79,12 +79,12 @@ describe("the floating bar", () => {
     expect(screen.getByTestId("route-more").textContent).toBe("More");
   });
 
-  test("the words are the tab bar's 13 on its 18 line, regular, on one line", () => {
+  test("the words are 11 on 13, medium, on one line", () => {
     cardBar();
     const word = screen.getByText("Info");
-    // The bars' own role (tab-bar, 13/18), the scale audit's (owner, 2026-11-21).
-    expect(word.className).toContain(TEXT.tabBar);
-    expect(word.className).toContain("font-normal");
+    // iOS 26's tab bar's words under the 24 glyph (the owner, 2026-11-26).
+    expect(word.className).toContain(TEXT.caption);
+    expect(word.className).toContain("font-medium");
     expect(word.className).toContain("whitespace-nowrap");
   });
 });
