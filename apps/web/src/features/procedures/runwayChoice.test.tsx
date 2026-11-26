@@ -48,4 +48,18 @@ describe("a runway end's note in its menu", () => {
   it("no crosswind, nothing said", () => {
     expect(endChoice(runway, end, "05", () => fit({ crosswindKt: 0 })).note).toBeNull();
   });
+
+  it("the worst fit leads its ring and note: too short, then a crosswind past the demonstrated, a tailwind, little to spare", () => {
+    const all = { short: true, crosswindOver: true, tailwindKt: 10, close: true };
+    const short = endChoice(runway, end, "05", () => fit(all));
+    expect([short.fit, short.note, short.ring]).toEqual(["short", "Too short today", "ring-2 ring-destructive"]);
+    expect(endChoice(runway, end, "05", () => fit({ ...all, short: false })).fit).toBe("crosswind");
+    expect(endChoice(runway, end, "05", () => fit({ ...all, short: false, crosswindOver: false })).fit).toBe("tailwind");
+    const close = endChoice(runway, end, "05", () => fit({ close: true, crosswindKt: 0 }));
+    expect([close.fit, close.note, close.ring]).toEqual(["close", "Little to spare", "ring-2 ring-caution"]);
+    // Its words say all that holds, after its number.
+    expect(short.words).toBe(`Runway 14${short.detail}`);
+    expect(short.detail).toContain("tailwind 10 knots");
+    expect(short.detail).toContain("too short today");
+  });
 });

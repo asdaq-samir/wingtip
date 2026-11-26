@@ -21,7 +21,7 @@ test("a field's traffic pattern is picked by its runway, kept in the address and
   await runway.click();
   // The pill says the runway picked.
   const pill = destination.getByTestId("runway-pill");
-  await expect(pill).toHaveAccessibleName(new RegExp(`: Runway ${name}\\b`));
+  await expect(pill).toHaveAccessibleName(new RegExp(`^RWY ${name}\\b`));
   await expect(page).toHaveURL(new RegExp(`[?&]pattern=[^&]*KDLH(%3A|:)${name}(%2C|,|&|$)`));
   await expect.poll(circuitsOf(page), { timeout: slow(10000) }).toContain("pattern-at-KDLH");
 
@@ -76,7 +76,7 @@ test("the destination's runway into the wind is picked as the route comes in, an
   await openTab(page, "Nav Log");
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(/: Runway 9, into the wind/, { timeout: slow(60_000) });
+  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(/^RWY 9, into the wind/, { timeout: slow(60_000) });
   await expect(page).not.toHaveURL(/NONE/);
   await expect(page).not.toHaveURL(/[?&]procs=/);
   await openRunways(kdlh);
@@ -88,7 +88,7 @@ test("the destination's runway into the wind is picked as the route comes in, an
   await settle(page);
   await openTab(page, "Nav Log");
   await openRoute(page);
-  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(new RegExp(`: Runway ${name}\\b`), { timeout: slow(20000) });
+  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(new RegExp(`^RWY ${name}\\b`), { timeout: slow(20000) });
 });
 
 /**

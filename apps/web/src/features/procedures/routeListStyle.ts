@@ -33,13 +33,14 @@ export const FIELD_GAP = "mb-3";
 export const CHIP = cn(CAPSULE_HIT, "h-8 min-w-11 justify-center px-3 font-normal", GLASS_PICKED, TEXT.detail);
 
 /** The slim pill of a field's Landing and Takeoff on FPL's list (the owner,
- *  2026-11-25: "Old pills style should be replaced with the slimmer route
- *  box pill style"): the route box's N-number and altitude pills'
- *  (navlog/pillLook's PILL) 24 tall, its fill and round ends, its words
- *  the row's at 16 on a phone, black, as theirs are; 10 above and below
- *  make its 44 (index.css's hit-y), nothing grown that is seen. */
+ *  2026-11-25: "the slimmer route box pill style"): the route box's pills'
+ *  (navlog/pillLook's PILL) fill and round ends, at least 24 tall and
+ *  growing with larger text so its words keep a little room above and
+ *  below, its words the row's at 16 on a phone. Its area reaches 44 each
+ *  way (index.css's hit-y; and wide, as Explain's, where "RWY" has gone
+ *  and the pill is only a number), nothing grown that is seen. */
 export const SLIM_PILL = cn(
-  "relative h-6 shrink-0 gap-0.5 rounded-full bg-foreground/8 px-2 font-normal text-foreground hit-y-2.5 dark:bg-foreground/8",
+  "relative min-h-6 shrink-0 gap-0.5 rounded-full bg-foreground/8 px-2 py-0.5 font-normal text-foreground hit-y-2.5 [--hit-x:min(0px,calc((100%_-_44px)/2))] dark:bg-foreground/8",
   TEXT.row,
   "pointer-coarse:text-[length:1rem]",
 );

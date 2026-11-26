@@ -76,19 +76,18 @@ export function RunwayPill({
             size="inline"
             type="button"
             className={cn(SLIM_PILL, shown?.ring)}
-            aria-label={`${label}: ${shown ? shown.words : "none picked"}${note ? `, ${note}` : ""}, pick another`}
+            aria-label={`${shown ? `RWY ${shown.id}${shown.detail}` : "RWY, none picked"}, ${label}${note ? `, ${note}` : ""}, pick another`}
             data-testid="runway-pill"
             data-fit={shown?.fit}
           />
         }
       >
-        {/* The runway alone, "≋26R", no "RWY" before it (the owner,
-            2026-11-25, so Land's and Takeoff's pills keep their line at
-            KLAS), but where its line has room, measured (`roomy`, LineRoom;
-            the owner: "Rwy back when have space"); its name says "Runway 26R".
-            The word drawn, not text: as text it was words the pill's name
-            ("…: Runway 26R, pick another") does not hold, which axe calls a
-            label not in its name (label-content-name-mismatch, serious). */}
+        {/* The runway alone, "≋26R", with "RWY" before it only where its
+            line has room, measured (`roomy`, LineRoom; the owner,
+            2026-11-25), so Land's and Takeoff's pills keep their line. The
+            word is drawn, not text, and the name starts "RWY 26R" whether it
+            shows or not: what is seen is in the name (Voice Control's "Tap
+            RWY 26R"; axe's label-content-name-mismatch). */}
         {(roomy || !shown) && <span data-rwy="" aria-hidden="true" className="before:content-['RWY']" />}
         {shown ? <span className="flex items-center gap-0.5 font-semibold text-tint">{shown.face}</span> : <span>—</span>}
       </DropdownMenuTrigger>
