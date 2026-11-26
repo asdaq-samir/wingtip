@@ -267,7 +267,14 @@ export default function FlightInputs({
               onClick={() => (tailNow ? openAirplaneProfile(tailNow) : field.current?.focus())}
               data-testid="aircraft-info"
             >
-              <ICON.info aria-hidden="true" />
+              {/* Filled, iOS's info.circle.fill (the owner, 2026-11-26: "Can
+                  info button be more fancy?"): the disc a filled button's
+                  fill and its "i" that button's words, so it reads in every
+                  look, light and dark. */}
+              <ICON.info
+                aria-hidden="true"
+                className="[&_circle]:fill-primary [&_circle]:stroke-primary [&_path]:stroke-primary-foreground"
+              />
             </InputGroupButton>
           </InputGroupAddon>
         </ComboboxInput>
