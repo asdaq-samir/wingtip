@@ -1,7 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { inSheet, settle, slow } from "./helpers";
 import { FAA } from "./faaRecord";
-import { extrasOn } from "./extras";
 
 /**
  * An airplane's card opened when it is not heard now, as the owner's
@@ -63,10 +62,7 @@ test.afterEach(async ({ page }) => {
 test("an airplane not heard now has its registration and type from the FAA's record, its owner beside its label, its picture as wide as the card and its last row reachable", async ({
   page,
 }) => {
-  // Its flights are another airplane's history, offered only with Other
-  // Airplanes on in Settings' Extras (the feature review, 2026-11-21:
-  // parked, off to start); off, the sketch says "Not heard today".
-  await extrasOn(page, "otherAirplanes");
+  // Every airplane's flights are offered, public (the owner, 2026-11-26).
   await notHeard(page);
   await page.goto("/app/plan?flight=a89c1e");
   await settle(page);

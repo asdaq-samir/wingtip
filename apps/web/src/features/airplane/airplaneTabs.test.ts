@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { airplaneTabs } from "./airplaneTabs";
 
 /** A registered airplane on the ground, opened by its N-number from the search. */
-const GROUND = { hex: "a89c1e", tail: "N654FL", history: true, flyable: true, figures: false, airborne: false, picked: null };
+const GROUND = { hex: "a89c1e", tail: "N654FL", flyable: true, figures: false, airborne: false, picked: null };
 
 describe("the one airplane card's tabs (the owner's design, 2026-11-26)", () => {
   it("are Flight, Flights, Info and Figures for an N-number it can fly, opened on Info from the search", () => {
@@ -24,12 +24,12 @@ describe("the one airplane card's tabs (the owner's design, 2026-11-26)", () => 
     expect(airplaneTabs({ ...GROUND, tail: null, flyable: false })).toEqual({ tabs: ["flight", "flights"], tab: "flight" });
   });
 
-  it("leave out Flight with no ICAO address, and Flights where its history is not offered", () => {
-    expect(airplaneTabs({ ...GROUND, hex: null, history: false }).tabs).toEqual(["info", "figures"]);
+  it("leave out Flight with no ICAO address", () => {
+    expect(airplaneTabs({ ...GROUND, hex: null }).tabs).toEqual(["flights", "info", "figures"]);
     expect(airplaneTabs({ ...GROUND, hex: null }).tabs).toEqual(["flights", "info", "figures"]);
   });
 
   it("are Info alone for an N-number the registry does not hold nor the pilot flies", () => {
-    expect(airplaneTabs({ ...GROUND, hex: null, history: false, flyable: false, figures: true })).toEqual({ tabs: ["info"], tab: "info" });
+    expect(airplaneTabs({ ...GROUND, hex: null, flyable: false, figures: true })).toEqual({ tabs: ["flights", "info"], tab: "info" });
   });
 });

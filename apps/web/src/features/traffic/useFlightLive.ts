@@ -51,7 +51,7 @@ const townOf = (field: { city?: string | null; region?: string | null; name?: st
  * internet data from adsb.lol's receivers: for knowing what is about, not
  * for avoiding it.
  */
-export function useFlightLive(hex: string | null, history: boolean) {
+export function useFlightLive(hex: string | null) {
   const latest = useShownStore(useTracking, (s) => (hex && s.latest?.plane.hex === hex ? s.latest : null));
   const { data: detail, isLoading: detailLoading } = useQuery({ ...flightQuery(hex ?? ""), enabled: !!hex, subscribed: useShown() });
   // Its flight number's route, asked once a callsign is heard, with where
@@ -96,13 +96,13 @@ export function useFlightLive(hex: string | null, history: boolean) {
   const registered = [detail?.faa?.manufacturer, detail?.faa?.model].filter(Boolean).join(" ") || null;
   const model = detail?.description ? nameCase(detail.description) : (detail?.type ?? plane?.type ?? registered);
   // Its flights (the Flights tab's list, the same question): the newest is
-  // the one it is on, or, not heard now, its last -- sketched. Another's
-  // only while Other Airplanes is on (lib/airplane/ownAirplane).
+  // the one it is on, or, not heard now, its last -- sketched; every
+  // airplane's, its flights public (the owner, 2026-11-26).
   const {
     data: past,
     isError: pastFailed,
     isLoading: pastLoading,
-  } = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex && history });
+  } = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex });
   const newest = past?.pages[0]?.flights?.[0] ?? null;
   const last = plane ? null : newest;
   // Where it has flown: today's trace while it is heard, or where it landed
@@ -115,13 +115,7 @@ export function useFlightLive(hex: string | null, history: boolean) {
   // The sketch's words where there is nothing to draw: its flights not had
   // is not "No flights heard" (the owner's iPhone, 2026-11-13).
   const notHad = pastFailed || lastFailed || (!newest && (past?.pages[0]?.unread_days ?? 0) > 0);
-  const sketchNote = !history
-    ? "Not heard today"
-    : notHad
-      ? "Its flights could not be fetched."
-      : past
-        ? "No flights heard"
-        : "Fetching its flights…";
+  const sketchNote = notHad ? "Its flights could not be fetched." : past ? "No flights heard" : "Fetching its flights…";
   // Its ends: where its trace says it took off, else its flight number's
   // route's first, and the route's last where it is flying the route; not
   // heard, its last flight's ends.

@@ -55,7 +55,7 @@ export default function InfoTab({
           />
         </div>
       )}
-      <AirplaneInfo record={record} details={card.details} detailsFailed={card.detailsFailed} history={card.history} />
+      <AirplaneInfo record={record} details={card.details} detailsFailed={card.detailsFailed} />
     </>
   );
 }

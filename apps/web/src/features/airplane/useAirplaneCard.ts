@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { airplaneDetailsQuery, airplanePhotoQuery } from "../../lib/airplane/details";
 import { useTailLookup } from "../../lib/airplane/lookup";
-import { useAirplaneHistory } from "../../lib/airplane/ownAirplane";
 import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import { aircraftKind } from "../../lib/aircraftKind";
 import type { KeptAircraft } from "../../lib/preferences";
@@ -27,12 +26,9 @@ export function useAirplaneCard(tail: string, known: string | null = null) {
   // above, so the card never waits on them (lib/airplane/details).
   const details = useQuery({ ...airplaneDetailsQuery(tail), enabled: !!tail });
   const photo = useQuery({ ...airplanePhotoQuery(tail), enabled: !!tail });
-  // Its flights, Alerts and history: the pilot's own always, another's while Other Airplanes is
-  // on in Settings' Extras (lib/airplane/ownAirplane), else neither offered nor fetched.
-  const history = useAirplaneHistory(hex, tail);
   // Its flights, newest first: the Flights tab's list (PastFlights, the same query) and the status
   // line's last landing. Undefined while still being looked for, back through the archive.
-  const past = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex && history });
+  const past = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex });
   const listed = past.data?.pages.flatMap((page) => page.flights ?? []);
   const flights = listed?.length || (past.data && !past.hasNextPage) ? listed : undefined;
   // Kept as traffic is kept (useFlightLive): by its address, its N-number its name.
@@ -50,8 +46,6 @@ export function useAirplaneCard(tail: string, known: string | null = null) {
     detailsFailed: details.isError,
     photo: photo.isError ? null : photo.data,
     hex,
-    /** Whether its Alerts, flights and history are offered (useAirplaneHistory). */
-    history,
     /** Under its name: "Piper PA-28-140, 1971", the registry's; null where it has none. */
     line,
     status: statusLine(inAir, flights, now),

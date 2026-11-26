@@ -13,12 +13,11 @@ import { browserStorage, keptAsIs } from "./storage";
  * until the switch is on again. Kept on this device, as the inner settings
  * are.
  */
-type Extra = "atcCopilot" | "otherAirplanes" | "modelWeather" | "threeD" | "trainingTools";
+type Extra = "atcCopilot" | "modelWeather" | "threeD" | "trainingTools";
 
 /** Each switch's row in Settings' Extras, in the order shown. */
 export const EXTRAS: { key: Extra; title: string; description: string }[] = [
   { key: "atcCopilot", title: "ATC Copilot", description: "Comms Assist, ATC alerts and the clearance readback check" },
-  { key: "otherAirplanes", title: "Other Airplanes", description: "Follow, past flights and history of airplanes not yours" },
   { key: "modelWeather", title: "Model Weather", description: "Wind and weather fields on the map's Weather menu" },
   { key: "threeD", title: "3D", description: "The map's 3D button: terrain and airspace stood up" },
   { key: "trainingTools", title: "Training Tools", description: "Flash cards, holding entries and lost comms practice" },
@@ -26,13 +25,7 @@ export const EXTRAS: { key: Extra; title: string; description: string }[] = [
 
 type Extras = Record<Extra, boolean> & { set: (key: Extra, on: boolean) => void };
 
-const ALL_OFF: Record<Extra, boolean> = {
-  atcCopilot: false,
-  otherAirplanes: false,
-  modelWeather: false,
-  threeD: false,
-  trainingTools: false,
-};
+const ALL_OFF: Record<Extra, boolean> = { atcCopilot: false, modelWeather: false, threeD: false, trainingTools: false };
 
 export const useExtras = create<Extras>()(
   persist((set) => ({ ...ALL_OFF, set: (key, on) => set({ [key]: on } as Partial<Extras>) }), {

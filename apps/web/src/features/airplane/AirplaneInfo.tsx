@@ -27,15 +27,12 @@ export default function AirplaneInfo({
   record,
   details,
   detailsFailed,
-  history: offered,
 }: {
   record: AircraftRegistration | null;
   details: AirplaneDetails | undefined;
   detailsFailed: boolean;
-  /** Whether its usual base, NTSB cases, past owners and documents are offered (useAirplaneHistory). */
-  history: boolean;
 }) {
-  const history = offered ? <AirplaneHistory details={details} failed={detailsFailed} /> : null;
+  const history = <AirplaneHistory details={details} failed={detailsFailed} />;
   const full = details?.registration ?? record;
   if (!full)
     return (

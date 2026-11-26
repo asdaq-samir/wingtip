@@ -3,7 +3,6 @@ import { useAddress } from "../../lib/address";
 import { closeAirplaneProfile } from "../../lib/airplane/profileStore";
 import { useTailLookup } from "../../lib/airplane/lookup";
 import { profileOfRegistered } from "../../lib/aircraftChoice";
-import { useAirplaneHistory } from "../../lib/airplane/ownAirplane";
 import { track, useTracking } from "../../lib/map/position/tracking";
 import { usePreferences } from "../../lib/preferences";
 import { shareOrCopy } from "../../lib/share";
@@ -36,12 +35,11 @@ export function useAirplaneCardModel({
   // Its ICAO address: the one it was opened by, else the registry's for its N-number.
   const registry = useTailLookup(openTail, false);
   const hex = openHex ?? registry.hex;
-  const live = useFlightLive(hex, useAirplaneHistory(hex, openTail));
+  const live = useFlightLive(hex);
   // Its N-number: the one it was opened by, else its US registration from the flight's detail.
   const tail = openTail ?? live.tail;
   const vm = useAirplaneProfile(tail ?? "", hex);
   const { card } = vm;
-  const history = useAirplaneHistory(hex, tail);
   // Opened by its N-number while the live find has it in the air: tracked,
   // as traffic tapped on the map is, so the card shows its flight -- without
   // the map moving to it, which Track asks for. Once a card, so a Track let
@@ -65,7 +63,7 @@ export function useAirplaneCardModel({
   const flyable = !!tail && ((!!card.record && profileOfRegistered(card.record) !== null) || vm.owned || vm.flying);
   // Each tab opening at its own top (useTabScroll).
   const [picked, pick] = useState<AirplaneTab | null>(null);
-  const { tabs, tab } = airplaneTabs({ hex, tail, history, flyable, figures, airborne, picked });
+  const { tabs, tab } = airplaneTabs({ hex, tail, flyable, figures, airborne, picked });
   const [, setTop] = useTabScroll(tab);
   const kept = card.kept ?? live.kept;
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));
@@ -97,7 +95,6 @@ export function useAirplaneCardModel({
     following,
     follow: (on: boolean) => useTracking.setState({ follow: on }),
     flyable,
-    history,
     tabs,
     tab,
     pick,
@@ -119,7 +116,7 @@ export function useAirplaneCardModel({
     close,
     /** One of its past flights' cards, its replay and debrief, over this one (PastFlightCard, `?flight=&past=`). */
     openPast: (id: number) => {
-      if (hex && history) void setAddress({ flight: hex, past: id, place: null, at: null, near: null, nearAt: null, nearName: null });
+      if (hex) void setAddress({ flight: hex, past: id, place: null, at: null, near: null, nearAt: null, nearName: null });
     },
     /** A field's card over this one: an end of its flight tapped. */
     openAirport: (ident: string) => void setAddress({ place: ident, at: null }),

@@ -1342,8 +1342,9 @@ second home; the web first (`features/pilot`, `features/settings`,
 parked features' switches are one Settings group, Extras, right after In
 Flight on every app: a stock switch each, its title and a one-line
 description, all off to start (the web's `lib/extras`, the iPhone's
-`Extra`, Android's `Extras`, the same keys). Web: ATC Copilot, Other
-Airplanes, Model Weather, 3D, Training Tools. iPhone: ATC Copilot, ADS-B
+`Extra`, Android's `Extras`, the same keys). Web: ATC Copilot, Model Weather, 3D, Training Tools (every
+airplane's flights, alerts and history shown, public, the owner,
+2026-11-26; the phones keep Other Airplanes until they follow). iPhone: ATC Copilot, ADS-B
 Receiver, Other Airplanes, Model Weather, Training Tools. Android: ATC
 Copilot, ADS-B Receiver, Other Airplanes, Model Weather, Ask. Off, a
 feature's controls are not drawn, nothing of it starts or is fetched,

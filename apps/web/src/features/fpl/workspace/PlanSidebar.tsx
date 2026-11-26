@@ -17,7 +17,6 @@ import type { KeptAircraft } from "../../../lib/preferences";
 import { afterRouteDrawn } from "../../../lib/routeDrawn";
 import Waits from "./Waits";
 import SearchBox from "../search/SearchBox";
-import { useAirplaneHistory } from "../../../lib/airplane/ownAirplane";
 
 /** The one search's parts on chunks of their own, out of the first load
  *  (its 1.10 MB budget, scripts/first-load.mjs): its own page, drawn once
@@ -113,11 +112,9 @@ export default function PlanSidebar({
     }, 1500);
   }, []);
   // An airplane's past flight, over its card (the one airplane card, features/airplane, which the
-  // page holds), only where its history is offered (useAirplaneHistory: the pilot's own, or Other
-  // Airplanes on).
-  const history = useAirplaneHistory(flight);
+  // page holds).
   const flightCard =
-    flight && past && history ? <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} /> : null;
+    flight && past ? <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} /> : null;
   // A stop asked for (FPL's Add a Stop) while the card is up, opened from
   // the search's page or the map: its Add Stop is the pick, put in where
   // the pilot asked, as a row tapped in the search would be.

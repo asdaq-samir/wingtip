@@ -34,7 +34,7 @@ const COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"] as 
 /** Its actions, the first filled, by its state (the owner's design of
  *  2026-11-26): in the air Track (the map keeps it in the middle), on the
  *  ground Fly This for an airplane the planner can fly; then Alerts (takes
- *  off, lands, comes near) where its history is offered, and Favorite. */
+ *  off, lands, comes near) and Favorite. */
 function Actions({ m }: { m: AirplaneCardModel }) {
   const { vm, live, hex } = m;
   const first = m.airborne ? (
@@ -69,7 +69,7 @@ function Actions({ m }: { m: AirplaneCardModel }) {
     />
   ) : null;
   // Alerts by the ICAO address: greyed for an N-number the registry gives none.
-  const alerts = !m.history ? null : hex ? (
+  const alerts = hex ? (
     <AircraftAlertMenu
       key="alerts"
       hex={hex}

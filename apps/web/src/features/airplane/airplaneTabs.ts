@@ -3,7 +3,7 @@ export type AirplaneTab = "flight" | "flights" | "info" | "figures";
 
 /**
  * The tabs the one airplane card has, and the one it is on: Flight with an
- * ICAO address to follow it by; Flights where its history is offered;
+ * ICAO address to follow it by; Flights wherever it has an address or an N-number;
  * Info for an N-number; Figures for an airplane the planner can fly. It
  * opens on Figures where they were asked for, on Flight while it flies,
  * else on Info -- until the pilot picks one --
@@ -12,7 +12,6 @@ export type AirplaneTab = "flight" | "flights" | "info" | "figures";
 export function airplaneTabs(a: {
   hex: string | null;
   tail: string | null;
-  history: boolean;
   flyable: boolean;
   /** Opened on Figures: a figure asked for, or the plan's N-number's ⓘ. */
   figures: boolean;
@@ -21,7 +20,7 @@ export function airplaneTabs(a: {
 }): { tabs: AirplaneTab[]; tab: AirplaneTab } {
   const tabs: AirplaneTab[] = [
     ...(a.hex ? (["flight"] as const) : []),
-    ...(a.history && (a.hex || a.tail) ? (["flights"] as const) : []),
+    ...(a.hex || a.tail ? (["flights"] as const) : []),
     ...(a.tail ? (["info"] as const) : []),
     ...(a.flyable ? (["figures"] as const) : []),
   ];

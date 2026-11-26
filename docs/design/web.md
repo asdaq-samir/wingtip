@@ -1939,7 +1939,7 @@ account), then Airplanes (the checklists inside), Flights, Logbook,
 Minimums, Documents (§13a), Training (Coach, and Practice while Extras has Training Tools
 on), the Emergency Assistant and Settings. Settings (`features/settings`)
 is one page pushed over You (`ConsolePages`): Map, In Flight
-(Alerts; ATC), Extras (`ExtrasGroup`: ATC Copilot, Other Airplanes,
+(Alerts; ATC), Extras (`ExtrasGroup`: ATC Copilot,
 Model Weather, 3D and Training Tools, a Base UI Switch each with its
 one line, all off to start; `lib/extras`, rules.md §8), Data and Help & About (Guide, Status, Log, About,
 Sources, the legal links); `openSettings` is the one way in, and the Map
