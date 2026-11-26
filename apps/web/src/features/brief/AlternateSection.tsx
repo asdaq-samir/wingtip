@@ -43,6 +43,13 @@ function Suggestion({ check, onFile }: { check: AlternateCheck; onFile: () => vo
             <span className={cn("block text-muted-foreground", TEXT.detail)}>
               {`${check.distance_nm} nm · ${check.precision ? "ILS" : "nonprecision"} · ${ceilingAndVisibility(check.ceiling_ft, check.visibility_sm)}`}
             </span>
+            {/* One to check before it is filed says so folded too, as its
+                chip said "Check, file": its own minimums, or under them. */}
+            {check.good !== true && (
+              <span className={cn("block", TEXT.detail, check.good === false ? "font-semibold text-destructive" : "text-caution-ink")}>
+                {standing(check)}
+              </span>
+            )}
           </span>
           <ChevronDown className="size-4 shrink-0 text-tint group-data-panel-open/fold:rotate-180" aria-hidden />
         </CollapsibleTrigger>

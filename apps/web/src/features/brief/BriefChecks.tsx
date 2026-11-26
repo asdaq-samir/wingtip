@@ -7,7 +7,7 @@ import { useTicked, usePreflight } from "./preflight";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import type { VerdictItem, Where } from "../../lib/verdict";
-import { GoToTab } from "../plan";
+import { GoToTab, LEGS } from "../plan";
 
 /** A check the planner does not make, and where the pilot makes it: the
  *  FAA's NOTAM and flow-control feeds need an operator's credentials. */
@@ -28,7 +28,8 @@ interface Elsewhere {
  *  with pages... it should be very clear what's happening with the
  *  tap"): the NOTAMs on this page, the one meaning the overview's NOTAMs
  *  row has; the alternate on Arrive, where an IFR flight files one
- *  (91.169) -- a VFR flight has no such section, so no row. The delays
+ *  (91.169); under VFR, the divert from any leg on FPL's legs, as 91.103(a)
+ *  asks it of every flight not in an airport's vicinity, VFR too. The delays
  *  alone are read on the FAA's own page, the row marked as leaving. */
 const NOTAMS: Elsewhere = { key: "notams", label: "NOTAMs", detail: "Those that matter", at: { tab: "preflight", section: "NOTAMs" } };
 const ALTERNATE: Elsewhere = {
@@ -36,6 +37,12 @@ const ALTERNATE: Elsewhere = {
   label: "Alternate",
   detail: "Filed on Arrive",
   at: { tab: "arrive", section: "Alternate" },
+};
+const DIVERT: Elsewhere = {
+  key: "alternatives",
+  label: "Alternates",
+  detail: "Divert from any leg",
+  at: { tab: "enroute", section: LEGS },
 };
 const DELAYS: Elsewhere = { key: "delays", label: "ATC Delays", detail: "fly.faa.gov", href: "https://www.fly.faa.gov" };
 
@@ -74,7 +81,7 @@ export default function BriefChecks({
   const tick = usePreflight((s) => s.tick);
   // After the Go / No-Go's, the alternate first, beside the route's
   // findings, then the NOTAMs and the delays.
-  const elsewhere = ifr ? [ALTERNATE, NOTAMS, DELAYS] : [NOTAMS, DELAYS];
+  const elsewhere = [ifr ? ALTERNATE : DIVERT, NOTAMS, DELAYS];
   const keys = [...items.map((i) => i.key), ...elsewhere.map((e) => e.key)];
   const seen = keys.filter((key) => looked[key]).length;
   const open = (key: string, at: Where | undefined) => {

@@ -11,9 +11,8 @@ import { useCardSize } from "../../lib/sheetCards";
  * (Briefing's `on_route`) -- and a tap shows those legs on the map, a
  * second puts them away: in the tint, as everything tappable is, and
  * it says so ("Show on Map"). Shown from the Brief all the way up, the
- * Brief comes down to half so the map is in sight (the owner, 2026-11-26),
- * the one place the app lowers a card. None for a hazard the planner
- * could not place.
+ * Brief comes down to half so the map is in sight (the owner, 2026-11-26).
+ * None for a hazard the planner could not place.
  */
 export default function OnRouteRow({ on, briefing, hazardKey }: { on: OnRoute | null | undefined; briefing: Briefing; hazardKey: string }) {
   const toggle = useLegHighlight((s) => s.toggle);

@@ -59,6 +59,10 @@ fn the_radio_calls_word_for_word() {
                 assert_eq!(c[key], w[key], "{} {key}", want["title"]);
             }
             assert_eq!(c.get("listen").cloned().unwrap_or(Value::Bool(false)), w.get("listen").cloned().unwrap_or(Value::Bool(false)));
+            // A call to an untowered field's traffic, and only that, is on its
+            // CTAF (AIM 4-1-9): Dacy's here, not Waukegan Tower's or Ground's.
+            let to_traffic = c["to"].as_str().unwrap().ends_with(" traffic");
+            assert_eq!(c.get("ctaf") == Some(&Value::Bool(true)), to_traffic, "{} ctaf", c["to"]);
             if let Some(part) = w.get("note_has").and_then(Value::as_str) {
                 assert!(c["note"].as_str().unwrap().contains(part), "{}", c["note"]);
             }

@@ -1553,11 +1553,13 @@ verdict, then the Adverse Conditions, When to go at the foot).
    "whether", then the flight watch and the instructor's note.
 
 **Preflight** uses the same grouped rows: Checks (the Go / No-Go's seven
-in the engine's order, then the alternates, NOTAMs on 1800wxbrief.com and
-ATC delays on fly.faa.gov), "N of 10 looked at" at its title's right;
+in the engine's order, then the alternates (Arrive's Alternate under IFR,
+a divert from any leg under VFR), the NOTAMs, which open this page's own
+with 1800wxbrief.com at their foot, and ATC delays on fly.faa.gov), "N of
+10 looked at" at its title's right;
 then Ready to Fly, the engine's line, at most three actions that fix in
 place and every check with its source, the next FAA cycle under it; then
-the NOTAMs that matter, laid open (§6); then Before You Go's folds (the
+the NOTAMs that matter, laid open (§6); then the folds (the
 airspace, the risk, the loading, the flight plan, the passengers, the
 checklists), which the checks' rows open. Option A's TFR and Risk as
 cards of their own, in place of their folds, is still to come.

@@ -63,6 +63,7 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
     /^Weight & Balance/,
     /^Risk/,
     /^Alternates/,
+    /^NOTAMs/,
   ]);
 
   await weather.click();
@@ -85,9 +86,9 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a row each, c
   await planned(page);
   const drawer = sideDrawer(page);
   await openTab(page, "Brief");
-  // VFR: no alternate to file, so no Alternate row (Arrive's is IFR's).
-  await expect(drawer.getByTestId("preflight-count")).toHaveText("0 of 9 looked at");
-  await expect(drawer.getByTestId("check-alternatives")).toHaveCount(0);
+  // VFR: the alternatives are a divert from any leg (91.103(a)).
+  await expect(drawer.getByTestId("preflight-count")).toHaveText("0 of 10 looked at");
+  await expect(drawer.getByTestId("check-alternatives")).toContainText("Divert from any leg");
   // The delays alone leave for the FAA's page; the NOTAMs open this page's own.
   await expect(drawer.getByTestId("check-delays")).toHaveAttribute("href", "https://www.fly.faa.gov");
   await drawer.getByTestId("check-notams").click();
@@ -102,7 +103,7 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a row each, c
   await expect(balance).not.toHaveAttribute("data-open");
   await drawer.getByTestId("verdict-balance").click();
   await expect(balance).toHaveAttribute("data-open", "");
-  await expect(drawer.getByTestId("preflight-count")).toHaveText("3 of 9 looked at");
+  await expect(drawer.getByTestId("preflight-count")).toHaveText("3 of 10 looked at");
 });
 
 test("the weather goes place by place, each TAF read for when the flight is there, the pilot reports where they were made", async ({
