@@ -55,9 +55,9 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
  * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack.
  * Every figure at its full size, never shrunk to fit (the owner,
  * 2026-11-21, at 19.65 px: "1,320 nm" and "⚠ 111.3 gal" read smaller than
- * "262 nm" and "23.1 gal"): the columns are as wide as their content, the
- * first flush left and the last flush right with the rest spread between,
- * and only where even that is too wide is a figure cut short with "…",
+ * "262 nm" and "23.1 gal"): the columns are as wide as their content,
+ * spread from the strip's one edge to the other, every figure centred in
+ * its own (the owner, 2026-11-26), and only where even that is too wide is a figure cut short with "…",
  * the figures always exact, never a rounded form in their place.
  *
  * `tap` makes a figure a button: given the figure and its face (the mark,
@@ -106,7 +106,6 @@ export default function FigureStrip({
   // flips between counts.
   const shown = row && !fits ? Math.max(1, fitting) : figures.length;
   const dropped = (i: number) => i >= shown;
-  const last = shown - 1;
   // As many columns as figures shown, so none ever wraps onto a row of its
   // own (in flight the GPS altitude, a fifth figure in four columns, went
   // under the rest, and the pill showed that row alone).
@@ -131,13 +130,12 @@ export default function FigureStrip({
         data-stacked={!fit || undefined}
       >
         {figures.map((f, i) => {
-          // The first figure flush with the strip's leading edge and the
-          // last with its trailing one, the rest centred in their columns,
-          // so the figures span the sheet's whole width (the owner,
-          // 2026-11-20: "Why aren't we using the full width for the figures
-          // at the bottom?"), where each centred in its fifth left the ends
-          // inset. Not in the two-column stack of a narrow strip.
-          const edge = fit && last > 1 && (i === 0 ? "start" : i === last ? "end" : null);
+          // Every figure centred, its name over its value (the owner,
+          // 2026-11-26: "Center align them all"), where the first was flush
+          // left and the last flush right; the columns, each as wide as its
+          // own figure, still run from the strip's one edge to the other
+          // (the owner, 2026-11-20: "Why aren't we using the full width for
+          // the figures at the bottom?").
           const button = tap?.(
             f,
             <>
@@ -168,12 +166,7 @@ export default function FigureStrip({
               key={f.name}
               inert={dropped(i) || undefined}
               aria-hidden={dropped(i) || undefined}
-              className={cn(
-                "min-w-0 text-center",
-                dropped(i) && "invisible absolute",
-                edge === "start" && "@min-[16rem]/figures:text-left",
-                edge === "end" && "@min-[16rem]/figures:text-right",
-              )}
+              className={cn("min-w-0 text-center", dropped(i) && "invisible absolute")}
             >
               {/* Its names and units a grey that reads on the pill's glass
                   over any chart (WCAG's 4.5:1), where the muted one did not;
@@ -211,8 +204,6 @@ export default function FigureStrip({
                   // A figure that is not a button said wrong in red, its
                   // mark before it (a destination not known, TripFigures).
                   !button && f.alert && "inline-flex w-full items-baseline justify-center text-destructive",
-                  !button && f.alert && edge === "start" && "@min-[16rem]/figures:justify-start",
-                  !button && f.alert && edge === "end" && "@min-[16rem]/figures:justify-end",
                 )}
                 data-testid={f.testId}
                 data-alert={(!button && f.alert) || undefined}
