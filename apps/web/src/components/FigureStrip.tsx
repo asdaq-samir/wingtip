@@ -120,9 +120,13 @@ export default function FigureStrip({
         // whatever the figures' lengths left, 42 points on a long route and
         // more on a short one (the owner, 2026-11-26: "we should pick a
         // small gap that looks nice for small figures size"); useFiguresFit
-        // reads it, a figure dropped where even that does not fit.
+        // reads it, a figure dropped where even that does not fit. FPL's
+        // pill (`row`) spreads them over its whole width, 20 apart at the
+        // least (the owner, 2026-11-26: "For the pill size, span the full
+        // width for the figures").
         className={cn(
-          "grid justify-center gap-x-5 gap-y-3",
+          "grid gap-x-5 gap-y-3",
+          row ? "justify-between" : "justify-center",
           "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
           !row && "@max-[16rem]/figures:grid-cols-2",
           !fit && "grid-cols-2",
