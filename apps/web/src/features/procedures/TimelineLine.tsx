@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import { PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
@@ -100,6 +100,10 @@ export function TimelineLine({
   // arrival, approach and missed approach under its row, Takeoff's
   // departure under its.
   const editing = opens && open;
+  // What the line's toggle opens, its Landing and Takeoff: Base UI's
+  // trigger points aria-controls at a CollapsibleContent this line does
+  // not have, an id in no element (axe's aria-valid-attr-value, critical).
+  const partsId = useId();
   const partOf = (role: "Arrive" | "Depart") => (editing ? parts.find((p) => p.part.role === role) : undefined);
   const landingPart = partOf("Arrive");
   const takeoffPart = partOf("Depart");
@@ -257,6 +261,7 @@ export function TimelineLine({
         <div className="relative flex min-h-11 min-w-0 flex-wrap items-center gap-x-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
+              aria-controls={editing ? partsId : undefined}
               render={
                 <Button
                   variant="ghost"
@@ -334,14 +339,16 @@ export function TimelineLine({
       // keep the separated. Only the landing and takeoff are cards").
     >
       {line}
-      {landingOut || takeoffOut ? (
-        <PhaseCards landing={landingOut && landing} takeoff={takeoffOut && takeoff} into={onPast} out={!last} />
-      ) : (
-        <>
-          {landing}
-          {takeoff}
-        </>
-      )}
+      <div id={partsId} className="contents">
+        {landingOut || takeoffOut ? (
+          <PhaseCards landing={landingOut && landing} takeoff={takeoffOut && takeoff} into={onPast} out={!last} />
+        ) : (
+          <>
+            {landing}
+            {takeoff}
+          </>
+        )}
+      </div>
     </div>
   );
 }

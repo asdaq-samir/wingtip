@@ -51,11 +51,14 @@ export function useSideGlide(panel: HTMLElement | null, size: PanelState, radius
     // Put in: its ground drawn to its old height under the head, closing
     // up, over the panel's own box: its left and width as well as its top,
     // and its data-* (what its look reads), so no offset container moves it.
+    // Not its slot: a copy that said it was the map's panel was a second
+    // one to what looks for the panel (use-shortcuts' search, backNavigation,
+    // the browser specs' "resolved to 2 elements" while it closed up).
     const from = seen ?? before.height;
     const box = panel.getBoundingClientRect();
     const ground = document.createElement("div");
     for (const { name, value } of panel.attributes)
-      if (name.startsWith("data-") && name !== "data-testid") ground.setAttribute(name, value);
+      if (name.startsWith("data-") && name !== "data-testid" && name !== "data-slot") ground.setAttribute(name, value);
     ground.setAttribute("aria-hidden", "true");
     ground.dataset.sideGlide = "";
     ground.className = panel.className;
