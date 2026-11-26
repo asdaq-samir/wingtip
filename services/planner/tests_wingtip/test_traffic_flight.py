@@ -73,7 +73,7 @@ def test_a_flight_with_no_trace_is_drawn_without_its_past_and_named_by_its_faa_r
     monkeypatch.setattr(registry, "lookup", lambda **kw: {"n_number": "N654FL", "year": 1971})  # N654FL's card read "Registration –"
     with patch("requests.get", return_value=Mock(status_code=404)):
         found = traffic.flight("a89c1e")
-    assert (found["trail"], found["departed"], found["type"], found["registration"], found["year"]) == ([], None, None, "N654FL", 1971)
+    assert (found["trail"], found["departed"], found["type"], found["registration"], found["year"]) == ([], None, None, "N654FL", "1971")
 
 
 def test_a_flight_that_has_landed_is_its_flight_to_the_landing_not_the_parked_tail(clock, monkeypatch):

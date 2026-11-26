@@ -93,6 +93,9 @@ def flight(hex_id: str, pilot: str | None = None) -> dict:
     # The FAA's record of a US airplane (wingtip.registry), None for one registered abroad; its registration and year
     # where no trace today gives them (N654FL's card read "Registration –" with the registry's record, 2026-11-13).
     faa = registry.lookup(hex_id=hex_id, n_number=trace.get("r"))
+    # The trace writes its year as text and the registry as a number; FlightDetail's year is text, so the registry's
+    # is written as text too (N606FR's card read "–" on every row when its 2023 came from the registry, 2026-11-26).
+    year = trace.get("year") or (faa or {}).get("year")
     return {
         "hex": hex_id,
         "faa": faa,
@@ -100,7 +103,7 @@ def flight(hex_id: str, pilot: str | None = None) -> dict:
         "type": trace.get("t") or None,
         "description": trace.get("desc") or None,
         "operator": trace.get("ownOp") or None,
-        "year": trace.get("year") or (faa or {}).get("year") or None,
+        "year": str(year) if year else None,
         "departed": departed,
         "trail": trail,
     }
