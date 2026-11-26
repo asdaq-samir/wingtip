@@ -90,7 +90,9 @@ describe("the Native look", () => {
     expect([t["--type-caption"], t["--lead-caption"]]).toEqual(["0.75rem", "1rem"]);
     // Wingtip keeps its own.
     expect(look("wingtip", false)["--type-hero"]).toBe("1.75rem");
-    expect(TYPE_CLASS.hero).toBe("text-(length:--type-hero) leading-(--lead-hero)");
+    // Its size and leading from the roles, and its tracking stock in Native.
+    expect(TYPE_CLASS.hero).toContain("text-(length:--type-hero) leading-(--lead-hero)");
+    expect(TYPE_CLASS.hero).toContain("native:tracking-normal");
   });
 
   it("turns Wingtip's touch sizes and states off, keeping the 44-point hit areas", () => {
