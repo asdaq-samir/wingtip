@@ -89,7 +89,7 @@ export default function FigureStrip({
    *  fit at full size, never one cut short. */
   row?: boolean;
   /** Spread over the strip's whole width, the room left shared between
-   *  the figures, 20 apart at the least: FPL's foot, the pill and the thin
+   *  the figures, 8 apart at the least: FPL's foot, the pill and the thin
    *  strip over the tab bar (as wide as the bar, FlightFoot). Else 20
    *  apart, together in the middle. */
   spread?: boolean;
@@ -132,8 +132,12 @@ export default function FigureStrip({
         // full width for the figures", "for small size, span the width of
         // tabs bar").
         className={cn(
-          "grid gap-x-5 gap-y-3",
-          spread ? "justify-between" : "justify-center",
+          // Spread, the room left sets the gaps, and the least between two
+          // is 8, so a long route's five still fit a phone's pill: at 20 the
+          // GPS altitude was the one dropped (the owner, 2026-11-26: "GPS
+          // not showing on pill strip").
+          "grid gap-y-3",
+          spread ? "justify-between gap-x-2" : "justify-center gap-x-5",
           "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
           !row && "@max-[16rem]/figures:grid-cols-2",
           !fit && "grid-cols-2",
