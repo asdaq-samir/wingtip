@@ -56,7 +56,12 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   const airplanes = useSearchAirplanes({
     typed,
     tail,
-    enabled: !direct && !pick,
+    // Not while a picker asks for an airport (Add a Stop, Change), but
+    // while the first flight's destination waits for one (`waiting`): an
+    // N-number typed there found nothing (the owner's iPhone, 2026-11-26,
+    // N606FR from the main sheet with no route), and an airplane is never
+    // the destination it asks for.
+    enabled: !direct && (!pick || !!pick.waiting),
     airplaneAsk,
     pickAirplane,
     changeAircraft,
