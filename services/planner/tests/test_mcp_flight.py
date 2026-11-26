@@ -60,7 +60,9 @@ def test_an_airplane_the_pilot_does_not_have_is_named_with_theirs():
 
 def test_the_briefing_is_the_go_no_go_line_and_its_findings(stubbed):  # noqa: F811
     brief = answer(call("flight_briefing", {"departure": "C81", "destination": "KDLH", "depart_at": "2026-10-06T14:00:00Z"}))
-    assert brief["line"] == {"finding": "ok", "words": "Nothing found against this flight"}
+    # No load given, so weight and balance is not worked out (30894f7fc): the
+    # line says what was not checked, never "nothing found".
+    assert brief["line"] == {"finding": "unknown", "words": "No problems found; not checked: weight & balance"}
     assert {f["key"] for f in brief["findings"]} >= {"weather", "fuel", "altitude"}
     assert brief["risk"]["line"] == "Low · 0 points"
 
