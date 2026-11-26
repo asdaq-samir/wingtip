@@ -17,6 +17,15 @@ import { FULL_BAND, SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayou
  *  up, where the body scrolls on under it. */
 const SOLID_BAND = "bg-(--sheet)";
 /** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
+/** At the pill no control of the band's row takes a tap: a press on the
+ *  pill marks the sheet as dragged (Base UI's data-swiping) before any
+ *  move, which brings the row up into sight under the finger, and the tap
+ *  fell on the N-number's field rather than raising the sheet (the owner's
+ *  iPhone, 2026-11-26: "Tapping figures on the pill is not working,
+ *  instead it opens the n number"). The tap is then the band's, which
+ *  raises it to half (tapOpens); a drag still moves it. */
+const PILL_HEAD_UNTAPPED = "[&_:is(button,a,input,[role=button],[role=combobox])]:pointer-events-none";
+
 const RISEN_BAND =
   "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
 
@@ -127,7 +136,7 @@ export function SheetScroller(p: ScrollerProps) {
           // route's whole height for Safari to redraw as it scrolls.
           !atPill
             ? cn("z-20", p.bandScrolls ? undefined : !onPhone ? "frost-head" : size !== "full" ? SOLID_BAND : FULL_BAND)
-            : p.rises && RISEN_BAND,
+            : p.rises && cn(RISEN_BAND, PILL_HEAD_UNTAPPED),
         )}
       >
         {p.band}

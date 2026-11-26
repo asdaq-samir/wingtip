@@ -136,7 +136,12 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
       className={cn(
         "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-(--sheet) px-4 text-foreground print:hidden",
         !shown && "invisible",
-        pill ? "[&_[data-pill-hides]]:hidden" : "[&_:is(button,a,[role=button])]:pointer-events-auto",
+        // Its buttons take taps at every size, the pill's figures too (the
+        // ETE's and the destination's, an airplane picked from the ETE's
+        // dash), where at the pill a tap on one fell through to the sheet
+        // behind (the owner, 2026-11-26); its ground passes every touch on.
+        "[&_:is(button,a,[role=button])]:pointer-events-auto",
+        pill && "[&_[data-pill-hides]]:hidden",
       )}
       style={{ paddingBottom: EDGE_ROOM }}
     >
