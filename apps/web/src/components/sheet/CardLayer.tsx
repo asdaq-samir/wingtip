@@ -33,8 +33,8 @@ export function CardLayer({
 }: {
   label?: string;
   dismiss?: CardFrame["dismiss"];
-  /** Its close on a swipe down from half (CardStack); none (the profile in
-   *  flight), and a swipe parks it at the pill. */
+  /** Its close on a swipe down from half (CardStack), every card's; none,
+   *  and a swipe parks it at the pill. */
   onSwipeClose?: CardFrame["onSwipeClose"];
   /** Where the focus goes as it closes (Base UI's); left where it is by default. */
   finalFocus?: CardFrame["finalFocus"];

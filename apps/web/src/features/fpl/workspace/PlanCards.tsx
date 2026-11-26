@@ -104,9 +104,7 @@ export default function PlanCards({
         </CardLayer>
       )}
       {profileDrawn && routed && (
-        // In flight or a dry run the side view and its way out stay up, as
-        // Apple Maps' navigation card does; planning, a swipe closes it.
-        <CardLayer open={profileShown} onSwipeClose={dryRunning || flying ? undefined : closeProfileCard}>
+        <CardLayer open={profileShown} onSwipeClose={closeProfileCard}>
           <ProfileCard
             name="Profile"
             sub={<ProfileLine vm={vm} />}

@@ -171,7 +171,7 @@ export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint, pillPx
  * through, the close had begun, the card faded out and dropped off the
  * screen's foot before onOpenChange took it back, and it faded in again
  * at the pill (the flicker audit, 2026-11-14, FL-3). A card at half with
- * a swipe's close (`close`, all but Emergency) closes on a swipe down, the Drawer's own
+ * a swipe's close (`close`, every card) closes on a swipe down, the Drawer's own
  * close carrying it, and down to a lower size too.
  */
 export function letGo(

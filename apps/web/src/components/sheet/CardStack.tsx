@@ -180,9 +180,8 @@ function CardDrawer({
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
   // Gone, it is no longer up (the map's room, map/cardRoom).
   useEffect(() => () => cardSettled(id, false), [id]);
-  // A card swiped down closes from half or below (every card with a close
-  // on a swipe, the owner, 2026-11-26: all but Emergency and the profile in
-  // flight); from all the way up it comes down to half, the Drawer's own
+  // A card swiped down closes from half or below (every card, the owner,
+  // 2026-11-26: the main sheet alone stays at its pill); from all the way up it comes down to half, the Drawer's own
   // next snap point, and stays open (the owner, 2026-11-14: "Settings cards
   // should only close from a swipe down when in medium detents").
   const swipeCloses = !!frame.onSwipeClose && at !== "full";
@@ -229,9 +228,9 @@ function CardDrawer({
         // open: it is no modal.
         if (!top || details.reason === "focus-out") return details.cancel();
         // A swipe past the pill is no close for a card without a swipe's
-        // close (Emergency, the profile in flight): it stays at the pill
-        // with its title row (the card rule's 10) -- every other card's
-        // at half closes, the Drawer's own close carrying it down;
+        // close (none now: a caller's CardLayer without onSwipeClose): it
+        // stays at the pill with its title row (the card rule's 10) --
+        // every card at half closes, the Drawer's own close carrying it down;
         // all the way up, it comes down to half.
         if (details.reason === "swipe" && swipeCloses) {
           swiped.current = true;

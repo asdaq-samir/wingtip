@@ -187,11 +187,11 @@ export function SheetCard({
           testId,
           labelledBy: headingId,
           dismiss,
-          // Every card but Emergency, which its ✕ alone closes: a swipe down
-          // from half closes it, as its ✕ does, and from all the way up
-          // brings it to half (CardStack; the owner, 2026-11-26, where only
-          // the settings cards did).
-          onSwipeClose: onClose && !fullScreen ? () => onClose() : undefined,
+          // Every card: a swipe down from half closes it, as its ✕ does, and
+          // from all the way up brings it to half (CardStack); the main
+          // sheet alone, Search and FPL, stays at its pill (the owner,
+          // 2026-11-26).
+          onSwipeClose: onClose && (() => onClose()),
           initialFocus: opening,
           finalFocus: finalFocus ?? toOpener,
         }
