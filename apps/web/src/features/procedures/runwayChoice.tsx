@@ -34,7 +34,12 @@ export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, f
       ? "ring-2 ring-caution"
       : undefined;
   const said = fitted?.short ? ", too short today" : fitted?.close ? ", little to spare in length" : "";
-  const words = `Runway ${id}${windward ? ", into the wind" : ""}${tail ? `, tailwind ${tail} knots` : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : ""}${said}`;
+  // The crosswind said as a figure, grey, where nothing else is said of
+  // the end and there is one: an airplane with no demonstrated crosswind
+  // to judge it by said nothing of 25 knots across (the owner's
+  // screenshot, 2026-11-26, KBUF 14 with the wind 060 at 20 gusting 26).
+  const across = fitted && !fitted.crosswindOver && fitted.crosswindKt > 0 ? fitted.crosswindKt : 0;
+  const words = `Runway ${id}${windward ? ", into the wind" : ""}${tail ? `, tailwind ${tail} knots` : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : across ? `, crosswind ${across} knots` : ""}${said}`;
   const fit = fitted?.short ? "short" : fitted?.crosswindOver ? "crosswind" : tail ? "tailwind" : fitted?.close ? "close" : undefined;
   // How it fits in a few words, for a menu's row: the chip's ring has no
   // room for them.
@@ -48,7 +53,9 @@ export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, f
           ? "Little to spare"
           : windward
             ? "Into the wind"
-            : null;
+            : across
+              ? `Crosswind ${across} kt`
+              : null;
   return {
     id,
     ring,

@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import type { Runway } from "../../lib/api/types";
+import type { RunwayEnd } from "../plan";
+import { endChoice } from "./runwayChoice";
+import type { EndFit } from "./runwayFit";
+
+// KBUF 14 with the wind 060 at 20 gusting 26: some 25 knots across it in
+// the gusts (the planner's own figure, 2026-11-26).
+const runway = { ends: "14/32" } as Runway;
+const end = { ident: "14", heading_true_deg: 127 } as RunwayEnd;
+const fit = (over: Partial<EndFit>): EndFit => ({
+  crosswindKt: 25,
+  crosswindOver: false,
+  neededFt: null,
+  lengthFt: null,
+  short: false,
+  close: false,
+  unknown: true,
+  beyond: false,
+  tailwindKt: 0,
+  ...over,
+});
+
+describe("a runway end's note in its menu", () => {
+  it("says the crosswind as a figure, grey, where the airplane has no demonstrated one to judge it by", () => {
+    const c = endChoice(runway, end, "05", () => fit({}));
+    expect(c.note).toBe("Crosswind 25 kt");
+    expect(c.fit).toBeUndefined();
+    expect(c.ring).toBeUndefined();
+    expect(c.words).toContain("crosswind 25 knots");
+  });
+
+  it("past the demonstrated, a caution with its ring", () => {
+    const c = endChoice(runway, end, "05", () => fit({ crosswindOver: true }));
+    expect(c.note).toBe("Crosswind 25 kt");
+    expect(c.fit).toBe("crosswind");
+    expect(c.ring).toContain("ring-caution");
+  });
+
+  it("a tailwind and into the wind are said before a crosswind", () => {
+    expect(endChoice(runway, end, "05", () => fit({ tailwindKt: 10 })).note).toBe("Tailwind 10 kt");
+    expect(endChoice(runway, end, "14", () => fit({ crosswindKt: 3 })).note).toBe("Into the wind");
+  });
+
+  it("no crosswind, nothing said", () => {
+    expect(endChoice(runway, end, "05", () => fit({ crosswindKt: 0 })).note).toBeNull();
+  });
+});
