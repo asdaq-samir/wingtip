@@ -79,11 +79,11 @@ export const PILL_END_ADDON = cn(
  * than then, so both still fit the head at the owner's 19.65 px text. The
  * box reaches 8 into the field before it, the field's own empty end (its
  * 5ch and 0.5rem, the words at most 5ch), never over its words; its area
- * (index.css's rule, a pseudo-element) 4 past its end and 4 over and
- * under, 44 tall, over the 4 to the next pill and that pill's own empty 8
- * before its "FL-".
+ * (index.css's rule, a pseudo-element) 12 past its end and 4 over and
+ * under, 44 tall and 44 wide, over the 4 to the next pill and that pill's
+ * own empty 8 before its "FL-", never over its words.
  */
 export const PILL_END = cn(
   "relative z-20 -my-1.5 -ml-2 h-9 w-8 rounded-md border-0 hover:bg-transparent hover:text-tint aria-expanded:bg-transparent [&_svg]:size-5!",
-  "hit-y-1 after:left-0 after:-right-1",
+  "hit-y-1 after:left-0 after:-right-3",
 );

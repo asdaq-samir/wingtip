@@ -57,8 +57,9 @@ const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
 // A pointer's answer a figure's own: a little dimmer, as a tap's, where
 // the link variant underlined it, which iOS never does to a number. Over
 // the strip's neighbours (z-10), so its area's foot is not under the next
-// box down.
-const AREA = "relative z-10 max-w-full hit-x-2 hover:no-underline hover:opacity-80";
+// box down. 4 past each side, half the strip's least gap (FigureStrip's
+// gap-x-2), so two figures' areas meet and never overlap.
+const AREA = "relative z-10 max-w-full hit-x-1 hover:no-underline hover:opacity-80";
 // Its area 44 points tall whatever the figure's size, as the timeline's
 // chips' (TimelineRows' CHIP_44): a band of 12 over and under a figure of
 // 16 to 25 made 40 to 49, under 44 on the thin strip (the HIG audit of
