@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import AccordionSection from "../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { describeError } from "../../lib/api/client";
@@ -9,7 +9,7 @@ import { ceilingAndVisibility } from "../plan";
 import { useAlternate, type AlternateWhere } from "./useAlternate";
 import { FieldError } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, FOLD_PANEL } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
 import { callEngine } from "../../lib/engine/engine";
 import { safeHref } from "../../lib/safeHref";
@@ -35,7 +35,7 @@ function Suggestion({ check, onFile }: { check: AlternateCheck; onFile: () => vo
     <Collapsible data-testid={`alternate-suggestion-${check.ident}`}>
       <div className="flex min-h-11 items-center gap-2 pr-3">
         <CollapsibleTrigger
-          className="group/fold flex min-w-0 flex-1 items-center gap-2 py-3.25 pl-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group/fold flex min-w-0 flex-1 items-center gap-2 rounded-lg py-3.25 pl-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:active:bg-muted"
           data-testid={`alternate-look-${check.ident}`}
         >
           <span className="min-w-0 flex-1">
@@ -51,29 +51,37 @@ function Suggestion({ check, onFile }: { check: AlternateCheck; onFile: () => vo
               </span>
             )}
           </span>
-          <ChevronDown className="size-4 shrink-0 text-tint group-data-panel-open/fold:rotate-180" aria-hidden />
+          {/* iOS's disclosure: a chevron to the right that turns down as it opens. */}
+          <ChevronRight
+            className="size-4 shrink-0 text-tint transition-transform duration-(--motion-fade) ease-(--motion-sheet-ease) group-data-panel-open/fold:rotate-90"
+            aria-hidden
+          />
         </CollapsibleTrigger>
         <Button variant="tint" size="chip" onClick={onFile} data-testid={`alternate-file-${check.ident}`}>
           File
         </Button>
       </div>
-      <CollapsibleContent className={cn("space-y-1 px-3 pb-3", TEXT.detail)} data-testid={`alternate-detail-${check.ident}`}>
-        <p className={cn(check.good === false && "font-semibold text-destructive")}>{standing(check)}</p>
-        {check.reasons.length > 0 && <p>{check.reasons.join(" ")}</p>}
-        <p className={cn("font-mono break-words", !check.taf && "font-sans text-muted-foreground")}>{check.taf ?? "No TAF"}</p>
-        {check.alternate_minimums_url && (
-          <Button
-            variant="link"
-            size="inline"
-            className="relative hit-y-3"
-            render={
-              <a href={safeHref(check.alternate_minimums_url)} target="_blank" rel="noreferrer" aria-label="Its Alternate Minimums" />
-            }
-            nativeButton={false}
-          >
-            Its Alternate Minimums
-          </Button>
-        )}
+      <CollapsibleContent className={FOLD_PANEL} data-testid={`alternate-detail-${check.ident}`}>
+        <div>
+          <div className={cn("space-y-1 px-3 pb-3", TEXT.detail)}>
+            <p className={cn(check.good === false && "font-semibold text-destructive")}>{standing(check)}</p>
+            {check.reasons.length > 0 && <p>{check.reasons.join(" ")}</p>}
+            <p className={cn("font-mono break-words", !check.taf && "font-sans text-muted-foreground")}>{check.taf ?? "No TAF"}</p>
+            {check.alternate_minimums_url && (
+              <Button
+                variant="link"
+                size="inline"
+                className="relative hit-y-3"
+                render={
+                  <a href={safeHref(check.alternate_minimums_url)} target="_blank" rel="noreferrer" aria-label="Its Alternate Minimums" />
+                }
+                nativeButton={false}
+              >
+                Its Alternate Minimums
+              </Button>
+            )}
+          </div>
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );
