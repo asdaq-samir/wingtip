@@ -41,8 +41,7 @@ export const CHIP = cn(CAPSULE_HIT, "h-8 min-w-11 justify-center px-3 font-norma
  *  and the pill is only a number), nothing grown that is seen. */
 export const SLIM_PILL = cn(
   "relative min-h-6 shrink-0 gap-0.5 rounded-full bg-foreground/8 px-2 py-0.5 font-normal text-foreground hit-y-2.5 [--hit-x:min(0px,calc((100%_-_44px)/2))] dark:bg-foreground/8",
-  TEXT.row,
-  "pointer-coarse:text-[length:1rem]",
+  TEXT.pill,
 );
 
 /** A procedure picked, its pill as wide as the card (the owner,

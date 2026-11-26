@@ -17,11 +17,7 @@ import { TEXT } from "../../lib/text";
  * and smaller"), so the pills read as settings under the title, not as
  * headings of their own.
  */
-export const PILL = cn(
-  "h-6 items-center rounded-full border-0 bg-foreground/8 shadow-none dark:bg-foreground/8",
-  TEXT.row,
-  "pointer-coarse:text-[length:1rem]",
-);
+export const PILL = cn("h-6 items-center rounded-full border-0 bg-foreground/8 shadow-none dark:bg-foreground/8", TEXT.pill);
 
 /**
  * The pill's field: one width whatever is in it, the widest value it takes

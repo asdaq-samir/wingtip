@@ -297,6 +297,7 @@ IOS_STYLES = {
     "title3": ".title3",
     "headline": ".headline",
     "body": ".body",
+    "callout": ".callout",
     "subheadline": ".subheadline",
     "footnote": ".footnote",
     "caption": ".caption",
@@ -308,6 +309,7 @@ UIKIT_STYLES = {
     "title3": ".title3",
     "headline": ".headline",
     "body": ".body",
+    "callout": ".callout",
     "subheadline": ".subheadline",
     "footnote": ".footnote",
     "caption": ".caption1",
@@ -320,7 +322,7 @@ WEIGHTS = {400: "regular", 500: "medium", 600: "semibold", 700: "bold"}
 # with it (UIFontMetrics), so both follow Dynamic Type.
 # fmt: off
 IOS_DEFAULT_SIZE = {"title": 28, "title2": 22, "title3": 20, "headline": 17, "body": 17,
-                    "subheadline": 15, "footnote": 13, "caption": 12, "caption2": 11}
+                    "callout": 16, "subheadline": 15, "footnote": 13, "caption": 12, "caption2": 11}
 # fmt: on
 
 

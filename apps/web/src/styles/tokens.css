@@ -25,6 +25,7 @@
   --type-heading: 1.25rem;
   --type-title: 1.0625rem;
   --type-row: 1.0625rem;
+  --type-pill: 1rem;
   --type-prose: 0.9375rem;
   --type-detail: 0.9375rem;
   --type-note: 0.8125rem;
@@ -37,6 +38,7 @@
   --lead-hero: 2.125rem;
   --lead-card: 1.75rem;
   --lead-heading: 1.5625rem;
+  --lead-pill: 1.375rem;
   --lead-note: 1.125rem;
   --lead-tab-bar: 1.125rem;
   --lead-badge: 1rem;

@@ -36,6 +36,10 @@ export const TEXT = {
   heading: TYPE_CLASS.heading,
   /** A row's name and its value, a section's title: 17, 14. */
   row: TYPE_CLASS.row,
+  /** A slim pill's words (the runway's, ARR's, the N-number's and FL's
+   *  pills): 16 on 22 everywhere, a size under a row's so a 24-point pill
+   *  holds them (the iPad audit's H-L6). */
+  pill: TYPE_CLASS.pill,
   /** The line under a row's name: 15, 12. */
   detail: TYPE_CLASS.detail,
   /** What is read rather than scanned -- a section's summary, a

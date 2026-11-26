@@ -915,6 +915,8 @@ nonisolated enum WingtipType {
     static let title: Font = Font.system(.headline, weight: .semibold)
     /// A row's name and its value, the body (iOS Body); 16 with a mouse, a desktop's body size (it was 14, and the desktop panel read small: the UI audit, 2026-11-09).
     static let row: Font = Font.system(.body, weight: .regular)
+    /// A slim pill's words (the route's runway, ARR, APCH and DEP pills, FPL's N-number and FL pills): 16 on 22 with a finger and a mouse alike, a size under a row's 17 so a 24-point pill holds them and a field's line keeps its pills; where they were a row's with a raw 16 for touch beside it in three places (the iPad audit's H-L6, 2026-11-26).
+    static let pill: Font = Font.system(.callout, weight: .regular)
     /// What is read rather than scanned: a summary, a paragraph (iOS Subheadline); 16 with a mouse.
     static let prose: Font = Font.system(.subheadline, weight: .regular)
     /// The line under a row's name (iOS Subheadline); 14 with a mouse.

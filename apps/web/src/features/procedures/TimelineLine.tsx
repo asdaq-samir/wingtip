@@ -140,7 +140,7 @@ export function TimelineLine({
           // but isn't"); with how it fits a landing today, a tailwind in
           // amber (the engine's runway_end_fit; AIM 4-3-6).
           <span
-            className={cn("flex items-center gap-1.5 py-0.5", TEXT.row, "pointer-coarse:text-[length:1rem]")}
+            className={cn("flex items-center gap-1.5 py-0.5", TEXT.pill)}
             data-testid="landing-runway"
             role="img"
             aria-label={`${ownChoice?.words ?? `Runway ${ownRunway}`}, straight in`}
