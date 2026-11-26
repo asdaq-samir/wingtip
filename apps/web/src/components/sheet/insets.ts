@@ -167,14 +167,12 @@ export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint, pillPx
 /**
  * A drag let go, the sheet's or a card's (MapPanel, CardStack), as the
  * Drawer tells it (onSnapPointChange): the size of the snap point it
- * picked, one of ours, asked for. Let go past the pill (no snap point),
- * the Drawer reads a close, refused here before it starts one, and the
- * surface goes to the pill (`park`: half for a card a swipe closes) -- let
- * through, the close had begun, the card faded out and dropped off the
- * screen's foot before onOpenChange took it back, and it faded in again
- * at the pill (the flicker audit, 2026-11-14, FL-3). A card at half with
- * a swipe's close (`close`, every card) closes on a swipe down, the Drawer's own
- * close carrying it, and down to a lower size too.
+ * picked, one of ours, asked for. With no `close` (the main sheet), let
+ * go past the pill (no snap point) the Drawer reads a close, refused here
+ * before it starts one, so it never begins to fade out (the flicker audit,
+ * 2026-11-14, FL-3), and the sheet goes to `park`. With a `close` (a card
+ * at half), a swipe down closes it, the Drawer's own close carrying it,
+ * and so does one down to a lower size.
  */
 export function letGo(
   point: Drawer.Root.SnapPoint | null,

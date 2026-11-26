@@ -62,12 +62,17 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   const controls = page.locator("[data-map-controls]");
   const radio = page.getByTestId("mic-circle");
 
-  // All the way up, a NOTAM's card over it at half: the buttons give way.
-  // Its row reached as a finger would, clear of the card's floating tabs.
+  // All the way up, a NOTAM's card opened from it opens all the way up too,
+  // the size of the card it came from (the card rule's 2), then lowered to
+  // half over it: the buttons give way. Its row reached as a finger would,
+  // clear of the card's floating tabs.
   const row = place.getByTestId("place-notam").first();
   await inSheet(page, row);
   await row.click();
   const notam = sideDrawer(page).getByTestId("place-notam-card");
+  await expect(notam).toHaveAttribute("data-panel", "full");
+  await settled(notam);
+  await grabberTo(page, "half");
   await expect(notam).toHaveAttribute("data-panel", "half");
   await settled(notam);
   await expect(page.locator("body")).toHaveAttribute("data-map-panel", "full");

@@ -81,7 +81,7 @@ describe("letGo", () => {
     return { cancel: details.cancel, ask };
   };
 
-  it("refuses a swipe past the pill at its source, and parks the card at the pill", () => {
+  it("refuses a swipe past the pill at its source, and parks the sheet at the pill", () => {
     const { cancel, ask } = go(null);
     expect(cancel).toHaveBeenCalledOnce();
     expect(ask).toHaveBeenCalledWith("peek");
@@ -93,7 +93,7 @@ describe("letGo", () => {
     expect(ask).not.toHaveBeenCalled();
   });
 
-  it("lets a settings card at half close on it, the Drawer's own close", () => {
+  it("lets a card at half close on it, the Drawer's own close", () => {
     const close = vi.fn();
     const { cancel } = go(null, { close, park: "half" });
     expect(cancel).not.toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe("letGo", () => {
     expect(go("23rem", { at: "peek" }).ask).toHaveBeenCalledWith("half");
     expect(go(1).ask).toHaveBeenCalledWith("full");
     expect(go("23rem").ask).not.toHaveBeenCalled();
-    // A settings card is parked at half, not the pill; one at half closes going lower.
+    // A card is parked at half, not the pill; one at half closes going lower.
     expect(go("4.25rem", { at: "full", park: "half" }).ask).toHaveBeenCalledWith("half");
     const close = vi.fn();
     go("4.25rem", { close, park: "half" });

@@ -19,17 +19,11 @@ export type CardFrame = {
   /** Its name for a screen reader, or the id of the heading that names it. */
   label?: string;
   labelledBy?: string;
-  /** Escape, a tap outside, a swipe past the pill, as the Drawer tells
-   *  them, the card on top only; none for the frame's own way (CardStack):
-   *  Escape a level back, the rest refused. */
+  /** Escape and a tap outside, as the Drawer tells them, the card on top
+   *  only; none for the frame's own way (CardStack): Escape a level back,
+   *  the rest refused. A swipe down from half is every card's close, the
+   *  top card's (CardStack). */
   dismiss?: (details: Drawer.Root.ChangeEventDetails) => void;
-  /** Its close on a swipe down from half, for the cards that are settings
-   *  -- You, the Map card -- as Apple Maps closes its account and settings
-   *  sheets (the owner, 2026-11-14); from all the way up a swipe down brings
-   *  it to half, open ("Settings cards should only close from a swipe down
-   *  when in medium detents", the owner, 2026-11-14). None, and a swipe
-   *  past the pill parks the card there (the card rule's 10). */
-  onSwipeClose?: () => void;
   initialFocus?: Drawer.Popup.Props["initialFocus"];
   finalFocus?: Drawer.Popup.Props["finalFocus"];
 };
@@ -85,13 +79,19 @@ export function coverCard(stack: CardEntry[], among: (entry: CardEntry) => boole
   return cover;
 }
 
-/** The size a card opens at (CardStack): half, every card, whatever it
- *  covers and wherever it is opened from, then where the pilot drags it,
- *  as Apple Maps opens its cards at the medium detent (the owner,
- *  2026-11-11: "I thought stock was to open each card medium by
- *  default"); Emergency alone all the way up (the card rule's 4). */
-export function cardOpening(entry: Pick<CardEntry, "fullScreen">): PanelState {
-  return entry.fullScreen ? "full" : "half";
+/** The size a card opens at (CardStack), as Apple Maps opens its cards:
+ *  at the size of the card it is opened from, `from`, the top card as it
+ *  opens -- all the way up over one all the way up -- and at half from the
+ *  map, the search or anywhere else, and over a card at its pill, so the
+ *  new one can be seen (the card rule's 2; the owner, 2026-11-26). Emergency always all the way up (the card rule's 4). */
+export function cardOpening(entry: Pick<CardEntry, "fullScreen">, from?: PanelState): PanelState {
+  return entry.fullScreen || from === "full" ? "full" : "half";
+}
+
+/** The size of the card a new card `id` is opened from: the top card open
+ *  and sized under it, none where it is the only one. */
+export function openedFrom(stack: CardEntry[], id: string): PanelState | undefined {
+  return [...stack].reverse().find((entry) => entry.id !== id && entry.state === "open" && entry.at !== undefined)?.at;
 }
 
 /** A card's entry changed in place. */
@@ -107,7 +107,7 @@ export function setCard(id: string, change: Partial<CardEntry>) {
 }
 
 /** A card opened again by the pilot: on top of the stack, the newest card,
- *  at the size a card opens at (cardOpening). */
+ *  at the size a card opens at (cardOpening), from the card then on top. */
 export function raiseCard(id: string) {
   useSheetCards.setState((s) => {
     const was = s.stack.find((entry) => entry.id === id);
