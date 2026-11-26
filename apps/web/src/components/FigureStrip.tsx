@@ -115,8 +115,13 @@ export default function FigureStrip({
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
         ref={strip}
+        // At least a rem between two figures (16 points, 20 at the owner's
+        // larger text), where 8 let them close in to crowd at a large text
+        // size before one was dropped (the owner, 2026-11-26: "The
+        // proportionality of gaps at small size and large size");
+        // useFiguresFit reads it, so a figure drops sooner instead.
         className={cn(
-          "grid justify-between gap-x-2 gap-y-3",
+          "grid justify-between gap-x-4 gap-y-3",
           "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
           !row && "@max-[16rem]/figures:grid-cols-2",
           !fit && "grid-cols-2",
