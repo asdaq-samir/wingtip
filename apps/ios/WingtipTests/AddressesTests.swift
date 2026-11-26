@@ -15,7 +15,7 @@ struct AddressesTests {
     /// The path the generated client asks, as the transport is handed it.
     private struct Asked: Error { let path: String }
 
-    nonisolated private struct Capture: ClientTransport {
+    private nonisolated struct Capture: ClientTransport {
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
             throw Asked(path: request.path ?? "")
         }

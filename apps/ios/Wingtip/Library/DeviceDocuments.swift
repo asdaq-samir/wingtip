@@ -254,7 +254,6 @@ extension DeviceDocuments {
         try JSONDecoder().decode(CfrText.self, from: Data(contentsOf: file))
     }
 
-
     /// A pilot's own document from iCloud (DocumentCloud) written here
     /// under the same id and name, so the two are one document.
     @concurrent
