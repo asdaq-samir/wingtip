@@ -74,6 +74,7 @@ export default function FigureStrip({
   tap,
   still = false,
   row = false,
+  spread = row,
 }: {
   figures: StripFigure[];
   size?: StripSize;
@@ -87,6 +88,11 @@ export default function FigureStrip({
    *  (FPL's pill), where figures are dropped from the end until the rest
    *  fit at full size, never one cut short. */
   row?: boolean;
+  /** Spread over the strip's whole width, the room left shared between
+   *  the figures, 20 apart at the least: FPL's foot, the pill and the thin
+   *  strip over the tab bar (as wide as the bar, FlightFoot). Else 20
+   *  apart, together in the middle. */
+  spread?: boolean;
 }) {
   const type = TYPE[size];
   const roll = still ? undefined : "figure-roll";
@@ -121,12 +127,13 @@ export default function FigureStrip({
         // more on a short one (the owner, 2026-11-26: "we should pick a
         // small gap that looks nice for small figures size"); useFiguresFit
         // reads it, a figure dropped where even that does not fit. FPL's
-        // pill (`row`) spreads them over its whole width, 20 apart at the
-        // least (the owner, 2026-11-26: "For the pill size, span the full
-        // width for the figures").
+        // foot (`spread`) spreads them over its whole width, 20 apart at
+        // the least (the owner, 2026-11-26: "For the pill size, span the
+        // full width for the figures", "for small size, span the width of
+        // tabs bar").
         className={cn(
           "grid gap-x-5 gap-y-3",
-          row ? "justify-between" : "justify-center",
+          spread ? "justify-between" : "justify-center",
           "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
           !row && "@max-[16rem]/figures:grid-cols-2",
           !fit && "grid-cols-2",

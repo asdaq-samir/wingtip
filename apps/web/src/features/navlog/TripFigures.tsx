@@ -268,6 +268,7 @@ export default function TripFigures({
       tap={tap}
       still={flying || !!flown}
       row={pill}
+      spread={thin}
     />
   );
 }

@@ -1,4 +1,4 @@
-import { Suspense, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { EDGE_ROOM } from "../../../components/sheet/insets";
 import { FOOT_BAR_PILL } from "../../../components/sheet/FootBar";
 import { useFootRest } from "../../../components/sheet/sheetMotion";
@@ -126,6 +126,26 @@ export default function FlightFoot({
   );
 }
 
+/** The tab bar's capsule's width, px, set on the foot as --tabs-width for
+ *  the thin strip over it (GroundFoot), as it is laid out: the capsule is
+ *  as wide as its items, which its own room and the reader's text size
+ *  set (floatingBarLook), so it is read, not worked out. */
+function useTabsWidth() {
+  const foot = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = foot.current;
+    const bar = el?.querySelector<HTMLElement>("[data-testid=fpl-actions] [role=toolbar]");
+    if (!el || !bar || typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(() => {
+      const width = bar.getBoundingClientRect().width;
+      if (width > 0) el.style.setProperty("--tabs-width", `${Math.round(width)}px`);
+    });
+    watch.observe(bar);
+    return () => watch.disconnect();
+  }, []);
+  return foot;
+}
+
 /**
  * FPL's foot on the ground: the figures strip on its tab bar, one stack
  * (iOS 26's tab bar with its bottom accessory), on a phone the fixed bar
@@ -163,8 +183,9 @@ function GroundFoot({
 }) {
   const pill = useFootRest() === "peek";
   const line = routesOut(vm) ? vm.routeList.routeLine : null;
+  const tabs = useTabsWidth();
   return (
-    <div className="flex w-full flex-col" style={{ "--strip-full": pill ? 1 : 0 } as CSSProperties}>
+    <div ref={tabs} className="flex w-full flex-col" style={{ "--strip-full": pill ? 1 : 0 } as CSSProperties}>
       {!figuresAway(vm) && (
         <div
           data-foot-strip=""
@@ -174,7 +195,13 @@ function GroundFoot({
           // size grows the bar rather than spilling over the map, and the
           // bar's measured height, the map's room, follows (the r6 UI
           // audit's H1). From half up a thin line just over the tabs.
-          className={cn("flex flex-col px-1", pill ? "justify-center" : "pt-2")}
+          // From half up as wide as the tab bar's capsule under it, the
+          // figures spread over it, the first over Brief and the last over
+          // More (the owner, 2026-11-26: "for small size, span the width
+          // of tabs bar"); at the pill the bar's whole width, and the
+          // suggested routes' chips, when they take its place, the whole
+          // width too.
+          className={cn("flex flex-col px-1", pill ? "justify-center" : cn("pt-2", !line && "mx-auto w-full max-w-(--tabs-width,100%)"))}
           style={pill ? { minHeight: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : undefined}
         >
           {line ? (
