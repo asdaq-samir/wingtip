@@ -20,6 +20,12 @@ export function useLineRoom(): [boolean, (row: HTMLElement | null) => (() => voi
   const measure = useCallback((row: HTMLElement | null) => {
     if (!row) return undefined;
     const fit = () => {
+      // Held while one of the line's menus is open: the page round an open
+      // menu is laid out a point or two otherwise (its scroll held), and a
+      // line on the edge of room lost its "RWY" as its runway's menu
+      // opened (the owner's iPhone, 2026-11-26: "Rwy disappears when
+      // opening menu"). Nothing on the line moves while it is being picked from.
+      if (row.querySelector("[data-popup-open]")) return;
       const items = [...row.children] as HTMLElement[];
       if (!items.length) return;
       const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
