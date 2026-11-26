@@ -31,7 +31,7 @@ struct NativeLookTests {
 
     @Test func aRowSaysWhenInUtcAndDropsTheHead() throws {
         #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z"), untilCharts: false, now: try #require(FieldNotamWords.date("2026-11-10T00:00:00Z")))
-                == "From 11/09 14:00 UTC")
+            == "From 11/09 14:00 UTC")
         #expect(NotamRows.when(notam("a", rank: 1, inForce: true), untilCharts: false) == "In effect now")
         // A card the engine could not read says no end at all (the r9 audit).
         let unread = notam("a", rank: 1, starts: "2026-11-09T14:00:00Z", ends: "2026-12-09T14:00:00Z", inForce: true)

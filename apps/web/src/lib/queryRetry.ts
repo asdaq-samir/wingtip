@@ -46,7 +46,7 @@ export function retryDelay(failures: number, error: unknown): number {
  *  the route plans by itself once the planner is back, where it stayed
  *  failed until Try again (the owner's screenshot, 2026-11-23). TanStack
  *  asks only while the page is in sight and the query wanted. */
-export const UNREACHABLE_REFETCH_MS = 20_000;
+const UNREACHABLE_REFETCH_MS = 20_000;
 
 /** lib/queryClientCore's default `refetchInterval`: only a query failed
  *  for want of the planner is asked again; any other is left as it is. */

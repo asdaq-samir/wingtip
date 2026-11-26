@@ -11,7 +11,7 @@ import SwiftData
 /// Nonisolated, so the records actor (DocumentRecords) can make and read
 /// one off the main actor.
 @Model
-nonisolated final class OwnDocumentRecord {
+final nonisolated class OwnDocumentRecord {
     var id: String = ""
     var name: String = ""
     var added: Date = Date()

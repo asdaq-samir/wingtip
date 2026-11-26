@@ -24,6 +24,7 @@ IOS = {
     "impact-heavy": ".impact(weight: .heavy)",
 }
 
+
 def _on(token, name):
     return token["$extensions"][EXT][name]
 

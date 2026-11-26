@@ -3,7 +3,6 @@ package app.wingtipmaps.android.map
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.view.View
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.api.Leg
@@ -13,14 +12,8 @@ import app.wingtipmaps.android.design.generated.WingtipMapLabel
 import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RoutePoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -30,7 +23,6 @@ import kotlinx.serialization.json.putJsonObject
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
-import org.maplibre.android.style.layers.Layer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.SymbolLayer
@@ -94,23 +86,7 @@ object RouteMarksLayer {
             .map { (words, _, at) -> Top(words, at.first, at.second) }
     }
 
-    fun follow(view: MapView) {
-        var scope: CoroutineScope? = null
-        var job: Job? = null
-        view.addOnDidFinishLoadingStyleListener { redraw(view, shown.value) }
-        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-                scope = s
-                job = s.launch { shown.collect { redraw(view, it) } }
-            }
-
-            override fun onViewDetachedFromWindow(v: View) {
-                job?.cancel()
-                scope?.cancel()
-            }
-        })
-    }
+    fun follow(view: MapView) = view.followFlow(shown, { shown.value }) { redraw(view, it) }
 
     private fun redraw(view: MapView, now: Shown) {
         val density = view.resources.displayMetrics.density
@@ -143,7 +119,7 @@ object RouteMarksLayer {
 
     private fun kind(k: String) = Expression.eq(Expression.get("kind"), Expression.literal(k))
 
-    private fun layers(): List<Layer> {
+    private fun layers(): List<org.maplibre.android.style.layers.Layer> {
         val casing = Expression.color(WingtipColors.Chart.CASING_HEX.toColorInt())
         val dark = Expression.color(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt())
         val ink = Expression.color(WingtipColors.Chart.FIX_INK_HEX.toColorInt())

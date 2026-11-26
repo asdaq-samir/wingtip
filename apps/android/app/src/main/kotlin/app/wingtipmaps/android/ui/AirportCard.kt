@@ -37,8 +37,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.FigureKey
-import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
+import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
