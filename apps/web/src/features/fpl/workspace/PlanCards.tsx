@@ -53,7 +53,6 @@ export default function PlanCards({
   const {
     briefHere,
     closeBrief,
-    closeNavLogCard,
     closeProfileCard,
     closeStops,
     navLogShown,
@@ -90,7 +89,7 @@ export default function PlanCards({
         />
       )}
       {navLogDrawn && routed && (
-        <CardLayer open={navLogShown} onSwipeClose={closeNavLogCard}>
+        <CardLayer open={navLogShown}>
           {/* Its room over its head the grabber's, as every card's (SheetCard).
                 The head is the whole log's own child (NavLogView): in a box of
                 its own it stuck only within it and scrolled away, the title and
@@ -104,7 +103,7 @@ export default function PlanCards({
         </CardLayer>
       )}
       {profileDrawn && routed && (
-        <CardLayer open={profileShown} onSwipeClose={closeProfileCard}>
+        <CardLayer open={profileShown}>
           <ProfileCard
             name="Profile"
             sub={<ProfileLine vm={vm} />}
@@ -154,7 +153,7 @@ export default function PlanCards({
       )}
       {stopsDrawn && (
         // Its id for its pins' taps, which bring it up from the pill (useFplCards).
-        <CardLayer open={stopsShown} cardId={STOPS_CARD} onSwipeClose={closeStops}>
+        <CardLayer open={stopsShown} cardId={STOPS_CARD}>
           <StopsCard
             at={stopsAt}
             route={stopsRoute}

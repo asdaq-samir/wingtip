@@ -5,7 +5,8 @@ import { AT_PILL, PILL_BODY, SHEET_SLIDE } from "./insets";
 import { SWIPE_READER } from "./sheetFollow";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { bandFits } from "./bandFits";
-import { FULL_BAND, SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayout";
+import { CONTROLS_UNTAPPED, FULL_BAND, SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayout";
+import { useFootBarHeight } from "./sheetMotion";
 
 /** The head band's ground where nothing scrolls under it: a phone's sheet
  *  at the pill and half, whose body does not scroll (index.css's one
@@ -16,15 +17,6 @@ import { FULL_BAND, SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayou
  *  idents smeared (the owner's iPhone, 2026-11-17). Frosted all the way
  *  up, where the body scrolls on under it. */
 const SOLID_BAND = "bg-(--sheet)";
-/** At the pill no control of the band's row takes a tap: a press on the
- *  pill marks the sheet as dragged (Base UI's data-swiping) before any
- *  move, which brings the row up into sight under the finger, and the tap
- *  fell on the N-number's field rather than raising the sheet (the owner's
- *  iPhone, 2026-11-26: "Tapping figures on the pill is not working,
- *  instead it opens the n number"). The tap is then the band's, which
- *  raises it to half (tapOpens); a drag still moves it. */
-const PILL_HEAD_UNTAPPED = "[&_:is(button,a,input,[role=button],[role=combobox])]:pointer-events-none";
-
 /** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
 const RISEN_BAND =
   "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
@@ -88,6 +80,9 @@ interface ScrollerProps {
 /** One scroller: its head's band sticky at its top and the body under it. */
 export function SheetScroller(p: ScrollerProps) {
   const { atPill, onPhone, fromBottom, size, cardsUp } = p.layout;
+  // The foot bar's height on these two elements alone: set on an ancestor
+  // as an inherited variable it restyled the whole sheet at every change.
+  const barPx = useFootBarHeight((s) => s.height);
   return (
     <div
       data-sheet-scroll=""
@@ -96,14 +91,10 @@ export function SheetScroller(p: ScrollerProps) {
       // (a tab's lists); none over a card, which has the sheet to itself.
       // A row focused or brought into view stops under the search's row,
       // not behind it (WCAG 2.4.11); one tabbed to at the foot stops over
-      // the foot bar (--foot-bar), not under it, where the page has its end
+      // the foot bar, not under it, where the page has its end
       // room for it (the r6 UI audit's M5).
       style={
-        {
-          "--sheet-head": p.head,
-          scrollPaddingTop: p.head,
-          scrollPaddingBottom: p.endRoom === "bar" ? "var(--foot-bar, 0px)" : undefined,
-        } as CSSProperties
+        { "--sheet-head": p.head, scrollPaddingTop: p.head, scrollPaddingBottom: p.endRoom === "bar" ? barPx : undefined } as CSSProperties
       }
       // Its scroll stops at its own end, not chained on to the drawer or the
       // page, so the head stays put as the rows stop (the owner,
@@ -136,7 +127,12 @@ export function SheetScroller(p: ScrollerProps) {
           // route's whole height for Safari to redraw as it scrolls.
           !atPill
             ? cn("z-20", p.bandScrolls ? undefined : !onPhone ? "frost-head" : size !== "full" ? SOLID_BAND : FULL_BAND)
-            : p.rises && cn(RISEN_BAND, PILL_HEAD_UNTAPPED),
+            : // At the pill no control of the band's row takes a tap: a press
+              // marks the sheet as dragged (Base UI's data-swiping) before
+              // any move, which brings the row into sight under the finger,
+              // and the tap landed on the N-number's field (the owner's
+              // iPhone, 2026-11-26). The tap is the band's, which raises it.
+              p.rises && cn(RISEN_BAND, CONTROLS_UNTAPPED),
         )}
       >
         {p.band}
@@ -163,14 +159,19 @@ export function SheetScroller(p: ScrollerProps) {
         <TabKept away={false}>{p.body}</TabKept>
       </PointerTapDiv>
       {/* The page's end room under FPL's foot bar, which stands over the
-          sheet's foot outside it (sheet/FootBar): the bar's height, set on
-          the viewport as the bar is laid out (--foot-bar), so the route's
+          sheet's foot outside it (sheet/FootBar): the bar's height
+          (useFootBarHeight), so the route's
           last row scrolls up clear of the figures and the tabs all the way
           up, as a list ends clear of iOS's tab bar; and the gap between
           groups (space.group) over it, less what the route's box keeps
           under its last row (--box-foot, index.css). */}
       {p.endRoom === "bar" && (
-        <div aria-hidden="true" className="h-[calc(var(--foot-bar,0px)+var(--space-group)-var(--box-foot))] shrink-0" data-foot-room="" />
+        <div
+          aria-hidden="true"
+          className="shrink-0"
+          style={{ height: `calc(${barPx}px + var(--space-group) - var(--box-foot))` }}
+          data-foot-room=""
+        />
       )}
     </div>
   );

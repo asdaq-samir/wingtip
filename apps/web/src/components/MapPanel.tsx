@@ -158,7 +158,8 @@ export default function MapPanel(props: Props) {
   const [sheetNode, setSheetNode] = useState<HTMLElement | null>(null);
   // FPL's pill, where its foot bar is in sight, is the bar folded and the
   // grabber's room (footPillPx), so the sheet rests wholly behind the bar.
-  const { height: barHeight, pill: barPill } = useFootBarHeight();
+  const barHeight = useFootBarHeight((s) => s.height);
+  const barPill = useFootBarHeight((s) => s.pill);
   const pillPx = footBarUp ? footPillPx(barPill) : 0;
   const snaps = snapsOf(fromBottom, pillPx);
 
@@ -261,8 +262,7 @@ export default function MapPanel(props: Props) {
   const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} sizes={grabberSizes} />;
   // Solid at every size, the look's --sheet (Canvas in Native), the light
   // grey of Apple Maps' web sheet (2026-11-10): glass is only for what
-  // floats over the map (CLAUDE.md, owner decision 2026-11-10). The side
-  // panel was MATERIAL, the chart showing through it (the web audit's WEB-6).
+  // floats over the map (CLAUDE.md, owner decision 2026-11-10).
   const look = onPhone
     ? GLASS_SHEET
     : // Narrowed in a narrow window to leave the map 22 rem beside it (an
@@ -305,8 +305,7 @@ export default function MapPanel(props: Props) {
   // The inspector's column, the window's height inside its float as the
   // side panel is, at the right inside the safe area: the cards' host,
   // drawn as a panel only while one is in it, its ground fading in and out
-  // with its card on the Drawer's time (the apple-design audit of
-  // 2026-11-23, H1), where it popped in and out as the map eased beside it.
+  // with its card on the Drawer's time (the apple-design audit of 2026-11-23, H1).
   const inspectorColumn = inspector && (
     <div
       data-slot="map-inspector"

@@ -52,7 +52,6 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
       host,
       frame: {
         dismiss: latest.current.dismiss && ((details) => latest.current.dismiss?.(details)),
-        onSwipeClose: latest.current.onSwipeClose && (() => latest.current.onSwipeClose?.()),
         initialFocus: latest.current.initialFocus,
         finalFocus: latest.current.finalFocus,
       } satisfies CardFrame,
@@ -94,31 +93,27 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
 
 /**
  * A card's content kept in sight while its drawer closes, its caller gone
- * (an airport's ✕, a settings card swiped away): a still copy of what was
- * drawn, put in the card's own box as React takes the caller's out, so the
- * card goes back down and fades with its face on it, as a kept card does
- * (CardStack's RISE). It went with its caller, so the drawer was cut at
- * once, an empty card never slid (the apple-design audit of 2026-11-23,
- * H3: the most frequent close on the phone, with no motion). The copy is
- * inert and hidden from assistive technology, its ids and test ids taken
- * off, so nothing finds it twice; it goes with the drawer once the close
- * is done (dropCard). Put in after React's commit, and only once the
- * caller's own nodes are gone: an effect run again in place (React's
- * StrictMode) keeps them, and then nothing is copied.
+ * (an airport's ✕, a card swiped away): a still copy of what was drawn,
+ * put in the card's own box as React takes the caller's nodes out, so the
+ * card goes back down with its face on it, as a kept card does (CardStack's
+ * RISE), not as an empty card (the apple-design audit of 2026-11-23, H3).
+ * A copy, because the real nodes cannot stay: they are the caller's, which
+ * goes as the card closes (its store cleared on ✕), and CardLayer's `open`
+ * keeps content alive only for a caller that stays drawn between openings
+ * (the Nav Log, the Profile, the Stops). Keeping every caller drawn until
+ * its close is done would move that into each caller's store.
  *
- * A clone alone is not the face (the r5-ui audit's M1, 2026-11-23): it
- * has no canvas's pixels (the airport diagram, a chart page went blank),
- * no scroll (a tab's page, Nearest's strip or the hours jumped to their
- * start), no typed value and its keyframes replayed. So each canvas's
- * picture is drawn into its copy, each typed value set, each scroller put
- * back where it was once the copy is in, and the copy's animations held
- * (data-card-face, feel.css). A MapLibre map's canvas is drawn again as
- * it is read (glFace): WebGL keeps no frame once it is on the screen, and
- * the diagram, the plate and a chart's pages still closed blank (the
- * r6-ui audit's M3). Only what can scroll is asked where it is scrolled
- * to: asking every node was a layout read each, thousands on a long Brief
- * on the close's first frame (L14). The caller keeps no content past its
- * own life, so a copy, not the real nodes, is what can stay.
+ * The copy is inert and hidden from assistive technology, its ids and test
+ * ids taken off, so nothing finds it twice; it goes with the drawer once
+ * the close is done (dropCard). Put in after React's commit, and only once
+ * the caller's own nodes are gone: an effect run again in place (React's
+ * StrictMode) keeps them, and then nothing is copied. A clone alone lacks
+ * what is not in the markup, so each canvas's picture is drawn into its
+ * copy (a MapLibre map's drawn again as it is read, glFace: WebGL keeps no
+ * frame once on the screen), each typed value set, each scroller put back
+ * where it was, and the copy's animations held (data-card-face, feel.css).
+ * Only what can scroll is asked where it is scrolled to, not every node: a
+ * layout read each on the close's first frame.
  */
 /** What can be scrolled: an overflow class (Tailwind's overflow-auto,
  *  -x-, -y-, -scroll, -hidden; a script scrolls a hidden one too) or an

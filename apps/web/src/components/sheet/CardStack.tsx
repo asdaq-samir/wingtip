@@ -3,7 +3,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
-import { cardOpening, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { cardOpening, dropCard, openedFrom, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { AT_PILL, letGo, snapsOf } from "./insets";
 import { EASE, FROM_BELOW, FROM_EDGE, RISE, SIDE_EASE } from "./cardMotion";
 import { UNDER_INDICATOR } from "./SheetDrawer";
@@ -11,6 +11,8 @@ import { cardSettled, frontOffset, frontUnder, sheetTopRef, useRidingCard } from
 import { useSwipeRelay } from "./sheetFollow";
 import { SheetViewport } from "./SheetViewport";
 import { PointerTapDiv } from "./PointerTapDiv";
+import { tapOpens } from "./sheetLayout";
+import { useCardScrollRoom } from "./cardScrollRoom";
 
 export interface StackProps {
   /** A phone's sheet: the cards are drawers with its sizes and its swipe.
@@ -41,9 +43,9 @@ export interface StackProps {
  *
  * Each card has its own snap point among the sheet's three sizes (the
  * owner, 2026-11-11: "Just let the drawer do what it does"; "each card
- * sizes its own drawer"), its entry's `at`: it opens at half, every card
- * (cardOpening; Emergency alone all the way up), then where the pilot
- * drags it or the card asks (useCardSize). The sheet under
+ * sizes its own drawer"), its entry's `at`: it opens at the size of the
+ * card it is opened from, else at half (cardOpening; Emergency all the way
+ * up), then where the pilot drags it or the card asks (useCardSize). The sheet under
  * it, and each card under it, stay at their own. Put on the page inside the
  * sheet's popup (`host`), so a card is in the sheet for what looks for it
  * there (the browser tests, index.css), and placed from the sheet's snap
@@ -52,22 +54,15 @@ export interface StackProps {
  *
  * Every card's drawer has one place in React's tree for its life: side by
  * side, by its id, in one Drawer of their own (`Cards`), whatever opens,
- * closes, is kept or raised over or under it. They were nested each in
- * the one under it, and a card kept was drawn beside them, so a card
- * going from under another, or to or from kept, gave the drawers over it
- * another parent, and React drew them anew: a card opened over another
- * was drawn all the way up for a frame, and one kept was drawn anew
- * closed, gone with no close, the map's buttons thrown off the screen's
- * top (the flicker audit, 2026-11-14, FL-1 and FL-2). Side by side they
- * cannot tell the sheet themselves: a Drawer tells its parent how many
- * are open over it by setting, not adding (useDialogRoot's
- * onNestedDialogOpen; @base-ui/react 1.9.0, the newest), and a closed one
- * tells it nothing, so the last card to speak won and the sheet thought
- * none was up with one still open -- its swipe the sheet's
- * (DrawerViewport), its content shown under the card
- * (data-nested-drawer-open). Their Drawer, open while any card is, is
- * what the sheet hears: one nested drawer up. Raised, a card's portal is
- * put last in the sheet's popup, over the rest (useStackOrder).
+ * closes, is kept or raised over or under it, so React never draws one
+ * anew with another parent (a card drawn all the way up for a frame, one
+ * kept drawn anew closed: the flicker audit, 2026-11-14, FL-1 and FL-2).
+ * Side by side they cannot tell the sheet themselves -- a Drawer tells its
+ * parent how many are open over it by setting, not adding (useDialogRoot's
+ * onNestedDialogOpen; @base-ui/react 1.9.0), so the last card to speak
+ * would win -- so their Drawer, open while any card is, is what the sheet
+ * hears: one nested drawer up. Raised, a card's portal is put last in the
+ * sheet's popup, over the rest (useStackOrder).
  */
 export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
@@ -156,10 +151,12 @@ function CardDrawer({
   const { onPhone, fromBottom } = p;
   // The sheet's own snap points, the same constant values (sheet/insets).
   const snaps = snapsOf(fromBottom);
-  // Its own snap point, kept in its entry: set as it opens, from then on
-  // the pilot's or the card's (useCardSize).
-  const at = entry.at ?? cardOpening(entry);
+  // Its own snap point, kept in its entry: set as it opens, at the size of
+  // the card it is opened from (cardOpening), from then on the pilot's or
+  // the card's (useCardSize).
   const unset = entry.at === undefined && entry.state === "open";
+  const from = useSheetCards((s) => (unset ? openedFrom(s.stack, id) : undefined));
+  const at = entry.at ?? cardOpening(entry, from);
   // With where the front sheet's top is as it opens, where it comes up (RISE).
   useLayoutEffect(() => {
     if (unset) setCard(id, { at, from: frontOffset() });
@@ -180,26 +177,19 @@ function CardDrawer({
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
   // Gone, it is no longer up (the map's room, map/cardRoom).
   useEffect(() => () => cardSettled(id, false), [id]);
-  // A card swiped down closes from half or below (every card, the owner,
-  // 2026-11-26: the main sheet alone stays at its pill); from all the way up it comes down to half, the Drawer's own
-  // next snap point, and stays open (the owner, 2026-11-14: "Settings cards
-  // should only close from a swipe down when in medium detents").
-  const swipeCloses = !!frame.onSwipeClose && at !== "full";
+  // Every card swiped down from half closes, as its ✕ does: the top card's
+  // close (lib/openCards), so a form with an edit still asks first; the
+  // main sheet alone, Search and FPL, stays at its pill (the owner,
+  // 2026-11-26). From all the way up a swipe brings it to half, the
+  // Drawer's next snap point, and it stays open (the owner, 2026-11-14).
+  const swipeCloses = at !== "full";
+  const swipeClose = () => {
+    swiped.current = true;
+    closeTopCard();
+  };
   // A drag let go (letGo): the top card's alone; a card under it refuses a close.
   const snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => {
-    if (top)
-      letGo(point, details, {
-        fromBottom,
-        at,
-        ask,
-        park: frame.onSwipeClose ? "half" : "peek",
-        close: swipeCloses
-          ? () => {
-              swiped.current = true;
-              frame.onSwipeClose?.();
-            }
-          : undefined,
-      });
+    if (top) letGo(point, details, { fromBottom, at, ask, park: "half", close: swipeCloses ? swipeClose : undefined });
     else if (point === null) details.cancel();
   };
   const topSlot = onPhone && fromBottom && riding;
@@ -227,19 +217,12 @@ function CardDrawer({
         // The focus going elsewhere -- the sheet, the map -- leaves it
         // open: it is no modal.
         if (!top || details.reason === "focus-out") return details.cancel();
-        // A swipe past the pill is no close for a card without a swipe's
-        // close (none now: a caller's CardLayer without onSwipeClose): it
-        // stays at the pill with its title row (the card rule's 10) --
-        // every card at half closes, the Drawer's own close carrying it down;
+        // The Drawer's own close carries a card swiped from half down;
         // all the way up, it comes down to half.
-        if (details.reason === "swipe" && swipeCloses) {
-          swiped.current = true;
-          frame.onSwipeClose?.();
-          return;
-        }
+        if (details.reason === "swipe" && swipeCloses) return swipeClose();
         if (details.reason === "swipe") {
           details.cancel();
-          ask(frame.onSwipeClose ? "half" : "peek");
+          ask("half");
           return;
         }
         if (frame.dismiss) return frame.dismiss(details);
@@ -335,27 +318,28 @@ function CardScroller({
   raise,
   below,
 }: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void }) {
+  const [scroller, setScroller] = useState<HTMLElement | null>(null);
+  const placed = useCallback(
+    (node: HTMLElement | null) => {
+      slot(node);
+      setScroller(node);
+    },
+    [slot],
+  );
+  useCardScrollRoom(scroller);
   return (
     <PointerTapDiv
-      onClick={
-        pill
-          ? (event) => {
-              if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) raise();
-            }
-          : undefined
-      }
+      onClick={pill ? (event) => tapOpens(event, raise) : undefined}
       className="flex min-h-0 flex-1 flex-col"
       style={{ "--sheet-head": "0px" } as CSSProperties}
     >
       <Drawer.Content
-        ref={slot}
+        ref={placed}
         data-sheet-scroll=""
         data-panel-body=""
-        // What is scrolled into sight comes to rest under the card's pinned
-        // head (PinnedHead: the grabber's room and its 3.5rem row), not
-        // under it, a focused control included (WCAG 2.4.11): at twice the
-        // text size the Brief's last control was scrolled to under its head
-        // (card-scroll.spec, the wave's validation, 2026-11-26).
+        // What is scrolled into sight comes to rest clear of the card's
+        // pinned head, a focused control included (WCAG 2.4.11): its
+        // measured height (useCardScrollRoom), this its room till then.
         className={cn(
           "flex min-h-0 flex-1 flex-col overflow-y-auto scroll-pt-[calc(var(--corner-inset,0.75rem)+3.5rem)] print:overflow-visible",
           below,

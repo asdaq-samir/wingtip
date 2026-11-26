@@ -9,7 +9,7 @@ import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { CardDialogs } from "./sheet/CardDialogs";
 import { CARD_FOOT_ROOM } from "./sheet/insets";
-import { closeTopCard, holdOpenCard, type OpenCard } from "../lib/openCards";
+import { holdOpenCard, type OpenCard } from "../lib/openCards";
 import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
 
 /**
@@ -181,27 +181,10 @@ export function SheetCard({
   };
   const target = useCardFrame(
     head
-      ? {
-          fullScreen,
-          title,
-          testId,
-          labelledBy: headingId,
-          dismiss,
-          // Every card: a swipe down from half closes it, as its ✕ does, and
-          // from all the way up brings it to half (CardStack); the main
-          // sheet alone, Search and FPL, stays at its pill (the owner,
-          // 2026-11-26).
-          onSwipeClose: onClose && (() => onClose()),
-          initialFocus: opening,
-          finalFocus: finalFocus ?? toOpener,
-        }
+      ? { fullScreen, title, testId, labelledBy: headingId, dismiss, initialFocus: opening, finalFocus: finalFocus ?? toOpener }
       : // Its content's head names it; the focus left where it is unless
-        // it came from the chart (fromMarker), the drawer's own Escape. A
-        // swipe down from half closes it too, as its head's ✕ does, the top
-        // card's close (lib/openCards; the swipe is the top card's alone):
-        // the airport's, an airspace's, traffic's, a past flight's and
-        // Nearest's, which parked at the pill (the audit, 2026-11-26).
-        { fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus, onSwipeClose: () => void closeTopCard() },
+        // it came from the chart (fromMarker), the drawer's own Escape.
+        { fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus },
     id,
   );
   const fromMarker = useFromMarker();

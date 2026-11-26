@@ -50,9 +50,19 @@ export const ROW_PAD = "pt-2.5";
  *  darker on it for WCAG's 4.5:1 (design/tokens.json's -shade tokens). */
 export const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
 
+/** What on the sheet is a control, which takes its own tap rather than
+ *  the pill's: one list for the pill's tap rules. The two classes are the
+ *  same list written out whole, as Tailwind finds a class only as written
+ *  (sheetLayout.test keeps them the same). */
+export const CONTROLS = "button,a,input,[role=button],[role=combobox]";
+/** The controls take taps where their ground takes none (FootBar). */
+export const CONTROLS_TAPPABLE = "[&_:is(button,a,input,[role=button],[role=combobox])]:pointer-events-auto";
+/** No control takes a tap, the row's own tap rules (a pill's band). */
+export const CONTROLS_UNTAPPED = "[&_:is(button,a,input,[role=button],[role=combobox])]:pointer-events-none";
+
 /** A tap on a pill's row raises the sheet, but not one on a control in it. */
 export function tapOpens(event: MouseEvent, open: () => void) {
-  if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) open();
+  if (!(event.target instanceof Element) || !event.target.closest(CONTROLS)) open();
 }
 
 /** The band all the way up: frosted only settled there, where the body

@@ -54,7 +54,7 @@ export default function BriefCard({
   // A card of its own over the sheet, the stock Drawer's nested drawer
   // (CardLayer, the owner 2026-11-11), as an airport's card is.
   return (
-    <CardLayer onSwipeClose={onClose}>
+    <CardLayer>
       <div className="flex min-h-0 flex-1 flex-col print:hidden" data-testid="brief-card">
         <PanelTabs
           printing={false}

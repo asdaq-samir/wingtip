@@ -12,7 +12,21 @@ import type { PanelState } from "../../lib/mapChrome";
  * item 3: four detectors of one event, one of them a SETTLE_MS guess that
  * failed on a slow runner).
  */
-const useSheetMoving = create<{ moving: boolean }>(() => ({ moving: false }));
+const useSheetMoving = create<{ moving: boolean; offset: number }>(() => ({ moving: false, offset: 0 }));
+
+/** The Drawer's own snap offset on a sheet's or a card's popup, as Base UI
+ *  writes it (--drawer-snap-point-offset): where it rests, or is going to
+ *  rest, not where a finger has it. Read here alone. */
+export function snapOffset(popup: HTMLElement | null | undefined): string | undefined {
+  return popup?.style.getPropertyValue("--drawer-snap-point-offset") || undefined;
+}
+
+/** The phone's sheet's snap offset, px: where it will rest, set as a
+ *  let-go or a tap picks its size, not changed by a finger's drag or the
+ *  slide (watchSheetMotion). 0 all the way up and with no bottom sheet. */
+export function useSheetRestOffset(): number {
+  return useSheetMoving((s) => s.offset);
+}
 
 /** Watches the sheet's popup (SheetDrawer's) for useSheetMoving while it
  *  is on the page. Answers the watch's end. */
@@ -21,8 +35,12 @@ export function watchSheetMotion(popup: HTMLElement): () => void {
   let settling = false;
   const tell = () => {
     const moving = swiping || settling;
-    if (useSheetMoving.getState().moving !== moving) useSheetMoving.setState({ moving });
+    const offset = parseFloat(snapOffset(popup) ?? "") || 0;
+    const was = useSheetMoving.getState();
+    if (was.moving !== moving || was.offset !== offset) useSheetMoving.setState({ moving, offset });
   };
+  // Base UI writes the finger's movement on the popup's style at every
+  // move, which changes nothing here; the offset only at a new rest.
   const swiped = new MutationObserver(() => {
     swiping = popup.hasAttribute("data-swiping");
     // A new swipe ends any slide before it: one cut off with neither
@@ -32,7 +50,7 @@ export function watchSheetMotion(popup: HTMLElement): () => void {
     if (swiping) settling = false;
     tell();
   });
-  swiped.observe(popup, { attributes: true, attributeFilter: ["data-swiping"] });
+  swiped.observe(popup, { attributes: true, attributeFilter: ["data-swiping", "style"] });
   // The popup's own slide, not a transition of something inside it.
   const ours = (e: TransitionEvent) => e.target === popup && e.propertyName === "transform";
   const run = (e: TransitionEvent) => {
@@ -54,7 +72,7 @@ export function watchSheetMotion(popup: HTMLElement): () => void {
     popup.removeEventListener("transitionrun", run);
     popup.removeEventListener("transitionend", end);
     popup.removeEventListener("transitioncancel", end);
-    useSheetMoving.setState({ moving: false });
+    useSheetMoving.setState({ moving: false, offset: 0 });
   };
 }
 
