@@ -183,7 +183,11 @@ export function useFlightLive(hex: string | null, history: boolean) {
     toField: toField ?? null,
     fromEnd: fromIdent ? { ident: fromIdent, place: townOf(fromField) ?? (plane ? (route?.airports[0]?.location ?? null) : null) } : null,
     toEnd: toIdent ? { ident: toIdent, place: townOf(toField) ?? (plane ? (flying?.airports.at(-1)?.location ?? null) : null) } : null,
-    startedAt: detail?.departed?.at ?? today?.[0]?.t ?? null,
+    // How long it has flown only from its departure: today's first point is
+    // when it was first heard, which for a flight heard mid-way read "0m"
+    // over Las Vegas to Detroit nearly flown (the owner's screenshot,
+    // 2026-11-26, DAL1864).
+    startedAt: detail?.departed?.at ?? null,
     departedAt: plane ? (detail?.departed?.at ?? null) : null,
     /** Its airport: the field it left while it is flying. */
     airport: plane ? fromIdent : null,

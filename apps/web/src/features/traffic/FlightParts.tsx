@@ -66,10 +66,11 @@ export function FlightTab({ hex, live, photo }: { hex: string; live: FlightLive;
           ),
         }
       : null,
-    // Where it has flown, sketched while it is heard or between the fields it
-    // flew, not a bare line on white an hour after (the owner's screenshot,
-    // 2026-11-26).
-    live.plane || live.fromField || live.toField
+    // Where it has flown, sketched only where there is a way flown to draw,
+    // two reports at the least: a bare line on white an hour after it
+    // landed, or two fields' dots with nothing between, filled a card-wide
+    // box (the owner's screenshots, 2026-11-26).
+    trail.length > 1
       ? {
           key: "trail",
           label: `Where ${name} has flown`,

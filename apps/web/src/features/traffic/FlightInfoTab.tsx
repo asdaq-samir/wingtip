@@ -106,8 +106,10 @@ export default function FlightInfoTab({
               <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
             </>
           )}
-          {/* Who flies it, this flight's, on every card. */}
-          <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />
+          {/* Who flies it, this flight's, on every card, where it is known. */}
+          {(detailLoading || detail?.operator) && (
+            <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />
+          )}
           <ListRow
             title="ICAO Address"
             value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>}
