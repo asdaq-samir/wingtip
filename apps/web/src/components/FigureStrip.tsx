@@ -56,7 +56,7 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
  * Every figure at its full size, never shrunk to fit (the owner,
  * 2026-11-21, at 19.65 px: "1,320 nm" and "⚠ 111.3 gal" read smaller than
  * "262 nm" and "23.1 gal"): the columns are as wide as their content,
- * spread from the strip's one edge to the other, every figure centred in
+ * 20 apart and together in the strip's middle, every figure centred in
  * its own (the owner, 2026-11-26), and only where even that is too wide is a figure cut short with "…",
  * the figures always exact, never a rounded form in their place.
  *
@@ -114,13 +114,15 @@ export default function FigureStrip({
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
         ref={strip}
-        // At least a rem between two figures (16 points, 20 at the owner's
-        // larger text), where 8 let them close in to crowd at a large text
-        // size before one was dropped (the owner, 2026-11-26: "The
-        // proportionality of gaps at small size and large size");
-        // useFiguresFit reads it, so a figure drops sooner instead.
+        // One small gap between figures, 20 (1.25rem, so it grows with the
+        // reader's text), the figures together in the strip's middle, where
+        // the room left was spread between them and their gaps came out at
+        // whatever the figures' lengths left, 42 points on a long route and
+        // more on a short one (the owner, 2026-11-26: "we should pick a
+        // small gap that looks nice for small figures size"); useFiguresFit
+        // reads it, a figure dropped where even that does not fit.
         className={cn(
-          "grid justify-between gap-x-4 gap-y-3",
+          "grid justify-center gap-x-5 gap-y-3",
           "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
           !row && "@max-[16rem]/figures:grid-cols-2",
           !fit && "grid-cols-2",
@@ -131,11 +133,8 @@ export default function FigureStrip({
       >
         {figures.map((f, i) => {
           // Every figure centred, its name over its value (the owner,
-          // 2026-11-26: "Center align them all"), where the first was flush
-          // left and the last flush right; the columns, each as wide as its
-          // own figure, still run from the strip's one edge to the other
-          // (the owner, 2026-11-20: "Why aren't we using the full width for
-          // the figures at the bottom?").
+          // 2026-11-26: "Center align them all"), each column as wide as its
+          // own figure.
           const button = tap?.(
             f,
             <>

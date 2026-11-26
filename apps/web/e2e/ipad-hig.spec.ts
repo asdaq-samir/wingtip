@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { grabberTo, openBrief, settle, sideDrawer, slow } from "./helpers";
 import { pick } from "./cardEntries";
 import { pickAirplane } from "./startState";
+import { steady } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -113,9 +114,7 @@ const stripColumns = (page: Page) =>
     };
   });
 
-test("the strip's names sit over their values: the ends flush to the edges, every column between centred (the owner, 2026-11-23)", async ({
-  page,
-}) => {
+test("the strip's names sit centred over their values, every column (the owner, 2026-11-26)", async ({ page }) => {
   test.setTimeout(slow(300000));
   for (const size of [
     { width: 390, height: 844 },
@@ -128,15 +127,13 @@ test("the strip's names sit over their values: the ends flush to the edges, ever
       await page.evaluate((r) => (document.documentElement.style.fontSize = r), root);
       await expect(page.getByTestId("navlog-ete").first()).toBeAttached({ timeout: slow(120000) });
       await grabberTo(page, "peek");
-      await page.waitForTimeout(800);
-      const { stacked, columns } = await stripColumns(page);
+      // The strip at rest at the pill's size before it is measured.
+      await steady(() => page.locator("[data-foot-strip]").first().boundingBox());
+      const { columns } = await stripColumns(page);
       const where = `${size.width} at ${root || "the default size"}`;
       expect(columns.length, where).toBeGreaterThanOrEqual(3);
       columns.forEach(({ name, value }, i) => {
-        const edge = !stacked && i === 0 ? "start" : !stacked && i === columns.length - 1 ? "end" : null;
-        if (edge === "start") expect(Math.abs(name.left - value.left), `${where}: column ${i} flush left`).toBeLessThanOrEqual(1);
-        else if (edge === "end") expect(Math.abs(name.right - value.right), `${where}: column ${i} flush right`).toBeLessThanOrEqual(1);
-        else expect(Math.abs(name.centre - value.centre), `${where}: column ${i}'s name centred over its value`).toBeLessThanOrEqual(1);
+        expect(Math.abs(name.centre - value.centre), `${where}: column ${i}'s name centred over its value`).toBeLessThanOrEqual(1);
       });
     }
   }
