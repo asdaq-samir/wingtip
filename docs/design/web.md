@@ -605,8 +605,8 @@ screens:
 How the app meets them (the accessibility audit of 2026-11-21):
 
 - A toggle's name never changes with its state: the stock Toggle keeps
-  one name and lets `aria-pressed` say on or off (Comms assist; a
-  flight's Follow, "Following" once pressed). A button whose words say
+  one name and lets `aria-pressed` say on or off (Comms assist; an
+  airplane's Track). A button whose words say
   what a tap does ("Show in 3D", "Hide my position") is a plain button,
   with no pressed state to contradict them ([APG Button][apg-button]).
 - The name starts with the words seen: "NRST, nearest airports",
@@ -870,32 +870,48 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
 **Structure, airplane card.** Head (tail, type, operator where the
 registry gives it; a picked airplane of the pilot's own shows its
 figures), the actions `lib/cardActions` gives its kind, then the figures
-the engine has for it. The airplane card (`features/airplane`, `AirplaneProfileSheet`) is
-laid out as the airport card is, the owner's P1 of 2026-11-14 (canvas
-<https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>; docs/design/rules.md,
-the airplane card), and after Apple Maps' place card as the airport
-card's C1 is (the owner, 2026-11-14: "make sure the airplane card looks
-similar to airport card"), top to bottom: the `CardAction` row Fly This,
-Follow (`AircraftAlertMenu` labelled Follow), Favorite (`FavoriteTile`)
-and Share (`shareOrCopy`, `?airplane=`); the status line
-(`airplaneStatus`); then, at the head of the Info tab alone (the owner,
-2026-11-14), the facts strip (`components/airplane/AirplaneFacts`
-on `CardFacts`: Type, Year, Seats, Engines, Registration, its status in
-the destructive ink where lapsed, and Owner, public as the FAA publishes
-it); its Planespotters.net photo as the airport card's picture tiles
-(`CardPictures`, the tile the link to its page, the photographer named on
-it); the page of Flights · Info · Figures, the tabs in the same
-floating glass bar (`CardTabBar`, icons History, Info and Gauge, Flights with its count over its icon). It reads its N-number two ways at once (`lib/airplane/lookup`,
-`useTailLookup`, in `useAirplaneCard`): the FAA's record from the
-planner's `/api/traffic/registered`, off its disk in milliseconds, for
-the line, Info (`AirplaneInfo`) and the ICAO address, and the rest of
-its public record from `/api/airplanes/{n_number}` and its `/photo`
-(`lib/airplane/details`; the history groups in `AirplaneHistory`, the
-photo in the pictures); and
+the engine has for it. The airplane card (`features/airplane`'s `AirplaneCard`, its view
+model `useAirplaneCardModel`, hosted over the page by `AirplaneCardHost`)
+is one card an airplane since the owner's design of 2026-11-26, which
+merged the airplane card and the tracked flight's card (docs/design/rules.md,
+the airplane card): opened by its N-number (`lib/airplane/profileStore`,
+`?airplane=`) or by its ICAO address (`?flight=`, traffic on the map,
+`selectFlight`), each finding the other, the key of its card its
+N-number while it has one. Picking another airplane puts the N-number's
+card away (`usePanelView`), and an N-number opened puts away another's
+`flight` (`useProfileAddress`). Laid out as the airport card is, the
+owner's P1 of 2026-11-14 (canvas
+<https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>), top to bottom: the
+head (`SheetCard`: Share at its start, `?airplane=` or `?flight=`, the
+N-number or call sign, ✕); the `CardAction` row by its state, Track (a
+Base UI Toggle on `useTracking`'s follow) or Fly This, then Alerts
+(`AircraftAlertMenu`) and Favorite (`FavoriteTile`); the flight in the
+air (`traffic/FlightParts`' `FlightLiveBox` over `FlightSummary`) or the
+one status line (`airplaneStatus`); then the tabs Flight · Flights ·
+Info · Figures in the floating glass bar (`CardTabBar`, icons Plane,
+History, Info and Gauge, Flights with its count over its icon). Flight
+is `traffic/FlightParts`' `FlightTab` (the sketch of where it has flown,
+its photo too where there is no Info, then `FlightInfoTab`), its data
+`traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
+route, the summary's ends). Info (`InfoTab`) starts with the facts strip
+(`components/airplane/AirplaneFacts` on `CardFacts`: Type, Year, Seats,
+Engines, Registration, its status in the destructive ink where lapsed,
+and Owner, public as the FAA publishes it) and its Planespotters.net
+photo as the airport card's picture tiles (`CardPictures`, the tile the
+link to its page, the photographer named on it), then `AirplaneInfo`.
+Figures (`FiguresTab`) is `useAirplaneProfile`'s. It reads its N-number
+two ways at once (`lib/airplane/lookup`, `useTailLookup`, in
+`useAirplaneCard`): the FAA's record from the planner's
+`/api/traffic/registered`, off its disk in milliseconds, for the line,
+Info and the ICAO address (the flight's detail carries the same record,
+there first on a card opened from traffic), and the rest of its public
+record from `/api/airplanes/{n_number}` and its `/photo`
+(`lib/airplane/details`; the history groups in `AirplaneHistory`); and
 `/api/traffic/find`, the live sources, seconds when adsb.lol's API is
-busy, for whether it is in the air. Flights is `PastFlights` by that
-address with a ▶ on each row (`play`), each opening `PastFlightCard`
-(`?flight=&past=`) over the card, in a chunk of its own fetched at that
+busy, for whether it is in the air, which tracks it (`?flight=`) without
+the map moving. Flights is `PastFlights` by that address with a ▶ on
+each row (`play`), each opening `PastFlightCard` (`?flight=&past=`), its
+replay and debrief, over the card, in a chunk of its own fetched at that
 tap (`flying/LazyPastFlightCard`), not with the route panel's. The one search's N-number row
 (`useOneSearch`) reads the same two queries, its type at once and
 whether it is in the air under it, so the card opens on answers already
@@ -929,24 +945,13 @@ way the engine's reason is said under the pill (`altitude-note`) and is
 the field's description, with what is flown and why (`altitude-why`).
 Done sits at the pill's start, over the airplane's pill in the same bar.
 
-**Structure, a tracked flight's card** (`FlightCard`), the same way (C1,
-2026-11-14): the head (callsign, what it is and who flies it, Share, ✕);
-Follow, Alert, Debrief and Favorite; the flight in its summary
-(`FlightSummary`: its ends, the bar of the way flown, height, speed and
-track, or where its last flight landed), the card's head; the ends' row
-always there, held while they are asked for and "—" for an end not
-known, each end its ident's line and its town's (kept empty), so nothing
-under it moves as they come in or come back empty (the owner,
-2026-11-19); then Info,
-starting with the facts strip (`AirplaneFacts`, from the FAA record, the
-traffic's type and year where it has none) and the pictures (its
-Planespotters photo, then the sketch of where it has flown), then
-`FlightInfoTab` (Details -- registration
-opening its N-number's card, type, squawk, registered to, model,
-operator, ICAO address, callsign, the tower's departure event -- the
-scheduled route and the FAA registration), or Flights (its earlier
-flights, each replayed) in the floating glass bar, Info first, the tab
-kept for the airplane while the page is open (`useCardTab`).
+**Structure, a tracked flight** is the airplane card's (above) since
+2026-11-26: its summary (`FlightSummary`: its ends, the bar of the way
+flown, height, speed and track) always in sight under the actions while
+it flies; the ends' row always there, held while they are asked for and
+"—" for an end not known, each end its ident's line and its town's (kept
+empty), so nothing under it moves as they come in or come back empty
+(the owner, 2026-11-19).
 
 **Structure, VOR and TFR cards** (the owner's iPhone screenshots of OBK's
 and TFR 6/4116's cards, 2026-11-14). Both heads are the shared one: Share
