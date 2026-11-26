@@ -74,8 +74,19 @@ export function readNotam(n: FieldNotam, ident: string): NotamReading {
  *  updated (the feed's end given, so a firm one is said as its time).
  *  Drawn inside an EngineGate. */
 export function cardOf(n: FieldNotam, ident: string): NotamCardReading {
-  return callEngine("notam_card", { text: n.raw, idents: identsOf(ident), ends: n.ends ?? null });
+  // Asked once a NOTAM and field: a row's title, its times and its card
+  // each want it, at every render, and the reading parses the whole text.
+  // The query's answers are kept objects, so a NOTAM is its own key.
+  const byField = cards.get(n) ?? new Map<string, NotamCardReading>();
+  cards.set(n, byField);
+  const known = byField.get(ident);
+  if (known) return known;
+  const card = callEngine("notam_card", { text: n.raw, idents: identsOf(ident), ends: n.ends ?? null });
+  byField.set(ident, card);
+  return card;
 }
+
+const cards = new WeakMap<FieldNotam, Map<string, NotamCardReading>>();
 
 /** A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it
  *  (the planner's `tfr`): its kind as a heading, its kind and rule, how

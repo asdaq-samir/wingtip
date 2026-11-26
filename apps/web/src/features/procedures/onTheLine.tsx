@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, FOLD_PANEL } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { WIDE_PILL } from "./routeListStyle";
@@ -109,28 +109,38 @@ export function FoldSection({
   // it has, not all of it (the owner, 2026-11-24: "Tapping shouldn't
   // unfold all of the subsections"); a tap on a head opens that one.
   const [open, setOpen] = useState(startOpen);
+  // Folding, the pill keeps its card's outline until its fixes have folded
+  // away under it, so the card closes as one thing; its inset eases with
+  // the fold on the fold's own time.
+  const [closing, setClosing] = useState(false);
+  const card = open || closing;
   return (
     <Collapsible
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(next) => {
+        setOpen(next);
+        setClosing(!next);
+      }}
       render={
         <section
           aria-label={label}
           data-testid={testId}
           data-section-folded={open ? undefined : ""}
-          className={cn(pill && "relative", pill && open && "mb-1.5 pb-1.5")}
+          className={cn(
+            pill && "relative transition-[margin,padding] duration-(--motion-fade) ease-(--motion-sheet-ease)",
+            pill && open && "mb-1.5 pb-1.5",
+          )}
           {...data}
         />
       }
     >
       {/* Unfolded, the pill grows into a card round its fixes (the owner,
-          2026-11-25: "Can the pills expand to a card when showing fixes?"):
-          one hairline outline from the pill's top round every fix's words,
-          its corners the pill's own, the route's dots left of it on the
-          line. Over the words' column only: the marks' 32 and their 16 gap
-          (w-8, TIMELINE_GAP) to its left, the card's 12 (PhaseCards' pr-3)
-          to its right, as the pill is. */}
-      {pill && open && (
+          2026-11-25): one hairline outline from the pill's top round every
+          fix's words, its corners the pill's own, the route's dots left of
+          it on the line. Over the words' column only: the marks' 32 and
+          their 16 gap (w-8, TIMELINE_GAP) to its left, the card's 12
+          (PhaseCards' pr-3) to its right, as the pill is. */}
+      {pill && card && (
         <span
           aria-hidden="true"
           className="pointer-events-none absolute top-0 right-3 bottom-0 left-12 rounded-(--radius-card) ring-1 ring-foreground/12 ring-inset"
@@ -138,7 +148,7 @@ export function FoldSection({
       )}
       <OnTheLine stop={stop && !open} thread={thread}>
         {pill ? (
-          <span className={cn(WIDE_PILL, open && "ring-0")}>
+          <span className={cn(WIDE_PILL, card && "ring-0")}>
             <CollapsibleTrigger
               render={
                 <Button
@@ -175,30 +185,18 @@ export function FoldSection({
           </>
         )}
       </OnTheLine>
-      {/* Base UI's own panel animation, the rows under it moving up as it
-          folds (none with Reduce Motion, index.css). Clipped while it
-          grows and from the first frame it shrinks, open to the route's
-          line past its foot only once grown: overflow, a discrete
-          property, turns visible a fold's time after it opens. Base UI
-          marks only the first frame (data-starting-style), so the fixes
-          were drawn whole over the Takeoff row under them while the room
-          for them grew (the owner's iPhone recording, 2026-11-26). Its
-          height eased as a grid's one row, 0fr to 1fr, the rows' own laid
-          out height, not Base UI's measured --collapsible-panel-height: a
-          scrollHeight, it counted what reaches past the foot (the route's
-          line, the rows' 44-point areas), so the card grew 8 too tall and
-          sprang back as it settled (the owner's recording, 2026-11-26:
-          "the arrival card overshooting at the bottom"). The clip is the
-          row's own child's, as a 0fr row needs. */}
+      {/* The stock fold (FOLD_PANEL); its card kept round it as it closes. */}
       <CollapsibleContent
+        onTransitionEnd={(event) => {
+          if (event.target === event.currentTarget && !open) setClosing(false);
+        }}
         className={cn(
           // Inside the card the fixes' words are inset 12 from its sides,
           // each row 40 tall, its tap 44 (TimelineProcedureRows' hit-y-0.5;
           // the owner, 2026-11-25: "Go ahead", rows of 48 for a name and
           // an altitude).
           pill && "[&_[data-words]]:min-h-10 [&_[data-words]]:pl-3 [&_[data-words]]:pr-6!",
-          "grid grid-rows-[1fr] transition-[grid-template-rows] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr]",
-          "[&>div]:min-h-0 [&>div]:overflow-hidden [&>div]:[transition:overflow_0s_var(--motion-fade)_allow-discrete] [&[data-open]:not([data-starting-style]):not([data-ending-style])>div]:overflow-visible data-ending-style:[&>div]:[transition:overflow_0s]",
+          FOLD_PANEL,
         )}
       >
         <div>{children}</div>

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import {
@@ -68,9 +68,22 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
   // fires its hover where the tap was), reading as picked (the owner's
   // iPhone, 2026-11-25): no row lit till the next press or a mouse moves.
   const [turned, setTurned] = useState(false);
-  const setPage = (to: "runways" | string | null) => {
+  // The menu's width held across its pages, never narrower than the page
+  // it was turned from, so the rows do not shift under the finger.
+  const [minWidth, setMinWidth] = useState<number | undefined>(undefined);
+  const setPage = (to: "runways" | string | null, event: MouseEvent<HTMLElement>) => {
+    const popup = event.currentTarget.closest<HTMLElement>("[data-slot=dropdown-menu-content]");
     setPaged(to);
-    setTurned(true);
+    // A keyboard's Enter (a click of no presses) keeps its row lit.
+    setTurned(event.detail > 0);
+    if (!popup) return;
+    setMinWidth((w) => Math.max(w ?? 0, popup.offsetWidth));
+    // The new page from its top, its first row focused: the row the focus
+    // was on is gone, and the arrows and VoiceOver go on from there.
+    requestAnimationFrame(() => {
+      popup.scrollTop = 0;
+      popup.querySelector<HTMLElement>("[role^=menuitem]:not([aria-disabled=true])")?.focus();
+    });
   };
   // approachGroups' first is a runway whenever there is an approach.
   const runways = first === null ? others : [first, ...others];
@@ -87,7 +100,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
     return on ? shortName(on) : [...new Set(there.map((p) => shortName(p).split(" ")[0]))].join(", ");
   };
   const toRunways = runways.length > 1 && (
-    <DropdownMenuItem closeOnClick={false} onClick={() => setPage("runways")} className="text-tint" data-testid="procedure-menu-back">
+    <DropdownMenuItem closeOnClick={false} onClick={(e) => setPage("runways", e)} className="text-tint" data-testid="procedure-menu-back">
       {/* The chevron's stroke in the rows' words' column, the words close after it, as iOS's Back. */}
       <ChevronLeft className="-mr-1 -ml-1.5" />
       All Runways
@@ -113,10 +126,12 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
           <DropdownMenuItem
             key={r}
             closeOnClick={false}
-            onClick={() => setPage(r === first ? null : r)}
+            onClick={(e) => setPage(r === first ? null : r, e)}
             data-testid="procedure-menu-runway"
           >
             {runwayName(r)}
+            {/* Said, not seen: the row turns to that runway's page. */}
+            <span className="sr-only">, its approaches</span>
             <span className="ml-auto pl-3 text-muted-foreground">{aside(r)}</span>
             <ChevronRight className="text-muted-foreground" />
           </DropdownMenuItem>
@@ -139,6 +154,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
         if (!open) return;
         setPaged(opening);
         setTurned(false);
+        setMinWidth(undefined);
         m.onOpen();
       }}
     >
@@ -146,6 +162,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
       <DropdownMenuContent
         align="start"
         className={cn("min-w-60 data-turned:[&_[data-highlighted]]:bg-transparent!", look === "slim" && "w-auto")}
+        style={{ minWidth }}
         data-turned={turned || undefined}
         onPointerDown={() => setTurned(false)}
         // The arrows light their row again (Full Keyboard Access, an iPad's keyboard).
