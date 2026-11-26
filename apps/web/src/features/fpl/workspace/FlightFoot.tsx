@@ -129,12 +129,15 @@ export default function FlightFoot({
 /** The tab bar's capsule's width, px, set on the foot as --tabs-width for
  *  the thin strip over it (GroundFoot), as it is laid out: the capsule is
  *  as wide as its items, which its own room and the reader's text size
- *  set (floatingBarLook), so it is read, not worked out. */
+ *  set (floatingBarLook), so it is read, not worked out. Found by the mark
+ *  the capsule sets on itself (FloatingBar's data-floating-bar), the one
+ *  in the foot. CSS alone cannot share it: the tab bar spans the foot and
+ *  centres the capsule in it. */
 function useTabsWidth() {
   const foot = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = foot.current;
-    const bar = el?.querySelector<HTMLElement>("[data-testid=fpl-actions] [role=toolbar]");
+    const bar = el?.querySelector<HTMLElement>("[data-floating-bar]");
     if (!el || !bar || typeof ResizeObserver === "undefined") return;
     const watch = new ResizeObserver(() => {
       const width = bar.getBoundingClientRect().width;
