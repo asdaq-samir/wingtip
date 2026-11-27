@@ -180,38 +180,51 @@ fn instrument_current_in(entries: &[Entry], month: i64) -> bool {
         && in_window(entries, month).any(|e| e.tracking)
 }
 
-/// The last month of instrument currency (61.57(c)(1), (d)), by
-/// `month_index`: the latest month whose six preceding months hold all
-/// three, or the sixth month after a proficiency check's (61.57(d): the
-/// check restores currency, and the six months after it are its window);
-/// None with neither. In the past where it has lapsed.
-fn instrument_until(entries: &[Entry], ipc: Option<i64>) -> Option<i64> {
-    let mut best = ipc.map(|m| m + INSTRUMENT_MONTHS);
-    let mut flown: Vec<i64> = entries.iter().map(|e| e.month).collect();
-    flown.sort_unstable();
-    flown.dedup();
-    // Each month a logged flight could have made current: the one after
-    // it, up to six after (no later month has it in its window).
-    for month in flown {
-        for ahead in (1..=INSTRUMENT_MONTHS).rev() {
-            let candidate = month + ahead;
-            if best.is_some_and(|b| candidate <= b) {
-                break;
-            }
-            if instrument_current_in(entries, candidate) {
-                best = Some(candidate);
-                break;
-            }
+/// The months the pilot is instrument current, by `month_index`, oldest
+/// first (61.57(c)(1), (d)). A month is current where a proficiency check
+/// falls in it or the six before it (61.57(d): the check restores
+/// currency, and the six months after it are its window), or where its
+/// six preceding months hold all three of (c)(1) and the pilot may still
+/// restore currency that way. 61.57(d): "a person who has failed to meet
+/// the instrument experience requirements of paragraph (c) for more than
+/// six calendar months may reestablish instrument currency only by
+/// completing an instrument proficiency check" -- so once the last
+/// current month is more than six behind, logged approaches no longer
+/// count, until a check is taken.
+///
+/// The logbook does not say when the rating was earned, so a logbook that
+/// never shows currency is taken as lapsed from the month before its first
+/// flight: the experience must be flown within its first six months, or a
+/// check is asked for. That errs toward asking for a check; a pilot whose
+/// instrument practical test came since gives its date as the check's.
+/// With the stricter reading of (c)(1) (a month's own flights count from
+/// the next), tasks flown in the sixth month of the grace period count
+/// only in the seventh, past it: also the safer side.
+fn instrument_months(entries: &[Entry], ipc: Option<i64>) -> Vec<i64> {
+    let first = entries.iter().map(|e| e.month).chain(ipc).min();
+    let last = entries.iter().map(|e| e.month + INSTRUMENT_MONTHS).chain(ipc.map(|i| i + INSTRUMENT_MONTHS)).max();
+    let (Some(first), Some(last)) = (first, last) else {
+        return Vec::new();
+    };
+    let mut current = Vec::new();
+    // The last month current, or the month before the logbook's first.
+    let mut last_current = first - 1;
+    for month in first..=last + 1 {
+        let checked = ipc.is_some_and(|i| i <= month && month <= i + INSTRUMENT_MONTHS);
+        let in_grace = month - last_current <= INSTRUMENT_MONTHS;
+        if checked || (in_grace && instrument_current_in(entries, month)) {
+            current.push(month);
+            last_current = month;
         }
     }
-    best
+    current
 }
 
-/// Whether the pilot is instrument current in `month` (61.57(c)(1), (d)):
-/// its six preceding months hold all three, or a proficiency check in
-/// `ipc` falls in it or the six months before it.
-fn instrument_current_on(entries: &[Entry], ipc: Option<i64>, month: i64) -> bool {
-    instrument_current_in(entries, month) || ipc.is_some_and(|i| i <= month && month <= i + INSTRUMENT_MONTHS)
+/// The last month of instrument currency (61.57(c)(1), (d)), by
+/// `month_index`; None where the logbook and the check never give one. In
+/// the past where it has lapsed.
+fn instrument_until(entries: &[Entry], ipc: Option<i64>) -> Option<i64> {
+    instrument_months(entries, ipc).last().copied()
 }
 
 /// The first month of instrument currency still to come, by `month_index`:
@@ -223,10 +236,11 @@ fn instrument_current_on(entries: &[Entry], ipc: Option<i64>, month: i64) -> boo
 /// of a pilot the rule counts as not current yet.
 fn instrument_from(entries: &[Entry], ipc: Option<i64>, until: Option<i64>, month: i64) -> Option<i64> {
     let until = until.filter(|&u| u > month)?;
-    if instrument_current_on(entries, ipc, month) {
+    let current = instrument_months(entries, ipc);
+    if current.contains(&month) {
         return None;
     }
-    (month + 1..=until).find(|&m| instrument_current_on(entries, ipc, m))
+    current.into_iter().find(|&m| m > month && m <= until)
 }
 
 mod dates;
