@@ -32,6 +32,9 @@ import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 /** As many fields as Nearest lists. */
@@ -52,13 +55,14 @@ private const val NEAREST = 10
  */
 @Composable
 fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -> Unit) {
-    val fix by ownShip.fix.collectAsStateWithLifecycle()
+    // Whether there is a fix, not each fix: the page is not drawn again
+    // each second (the glide rows have their own step, rememberGlideReach).
+    val hasFix by remember(ownShip) { ownShip.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(ownShip.fix.value != null)
     var fields by remember { mutableStateOf<List<NearestAirport>?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
     var onPhone by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    LaunchedEffect(fix == null) {
-        val at = fix ?: return@LaunchedEffect
+    suspend fun load(at: OwnShip.Fix) {
         try {
             fields = Planner.nearest(at.lat, at.lon, limit = NEAREST)
             problem = null
@@ -78,10 +82,16 @@ fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -
             }
         }
     }
+    // Asked again each mile the airplane moves (OwnShip.byTheMile), so the
+    // miles, the way and the glide are never a place behind; a newer ask
+    // cancels one still unanswered.
+    LaunchedEffect(ownShip) {
+        ownShip.byTheMile.collectLatest { at -> if (at != null) load(at) }
+    }
     CardPage(title = stringResource(R.string.nearest), exit = exit) { padding ->
         Column(Modifier.padding(padding).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             when {
-                fix == null -> Text(stringResource(R.string.nearest_finding_position), style = MaterialTheme.typography.bodyMedium)
+                !hasFix -> Text(stringResource(R.string.nearest_finding_position), style = MaterialTheme.typography.bodyMedium)
                 problem != null -> ProblemLine(problem)
                 fields == null -> Text(stringResource(R.string.wording_fetching_nearest_fields), style = MaterialTheme.typography.bodyMedium)
                 onPhone -> Text(stringResource(R.string.from_this_phone), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

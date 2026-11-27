@@ -114,8 +114,11 @@ private fun Card(
         SheetPage.Passengers -> Page(stringResource(R.string.passenger_briefing), exit) { PassengerScreen(plan) }
         SheetPage.About -> Page(stringResource(R.string.about), exit) { AboutScreen(onDemo = showPlan) }
         SheetPage.Clearance -> {
-            val fix by ownShip.fix.collectAsStateWithLifecycle()
-            ClearancePage(plan, fix, exit, onEntered = showPlan)
+            // Where the airplane is to a mile or so (the clearance's
+            // points round it), not each fix: the page is not drawn again,
+            // nor its points sent again, each second.
+            val near by remember(ownShip) { ownShip.byTheMile }.collectAsStateWithLifecycle(ownShip.fix.value)
+            ClearancePage(plan, near, exit, onEntered = showPlan)
         }
         SheetPage.YourAirplanes -> YourAirplanesPage(exit)
         SheetPage.Documents -> DocumentsPage(exit, open = sheet::push)
