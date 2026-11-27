@@ -6,7 +6,7 @@
 # the files first listed then, are the formatters' growth (the whole-tree
 # reformat of scripts/dev/format.sh, a commit a language), not new code.
 
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 667
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 647
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 753
 apps/ios/Wingtip/Views/ChartMap.swift 670
 apps/ios/Wingtip/Views/ChartOverlays.swift 706
