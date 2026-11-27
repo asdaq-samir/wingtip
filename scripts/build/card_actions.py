@@ -69,7 +69,8 @@ def load():
             errors.append(f"card {kind}: an action is listed twice")
         errors += [f"card {kind}: no app {a!r}" for a in card.get("apps", []) if a not in APPS]
         for app in card.get("apps", APPS):
-            errors += [f"card {kind}: {a} is not generated for {app}" for a in listed if a in actions and app not in actions[a].get("apps", APPS)]
+            missing = [a for a in listed if a in actions and app not in actions[a].get("apps", APPS)]
+            errors += [f"card {kind}: {a} is not generated for {app}" for a in missing]
     if errors:
         raise SystemExit("\n".join(f"design/card-actions.json: {e}" for e in errors))
     return actions, cards, words
@@ -164,10 +165,8 @@ enum CardKind: String, CaseIterable, Sendable {{
 
 def android(actions, cards):
     names, kinds = for_app(actions, cards, "android")
-    rows = "\n".join(
-        f"    /** {actions[n]['about']} */\n    {constant(n)}(R.string.wording_{actions[n]['wording']}, WingtipIcons.{actions[n]['glyph']}),"
-        for n in names
-    )
+    entry = "    /** {about} */\n    {name}(R.string.wording_{wording}, WingtipIcons.{glyph}),"
+    rows = "\n".join(entry.format(name=constant(n), **actions[n]) for n in names)
     sets = "\n".join(
         f"    /** {c['about']} */\n    {constant(k)}(listOf({', '.join('CardAction.' + constant(a) for a in c['actions'])})),"
         for k, c in kinds.items()
@@ -198,18 +197,21 @@ enum class CardKind(val actions: List<CardAction>) {{
 
 def doc_block(actions, cards, words):
     label = {n: words[a["wording"]]["text"] for n, a in actions.items()}
-    rows = [f"| `{k}` | {', '.join(label[a] for a in c['actions'])} | {', '.join(c.get('apps', APPS))} | {c['about']} |" for k, c in cards.items()]
+    rows = [
+        f"| `{k}` | {', '.join(label[a] for a in c['actions'])} | {', '.join(c.get('apps', APPS))} | {c['about']} |"
+        for k, c in cards.items()
+    ]
     terms = [f"- **{label[n]}** (`{n}`, glyph `{a['glyph']}`): {a['about']}" for n, a in actions.items()]
     head = [DOC_BEGIN, "", "| Card | Actions, in order | Apps | Which |", "|---|---|---|---|"]
     return "\n".join(head + rows + [""] + terms + ["", DOC_END])
 
 
 def doc(block, current):
-    if DOC_BEGIN not in current or DOC_END not in current:
+    """icons.md with its generated block replaced, the rest of it as written."""
+    span = re.compile(re.escape(DOC_BEGIN) + ".*?" + re.escape(DOC_END), re.DOTALL)
+    if not span.search(current):
         raise SystemExit(f"{DOC.relative_to(ROOT)}: no {DOC_BEGIN!r} ... {DOC_END!r} block to fill")
-    before, rest = current.split(DOC_BEGIN, 1)
-    _, after = rest.split(DOC_END, 1)
-    return before + block + after
+    return span.sub(lambda _: block, current, count=1)
 
 
 def main():
@@ -217,19 +219,14 @@ def main():
     actions, cards, words = load()
     outputs = {WEB_TS: web(actions, cards), IOS_SWIFT: ios(actions, cards), ANDROID_KT: android(actions, cards)}
     outputs[DOC] = doc(doc_block(actions, cards, words), DOC.read_text())
-    stale = []
-    for path, text in outputs.items():
-        if (path.read_text() if path.exists() else None) == text:
-            continue
-        if check:
-            stale.append(str(path.relative_to(ROOT)))
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text)
-            print(f"wrote {path.relative_to(ROOT)}")
-    if stale:
-        print("Out of date with design/card-actions.json (run scripts/build/card-actions.sh and commit):", *stale, sep="\n  ")
-        sys.exit(1)
+    differ = [path for path, text in outputs.items() if not path.exists() or path.read_text() != text]
+    if check and differ:
+        names = "\n  ".join(str(path.relative_to(ROOT)) for path in differ)
+        sys.exit(f"Out of date with design/card-actions.json (run scripts/build/card-actions.sh and commit):\n  {names}")
+    for path in [] if check else differ:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(outputs[path])
+        print(f"wrote {path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
