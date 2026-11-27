@@ -55,6 +55,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                         dir_true_deg: i.opt_num(n, "dir_true_deg")?,
                         speed_kt: i.opt_num(n, "speed_kt")?,
                         gust_kt: i.opt_num(n, "gust_kt")?,
+                        variable_deg: None,
                     },
                 }),
             };
@@ -218,6 +219,7 @@ pub(super) fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
             dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
             speed_kt: i.opt_num(m, "wind_speed_kt")?,
             gust_kt: i.opt_num(m, "wind_gust_kt")?,
+            variable_deg: super::wind_variable::variable(i, m)?,
         })),
         _ => Ok(None),
     }

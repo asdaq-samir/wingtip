@@ -23,6 +23,7 @@ fn field(gust_kt: Option<f64>) -> Vec<Field> {
         wind_dir_true_deg: Some(80.0),
         wind_speed_kt: Some(10.0),
         wind_gust_kt: gust_kt,
+        wind_variable_deg: None,
     };
     let runway = Runway {
         surface: Some("ASPH".into()),
@@ -77,4 +78,32 @@ fn the_shown_figure_errs_toward_the_stronger_tailwind() {
     assert_eq!(along_shown_kt(8.0, Some(15.0)), 8.0);
     assert_eq!(along_shown_kt(0.0, Some(4.0)), 0.0);
     assert_eq!(along_shown_kt(0.0, Some(-4.4)), -4.0);
+}
+
+#[test]
+fn distances_with_no_temperature_reported_say_they_assume_a_standard_day() {
+    // FAA-H-8083-25C ch. 11: a hot day's density altitude lengthens the
+    // roll, so a standard day's distances are flagged, never passed quietly.
+    assert!(!on_23(None).temp_assumed);
+    let mut fields = field(None);
+    fields[0].metar.as_mut().unwrap().temp_c = None;
+    let check = runway_checks(&airplane(), true, &fields, Some(2400.0), Some(2400.0), None).remove(0);
+    assert!(check.temp_assumed && !check.distances.is_empty());
+    fields[0].metar = None;
+    assert!(runway_checks(&airplane(), true, &fields, Some(2400.0), Some(2400.0), None)[0].temp_assumed);
+    // With no elevation nothing is worked out, and nothing assumed.
+    fields[0].elevation_ft = None;
+    assert!(!runway_checks(&airplane(), true, &fields, Some(2400.0), Some(2400.0), None)[0].temp_assumed);
+}
+
+#[test]
+fn a_standard_day_is_a_runway_caution_naming_the_field() {
+    let r = crate::gonogo::verdict::Runways { worked: true, standard_day: vec!["KAAA".into()], ..Default::default() };
+    let v = crate::gonogo::verdict::Input { runways: r, ..Default::default() };
+    let items = crate::gonogo::verdict::verdict_items(&v);
+    let item = items.iter().find(|i| i.key == "runways").unwrap();
+    assert_eq!(
+        (item.finding.as_str(), item.detail.as_str()),
+        ("caution", "No temperature reported at KAAA: distances assume a standard day")
+    );
 }

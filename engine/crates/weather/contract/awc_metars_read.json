@@ -72,6 +72,10 @@
             "type": "boolean",
             "description": "The visibility is at least visibility_sm: the feed's \"10+\", the report's P6SM or 10SM and more."
           },
+          "visibility_minus": {
+            "type": "boolean",
+            "description": "Less than the figure, \"M1/4SM\" (FMH-1 chapter 12): said \"less than 1/4 sm\", never 1/4."
+          },
           "wind_dir_true_deg": {
             "type": [
               "number",
@@ -89,6 +93,18 @@
               "number",
               "null"
             ]
+          },
+          "wind_variable_deg": {
+            "description": "A variable wind direction, \"250V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.",
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
           },
           "altimeter_in_hg": {
             "type": [
@@ -131,9 +147,11 @@
           "ceiling_cover",
           "visibility_sm",
           "visibility_plus",
+          "visibility_minus",
           "wind_dir_true_deg",
           "wind_speed_kt",
           "wind_gust_kt",
+          "wind_variable_deg",
           "altimeter_in_hg",
           "temp_c",
           "dewpoint_c",

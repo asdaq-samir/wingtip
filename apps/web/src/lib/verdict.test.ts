@@ -113,7 +113,7 @@ describe("the Go / No-Go", () => {
 });
 
 describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
-  const check = (good: boolean) => ({
+  const check = (good: boolean | null) => ({
     ident: "KMSN",
     approach: true,
     precision: true,
@@ -123,6 +123,7 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
     visibility_sm: 4,
     taf: null,
     good,
+    closed: false,
     meets_standard: true,
     reasons: [],
     distance_nm: 220,
@@ -136,24 +137,32 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
     ...quiet,
     weather: { ...quiet.weather, ifr: true, ...weather },
   });
-  const weather = (input: VerdictInput, alternate?: Alternates): VerdictItem => verdict(input, { alternate }).items[0]!;
+  const weather = (input: VerdictInput, alternate?: Alternates | { failed?: boolean; pending?: boolean }): VerdictItem =>
+    verdict(input, { alternate }).items[0]!;
 
-  it("says nothing while the answer is awaited or the one filed will do", () => {
-    expect(weather(ifr()).finding).toBe("ok");
+  it("is pending while the answer is awaited, and says nothing where the one filed will do", () => {
+    expect(weather(ifr(), { pending: true }).finding).toBe("pending");
     expect(weather(ifr(), answer(true, check(true))).finding).toBe("ok");
+  });
+
+  it("is not checked, never ok, where no check was made or it failed (14 CFR 91.169(b))", () => {
+    expect(weather(ifr()).finding).toBe("unknown");
+    expect(weather(ifr(), { failed: true }).detail).toBe(
+      "Alternate not checked: 14 CFR 91.169(b) excuses one only where the destination's forecast shows it",
+    );
   });
 
   it("asks for one where one is needed, and stops on one under its minimums, opening its section", () => {
     expect(weather(ifr(), answer(true, null))).toMatchObject({
-      finding: "caution",
-      detail: "An alternate is required (14 CFR 91.169): file one in Weather",
+      finding: "stop",
+      detail: "An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather",
       tab: "arrive",
       section: "Alternate",
     });
     expect(weather(ifr(), answer(true, check(false))).finding).toBe("stop");
   });
 
-  it("leaves the weather's own caution where its caution is no worse", () => {
-    expect(weather(ifr({ hazards: ["IFR G-AIRMET"] }), answer(true, null)).detail).toBe("IFR G-AIRMET along the route");
+  it("leaves the weather's own caution where its caution is no worse (none filed is a stop, 91.169(a)(2))", () => {
+    expect(weather(ifr({ hazards: ["IFR G-AIRMET"] }), answer(true, check(null))).detail).toBe("IFR G-AIRMET along the route");
   });
 });

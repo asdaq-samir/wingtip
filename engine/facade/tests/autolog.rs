@@ -43,10 +43,12 @@ fn the_c81_to_kdlh_flight_is_logged_as_flown() {
     // 1.1's night began at KDLH's civil dusk, a little after 23:00Z.
     let night = e["nightHours"].as_f64().unwrap();
     assert!((0.6..=1.0).contains(&night), "{night}");
-    // 61.57(a) counts the touch-and-go, (b) only the full stop after
-    // 1 hour after sunset.
-    assert_eq!(e["dayLandings"], 1.0);
-    assert_eq!(e["nightLandings"], 1.0);
+    // 61.57(a) counts the touch-and-go; (b) would count the full stop
+    // after 1 hour after sunset, but its takeoff (the touch-and-go's
+    // go-around) was before then, and (b)(1) wants "three takeoffs and
+    // three landings" in that period: neither counts.
+    assert_eq!(e["dayLandings"], 2.0);
+    assert_eq!(e["nightLandings"], 0.0);
     assert_eq!(e["toweredLandings"], 1.0);
     assert_eq!(e["touchAndGoes"], 1.0);
     let kinds: Vec<&str> = d["landings"].as_array().unwrap().iter().map(|l| l["kind"].as_str().unwrap()).collect();

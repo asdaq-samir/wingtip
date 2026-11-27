@@ -156,6 +156,30 @@ fn a_diversion_ranks_a_private_or_military_field_after_a_public_one() {
 }
 
 #[test]
+fn the_diversion_drill_leaves_out_a_field_under_the_point_and_offers_six() {
+    // A field under the point is where the airplane is, not a diversion
+    // (the drill, ACS PA.VI.C): 1.9 nm off left out, 2.1 kept; an
+    // emergency's diversion keeps both.
+    let at = json!({ "lat": 42.0, "lon": -88.0 });
+    let north = |ident: &str, nm: f64| {
+        json!({ "ident": ident, "lat": 42.0 + nm / 60.0, "lon": -88.0, "elevation_ft": 900,
+            "runways": [{ "length_ft": 4000, "surface": "ASP", "runway_ends": [{ "ident": "18", "heading_true_deg": 180 }] }] })
+    };
+    let mut fields = vec![north("UNDR", 1.9), north("NEAR", 2.1)];
+    fields.extend((0..8).map(|k| north(&format!("F{k}"), 5.0 + k as f64)));
+    let ask_with = |drill: bool| {
+        ask(
+            "best_fields",
+            &json!({ "mode": "diversion", "drill": drill, "at": at, "airplane": { "cruise_tas_kt": 110 }, "fields": fields }),
+        )
+    };
+    let drill = ask_with(true);
+    assert!(!idents(&drill).contains(&"UNDR".to_owned()) && idents(&drill).contains(&"NEAR".to_owned()));
+    assert_eq!(idents(&drill).len(), 6);
+    assert!(idents(&ask_with(false)).contains(&"UNDR".to_owned()));
+}
+
+#[test]
 fn a_joint_use_field_is_public_use_not_military() {
     // KFHU, Sierra Vista Municipal-Libby AAF: OWNERSHIP_TYPE_CODE MR,
     // FACILITY_USE_CODE PU (NASR 2026-10-29), open to civil airplanes.

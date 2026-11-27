@@ -291,8 +291,8 @@ nonisolated extension Engine {
     }
 
     /// The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. In "diversion" mode a private or military-only field counts against it as an IFR report does (the owner's or the service's permission stands with no emergency), so a public or joint-use field comes first of fields otherwise alike, and its reasons give the card's line ("Private: permission required", "Military: prior permission required"); in "glide" mode it does not count (14 CFR 91.3(b)) and is said as a caution. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
-    static func bestFields(mode: String? = nil, at: EngineContract.BestFieldsInputAt, altitudeFt: Double? = nil, speedKt: Double? = nil, wind: EngineContract.BestFieldsInputWind? = nil, variationDeg: Double? = nil, airplane: EngineContract.BestFieldsInputAirplane? = nil, fields: [EngineContract.BestFieldsInputFieldsItem], limit: Double? = nil) throws -> EngineContract.BestFieldsAnswer {
-        try Self.rule("best_fields", EngineContract.BestFieldsInput(mode: mode, at: at, altitudeFt: altitudeFt, speedKt: speedKt, wind: wind, variationDeg: variationDeg, airplane: airplane, fields: fields, limit: limit))
+    static func bestFields(mode: String? = nil, at: EngineContract.BestFieldsInputAt, altitudeFt: Double? = nil, speedKt: Double? = nil, wind: EngineContract.BestFieldsInputWind? = nil, variationDeg: Double? = nil, airplane: EngineContract.BestFieldsInputAirplane? = nil, fields: [EngineContract.BestFieldsInputFieldsItem], limit: Double? = nil, drill: Bool? = nil) throws -> EngineContract.BestFieldsAnswer {
+        try Self.rule("best_fields", EngineContract.BestFieldsInput(mode: mode, at: at, altitudeFt: altitudeFt, speedKt: speedKt, wind: wind, variationDeg: variationDeg, airplane: airplane, fields: fields, limit: limit, drill: drill))
     }
 
     /// Our call sign as a regular expression over a recognizer's words (AIM 4-2-4), for a locked phone's listener; null where `tail` is no registration.
@@ -430,7 +430,7 @@ nonisolated extension Engine {
         try Self.rule("data_cycle", EngineContract.DataCycleInput(kind: kind, effective: effective, on: on))
     }
 
-    /// When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
+    /// When a digital ATIS broadcast heard at a time stops being the airport's: 75 minutes after it was heard: the hourly update AIM 4-1-13 asks, and a quarter hour for it to come ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
     static func datisEnds(heard: Double) throws -> EngineContract.DatisEndsAnswer {
         try Self.rule("datis_ends", EngineContract.DatisEndsInput(heard: heard))
     }
@@ -581,8 +581,8 @@ nonisolated extension Engine {
     }
 
     /// What a student's endorsements say: each one's last good day (90 days for a solo endorsement, 14 CFR 61.87(n), (p), the night solo's, 61.87(o), and Class B's, 61.95(a)(2), (b)(2); AC 61-65K A.5-A.7, A.12, A.13; null for one that does not run out), the day their solo endorsement runs out, and, for a solo cross-country on flight_on, what their record answers of 61.93(d): (4) a solo cross-country endorsement (61.93(c)(1), (2)) and (5) a solo endorsement within the 90 days before the flight.
-    static func endorsementRecords(held: [EngineContract.EndorsementRecordsInputHeldItem]? = nil, flightOn: String? = nil) throws -> EngineContract.EndorsementRecordsAnswer {
-        try Self.rule("endorsement_records", EngineContract.EndorsementRecordsInput(held: held, flightOn: flightOn))
+    static func endorsementRecords(held: [EngineContract.EndorsementRecordsInputHeldItem]? = nil, flightOn: String? = nil, makeModel: String? = nil) throws -> EngineContract.EndorsementRecordsAnswer {
+        try Self.rule("endorsement_records", EngineContract.EndorsementRecordsInput(held: held, flightOn: flightOn, makeModel: makeModel))
     }
 
     /// An endorsement's words as they will be signed.
@@ -945,9 +945,9 @@ nonisolated extension Engine {
         try Self.rule("gonogo_risk_line", EngineContract.GonogoRiskLineInput(level: level, score: score))
     }
 
-    /// The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those). With `tfrs`, which crossed TFRs are in force is decided here; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
-    static func gonogoRouteFigures(totals: EngineContract.GonogoRouteFiguresInputTotals? = nil, tfrCount: Double? = nil, crossed: [String]? = nil, tfrs: [EngineContract.GonogoRouteFiguresInputTfrsItem]? = nil, legs: [EngineContract.GonogoRouteFiguresInputLegsItem]? = nil, departUs: Double? = nil, ifr: Bool? = nil, vfrNotRecommended: [String]? = nil, hazards: [String]? = nil, weatherUnavailable: [String]? = nil) throws -> EngineContract.GonogoRouteFiguresAnswer {
-        try Self.rule("gonogo_route_figures", EngineContract.GonogoRouteFiguresInput(totals: totals, tfrCount: tfrCount, crossed: crossed, tfrs: tfrs, legs: legs, departUs: departUs, ifr: ifr, vfrNotRecommended: vfrNotRecommended, hazards: hazards, weatherUnavailable: weatherUnavailable))
+    /// The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145), from the briefing's `tfrs`, by NOTAM id, with how many more it lists near it; none where no `tfrs` are sent; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
+    static func gonogoRouteFigures(totals: EngineContract.GonogoRouteFiguresInputTotals? = nil, tfrs: [EngineContract.GonogoRouteFiguresInputTfrsItem]? = nil, legs: [EngineContract.GonogoRouteFiguresInputLegsItem]? = nil, departUs: Double? = nil, ifr: Bool? = nil, vfrNotRecommended: [String]? = nil, hazards: [String]? = nil, weatherUnavailable: [String]? = nil) throws -> EngineContract.GonogoRouteFiguresAnswer {
+        try Self.rule("gonogo_route_figures", EngineContract.GonogoRouteFiguresInput(totals: totals, tfrs: tfrs, legs: legs, departUs: departUs, ifr: ifr, vfrNotRecommended: vfrNotRecommended, hazards: hazards, weatherUnavailable: weatherUnavailable))
     }
 
     /// The runway check at each field taken off from or landed at, fields and runways by index: the runway, pressure and density altitude, wind along and across it, and the POH's distances against its length (14 CFR 91.103(b)). Empty without both tables.
@@ -1096,13 +1096,13 @@ nonisolated extension Engine {
     }
 
     /// Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility). A private or military-only field (private, military) is the pilot's to check too, with "KMXF is military: prior permission required (PPR)." or the owner's permission said.
-    static func ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil) throws -> EngineContract.IfrAlternateCheck {
-        try Self.rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military))
+    static func ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil, status: String? = nil) throws -> EngineContract.IfrAlternateCheck {
+        try Self.rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military, status: status))
     }
 
     /// Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
-    static func ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil) throws -> EngineContract.IfrAlternateDestinationAnswer {
-        try Self.rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military))
+    static func ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil, status: String? = nil) throws -> EngineContract.IfrAlternateDestinationAnswer {
+        try Self.rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military, status: status))
     }
 
     /// Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the "1-2-3").
@@ -1720,7 +1720,7 @@ nonisolated extension Engine {
         try Self.rule("remarks_read", EngineContract.RemarksReadInput(remarks: remarks))
     }
 
-    /// A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+    /// A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those in the 10 s before, at the report's own time (a transponder's 25 ft steps, DO-260B), and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the rate the report sent (baro_rate_fpm, else geom_rate_fpm), else the slope of the heights reported in the 15 s before, as a VSI lags (FAA-H-8083-15B, Ch. 5): never from a report still to come; a held pressure altitude (`alt_held`, or unchanged for up to 60 s while the GNSS height or the rate sent moved more than 300 ft) left out of every fit and rate, its height the last good one carried forward, never null; ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
     static func replayTrack(points: [EngineContract.ReplayTrackInputPointsItem], gapS: Double? = nil) throws -> EngineContract.ReplayTrackAnswer {
         try Self.rule("replay_track", EngineContract.ReplayTrackInput(points: points, gapS: gapS))
     }
@@ -2150,7 +2150,7 @@ nonisolated extension Engine {
         try Self.rule("wind_arrow", EngineContract.WindArrowInput(speedKt: speedKt, gustKt: gustKt, crosswindKt: crosswindKt, demonstratedKt: demonstratedKt))
     }
 
-    /// The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
+    /// The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends; a light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's 9900, under 5 kt) taken as 0 kt with the nearest level's direction, never skipped (the next level's wind in its place understated time and fuel, 14 CFR 91.151, 91.167); null with no level, never calm. A list for "altitudes".
     static func windAtAltitude(levels: [String: EngineContract.WindAtAltitudeInputLevelsValue], altitudeFt: Double? = nil, altitudes: [Double]? = nil) throws -> OpenAPIValueContainer? {
         try Self.rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels: levels, altitudeFt: altitudeFt, altitudes: altitudes))
     }

@@ -37,7 +37,7 @@ const SECTION = "place-notams";
  * not a line (the owner, 2026-11-12: "dates are twice").
  */
 function NotamLines({ n, read, ident }: { n: FieldNotam; read: NotamReading; ident: string }) {
-  const times = timeLines(n, read, cardOf(n, ident).until_charts, useFieldZone(ident));
+  const times = timeLines(n, read, cardOf(n).until_charts, useFieldZone(ident));
   const where = whereOf(n, read);
   return (
     <span className={cn("flex flex-col gap-0.5", n.in_force === false && "text-muted-foreground")}>
@@ -76,7 +76,7 @@ export function NotamRows({
       <ListGroup>
         {state}
         {notams.map((n) => {
-          const read = readNotam(n, ident);
+          const read = readNotam(n);
           return (
             <ListRow
               key={n.id}
@@ -92,7 +92,7 @@ export function NotamRows({
                 // Its number only on its own card (the owner, 2026-11-11: "what's
                 // 11/439", then "Full card is fine").
                 <span className={cn(!read.what && n.kind !== "tfr" && "line-clamp-3")}>
-                  <NotamWhat what={whatOf(n, ident)} />
+                  <NotamWhat what={whatOf(n)} />
                 </span>
               }
               description={<NotamLines n={n} read={read} ident={ident} />}
@@ -155,10 +155,10 @@ function Unchecked({ data, none }: { data: FieldNotams | undefined; none: string
 /** The NOTAMs by what they are about, the engine's heading (notam_read:
  *  Runway, Taxiway, Obstacle ...; a TFR's "TFR"), each kind where its
  *  first NOTAM ranks. */
-function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] {
+function kindsOf(notams: FieldNotam[]): [string, FieldNotam[]][] {
   const kinds = new Map<string, FieldNotam[]>();
   for (const n of notams) {
-    const kind = n.kind === "tfr" ? "TFR" : (readNotam(n, ident).heading ?? "Other");
+    const kind = n.kind === "tfr" ? "TFR" : (readNotam(n).heading ?? "Other");
     kinds.set(kind, [...(kinds.get(kind) ?? []), n]);
   }
   return [...kinds];
@@ -202,7 +202,7 @@ export function PlaceNotamsSection({ ident, name = null, none = null }: { ident:
         {long && (
           <CollapsibleContent className="flex flex-col gap-2">
             {!shown.length && <NotamRows notams={[]} ident={ident} name={name} state={state} />}
-            {kindsOf(shown, ident).map(([kind, group]) => (
+            {kindsOf(shown).map(([kind, group]) => (
               <div key={kind} className="flex flex-col gap-1">
                 <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{kind}</span>
                 <NotamRows notams={group} ident={ident} name={name} state={null} />

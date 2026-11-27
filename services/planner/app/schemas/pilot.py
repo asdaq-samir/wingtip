@@ -14,7 +14,7 @@ class LogbookEntry(BaseModel):
     """One logbook entry, the columns the rules read; a column missing is
     none of it."""
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     flownOn: date
     totalHours: float = 0
@@ -31,6 +31,12 @@ class LogbookEntry(BaseModel):
     approaches: int = 0
     holding: bool = False
     tracking: bool = False
+    # 61.57(a)(1): the landings in the same category and class (and a
+    # tailwheel's to a full stop); none said and the engine says it can't tell.
+    category: str | None = Field(None, description="14 CFR 61.5 category, \"Airplane\".")
+    aircraftClass: str | None = Field(None, alias="class", description="14 CFR 61.5 class, \"Single-engine land\".")
+    tailwheel: bool = False
+    fullStopLandings: int | None = Field(None, description="Landings to a full stop, day and night, where logged.")
 
 
 class CurrencyAsk(BaseModel):
@@ -64,6 +70,12 @@ class Currency(BaseModel):
 
     dayPassengersUntil: date | None = Field(description="90 days after the third most recent landing (14 CFR 61.57(a)).")
     nightPassengersUntil: date | None = Field(description="90 days after the third most recent night full-stop landing (61.57(b)).")
+    passengerClass: str | None = Field(
+        None, description="The category and class the passenger currency was judged in, the newest flight's (61.57(a)(1))."
+    )
+    passengerClassUnknown: bool = Field(
+        False, description="The newest flight says no category and class, so every landing was counted: the logbook can't tell."
+    )
     flightReviewOn: date | None
     flightReviewUntil: date | None = Field(description="The end of the 24th calendar month after the flight review's (61.56(c)).")
     medicalExpiresOn: date | None
@@ -124,6 +136,11 @@ class EndorsementsAsk(BaseModel):
 
     held: list[HeldEndorsement]
     flightOn: date | None = None
+    makeModel: str | None = Field(
+        default=None,
+        description="The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; "
+        "none and the checks can't tell.",
+    )
 
 
 class ReviewCheck(BaseModel):

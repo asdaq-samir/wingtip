@@ -55,8 +55,10 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
         member(out, key);
         out.push_str(if v { "true" } else { "false" });
     };
-    let day_passengers = passengers_until(entries, &Entry::landings);
-    let night_passengers = passengers_until(entries, &|e| e.night_landings);
+    // 61.57(a)(1): in the newest flight's category and class (passenger_class).
+    let class = passenger_class(entries);
+    let day_passengers = passengers_until(entries, &|e| class_landings(e, &class, &Entry::landings));
+    let night_passengers = passengers_until(entries, &|e| class_landings(e, &class, &|e| e.night_landings));
     let review_until = review.map(|r| end_of_month_after(r, FLIGHT_REVIEW_MONTHS));
     let due = crate::pilot::paperwork::pilot_due(crate::pilot::paperwork::PilotDays {
         flight_review_until: review_until.clone(),
@@ -67,6 +69,8 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
     });
     opt(&mut out, "dayPassengersUntil", day_passengers);
     opt(&mut out, "nightPassengersUntil", night_passengers);
+    opt(&mut out, "passengerClass", class.as_ref().map(|(c, _)| c.clone()));
+    flag(&mut out, "passengerClassUnknown", class.is_none());
     opt(&mut out, "flightReviewOn", dates.flight_review_on.map(str::to_owned));
     opt(&mut out, "flightReviewUntil", review_until);
     opt(&mut out, "medicalExpiresOn", dates.medical_expires_on.map(str::to_owned));

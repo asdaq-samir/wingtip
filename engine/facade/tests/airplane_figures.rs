@@ -189,3 +189,34 @@ fn a_table_without_its_pohs_wind_notes_takes_no_other_airplanes() {
     assert_eq!(tail["ground_roll_ft"], still["ground_roll_ft"]);
     assert_eq!(tail["caveats"], json!(["the wind correction is not in this airplane's profile"]));
 }
+
+#[test]
+fn a_table_out_of_order_is_refused_not_read() {
+    // Weights lightest first would read a heavy airplane at the lightest
+    // weight's shorter distance (FAA-H-8083-25C ch. 11: a chart holds only
+    // as it is laid out), so the engine refuses it.
+    let full = c172()["takeoff"].clone();
+    let ask_with = |t: &serde_json::Value| {
+        call(
+            "gonogo_end_distance",
+            &json!({"table": t, "pressure_alt_ft": 0, "temp_c": 10, "weight_lb": 2550, "headwind_kt": 0}).to_string(),
+        )
+    };
+    assert!(ask_with(&full).is_ok());
+    let flip = |key: &str| {
+        let mut t = full.clone();
+        let mut v = t[key].as_array().unwrap().clone();
+        v.reverse();
+        t[key] = json!(v);
+        if key == "weights_lb" {
+            let mut tables = t["tables"].as_array().unwrap().clone();
+            tables.reverse();
+            t["tables"] = json!(tables);
+        }
+        t
+    };
+    for key in ["weights_lb", "pressure_altitudes_ft", "temperatures_c"] {
+        let e = ask_with(&flip(key)).unwrap_err();
+        assert!(e.contains("is not in order"), "{key}: {e}");
+    }
+}

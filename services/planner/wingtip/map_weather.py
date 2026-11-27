@@ -113,7 +113,7 @@ def marks_of(place: dict, metar: dict | None) -> dict:
             least = ask(
                 "least_crosswind",
                 runways=[{"end_headings": ends} for ends in runways],
-                metar={k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt")},
+                metar={k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt", "wind_variable_deg")},
                 variation_deg=_variation(place["lat"], place["lon"], date.today()),
             )
     out["crosswind_kt"] = least["crosswind_kt"] if least else None

@@ -204,7 +204,7 @@ mod tests {
     use super::*;
 
     fn wind(dir: Option<f64>, kt: f64, gust: Option<f64>) -> Reported {
-        Reported { dir_true_deg: dir, speed_kt: Some(kt), gust_kt: gust }
+        Reported { dir_true_deg: dir, speed_kt: Some(kt), gust_kt: gust, variable_deg: None }
     }
 
     fn rwy(a: &str, ha: f64, b: &str, hb: f64) -> Ends {

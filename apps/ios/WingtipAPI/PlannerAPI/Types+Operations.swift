@@ -2558,7 +2558,9 @@ public enum Operations {
     /// ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
     /// uses). With no flight there is no runway in use or cruise altitude to
     /// weigh. `unchecked` names the TFRs when their list could not be had;
-    /// `time_zone` is the field's, for its NOTAMs' local times.
+    /// `time_zone` is the field's, for its NOTAMs' local times. Each NOTAM
+    /// comes read for the card: its `reading`, `card` and `subject`
+    /// (app.notam_reading).
     ///
     /// - Remark: HTTP `GET /api/airport/{ident}/notams`.
     /// - Remark: Generated from `#/paths//api/airport/{ident}/notams/get(airport_notams)`.

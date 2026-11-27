@@ -144,19 +144,31 @@ fn an_altitude_line_left_empty_stays_empty_as_the_webs_nullish_says() {
 
 #[test]
 fn the_alternate_speaks_for_the_weather_where_the_weather_says_nothing_worse() {
-    let needed = Alternates { required: true, alternate: None };
+    // 91.169(a)(2) is a prohibition: a required alternate not filed is a stop.
+    let needed = Alternates { required: true, alternate: None, ..Alternates::default() };
     assert_eq!(
         verdict::alternate_finding(Some(&needed)),
-        Some(("caution", s("An alternate is required (14 CFR 91.169): file one in Weather")))
+        Some(("stop", s("An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather")))
     );
-    assert_eq!(verdict::alternate_finding(Some(&Alternates { required: false, alternate: None })), None);
+    assert_eq!(verdict::alternate_finding(Some(&Alternates::default())), None);
+    // A check that failed shows nothing 91.169(b) needs: unknown, never ok.
+    let failed = Alternates { failed: true, ..Alternates::default() };
+    assert_eq!(verdict::alternate_finding(Some(&failed)), Some(verdict::alternate_unchecked()));
+    assert_eq!(verdict::alternate_unchecked().0, "unknown");
+    let awaited = Alternates { pending: true, ..Alternates::default() };
+    assert_eq!(verdict::alternate_finding(Some(&awaited)).map(|f| f.0), Some("pending"));
     let filed = |good, good_given| Alternates {
         required: true,
-        alternate: Some(FiledAlternate { ident: s("KMSN"), good, good_given, first_reason: None }),
+        alternate: Some(FiledAlternate { ident: s("KMSN"), good, good_given, first_reason: None, closed: false }),
+        ..Alternates::default()
     };
     let under = verdict::alternate_finding(Some(&filed(Some(false), true)));
     assert_eq!(under, Some(("stop", s("KMSN is under its alternate minimums at the ETA there"))));
     assert_eq!(verdict::alternate_finding(Some(&filed(None, true))), Some(("caution", s("KMSN: check it"))));
+    // A closed field is never an alternate (decision 0043).
+    let mut closed = filed(Some(false), true);
+    closed.alternate.as_mut().unwrap().closed = true;
+    assert_eq!(verdict::alternate_finding(Some(&closed)), Some(("stop", s("KMSN is closed: file another alternate"))));
     // `good === null` only: an answer with no `good` says nothing.
     assert_eq!(verdict::alternate_finding(Some(&filed(None, false))), None);
     let (f, d) = under.unwrap();

@@ -62,6 +62,17 @@
           ],
           "description": "90 days after the third most recent night full-stop landing (61.57(b))."
         },
+        "passengerClass": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The category and class the passenger currency was judged in, \"airplane/single-engine land\": the newest flight's (61.57(a)(1)); null where it does not say."
+        },
+        "passengerClassUnknown": {
+          "type": "boolean",
+          "description": "The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1))."
+        },
         "flightReviewOn": {
           "type": [
             "string",
@@ -152,6 +163,8 @@
       "required": [
         "dayPassengersUntil",
         "nightPassengersUntil",
+        "passengerClass",
+        "passengerClassUnknown",
         "flightReviewOn",
         "flightReviewUntil",
         "medicalExpiresOn",

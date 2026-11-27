@@ -118,6 +118,7 @@ pub(crate) fn end_fit_rule(i: In, v: &Value) -> Result<String, String> {
             dir_true_deg: i.opt_num(w, "dir_true_deg")?,
             speed_kt: i.opt_num(w, "speed_kt")?,
             gust_kt: i.opt_num(w, "gust_kt")?,
+            variable_deg: super::wind_variable::variable_at(i, w, "variable_deg")?,
         }),
         None => None,
     };

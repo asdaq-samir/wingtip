@@ -1723,9 +1723,13 @@ nonisolated enum EngineContract {
         var visibilitySm: Double?
         /// The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
         var visibilityPlus: Bool
+        /// Less than the figure, "M1/4SM" (FMH-1 chapter 12): said "less than 1/4 sm", never 1/4.
+        var visibilityMinus: Bool
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
+        /// A variable wind direction, "250V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.
+        var windVariableDeg: [Double]?
         var altimeterInHg: Double?
         var tempC: Double?
         var dewpointC: Double?
@@ -1742,9 +1746,11 @@ nonisolated enum EngineContract {
             case ceilingCover = "ceiling_cover"
             case visibilitySm = "visibility_sm"
             case visibilityPlus = "visibility_plus"
+            case visibilityMinus = "visibility_minus"
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
+            case windVariableDeg = "wind_variable_deg"
             case altimeterInHg = "altimeter_in_hg"
             case tempC = "temp_c"
             case dewpointC = "dewpoint_c"
@@ -1922,6 +1928,8 @@ nonisolated enum EngineContract {
         var fields: [EngineContract.BestFieldsInputFieldsItem]
         /// At most this many; 10 where not given.
         var limit: Double?
+        /// The diversion drill's (ACS PA.VI.C), with mode "diversion": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency.
+        var drill: Bool?
 
         enum CodingKeys: String, CodingKey {
             case mode
@@ -1933,6 +1941,7 @@ nonisolated enum EngineContract {
             case airplane
             case fields
             case limit
+            case drill
         }
     }
 
@@ -2011,6 +2020,8 @@ nonisolated enum EngineContract {
         var dirTrueDeg: Double?
         var speedKt: Double?
         var gustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var variableDeg: [Double]?
         var altimeterInHg: Double?
         var tempC: Double?
         var flightCategory: String?
@@ -2019,6 +2030,7 @@ nonisolated enum EngineContract {
             case dirTrueDeg = "dir_true_deg"
             case speedKt = "speed_kt"
             case gustKt = "gust_kt"
+            case variableDeg = "variable_deg"
             case altimeterInHg = "altimeter_in_hg"
             case tempC = "temp_c"
             case flightCategory = "flight_category"
@@ -3793,10 +3805,13 @@ nonisolated enum EngineContract {
         var held: [EngineContract.EndorsementRecordsInputHeldItem]?
         /// YYYY-MM-DD
         var flightOn: String?
+        /// The solo cross-country's make and model, "C172": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met.
+        var makeModel: String?
 
         enum CodingKeys: String, CodingKey {
             case held
             case flightOn = "flight_on"
+            case makeModel = "make_model"
         }
     }
 
@@ -5125,10 +5140,14 @@ nonisolated enum EngineContract {
         }
     }
 
-    /// The planner's /api/alternate answer, as much as the finding reads.
+    /// The planner's /api/alternate answer, as much as the finding reads, or {"failed": true} where it could not be had, {"pending": true} while it is awaited.
     nonisolated struct GonogoAlternateData: Codable, Equatable, Sendable {
         var destination: EngineContract.GonogoAlternateDataDestination?
         var alternate: EngineContract.GonogoAlternateDataAlternate?
+        /// True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b)).
+        var failed: Bool?
+        /// True while an app still awaits the check: the alternate is then pending.
+        var pending: Bool?
     }
 
     nonisolated struct GonogoAlternateDataAlternate: Codable, Equatable, Sendable {
@@ -5136,6 +5155,8 @@ nonisolated enum EngineContract {
         /// False: under its alternate minimums; null: the pilot's to check; left out: says nothing.
         var good: Bool?
         var reasons: [String]?
+        /// NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043).
+        var closed: Bool?
     }
 
     nonisolated struct GonogoAlternateDataDestination: Codable, Equatable, Sendable {
@@ -5204,7 +5225,7 @@ nonisolated enum EngineContract {
         var facts: EngineContract.GonogoFacts?
         /// With `facts`: the risk assessment's level and line (gonogo_risk, gonogo_risk_line); null before the briefing.
         var risk: EngineContract.GonogoBriefInputRisk?
-        /// /api/alternate's answer; null while it is awaited or where none was asked.
+        /// /api/alternate's answer, or {"failed": true} where it failed, {"pending": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b)).
         var alternate: EngineContract.GonogoAlternateData?
         /// The departure, the stops and the destination; null or empty where the route has no two ends yet.
         var fields: [EngineContract.GonogoFieldUse]?
@@ -5798,6 +5819,8 @@ nonisolated enum EngineContract {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var windVariableDeg: [Double]?
 
         enum CodingKeys: String, CodingKey {
             case ceilingFt = "ceiling_ft"
@@ -5807,6 +5830,7 @@ nonisolated enum EngineContract {
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
+            case windVariableDeg = "wind_variable_deg"
         }
     }
 
@@ -5980,10 +6004,6 @@ nonisolated enum EngineContract {
     nonisolated struct GonogoRouteFiguresInput: Codable, Equatable, Sendable {
         /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
         var totals: EngineContract.GonogoRouteFiguresInputTotals?
-        /// How many TFRs the briefing lists along the route, with `crossed`.
-        var tfrCount: Double?
-        /// The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.
-        var crossed: [String]?
         /// The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` ("during") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.
         var tfrs: [EngineContract.GonogoRouteFiguresInputTfrsItem]?
         /// The nav log's legs, for when the flight passes each TFR.
@@ -6001,8 +6021,6 @@ nonisolated enum EngineContract {
 
         enum CodingKeys: String, CodingKey {
             case totals
-            case tfrCount = "tfr_count"
-            case crossed
             case tfrs
             case legs
             case departUs = "depart_us"
@@ -6091,6 +6109,8 @@ nonisolated enum EngineContract {
         var tempC: Double?
         /// A METAR gave the temperature and altimeter.
         var reported: Bool
+        /// The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+        var tempAssumed: Bool
         /// The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind.
         var headwindKt: Double
         var crosswindKt: Double
@@ -6115,6 +6135,7 @@ nonisolated enum EngineContract {
             case densityAltFt = "density_alt_ft"
             case tempC = "temp_c"
             case reported
+            case tempAssumed = "temp_assumed"
             case headwindKt = "headwind_kt"
             case crosswindKt = "crosswind_kt"
             case crosswindOver = "crosswind_over"
@@ -6216,6 +6237,20 @@ nonisolated enum EngineContract {
         var tailwind: [String]
         var close: [String]
         var unchecked: [String]
+        /// Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+        var standardDay: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case pending
+            case worked
+            case short
+            case crosswind
+            case beyond
+            case tailwind
+            case close
+            case unchecked
+            case standardDay = "standard_day"
+        }
     }
 
     nonisolated struct GonogoRunwayFindingsInput: Codable, Equatable, Sendable {
@@ -7123,6 +7158,8 @@ nonisolated enum EngineContract {
         var visibilitySm: Double?
         var taf: String?
         var good: Bool?
+        /// NASR lists it closed: `good` false, never offered (decision 0043).
+        var closed: Bool
         var meetsStandard: Bool
         var reasons: [String]
 
@@ -7136,6 +7173,7 @@ nonisolated enum EngineContract {
             case visibilitySm = "visibility_sm"
             case taf
             case good
+            case closed
             case meetsStandard = "meets_standard"
             case reasons
         }
@@ -7181,6 +7219,8 @@ nonisolated enum EngineContract {
         var `private`: Bool?
         /// ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
         var military: String?
+        /// NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+        var status: String?
     }
 
     /// The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
@@ -7927,6 +7967,14 @@ nonisolated enum EngineContract {
         var approaches: Double?
         var holding: Bool?
         var tracking: Bool?
+        /// 14 CFR 61.5 category, "Airplane": with `class`, the passenger currency's (61.57(a)(1)) group.
+        var category: String?
+        /// 14 CFR 61.5 class, "Single-engine land".
+        var `class`: String?
+        /// A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii)).
+        var tailwheel: Bool?
+        /// Landings to a full stop, day and night, where logged.
+        var fullStopLandings: Double?
     }
 
     nonisolated struct LogbookFromTrackAnswer: Codable, Equatable, Sendable {
@@ -8437,11 +8485,14 @@ nonisolated enum EngineContract {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var windVariableDeg: [Double]?
 
         enum CodingKeys: String, CodingKey {
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
+            case windVariableDeg = "wind_variable_deg"
         }
     }
 
@@ -9979,6 +10030,10 @@ nonisolated enum EngineContract {
         var dayPassengersUntil: String?
         /// 90 days after the third most recent night full-stop landing (61.57(b)).
         var nightPassengersUntil: String?
+        /// The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+        var passengerClass: String?
+        /// The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+        var passengerClassUnknown: Bool
         /// YYYY-MM-DD; null where none can be had.
         var flightReviewOn: String?
         /// The end of the 24th calendar month after the flight review's (61.56(c)).
@@ -11764,6 +11819,8 @@ nonisolated enum EngineContract {
         var lat: Double
         var lon: Double
         var altFt: Double?
+        /// The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null.
+        var altHeld: Bool
         var gsKt: Double?
         var trackDeg: Double?
         var vsFpm: Double?
@@ -11776,6 +11833,7 @@ nonisolated enum EngineContract {
             case lat
             case lon
             case altFt = "alt_ft"
+            case altHeld = "alt_held"
             case gsKt = "gs_kt"
             case trackDeg = "track_deg"
             case vsFpm = "vs_fpm"
@@ -11805,6 +11863,14 @@ nonisolated enum EngineContract {
         var gsKt: Double?
         var trackDeg: Double?
         var ground: Bool?
+        /// The barometric rate sent, ft/min (readsb's baro_rate).
+        var baroRateFpm: Double?
+        /// The GNSS rate sent, ft/min (readsb's geom_rate).
+        var geomRateFpm: Double?
+        /// The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it.
+        var altGeomFt: Double?
+        /// The caller's word that the pressure altitude is held (stale); null to let the engine tell.
+        var altHeld: Bool?
 
         enum CodingKeys: String, CodingKey {
             case t
@@ -11814,6 +11880,10 @@ nonisolated enum EngineContract {
             case gsKt = "gs_kt"
             case trackDeg = "track_deg"
             case ground
+            case baroRateFpm = "baro_rate_fpm"
+            case geomRateFpm = "geom_rate_fpm"
+            case altGeomFt = "alt_geom_ft"
+            case altHeld = "alt_held"
         }
     }
 
@@ -12752,11 +12822,14 @@ nonisolated enum EngineContract {
         var dirTrueDeg: Double?
         var speedKt: Double?
         var gustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var variableDeg: [Double]?
 
         enum CodingKeys: String, CodingKey {
             case dirTrueDeg = "dir_true_deg"
             case speedKt = "speed_kt"
             case gustKt = "gust_kt"
+            case variableDeg = "variable_deg"
         }
     }
 
@@ -14080,6 +14153,10 @@ nonisolated enum EngineContract {
         var floorRef: String?
         var ceilingFt: Double?
         var ceilingRef: String?
+        /// Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read.
+        var floorVaries: Bool
+        /// Likewise for the highest ceiling.
+        var ceilingVaries: Bool
         /// Its operative instructions, a line each as sent.
         var instructions: [String]
         /// Its NOTAM's text as sent.
@@ -14098,6 +14175,8 @@ nonisolated enum EngineContract {
             case floorRef = "floor_ref"
             case ceilingFt = "ceiling_ft"
             case ceilingRef = "ceiling_ref"
+            case floorVaries = "floor_varies"
+            case ceilingVaries = "ceiling_varies"
             case instructions
             case text
             case facility
@@ -14574,6 +14653,20 @@ nonisolated enum EngineContract {
         var close: [String]?
         /// Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
         var unchecked: [String]?
+        /// Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+        var standardDay: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case pending
+            case worked
+            case short
+            case crosswind
+            case beyond
+            case tailwind
+            case close
+            case unchecked
+            case standardDay = "standard_day"
+        }
     }
 
     nonisolated struct VerdictInputWeather: Codable, Equatable, Sendable {

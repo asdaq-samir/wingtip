@@ -65,6 +65,7 @@ fn a_variable_wind_with_no_runway_component_is_all_crosswind_gusts_included() {
         wind_dir_true_deg: None,
         wind_speed_kt: Some(12.0),
         wind_gust_kt: Some(22.0),
+        wind_variable_deg: None,
     };
     let calm_runway = Runway { wind: None, ..runway(5000.0, 0.0, 0.0) };
     let f = fields(vec![calm_runway.clone()], vec![runway(9000.0, 10.0, 3.0)], Some(vrb));

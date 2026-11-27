@@ -11,7 +11,7 @@ use crate::gonogo::minimums::{best_crosswind, RunwayWind};
 
 #[test]
 fn the_favoured_end_carries_the_crosswind_unrounded_beside_the_rounded() {
-    let report = Reported { dir_true_deg: Some(30.0), speed_kt: Some(21.0), gust_kt: None };
+    let report = Reported { dir_true_deg: Some(30.0), speed_kt: Some(21.0), gust_kt: None, variable_deg: None };
     let f = favoured_end(&[(Some("36".into()), Some(360.0))], Some(&report), 0.0, None).unwrap();
     assert_eq!(f.crosswind_kt, 10.0);
     assert!((f.crosswind_exact_kt - 10.5).abs() < 1e-9);
@@ -20,7 +20,7 @@ fn the_favoured_end_carries_the_crosswind_unrounded_beside_the_rounded() {
 #[test]
 fn a_crosswind_rounded_down_to_the_demonstrated_is_still_past_it() {
     // 20.8 kt at 30° is 10.4 kt across: it rounds to 10.
-    let wind = FitWind { dir_true_deg: Some(30.0), speed_kt: Some(20.8), gust_kt: None };
+    let wind = FitWind { dir_true_deg: Some(30.0), speed_kt: Some(20.8), gust_kt: None, variable_deg: None };
     let field = FieldReport { elevation_ft: None, altimeter_in_hg: None, temp_c: None };
     let fit = end_fit(None, Some(10.0), &Runway::default(), Some(360.0), Some(&wind), &field, None, None);
     assert!(fit.crosswind_over);
@@ -49,7 +49,7 @@ fn an_end_with_the_wind_behind_it_has_its_tailwind_and_one_into_it_none() {
     // said (the aviation audit, 2026-11-25); heading 050°, ahead, none.
     let field = FieldReport { elevation_ft: None, altimeter_in_hg: None, temp_c: None };
     let fit = |gust_kt, heading| {
-        let wind = FitWind { dir_true_deg: Some(80.0), speed_kt: Some(10.0), gust_kt };
+        let wind = FitWind { dir_true_deg: Some(80.0), speed_kt: Some(10.0), gust_kt, variable_deg: None };
         end_fit(None, None, &Runway::default(), Some(heading), Some(&wind), &field, None, None).tailwind_kt
     };
     assert_eq!(fit(None, 230.0), 9.0);

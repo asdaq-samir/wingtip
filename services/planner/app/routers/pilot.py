@@ -47,7 +47,7 @@ router = APIRouter()
 
 
 def _entries(entries: list[LogbookEntry]) -> list[dict]:
-    return [e.model_dump(mode="json") for e in entries]
+    return [e.model_dump(mode="json", by_alias=True) for e in entries]
 
 
 def _ask(name: str, **given):
@@ -87,6 +87,7 @@ def endorsements(ask: EndorsementsAsk) -> Endorsements:
     got = _ask(
         "endorsement_records",
         flight_on=ask.flightOn.isoformat() if ask.flightOn else None,
+        make_model=ask.makeModel,
         held=[{"code": h.code, "on": h.on.isoformat(), "make_model": h.makeModel} for h in ask.held],
     )
     return Endorsements(until=got["until"], soloUntil=got["solo_until"], checks=[ReviewCheck(**c) for c in got["checks"]])

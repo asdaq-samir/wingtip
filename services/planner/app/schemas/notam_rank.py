@@ -94,6 +94,17 @@ class RankedNotam(BaseModel):
     starts: str | None
     ends: str | None
     tfr: TfrFacts | None = None
+    #: On a field's card (/api/airport/{ident}/notams), the NOTAM read by
+    #: the engine here, as the web once read it (app.notam_reading): its
+    #: notam_read, its notam_card and its notam_subject's badges against
+    #: the card's own lists (engine/contract/engine.schema.json gives each
+    #: answer's shape). None on a route's.
+    reading: dict | None = None
+    card: dict | None = None
+    subject: dict | None = None
+    #: The plan's roles it reaches (notam_affects, asked for all four),
+    #: in the engine's order: the card keeps those its field plays.
+    affects: list[dict] | None = None
 
 
 class NotamsRanked(BaseModel):

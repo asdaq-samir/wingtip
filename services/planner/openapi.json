@@ -2836,6 +2836,11 @@
             ],
             "title": "Ceiling Ft"
           },
+          "closed": {
+            "default": false,
+            "title": "Closed",
+            "type": "boolean"
+          },
           "distance_nm": {
             "anyOf": [
               {
@@ -6451,6 +6456,24 @@
             "description": "90 days after the third most recent night full-stop landing (61.57(b)).",
             "title": "Nightpassengersuntil"
           },
+          "passengerClass": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The category and class the passenger currency was judged in, the newest flight's (61.57(a)(1)).",
+            "title": "Passengerclass"
+          },
+          "passengerClassUnknown": {
+            "default": false,
+            "description": "The newest flight says no category and class, so every landing was counted: the logbook can't tell.",
+            "title": "Passengerclassunknown",
+            "type": "boolean"
+          },
           "totalHours": {
             "title": "Totalhours",
             "type": "number"
@@ -9379,6 +9402,18 @@
             },
             "title": "Held",
             "type": "array"
+          },
+          "makeModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; none and the checks can't tell.",
+            "title": "Makemodel"
           }
         },
         "required": [
@@ -14089,6 +14124,30 @@
             "title": "Approaches",
             "type": "integer"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 category, \"Airplane\".",
+            "title": "Category"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 class, \"Single-engine land\".",
+            "title": "Class"
+          },
           "crossCountryHours": {
             "default": 0,
             "title": "Crosscountryhours",
@@ -14114,6 +14173,18 @@
             "format": "date",
             "title": "Flownon",
             "type": "string"
+          },
+          "fullStopLandings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Landings to a full stop, day and night, where logged.",
+            "title": "Fullstoplandings"
           },
           "holding": {
             "default": false,
@@ -14145,6 +14216,11 @@
             "default": 0,
             "title": "Solohours",
             "type": "number"
+          },
+          "tailwheel": {
+            "default": false,
+            "title": "Tailwheel",
+            "type": "boolean"
           },
           "totalHours": {
             "default": 0,
@@ -20010,6 +20086,33 @@
       "RankedNotam": {
         "description": "One NOTAM or TFR, ranked: its place in the list and score, whether it\nis one of the top three said first, whether its score is shared\n(`tied`), what was read of it, and its text as sent (`raw`).",
         "properties": {
+          "affects": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affects"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card"
+          },
           "closed": {
             "title": "Closed",
             "type": "boolean"
@@ -20100,6 +20203,18 @@
             "title": "Raw",
             "type": "string"
           },
+          "reading": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading"
+          },
           "reasons": {
             "items": {
               "$ref": "#/components/schemas/NotamReason"
@@ -20139,6 +20254,18 @@
               }
             ],
             "title": "Starts"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
           },
           "tfr": {
             "anyOf": [
@@ -26490,7 +26617,7 @@
     },
     "/api/airport/{ident}/notams": {
       "get": {
-        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had;\n`time_zone` is the field's, for its NOTAMs' local times.",
+        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had;\n`time_zone` is the field's, for its NOTAMs' local times. Each NOTAM\ncomes read for the card: its `reading`, `card` and `subject`\n(app.notam_reading).",
         "operationId": "airport_notams_api_airport__ident__notams_get",
         "parameters": [
           {

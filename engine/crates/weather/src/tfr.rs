@@ -37,6 +37,11 @@ pub struct Detail {
     pub purpose: Option<String>,
     pub floor: Option<(f64, Reference)>,
     pub ceiling: Option<(f64, Reference)>,
+    /// Its areas' floors (or ceilings) are given some above the ground and
+    /// some above sea level, and which is lowest (highest) depends on the
+    /// ground: `floor` is then only the lowest figure (mixed_heights).
+    pub floor_varies: bool,
+    pub ceiling_varies: bool,
     /// Its operative instructions, a line each as sent (InstructionsGroup).
     pub instructions: Vec<String>,
     /// Its NOTAM's text as sent (txtDescrTraditional, else txtDescrUSNS).
@@ -101,6 +106,24 @@ fn height(area: &xml::Element, side: &str) -> Option<(f64, Reference)> {
     Some((feet, if code == Some("HEI") { Reference::Agl } else { Reference::Msl }))
 }
 
+/// Whether the lowest floor (`lowest`) or the highest ceiling of the
+/// areas' heights can't be told without the ground under them: a height
+/// above the ground is at least that much above sea level, so an MSL
+/// floor at or under the lowest AGL one is lowest wherever it is, but a
+/// 1,000 ft AGL floor beside a 3,000 ft MSL one is the lower only where
+/// the ground is under 2,000 ft (and a ceiling the other way about).
+fn mixed_heights(heights: &[(f64, Reference)], lowest: bool) -> bool {
+    let of = |r: Reference| heights.iter().filter(move |h| h.1 == r).map(|h| h.0);
+    let (msl, agl) = if lowest {
+        (of(Reference::Msl).fold(f64::INFINITY, f64::min), of(Reference::Agl).fold(f64::INFINITY, f64::min))
+    } else {
+        (of(Reference::Msl).fold(f64::NEG_INFINITY, f64::max), of(Reference::Agl).fold(f64::NEG_INFINITY, f64::max))
+    };
+    // Either way it is undecided where the MSL figure is the greater; a
+    // floor at the surface (0 AGL) is the lowest wherever it is.
+    msl.is_finite() && agl.is_finite() && msl > agl && !(lowest && agl <= 0.0)
+}
+
 /// The detail of a TFR; None where the file is not XML or holds no NOTAM.
 pub fn parse_detail(text: &str) -> Option<Detail> {
     let root = xml::parse(text).ok()?;
@@ -112,6 +135,9 @@ pub fn parse_detail(text: &str) -> Option<Detail> {
         floors.extend(height(area, "Lower"));
         ceilings.extend(height(area, "Upper"));
     }
+    // AGL and MSL compared like with like (mixed_heights): where one can't
+    // be told lower than the other without the ground, it is said so.
+    let (floor_varies, ceiling_varies) = (mixed_heights(&floors, true), mixed_heights(&ceilings, false));
     // The first lowest and the first highest, as Python's min and max keep.
     let floor = floors.iter().copied().fold(None, |best: Option<(f64, Reference)>, h| match best {
         Some(b) if b.0 <= h.0 => Some(b),
@@ -130,6 +156,8 @@ pub fn parse_detail(text: &str) -> Option<Detail> {
         purpose: notam.text_at(&["txtDescrPurpose"]).and_then(sentence),
         floor,
         ceiling,
+        floor_varies,
+        ceiling_varies,
         instructions: root.iter_named("txtInstr").iter().map(|e| e.text.trim().to_owned()).filter(|t| !t.is_empty()).collect(),
         text: ["txtDescrTraditional", "txtDescrUSNS"]
             .iter()
@@ -162,6 +190,7 @@ pub fn to_json(d: &Detail) -> String {
     json::opt_number(&mut out, d.ceiling.map(|c| c.0));
     out.push_str(",\"ceiling_ref\":");
     json::opt_string(&mut out, reference(d.ceiling));
+    out.push_str(&format!(",\"floor_varies\":{},\"ceiling_varies\":{}", d.floor_varies, d.ceiling_varies));
     out.push_str(",\"instructions\":[");
     for (i, line) in d.instructions.iter().enumerate() {
         if i > 0 {
@@ -181,7 +210,21 @@ pub fn to_json(d: &Detail) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::sentence;
+    use super::{mixed_heights, sentence, Reference};
+
+    #[test]
+    fn agl_and_msl_heights_are_compared_like_with_like() {
+        let (agl, msl) = (Reference::Agl, Reference::Msl);
+        // 1,000 AGL beside 3,000 MSL: lower only where the ground is under 2,000.
+        assert!(mixed_heights(&[(1000.0, agl), (3000.0, msl)], true));
+        // 3,000 MSL at or under 3,000 AGL is the lowest wherever it is; the surface always is.
+        assert!(!mixed_heights(&[(3000.0, agl), (3000.0, msl)], true));
+        assert!(!mixed_heights(&[(0.0, agl), (3000.0, msl)], true));
+        // Ceilings: 18,000 MSL over 3,000 AGL can't be told without the ground; 3,000 AGL over 2,000 MSL can.
+        assert!(mixed_heights(&[(3000.0, agl), (18000.0, msl)], false));
+        assert!(!mixed_heights(&[(3000.0, agl), (2000.0, msl)], false));
+        assert!(!mixed_heights(&[(1000.0, msl), (3000.0, msl)], true));
+    }
 
     #[test]
     fn a_tfrs_purpose_keeps_its_codes_in_sentence_case() {

@@ -1,12 +1,30 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../lib/fixtures/notamSubject.json";
-import { callEngine } from "../../lib/engine/engine";
 import type { AirportPlace } from "../../lib/api/types";
 import type { FieldNotam } from "./fieldNotams";
 import { notamMarks } from "./notamBadges";
 
+/** The badges the engine answers on the planner (notam_subject, app.notam_reading) for each
+ *  text against the shared fixture's card; the engine's own cases are its notam_subject.rs. */
+type Badge = { on: string; index: number | null; word: string; severity: string; label: string };
+const closed = (index: number, label: string): Badge => ({ on: "runway", index, word: "Closed", severity: "unusable", label });
+const SUBJECTS: Record<string, Badge[]> = {
+  "!DLH 11/042 DLH RWY 09/27 CLSD 2611101200-2611121432": [closed(0, "Runway 09/27 closed.")],
+  "!DLH 11/043 DLH RWY 09/27 CLSD 2611101200-2611121432": [closed(0, "Runway 09/27 closed.")],
+  "!DLH 11/043 DLH RWY 03/21 CLSD 2611101200-2611121432": [closed(1, "Runway 03/21 closed.")],
+  "!DLH 11/050 DLH TWY A BTN RWY 09 AND TWY C CLSD 2611101200-2611121432": [],
+  "!DLH 11/052 DLH RWY 27 PAPI U/S 2611101200-2611202359": [
+    { on: "light", index: 0, word: "Out of service", severity: "caution", label: "Runway 27 PAPI out of service." },
+    { on: "runway", index: 0, word: "NOTAM", severity: "caution", label: "Runway 27 PAPI out of service." },
+  ],
+  "!FDC 6/1 ZMP ...": [
+    { on: "field", index: null, word: "TFR", severity: "caution", label: "Temporary flight restriction near the field" },
+  ],
+};
+
 const notam = (id: string, raw: string, extra: Partial<FieldNotam> = {}): FieldNotam =>
   ({
+    subject: { badges: SUBJECTS[raw] ?? [] },
     id,
     kind: "notam",
     closed: false,
@@ -30,19 +48,12 @@ const place = {
 } as unknown as AirportPlace;
 
 describe("what a field's NOTAMs address on its card", () => {
-  it("is the engine's answer to the shared cases (notam_subject, JO 7930.2)", () => {
-    for (const c of fixture.cases) {
-      expect(callEngine("notam_subject", { ...fixture.card, text: c.text }), c.about).toEqual(c.answer);
-    }
-  });
-
   it("puts a closure on its runway and none on a taxiway between runways", () => {
     const marks = notamMarks(
       [
         notam("a", "!DLH 11/042 DLH RWY 09/27 CLSD 2611101200-2611121432"),
         notam("b", "!DLH 11/050 DLH TWY A BTN RWY 09 AND TWY C CLSD 2611101200-2611121432"),
       ],
-      "KDLH",
       place,
     );
     expect(marks.runway.get(0)?.word).toBe("Closed");
@@ -57,7 +68,6 @@ describe("what a field's NOTAMs address on its card", () => {
         notam("closed", "!DLH 11/042 DLH RWY 09/27 CLSD 2611101200-2611121432"),
         notam("later", "!DLH 11/043 DLH RWY 03/21 CLSD 2611101200-2611121432", { in_force: false }),
       ],
-      "KDLH",
       place,
     );
     expect(marks.runway.get(0)).toMatchObject({ word: "Closed", severity: "unusable" });
@@ -73,7 +83,6 @@ describe("what a field's NOTAMs address on its card", () => {
         notam("later", "!DLH 11/043 DLH RWY 09/27 CLSD 2611101200-2611121432", { in_force: false }),
         notam("papi", "!DLH 11/052 DLH RWY 27 PAPI U/S 2611101200-2611202359"),
       ],
-      "KDLH",
       place,
     );
     expect(marks.runway.get(0)).toMatchObject({ word: "NOTAM" });
@@ -81,6 +90,6 @@ describe("what a field's NOTAMs address on its card", () => {
   });
 
   it("badges the field for a TFR near it", () => {
-    expect(notamMarks([notam("t", "!FDC 6/1 ZMP ...", { kind: "tfr" })], "KDLH", place).field?.word).toBe("TFR");
+    expect(notamMarks([notam("t", "!FDC 6/1 ZMP ...", { kind: "tfr" })], place).field?.word).toBe("TFR");
   });
 });

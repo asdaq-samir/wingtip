@@ -155,6 +155,9 @@ def test_a_fields_card_gets_its_own_notams_and_the_tfrs_near_it(monkeypatch):
     assert body["unchecked"] == []
     # Madison's zone, for the card's local times beside the NOTAMs' UTC.
     assert body["time_zone"] == "America/Chicago"
+    # Read here for the card (app.notam_reading), as the web's engine once did.
+    assert "RWY 18/36" in only["reading"]["words"] or "18/36" in (only["card"]["title"] or "")
+    assert isinstance(only["subject"]["badges"], list)
 
 
 def test_a_tfr_near_the_field_carries_what_the_card_reads_it_by(monkeypatch):

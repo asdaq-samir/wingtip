@@ -17,9 +17,8 @@
 //!   force is the briefing's word where it placed the TFR on the legs
 //!   (`on_route.when`, "during"), else its window, widened by half an hour
 //!   either way, at the time the flight gets there (pass_times), else --
-//!   that time not known -- in force: the safer side. A caller that still
-//!   decides it sends `crossed` and `tfr_count` instead (the phones, until
-//!   their port).
+//!   that time not known -- in force: the safer side. With no `tfrs` sent,
+//!   none.
 //! - Under IFR "VFR flight not recommended" is no reason not to go: its
 //!   weather check is the destination's and the alternate's (14 CFR
 //!   91.169), so its reasons are dropped (vfr_flown, gonogo_input's too).
@@ -95,10 +94,10 @@ fn tfr_in_force(t: &Value, legs: &[(f64, Option<f64>)], depart_us: Option<f64>) 
 }
 
 /// The NOTAM ids of the TFRs the route crosses in force, and how many the
-/// briefing lists: from `tfrs` where sent, else the caller's own.
+/// briefing lists, from `tfrs`; none where none are sent.
 fn tfrs_of(i: In, v: &Value) -> Result<(Vec<String>, f64), String> {
     let Some(Value::Array(tfrs)) = v.get("tfrs") else {
-        return Ok((i.strings(v, "crossed")?, num(v, "tfr_count")?.unwrap_or(0.0)));
+        return Ok((Vec::new(), 0.0));
     };
     let legs =
         i.list(v, "legs")?.iter().map(|l| Ok((i.num(l, "distance_nm")?, i.opt_num(l, "ete_min")?))).collect::<Result<Vec<_>, String>>()?;
@@ -187,12 +186,12 @@ mod tests {
     #[test]
     fn under_ifr_vfr_not_recommended_drops_and_hazards_both_unread_count_none() {
         let v = asked(
-            r#"{"totals": null, "crossed": [], "ifr": true, "vfr_not_recommended": ["KDLH IFR"], "hazards": ["IFR G-AIRMET"], "weather_unavailable": ["hazards", "gairmets"]}"#,
+            r#"{"totals": null, "ifr": true, "vfr_not_recommended": ["KDLH IFR"], "hazards": ["IFR G-AIRMET"], "weather_unavailable": ["hazards", "gairmets"]}"#,
         );
         assert_eq!(v.get("vfr_not_recommended"), Some(&json::parse("[]").unwrap()));
         assert_eq!(v.get("hazard_count").and_then(json::Value::as_f64), Some(0.0));
         let v = asked(
-            r#"{"totals": null, "crossed": [], "vfr_not_recommended": ["KDLH IFR"], "hazards": ["IFR G-AIRMET"], "weather_unavailable": ["hazards"]}"#,
+            r#"{"totals": null, "vfr_not_recommended": ["KDLH IFR"], "hazards": ["IFR G-AIRMET"], "weather_unavailable": ["hazards"]}"#,
         );
         assert_eq!(v.get("vfr_not_recommended"), Some(&json::parse(r#"["KDLH IFR"]"#).unwrap()));
         assert_eq!(v.get("hazard_count").and_then(json::Value::as_f64), Some(1.0));

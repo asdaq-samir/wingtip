@@ -12,6 +12,7 @@
 //! with no number has no heading, and no wind of its own.
 
 use super::pick::{runway_in_use, runway_number, Runway};
+use super::wind_variable::worst_crosswind_kt;
 use crate::figures::words::js_round_f;
 use crate::geo::py_mod;
 use wingtip_core::sort::StableSort;
@@ -133,12 +134,14 @@ pub fn end_heading_true_deg(ident: Option<&str>, heading_true_deg: Option<f64>, 
 }
 
 /// A report's wind, as much of a METAR as the runways' winds read: true,
-/// knots, each None where it is not reported.
+/// knots, each None where it is not reported; `variable_deg` a variable
+/// direction's bounds, "230V310" (wind_variable).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Reported {
     pub dir_true_deg: Option<f64>,
     pub speed_kt: Option<f64>,
     pub gust_kt: Option<f64>,
+    pub variable_deg: Option<(f64, f64)>,
 }
 
 /// The end of a runway a report favours (favoured_end): its ident as the
@@ -205,12 +208,17 @@ pub fn favoured_end(
     let (ident, heading) = first_max(&headed, |(_, h)| headwind_kt(dir, speed, *h))?;
     // Python's round, halves to even, as the planner has always rounded them.
     let gust = report.gust_kt.filter(|g| *g != 0.0 && !g.is_nan());
+    // With a variable direction, the crosswind at its worst (wind_variable);
+    // the headwind on the mean, as the other end's is its negative: the
+    // Go / No-Go's tailwind takes the arc's worst on the end flown.
+    let arc = report.variable_deg;
+    let across = |kt: f64| worst_crosswind_kt(dir, arc, kt, *heading);
     Some(Favoured {
         end: (*ident).clone(),
         headwind_kt: headwind_kt(dir, speed, *heading).round_ties_even(),
-        crosswind_kt: crosswind_kt(dir, speed, *heading).round_ties_even(),
-        gust_crosswind_kt: gust.map(|g| crosswind_kt(dir, g, *heading).round_ties_even()),
-        crosswind_exact_kt: steady_or_gust_kt(crosswind_kt(dir, speed, *heading), gust.map(|g| crosswind_kt(dir, g, *heading))),
+        crosswind_kt: across(speed).round_ties_even(),
+        gust_crosswind_kt: gust.map(|g| across(g).round_ties_even()),
+        crosswind_exact_kt: steady_or_gust_kt(across(speed), gust.map(across)),
         calm: false,
         in_use: false,
     })

@@ -1448,6 +1448,8 @@ data class AlternateCheck (
     @SerialName("ceiling_ft")
     val ceilingFt: Double? = null,
 
+    val closed: Boolean? = null,
+
     @SerialName("distance_nm")
     val distanceNm: Double? = null,
 
@@ -2573,6 +2575,18 @@ data class Currency (
      */
     val nightPassengersUntil: String? = null,
 
+    /**
+     * The category and class the passenger currency was judged in, the newest flight's
+     * (61.57(a)(1)).
+     */
+    val passengerClass: String? = null,
+
+    /**
+     * The newest flight says no category and class, so every landing was counted: the logbook
+     * can't tell.
+     */
+    val passengerClassUnknown: Boolean? = null,
+
     val totalHours: Double,
     val trackingInWindow: Boolean
 )
@@ -2622,6 +2636,18 @@ data class CurrencyAsk (
 @Serializable
 data class LogbookEntry (
     val approaches: Int? = null,
+
+    /**
+     * 14 CFR 61.5 category, "Airplane".
+     */
+    val category: String? = null,
+
+    /**
+     * 14 CFR 61.5 class, "Single-engine land".
+     */
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
     val crossCountryHours: Double? = null,
 
     /**
@@ -2632,6 +2658,12 @@ data class LogbookEntry (
     val distanceNm: Double? = null,
     val dualHours: Double? = null,
     val flownOn: String,
+
+    /**
+     * Landings to a full stop, day and night, where logged.
+     */
+    val fullStopLandings: Int? = null,
+
     val holding: Boolean? = null,
     val instrumentHours: Double? = null,
     val longestLegNm: Double? = null,
@@ -2643,6 +2675,7 @@ data class LogbookEntry (
     val nightLandings: Int? = null,
 
     val soloHours: Double? = null,
+    val tailwheel: Boolean? = null,
     val totalHours: Double? = null,
     val toweredLandings: Int? = null,
     val tracking: Boolean? = null
@@ -6438,6 +6471,8 @@ data class NotamsRanked (
  */
 @Serializable
 data class RankedNotam (
+    val affects: JsonArray? = null,
+    val card: JsonObject? = null,
     val closed: Boolean,
     val ends: String? = null,
     val field: String? = null,
@@ -6458,11 +6493,13 @@ data class RankedNotam (
 
     val rank: Int,
     val raw: String,
+    val reading: JsonObject? = null,
     val reasons: List<NotamReason>,
     val role: String? = null,
     val runways: List<String>,
     val score: Int,
     val starts: String? = null,
+    val subject: JsonObject? = null,
     val tfr: TfrFacts? = null,
     val tied: Boolean,
     val top: Boolean
@@ -7601,7 +7638,13 @@ data class RecordsBatchAsk (
 @Serializable
 data class EndorsementsAsk (
     val flightOn: String? = null,
-    val held: List<HeldEndorsement>
+    val held: List<HeldEndorsement>,
+
+    /**
+     * The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the
+     * endorsements to it; none and the checks can't tell.
+     */
+    val makeModel: String? = null
 )
 
 /**

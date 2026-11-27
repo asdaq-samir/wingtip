@@ -133,12 +133,12 @@
   ],
   "datis_ends": [
     {
-      "about": "A broadcast heard at 0000Z is the airport's until 0200Z: two of AIM 4-1-13's hourly updates",
+      "about": "A broadcast heard at 0000Z is the airport's until 0115Z: AIM 4-1-13's hourly update and a quarter hour for it to come",
       "input": {
         "heard": 1763337600
       },
       "answer": {
-        "ends": 1763344800.0
+        "ends": 1763342100.0
       }
     }
   ],

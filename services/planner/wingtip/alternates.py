@@ -63,6 +63,8 @@ def _asked(ident: str, procs: Approaches, forecast: dict | None) -> dict:
     return {
         "ident": ident,
         **field_use.use_of(ident),
+        # NASR's status: a closed field is never an alternate (decision 0043, the engine's).
+        "status": field_status.status_of(ident, DEFAULT_FAA_CACHE_DIR),
         "approaches": {"names": list(procs.names), "alternate_minimums_url": procs.alternate_minimums_url},
         "forecast": None if forecast is None else {k: forecast.get(k) for k in _FORECAST_KEYS},
     }

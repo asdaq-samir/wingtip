@@ -52,6 +52,8 @@ def test_endorsements_answer_the_shared_fixture():
         ask = {
             "held": [{"code": h["code"], "on": h["on"], "makeModel": h.get("make_model")} for h in given["held"]],
             "flightOn": given.get("flight_on"),
+            # 61.93(d)(4), (5) and 61.87(n): the flight's make and model, where the case gives one.
+            "makeModel": given.get("make_model"),
         }
         answer = client.post("/api/pilot/endorsements", json=ask)
         assert answer.status_code == 200, answer.text

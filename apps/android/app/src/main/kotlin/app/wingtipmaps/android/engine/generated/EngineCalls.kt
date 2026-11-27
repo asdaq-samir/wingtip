@@ -351,8 +351,8 @@ fun Engine.belowVfrMinimums(ceilingFt: Double? = null, visibilitySm: Double? = n
 /**
  * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. In "diversion" mode a private or military-only field counts against it as an IFR report does (the owner's or the service's permission stands with no emergency), so a public or joint-use field comes first of fields otherwise alike, and its reasons give the card's line ("Private: permission required", "Military: prior permission required"); in "glide" mode it does not count (14 CFR 91.3(b)) and is said as a caution. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
  */
-fun Engine.bestFields(mode: String? = null, at: EngineContract.BestFieldsInputAt, altitudeFt: Double? = null, speedKt: Double? = null, wind: EngineContract.BestFieldsInputWind? = null, variationDeg: Double? = null, airplane: EngineContract.BestFieldsInputAirplane? = null, fields: List<EngineContract.BestFieldsInputFieldsItem>, limit: Double? = null): Result<EngineContract.BestFieldsAnswer> =
-    rule("best_fields", EngineContract.BestFieldsInput(mode = mode, at = at, altitudeFt = altitudeFt, speedKt = speedKt, wind = wind, variationDeg = variationDeg, airplane = airplane, fields = fields, limit = limit))
+fun Engine.bestFields(mode: String? = null, at: EngineContract.BestFieldsInputAt, altitudeFt: Double? = null, speedKt: Double? = null, wind: EngineContract.BestFieldsInputWind? = null, variationDeg: Double? = null, airplane: EngineContract.BestFieldsInputAirplane? = null, fields: List<EngineContract.BestFieldsInputFieldsItem>, limit: Double? = null, drill: Boolean? = null): Result<EngineContract.BestFieldsAnswer> =
+    rule("best_fields", EngineContract.BestFieldsInput(mode = mode, at = at, altitudeFt = altitudeFt, speedKt = speedKt, wind = wind, variationDeg = variationDeg, airplane = airplane, fields = fields, limit = limit, drill = drill))
 
 /**
  * Our call sign as a regular expression over a recognizer's words (AIM 4-2-4), for a locked phone's listener; null where `tail` is no registration.
@@ -517,7 +517,7 @@ fun Engine.dataCycle(kind: String, effective: String? = null, on: String): Resul
     rule("data_cycle", EngineContract.DataCycleInput(kind = kind, effective = effective, on = on))
 
 /**
- * When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
+ * When a digital ATIS broadcast heard at a time stops being the airport's: 75 minutes after it was heard: the hourly update AIM 4-1-13 asks, and a quarter hour for it to come ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
  */
 fun Engine.datisEnds(heard: Double): Result<EngineContract.DatisEndsAnswer> =
     rule("datis_ends", EngineContract.DatisEndsInput(heard = heard))
@@ -699,8 +699,8 @@ fun Engine.endorsementLapse(until: String? = null, untilKind: String? = null, si
 /**
  * What a student's endorsements say: each one's last good day (90 days for a solo endorsement, 14 CFR 61.87(n), (p), the night solo's, 61.87(o), and Class B's, 61.95(a)(2), (b)(2); AC 61-65K A.5-A.7, A.12, A.13; null for one that does not run out), the day their solo endorsement runs out, and, for a solo cross-country on flight_on, what their record answers of 61.93(d): (4) a solo cross-country endorsement (61.93(c)(1), (2)) and (5) a solo endorsement within the 90 days before the flight.
  */
-fun Engine.endorsementRecords(held: List<EngineContract.EndorsementRecordsInputHeldItem>? = null, flightOn: String? = null): Result<EngineContract.EndorsementRecordsAnswer> =
-    rule("endorsement_records", EngineContract.EndorsementRecordsInput(held = held, flightOn = flightOn))
+fun Engine.endorsementRecords(held: List<EngineContract.EndorsementRecordsInputHeldItem>? = null, flightOn: String? = null, makeModel: String? = null): Result<EngineContract.EndorsementRecordsAnswer> =
+    rule("endorsement_records", EngineContract.EndorsementRecordsInput(held = held, flightOn = flightOn, makeModel = makeModel))
 
 /**
  * An endorsement's words as they will be signed.
@@ -1135,10 +1135,10 @@ fun Engine.gonogoRiskLine(level: String, score: Double): Result<String> =
     rule("gonogo_risk_line", EngineContract.GonogoRiskLineInput(level = level, score = score))
 
 /**
- * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those). With `tfrs`, which crossed TFRs are in force is decided here; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
+ * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145), from the briefing's `tfrs`, by NOTAM id, with how many more it lists near it; none where no `tfrs` are sent; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
  */
-fun Engine.gonogoRouteFigures(totals: EngineContract.GonogoRouteFiguresInputTotals? = null, tfrCount: Double? = null, crossed: List<String>? = null, tfrs: List<EngineContract.GonogoRouteFiguresInputTfrsItem>? = null, legs: List<EngineContract.GonogoRouteFiguresInputLegsItem>? = null, departUs: Double? = null, ifr: Boolean? = null, vfrNotRecommended: List<String>? = null, hazards: List<String>? = null, weatherUnavailable: List<String>? = null): Result<EngineContract.GonogoRouteFiguresAnswer> =
-    rule("gonogo_route_figures", EngineContract.GonogoRouteFiguresInput(totals = totals, tfrCount = tfrCount, crossed = crossed, tfrs = tfrs, legs = legs, departUs = departUs, ifr = ifr, vfrNotRecommended = vfrNotRecommended, hazards = hazards, weatherUnavailable = weatherUnavailable))
+fun Engine.gonogoRouteFigures(totals: EngineContract.GonogoRouteFiguresInputTotals? = null, tfrs: List<EngineContract.GonogoRouteFiguresInputTfrsItem>? = null, legs: List<EngineContract.GonogoRouteFiguresInputLegsItem>? = null, departUs: Double? = null, ifr: Boolean? = null, vfrNotRecommended: List<String>? = null, hazards: List<String>? = null, weatherUnavailable: List<String>? = null): Result<EngineContract.GonogoRouteFiguresAnswer> =
+    rule("gonogo_route_figures", EngineContract.GonogoRouteFiguresInput(totals = totals, tfrs = tfrs, legs = legs, departUs = departUs, ifr = ifr, vfrNotRecommended = vfrNotRecommended, hazards = hazards, weatherUnavailable = weatherUnavailable))
 
 /**
  * The runway check at each field taken off from or landed at, fields and runways by index: the runway, pressure and density altitude, wind along and across it, and the POH's distances against its length (14 CFR 91.103(b)). Empty without both tables.
@@ -1317,14 +1317,14 @@ fun Engine.icingSeverity(category: Double): Result<String?> =
 /**
  * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility). A private or military-only field (private, military) is the pilot's to check too, with "KMXF is military: prior permission required (PPR)." or the owner's permission said.
  */
-fun Engine.ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null, private: Boolean? = null, military: String? = null): Result<EngineContract.IfrAlternateCheck> =
-    rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast, private = private, military = military))
+fun Engine.ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null, private: Boolean? = null, military: String? = null, status: String? = null): Result<EngineContract.IfrAlternateCheck> =
+    rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast, private = private, military = military, status = status))
 
 /**
  * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
  */
-fun Engine.ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null, private: Boolean? = null, military: String? = null): Result<EngineContract.IfrAlternateDestinationAnswer> =
-    rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast, private = private, military = military))
+fun Engine.ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null, private: Boolean? = null, military: String? = null, status: String? = null): Result<EngineContract.IfrAlternateDestinationAnswer> =
+    rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast, private = private, military = military, status = status))
 
 /**
  * Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the "1-2-3").
@@ -2065,7 +2065,7 @@ fun Engine.remarksRead(remarks: List<String>): Result<EngineContract.RemarksRead
     rule("remarks_read", EngineContract.RemarksReadInput(remarks = remarks))
 
 /**
- * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+ * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those in the 10 s before, at the report's own time (a transponder's 25 ft steps, DO-260B), and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the rate the report sent (baro_rate_fpm, else geom_rate_fpm), else the slope of the heights reported in the 15 s before, as a VSI lags (FAA-H-8083-15B, Ch. 5): never from a report still to come; a held pressure altitude (`alt_held`, or unchanged for up to 60 s while the GNSS height or the rate sent moved more than 300 ft) left out of every fit and rate, its height the last good one carried forward, never null; ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
  */
 fun Engine.replayTrack(points: List<EngineContract.ReplayTrackInputPointsItem>, gapS: Double? = null): Result<EngineContract.ReplayTrackAnswer> =
     rule("replay_track", EngineContract.ReplayTrackInput(points = points, gapS = gapS))
@@ -2581,7 +2581,7 @@ fun Engine.windArrow(speedKt: Double? = null, gustKt: Double? = null, crosswindK
     rule("wind_arrow", EngineContract.WindArrowInput(speedKt = speedKt, gustKt = gustKt, crosswindKt = crosswindKt, demonstratedKt = demonstratedKt))
 
 /**
- * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
+ * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends; a light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's 9900, under 5 kt) taken as 0 kt with the nearest level's direction, never skipped (the next level's wind in its place understated time and fuel, 14 CFR 91.151, 91.167); null with no level, never calm. A list for "altitudes".
  */
 fun Engine.windAtAltitude(levels: Map<String, EngineContract.WindAtAltitudeInputLevelsValue>, altitudeFt: Double? = null, altitudes: List<Double>? = null): Result<JsonElement?> =
     rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels = levels, altitudeFt = altitudeFt, altitudes = altitudes))

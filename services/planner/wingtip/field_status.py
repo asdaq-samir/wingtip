@@ -118,6 +118,20 @@ def closed_fields(cache_dir) -> dict[str, str]:
     return {ident: label for ident, code in by_ident.items() if (label := closed_label(code))}
 
 
+def status_of(ident: str, cache_dir) -> str | None:
+    """A field's NASR ARPT_STATUS by its ident, for the engine's
+    field_status rules (decision 0043); None where NASR doesn't list it or
+    the file cannot be had, which the engine takes as open."""
+    from . import faa_data
+
+    try:
+        path = faa_data.ensure_nasr_file("APT_BASE.csv", cache_dir)
+        return nasr_status(str(path), path.stat().st_mtime).get((ident or "").strip().upper())
+    except Exception:
+        log.warning("No APT_BASE.csv for %s's status", ident, exc_info=True)
+        return None
+
+
 #: The idents a field of OurAirports' table goes by, the FAA's own first:
 #: NASR's status is looked up by the first of them NASR lists.
 _IDENT_COLUMNS = ("local_code", "ident", "icao_code", "gps_code")

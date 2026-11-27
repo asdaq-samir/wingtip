@@ -210,6 +210,15 @@ pub fn vfr_not_recommended_reasons(
             _ if report.get("ceiling_unknown") == Some(&Value::Bool(true)) => {
                 reasons.push(format!("{ident} currently reporting a ceiling of unknown height"));
             }
+            // With no category (the visibility missing, so none can be
+            // settled), a ceiling the report does give under the basic VFR
+            // minimum still warrants it: 91.155(c), no VFR "beneath the
+            // ceiling when the ceiling is less than 1,000 feet".
+            None => {
+                if let Some(c) = num(report, "ceiling_ft").filter(|c| *c < min_ceiling_ft) {
+                    reasons.push(format!("{ident} currently reporting a {} ft ceiling", feet(c)));
+                }
+            }
             _ => {}
         }
     }

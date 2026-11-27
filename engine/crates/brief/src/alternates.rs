@@ -192,7 +192,7 @@ fn destination(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> 
 /// Whether a field will do as the alternate at its ETA (91.169(c)):
 /// `good` true, false, or null where the pilot has to look (nonstandard
 /// minimums, no approach, no TAF), with why.
-fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>, usage: Use) -> Value {
+fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>, usage: Use, closed: Option<&str>) -> Value {
     let minimums = if procs.precision { PRECISION_MINIMUMS } else { NONPRECISION_MINIMUMS };
     let mut reasons = Vec::new();
     let mut good = Some(true);
@@ -258,6 +258,12 @@ fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>, usage
         good = good.filter(|g| !g);
         reasons.push(format!("{words}."));
     }
+    // A field NASR lists closed (ARPT_STATUS CI or CP) is never an
+    // alternate, whatever its forecast (decision 0043; field::is_open).
+    if let Some(words) = closed {
+        good = Some(false);
+        reasons.insert(0, format!("{ident}: {words}, never an alternate."));
+    }
     obj(vec![
         ("ident", Value::String(ident.to_owned())),
         ("approach", Value::Bool(procs.any)),
@@ -275,6 +281,7 @@ fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>, usage
         ("visibility_sm", opt(forecast.and_then(|f| f.visibility_sm))),
         ("taf", forecast.and_then(|f| f.raw.clone()).map_or(Value::Null, Value::String)),
         ("good", good.map_or(Value::Null, Value::Bool)),
+        ("closed", Value::Bool(closed.is_some())),
         ("meets_standard", Value::Bool(meets_standard)),
         ("reasons", strings(reasons)),
     ])
@@ -286,6 +293,8 @@ fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>, usage
 fn ranked(checks: &[Value], limit: usize) -> Value {
     let mut kept: Vec<&Value> = checks
         .iter()
+        // Never a closed field (decision 0043), whatever else it says.
+        .filter(|c| c.get("closed") != Some(&Value::Bool(true)))
         .filter(|c| match c.get("good") {
             Some(Value::Bool(true)) => true,
             None | Some(Value::Null) => c.get("meets_standard").and_then(as_bool).unwrap_or(false),
@@ -346,7 +355,10 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let f = forecast(v);
             match name {
                 "ifr_alternate_destination" => destination(ident, &procs, f.as_ref()),
-                "ifr_alternate_check" => alternate(ident, &procs, f.as_ref(), airport_use::read(name, v)?),
+                "ifr_alternate_check" => {
+                    let closed = wingtip_flight::field::closed_words(v.get("status").and_then(Value::as_str));
+                    alternate(ident, &procs, f.as_ref(), airport_use::read(name, v)?, closed)
+                }
                 _ => return Err(format!("the engine has no rule called {name:?}")),
             }
         }
@@ -357,43 +369,5 @@ pub fn call(name: &str, v: &Value) -> R<String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_destinations_window_is_an_hour_either_side_and_an_alternates_its_eta() {
-        assert_eq!(window(10_000.0, true), (6_400.0, 13_600.0));
-        assert_eq!(window(10_000.0, false), (10_000.0, 10_000.0));
-        let v = json::parse(r#"{"eta":7200,"for":"destination"}"#).unwrap();
-        assert_eq!(call("ifr_alternate_window", &v).unwrap(), r#"{"start":3600.0,"end":10800.0}"#);
-        assert!(call("ifr_alternate_window", &json::parse(r#"{"eta":1}"#).unwrap()).is_err());
-    }
-
-    #[test]
-    fn visibilities_are_written_as_python_wrote_them() {
-        assert_eq!(g(2.5), "2.5");
-        assert_eq!(g(10.0), "10");
-        assert_eq!(g(0.25), "0.25");
-        assert_eq!(g(1.0 / 3.0), "0.333333");
-    }
-
-    #[test]
-    fn a_tempo_under_1_2_3_asks_for_an_alternate() {
-        let procs = Approaches { any: true, precision: true, alternate_minimums_url: None };
-        let f = Forecast { ceiling_ft: Some(1500.0), ceiling_unknown: false, visibility_sm: Some(6.0), covers: true, raw: None };
-        let d = destination("KDST", &procs, Some(&f));
-        assert_eq!(d.get("required"), Some(&Value::Bool(true)));
-    }
-
-    #[test]
-    fn precision_is_ils_gls_and_par_by_the_aim() {
-        // AIM 5-4-5 a.7(a): "PAR, ILS, and GLS are precision approaches";
-        // (b): "LDA with glidepath, LNAV/VNAV and LPV are APV approaches".
-        for name in ["ILS OR LOC RWY 27", "ILS RWY 4R (SA CAT I)", "ILS Z RWY 9", "GLS RWY 4R", "PAR RWY 32", "ils rwy 9"] {
-            assert!(precision_approach(name), "{name}");
-        }
-        for name in ["LOC RWY 27", "RNAV (GPS) RWY 9", "LDA/GLIDESLOPE RWY 19", "VOR RWY 3", "ILSX", "LOC BC RWY 9", "NDB OR GPS RWY 6"] {
-            assert!(!precision_approach(name), "{name}");
-        }
-    }
-}
+#[path = "alternates_tests.rs"]
+mod tests;

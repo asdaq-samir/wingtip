@@ -483,6 +483,10 @@ export type GonogoRunwayChecksAnswer = {
    */
   reported: boolean;
   /**
+   * The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+   */
+  temp_assumed: boolean;
+  /**
    * The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind.
    */
   headwind_kt: number;
@@ -718,6 +722,13 @@ export type MetarWindIn = {
   wind_dir_true_deg?: number | null;
   wind_speed_kt?: number | null;
   wind_gust_kt?: number | null;
+  /**
+   * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  wind_variable_deg?: [number, number] | null;
 } | null;
 export type LeastCrosswindAnswer = {
   /**
@@ -1093,6 +1104,14 @@ export type TfrDetailReadAnswer = {
   floor_ref: string | null;
   ceiling_ft: number | null;
   ceiling_ref: string | null;
+  /**
+   * Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read.
+   */
+  floor_varies: boolean;
+  /**
+   * Likewise for the highest ceiling.
+   */
+  ceiling_varies: boolean;
   /**
    * Its operative instructions, a line each as sent.
    */
@@ -1808,7 +1827,7 @@ export interface EngineContract {
     answer: DataCycleAnswer;
   };
   /**
-   * When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
+   * When a digital ATIS broadcast heard at a time stops being the airport's: 75 minutes after it was heard: the hourly update AIM 4-1-13 asks, and a quarter hour for it to come ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
    */
   datis_ends: {
     input: DatisEndsInput;
@@ -2529,7 +2548,7 @@ export interface EngineContract {
     answer: GonogoRiskLineAnswer;
   };
   /**
-   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those). With `tfrs`, which crossed TFRs are in force is decided here; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
+   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145), from the briefing's `tfrs`, by NOTAM id, with how many more it lists near it; none where no `tfrs` are sent; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
    */
   gonogo_route_figures: {
     input: GonogoRouteFiguresInput;
@@ -3614,7 +3633,7 @@ export interface EngineContract {
     answer: RemarksReadAnswer;
   };
   /**
-   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those in the 10 s before, at the report's own time (a transponder's 25 ft steps, DO-260B), and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the rate the report sent (baro_rate_fpm, else geom_rate_fpm), else the slope of the heights reported in the 15 s before, as a VSI lags (FAA-H-8083-15B, Ch. 5): never from a report still to come; a held pressure altitude (`alt_held`, or unchanged for up to 60 s while the GNSS height or the rate sent moved more than 300 ft) left out of every fit and rate, its height the last good one carried forward, never null; ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
    */
   replay_track: {
     input: ReplayTrackInput;
@@ -4216,7 +4235,7 @@ export interface EngineContract {
     answer: WindArrowAnswer;
   };
   /**
-   * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
+   * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends; a light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's 9900, under 5 kt) taken as 0 kt with the nearest level's direction, never skipped (the next level's wind in its place understated time and fuel, 14 CFR 91.151, 91.167); null with no level, never calm. A list for "altitudes".
    */
   wind_at_altitude: {
     input: WindAtAltitudeInput;
@@ -5592,9 +5611,20 @@ export interface AwcMetar {
    * The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
    */
   visibility_plus: boolean;
+  /**
+   * Less than the figure, "M1/4SM" (FMH-1 chapter 12): said "less than 1/4 sm", never 1/4.
+   */
+  visibility_minus: boolean;
   wind_dir_true_deg: number | null;
   wind_speed_kt: number | null;
   wind_gust_kt: number | null;
+  /**
+   * A variable wind direction, "250V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  wind_variable_deg: [number, number] | null;
   altimeter_in_hg: number | null;
   temp_c: number | null;
   dewpoint_c: number | null;
@@ -5673,6 +5703,13 @@ export interface BestFieldsInput {
       dir_true_deg?: number | null;
       speed_kt?: number | null;
       gust_kt?: number | null;
+      /**
+       * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+       *
+       * @minItems 2
+       * @maxItems 2
+       */
+      variable_deg?: [number, number] | null;
       altimeter_in_hg?: number | null;
       temp_c?: number | null;
       flight_category?: string | null;
@@ -5695,6 +5732,10 @@ export interface BestFieldsInput {
    * At most this many; 10 where not given.
    */
   limit?: number | null;
+  /**
+   * The diversion drill's (ACS PA.VI.C), with mode "diversion": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency.
+   */
+  drill?: boolean | null;
 }
 /**
  * A POH's short-field takeoff or landing table: at least two altitudes and two temperatures, a grid of them for every weight.
@@ -6950,6 +6991,10 @@ export interface VerdictInput {
      * Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
      */
     unchecked?: string[] | null;
+    /**
+     * Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+     */
+    standard_day?: string[] | null;
   };
   balance: {
     /**
@@ -6976,7 +7021,7 @@ export interface VerdictInput {
   } | null;
 }
 /**
- * The planner's /api/alternate answer, as much as the finding reads.
+ * The planner's /api/alternate answer, as much as the finding reads, or {"failed": true} where it could not be had, {"pending": true} while it is awaited.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "GonogoAlternateData".
@@ -6995,7 +7040,19 @@ export interface GonogoAlternateData {
      */
     good?: boolean | null;
     reasons?: string[] | null;
+    /**
+     * NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043).
+     */
+    closed?: boolean | null;
   } | null;
+  /**
+   * True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b)).
+   */
+  failed?: boolean | null;
+  /**
+   * True while an app still awaits the check: the alternate is then pending.
+   */
+  pending?: boolean | null;
 }
 export interface DepartureWindowAnswer {
   hours: DepartureWindowHour[];
@@ -7405,6 +7462,10 @@ export interface EndorsementRecordsInput {
    * YYYY-MM-DD
    */
   flight_on?: string | null;
+  /**
+   * The solo cross-country's make and model, "C172": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met.
+   */
+  make_model?: string | null;
 }
 export interface EndorsementRecordsAnswer {
   /**
@@ -8452,7 +8513,7 @@ export interface GonogoBriefInput {
     line: string;
   } | null;
   /**
-   * /api/alternate's answer; null while it is awaited or where none was asked.
+   * /api/alternate's answer, or {"failed": true} where it failed, {"pending": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b)).
    */
   alternate?: GonogoAlternateData | null;
   /**
@@ -9038,14 +9099,6 @@ export interface GonogoRouteFiguresInput {
       | null;
   } | null;
   /**
-   * How many TFRs the briefing lists along the route, with `crossed`.
-   */
-  tfr_count?: number | null;
-  /**
-   * The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.
-   */
-  crossed?: string[];
-  /**
    * The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` ("during") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.
    */
   tfrs?:
@@ -9154,6 +9207,13 @@ export interface GonogoMetar {
   wind_dir_true_deg?: number | null;
   wind_speed_kt?: number | null;
   wind_gust_kt?: number | null;
+  /**
+   * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  wind_variable_deg?: [number, number] | null;
 }
 export interface GonogoRunwayFindingsInput {
   /**
@@ -9195,6 +9255,10 @@ export interface GonogoRunwayFindingsAnswer {
   tailwind: string[];
   close: string[];
   unchecked: string[];
+  /**
+   * Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+   */
+  standard_day: string[];
 }
 export interface GonogoRunwayFlownInput {
   runways?: Runway[] | null;
@@ -9840,6 +9904,10 @@ export interface IfrAlternateCheckInput {
    * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
    */
   military?: "military" | "joint" | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+   */
+  status?: string | null;
 }
 export interface IfrAlternateCheckAnswer {
   ident: string;
@@ -9854,6 +9922,10 @@ export interface IfrAlternateCheckAnswer {
   visibility_sm: number | null;
   taf: string | null;
   good: boolean | null;
+  /**
+   * NASR lists it closed: `good` false, never offered (decision 0043).
+   */
+  closed: boolean;
   meets_standard: boolean;
   reasons: string[];
 }
@@ -9890,6 +9962,10 @@ export interface IfrAlternateDestinationInput {
    * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
    */
   military?: "military" | "joint" | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+   */
+  status?: string | null;
 }
 export interface IfrAlternateDestinationAnswer {
   ident: string;
@@ -11954,6 +12030,22 @@ export interface LogbookEntry {
   approaches?: number | null;
   holding?: boolean | null;
   tracking?: boolean | null;
+  /**
+   * 14 CFR 61.5 category, "Airplane": with `class`, the passenger currency's (61.57(a)(1)) group.
+   */
+  category?: string | null;
+  /**
+   * 14 CFR 61.5 class, "Single-engine land".
+   */
+  class?: string | null;
+  /**
+   * A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii)).
+   */
+  tailwheel?: boolean | null;
+  /**
+   * Landings to a full stop, day and night, where logged.
+   */
+  fullStopLandings?: number | null;
 }
 export interface PilotCurrencyAnswer {
   /**
@@ -11964,6 +12056,14 @@ export interface PilotCurrencyAnswer {
    * 90 days after the third most recent night full-stop landing (61.57(b)).
    */
   nightPassengersUntil: string | null;
+  /**
+   * The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+   */
+  passengerClass: string | null;
+  /**
+   * The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+   */
+  passengerClassUnknown: boolean;
   /**
    * YYYY-MM-DD; null where none can be had.
    */
@@ -13453,6 +13553,22 @@ export interface ReplayReport {
   gs_kt?: number | null;
   track_deg?: number | null;
   ground?: boolean | null;
+  /**
+   * The barometric rate sent, ft/min (readsb's baro_rate).
+   */
+  baro_rate_fpm?: number | null;
+  /**
+   * The GNSS rate sent, ft/min (readsb's geom_rate).
+   */
+  geom_rate_fpm?: number | null;
+  /**
+   * The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it.
+   */
+  alt_geom_ft?: number | null;
+  /**
+   * The caller's word that the pressure altitude is held (stale); null to let the engine tell.
+   */
+  alt_held?: boolean | null;
 }
 export interface ReplayTrackAnswer {
   points: ReplaySample[];
@@ -13464,6 +13580,10 @@ export interface ReplaySample {
   lat: number;
   lon: number;
   alt_ft: number | null;
+  /**
+   * The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null.
+   */
+  alt_held: boolean;
   gs_kt: number | null;
   track_deg: number | null;
   vs_fpm: number | null;
@@ -14157,6 +14277,13 @@ export interface RunwayEndFitInput {
     dir_true_deg?: number | null;
     speed_kt?: number | null;
     gust_kt?: number | null;
+    /**
+     * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+     *
+     * @minItems 2
+     * @maxItems 2
+     */
+    variable_deg?: [number, number] | null;
   } | null;
   /**
    * Null where the field's elevation is not known: no distance is worked out (needed_ft null, unknown true).
@@ -15780,6 +15907,10 @@ export interface IfrAlternateCheck {
   visibility_sm: number | null;
   taf: string | null;
   good: boolean | null;
+  /**
+   * NASR lists it closed: `good` false, never offered (decision 0043).
+   */
+  closed: boolean;
   meets_standard: boolean;
   reasons: string[];
 }
@@ -15820,4 +15951,8 @@ export interface IfrAlternateIn {
    * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
    */
   military?: "military" | "joint" | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+   */
+  status?: string | null;
 }

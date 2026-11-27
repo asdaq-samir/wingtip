@@ -1731,15 +1731,15 @@
             "night_passengers": false,
             "reasons": [
               {
-                "detail": "An alternate is required (14 CFR 91.169): file one in Weather",
-                "finding": "caution",
+                "detail": "An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather",
+                "finding": "stop",
                 "key": "weather",
                 "label": "Weather",
                 "section": "Alternate",
                 "tab": "arrive"
               }
             ],
-            "verdict": "caution"
+            "verdict": "no-go"
           },
           {
             "depart_s": 1794322800.0,

@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { cn } from "cn";
 import { Badge } from "../../components/ui/badge";
 import { SheetCard } from "../../components/SheetCard";
@@ -9,7 +8,6 @@ import { stopsOf } from "../../lib/identSchema";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { instantOf } from "../../lib/format";
-import { callEngine } from "../../lib/engine/engine";
 import {
   cardOf,
   headingOf,
@@ -40,7 +38,8 @@ type PlanRole = keyof typeof ROLE_WORDS;
  *  or null where it is none of the address's dep, stops, dest and
  *  alternate filed, or reaches none of them. Which roles it reaches, and
  *  whether it takes a procedure one flies (red) or is the field's
- *  (neutral), is the engine's notam_affects (the r8 audit's S-M1). */
+ *  (neutral), is the engine's notam_affects (the r8 audit's S-M1), read
+ *  on the planner (the NOTAM's `affects`). */
 function usePlanRole(n: FieldNotam, ident: string): { words: string; taken: boolean } | null {
   const [dep] = useAddressKey("dep");
   const [dest] = useAddressKey("dest");
@@ -55,19 +54,11 @@ function usePlanRole(n: FieldNotam, ident: string): { words: string; taken: bool
     arrival: is(dest),
     alternate: is(alternate),
   };
-  const roles = (Object.keys(plays) as PlanRole[]).filter((r) => plays[r]);
-  // Asked again only when the NOTAM or the plan's roles change, not on
-  // each minute's tick that draws NotamFull again (the r9 audit).
-  // The keys are words, so a new array with the same members is no change.
-  const raw = n.raw;
-  const identsKey = idents.join(" ");
-  const rolesKey = roles.join(" ");
-  return useMemo(() => {
-    if (!rolesKey) return null;
-    const asked = { text: raw, idents: identsKey.split(" "), roles: rolesKey.split(" ") as PlanRole[] };
-    const [first] = callEngine("notam_affects", asked).affects;
-    return first ? { words: ROLE_WORDS[first.role], taken: first.taken } : null;
-  }, [raw, identsKey, rolesKey]);
+  // The engine's notam_affects, asked on the planner for every role in its
+  // order (app.notam_reading): the first of those this field plays is the chip.
+  const affects = (n.affects ?? []) as { role: PlanRole; taken: boolean }[];
+  const first = affects.find((a) => plays[a.role]);
+  return first ? { words: ROLE_WORDS[first.role], taken: first.taken } : null;
 }
 
 /** Whether it is in force now, the shared StatusBadge (the owner,
@@ -178,13 +169,13 @@ function numberLine(n: FieldNotam, ident: string, card: NotamCardReading, read: 
 export function NotamCard({ n, ident, name, onClose }: { n: FieldNotam; ident: string; name?: string | null; onClose: () => void }) {
   // Asked of the engine once a render, each a trip through its WASM, and
   // handed down (the r5-ui audit's L13).
-  const card = cardOf(n, ident);
-  const read = readNotam(n, ident);
+  const card = cardOf(n);
+  const read = readNotam(n);
   const title = n.kind === "tfr" ? null : card.title;
   const field = name ? `${ident} ${name}` : ident;
   return (
     <SheetCard
-      title={title ?? headingOf(n, ident)}
+      title={title ?? headingOf(n)}
       description={`${field} · ${numberLine(n, ident, card, read)}`}
       onClose={onClose}
       testId="place-notam-card"

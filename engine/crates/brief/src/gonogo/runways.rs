@@ -20,7 +20,8 @@ pub use crate::runway::performance::{
 pub use crate::runway::pick::{
     available_ft, bare_ident, picked_end, runway_flown, runway_in_use, runway_number, End, Flown, Picks, Runway,
 };
-use crate::runway::wind::{headwind_kt, js_round};
+use crate::runway::wind::js_round;
+use crate::runway::wind_variable::worst_headwind_kt;
 use wingtip_core::sort::StableSort;
 
 /// A field's current report, as much as the check reads of it.
@@ -31,6 +32,8 @@ pub struct Report {
     pub wind_dir_true_deg: Option<f64>,
     pub wind_speed_kt: Option<f64>,
     pub wind_gust_kt: Option<f64>,
+    /// A variable direction's bounds, "230V310" (runway::wind_variable).
+    pub wind_variable_deg: Option<(f64, f64)>,
 }
 
 /// An airport the flight takes off from or lands at, in the route's
@@ -92,6 +95,10 @@ pub struct Check {
     pub temp_c: Option<f64>,
     /// The temperature and altimeter were reported (a METAR).
     pub reported: bool,
+    /// The distances were worked out on a standard day's temperature, none
+    /// being reported: a hot day's are longer (FAA-H-8083-25C ch. 11), so
+    /// the Go / No-Go says so (14 CFR 91.103(b)).
+    pub temp_assumed: bool,
     /// The wind along that runway's end, negative for a tailwind: the
     /// steady headwind, but a tailwind's gusts where they are more behind
     /// the end (along_shown_kt), as its crosswind's are.
@@ -201,10 +208,15 @@ pub fn runway_checks(
                 None => 0.0,
             };
             // The gusts along the end flown, from the report's wind and the
-            // end's true heading (both true): None for a VRB or no gust.
+            // end's true heading (both true): None for a VRB or no gust. A
+            // variable direction, "230V310", takes the arc's worst, gusting
+            // or steady (runway::wind_variable).
             let heading = runway.zip(end.as_ref()).and_then(|(r, e)| runways[r].ends.iter().find(|x| x.ident == *e)?.heading_true_deg);
             let gust_along = match (metar, heading) {
-                (Some(m), Some(h)) => m.wind_dir_true_deg.zip(m.wind_gust_kt).map(|(d, g)| headwind_kt(d, g, h)),
+                (Some(m), Some(h)) => m.wind_dir_true_deg.and_then(|d| {
+                    let kt = m.wind_gust_kt.or(m.wind_variable_deg.and(m.wind_speed_kt))?;
+                    Some(worst_headwind_kt(d, m.wind_variable_deg, kt, h))
+                }),
                 _ => None,
             };
             let shown_headwind = if w.is_some() { along_shown_kt(headwind, gust_along) } else { headwind };
@@ -285,6 +297,7 @@ pub fn runway_checks(
             density_alt_ft: air.map(|a| density_altitude_ft(a.0, a.1)),
             temp_c: air.map(|a| a.1).or(metar.and_then(|m| m.temp_c)),
             reported: metar.is_some(),
+            temp_assumed: air.is_some() && metar.and_then(|m| m.temp_c).is_none(),
             headwind_kt: first.shown_headwind,
             crosswind_kt: crosswind_shown(first.crosswind, first.crosswind.round_ties_even(), airplane.demonstrated_kt),
             crosswind_over: airplane.demonstrated_kt.is_some_and(|d| first.crosswind > d),
@@ -337,7 +350,7 @@ pub fn checks_json(checks: &[Check]) -> String {
         json::opt_number(&mut out, c.density_alt_ft);
         out.push_str(",\"temp_c\":");
         json::opt_number(&mut out, c.temp_c);
-        out.push_str(&format!(",\"reported\":{},\"headwind_kt\":", c.reported));
+        out.push_str(&format!(",\"reported\":{},\"temp_assumed\":{},\"headwind_kt\":", c.reported, c.temp_assumed));
         json::number(&mut out, c.headwind_kt);
         out.push_str(",\"crosswind_kt\":");
         json::number(&mut out, c.crosswind_kt);

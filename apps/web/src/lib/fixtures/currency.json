@@ -277,6 +277,306 @@
     "ipcNeededAfter": "2027-09-30",
     "instrumentCurrentFrom": null
    }
+  },
+  {
+   "name": "Lapsed for more than six calendar months, logged approaches no longer restore it: only a proficiency check does (61.57(d))",
+   "today": "2026-11-15",
+   "entries": [
+    {
+     "flownOn": "2024-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    },
+    {
+     "flownOn": "2026-10-05",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": "2024-07-31",
+    "ipcNeededAfter": "2025-01-31",
+    "instrumentCurrentFrom": null
+   }
+  },
+  {
+   "name": "Tasks flown in the sixth month after the lapse restore currency from the next (61.57(c)(1), (d))",
+   "today": "2026-12-20",
+   "entries": [
+    {
+     "flownOn": "2026-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    },
+    {
+     "flownOn": "2026-12-05",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": "2027-06-30",
+    "instrumentCurrentFrom": "2027-01-01"
+   }
+  },
+  {
+   "name": "Tasks flown in the seventh month after the lapse count past the grace period: a check is needed (61.57(d))",
+   "today": "2027-01-20",
+   "entries": [
+    {
+     "flownOn": "2026-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    },
+    {
+     "flownOn": "2027-01-05",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": "2026-07-31",
+    "ipcNeededAfter": "2027-01-31",
+    "instrumentCurrentFrom": null
+   }
+  },
+  {
+   "name": "A logbook that never shows currency counts the tasks only within its first six months (61.57(d))",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2025-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 0,
+     "holding": false,
+     "tracking": false
+    },
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": null
+   }
+  },
+  {
+   "name": "A check in the same month as logged approaches restores currency for the check's six months (61.57(d))",
+   "today": "2026-04-11",
+   "ipcOn": "2026-03-10",
+   "entries": [
+    {
+     "flownOn": "2022-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    },
+    {
+     "flownOn": "2026-03-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": "2026-09-30",
+    "instrumentCurrentFrom": null
+   }
+  },
+  {
+   "name": "After a check, approaches flown within its window carry currency on (61.57(c)(1), (d))",
+   "today": "2026-10-11",
+   "ipcOn": "2026-03-10",
+   "entries": [
+    {
+     "flownOn": "2022-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    },
+    {
+     "flownOn": "2026-08-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": "2027-02-28",
+    "instrumentCurrentFrom": null
+   }
+  },
+  {
+   "name": "Only landings in the newest flight's category and class count for passengers (61.57(a)(1): \"in an aircraft of the same category, class, and type\")",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land"
+    },
+    {
+     "flownOn": "2026-09-20",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Multiengine land"
+    },
+    {
+     "flownOn": "2026-08-15",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land"
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-11-13",
+    "passengerClass": "airplane/single-engine land",
+    "passengerClassUnknown": false
+   }
+  },
+  {
+   "name": "In a tailwheel airplane only full-stop landings count (61.57(a)(1)(ii))",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 1
+    },
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "fullStopLandings": 3
+    },
+    {
+     "flownOn": "2026-08-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 2
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-10-30",
+    "passengerClassUnknown": false
+   }
+  },
+  {
+   "name": "A logbook that doesn't say the category and class counts every landing and says it couldn't tell",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-12-30",
+    "passengerClass": null,
+    "passengerClassUnknown": true
+   }
   }
  ],
  "experience": [

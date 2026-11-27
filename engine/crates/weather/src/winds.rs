@@ -29,23 +29,43 @@ pub struct WindAt {
 /// The wind at `altitude_ft` from a station's levels, (altitude_ft,
 /// direction or None for light and variable, speed): interpolated between
 /// the levels either side (the direction the short way round), clamped to
-/// the nearest end outside them. A light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's
-/// 9900, no direction) is left out rather than guessed; None where no
-/// level is left -- no wind known, never calm.
+/// the nearest end outside them. A light-and-variable level (FAA-H-8083-28B
+/// 27.2.1.1.1's 9900: "light and variable", less than 5 knots) is taken as
+/// 0 kt with no direction, never skipped: skipping it put the next level's
+/// wind in its place, 30 kt at 3,000 ft under a 9900 there, which flown as
+/// a tailwind understates the time and fuel (14 CFR 91.151, 91.167). The
+/// speed is interpolated toward it, the direction kept from the nearest
+/// level that has one (any will do at no speed). None only with no level:
+/// no wind known, never calm.
 pub fn wind_at_altitude(levels: &[(f64, Option<f64>, f64)], altitude_ft: f64) -> Option<WindAt> {
-    let mut profile: Vec<(f64, f64, f64)> = levels.iter().filter_map(|&(a, d, s)| d.map(|d| (a, d, s))).collect();
+    let mut profile: Vec<(f64, Option<f64>, f64)> = levels.iter().map(|&(a, d, s)| (a, d, if d.is_some() { s } else { 0.0 })).collect();
     profile.stable_sort_by(|a, b| a.0.total_cmp(&b.0));
     let (first, last) = (*profile.first()?, *profile.last()?);
+    // The direction from the level with one nearest `altitude_ft`; 0 where
+    // every level is light and variable, at 0 kt.
+    let nearest_dir = || {
+        profile
+            .iter()
+            .filter_map(|&(a, d, _)| d.map(|d| ((a - altitude_ft).abs(), d)))
+            .fold(None, |best: Option<(f64, f64)>, x| Some(best.map_or(x, |b| if x.0 < b.0 { x } else { b })))
+            .map_or(0.0, |(_, d)| d)
+    };
+    let at = |(_, d, s): (f64, Option<f64>, f64)| WindAt { dir_true_deg: d.unwrap_or_else(nearest_dir), speed_kt: s };
     if altitude_ft <= first.0 {
-        return Some(WindAt { dir_true_deg: first.1, speed_kt: first.2 });
+        return Some(at(first));
     }
     if altitude_ft >= last.0 {
-        return Some(WindAt { dir_true_deg: last.1, speed_kt: last.2 });
+        return Some(at(last));
     }
     profile.windows(2).find(|w| w[0].0 <= altitude_ft && altitude_ft <= w[1].0).map(|w| {
         let ((a1, d1, s1), (a2, d2, s2)) = (w[0], w[1]);
         let frac = if a2 != a1 { (altitude_ft - a1) / (a2 - a1) } else { 0.0 };
-        WindAt { dir_true_deg: interp_direction(d1, d2, frac), speed_kt: s1 + frac * (s2 - s1) }
+        let dir = match (d1, d2) {
+            (Some(d1), Some(d2)) => interp_direction(d1, d2, frac),
+            (Some(d), None) | (None, Some(d)) => d,
+            (None, None) => nearest_dir(),
+        };
+        WindAt { dir_true_deg: dir, speed_kt: s1 + frac * (s2 - s1) }
     })
 }
 
@@ -132,8 +152,22 @@ mod aloft_tests {
         let w = wind_at_altitude(&levels, 4500.0).unwrap();
         assert!(w.dir_true_deg.abs() < 1e-9 || (w.dir_true_deg - 360.0).abs() < 1e-9, "{w:?}");
         assert!((w.speed_kt - 15.0).abs() < 1e-9);
-        assert_eq!(wind_at_altitude(&levels, 12000.0).unwrap().speed_kt, 20.0);
-        assert_eq!(wind_at_altitude(&[(3000.0, None, 3.0)], 3000.0), None);
+        assert_eq!(wind_at_altitude(&levels, 12000.0).unwrap().speed_kt, 0.0);
+        assert_eq!(wind_at_altitude(&[], 3000.0), None);
+    }
+
+    #[test]
+    fn a_light_and_variable_level_is_no_wind_not_the_next_levels() {
+        // FAA-H-8083-28B 27.2.1.1.1: 9900 is light and variable. 3,000 ft
+        // 9900 under 6,000 ft 270/30: 0 kt at 3,000 ft, not 30.
+        let levels = [(3000.0, None, 0.0), (6000.0, Some(270.0), 30.0)];
+        assert_eq!(wind_at_altitude(&levels, 3000.0), Some(WindAt { dir_true_deg: 270.0, speed_kt: 0.0 }));
+        assert_eq!(wind_at_altitude(&levels, 2000.0).unwrap().speed_kt, 0.0);
+        // Halfway, half the speed, the direction the level above's.
+        assert_eq!(wind_at_altitude(&levels, 4500.0), Some(WindAt { dir_true_deg: 270.0, speed_kt: 15.0 }));
+        assert_eq!(wind_at_altitude(&levels, 6000.0).unwrap().speed_kt, 30.0);
+        // Every level light and variable: calm, not unknown.
+        assert_eq!(wind_at_altitude(&[(3000.0, None, 3.0)], 3000.0).map(|w| w.speed_kt), Some(0.0));
     }
 
     #[test]

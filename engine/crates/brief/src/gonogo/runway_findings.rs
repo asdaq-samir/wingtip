@@ -14,7 +14,8 @@
 //! POH's table; a tailwind, the wind along the end negative (AIM 4-3-6c:
 //! the runway most nearly into the wind); less than SAFO 19001's 15 per
 //! cent to spare; and a field whose elevation or a runway's length is not
-//! known, so whether it fits is not known, never "within".
+//! known, so whether it fits is not known, never "within"; and a field
+//! with no temperature reported, whose distances assume a standard day.
 
 use super::calls::truth;
 use crate::json::Value;
@@ -70,13 +71,15 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             .collect::<R<_>>()?,
         Some(_) => return Err(format!("{NAME}: \"checks\" is not a list")),
     };
-    let lists: [(&str, Vec<String>); 6] = [
+    let worked = |c: &Value| c.get("distances").and_then(Value::as_array).is_some_and(|ds| !ds.is_empty());
+    let lists: [(&str, Vec<String>); 7] = [
         ("short", fields(&checks, |c| any_distance(c, "over"))),
         ("crosswind", fields(&checks, |c| truth(c, "crosswind_over"))),
         ("beyond", fields(&checks, |c| any_distance(c, "beyond"))),
         ("tailwind", fields(&checks, |c| c.get("headwind_kt").and_then(Value::as_f64).is_some_and(|h| h < 0.0))),
         ("close", fields(&checks, |c| any_distance(c, "close"))),
         ("unchecked", fields(&checks, |c| truth(c, "unchecked") || any_distance(c, "unknown"))),
+        ("standard_day", fields(&checks, |c| truth(c, "temp_assumed") && worked(c))),
     ];
     let mut out = String::from("{\"pending\":");
     out.push_str(if !planned || !briefed { "true" } else { "false" });

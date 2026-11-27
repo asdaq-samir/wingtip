@@ -134,8 +134,8 @@ def wind_in_levels(levels: dict, altitude_ft: float) -> dict | None:
     """One FD station's wind at altitude_ft from its levels ({altitude:
     {"wind_dir_true_deg", "wind_speed_kt", ...}}): the engine's (winds.rs
     wind_at_altitude) -- interpolated between the levels either side,
-    clamped at the ends, light and variable left out; None with no usable
-    level."""
+    clamped at the ends, a light-and-variable level 0 kt (FAA-H-8083-28B
+    27.2.1.1.1's 9900); None with no level."""
     return ask("wind_at_altitude", levels={str(alt): level for alt, level in levels.items()}, altitude_ft=altitude_ft)
 
 

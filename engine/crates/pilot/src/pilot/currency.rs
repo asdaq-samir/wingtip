@@ -9,13 +9,20 @@
 //! time zone enters here. A logbook is only as good as what is in it:
 //! none of this is anyone's sign-off, and the pages say so.
 //!
-//! What it simplifies, each toward telling the pilot less than they may
-//! have rather than more: 61.57(a) and (b) also ask the landings be in
-//! the same category, class and type (a tailwheel's to a full stop), which
-//! the logbook's columns do not say, so every landing logged counts; the
-//! night landings counted are the logbook's night full-stop ones (61.57(b)
-//! "to a full stop during the period beginning 1 hour after sunset and
-//! ending 1 hour before sunrise"), as the pilot logged them.
+//! Passenger currency, 61.57(a)(1): the landings "in an aircraft of the
+//! same category, class, and type (if a type rating is required)", and in
+//! a tailwheel airplane "to a full stop". Where the entries carry their
+//! `category` and `class` (and `tailwheel`), only the landings in the
+//! category and class of the newest flight are counted, and a tailwheel's
+//! only to a full stop (`fullStopLandings`, else its night landings, which
+//! the logbook keeps as full stops); entries that say neither are then
+//! left out. Where the newest flight does not say, the logbook cannot
+//! tell, every landing is counted, and `passengerClassUnknown` says so,
+//! so no page claims the class was checked. A type rating's own type is
+//! not told apart. The night landings counted are the logbook's night
+//! full-stop ones (61.57(b) "to a full stop during the period beginning 1
+//! hour after sunset and ending 1 hour before sunrise"), as the pilot
+//! logged them.
 
 use super::js;
 use crate::json::{self, Value};
@@ -97,6 +104,12 @@ pub struct Entry {
     pub approaches: f64,
     pub holding: bool,
     pub tracking: bool,
+    /// 61.57(a)(1)'s category and class, "airplane/single-engine land",
+    /// None where the entry does not say both.
+    pub class: Option<String>,
+    pub tailwheel: bool,
+    /// Landings to a full stop, day and night, where logged.
+    pub full_stops: Option<f64>,
 }
 
 impl Entry {
@@ -137,6 +150,15 @@ pub fn entries(name: &str, items: &[Value]) -> Result<Vec<Entry>, String> {
                 approaches: num("approaches")?,
                 holding: flag("holding"),
                 tracking: flag("tracking"),
+                class: match (e.get("category").and_then(Value::as_str), e.get("class").and_then(Value::as_str)) {
+                    (Some(c), Some(k)) if !c.is_empty() && !k.is_empty() => Some(format!("{}/{}", c.to_lowercase(), k.to_lowercase())),
+                    _ => None,
+                },
+                tailwheel: flag("tailwheel"),
+                full_stops: match e.get("fullStopLandings") {
+                    None | Some(Value::Null) => None,
+                    _ => Some(num("fullStopLandings")?),
+                },
             })
         })
         .collect()
@@ -145,6 +167,27 @@ pub fn entries(name: &str, items: &[Value]) -> Result<Vec<Entry>, String> {
 /// Hours to the tenth, as the logbook keeps them.
 fn tenth(hours: f64) -> f64 {
     js::round(hours * 10.0) / 10.0
+}
+
+/// The category and class passenger currency is judged in (61.57(a)(1)):
+/// the newest flight's, and whether it was a tailwheel; None where that
+/// flight does not say, and every landing counts.
+pub(crate) fn passenger_class(entries: &[Entry]) -> Option<(String, bool)> {
+    let newest = entries.iter().max_by_key(|e| e.day)?;
+    newest.class.clone().map(|c| (c, newest.tailwheel))
+}
+
+/// The landings an entry gives toward 61.57(a)(1) in `class`: none in
+/// another category and class, or in one not said; in a tailwheel, only
+/// those to a full stop; with no class to judge, every one (`landings`).
+pub(crate) fn class_landings(e: &Entry, class: &Option<(String, bool)>, landings: &dyn Fn(&Entry) -> f64) -> f64 {
+    match class {
+        None => landings(e),
+        Some((c, _)) if e.class.as_ref() != Some(c) => 0.0,
+        Some((_, true)) if !e.tailwheel => 0.0,
+        Some((_, true)) => landings(e).min(e.full_stops.unwrap_or(e.night_landings)),
+        Some(_) => landings(e),
+    }
 }
 
 /// 61.57(a), (b): 90 days after the day the third most recent landing was
@@ -180,38 +223,51 @@ fn instrument_current_in(entries: &[Entry], month: i64) -> bool {
         && in_window(entries, month).any(|e| e.tracking)
 }
 
-/// The last month of instrument currency (61.57(c)(1), (d)), by
-/// `month_index`: the latest month whose six preceding months hold all
-/// three, or the sixth month after a proficiency check's (61.57(d): the
-/// check restores currency, and the six months after it are its window);
-/// None with neither. In the past where it has lapsed.
-fn instrument_until(entries: &[Entry], ipc: Option<i64>) -> Option<i64> {
-    let mut best = ipc.map(|m| m + INSTRUMENT_MONTHS);
-    let mut flown: Vec<i64> = entries.iter().map(|e| e.month).collect();
-    flown.sort_unstable();
-    flown.dedup();
-    // Each month a logged flight could have made current: the one after
-    // it, up to six after (no later month has it in its window).
-    for month in flown {
-        for ahead in (1..=INSTRUMENT_MONTHS).rev() {
-            let candidate = month + ahead;
-            if best.is_some_and(|b| candidate <= b) {
-                break;
-            }
-            if instrument_current_in(entries, candidate) {
-                best = Some(candidate);
-                break;
-            }
+/// The months the pilot is instrument current, by `month_index`, oldest
+/// first (61.57(c)(1), (d)). A month is current where a proficiency check
+/// falls in it or the six before it (61.57(d): the check restores
+/// currency, and the six months after it are its window), or where its
+/// six preceding months hold all three of (c)(1) and the pilot may still
+/// restore currency that way. 61.57(d): "a person who has failed to meet
+/// the instrument experience requirements of paragraph (c) for more than
+/// six calendar months may reestablish instrument currency only by
+/// completing an instrument proficiency check" -- so once the last
+/// current month is more than six behind, logged approaches no longer
+/// count, until a check is taken.
+///
+/// The logbook does not say when the rating was earned, so a logbook that
+/// never shows currency is taken as lapsed from the month before its first
+/// flight: the experience must be flown within its first six months, or a
+/// check is asked for. That errs toward asking for a check; a pilot whose
+/// instrument practical test came since gives its date as the check's.
+/// With the stricter reading of (c)(1) (a month's own flights count from
+/// the next), tasks flown in the sixth month of the grace period count
+/// only in the seventh, past it: also the safer side.
+fn instrument_months(entries: &[Entry], ipc: Option<i64>) -> Vec<i64> {
+    let first = entries.iter().map(|e| e.month).chain(ipc).min();
+    let last = entries.iter().map(|e| e.month + INSTRUMENT_MONTHS).chain(ipc.map(|i| i + INSTRUMENT_MONTHS)).max();
+    let (Some(first), Some(last)) = (first, last) else {
+        return Vec::new();
+    };
+    let mut current = Vec::new();
+    // The last month current, or the month before the logbook's first.
+    let mut last_current = first - 1;
+    for month in first..=last + 1 {
+        let checked = ipc.is_some_and(|i| i <= month && month <= i + INSTRUMENT_MONTHS);
+        let in_grace = month - last_current <= INSTRUMENT_MONTHS;
+        if checked || (in_grace && instrument_current_in(entries, month)) {
+            current.push(month);
+            last_current = month;
         }
     }
-    best
+    current
 }
 
-/// Whether the pilot is instrument current in `month` (61.57(c)(1), (d)):
-/// its six preceding months hold all three, or a proficiency check in
-/// `ipc` falls in it or the six months before it.
-fn instrument_current_on(entries: &[Entry], ipc: Option<i64>, month: i64) -> bool {
-    instrument_current_in(entries, month) || ipc.is_some_and(|i| i <= month && month <= i + INSTRUMENT_MONTHS)
+/// The last month of instrument currency (61.57(c)(1), (d)), by
+/// `month_index`; None where the logbook and the check never give one. In
+/// the past where it has lapsed.
+fn instrument_until(entries: &[Entry], ipc: Option<i64>) -> Option<i64> {
+    instrument_months(entries, ipc).last().copied()
 }
 
 /// The first month of instrument currency still to come, by `month_index`:
@@ -223,10 +279,11 @@ fn instrument_current_on(entries: &[Entry], ipc: Option<i64>, month: i64) -> boo
 /// of a pilot the rule counts as not current yet.
 fn instrument_from(entries: &[Entry], ipc: Option<i64>, until: Option<i64>, month: i64) -> Option<i64> {
     let until = until.filter(|&u| u > month)?;
-    if instrument_current_on(entries, ipc, month) {
+    let current = instrument_months(entries, ipc);
+    if current.contains(&month) {
         return None;
     }
-    (month + 1..=until).find(|&m| instrument_current_on(entries, ipc, m))
+    current.into_iter().find(|&m| m > month && m <= until)
 }
 
 mod dates;

@@ -1754,12 +1754,22 @@ object EngineContract {
          */
         @SerialName("visibility_plus")
         val visibilityPlus: Boolean,
+        /**
+         * Less than the figure, "M1/4SM" (FMH-1 chapter 12): said "less than 1/4 sm", never 1/4.
+         */
+        @SerialName("visibility_minus")
+        val visibilityMinus: Boolean,
         @SerialName("wind_dir_true_deg")
         val windDirTrueDeg: Double? = null,
         @SerialName("wind_speed_kt")
         val windSpeedKt: Double? = null,
         @SerialName("wind_gust_kt")
         val windGustKt: Double? = null,
+        /**
+         * A variable wind direction, "250V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.
+         */
+        @SerialName("wind_variable_deg")
+        val windVariableDeg: List<Double>? = null,
         @SerialName("altimeter_in_hg")
         val altimeterInHg: Double? = null,
         @SerialName("temp_c")
@@ -1959,6 +1969,10 @@ object EngineContract {
          * At most this many; 10 where not given.
          */
         val limit: Double? = null,
+        /**
+         * The diversion drill's (ACS PA.VI.C), with mode "diversion": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency.
+         */
+        val drill: Boolean? = null,
     )
 
     @Serializable
@@ -2031,6 +2045,11 @@ object EngineContract {
         val speedKt: Double? = null,
         @SerialName("gust_kt")
         val gustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("variable_deg")
+        val variableDeg: List<Double>? = null,
         @SerialName("altimeter_in_hg")
         val altimeterInHg: Double? = null,
         @SerialName("temp_c")
@@ -3827,6 +3846,11 @@ object EngineContract {
          */
         @SerialName("flight_on")
         val flightOn: String? = null,
+        /**
+         * The solo cross-country's make and model, "C172": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met.
+         */
+        @SerialName("make_model")
+        val makeModel: String? = null,
     )
 
     @Serializable
@@ -5180,12 +5204,20 @@ object EngineContract {
     )
 
     /**
-     * The planner's /api/alternate answer, as much as the finding reads.
+     * The planner's /api/alternate answer, as much as the finding reads, or {"failed": true} where it could not be had, {"pending": true} while it is awaited.
      */
     @Serializable
     data class GonogoAlternateData(
         val destination: EngineContract.GonogoAlternateDataDestination? = null,
         val alternate: EngineContract.GonogoAlternateDataAlternate? = null,
+        /**
+         * True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b)).
+         */
+        val failed: Boolean? = null,
+        /**
+         * True while an app still awaits the check: the alternate is then pending.
+         */
+        val pending: Boolean? = null,
     )
 
     @Serializable
@@ -5196,6 +5228,10 @@ object EngineContract {
          */
         val good: Boolean? = null,
         val reasons: List<String>? = null,
+        /**
+         * NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043).
+         */
+        val closed: Boolean? = null,
     )
 
     @Serializable
@@ -5269,7 +5305,7 @@ object EngineContract {
          */
         val risk: EngineContract.GonogoBriefInputRisk? = null,
         /**
-         * /api/alternate's answer; null while it is awaited or where none was asked.
+         * /api/alternate's answer, or {"failed": true} where it failed, {"pending": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b)).
          */
         val alternate: EngineContract.GonogoAlternateData? = null,
         /**
@@ -5978,6 +6014,11 @@ object EngineContract {
         val windSpeedKt: Double? = null,
         @SerialName("wind_gust_kt")
         val windGustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("wind_variable_deg")
+        val windVariableDeg: List<Double>? = null,
     )
 
     @Serializable
@@ -6171,15 +6212,6 @@ object EngineContract {
          */
         val totals: EngineContract.GonogoRouteFiguresInputTotals? = null,
         /**
-         * How many TFRs the briefing lists along the route, with `crossed`.
-         */
-        @SerialName("tfr_count")
-        val tfrCount: Double? = null,
-        /**
-         * The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.
-         */
-        val crossed: List<String>? = null,
-        /**
          * The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` ("during") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.
          */
         val tfrs: List<EngineContract.GonogoRouteFiguresInputTfrsItem>? = null,
@@ -6297,6 +6329,11 @@ object EngineContract {
          */
         val reported: Boolean,
         /**
+         * The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+         */
+        @SerialName("temp_assumed")
+        val tempAssumed: Boolean,
+        /**
          * The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind.
          */
         @SerialName("headwind_kt")
@@ -6409,6 +6446,11 @@ object EngineContract {
         val tailwind: List<String>,
         val close: List<String>,
         val unchecked: List<String>,
+        /**
+         * Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+         */
+        @SerialName("standard_day")
+        val standardDay: List<String>,
     )
 
     @Serializable
@@ -7370,6 +7412,10 @@ object EngineContract {
         val visibilitySm: Double? = null,
         val taf: String? = null,
         val good: Boolean? = null,
+        /**
+         * NASR lists it closed: `good` false, never offered (decision 0043).
+         */
+        val closed: Boolean,
         @SerialName("meets_standard")
         val meetsStandard: Boolean,
         val reasons: List<String>,
@@ -7415,6 +7461,10 @@ object EngineContract {
          * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
          */
         val military: String? = null,
+        /**
+         * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+         */
+        val status: String? = null,
     )
 
     /**
@@ -8210,6 +8260,22 @@ object EngineContract {
         val approaches: Double? = null,
         val holding: Boolean? = null,
         val tracking: Boolean? = null,
+        /**
+         * 14 CFR 61.5 category, "Airplane": with `class`, the passenger currency's (61.57(a)(1)) group.
+         */
+        val category: String? = null,
+        /**
+         * 14 CFR 61.5 class, "Single-engine land".
+         */
+        val `class`: String? = null,
+        /**
+         * A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii)).
+         */
+        val tailwheel: Boolean? = null,
+        /**
+         * Landings to a full stop, day and night, where logged.
+         */
+        val fullStopLandings: Double? = null,
     )
 
     @Serializable
@@ -8728,6 +8794,11 @@ object EngineContract {
         val windSpeedKt: Double? = null,
         @SerialName("wind_gust_kt")
         val windGustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("wind_variable_deg")
+        val windVariableDeg: List<Double>? = null,
     )
 
     @Serializable
@@ -10330,6 +10401,14 @@ object EngineContract {
          * 90 days after the third most recent night full-stop landing (61.57(b)).
          */
         val nightPassengersUntil: String? = null,
+        /**
+         * The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+         */
+        val passengerClass: String? = null,
+        /**
+         * The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+         */
+        val passengerClassUnknown: Boolean,
         /**
          * YYYY-MM-DD; null where none can be had.
          */
@@ -12261,6 +12340,11 @@ object EngineContract {
         val lon: Double,
         @SerialName("alt_ft")
         val altFt: Double? = null,
+        /**
+         * The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null.
+         */
+        @SerialName("alt_held")
+        val altHeld: Boolean,
         @SerialName("gs_kt")
         val gsKt: Double? = null,
         @SerialName("track_deg")
@@ -12298,6 +12382,26 @@ object EngineContract {
         @SerialName("track_deg")
         val trackDeg: Double? = null,
         val ground: Boolean? = null,
+        /**
+         * The barometric rate sent, ft/min (readsb's baro_rate).
+         */
+        @SerialName("baro_rate_fpm")
+        val baroRateFpm: Double? = null,
+        /**
+         * The GNSS rate sent, ft/min (readsb's geom_rate).
+         */
+        @SerialName("geom_rate_fpm")
+        val geomRateFpm: Double? = null,
+        /**
+         * The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it.
+         */
+        @SerialName("alt_geom_ft")
+        val altGeomFt: Double? = null,
+        /**
+         * The caller's word that the pressure altitude is held (stale); null to let the engine tell.
+         */
+        @SerialName("alt_held")
+        val altHeld: Boolean? = null,
     )
 
     @Serializable
@@ -13311,6 +13415,11 @@ object EngineContract {
         val speedKt: Double? = null,
         @SerialName("gust_kt")
         val gustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("variable_deg")
+        val variableDeg: List<Double>? = null,
     )
 
     @Serializable
@@ -14701,6 +14810,16 @@ object EngineContract {
         @SerialName("ceiling_ref")
         val ceilingRef: String? = null,
         /**
+         * Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read.
+         */
+        @SerialName("floor_varies")
+        val floorVaries: Boolean,
+        /**
+         * Likewise for the highest ceiling.
+         */
+        @SerialName("ceiling_varies")
+        val ceilingVaries: Boolean,
+        /**
          * Its operative instructions, a line each as sent.
          */
         val instructions: List<String>,
@@ -15243,6 +15362,11 @@ object EngineContract {
          * Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
          */
         val unchecked: List<String>? = null,
+        /**
+         * Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+         */
+        @SerialName("standard_day")
+        val standardDay: List<String>? = null,
     )
 
     @Serializable

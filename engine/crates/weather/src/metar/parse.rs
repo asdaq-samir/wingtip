@@ -14,6 +14,28 @@ impl Metar {
     }
 }
 
+/// A variable wind direction group, "250V310": the two bounds the
+/// direction varied between, clockwise from the first, true as the wind
+/// group is. A METAR sends it after the wind where the direction varies by
+/// 60 degrees or more with the speed over 6 knots (FMH-1 chapter 12, the
+/// wind group; AIM 7-1-28's METAR key, "dddVddd"): the wind may then blow
+/// from anywhere between them, so the runways' crosswind and tailwind are
+/// judged at the worst of them (wingtip_brief::runway::wind_variable).
+pub fn variable_group(w: &str) -> Option<(f64, f64)> {
+    let b = w.as_bytes();
+    if b.len() != 7 || b[3] != b'V' || !b[..3].iter().chain(&b[4..]).all(u8::is_ascii_digit) {
+        return None;
+    }
+    let (from, to) = (w[..3].parse::<f64>().ok()?, w[4..].parse::<f64>().ok()?);
+    (from <= 360.0 && to <= 360.0).then_some((from, to))
+}
+
+/// The variable direction in a report's text, before its remarks; None
+/// where it sends none.
+pub fn variable_direction(raw: &str) -> Option<(f64, f64)> {
+    raw.split_whitespace().take_while(|w| *w != "RMK").find_map(variable_group)
+}
+
 /// A report as sent, "METAR KDLH 021355Z ... RMK ...". None where the
 /// station and time cannot be read; groups it does not know are passed
 /// over, as the AWC passes them over.
@@ -84,8 +106,7 @@ pub fn parse(raw: &str) -> Option<Metar> {
                 m.visibility_sm = Some(metric_sm(w[..w.len() - 2].parse::<f64>().unwrap() * 1000.0));
             }
             _ if m.wind.is_none() && m.visibility_sm.is_none() && wind(w).is_some() => m.wind = wind(w),
-            // A variable direction "250V310" says nothing the figures carry.
-            _ if w.len() == 7 && w.as_bytes()[3] == b'V' && w.bytes().filter(u8::is_ascii_digit).count() == 6 => {}
+            _ if variable_group(w).is_some() => m.wind_variable_deg = variable_group(w),
             _ if m.visibility_sm.is_none()
                 && w.len() == 1
                 && w.as_bytes()[0].is_ascii_digit()
@@ -99,6 +120,8 @@ pub fn parse(raw: &str) -> Option<Metar> {
                 if let Some((v, plus)) = statute_miles(w, None) {
                     m.visibility_sm = Some(v);
                     m.visibility_plus = plus;
+                    // "M1/4SM" is less than 1/4 sm, never 1/4 itself.
+                    m.visibility_minus = w.starts_with('M');
                 }
             }
             // Metres (WMO No. 306): 9999 is 10 km or more.

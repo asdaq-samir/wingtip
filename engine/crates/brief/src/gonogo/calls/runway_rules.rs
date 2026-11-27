@@ -36,6 +36,15 @@ pub(crate) fn table(i: In, t: &Value) -> R<ShortField> {
     if rows < 2 || cols < 2 || n == 0 || !fits(&st.ground_roll_ft) || !fits(&st.total_50ft_ft) {
         return i.err("table", "is not a short-field table of its altitudes, temperatures and weights");
     }
+    // The reading (performance::short_field) takes the altitudes and the
+    // temperatures lowest first and the weights heaviest first: a table in
+    // another order would read a heavy airplane at the lightest weight's
+    // shorter distance, so it is refused, not read.
+    let rising = |v: &[f64]| v.windows(2).all(|w| w[0] < w[1]);
+    let falling = |v: &[f64]| v.windows(2).all(|w| w[0] > w[1]);
+    if !rising(&st.pressure_altitudes_ft) || !rising(&st.temperatures_c) || !falling(&st.weights_lb) {
+        return i.err("table", "is not in order: altitudes and temperatures lowest first, weights heaviest first");
+    }
     Ok(st)
 }
 
@@ -126,6 +135,7 @@ pub(super) fn runway_checks_rule(i: In, v: &Value) -> R<String> {
                     wind_dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
                     wind_speed_kt: i.opt_num(m, "wind_speed_kt")?,
                     wind_gust_kt: i.opt_num(m, "wind_gust_kt")?,
+                    wind_variable_deg: crate::runway::wind_variable::variable(i, m)?,
                 }),
             };
             Ok(Field { runways: field_runways(i, v, &ident)?, elevation_ft: i.opt_num(f, "elevation_ft")?, metar: report, ident })

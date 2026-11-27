@@ -4072,6 +4072,10 @@
                 "type": "boolean",
                 "description": "The visibility is at least visibility_sm: the feed's \"10+\", the report's P6SM or 10SM and more."
               },
+              "visibility_minus": {
+                "type": "boolean",
+                "description": "Less than the figure, \"M1/4SM\" (FMH-1 chapter 12): said \"less than 1/4 sm\", never 1/4."
+              },
               "wind_dir_true_deg": {
                 "type": [
                   "number",
@@ -4089,6 +4093,18 @@
                   "number",
                   "null"
                 ]
+              },
+              "wind_variable_deg": {
+                "description": "A variable wind direction, \"250V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.",
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
               },
               "altimeter_in_hg": {
                 "type": [
@@ -4131,9 +4147,11 @@
               "ceiling_cover",
               "visibility_sm",
               "visibility_plus",
+              "visibility_minus",
               "wind_dir_true_deg",
               "wind_speed_kt",
               "wind_gust_kt",
+              "wind_variable_deg",
               "altimeter_in_hg",
               "temp_c",
               "dewpoint_c",
@@ -4498,6 +4516,18 @@
                           "null"
                         ]
                       },
+                      "variable_deg": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
+                      },
                       "altimeter_in_hg": {
                         "type": [
                           "number",
@@ -4565,6 +4595,13 @@
                 "null"
               ],
               "description": "At most this many; 10 where not given."
+            },
+            "drill": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The diversion drill's (ACS PA.VI.C), with mode \"diversion\": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency."
             }
           },
           "required": [
@@ -6705,7 +6742,7 @@
       "additionalProperties": false
     },
     "datis_ends": {
-      "description": "When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
+      "description": "When a digital ATIS broadcast heard at a time stops being the airport's: 75 minutes after it was heard: the hourly update AIM 4-1-13 asks, and a quarter hour for it to come ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
       "type": "object",
       "properties": {
         "input": {
@@ -9176,6 +9213,13 @@
                 "null"
               ],
               "description": "YYYY-MM-DD"
+            },
+            "make_model": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The solo cross-country's make and model, \"C172\": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met."
             }
           }
         },
@@ -13273,7 +13317,7 @@
                   "type": "null"
                 }
               ],
-              "description": "/api/alternate's answer; null while it is awaited or where none was asked."
+              "description": "/api/alternate's answer, or {\"failed\": true} where it failed, {\"pending\": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b))."
             },
             "fields": {
               "type": [
@@ -14175,7 +14219,7 @@
       "additionalProperties": false
     },
     "gonogo_route_figures": {
-      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those). With `tfrs`, which crossed TFRs are in force is decided here; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.",
+      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145), from the briefing's `tfrs`, by NOTAM id, with how many more it lists near it; none where no `tfrs` are sent; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.",
       "type": "object",
       "properties": {
         "input": {
@@ -14241,20 +14285,6 @@
                     }
                   }
                 }
-              }
-            },
-            "tfr_count": {
-              "description": "How many TFRs the briefing lists along the route, with `crossed`.",
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "crossed": {
-              "description": "The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.",
-              "type": "array",
-              "items": {
-                "type": "string"
               }
             },
             "tfrs": {
@@ -14640,6 +14670,10 @@
                 "type": "boolean",
                 "description": "A METAR gave the temperature and altimeter."
               },
+              "temp_assumed": {
+                "type": "boolean",
+                "description": "The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
+              },
               "headwind_kt": {
                 "type": "number",
                 "description": "The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind."
@@ -14765,6 +14799,7 @@
               "density_alt_ft",
               "temp_c",
               "reported",
+              "temp_assumed",
               "headwind_kt",
               "crosswind_kt",
               "crosswind_over",
@@ -14918,6 +14953,13 @@
               "items": {
                 "type": "string"
               }
+            },
+            "standard_day": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
             }
           },
           "required": [
@@ -14928,7 +14970,8 @@
             "beyond",
             "tailwind",
             "close",
-            "unchecked"
+            "unchecked",
+            "standard_day"
           ],
           "additionalProperties": false
         }
@@ -24084,6 +24127,17 @@
               ],
               "description": "90 days after the third most recent night full-stop landing (61.57(b))."
             },
+            "passengerClass": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The category and class the passenger currency was judged in, \"airplane/single-engine land\": the newest flight's (61.57(a)(1)); null where it does not say."
+            },
+            "passengerClassUnknown": {
+              "type": "boolean",
+              "description": "The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1))."
+            },
             "flightReviewOn": {
               "type": [
                 "string",
@@ -24174,6 +24228,8 @@
           "required": [
             "dayPassengersUntil",
             "nightPassengersUntil",
+            "passengerClass",
+            "passengerClassUnknown",
             "flightReviewOn",
             "flightReviewUntil",
             "medicalExpiresOn",
@@ -28175,7 +28231,7 @@
       "additionalProperties": false
     },
     "replay_track": {
-      "description": "A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.",
+      "description": "A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those in the 10 s before, at the report's own time (a transponder's 25 ft steps, DO-260B), and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the rate the report sent (baro_rate_fpm, else geom_rate_fpm), else the slope of the heights reported in the 15 s before, as a VSI lags (FAA-H-8083-15B, Ch. 5): never from a report still to come; a held pressure altitude (`alt_held`, or unchanged for up to 60 s while the GNSS height or the rate sent moved more than 300 ft) left out of every fit and rate, its height the last good one carried forward, never null; ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.",
       "type": "object",
       "properties": {
         "input": {
@@ -28222,6 +28278,34 @@
                       "boolean",
                       "null"
                     ]
+                  },
+                  "baro_rate_fpm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The barometric rate sent, ft/min (readsb's baro_rate)."
+                  },
+                  "geom_rate_fpm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The GNSS rate sent, ft/min (readsb's geom_rate)."
+                  },
+                  "alt_geom_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it."
+                  },
+                  "alt_held": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "description": "The caller's word that the pressure altitude is held (stale); null to let the engine tell."
                   }
                 },
                 "required": [
@@ -28268,6 +28352,10 @@
                       "null"
                     ]
                   },
+                  "alt_held": {
+                    "type": "boolean",
+                    "description": "The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null."
+                  },
                   "gs_kt": {
                     "type": [
                       "number",
@@ -28301,6 +28389,7 @@
                   "lat",
                   "lon",
                   "alt_ft",
+                  "alt_held",
                   "gs_kt",
                   "track_deg",
                   "vs_fpm",
@@ -30105,6 +30194,18 @@
                     "number",
                     "null"
                   ]
+                },
+                "variable_deg": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
                 }
               }
             },
@@ -33558,6 +33659,14 @@
                 "null"
               ]
             },
+            "floor_varies": {
+              "type": "boolean",
+              "description": "Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read."
+            },
+            "ceiling_varies": {
+              "type": "boolean",
+              "description": "Likewise for the highest ceiling."
+            },
             "instructions": {
               "type": "array",
               "items": {
@@ -33643,7 +33752,9 @@
             "instructions",
             "text",
             "facility",
-            "contact"
+            "contact",
+            "floor_varies",
+            "ceiling_varies"
           ]
         }
       },
@@ -35348,7 +35459,7 @@
       "additionalProperties": false
     },
     "wind_at_altitude": {
-      "description": "The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for \"altitudes\".",
+      "description": "The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends; a light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's 9900, under 5 kt) taken as 0 kt with the nearest level's direction, never skipped (the next level's wind in its place understated time and fuel, 14 CFR 91.151, 91.167); null with no level, never calm. A list for \"altitudes\".",
       "type": "object",
       "properties": {
         "input": {
@@ -39488,6 +39599,13 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "closed": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043)."
                 }
               }
             },
@@ -39495,9 +39613,23 @@
               "type": "null"
             }
           ]
+        },
+        "failed": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b))."
+        },
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True while an app still awaits the check: the alternate is then pending."
         }
       },
-      "description": "The planner's /api/alternate answer, as much as the finding reads."
+      "description": "The planner's /api/alternate answer, as much as the finding reads, or {\"failed\": true} where it could not be had, {\"pending\": true} while it is awaited."
     },
     "GonogoDistances": {
       "title": "GonogoDistances",
@@ -40329,6 +40461,18 @@
             "number",
             "null"
           ]
+        },
+        "wind_variable_deg": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
         }
       },
       "description": "A field's METAR, as much as the rules read of it."
@@ -40903,6 +41047,10 @@
             "null"
           ]
         },
+        "closed": {
+          "type": "boolean",
+          "description": "NASR lists it closed: `good` false, never offered (decision 0043)."
+        },
         "meets_standard": {
           "type": "boolean"
         },
@@ -40923,6 +41071,7 @@
         "visibility_sm",
         "taf",
         "good",
+        "closed",
         "meets_standard",
         "reasons"
       ]
@@ -41013,6 +41162,13 @@
             null
           ],
           "description": "ifr_alternate_check's: \"military\" or \"joint\" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it."
         }
       },
       "required": [
@@ -41153,6 +41309,34 @@
             "boolean",
             "null"
           ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "14 CFR 61.5 category, \"Airplane\": with `class`, the passenger currency's (61.57(a)(1)) group."
+        },
+        "class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "14 CFR 61.5 class, \"Single-engine land\"."
+        },
+        "tailwheel": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii))."
+        },
+        "fullStopLandings": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Landings to a full stop, day and night, where logged."
         }
       },
       "required": [
@@ -41311,6 +41495,18 @@
             "number",
             "null"
           ]
+        },
+        "wind_variable_deg": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
         }
       },
       "description": "A METAR's wind; null, missing or empty for none."
@@ -45054,6 +45250,16 @@
                 "type": "string"
               },
               "description": "Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok."
+            },
+            "standard_day": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
             }
           }
         },
