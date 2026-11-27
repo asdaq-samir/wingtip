@@ -31,6 +31,12 @@ class CoachLogbookEntry(BaseModel):
     approaches: int = 0
     holding: bool = False
     tracking: bool = False
+    # 61.57(a)(1): passengers count only the landings in the airplane's
+    # category and class, a tailwheel's to a full stop; unsaid, none.
+    category: str | None = None
+    aircraftClass: str | None = Field(None, alias="class")
+    tailwheel: bool | None = None
+    fullStopLandings: int | None = None
 
 
 class CoachEndorsement(BaseModel):

@@ -91,7 +91,7 @@ class Currency(BaseModel):
     passengerClass: str | None = Field(
         None, description="The category and class judged: the airplane to be flown's, else the newest flight's (61.57(a)(1))."
     )
-    passengerClassUnknown: bool = Field(False, description="Neither the airplane to be flown nor the newest flight says its category and class.")
+    passengerClassUnknown: bool = Field(False, description="Neither the airplane to be flown nor the newest flight says the class.")
     passengerTailwheel: bool | None = Field(None, description="Whether the airplane judged has a tailwheel; null not said, judged as one.")
     tailwheelPassengersUntil: date | None = Field(
         None, description="A tailwheel's own, for a pilot judged in a tricycle who has flown one in the class (61.57(a)(1)(ii))."
