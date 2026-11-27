@@ -1975,6 +1975,11 @@ nonisolated extension Engine {
         try Self.rule("track_left_from", EngineContract.TrackLeftFromInput(distanceNm: distanceNm, aboveFt: aboveFt))
     }
 
+    /// The figures the hosts' own traffic code holds to, one copy for them: stale_s, 30 s, past which a position heard (the planner's feed) or the map's last answer (the web, which then says traffic is not available) is too old to draw: the airplane is somewhere else by now. A design choice, no rule: seconds-old internet data is for knowing what is about, never for avoiding it.
+    static func trafficFigures() throws -> EngineContract.TrafficFiguresAnswer {
+        try Self.rule("traffic_figures", EngineContract.TrafficFiguresInput())
+    }
+
     /// Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.
     static func trafficFresh(ageS: Double? = nil, planes: [EngineContract.TrafficFreshInputPlanesItem]) throws -> [Bool] {
         try Self.rule("traffic_fresh", EngineContract.TrafficFreshInput(ageS: ageS, planes: planes))

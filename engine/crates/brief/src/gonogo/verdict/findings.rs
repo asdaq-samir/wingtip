@@ -149,7 +149,7 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
         not_sent()
     } else if !r.short.is_empty() {
         ("stop", format!("Too short at {}", r.short.join(", ")))
-    } else if !r.crosswind.is_empty() || !r.beyond.is_empty() {
+    } else if [&r.crosswind, &r.tailwind, &r.close, &r.beyond].iter().any(|l| !l.is_empty()) {
         // Past the POH's table the distance is its edge's, not the
         // airplane's (FAA-H-8083-25C, chapter 11: performance charts hold
         // only within their stated conditions), so "within" is not known:
@@ -157,6 +157,15 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
         let mut parts = Vec::new();
         if !r.crosswind.is_empty() {
             parts.push(format!("Crosswind past the POH's demonstrated at {}", r.crosswind.join(", ")));
+        }
+        // The wind behind the end (AIM 4-3-6c: tailwind considerations
+        // come first) and SAFO 19001's 15 per cent margin not met: the
+        // cautions FPL's runway chips ring (runway::fit).
+        if !r.tailwind.is_empty() {
+            parts.push(format!("Tailwind at {}", r.tailwind.join(", ")));
+        }
+        if !r.close.is_empty() {
+            parts.push(format!("Less than 15% to spare at {}", r.close.join(", ")));
         }
         if !r.beyond.is_empty() {
             parts.push(format!("Past the POH's tables at {}: its distances will be longer", r.beyond.join(", ")));

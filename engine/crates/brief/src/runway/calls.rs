@@ -4,7 +4,7 @@
 //! ShortField -- and answers JSON.
 
 use super::circuit::{self, CircuitEnd, CircuitRunway, Pattern, Point};
-use super::performance;
+use super::fit;
 use super::pick;
 use super::wind::{self, Favoured, Nearby, Reported, RunwayWind, WindPick};
 use crate::gonogo::calls::{runway_list, truth, In};
@@ -110,7 +110,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 .collect();
             Ok(format!("[{}]", each.join(",")))
         })(),
-        "runway_end_fit" => performance::end_fit_rule(i, v),
+        "runway_end_fit" => fit::end_fit_rule(i, v),
         "traffic_pattern" => (|| {
             let r = circuit_runway(i, v)?;
             pattern_json(i, v, circuit::arrival(&r, &i.str(v, "end_ident")?).as_ref())

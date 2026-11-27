@@ -3,56 +3,291 @@
   "shared": {
     "takeoff": {
       "source": "Cessna 172S POH (1998), figure 5-5: short field, flaps 10°, paved, level and dry",
-      "pressure_altitudes_ft": [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000],
-      "temperatures_c": [0, 10, 20, 30, 40],
-      "weights_lb": [2550, 2400],
+      "pressure_altitudes_ft": [
+        0,
+        1000,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000
+      ],
+      "temperatures_c": [
+        0,
+        10,
+        20,
+        30,
+        40
+      ],
+      "weights_lb": [
+        2550,
+        2400
+      ],
       "tables": [
         {
           "ground_roll_ft": [
-            [860, 925, 995, 1070, 1150],
-            [940, 1010, 1090, 1170, 1260],
-            [1025, 1110, 1195, 1285, 1380],
-            [1125, 1215, 1310, 1410, 1515],
-            [1235, 1335, 1440, 1550, 1660],
-            [1355, 1465, 1585, 1705, 1825],
-            [1495, 1615, 1745, 1875, 2010],
-            [1645, 1785, 1920, 2065, 2215],
-            [1820, 1970, 2120, 2280, 2450]
+            [
+              860,
+              925,
+              995,
+              1070,
+              1150
+            ],
+            [
+              940,
+              1010,
+              1090,
+              1170,
+              1260
+            ],
+            [
+              1025,
+              1110,
+              1195,
+              1285,
+              1380
+            ],
+            [
+              1125,
+              1215,
+              1310,
+              1410,
+              1515
+            ],
+            [
+              1235,
+              1335,
+              1440,
+              1550,
+              1660
+            ],
+            [
+              1355,
+              1465,
+              1585,
+              1705,
+              1825
+            ],
+            [
+              1495,
+              1615,
+              1745,
+              1875,
+              2010
+            ],
+            [
+              1645,
+              1785,
+              1920,
+              2065,
+              2215
+            ],
+            [
+              1820,
+              1970,
+              2120,
+              2280,
+              2450
+            ]
           ],
           "total_50ft_ft": [
-            [1465, 1575, 1690, 1810, 1945],
-            [1600, 1720, 1850, 1990, 2135],
-            [1755, 1890, 2035, 2190, 2355],
-            [1925, 2080, 2240, 2420, 2605],
-            [2120, 2295, 2480, 2685, 2880],
-            [2345, 2545, 2755, 2975, 3205],
-            [2605, 2830, 3075, 3320, 3585],
-            [2910, 3170, 3440, 3730, 4045],
-            [3265, 3575, 3880, 4225, 4615]
+            [
+              1465,
+              1575,
+              1690,
+              1810,
+              1945
+            ],
+            [
+              1600,
+              1720,
+              1850,
+              1990,
+              2135
+            ],
+            [
+              1755,
+              1890,
+              2035,
+              2190,
+              2355
+            ],
+            [
+              1925,
+              2080,
+              2240,
+              2420,
+              2605
+            ],
+            [
+              2120,
+              2295,
+              2480,
+              2685,
+              2880
+            ],
+            [
+              2345,
+              2545,
+              2755,
+              2975,
+              3205
+            ],
+            [
+              2605,
+              2830,
+              3075,
+              3320,
+              3585
+            ],
+            [
+              2910,
+              3170,
+              3440,
+              3730,
+              4045
+            ],
+            [
+              3265,
+              3575,
+              3880,
+              4225,
+              4615
+            ]
           ]
         },
         {
           "ground_roll_ft": [
-            [745, 800, 860, 925, 995],
-            [810, 875, 940, 1010, 1085],
-            [885, 955, 1030, 1110, 1190],
-            [970, 1050, 1130, 1215, 1305],
-            [1065, 1150, 1240, 1335, 1430],
-            [1170, 1265, 1360, 1465, 1570],
-            [1285, 1390, 1500, 1610, 1725],
-            [1415, 1530, 1650, 1770, 1900],
-            [1560, 1690, 1815, 1950, 2095]
+            [
+              745,
+              800,
+              860,
+              925,
+              995
+            ],
+            [
+              810,
+              875,
+              940,
+              1010,
+              1085
+            ],
+            [
+              885,
+              955,
+              1030,
+              1110,
+              1190
+            ],
+            [
+              970,
+              1050,
+              1130,
+              1215,
+              1305
+            ],
+            [
+              1065,
+              1150,
+              1240,
+              1335,
+              1430
+            ],
+            [
+              1170,
+              1265,
+              1360,
+              1465,
+              1570
+            ],
+            [
+              1285,
+              1390,
+              1500,
+              1610,
+              1725
+            ],
+            [
+              1415,
+              1530,
+              1650,
+              1770,
+              1900
+            ],
+            [
+              1560,
+              1690,
+              1815,
+              1950,
+              2095
+            ]
           ],
           "total_50ft_ft": [
-            [1275, 1370, 1470, 1570, 1685],
-            [1390, 1495, 1605, 1720, 1845],
-            [1520, 1635, 1760, 1890, 2030],
-            [1665, 1795, 1930, 2080, 2230],
-            [1830, 1975, 2130, 2295, 2455],
-            [2015, 2180, 2355, 2530, 2715],
-            [2230, 2410, 2610, 2805, 3015],
-            [2470, 2685, 2900, 3125, 3370],
-            [2755, 3000, 3240, 3500, 3790]
+            [
+              1275,
+              1370,
+              1470,
+              1570,
+              1685
+            ],
+            [
+              1390,
+              1495,
+              1605,
+              1720,
+              1845
+            ],
+            [
+              1520,
+              1635,
+              1760,
+              1890,
+              2030
+            ],
+            [
+              1665,
+              1795,
+              1930,
+              2080,
+              2230
+            ],
+            [
+              1830,
+              1975,
+              2130,
+              2295,
+              2455
+            ],
+            [
+              2015,
+              2180,
+              2355,
+              2530,
+              2715
+            ],
+            [
+              2230,
+              2410,
+              2610,
+              2805,
+              3015
+            ],
+            [
+              2470,
+              2685,
+              2900,
+              3125,
+              3370
+            ],
+            [
+              2755,
+              3000,
+              3240,
+              3500,
+              3790
+            ]
           ]
         }
       ],
@@ -64,32 +299,158 @@
     },
     "landing": {
       "source": "Cessna 172S POH (1998), figure 5-11: short field, flaps 30°, paved, level and dry",
-      "pressure_altitudes_ft": [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000],
-      "temperatures_c": [0, 10, 20, 30, 40],
-      "weights_lb": [2550],
+      "pressure_altitudes_ft": [
+        0,
+        1000,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000
+      ],
+      "temperatures_c": [
+        0,
+        10,
+        20,
+        30,
+        40
+      ],
+      "weights_lb": [
+        2550
+      ],
       "tables": [
         {
           "ground_roll_ft": [
-            [545, 565, 585, 605, 625],
-            [565, 585, 605, 625, 650],
-            [585, 610, 630, 650, 670],
-            [610, 630, 655, 675, 695],
-            [630, 655, 675, 700, 725],
-            [655, 680, 705, 725, 750],
-            [680, 705, 730, 755, 780],
-            [705, 730, 760, 785, 810],
-            [735, 760, 790, 815, 840]
+            [
+              545,
+              565,
+              585,
+              605,
+              625
+            ],
+            [
+              565,
+              585,
+              605,
+              625,
+              650
+            ],
+            [
+              585,
+              610,
+              630,
+              650,
+              670
+            ],
+            [
+              610,
+              630,
+              655,
+              675,
+              695
+            ],
+            [
+              630,
+              655,
+              675,
+              700,
+              725
+            ],
+            [
+              655,
+              680,
+              705,
+              725,
+              750
+            ],
+            [
+              680,
+              705,
+              730,
+              755,
+              780
+            ],
+            [
+              705,
+              730,
+              760,
+              785,
+              810
+            ],
+            [
+              735,
+              760,
+              790,
+              815,
+              840
+            ]
           ],
           "total_50ft_ft": [
-            [1290, 1320, 1350, 1380, 1415],
-            [1320, 1350, 1385, 1420, 1450],
-            [1355, 1385, 1420, 1455, 1490],
-            [1385, 1425, 1460, 1495, 1530],
-            [1425, 1460, 1495, 1535, 1570],
-            [1460, 1500, 1535, 1575, 1615],
-            [1500, 1540, 1580, 1620, 1660],
-            [1545, 1585, 1625, 1665, 1705],
-            [1585, 1630, 1670, 1715, 1755]
+            [
+              1290,
+              1320,
+              1350,
+              1380,
+              1415
+            ],
+            [
+              1320,
+              1350,
+              1385,
+              1420,
+              1450
+            ],
+            [
+              1355,
+              1385,
+              1420,
+              1455,
+              1490
+            ],
+            [
+              1385,
+              1425,
+              1460,
+              1495,
+              1530
+            ],
+            [
+              1425,
+              1460,
+              1495,
+              1535,
+              1570
+            ],
+            [
+              1460,
+              1500,
+              1535,
+              1575,
+              1615
+            ],
+            [
+              1500,
+              1540,
+              1580,
+              1620,
+              1660
+            ],
+            [
+              1545,
+              1585,
+              1625,
+              1665,
+              1705
+            ],
+            [
+              1585,
+              1630,
+              1670,
+              1715,
+              1755
+            ]
           ]
         }
       ],
@@ -503,6 +864,14 @@
         {
           "path": "crosswind_over",
           "equals": true
+        },
+        {
+          "path": "finding",
+          "equals": "caution"
+        },
+        {
+          "path": "fit",
+          "equals": "crosswind"
         }
       ],
       "source": "Cessna 172S POH (1998) section 4: maximum demonstrated crosswind velocity 15 knots. The gust's crosswind, straight across."
@@ -541,6 +910,14 @@
         {
           "path": "crosswind_over",
           "equals": false
+        },
+        {
+          "path": "finding",
+          "equals": "ok"
+        },
+        {
+          "path": "fit",
+          "equals": null
         }
       ],
       "source": "Cessna 172S POH (1998) section 4: maximum demonstrated crosswind velocity 15 knots."
@@ -618,6 +995,14 @@
         {
           "path": "short",
           "equals": true
+        },
+        {
+          "path": "finding",
+          "equals": "stop"
+        },
+        {
+          "path": "fit",
+          "equals": "short"
         }
       ],
       "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it); 29.92 inHg at sea level is a pressure altitude of 0 (FAA-H-8083-25C Figure 11-22)."
@@ -652,6 +1037,14 @@
         {
           "path": "close",
           "equals": true
+        },
+        {
+          "path": "finding",
+          "equals": "caution"
+        },
+        {
+          "path": "fit",
+          "equals": "close"
         }
       ],
       "source": "SAFO 19001 (2019), landing performance: a 15 per cent margin over the distance the manufacturer's data gives; 1.10 of the distance is inside 1.15."
@@ -686,6 +1079,10 @@
         {
           "path": "close",
           "equals": false
+        },
+        {
+          "path": "finding",
+          "equals": "ok"
         }
       ],
       "source": "SAFO 19001 (2019), landing performance: a 15 per cent margin over the distance the manufacturer's data gives."
@@ -798,9 +1195,101 @@
         {
           "path": "short",
           "equals": false
+        },
+        {
+          "path": "finding",
+          "equals": "unknown"
+        },
+        {
+          "path": "fit",
+          "equals": null
         }
       ],
       "source": "14 CFR 91.103(b): runway lengths and takeoff and landing distance data; with no elevation there is no pressure altitude to read the table at."
+    },
+    {
+      "name": "4 kt behind runway 27: a caution, though it fits",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 5000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": {
+          "dir_true_deg": 90,
+          "speed_kt": 4
+        },
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "tailwind_kt",
+          "value": 4,
+          "tolerance": 0
+        },
+        {
+          "path": "short",
+          "equals": false
+        },
+        {
+          "path": "finding",
+          "equals": "caution"
+        },
+        {
+          "path": "fit",
+          "equals": "tailwind"
+        }
+      ],
+      "source": "AIM 4-3-6c: the runway most nearly aligned with the wind, and its note that tailwind and crosswind considerations take precedence; Cessna 172S POH (1998) figure 5-5's note: decrease distances 10% for each 9 knots headwind, for tailwinds up to 10 knots add 10% for each 2 knots."
+    },
+    {
+      "name": "4 kt down runway 27: no tailwind, fine",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 5000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": {
+          "dir_true_deg": 270,
+          "speed_kt": 4
+        },
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "tailwind_kt",
+          "value": 0,
+          "tolerance": 0
+        },
+        {
+          "path": "finding",
+          "equals": "ok"
+        }
+      ],
+      "source": "AIM 4-3-6c, as the tailwind case: the wind down the runway is no tailwind."
     },
     {
       "name": "The departure's check: a variable 12 gusting 22 may be 22 across, over the 15",
@@ -852,9 +1341,221 @@
           "path": "0.pressure_alt_ft",
           "value": 0,
           "tolerance": 2
+        },
+        {
+          "path": "0.finding",
+          "equals": "caution"
+        },
+        {
+          "path": "0.fit",
+          "equals": "crosswind"
         }
       ],
       "source": "Cessna 172S POH (1998) section 4: maximum demonstrated crosswind velocity 15 knots. AIM 7-1-28 VRB; FAA-H-8083-25C Figure 11-22, 29.92 inHg is the standard datum."
+    },
+    {
+      "name": "The departure's check: 1,733 ft for the 1,575 needed is within SAFO 19001's 15 per cent, a caution as in FPL",
+      "rule": "gonogo_runway_checks",
+      "input": {
+        "aircraft": "$c172",
+        "fields": [
+          {
+            "ident": "C81",
+            "elevation_ft": 0
+          }
+        ],
+        "metars": {
+          "C81": {
+            "temp_c": 10,
+            "altimeter_in_hg": 29.92,
+            "wind_dir_true_deg": null,
+            "wind_speed_kt": 0,
+            "wind_gust_kt": null
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": [
+              {
+                "length_ft": 1733,
+                "surface": "ASP",
+                "closed": false,
+                "runway_ends": [],
+                "wind": null
+              }
+            ]
+          }
+        },
+        "takeoff_lb": 2550,
+        "landing_lb": 2550
+      },
+      "expect": [
+        {
+          "path": "0.distances.0.over",
+          "equals": false
+        },
+        {
+          "path": "0.distances.0.close",
+          "equals": true
+        },
+        {
+          "path": "0.finding",
+          "equals": "caution"
+        },
+        {
+          "path": "0.fit",
+          "equals": "close"
+        }
+      ],
+      "source": "SAFO 19001 (2019): a 15 per cent margin over the manufacturer's distance; Cessna 172S POH (1998) figure 5-5, 1,575 ft over 50 ft at sea level, 10 C, 2,550 lb."
+    },
+    {
+      "name": "The departure's check: 1,574 ft for the 1,575 needed is a stop",
+      "rule": "gonogo_runway_checks",
+      "input": {
+        "aircraft": "$c172",
+        "fields": [
+          {
+            "ident": "C81",
+            "elevation_ft": 0
+          }
+        ],
+        "metars": {
+          "C81": {
+            "temp_c": 10,
+            "altimeter_in_hg": 29.92,
+            "wind_dir_true_deg": null,
+            "wind_speed_kt": 0,
+            "wind_gust_kt": null
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": [
+              {
+                "length_ft": 1574,
+                "surface": "ASP",
+                "closed": false,
+                "runway_ends": [],
+                "wind": null
+              }
+            ]
+          }
+        },
+        "takeoff_lb": 2550,
+        "landing_lb": 2550
+      },
+      "expect": [
+        {
+          "path": "0.distances.0.over",
+          "equals": true
+        },
+        {
+          "path": "0.finding",
+          "equals": "stop"
+        },
+        {
+          "path": "0.fit",
+          "equals": "short"
+        }
+      ],
+      "source": "14 CFR 91.103(b)(1): runway lengths and takeoff distance data; Cessna 172S POH (1998) figure 5-5, 1,575 ft."
+    },
+    {
+      "name": "The departure's check: 5,000 ft, still air, fine",
+      "rule": "gonogo_runway_checks",
+      "input": {
+        "aircraft": "$c172",
+        "fields": [
+          {
+            "ident": "C81",
+            "elevation_ft": 0
+          }
+        ],
+        "metars": {
+          "C81": {
+            "temp_c": 10,
+            "altimeter_in_hg": 29.92,
+            "wind_dir_true_deg": null,
+            "wind_speed_kt": 0,
+            "wind_gust_kt": null
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": [
+              {
+                "length_ft": 5000,
+                "surface": "ASP",
+                "closed": false,
+                "runway_ends": [],
+                "wind": null
+              }
+            ]
+          }
+        },
+        "takeoff_lb": 2550,
+        "landing_lb": 2550
+      },
+      "expect": [
+        {
+          "path": "0.finding",
+          "equals": "ok"
+        },
+        {
+          "path": "0.fit",
+          "equals": null
+        }
+      ],
+      "source": "Cessna 172S POH (1998) figure 5-5, 1,575 ft over 50 ft, well past SAFO 19001's 15 per cent on 5,000 ft."
+    },
+    {
+      "name": "The departure's check: no elevation, not known",
+      "rule": "gonogo_runway_checks",
+      "input": {
+        "aircraft": "$c172",
+        "fields": [
+          {
+            "ident": "C81",
+            "elevation_ft": null
+          }
+        ],
+        "metars": {
+          "C81": {
+            "temp_c": 10,
+            "altimeter_in_hg": 29.92,
+            "wind_dir_true_deg": null,
+            "wind_speed_kt": 0,
+            "wind_gust_kt": null
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": [
+              {
+                "length_ft": 5000,
+                "surface": "ASP",
+                "closed": false,
+                "runway_ends": [],
+                "wind": null
+              }
+            ]
+          }
+        },
+        "takeoff_lb": 2550,
+        "landing_lb": 2550
+      },
+      "expect": [
+        {
+          "path": "0.finding",
+          "equals": "unknown"
+        },
+        {
+          "path": "0.fit",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.103(b): with no field elevation there is no pressure altitude to read the POH's table at."
     },
     {
       "name": "TURF is soft",

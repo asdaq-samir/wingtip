@@ -12,6 +12,8 @@
 
 use super::minimums::{crosswind_shown, runway_crosswind_judged_kt, steady_or_gust_kt};
 use crate::json;
+use crate::runway::fit::{fit_json, FitFacts};
+use crate::runway::performance::DISTANCE_MARGIN;
 pub use crate::runway::performance::{
     density_altitude_ft, end_distance, field_air, pressure_altitude_ft, short_field, soft_surface, Distances, ShortField,
 };
@@ -67,6 +69,9 @@ pub struct EndCheck {
     /// Read past the POH's table (Distances::beyond): its edge's figures,
     /// not the airplane's.
     pub beyond: bool,
+    /// Within the runway, but with less than SAFO 19001's 15 per cent to
+    /// spare (performance::DISTANCE_MARGIN), as FPL's chips say it.
+    pub close: bool,
 }
 
 pub struct Check {
@@ -101,6 +106,24 @@ pub struct Check {
     /// empty), where they were not.
     pub unchecked: Option<&'static str>,
     pub distances: Vec<EndCheck>,
+}
+
+impl Check {
+    /// The field's runway finding and its reason (runway::fit), the one
+    /// FPL's chips give an end: short where any distance is over, a
+    /// caution for the crosswind, a tailwind (the shown headwind below 0),
+    /// too little to spare or a reading past the POH's table, not known
+    /// where the field's elevation or a runway's length is not.
+    pub fn fit(&self) -> FitFacts {
+        FitFacts {
+            short: self.distances.iter().any(|d| d.over),
+            crosswind_over: self.crosswind_over,
+            tailwind_kt: (-self.headwind_kt).max(0.0),
+            close: self.distances.iter().any(|d| d.close),
+            beyond: self.distances.iter().any(|d| d.beyond),
+            unknown: self.unchecked.is_some() || self.distances.is_empty() || self.distances.iter().any(|d| d.unknown),
+        }
+    }
 }
 
 /// Why a field's distances are not worked out without its elevation.
@@ -232,6 +255,7 @@ pub fn runway_checks(
                     let (d, over) = end_distance(table, runway, available, air, weight, on.headwind);
                     let unknown = available.is_none();
                     let beyond = d.beyond();
+                    let close = !over && available.is_some_and(|l| d.total_ft * DISTANCE_MARGIN > l);
                     EndCheck {
                         kind: if takeoff { "takeoff" } else { "landing" },
                         distances: d,
@@ -240,6 +264,7 @@ pub fn runway_checks(
                         end: on.end,
                         unknown,
                         beyond,
+                        close,
                     }
                 })
                 .collect(),
@@ -325,13 +350,18 @@ pub fn checks_json(checks: &[Check]) -> String {
             }
             out.push_str(&format!("{{\"kind\":\"{}\",", d.kind));
             distances_json(&mut out, &d.distances);
-            out.push_str(&format!(",\"over\":{},\"unknown\":{},\"beyond\":{},\"runway\":", d.over, d.unknown, d.beyond));
+            out.push_str(&format!(
+                ",\"over\":{},\"unknown\":{},\"beyond\":{},\"close\":{},\"runway\":",
+                d.over, d.unknown, d.beyond, d.close
+            ));
             opt_index(&mut out, d.runway);
             out.push_str(",\"end\":");
             json::opt_string(&mut out, d.end.as_deref());
             out.push('}');
         }
-        out.push_str("]}");
+        out.push(']');
+        fit_json(&mut out, &c.fit());
+        out.push('}');
     }
     out.push(']');
     out

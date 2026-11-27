@@ -234,6 +234,7 @@ export const WEB_RULES = [
   "time_ago",
   "title_case",
   "tokens",
+  "traffic_figures",
   "traffic_fresh",
   "traffic_marks",
   "traffic_pattern",

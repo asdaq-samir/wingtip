@@ -14332,6 +14332,10 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "close": {
+                      "type": "boolean",
+                      "description": "Within the runway, but with less than SAFO 19001's 15 per cent to spare."
                     }
                   },
                   "required": [
@@ -14343,9 +14347,35 @@
                     "unknown",
                     "beyond",
                     "runway",
-                    "end"
+                    "end",
+                    "close"
                   ]
                 }
+              },
+              "finding": {
+                "type": "string",
+                "enum": [
+                  "stop",
+                  "caution",
+                  "unknown",
+                  "ok"
+                ],
+                "description": "The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok."
+              },
+              "fit": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "short",
+                  "crosswind",
+                  "tailwind",
+                  "close",
+                  "beyond",
+                  null
+                ],
+                "description": "The finding's reason, the worst first; null for unknown and ok."
               }
             },
             "required": [
@@ -14363,7 +14393,9 @@
               "crosswind_over",
               "grass",
               "unchecked",
-              "distances"
+              "distances",
+              "finding",
+              "fit"
             ]
           }
         }
@@ -29087,6 +29119,31 @@
             "tailwind_kt": {
               "type": "number",
               "description": "The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it)."
+            },
+            "finding": {
+              "type": "string",
+              "enum": [
+                "stop",
+                "caution",
+                "unknown",
+                "ok"
+              ],
+              "description": "How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok."
+            },
+            "fit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "short",
+                "crosswind",
+                "tailwind",
+                "close",
+                "beyond",
+                null
+              ],
+              "description": "The finding's reason, the worst first; null for unknown and ok."
             }
           },
           "required": [
@@ -29098,7 +29155,9 @@
             "close",
             "unknown",
             "beyond",
-            "tailwind_kt"
+            "tailwind_kt",
+            "finding",
+            "fit"
           ]
         }
       },
@@ -32793,6 +32852,36 @@
       ],
       "additionalProperties": false
     },
+    "traffic_figures": {
+      "description": "The figures the hosts' own traffic code holds to, one copy for them: stale_s, 30 s, past which a position heard (the planner's feed) or the map's last answer (the web, which then says traffic is not available) is too old to draw: the airplane is somewhere else by now. A design choice, no rule: seconds-old internet data is for knowing what is about, never for avoiding it.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TrafficFiguresInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "TrafficFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "stale_s": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "stale_s"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "traffic_fresh": {
       "description": "Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.",
       "type": "object",
@@ -35211,6 +35300,7 @@
     "title_case",
     "tokens",
     "track_left_from",
+    "traffic_figures",
     "traffic_fresh",
     "traffic_marks",
     "traffic_pattern",
@@ -43370,6 +43460,26 @@
                 "type": "string"
               },
               "description": "Fields whose distances were read past the POH's table: a caution."
+            },
+            "tailwind": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields whose runway has the wind behind it (the check's fit \"tailwind\"; AIM 4-3-6c): a caution."
+            },
+            "close": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution."
             },
             "unchecked": {
               "type": [

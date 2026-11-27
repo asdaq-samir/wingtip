@@ -5785,6 +5785,10 @@ nonisolated enum EngineContract {
         /// Why the field's distances were not worked out (distances then empty): its elevation not known.
         var unchecked: String?
         var distances: [EngineContract.GonogoRunwayChecksAnswerItemDistancesItem]
+        /// The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok.
+        var finding: String
+        /// The finding's reason, the worst first; null for unknown and ok.
+        var fit: String?
 
         enum CodingKeys: String, CodingKey {
             case field
@@ -5802,6 +5806,8 @@ nonisolated enum EngineContract {
             case grass
             case unchecked
             case distances
+            case finding
+            case fit
         }
     }
 
@@ -5819,6 +5825,8 @@ nonisolated enum EngineContract {
         var beyond: Bool
         var runway: Int?
         var end: String?
+        /// Within the runway, but with less than SAFO 19001's 15 per cent to spare.
+        var close: Bool
 
         enum CodingKeys: String, CodingKey {
             case groundRollFt = "ground_roll_ft"
@@ -5830,6 +5838,7 @@ nonisolated enum EngineContract {
             case beyond
             case runway
             case end
+            case close
         }
     }
 
@@ -12137,6 +12146,10 @@ nonisolated enum EngineContract {
         var beyond: Bool
         /// The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
         var tailwindKt: Double
+        /// How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok.
+        var finding: String
+        /// The finding's reason, the worst first; null for unknown and ok.
+        var fit: String?
 
         enum CodingKeys: String, CodingKey {
             case crosswindKt = "crosswind_kt"
@@ -12148,6 +12161,8 @@ nonisolated enum EngineContract {
             case unknown
             case beyond
             case tailwindKt = "tailwind_kt"
+            case finding
+            case fit
         }
     }
 
@@ -13678,6 +13693,17 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct TrafficFiguresAnswer: Codable, Equatable, Sendable {
+        var staleS: Double
+
+        enum CodingKeys: String, CodingKey {
+            case staleS = "stale_s"
+        }
+    }
+
+    nonisolated struct TrafficFiguresInput: Codable, Equatable, Sendable {
+    }
+
     nonisolated struct TrafficFreshInput: Codable, Equatable, Sendable {
         var ageS: Double?
         var planes: [EngineContract.TrafficFreshInputPlanesItem]
@@ -14005,6 +14031,10 @@ nonisolated enum EngineContract {
         var crosswind: [String]?
         /// Fields whose distances were read past the POH's table: a caution.
         var beyond: [String]?
+        /// Fields whose runway has the wind behind it (the check's fit "tailwind"; AIM 4-3-6c): a caution.
+        var tailwind: [String]?
+        /// Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution.
+        var close: [String]?
         /// Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
         var unchecked: [String]?
     }

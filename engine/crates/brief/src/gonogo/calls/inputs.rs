@@ -54,6 +54,8 @@ pub(crate) fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
             short: i.strings(r, "short")?,
             crosswind: i.strings(r, "crosswind")?,
             beyond: i.strings(r, "beyond")?,
+            tailwind: i.strings(r, "tailwind")?,
+            close: i.strings(r, "close")?,
             unchecked: i.strings(r, "unchecked")?,
         },
         balance: verdict::Balance {

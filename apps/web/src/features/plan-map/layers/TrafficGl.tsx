@@ -10,7 +10,7 @@ import { TRAFFIC_COLOURS } from "../../../lib/map/marks/icons";
 import { CHART } from "../../../lib/tokens";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePastFlight } from "../../plan";
-import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../../../lib/traffic";
+import { carryS, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../../../lib/traffic";
 import { trafficCredit } from "../../../components/dataSources";
 import { reported, useTracking, type Report } from "../../../lib/map/position/tracking";
 import { EMPTY, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
@@ -35,7 +35,6 @@ const BLEND_MS = 1000;
 const HEIGHT_ZOOM = 9;
 const CALLSIGN_ZOOM = 10;
 const PROBLEM = "traffic";
-const STALE_MS = 30_000;
 const POINTS = "traffic";
 const TRENDS = "traffic-trends";
 const IDS = { marks: "traffic-marks", tags: "traffic-tags", trends: "traffic-trend-lines" };
@@ -156,7 +155,7 @@ function Traffic({ geo }: { geo: Geo }) {
 
   const [answer, setAnswer] = useState<{ data: NonNullable<typeof data>; at: number } | null>(null);
   if (data && !isPlaceholderData && answer?.at !== dataUpdatedAt) setAnswer({ data, at: dataUpdatedAt });
-  const gone = isError && (!answer || errorUpdatedAt - answer.at > STALE_MS);
+  const gone = isError && (!answer || errorUpdatedAt - answer.at > carryS() * 1000);
   useEffect(() => {
     if (gone) raiseProblem({ id: PROBLEM, title: "Traffic is not available right now." });
     else clearProblem(PROBLEM);
@@ -265,7 +264,7 @@ function Traffic({ geo }: { geo: Geo }) {
 
 /** Each airplane carried on to now, in sight only, and the layers' data
  *  set again (Traffic's step, a frame at a time, more often closer in);
- *  those older than CARRY_S let go. */
+ *  those older than carryS() let go. */
 function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
   const now = Date.now();
   const b = map.getBounds();
@@ -274,9 +273,10 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
   const { hex: tracked } = useTracking.getState();
   const points: GeoJSON.Feature<GeoJSON.Point, TrafficMarkProps>[] = [];
   const trends: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+  const carry = carryS();
   for (const [hex, target] of targets) {
     const age = (now - target.at) / 1000;
-    if (age > CARRY_S) {
+    if (age > carry) {
       targets.delete(hex);
       continue;
     }

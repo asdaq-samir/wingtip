@@ -9,8 +9,6 @@
 use super::pick::{available_ft, End, Runway};
 use super::wind::{crosswind_kt, headwind_kt, js_round, steady_or_gust_kt};
 use crate::flight;
-use crate::gonogo::calls::{runway, table, In};
-use crate::json::{self, Value};
 
 /// The field's pressure altitude from its elevation and the altimeter
 /// setting reported: the standard atmosphere's height of the setting
@@ -336,65 +334,4 @@ pub fn end_fit(
         beyond: distances.as_ref().is_some_and(Distances::beyond),
         tailwind_kt: js_round((-headwind).max(-along(wind.and_then(|w| w.gust_kt))).max(0.0)),
     }
-}
-
-/// `{"aircraft"?: {"takeoff"?, "landing"?, "crosswind"?: {"demonstrated_kt"?}},
-/// "runway", "end": {"heading_true_deg"?}, "wind"?: {"dir_true_deg"?,
-/// "speed_kt"?, "gust_kt"?}, "elevation_ft"? (null: not known, no distance), "altimeter_in_hg"?, "temp_c"?,
-/// "weight_lb"?, "kind": "takeoff"|"landing"}`. A landing's end is the
-/// "end" given, its `displaced_threshold_ft` and `lda_ft` its own or, where
-/// it names its `ident`, the runway's end of that ident's.
-pub(crate) fn end_fit_rule(i: In, v: &Value) -> Result<String, String> {
-    let aircraft = i.obj(v, "aircraft")?;
-    let takeoff = i.str(v, "kind")? == "takeoff";
-    let t = match aircraft.map(|a| i.obj(a, if takeoff { "takeoff" } else { "landing" })).transpose()?.flatten() {
-        Some(t) => Some(table(i, t)?),
-        None => None,
-    };
-    let demonstrated = match aircraft.map(|a| i.obj(a, "crosswind")).transpose()?.flatten() {
-        Some(c) => i.opt_num(c, "demonstrated_kt")?,
-        None => None,
-    };
-    let r = runway(i, i.obj(v, "runway")?.map_or_else(|| i.err("runway", "is missing"), Ok)?)?;
-    let end = i.obj(v, "end")?;
-    let heading = match end {
-        Some(e) => i.opt_num(e, "heading_true_deg")?,
-        None => None,
-    };
-    let landing_end = match end.filter(|_| !takeoff) {
-        None => None,
-        Some(e) => {
-            let named = i.opt_str(e, "ident")?.and_then(|id| r.ends.iter().find(|x| x.ident == id).cloned()).unwrap_or_default();
-            Some(End {
-                displaced_threshold_ft: i.opt_num(e, "displaced_threshold_ft")?.or(named.displaced_threshold_ft),
-                lda_ft: i.opt_num(e, "lda_ft")?.or(named.lda_ft),
-                ..named
-            })
-        }
-    };
-    let wind = match i.obj(v, "wind")? {
-        Some(w) => Some(FitWind {
-            dir_true_deg: i.opt_num(w, "dir_true_deg")?,
-            speed_kt: i.opt_num(w, "speed_kt")?,
-            gust_kt: i.opt_num(w, "gust_kt")?,
-        }),
-        None => None,
-    };
-    let field = FieldReport {
-        elevation_ft: i.opt_num(v, "elevation_ft")?,
-        altimeter_in_hg: i.opt_num(v, "altimeter_in_hg")?,
-        temp_c: i.opt_num(v, "temp_c")?,
-    };
-    let f = end_fit(t.as_ref(), demonstrated, &r, heading, wind.as_ref(), &field, i.opt_num(v, "weight_lb")?, landing_end.as_ref());
-    let mut out = String::from("{\"crosswind_kt\":");
-    json::number(&mut out, f.crosswind_kt);
-    out.push_str(&format!(",\"crosswind_over\":{},\"needed_ft\":", f.crosswind_over));
-    json::opt_number(&mut out, f.needed_ft);
-    out.push_str(",\"length_ft\":");
-    json::opt_number(&mut out, f.length_ft);
-    out.push_str(&format!(",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{}", f.short, f.close, f.unknown, f.beyond));
-    out.push_str(",\"tailwind_kt\":");
-    json::number(&mut out, f.tailwind_kt);
-    out.push('}');
-    Ok(out)
 }

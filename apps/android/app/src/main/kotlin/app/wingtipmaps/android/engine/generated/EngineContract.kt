@@ -5935,6 +5935,14 @@ object EngineContract {
          */
         val unchecked: String? = null,
         val distances: List<EngineContract.GonogoRunwayChecksAnswerItemDistancesItem>,
+        /**
+         * The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok.
+         */
+        val finding: String,
+        /**
+         * The finding's reason, the worst first; null for unknown and ok.
+         */
+        val fit: String? = null,
     )
 
     @Serializable
@@ -5962,6 +5970,10 @@ object EngineContract {
         val beyond: Boolean,
         val runway: Int? = null,
         val end: String? = null,
+        /**
+         * Within the runway, but with less than SAFO 19001's 15 per cent to spare.
+         */
+        val close: Boolean,
     )
 
     @Serializable
@@ -12575,6 +12587,14 @@ object EngineContract {
          */
         @SerialName("tailwind_kt")
         val tailwindKt: Double,
+        /**
+         * How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok.
+         */
+        val finding: String,
+        /**
+         * The finding's reason, the worst first; null for unknown and ok.
+         */
+        val fit: String? = null,
     )
 
     @Serializable
@@ -14196,6 +14216,18 @@ object EngineContract {
     )
 
     @Serializable
+    data class TrafficFiguresAnswer(
+        @SerialName("stale_s")
+        val staleS: Double,
+    )
+
+    @Serializable
+    class TrafficFiguresInput {
+        override fun equals(other: Any?): Boolean = other is TrafficFiguresInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class TrafficFreshInput(
         @SerialName("age_s")
         val ageS: Double? = null,
@@ -14532,6 +14564,14 @@ object EngineContract {
          * Fields whose distances were read past the POH's table: a caution.
          */
         val beyond: List<String>? = null,
+        /**
+         * Fields whose runway has the wind behind it (the check's fit "tailwind"; AIM 4-3-6c): a caution.
+         */
+        val tailwind: List<String>? = null,
+        /**
+         * Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution.
+         */
+        val close: List<String>? = null,
         /**
          * Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
          */

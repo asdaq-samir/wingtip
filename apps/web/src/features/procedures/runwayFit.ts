@@ -10,7 +10,7 @@
  * the same for the runway flown: the rules and their sources live there.
  */
 import type { AircraftProfile, Runway } from "../../lib/api/types";
-import { callEngine } from "../../lib/engine/engine";
+import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import type { RunwayEnd } from "../plan";
 
 /** A wind as a METAR reports it: true, in knots. */
@@ -40,6 +40,10 @@ export interface EndFit {
   beyond: boolean;
   /** The steady wind's tailwind on the end, whole knots, 0 for none. */
   tailwindKt: number;
+  /** How it fits, worst first, and why: the engine's (runway::fit), the
+   *  same finding the Brief's runway check gives the field. */
+  finding: EngineAnswer<"runway_end_fit">["finding"];
+  fit: EngineAnswer<"runway_end_fit">["fit"];
 }
 
 export function endFit({
@@ -91,5 +95,7 @@ export function endFit({
     unknown: fit.unknown,
     beyond: fit.beyond,
     tailwindKt: fit.tailwind_kt,
+    finding: fit.finding,
+    fit: fit.fit,
   };
 }

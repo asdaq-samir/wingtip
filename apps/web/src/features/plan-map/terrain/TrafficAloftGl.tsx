@@ -10,7 +10,7 @@ import { useTracking } from "../../../lib/map/position/tracking";
 import { usePreferences } from "../../../lib/preferences";
 import { CHART } from "../../../lib/tokens";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "../layers/trafficMarks";
-import { CARRY_S, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../../../lib/traffic";
+import { carryS, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../../../lib/traffic";
 import { standAtM } from "./trafficAloft";
 import { useGeo, type Geo } from "../../../lib/geo";
 import { pickOnMap } from "../../../lib/map/mapPick";
@@ -92,9 +92,10 @@ function Aloft({ geo }: { geo: Geo }) {
       ownFt,
     );
     const out: (Drawn & { feature: GeoJSON.Feature<GeoJSON.Point, TrafficMarkProps> })[] = [];
+    const carry = carryS();
     for (const { plane, at } of seen) {
       const age = (now - at) / 1000;
-      if (age > CARRY_S) continue;
+      if (age > carry) continue;
       const { lat, lon } = carriedOn(geo, plane, age);
       const groundM = map.queryTerrainElevation([lon, lat]) ?? 0;
       // The ground as drawn, stretched; the airplane stretched with it.

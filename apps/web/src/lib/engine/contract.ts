@@ -518,7 +518,19 @@ export type GonogoRunwayChecksAnswer = {
     beyond: boolean;
     runway: number | null;
     end: string | null;
+    /**
+     * Within the runway, but with less than SAFO 19001's 15 per cent to spare.
+     */
+    close: boolean;
   }[];
+  /**
+   * The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok.
+   */
+  finding: "stop" | "caution" | "unknown" | "ok";
+  /**
+   * The finding's reason, the worst first; null for unknown and ok.
+   */
+  fit: "short" | "crosswind" | "tailwind" | "close" | "beyond" | null;
 }[];
 /**
  * The runway and end flown, by index, or null.
@@ -3956,6 +3968,13 @@ export interface EngineContract {
     answer: TrackLeftFromAnswer;
   };
   /**
+   * The figures the hosts' own traffic code holds to, one copy for them: stale_s, 30 s, past which a position heard (the planner's feed) or the map's last answer (the web, which then says traffic is not available) is too old to draw: the airplane is somewhere else by now. A design choice, no rule: seconds-old internet data is for knowing what is about, never for avoiding it.
+   */
+  traffic_figures: {
+    input: TrafficFiguresInput;
+    answer: TrafficFiguresAnswer;
+  };
+  /**
    * Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.
    */
   traffic_fresh: {
@@ -6820,6 +6839,14 @@ export interface VerdictInput {
      * Fields whose distances were read past the POH's table: a caution.
      */
     beyond?: string[] | null;
+    /**
+     * Fields whose runway has the wind behind it (the check's fit "tailwind"; AIM 4-3-6c): a caution.
+     */
+    tailwind?: string[] | null;
+    /**
+     * Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution.
+     */
+    close?: string[] | null;
     /**
      * Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
      */
@@ -13464,6 +13491,14 @@ export interface RunwayEndFitAnswer {
    * The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
    */
   tailwind_kt: number;
+  /**
+   * How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok.
+   */
+  finding: "stop" | "caution" | "unknown" | "ok";
+  /**
+   * The finding's reason, the worst first; null for unknown and ok.
+   */
+  fit: "short" | "crosswind" | "tailwind" | "close" | "beyond" | null;
 }
 export interface RunwayEndHeadingInput {
   ident?: string | null;
@@ -14488,6 +14523,10 @@ export interface TrackLeftFromAnswer {
    * The track starts at its takeoff from the field.
    */
   left: boolean;
+}
+export interface TrafficFiguresInput {}
+export interface TrafficFiguresAnswer {
+  stale_s: number;
 }
 export interface TrafficFreshInput {
   age_s?: number | null;

@@ -6,6 +6,7 @@ from __future__ import annotations
 import threading
 import time
 
+from ..engine import ask as engine
 from ..figure import number as _number
 from ..units import NM_PER_DEG_LAT
 
@@ -36,7 +37,9 @@ def refused_for_s(resp) -> float:
 
 
 #: A position older than this is left out: the airplane is somewhere else.
-STALE_S = 30.0
+#: The engine's (traffic_figures), which the web's map and the phones hold
+#: to as well.
+STALE_S = engine("traffic_figures")["stale_s"]
 #: How long one request may take.
 TIMEOUT_S = 5.0
 

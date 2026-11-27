@@ -82,16 +82,9 @@ export function buildGlance({
       crosswindKt: check ? Math.round(check.crosswindKt) : null,
       crosswindOver: !!check?.crosswindOver,
       radio: call ? { to: call.to, mhz: call.mhz!, ctaf: !!call.ctaf } : null,
-      // A field not checked (no elevation, no runway length) is not known, never fine; one past
-      // the POH's tables is a caution (the engine's runways finding says the same).
-      finding:
-        !check || check.unchecked || !distance || distance.unknown
-          ? "unknown"
-          : distance.over
-            ? "stop"
-            : check.crosswindOver || distance.beyond
-              ? "caution"
-              : "ok",
+      // The engine's finding for the field (runway::fit), FPL's chips' too; a field not
+      // checked at all is not known, never fine.
+      finding: check?.finding ?? "unknown",
     };
   };
   const byKey = (keys: VerdictItem["key"][]) => worstOf(items.filter((i) => keys.includes(i.key)).map((i) => i.finding));
