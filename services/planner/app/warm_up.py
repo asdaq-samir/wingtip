@@ -9,6 +9,7 @@ import threading
 
 from apscheduler.schedulers.base import BaseScheduler
 from wingtip import (
+    airport_comms,
     airspace,
     altitude,
     chart_prepare,
@@ -17,6 +18,7 @@ from wingtip import (
     fixes,
     geocode,
     nearby,
+    pattern,
     places,
     publication_prune,
     publications,
@@ -222,6 +224,13 @@ def warm_reference_data(on: BaseScheduler) -> None:
         # its parse was 11.8 s of a cold KBOS to KSAN's plan (Session1's
         # profile, 2026-10-23).
         ("patterns", lambda: faa_data.pattern_agl_ft("KJFK", altitude.DEFAULT_FAA_CACHE_DIR)),
+        # Every field's runways from NASR (wingtip.nasr_fields) and their
+        # ends' right traffic and positions (wingtip.pattern): the first
+        # briefing after a restart read them, 2.4 s where the next took
+        # 18 ms (4.8 and 0.5 s of a cold briefing's 5.4 s profiled in the
+        # planner's container, 2026-11-27).
+        ("runways", lambda: airport_comms.get_runways("KORD")),
+        ("runway ends", lambda: pattern.right_traffic_ends("KORD")),
         # And its charted, open fields, a route's checkpoint candidates.
         (
             "route airports",
