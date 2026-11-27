@@ -12,6 +12,11 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.maplibre.android.maps.Style
+import org.maplibre.android.style.expressions.Expression
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.PropertyValue
+import org.maplibre.android.style.layers.SymbolLayer
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -89,6 +94,49 @@ object MapLabels {
         }
         return out
     }
+
+    /**
+     * The words of a style already in, changed in place as Larger Map
+     * Labels or the dark theme turns: each symbol layer of the style as
+     * MapStyle wrote it (`written`, before `adjust`) given its size and
+     * inks again, and each late layer's plain size by the change of scale,
+     * so neither turn sets a new style and asks for every tile again. A
+     * late picture (PlateLayer's tags) takes the scale when next drawn.
+     */
+    fun relabel(style: Style, written: List<JsonObject>, scale: Float, night: Boolean) {
+        val was = late
+        late = scale
+        val ids = HashSet<String>()
+        for (day in written) {
+            if (day["type"]?.jsonPrimitive?.content != "symbol") continue
+            val id = day["id"]?.jsonPrimitive?.content ?: continue
+            ids += id
+            val layer = style.getLayerAs<SymbolLayer>(id) ?: continue
+            val now = layer(day, scale, night)
+            val props = listOfNotNull(
+                now["layout"]?.jsonObject?.get("text-size")?.let { PropertyValue("text-size", live(it)) },
+                now["paint"]?.jsonObject?.get("text-color")?.let { PropertyValue("text-color", live(it)) },
+                now["paint"]?.jsonObject?.get("text-halo-color")?.let { PropertyValue("text-halo-color", live(it)) },
+            )
+            if (props.isNotEmpty()) layer.setProperties(*props.toTypedArray())
+        }
+        if (scale == was) return
+        for (layer in style.layers) {
+            if (layer !is SymbolLayer || layer.id in ids) continue
+            // A plain size only (lateSize's); an expression's value is no Float.
+            val size = layer.textSize.takeIf { it.isValue }?.value ?: continue
+            layer.setProperties(PropertyFactory.textSize(size * scale / was))
+        }
+    }
+
+    /** A style's layers, as `relabel` takes them. */
+    fun layersOf(style: String): List<JsonObject> =
+        json.parseToJsonElement(style).jsonObject["layers"]?.jsonArray?.map { it.jsonObject }.orEmpty()
+
+    /** A style's value as a layer takes it: a number, a colour's words,
+     *  or an expression. */
+    private fun live(value: JsonElement): Any =
+        (value as? JsonPrimitive)?.let { it.doubleOrNull?.toFloat() ?: it.content } ?: Expression.raw(value.toString())
 
     /** A size times the scale: a number, or each output of a top
      *  interpolate (after its input, every second element) or step. */
