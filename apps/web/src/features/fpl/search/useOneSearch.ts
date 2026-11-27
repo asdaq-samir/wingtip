@@ -16,6 +16,7 @@ import type { PlanSlices } from "../vm/planSlices";
 import { useSearchAirplanes, type AirplaneHit } from "./searchAirplanes";
 import { doHits } from "./searchDoes";
 import { useSearchAskFocus } from "./useSearchAskFocus";
+import { usePrefetchHighlighted } from "./usePrefetchHighlighted";
 
 /**
  * The one search's view model (the one-search design, 2026-11-09) over the
@@ -71,6 +72,9 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   });
 
   const airports = useMemo(() => (airplaneAsk ? [] : search.rows.filter((r) => r.kind !== "fix")), [airplaneAsk, search.rows]);
+  const airportIdents = useMemo(() => airports.map((r) => r.ident), [airports]);
+  // The lit row's card asked ahead of its pick (the Autocomplete's onItemHighlighted).
+  const highlighted = usePrefetchHighlighted(airportIdents);
   const noFixes = direct || airplaneAsk || (!!pick && !pick.fixes);
   const waypoints = useMemo(() => (noFixes ? [] : search.rows.filter((r) => r.kind === "fix")), [noFixes, search.rows]);
 
@@ -230,6 +234,7 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     waypoints,
     airplanes,
     does,
+    highlighted,
     setTyped: (text: string) => {
       // Typed over, a search sent is let go: the suggestions again.
       if (sent && text !== sent.query) useSearchResults.getState().clear();

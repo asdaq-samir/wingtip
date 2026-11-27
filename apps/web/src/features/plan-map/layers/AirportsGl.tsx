@@ -1,11 +1,12 @@
 import { useWeatherAgeCredit } from "../../../lib/map/marks/weatherAge";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
 import { api } from "../../../lib/api/client";
 import { airportsQuery } from "../airportsQuery";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
-import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
+import { nearestHit, useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
+import { airportQuery } from "../../../lib/queryClient";
 import {
   AIRPORT_TILE_LAYERS,
   OVERLAY_SOURCE,
@@ -134,6 +135,40 @@ function useAirportTaps(
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
   useGlProbe("airport-marks", AIRPORT_TILE_LAYERS, fields);
   useGlTap(AIRPORT_TILE_LAYERS, TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
+  usePrefetchOnPress();
+}
+
+/** The field under a finger or a mouse as it goes down, its card's answer
+ *  asked then (airportQuery, PlaceCard's) rather than at the tap's end, so
+ *  the card opens on it about a press sooner (the speed work, 2026-11-27).
+ *  The same reach and the same nearest mark the tap takes (nearestHit); a
+ *  press that becomes a pan asks for a field kept five minutes all the
+ *  same, which the card would ask for at its open. */
+function usePrefetchOnPress() {
+  const { map } = useGlMap();
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const target = map.getCanvasContainer();
+    const pressed = (e: PointerEvent) => {
+      if (!e.isPrimary || !map.style) return;
+      const layers = AIRPORT_TILE_LAYERS.filter((l) => map.getLayer(l));
+      if (!layers.length) return;
+      const box = target.getBoundingClientRect();
+      const at = { x: e.clientX - box.left, y: e.clientY - box.top };
+      const r = TAP.mark;
+      const found = map.queryRenderedFeatures(
+        [
+          [at.x - r, at.y - r],
+          [at.x + r, at.y + r],
+        ],
+        { layers },
+      );
+      const ident = nearestHit(found, at, r, (p) => map.project(p))?.properties.ident;
+      if (ident) void queryClient.prefetchQuery(airportQuery(String(ident)));
+    };
+    target.addEventListener("pointerdown", pressed);
+    return () => target.removeEventListener("pointerdown", pressed);
+  }, [map, queryClient]);
 }
 
 /** The overlay tiles' airports: the settings' filters and the route's

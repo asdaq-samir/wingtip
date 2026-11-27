@@ -286,7 +286,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         },
         // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
         around: (panel) => (
-          <CommandRoot value={vm.search.query} onValueChange={search.setTyped} autoHighlight="always">
+          <CommandRoot
+            value={vm.search.query}
+            onValueChange={search.setTyped}
+            onItemHighlighted={search.highlighted}
+            autoHighlight="always"
+          >
             {panel}
           </CommandRoot>
         ),
