@@ -56,6 +56,25 @@ object MapDim {
     fun opacity(base: Float = 1f): Expression =
         Expression.product(Expression.coalesce(Expression.globalState(STATE), Expression.literal(1f)), Expression.literal(base))
 
+    /**
+     * A constant colour times the dim, for a line, circle or word that
+     * must keep its contrast with the chart at night (the web's
+     * DIM_BY_COLOUR): black at none, itself at 1, as the chart's own
+     * raster-brightness-max dims its inks, so the two darken together and
+     * keep near their day's ratio (the course's magenta over the paper's
+     * white at the night's default Dimmer about 2.7 to 1, its day's 3.8,
+     * where see-through it fell to 1.04 to 1; the owner's "Dim by colour"
+     * for TFRs and obstacles, 2026-11-27). Its alpha is kept. A colour by feature is a layer a
+     * colour instead (one constant colour a layer), so a Dimmer's move lays
+     * no source out again. The terrain hazard's tint is never dimmed.
+     */
+    fun colour(argb: Int): Expression = Expression.interpolate(
+        Expression.linear(),
+        Expression.coalesce(Expression.globalState(STATE), Expression.literal(1f)),
+        Expression.stop(0f, Expression.color(argb and 0xFF000000.toInt())),
+        Expression.stop(1f, Expression.color(argb)),
+    )
+
     /** One opacity times the dim. MapLibre takes the zoom only as the
      *  input of a top-level interpolate or step, so there the dim goes
      *  into each stop's output; anything else is multiplied whole. A

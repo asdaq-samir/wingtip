@@ -287,7 +287,8 @@ object Map3dLayer {
             PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
             PropertyFactory.textSize(MapLabels.lateSize(12f)),
             PropertyFactory.textLineHeight(1.1f),
-            PropertyFactory.textColor(app.wingtipmaps.android.design.generated.WingtipColors.Chart.CASING_HEX.toColorInt()),
+            // The words dimmed with the chart by their colour at night, the tab by its light (MapDim).
+            PropertyFactory.textColor(MapDim.colour(app.wingtipmaps.android.design.generated.WingtipColors.Chart.CASING_HEX.toColorInt())),
             PropertyFactory.textPitchAlignment(Property.TEXT_PITCH_ALIGNMENT_VIEWPORT),
             PropertyFactory.textRotationAlignment(Property.TEXT_ROTATION_ALIGNMENT_VIEWPORT),
             PropertyFactory.iconImage(Expression.concat(Expression.literal(MapStyle.airspaceTab("")), Expression.get("class"))),
@@ -297,7 +298,7 @@ object Map3dLayer {
             PropertyFactory.textPadding(4f),
             PropertyFactory.symbolSortKey(Expression.sum(Expression.product(Expression.match(Expression.get("class"), Expression.literal(2), Expression.stop("B", 0), Expression.stop("C", 1)), Expression.literal(100_000)), Expression.get("floor_ft"))),
             PropertyFactory.textOpacity(faded),
-            PropertyFactory.iconOpacity(faded),
+            PropertyFactory.iconOpacity(Expression.product(faded, MapDim.opacity())),
         )
         style.addLayer(layer)
     }
@@ -306,7 +307,7 @@ object Map3dLayer {
      *  dashed (the web's approach-centreline). */
     private fun approach(style: Style, json: String?) {
         if (json == null) {
-            for (id in listOf(APPROACH_LINE, APPROACH_DASH)) style.getLayer(id)?.let(style::removeLayer)
+            for (id in approachIds()) style.getLayer(id)?.let(style::removeLayer)
             style.getSource(APPROACH)?.let(style::removeSource)
             return
         }
@@ -316,30 +317,22 @@ object Map3dLayer {
             return
         }
         style.addSource(GeoJsonSource(APPROACH, json))
-        val ink = Expression.match(
-            Expression.get("role"), Expression.color(ApproachScene3d.INKS.getValue(ApproachScene3d.PROCEDURE).toColorInt()),
-            *ApproachScene3d.INKS.map { (role, hex) -> Expression.stop(role, Expression.color(hex.toColorInt())) }.toTypedArray(),
-        )
-        val layer = LineLayer(APPROACH_LINE, APPROACH).withProperties(
-            PropertyFactory.lineColor(ink),
-            PropertyFactory.lineWidth(3f),
-            PropertyFactory.lineOpacity(0.9f),
-            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-        )
-        below(style, layer)
-        // The centreline dashed as the web's: a layer of its own, since a
-        // dash array is the layer's, not a feature's.
-        val dashed = LineLayer(APPROACH_DASH, APPROACH).withProperties(
-            PropertyFactory.lineColor(ApproachScene3d.INKS.getValue(ApproachScene3d.CENTRELINE).toColorInt()),
-            PropertyFactory.lineWidth(2f),
-            PropertyFactory.lineOpacity(0.9f),
-            PropertyFactory.lineCap(Property.LINE_CAP_BUTT),
-            PropertyFactory.lineDasharray(arrayOf(4f, 3f)),
-        )
-        layer.setFilter(Expression.neq(Expression.get("role"), Expression.literal(ApproachScene3d.CENTRELINE)))
-        dashed.setFilter(Expression.eq(Expression.get("role"), Expression.literal(ApproachScene3d.CENTRELINE)))
-        below(style, dashed)
+        // A layer a role, each its ink a constant dimmed with the chart by its colour at night (MapDim.colour);
+        // the centreline dashed as the web's, since a dash array is the layer's, not a feature's.
+        for ((role, hex) in ApproachScene3d.INKS) {
+            val centre = role == ApproachScene3d.CENTRELINE
+            val layer = LineLayer(if (centre) APPROACH_DASH else "$APPROACH_LINE-$role", APPROACH).withProperties(
+                PropertyFactory.lineColor(MapDim.colour(hex.toColorInt())),
+                PropertyFactory.lineWidth(if (centre) 2f else 3f),
+                PropertyFactory.lineOpacity(0.9f),
+                PropertyFactory.lineCap(if (centre) Property.LINE_CAP_BUTT else Property.LINE_CAP_ROUND),
+            ).withFilter(Expression.eq(Expression.get("role"), role))
+            if (centre) layer.setProperties(PropertyFactory.lineDasharray(arrayOf(4f, 3f)))
+            below(style, layer)
+        }
     }
+
+    private fun approachIds() = ApproachScene3d.INKS.keys.map { if (it == ApproachScene3d.CENTRELINE) APPROACH_DASH else "$APPROACH_LINE-$it" }
 
     /** Under the route and the marks (the style's route slot), as the web
      *  lays its volumes and lines. */

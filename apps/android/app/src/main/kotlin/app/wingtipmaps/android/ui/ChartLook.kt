@@ -31,6 +31,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipChartLook
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.map.MapStyle
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,16 +61,19 @@ data class ChartLook(val dimLight: Float = 0f, val dimDark: Float = NIGHT_DIM, v
         MapStyle.chartPaint(night).let { it.copy(brightnessMax = 1f - dim(night), contrast = (it.contrast + offset).coerceIn(-1f, 1f)) }
 
     companion object {
+        // The look's figures are design/tokens.json's chartLook, one copy
+        // for the three apps (WingtipChartLook, generated).
+
         /** The night's dim before it is moved: half the chart's light (the web's NIGHT_DIM). */
-        const val NIGHT_DIM = 0.5f
+        const val NIGHT_DIM = WingtipChartLook.NIGHT_DIM
 
         /** The deepest dim: the paper's white at 30%, about the least the chart's small print reads at. */
-        const val DIM_MAX = 0.7f
-        const val CONTRAST_MIN = -0.3f
-        const val CONTRAST_MAX = 0.4f
+        const val DIM_MAX = WingtipChartLook.DIM_MAX
+        const val CONTRAST_MIN = WingtipChartLook.CONTRAST_MIN
+        const val CONTRAST_MAX = WingtipChartLook.CONTRAST_MAX
 
-        /** Each slider's stops, the web's LOOK_STEP of 0.05. */
-        const val STEP = 0.05f
+        /** Each slider's stops, the web's LOOK_STEP. */
+        const val STEP = WingtipChartLook.STEP
     }
 }
 

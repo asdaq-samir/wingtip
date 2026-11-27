@@ -44,6 +44,9 @@ object ForecastAreasLayer {
     private const val FILL = "forecast-areas-fill"
     private const val EDGE = "forecast-areas-edge"
 
+    /** Each kind's ink, as `ink` matches them; null the rest. */
+    private val EDGE_INKS = listOf("sigmet" to WingtipColors.Category.IFR_HEX, "gairmet" to WingtipColors.Chart.SPECIAL_USE_HEX, null to WingtipColors.Category.LIFR_HEX)
+
     private val _areas = MutableStateFlow<List<RunArea>>(emptyList())
     val areas: StateFlow<List<RunArea>> = _areas.asStateFlow()
 
@@ -87,10 +90,13 @@ object ForecastAreasLayer {
             Expression.stop("sigmet", Expression.color(WingtipColors.Category.IFR_HEX.toColorInt())),
             Expression.stop("gairmet", Expression.color(WingtipColors.Chart.SPECIAL_USE_HEX.toColorInt())),
         )
-        val layers: List<Layer> = listOf(
-            FillLayer(FILL, SOURCE).withProperties(PropertyFactory.fillColor(ink), PropertyFactory.fillOpacity(0.18f)),
-            LineLayer(EDGE, SOURCE).withProperties(PropertyFactory.lineColor(ink), PropertyFactory.lineWidth(2f)),
-        )
+        // The edges dimmed with the chart by their colour at night (MapDim.colour), one layer an ink so each
+        // is a constant colour; the wash under them is faint already and left.
+        val edges = EDGE_INKS.map { (kind, hex) ->
+            val which = Expression.get("kind").let { k -> if (kind == null) Expression.all(Expression.neq(k, "sigmet"), Expression.neq(k, "gairmet")) else Expression.eq(k, kind) }
+            LineLayer("$EDGE-${kind ?: "other"}", SOURCE).withProperties(PropertyFactory.lineColor(MapDim.colour(hex.toColorInt())), PropertyFactory.lineWidth(2f)).withFilter(which)
+        }
+        val layers: List<Layer> = listOf(FillLayer(FILL, SOURCE).withProperties(PropertyFactory.fillColor(ink), PropertyFactory.fillOpacity(0.18f))) + edges
         for (layer in layers) if (style.getLayer(MapStyle.ROUTE_SLOT) != null) style.addLayerBelow(layer, MapStyle.ROUTE_SLOT) else style.addLayer(layer)
     }
 

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import app.wingtipmaps.android.design.generated.WingtipChartLook
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,11 +48,11 @@ data class PlateLook(
     companion object {
         /** Nearly solid, so the page reads as ForeFlight's does as it opens,
          *  with a little of the chart showing through at its edges. */
-        const val DEFAULT_OPACITY = 0.85f
+        const val DEFAULT_OPACITY = WingtipChartLook.PLATE_OPACITY
 
         /** The faintest the slider goes: a plate turned all the way to
          *  clear is still found by a tap, so its card can bring it back. */
-        const val LEAST_OPACITY = 0.1f
+        const val LEAST_OPACITY = WingtipChartLook.PLATE_LEAST_OPACITY
     }
 }
 

@@ -5,6 +5,7 @@ import app.wingtipmaps.android.api.generated.ProcedureList
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.routeTyped
+import app.wingtipmaps.android.engine.generated.routeTypedPicks
 import app.wingtipmaps.android.plan.PlanProcedures
 
 /**
@@ -46,37 +47,35 @@ object TypedRoute {
     }
 
     /**
-     * The typed SIDs and STARs as picks, each found among its field's
-     * procedures as the iPhone's TypedRoute.picks and the web's
-     * typedProcedure find it: a departure from `dep`, its transition the
-     * point typed after it where the procedure has that transition, else an
-     * arrival into `dest` by the point typed before it. The names neither
-     * field publishes come back as missed. `list` is a field's procedures,
-     * null where they could not be had.
+     * The typed SIDs and STARs as picks, found among their fields'
+     * procedures by the engine's `route_typed_picks`, the one copy the web's
+     * route box and the iPhone's TypedRoute ask too (AIM 5-2-9, a SID out of
+     * the departure; AIM 5-4-1, a STAR into the destination): a departure
+     * from `dep`, its transition the point typed after it where published,
+     * else an arrival into `dest` by the point typed before it. The names
+     * neither field publishes come back as missed. `list` is a field's
+     * procedures, null where they could not be had; where the engine cannot
+     * answer, every typed name is missed, never a pick guessed.
      */
     suspend fun picks(read: Read, dep: String, dest: String, list: suspend (String) -> ProcedureList?): Pair<List<PlanProcedures.Pick>, List<String>> {
-        val picks = mutableListOf<PlanProcedures.Pick>()
-        val missed = mutableListOf<String>()
+        if (read.procedures.isEmpty()) return emptyList<PlanProcedures.Pick>() to emptyList()
         val lists = mutableMapOf<String, ProcedureList?>()
-        for (typed in read.procedures) {
-            var found: PlanProcedures.Pick? = null
-            for ((field, kind, join) in listOf(Triple(dep, "departure", typed.after), Triple(dest, "arrival", typed.before))) {
-                if (field.isEmpty()) continue
-                val listed = lists.getOrPut(field) { list(field) } ?: continue
-                val procedure = listed.procedures.firstOrNull { it.kind == kind && it.id == typed.name } ?: continue
-                val transition = join?.takeIf { it in procedure.transitions }
-                found = PlanProcedures.Pick(field, procedure.id, kind, procedure.name, transition)
-                break
-            }
-            val picked = found
-            if (picked != null) {
-                picks.removeAll { it.ident == picked.ident && it.kind == picked.kind }
-                picks += picked
-            } else {
-                missed += typed.name
-            }
+        suspend fun listed(field: String) = field.takeIf { it.isNotEmpty() }?.let { lists.getOrPut(it) { list(it) } }
+        val departure = listed(dep)?.let { l ->
+            EngineContract.RouteTypedPicksInputDeparture(
+                dep,
+                l.procedures.map { EngineContract.RouteTypedPicksInputDepartureProceduresItem(it.kind, it.id, it.name, it.transitions) },
+            )
         }
-        return picks to missed
+        val arrival = listed(dest)?.let { l ->
+            EngineContract.RouteTypedPicksInputArrival(
+                dest,
+                l.procedures.map { EngineContract.RouteTypedPicksInputArrivalProceduresItem(it.kind, it.id, it.name, it.transitions) },
+            )
+        }
+        val typed = read.procedures.map { EngineContract.RouteTypedPicksInputProceduresItem(it.name, it.before, it.after) }
+        val answer = Engine.routeTypedPicks(typed, departure, arrival).getOrNull() ?: return emptyList<PlanProcedures.Pick>() to read.procedures.map { it.name }
+        return answer.picks.map { PlanProcedures.Pick(it.ident, it.id, it.kind, it.name, it.transition) } to answer.missed
     }
 
     /** How the typing went, for the box to say where it was typed. */

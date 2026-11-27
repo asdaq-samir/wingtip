@@ -23,7 +23,7 @@ object RouteLegLayer {
     fun add(style: Style, source: String, below: String, night: Boolean, selected: Int?) {
         if (style.getLayer(ID) != null) return
         val layer = LineLayer(ID, source).withProperties(
-            PropertyFactory.lineColor(green(night)),
+            PropertyFactory.lineColor(MapDim.colour(green(night))),
             PropertyFactory.lineWidth(CASING_WIDTH),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
@@ -37,14 +37,15 @@ object RouteLegLayer {
     }
 
     fun paint(style: Style, night: Boolean) {
-        style.getLayerAs<LineLayer>(ID)?.setProperties(PropertyFactory.lineColor(green(night)))
+        style.getLayerAs<LineLayer>(ID)?.setProperties(PropertyFactory.lineColor(MapDim.colour(green(night))))
     }
 
     private fun filter(selected: Int?): Expression =
         if (selected == null) Expression.literal(false)
         else Expression.eq(Expression.get(RouteLegs.LEG), Expression.literal(selected))
 
-    /** The tokens' route green, a shade deeper over the dimmed night chart. */
+    /** The tokens' route green, a shade deeper over the dimmed night chart,
+     *  and dimmed with the chart by its colour (MapDim.colour). */
     private fun green(night: Boolean): Int = (if (night) WingtipColors.Chart.ROUTE_GREEN_NIGHT_HEX else WingtipColors.Chart.ROUTE_GREEN_HEX).toColorInt()
 
     /** Wider than the edge (6.5) so the green shows either side of it. */

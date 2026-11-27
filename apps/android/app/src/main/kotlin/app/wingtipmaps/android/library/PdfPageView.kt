@@ -22,14 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.Loading
+import app.wingtipmaps.android.ui.pageFilter
 import me.saket.telephoto.zoomable.ZoomableState
 import me.saket.telephoto.zoomable.zoomable
 import kotlin.math.roundToInt
@@ -74,7 +73,7 @@ internal fun PdfPageView(
                 Loading(Modifier.align(Alignment.Center))
             } else {
                 val image = remember(page) { page.asImageBitmap() }
-                Image(image, contentDescription = stringResource(R.string.reader_page_of, index + 1, pages.count), colorFilter = if (inverted) INVERT else null, modifier = Modifier.fillMaxSize())
+                Image(image, contentDescription = stringResource(R.string.reader_page_of, index + 1, pages.count), colorFilter = if (inverted) INVERTED else null, modifier = Modifier.fillMaxSize())
             }
             Matches(matches)
             MarkLayer(marks, index + 1, wPx, hPx, marking, onMarked)
@@ -100,10 +99,9 @@ private fun Matches(matches: List<RectF>) {
     }
 }
 
-/** White on black: each colour taken from its full, alpha kept. */
-private val INVERT = ColorFilter.colorMatrix(
-    ColorMatrix(floatArrayOf(-1f, 0f, 0f, 0f, 255f, 0f, -1f, 0f, 0f, 255f, 0f, 0f, -1f, 0f, 255f, 0f, 0f, 0f, 1f, 0f)),
-)
+/** White on black, the one inversion the plates and diagrams draw with
+ *  (pageFilter), at full light: a document has no Dimmer of its own. */
+private val INVERTED = pageFilter(true, 1f)
 
 private const val MATCH_ALPHA = 0.3f
 

@@ -5,6 +5,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** What is drawn on the chart at the chart's own light at night (the
@@ -43,5 +44,19 @@ class MapDimTest {
         assertEquals("0.9", layers[2]["paint"]!!.jsonObject["fill-opacity"].toString())
         assertEquals("""["*",$dim,0.5]""", layers[3]["paint"]!!.jsonObject["circle-opacity"].toString())
         assertEquals("""["*",$dim,1]""", layers[3]["paint"]!!.jsonObject["circle-stroke-opacity"].toString())
+    }
+
+    @Test
+    fun aColourDimmedByItsColourGoesToBlackWithTheDimItsAlphaKept() {
+        // The web's DIM_BY_COLOUR: black at no light, itself at the day's.
+        val parts = MapDim.colour(0x80E600E6.toInt()).toArray()
+        assertEquals("interpolate", parts[0])
+        assertTrue(java.util.Arrays.deepToString(parts[2] as Array<*>).contains("global-state, mapDim"))
+        fun rgba(at: Int) = (parts[at] as Array<*>).drop(1).map { (it as Number).toDouble() }
+        assertEquals(0.0, (parts[3] as Number).toDouble(), 0.0)
+        assertEquals(listOf(0.0, 0.0, 0.0), rgba(4).take(3))
+        assertEquals(1.0, (parts[5] as Number).toDouble(), 0.0)
+        assertEquals(listOf(230.0, 0.0, 230.0), rgba(6).take(3))
+        assertEquals(rgba(6)[3], rgba(4)[3], 1e-6)
     }
 }
