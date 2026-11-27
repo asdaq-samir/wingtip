@@ -1,9 +1,9 @@
-import { Bell, Crosshair, Gauge, History, Info, Share } from "lucide-react";
+import { Bell, Crosshair, Gauge, History, Info } from "lucide-react";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { SheetCard } from "../../components/SheetCard";
 import { CardAction } from "../../components/CardAction";
-import IconButton from "../../components/IconButton";
+import { CardTitle } from "../../components/CardTitle";
 import { ACTION } from "../../lib/cardActions";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import { FavoriteTile } from "../../components/FavoriteTile";
@@ -132,19 +132,19 @@ export default function AirplaneCard({
   // Its POH on Figures, else on the page: one row.
   const poh = m.tail ? <PohRow tail={m.tail} model={m.pohModel} /> : null;
   return (
-    <SheetCard
-      title={m.title}
-      description={m.sub}
-      onClose={m.close}
-      // Share at the start of its head, ✕ at the end, as the airport's card has them (CardTitle).
-      leading={
-        <IconButton round label={`Share ${m.title}`} onClick={m.share} data-testid="airplane-share">
-          <Share />
-        </IconButton>
-      }
-      closeButton
-      testId="airplane-profile"
-    >
+    <SheetCard head={false} onClose={m.close} testId="airplane-profile">
+      {/* The airport card's head (CardTitle): Share at its start, its name
+          with its call sign and what it is under it, ✕ at its end. */}
+      <CardTitle
+        title={m.title}
+        sub={m.sub}
+        onClose={m.close}
+        onShare={m.share}
+        testId="airplane-head"
+        titleTestId="airplane-name"
+        closeTestId="sheet-card-close"
+        shareTestId="airplane-share"
+      />
       <Actions m={m} />
       {live.waiting && (
         <p className={cn("pt-2 text-tint", TEXT.note)} data-testid="flight-alerts-set">
