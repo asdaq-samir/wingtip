@@ -83,6 +83,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
         key={r.ident}
         value={r.ident}
         icon={<AirportIcon ident={r.ident} name={r.name} kept={top} />}
+        iconWidth="mark"
         title={
           <>
             <span className="font-mono">
@@ -245,25 +246,29 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
     <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
       {problem && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{problem}</FieldError>}
       {unheard && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{unheard}</FieldError>}
-      <CommandList
-        className={cn("max-h-none overflow-hidden rounded-2xl bg-card p-0", none && "bg-transparent", !airportsAnswered && "opacity-60")}
-        aria-busy={!answered}
-        aria-label="Search results"
-      >
-        {groups.map((g, i) => (
-          <Fragment key={`${i}-${g.heading}`}>
-            {i > 0 && <RowLine />}
-            <ResultGroup heading={g.heading} className={cn(g.waiting && "opacity-60")}>
+      {/* The list holds its groups alone, as a listbox may (axe's
+          aria-required-children): the hairline between two groups is the
+          group's own (ResultGroup's lined), and the status follows the
+          list, in one block with it so the page's gap is not added under
+          the list. */}
+      <div>
+        <CommandList
+          className={cn("max-h-none overflow-hidden rounded-2xl bg-card p-0", none && "bg-transparent", !airportsAnswered && "opacity-60")}
+          aria-busy={!answered}
+          aria-label="Search results"
+        >
+          {groups.map((g, i) => (
+            <ResultGroup key={`${i}-${g.heading}`} heading={g.heading} lined={i > 0} className={cn(g.waiting && "opacity-60")}>
               {g.rows}
             </ResultGroup>
-          </Fragment>
-        ))}
+          ))}
+        </CommandList>
         {/* Base UI's status, kept mounted so VoiceOver hears "Nothing
             found" as it comes; empty while there are rows. */}
         <CommandEmpty className={cn("px-1 text-muted-foreground", TEXT.prose)}>
           {none && (direct && !typed ? "Type an airport's ident or name." : answered ? "Nothing found." : "Searching…")}
         </CommandEmpty>
-      </CommandList>
+      </div>
     </div>
   );
 }

@@ -258,7 +258,8 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   };
   answer({ aircraft: [flying], checked: true, source: "ADS-B Exchange", license: "ADS-B Exchange terms" });
   await expect(row.getByTestId("search-airplane-live")).toHaveText("In the air 4,500 ft · 108 kt", { timeout: slow(10_000) });
-  await row.getByTestId("search-airplane-track").click();
+  // Its Track beside the row's option, not in it (ResultRow: no button inside an option).
+  await sideDrawer(page).locator("[data-result-row]").filter({ has: row }).getByTestId("search-airplane-track").click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, in the air Track first, no Fly
   // This, its flight now at the head of its Flights tab (the owner, 2026-11-27).

@@ -38,19 +38,45 @@ export function AirportIcon({ ident, name, kept = false }: { ident: string; name
 }
 
 /** The group a set of rows is in: its name for a screen reader only, as
- *  Apple's results carry no headings; the row's icon says its kind. */
-export function ResultGroup({ heading, children, className }: { heading: string; children: ReactNode; className?: string }) {
+ *  Apple's results carry no headings; the row's icon says its kind.
+ *  `lined`: the hairline over it, from the title's edge as RowLine's, drawn
+ *  by the group itself: a separator between two groups is a child of the
+ *  list, whose children may be only groups and options (axe's
+ *  aria-required-children on the one search typed, WCAG 1.3.1). */
+export function ResultGroup({
+  heading,
+  children,
+  className,
+  lined = false,
+}: {
+  heading: string;
+  children: ReactNode;
+  className?: string;
+  lined?: boolean;
+}) {
   return (
-    <CommandGroup heading={heading} className={cn("p-0", className)} headingClassName="sr-only">
+    <CommandGroup
+      heading={heading}
+      className={cn(
+        "p-0",
+        lined && "relative pt-px before:absolute before:inset-x-0 before:top-0 before:ml-15 before:h-px before:bg-border/70",
+        className,
+      )}
+      headingClassName="sr-only"
+    >
       {children}
     </CommandGroup>
   );
 }
 
-/** The hairline between two rows, from the title's edge. */
+/** The hairline between two rows of a group, from the title's edge. */
 export function RowLine() {
   return <CommandSeparator className="mx-0 ml-15 bg-border/70" />;
 }
+
+/** A row's icon column: the chart's mark for a field, a disc for the rest,
+ *  so its quick actions line up under its title (ResultRow). */
+const ICON_WIDTH = { mark: "[--row-icon:var(--size-chart-mark)]", disc: "[--row-icon:var(--size-search-disc)]" } as const;
 
 /** One result: its icon, its title in bold and the grey line under it,
  *  what is beside them at the right, and (the top hit) its quick actions
@@ -67,6 +93,7 @@ export function ResultRow({
   actions,
   tint = false,
   disabled = false,
+  iconWidth = "disc",
 }: {
   value: string;
   icon: ReactNode;
@@ -82,25 +109,42 @@ export function ResultRow({
   /** Greyed, a tap and Enter doing nothing: a field a pick refuses, its
    *  reason in `detail` (the owner, 2026-11-21). */
   disabled?: boolean;
+  /** The icon's width, for the actions under the title: the chart's mark
+   *  (AirportIcon) or a disc (RoundIcon). */
+  iconWidth?: keyof typeof ICON_WIDTH;
 }) {
-  return (
+  const item = (
     <CommandItem
       value={value}
       disabled={disabled}
       onClick={onSelect}
-      className={cn("min-h-13 items-start gap-3 rounded-none px-3 py-2.5", className)}
+      // With actions, none of its own room under the words: theirs is under
+      // it (ResultRow's actions).
+      className={cn("min-h-13 items-start gap-3 rounded-none px-3 py-2.5", ICON_WIDTH[iconWidth], actions && "pb-0", className)}
       data-testid={testId}
     >
-      <span className="pt-0.5">{icon}</span>
+      <span className="w-(--row-icon) shrink-0 pt-0.5">{icon}</span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className={cn("block truncate font-semibold", tint ? "text-tint" : "text-foreground", TEXT.row)}>{title}</span>
         {detail && <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>{detail}</span>}
-        {/* Side by side, each half the row, never on two lines: at 19.65 px
-            Fly Here and Depart From wrapped. */}
-        {actions && <span className="flex gap-2 pt-1.5">{actions}</span>}
       </span>
       {end}
     </CommandItem>
+  );
+  if (!actions) return item;
+  // The actions beside the option, not in it, under its title as they were
+  // (6 over them, 10 under): buttons inside an option, whose children are
+  // presentational, were axe's nested-interactive on the top hit. Under the
+  // option, not laid over it, so its 44-point square is its own and their
+  // areas (index.css's, 6 over a small button) start where it ends. The
+  // whole row greyed with the option highlighted. Side by side, each half
+  // the row, never on two lines: at 19.65 px Fly Here and Depart From
+  // wrapped.
+  return (
+    <div className={cn("has-data-highlighted:bg-muted", ICON_WIDTH[iconWidth])} data-result-row="">
+      {item}
+      <span className="flex gap-2 pt-1.5 pr-3 pb-2.5 pl-[calc(var(--row-icon)+1.5rem)]">{actions}</span>
+    </div>
   );
 }
 
