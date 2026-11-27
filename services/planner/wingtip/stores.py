@@ -10,6 +10,11 @@ paths are settings (LIVE_STORE, NOTAM_STORE, FILED_STORE, REPORTS_STORE),
 the data folder by default, as on the server, where both containers mount
 one Linux disk.
 
+A store's shape is its PRAGMA user_version, which its builder sets: a
+file of another shape reads as none until it is built again (`version`,
+`older`), the one check the registry, the NTSB's store, the NOTAMs' and
+ingest's turns each wrote their own way (round 6's common-code audit, 4).
+
 A store first opened at a new path takes the one kept at its old path
 (adopt): the NOTAMs heard since 19 Oct 2026 are the briefing's whole
 record (wingtip.notams.since), and the feed sends none of them again.
@@ -65,6 +70,41 @@ def connect(store: Path, former: Path | None = None, autocommit: bool = False) -
     # WAL's own safe setting: a power cut may lose the last write, never the file.
     db.execute("PRAGMA synchronous=NORMAL")
     return db
+
+
+#: The shape `version` gives a file SQLite cannot read: no store's.
+UNREADABLE = -1
+
+
+def user_version(db: sqlite3.Connection) -> int:
+    """An open store's shape, its PRAGMA user_version; UNREADABLE where
+    SQLite cannot read the file."""
+    try:
+        return db.execute("PRAGMA user_version").fetchone()[0]
+    except sqlite3.DatabaseError:
+        return UNREADABLE
+
+
+def version(path: Path) -> int:
+    """The shape of the store at `path`: 0 where there is none,
+    UNREADABLE where SQLite cannot read it."""
+    path = Path(path)
+    if not path.exists():
+        return 0
+    try:
+        db = read_only(path)
+    except sqlite3.DatabaseError:
+        return UNREADABLE
+    try:
+        return user_version(db)
+    finally:
+        db.close()
+
+
+def older(path: Path, schema: int) -> bool:
+    """Whether a store is there and of a shape other than `schema`, one
+    SQLite cannot read among them: its builder's first turn (ingest.history)."""
+    return version(path) not in (0, schema)
 
 
 def read_only(path: Path) -> sqlite3.Connection:

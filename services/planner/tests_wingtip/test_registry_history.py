@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from tests_wingtip.test_registry import MASTER_HEADER, _master
-from wingtip import aircraft_details, registry, registry_history, traffic
+from wingtip import aircraft_details, registry, registry_history, stores, traffic
 from wingtip.history import ntsb
 
 DEREG_HEADER = (
@@ -152,8 +152,8 @@ def test_documents_and_a_reservation(directory):
 
 
 def test_an_older_registry_file_is_read_again(directory, tmp_path):
-    assert registry.schema(directory / registry.DB_NAME) == registry.SCHEMA
-    assert registry.schema(tmp_path / "none.sqlite") == 0
+    assert stores.version(directory / registry.DB_NAME) == registry.SCHEMA
+    assert stores.version(tmp_path / "none.sqlite") == 0
 
 
 def test_the_card_gathers_every_part(directory, monkeypatch):
@@ -170,7 +170,7 @@ def test_the_card_gathers_every_part(directory, monkeypatch):
 
 
 @pytest.mark.skipif(
-    not (RAW / registry.DB_NAME).exists() or registry.schema(RAW / registry.DB_NAME) != registry.SCHEMA,
+    not (RAW / registry.DB_NAME).exists() or stores.version(RAW / registry.DB_NAME) != registry.SCHEMA,
     reason="the FAA's registry is not read on this machine in this shape",
 )
 def test_the_real_registry_has_every_part():

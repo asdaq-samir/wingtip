@@ -29,10 +29,9 @@ again, and the NTSB's waited 300 s behind the registry (round 5's audit).
 
 from __future__ import annotations
 
-import sqlite3
 
 from apscheduler.schedulers.base import BaseScheduler
-from wingtip import registry, schedule
+from wingtip import registry, schedule, stores
 from wingtip.config import get_settings
 from wingtip.history import notam_archive
 
@@ -58,24 +57,15 @@ def jobs(on: BaseScheduler) -> None:
     store each NTSB_EVERY_S, the airmen's each AIRMEN_EVERY_S and the
     registry's age looked at each REGISTRY_EVERY_S, the archive's first
     now and the registry's, the NTSB's and the airmen's FIRST_TURNS_APART_S
-    apart, a store of an older shape first (`_stale`): each a job on `on`."""
+    apart, a store of an older shape first (stores.older): each a job on `on`."""
     schedule.every(on, SNAPSHOT_EVERY_S, notam_archive.snapshot, name="notam-archive")
-    heavy = [("ntsb", NTSB_EVERY_S, ntsb.refresh, _stale(ntsb.older_shape))]
+    heavy = [("ntsb", NTSB_EVERY_S, ntsb.refresh, ntsb.older_shape())]
     heavy.append(("airmen", AIRMEN_EVERY_S, airmen.refresh, False))
     # Off on a stack that downloads nothing it need not (REGISTRY_REFRESH=0);
     # an older registry file there reads as none in the planner.
     if get_settings().registry_refresh:
-        older = _stale(lambda: registry.schema(registry.DEFAULT_DIR / registry.DB_NAME) not in (0, registry.SCHEMA))
+        older = stores.older(registry.DEFAULT_DIR / registry.DB_NAME, registry.SCHEMA)
         heavy.insert(0, ("aircraft-registry", REGISTRY_EVERY_S, registry.refresh, older))
     # sorted keeps the order among equals: the stale first, then as listed.
     for turn, (name, every_s, job, _) in enumerate(sorted(heavy, key=lambda h: not h[3])):
         schedule.every(on, every_s, job, name=name, after=turn * FIRST_TURNS_APART_S)
-
-
-def _stale(older) -> bool:
-    """`older()`: whether a store on disk is of an older shape than the
-    planner reads, a file SQLite cannot read among them."""
-    try:
-        return older()
-    except sqlite3.DatabaseError:
-        return True

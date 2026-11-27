@@ -118,7 +118,7 @@ def _upgrade(db: sqlite3.Connection) -> None:
     FAA's feed puts inside its XML ("O&apos;HARE"), which notam_read took for
     someone's own words; the engine's reader now decodes them (from_fns),
     and those kept are decoded here."""
-    version = db.execute("PRAGMA user_version").fetchone()[0]
+    version = stores.user_version(db)
     if version >= STORE_VERSION:
         return
     if version < 1:

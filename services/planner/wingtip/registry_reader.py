@@ -54,11 +54,7 @@ def ready(db_path: Path) -> bool:
     with _READERS_LOCK:
         if _SHAPED["file"] == file:
             return bool(_SHAPED["ready"])
-    try:
-        with contextlib.closing(stores.read_only(db_path)) as db:
-            shaped = db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA
-    except sqlite3.DatabaseError:
-        shaped = False
+    shaped = stores.version(db_path) == SCHEMA
     with _READERS_LOCK:
         _SHAPED["file"], _SHAPED["ready"] = file, shaped
     return shaped

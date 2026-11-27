@@ -6,7 +6,7 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 
-from wingtip import registry, schedule
+from wingtip import registry, schedule, stores
 from wingtip.history import notam_archive, ntsb as ntsb_store
 
 from ingest import history, ntsb
@@ -23,8 +23,8 @@ def _stamp(store: Path, version: int) -> None:
 
 def _shapes(monkeypatch, registry_shape: int, ntsb_shape: int) -> None:
     """The registry's file and the NTSB's store on disk of these shapes (0: none)."""
-    monkeypatch.setattr(registry, "schema", lambda path: registry_shape)
-    monkeypatch.setattr(ntsb_store, "schema", lambda: ntsb_shape)
+    registry_file = registry.DEFAULT_DIR / registry.DB_NAME
+    monkeypatch.setattr(stores, "version", lambda path: registry_shape if path == registry_file else ntsb_shape)
 
 
 def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now(monkeypatch):

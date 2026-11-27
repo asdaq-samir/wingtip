@@ -18,7 +18,6 @@ town are given here, not the street.
 
 from __future__ import annotations
 
-import contextlib
 import json
 import logging
 import re
@@ -182,14 +181,6 @@ def build(zip_path: Path, db_path: Path) -> int:
     return count
 
 
-def schema(db_path: Path) -> int:
-    """The shape of the registry file on disk (SCHEMA), 0 where there is none."""
-    if not db_path.exists():
-        return 0
-    with contextlib.closing(stores.read_only(db_path)) as db:
-        return db.execute("PRAGMA user_version").fetchone()[0]
-
-
 def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
     """The FAA's registry downloaded and read again where the copy on disk
     is a day old or missing; whether it was. One at a time: a second
@@ -197,7 +188,7 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
     directory = Path(directory)
     db_path = directory / DB_NAME
     fresh = db_path.exists() and time.time() - db_path.stat().st_mtime < MAX_AGE_S
-    if not force and fresh and schema(db_path) == SCHEMA:
+    if not force and fresh and stores.version(db_path) == SCHEMA:
         return False
     with _LOCK:
         if _BUILDING.is_set():

@@ -305,18 +305,6 @@ def events(reg: str, day: str, path: Path | None = None) -> list[dict]:
     return out
 
 
-def schema(path: Path | None = None) -> int:
-    """The store's shape on disk (SCHEMA), 0 where there is none."""
-    path = path or store_path()
-    if not path.exists():
-        return 0
-    db = stores.read_only(path)
-    try:
-        return db.execute("PRAGMA user_version").fetchone()[0]
-    finally:
-        db.close()
-
-
 def _shaped(path: Path) -> sqlite3.Connection | None:
     """A read-only connection to the store where it is there and of
     SCHEMA's shape, else None: one of an older shape reads as none until
@@ -325,11 +313,8 @@ def _shaped(path: Path) -> sqlite3.Connection | None:
     if not path.exists():
         return None
     db = stores.read_only(path)
-    try:
-        if db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA:
-            return db
-    except sqlite3.DatabaseError:
-        pass
+    if stores.user_version(db) == SCHEMA:
+        return db
     db.close()
     return None
 
@@ -376,4 +361,4 @@ def cases(reg: str, path: Path | None = None) -> list[dict]:
     ]
 
 
-__all__ = ["CREDIT", "SCHEMA", "SOURCE", "apply", "build", "cases", "events", "phase_words", "registration", "schema", "store_path"]
+__all__ = ["CREDIT", "SCHEMA", "SOURCE", "apply", "build", "cases", "events", "phase_words", "registration", "store_path"]

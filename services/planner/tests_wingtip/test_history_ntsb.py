@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from wingtip import stores
 from wingtip.history import ntsb
 
 FIXTURES = Path(__file__).parent / "fixtures" / "history"
@@ -121,7 +122,7 @@ def test_every_case_of_an_airplane_with_its_kind_and_damage_newest_first(store):
     assert case["carol_url"].endswith("/204059/pdf")
     assert ntsb.cases("594BA", store)[0]["ntsb_no"] == "ERA25LA382"
     assert ntsb.cases("N12345", store) == []
-    assert ntsb.schema(store) == ntsb.SCHEMA
+    assert stores.version(store) == ntsb.SCHEMA
 
 
 def test_no_cases_where_the_store_is_not_built(tmp_path):

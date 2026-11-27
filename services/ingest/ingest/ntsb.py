@@ -51,7 +51,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from bs4 import BeautifulSoup
-from wingtip import outside
+from wingtip import outside, stores
 from wingtip.config import REQUEST_HEADERS
 from wingtip.history import ntsb
 
@@ -118,14 +118,14 @@ def due(avall: dict, state: dict) -> bool:
     """Whether the store is to be made again from avall.zip: none built,
     one of an older shape (wingtip.history.ntsb.SCHEMA), or the NTSB's file
     not the one it was built from (its date or size)."""
-    return ntsb.schema() != ntsb.SCHEMA or state.get("avall") != avall
+    return stores.version(ntsb.store_path()) != ntsb.SCHEMA or state.get("avall") != avall
 
 
 def older_shape() -> bool:
     """Whether the store on disk is of an older shape than the planner
     reads, which it reads as none until it is made again (ingest.history
     gives it the first turn)."""
-    return ntsb.schema() not in (0, ntsb.SCHEMA)
+    return stores.older(ntsb.store_path(), ntsb.SCHEMA)
 
 
 def deltas_due(files: dict[str, dict], state: dict) -> list[str]:
