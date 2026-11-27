@@ -517,7 +517,7 @@ fun Engine.dataCycle(kind: String, effective: String? = null, on: String): Resul
     rule("data_cycle", EngineContract.DataCycleInput(kind = kind, effective = effective, on = on))
 
 /**
- * When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
+ * When a digital ATIS broadcast heard at a time stops being the airport's: 75 minutes after it was heard: the hourly update AIM 4-1-13 asks, and a quarter hour for it to come ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
  */
 fun Engine.datisEnds(heard: Double): Result<EngineContract.DatisEndsAnswer> =
     rule("datis_ends", EngineContract.DatisEndsInput(heard = heard))
