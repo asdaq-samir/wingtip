@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
 import TabKept from "../TabKept";
-import { AT_PILL, PILL_BODY, SHEET_SLIDE } from "./insets";
-import { SWIPE_READER } from "./sheetFollow";
+import { AT_PILL, PILL_BODY } from "./insets";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { bandFits } from "./bandFits";
 import { CONTROLS_UNTAPPED, FULL_BAND, SHEET_BELOW, tapOpens, type SheetLayout } from "./sheetLayout";
@@ -20,21 +19,6 @@ const SOLID_BAND = "bg-(--sheet)";
 /** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
 const RISEN_BAND =
   "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
-
-/** The body cut off at a bottom sheet's figures by the same offset, the
- *  finger's movement handed to it alone (SWIPE_READER, sheet/sheetFollow).
- *  Eased with the sheet once it is drawn where it rests (its popup's
- *  data-ready): the cut is the sheet's slide itself, a straight line of
- *  it, so on the same curve and time it is where the sheet is at every
- *  frame, where it jumped to its end at the let-go and showed a band of
- *  bare sheet under the route through the settle (the gestures audit of
- *  2026-11-23, M1). The scroller is a composited layer of its own
- *  (will-change: transform, with no transform set, so nothing moves and no
- *  fixed part is held to it; none is), so each frame of the eased cut
- *  changes only the clip the compositor applies to the layer's pixels,
- *  where it repainted the whole scroller every frame of a settle (the
- *  motion audit of 2026-11-23, fpl-motion, low). */
-const CUT_BOTTOM = `[will-change:transform] [clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)] group-data-ready/sheet:transition-[clip-path] duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;
 
 /** Where the panel's top-right button sits, one place in every panel. */
 const CORNER_VARS = {
@@ -55,8 +39,6 @@ interface ScrollerProps {
   off: boolean;
   /** --sheet-head: what a list's pinned head sticks under. */
   head: string;
-  /** The figures pinned at its foot, so its body is cut off there. */
-  cut: boolean;
   /** Under a foot bar beside the sheet (sheet/FootBar, SheetFoot's
    *  BesideSheet: "bar") room at its end as tall as the bar, so its last
    *  row scrolls clear above it. With none its foot (SheetFoot) ends the
@@ -101,10 +83,7 @@ export function SheetScroller(p: ScrollerProps) {
       // page, so the head stays put as the rows stop (the owner,
       // 2026-11-22: "When I scroll up on the plan, it keeps scrolling up
       // and the title disappears"), as Apple Maps' card does.
-      className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain print:overflow-visible",
-        onPhone && fromBottom && p.cut && CUT_BOTTOM,
-      )}
+      className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain print:overflow-visible")}
     >
       <PointerTapDiv
         data-head-band=""

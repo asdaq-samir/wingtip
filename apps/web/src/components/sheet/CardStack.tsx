@@ -8,7 +8,6 @@ import { AT_PILL, letGo, snapsOf } from "./insets";
 import { EASE, FROM_BELOW, FROM_EDGE, RISE, SIDE_EASE } from "./cardMotion";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, frontOffset, frontUnder, sheetTopRef, useRidingCard } from "./sheetTopSlot";
-import { useSwipeRelay } from "./sheetFollow";
 import { SheetViewport } from "./SheetViewport";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { tapOpens } from "./sheetLayout";
@@ -138,9 +137,8 @@ function CardDrawer({
   ...p
 }: StackProps & { entry: CardEntry; top: boolean; riding: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
-  // Its popup, watched for its movement's readers (sheet/sheetFollow).
+  // Its popup, for where it goes back down to as it closes.
   const [popup, setPopup] = useState<HTMLElement | null>(null);
-  const relayed = useSwipeRelay(setPopup);
   // The card's own content box taken into this drawer's scroller (useCardFrame).
   const content = entry.host;
   const slot = useCallback(
@@ -253,7 +251,7 @@ function CardDrawer({
             style={{ bottom: "var(--drawer-keyboard-inset, 0px)" }}
           >
             <Drawer.Popup
-              ref={relayed}
+              ref={setPopup}
               role="region"
               aria-label={frame.label}
               aria-labelledby={frame.label ? undefined : frame.labelledBy}
@@ -278,9 +276,8 @@ function CardDrawer({
                 p.look,
                 // Its own snap offset and drag, from the sheet's offset it is
                 // drawn in (--sheet-base, SheetDrawer). Its offset copied for
-                // what is inside (sheet/insets' HOLD_AT_EDGE): Base UI's own
-                // does not inherit; the finger's movement handed to its
-                // readers alone (sheet/sheetFollow).
+                // what is inside (a card's room, ProfileCard, PastFlightCard):
+                // Base UI's own does not inherit.
                 onPhone &&
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)]",
                 onPhone && p.ready && EASE,

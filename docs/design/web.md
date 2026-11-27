@@ -418,12 +418,13 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   short move, from the right edge in the inspector's column and up over
   the side panel, the column's ground fading with it; the side panel's
   edge glides between its head and the window's height by a clip
-  (`useSideGlide`). The finger's movement (`--sheet-swipe`) is registered
-  with `inherits: false` and handed by script only to the parts that read
-  it (`sheet/sheetFollow`), so a drag restyles those parts, not the whole
-  sheet; FPL's pinned figures follow a settle by an animation of their
-  own on the Drawer's curve that keeps their path, riding the plan to the
-  foot and stopping there (`sheet/pinFollow`). The map's
+  (`useSideGlide`). Nothing inside a sliding popup is moved against its
+  slide: what stays still at the screen's foot -- FPL's foot bar, the
+  figures in flight and in a dry run, a card's tab bar -- stands beside the
+  popup in the Drawer's viewport (`sheet/FootBar`, `SheetFoot`'s
+  BesideSheet, `sheet/CardFoot`), so a drag restyles nothing in the sheet
+  and nothing there can drift from it (the sheet-motion audit of
+  2026-11-23; wave 2 of the speed work, 2026-11-27). The map's
   buttons move onto its top in the commit it opens in, and glide (Web
   Animations, on the Drawer's time and curve) only when handed to a top
   at another height (Base UI writes the snap offset as 0 until it has
@@ -522,8 +523,8 @@ is picked on the map at a time, in one yellow (rules.md, 14;
 - `prefers-reduced-motion`: animate only inside `(prefers-reduced-motion:
   no-preference)`, keep normal scrolling, drop zooms and autoplay
   ([web.dev reduced motion][webdev-reduced-motion]). One exception, as
-  iOS has it: a sheet's slide between its sizes, and what is held against
-  it, keep the Drawer's time (`SHEET_SLIDE`, the `.sheet-slide` rule in
+  iOS has it: a sheet's slide between its sizes and a card's keep the
+  Drawer's time (`SHEET_SLIDE`, the `.sheet-slide` rule in
   index.css), a move along one axis the pilot made, where a jump lost
   where the sheet went (the apple-design audit of 2026-11-23, M5; the
   owner took the recommendation). Vercel adds: CSS
@@ -863,11 +864,14 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    detent, `useTabScroll` keeping their room as the scroller resizes so no
    swap clamps the scroll), in
    a glass capsule floating at the card's foot like Maps' group of
-   buttons: sticky at the foot of the card's scroller and moved up by the
-   Drawer's own offset (`--sheet-offset`, `--sheet-swipe`) so it stays at
-   the foot of the part in sight at every height, hidden at the pill with
-   the rest of the body; its own room in the flow is the room the last row
-   scrolls clear of it. Glass (`liquid-glass`) because it floats over the
+   buttons: on a phone's bottom sheet in the card's foot slot, a fixed
+   slot at the screen's foot beside the sliding cards (`sheet/CardFoot`),
+   so the card slides behind it at every height; in sight while the card
+   is the top one and above the pill, changed as a drag is let go, never
+   with the finger; the slot's height the card's end room and scroll
+   padding (`useCardFootHeight`), so the last row scrolls clear of it.
+   Beside the side panel and on a top sheet it is sticky at the foot of
+   the card's scroller, its own room in the flow the last row's. Glass (`liquid-glass`) because it floats over the
    card, the one place glass stays (rules.md; the owner, 2026-11-10), at
    the denser bar fill and blur (`material.bar-fill` 0.6, `bar-blur` 30: the content scrolling under it
    shows through, blurred, as an iOS 26 tab bar's does). The
@@ -1108,8 +1112,10 @@ card's bar stays the stock Tabs (`CardTabBar`), being tabs, not
 buttons. The strip and the bar are one fixed bar over the screen's foot,
 outside the sliding sheet (`components/sheet/FootBar`, drawn by
 `SheetDrawer` beside the Drawer's popup in its viewport, as iOS 26 puts a
-tab bar's bottom accessory over its tab bar; beside the side panel, on a
-top sheet and in flight the foot is the sheet's own, `SheetFoot`), so the
+tab bar's bottom accessory over its tab bar; in flight and in a dry run
+the foot is the sheet's own, `SheetFoot`, beside the popup the same way
+in its `BesideSheet`; beside the side panel and on a top sheet it is in
+the sheet), so the
 sheet slides behind it and nothing in it follows the sheet (the
 sheet-motion audit of 2026-11-23, option B, which the owner took). Before,
 the figures were held at the foot from inside the sliding popup

@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsIndicator, TabsList, TabsTrigger } from "./ui/tabs";
-import { CARD_FOOT_ROOM, HOLD_AT_EDGE } from "./sheet/insets";
+import { CARD_FOOT_ROOM } from "./sheet/insets";
 import { InCardFoot } from "./sheet/CardFoot";
 import { FloatingBar, FloatingBarFace } from "./FloatingBar";
 import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM, FLOATING_BAR_PICKED, FLOATING_BAR_ROOM } from "./floatingBarLook";
@@ -117,7 +117,7 @@ export function CardTabBar<T extends string>({
         // over it (GRABBER_ROOM), as FPL's does (SheetFoot), where it lay on the
         // grabber's pill (the HIG audit of 2026-11-23, M3).
         <div
-          className={cn("sticky bottom-0 z-10", room, HOLD_AT_EDGE)}
+          className={cn("sticky bottom-0 z-10", room)}
           style={{ ...foot, marginBottom: `calc(-1 * ${CARD_FOOT_ROOM})` }}
           data-testid={testId}
         >

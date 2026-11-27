@@ -106,9 +106,9 @@ export function SheetFoot(p: {
  * sheet slides behind it and nothing in it follows the sheet (the
  * sheet-motion audit of 2026-11-23: anything that stays still at the foot
  * lives outside the sliding panel). It stood in the popup, moved back by
- * the Drawer's offset and the finger's movement on the Drawer's curve
- * (HOLD_AT_EDGE), with the body cut where it began, and could slide apart
- * from the sheet on the iPhone mid-drag.
+ * the Drawer's offset and the finger's movement on the Drawer's curve,
+ * with the body cut where it began, and could slide apart from the sheet
+ * on the iPhone mid-drag.
  *
  * On the sheet's own ground, carried on under the home indicator, so
  * nothing slid behind it shows there. Its ground takes no touch, only its
