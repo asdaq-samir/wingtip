@@ -185,7 +185,8 @@ export function useFlightBriefing({
   const airplane = useAirplaneChosen();
   // The Go / No-Go put together by the engine (gonogo_brief): the tabs' findings, the alternate's, the fields row.
   const verdict = briefVerdict({
-    alternate: alternateCheck.data,
+    // Under IFR a check that failed or was never made is unknown, never ok (14 CFR 91.169(b)).
+    alternate: alternateCheck.data ?? (alternateCheck.isError ? { failed: true } : alternateCheck.isLoading ? { pending: true } : null),
     fields: fields.uses,
     airplane,
     risk: assessment ? { level: assessment.level, line: riskLine(assessment) } : null,

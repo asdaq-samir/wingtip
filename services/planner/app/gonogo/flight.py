@@ -131,13 +131,15 @@ def brief_for(q: PlanQuery, ete_min: float | None) -> dict:
     return _as_dict(route_briefing.briefing(q.dep, q.dest, q.stops, q.depart, ete_min))
 
 
-def alternate_for(dest: str, eta: datetime, tas_kt: float, filed: str) -> dict | None:
-    """The IFR alternate's check (/api/alternate); None where it could not
-    be made, as the web's query that failed."""
+def alternate_for(dest: str, eta: datetime, tas_kt: float, filed: str) -> dict:
+    """The IFR alternate's check (/api/alternate); {"failed": True} where it
+    could not be made, which the engine says is an alternate not checked,
+    never ok (14 CFR 91.169(b) excuses one only where the destination's
+    forecasts show it)."""
     try:
         return _as_dict(route_briefing.alternate(dest, eta, tas_kt, filed))
     except HTTPException:
-        return None
+        return {"failed": True}
 
 
 def briefing_or_failure(q: PlanQuery, ete_min: float | None) -> tuple[dict | None, str | None]:

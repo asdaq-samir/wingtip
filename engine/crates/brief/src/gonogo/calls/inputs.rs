@@ -86,9 +86,13 @@ pub(crate) fn items(i: In, v: &Value, key: &str) -> R<Vec<Item>> {
 }
 
 /// The planner's /api/alternate answer, as much as the finding reads:
-/// None where there is none (`!data`).
+/// None where there is none (`!data`); `failed` where the planner or the
+/// app says the check could not be made, `pending` while it is awaited.
 pub(crate) fn alternates(i: In, data: Option<&Value>) -> R<Option<Alternates>> {
     let Some(data) = data.filter(|d| !matches!(d, Value::Null)) else { return Ok(None) };
+    if truth(data, "failed") || truth(data, "pending") {
+        return Ok(Some(Alternates { failed: truth(data, "failed"), pending: !truth(data, "failed"), ..Alternates::default() }));
+    }
     let required = data.get("destination").is_some_and(|d| truth(d, "required"));
     let alternate = match data.get("alternate") {
         None | Some(Value::Null) => None,
@@ -102,7 +106,7 @@ pub(crate) fn alternates(i: In, data: Option<&Value>) -> R<Option<Alternates>> {
             first_reason: i.strings(a, "reasons")?.into_iter().next(),
         }),
     };
-    Ok(Some(Alternates { required, alternate }))
+    Ok(Some(Alternates { required, alternate, ..Alternates::default() }))
 }
 
 // --- minimums ---------------------------------------------------------------

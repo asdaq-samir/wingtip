@@ -6976,7 +6976,7 @@ export interface VerdictInput {
   } | null;
 }
 /**
- * The planner's /api/alternate answer, as much as the finding reads.
+ * The planner's /api/alternate answer, as much as the finding reads, or {"failed": true} where it could not be had, {"pending": true} while it is awaited.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "GonogoAlternateData".
@@ -6996,6 +6996,14 @@ export interface GonogoAlternateData {
     good?: boolean | null;
     reasons?: string[] | null;
   } | null;
+  /**
+   * True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b)).
+   */
+  failed?: boolean | null;
+  /**
+   * True while an app still awaits the check: the alternate is then pending.
+   */
+  pending?: boolean | null;
 }
 export interface DepartureWindowAnswer {
   hours: DepartureWindowHour[];
@@ -8452,7 +8460,7 @@ export interface GonogoBriefInput {
     line: string;
   } | null;
   /**
-   * /api/alternate's answer; null while it is awaited or where none was asked.
+   * /api/alternate's answer, or {"failed": true} where it failed, {"pending": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b)).
    */
   alternate?: GonogoAlternateData | null;
   /**

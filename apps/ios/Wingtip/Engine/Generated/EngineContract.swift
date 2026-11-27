@@ -5125,10 +5125,14 @@ nonisolated enum EngineContract {
         }
     }
 
-    /// The planner's /api/alternate answer, as much as the finding reads.
+    /// The planner's /api/alternate answer, as much as the finding reads, or {"failed": true} where it could not be had, {"pending": true} while it is awaited.
     nonisolated struct GonogoAlternateData: Codable, Equatable, Sendable {
         var destination: EngineContract.GonogoAlternateDataDestination?
         var alternate: EngineContract.GonogoAlternateDataAlternate?
+        /// True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b)).
+        var failed: Bool?
+        /// True while an app still awaits the check: the alternate is then pending.
+        var pending: Bool?
     }
 
     nonisolated struct GonogoAlternateDataAlternate: Codable, Equatable, Sendable {
@@ -5204,7 +5208,7 @@ nonisolated enum EngineContract {
         var facts: EngineContract.GonogoFacts?
         /// With `facts`: the risk assessment's level and line (gonogo_risk, gonogo_risk_line); null before the briefing.
         var risk: EngineContract.GonogoBriefInputRisk?
-        /// /api/alternate's answer; null while it is awaited or where none was asked.
+        /// /api/alternate's answer, or {"failed": true} where it failed, {"pending": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b)).
         var alternate: EngineContract.GonogoAlternateData?
         /// The departure, the stops and the destination; null or empty where the route has no two ends yet.
         var fields: [EngineContract.GonogoFieldUse]?

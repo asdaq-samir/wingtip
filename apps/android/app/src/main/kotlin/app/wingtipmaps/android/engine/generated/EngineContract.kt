@@ -5180,12 +5180,20 @@ object EngineContract {
     )
 
     /**
-     * The planner's /api/alternate answer, as much as the finding reads.
+     * The planner's /api/alternate answer, as much as the finding reads, or {"failed": true} where it could not be had, {"pending": true} while it is awaited.
      */
     @Serializable
     data class GonogoAlternateData(
         val destination: EngineContract.GonogoAlternateDataDestination? = null,
         val alternate: EngineContract.GonogoAlternateDataAlternate? = null,
+        /**
+         * True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b)).
+         */
+        val failed: Boolean? = null,
+        /**
+         * True while an app still awaits the check: the alternate is then pending.
+         */
+        val pending: Boolean? = null,
     )
 
     @Serializable
@@ -5269,7 +5277,7 @@ object EngineContract {
          */
         val risk: EngineContract.GonogoBriefInputRisk? = null,
         /**
-         * /api/alternate's answer; null while it is awaited or where none was asked.
+         * /api/alternate's answer, or {"failed": true} where it failed, {"pending": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b)).
          */
         val alternate: EngineContract.GonogoAlternateData? = null,
         /**

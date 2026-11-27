@@ -93,8 +93,16 @@ pub fn call(name: &str, v: &Value) -> R<String> {
     let oxygen = oxygen_item(given.get("altitude"));
     input.altitude.cautions.retain(|c| oxygen.as_ref().is_none_or(|o| *c != o.detail));
     // The alternate is an IFR flight's alone (14 CFR 91.169(a)): under VFR
-    // its answer, if one was sent, says nothing.
-    let alternate = if input.weather.ifr { verdict::alternate_finding(alternates(i, v.get("alternate"))?.as_ref()) } else { None };
+    // its answer, if one was sent, says nothing; under IFR none sent is
+    // none checked, which is unknown, never ok (91.169(b)).
+    let alternate = if input.weather.ifr {
+        match alternates(i, v.get("alternate"))? {
+            Some(a) => verdict::alternate_finding(Some(&a)),
+            None => Some(verdict::alternate_unchecked()),
+        }
+    } else {
+        None
+    };
     let fields = permission_item(&read_fields(i, v, "fields")?);
     let items = assemble(
         with_oxygen(verdict::verdict_items(&input), oxygen),
