@@ -13,7 +13,7 @@ const FOOT = ".sticky.bottom-0";
  * Measured, as a head with a line or a verdict under its name is taller
  * than any fixed room (the HIG audit of 2026-11-26, M2); with nothing
  * measured the scroller's own class keeps its room. Each is found as the
- * card's content is put in and changes, and measured as it resizes. On a
+ * card's content is put in and resizes, and measured as it resizes. On a
  * phone's bottom sheet the bar stands in the card's foot slot beside it
  * (sheet/CardFoot), not in the scroller: its height is `footPx`.
  */
@@ -34,24 +34,32 @@ export function useCardScrollRoom(scroller: HTMLElement | null, footPx = 0) {
       if (px) scroller.style.setProperty(`scroll-padding-${side}`, `${px}px`);
       else scroller.style.removeProperty(`scroll-padding-${side}`);
     };
-    const sizes = new ResizeObserver(() => {
-      room("top", head);
-      room("bottom", foot);
-    });
+    // Found again as anything in the card resizes -- its content root as
+    // its parts come in or change, the head or the bar themselves, one
+    // taken out (a detached element is resized to nothing) -- and as the
+    // scroller's own children change: where a subtree MutationObserver
+    // ran at every node any part of the card put in or took out (the
+    // round-2 speed audit).
     const find = () => {
       const nowHead = scroller.querySelector<HTMLElement>(HEAD);
       const nowFoot = scroller.querySelector<HTMLElement>(FOOT);
-      if (nowHead === head && nowFoot === foot) return;
-      head = nowHead;
-      foot = nowFoot;
-      sizes.disconnect();
-      for (const el of [head, foot]) if (el) sizes.observe(el);
+      if (nowHead !== head || nowFoot !== foot) {
+        for (const el of [head, foot]) if (el && el.parentElement !== scroller) sizes.unobserve(el);
+        head = nowHead;
+        foot = nowFoot;
+        for (const el of [head, foot]) if (el) sizes.observe(el);
+      }
       room("top", head);
       room("bottom", foot);
     };
-    const parts = new MutationObserver(find);
-    parts.observe(scroller, { childList: true, subtree: true });
-    find();
+    const sizes = new ResizeObserver(find);
+    const roots = () => {
+      for (const child of scroller.children) sizes.observe(child);
+      find();
+    };
+    const parts = new MutationObserver(roots);
+    parts.observe(scroller, { childList: true });
+    roots();
     return () => {
       parts.disconnect();
       sizes.disconnect();
