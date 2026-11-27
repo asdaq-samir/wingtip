@@ -2569,6 +2569,12 @@ fun Engine.windComponents(fromDeg: Double, kt: Double, headingDeg: Double): Resu
     rule("wind_components", EngineContract.WindComponentsInput(fromDeg = fromDeg, kt = kt, headingDeg = headingDeg))
 
 /**
+ * wind_arrow and wind_barb for many fields in one call, in the order asked: the map's airport weather marks for every METAR in view at each rebuild. Each field's arrow as wind_arrow gives it (10 kt or more, or gusting, the owner's pick, 2026-11-10; red past the airplane's maximum demonstrated crosswind, the POH's, 14 CFR 23.233(a) before amendment 23-64) and its barb as wind_barb (FAA-H-8083-28B, 25.2.3.4.5), null where no wind is reported.
+ */
+fun Engine.windMarks(fields: List<EngineContract.WindMarksInputFieldsItem>): Result<List<EngineContract.WindMarksAnswerItem>> =
+    rule("wind_marks", EngineContract.WindMarksInput(fields = fields))
+
+/**
  * The wind a field's runways are chosen by (lib/pattern WindPick, AC 90-66C 11.5), or null with no wind to go by.
  */
 fun Engine.windPick(runways: List<EngineContract.Runway>? = null, nearby: EngineContract.WindPickInputNearby? = null, forecastAt: Double? = null): Result<EngineContract.WindPickAnswer?> =

@@ -13,6 +13,8 @@
 //!   where that least crosswind is more than the airplane's demonstrated
 //!   crosswind; never red with no airplane or no figure for it.
 //! - `wind_barb`: the station model's flags, barbs and half-barbs.
+//! - `wind_marks`: both for a list of fields in one call, the map's many
+//!   METARs at each rebuild asked once rather than twice a field.
 //!
 //! A caution, never a limit (the owner, 2026-10-23: warn, never limit).
 
@@ -133,6 +135,15 @@ pub fn wind_barb(speed_kt: f64) -> Barb {
     Barb { calm: false, flags: fives / 10, barbs: (fives % 10) / 2, half_barbs: fives % 2 }
 }
 
+/// wind_arrow on one field's asked figures.
+fn arrow_of(i: In, v: &Value) -> R<(bool, bool)> {
+    Ok(wind_arrow(i.opt_num(v, "speed_kt")?, i.opt_num(v, "gust_kt")?, i.opt_num(v, "crosswind_kt")?, i.opt_num(v, "demonstrated_kt")?))
+}
+
+fn barb_json(b: Barb) -> String {
+    format!("{{\"calm\":{},\"flags\":{},\"barbs\":{},\"half_barbs\":{}}}", b.calm, b.flags, b.barbs, b.half_barbs)
+}
+
 /// The rules by name, as their contract files (crates/brief/contract) name
 /// them to the dispatcher.
 #[cfg_attr(target_arch = "wasm32", inline(always))]
@@ -164,17 +175,25 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             })
         }
         "wind_arrow" => {
-            let (shown, over) = wind_arrow(
-                i.opt_num(v, "speed_kt")?,
-                i.opt_num(v, "gust_kt")?,
-                i.opt_num(v, "crosswind_kt")?,
-                i.opt_num(v, "demonstrated_kt")?,
-            );
+            let (shown, over) = arrow_of(i, v)?;
             Ok(format!("{{\"shown\":{shown},\"over\":{over}}}"))
         }
-        "wind_barb" => {
-            let b = wind_barb(i.num(v, "speed_kt")?);
-            Ok(format!("{{\"calm\":{},\"flags\":{},\"barbs\":{},\"half_barbs\":{}}}", b.calm, b.flags, b.barbs, b.half_barbs))
+        "wind_barb" => Ok(barb_json(wind_barb(i.num(v, "speed_kt")?))),
+        // Each field's arrow and barb in one answer, in the order asked: the
+        // web's map rebuilds the marks of hundreds of METAR fields at once.
+        // A field with no wind reported has no barb (null).
+        "wind_marks" => {
+            let mut out = String::from("[");
+            for (n, f) in i.list(v, "fields")?.iter().enumerate() {
+                let (shown, over) = arrow_of(i, f)?;
+                let barb = i.opt_num(f, "speed_kt")?.map_or_else(|| "null".to_owned(), |kt| barb_json(wind_barb(kt)));
+                if n > 0 {
+                    out.push(',');
+                }
+                out.push_str(&format!("{{\"shown\":{shown},\"over\":{over},\"barb\":{barb}}}"));
+            }
+            out.push(']');
+            Ok(out)
         }
         _ => Err(format!("the engine has no rule called {name:?}")),
     }
@@ -237,6 +256,24 @@ mod tests {
         assert_eq!(wind_arrow(Some(18.0), Some(26.0), Some(17.0), Some(15.0)), (true, true));
         assert_eq!(wind_arrow(Some(18.0), Some(26.0), Some(15.0), Some(15.0)), (true, false));
         assert_eq!(wind_arrow(Some(18.0), Some(26.0), Some(17.0), None), (true, false));
+    }
+
+    #[test]
+    fn the_list_form_is_each_field_asked_alone() {
+        let v = crate::json::parse(
+            r#"{"fields":[{"speed_kt":18,"gust_kt":26,"crosswind_kt":17,"demonstrated_kt":15},{"speed_kt":null},{"speed_kt":2}]}"#,
+        )
+        .unwrap();
+        let shown = call("wind_marks", &v).unwrap();
+        assert_eq!(
+            shown,
+            concat!(
+                r#"[{"shown":true,"over":true,"barb":{"calm":false,"flags":0,"barbs":2,"half_barbs":0}},"#,
+                r#"{"shown":false,"over":false,"barb":null},"#,
+                r#"{"shown":false,"over":false,"barb":{"calm":true,"flags":0,"barbs":0,"half_barbs":0}}]"#
+            )
+        );
+        assert_eq!(call("wind_marks", &crate::json::parse(r#"{"fields":[]}"#).unwrap()).unwrap(), "[]");
     }
 
     #[test]

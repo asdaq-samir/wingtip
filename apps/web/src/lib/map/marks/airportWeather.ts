@@ -1,5 +1,5 @@
 import type { AirportPin } from "../../api/types";
-import { callEngine, type EngineAnswer } from "../../engine/engine";
+import { callEngine } from "../../engine/engine";
 import { reportedDirection, reportedVisibility } from "../../format";
 import { barbId } from "./stationModel";
 
@@ -10,7 +10,7 @@ import { barbId } from "./stationModel";
  * says for the mark. What counts -- zoomed out, a barb from 10 kt or a
  * gust, red past the airplane's demonstrated crosswind, the barb's flags,
  * barbs and half-barbs -- is the engine's
- * (wind_arrow, wind_barb; the least crosswind on the field's runways comes
+ * (wind_marks, wind_arrow and wind_barb for many fields at once; the least crosswind on the field's runways comes
  * worked out by the planner's least_crosswind); how it is written here is
  * the app's.
  */
@@ -62,42 +62,29 @@ export function stationLines(w: PinWeather): string {
   return [sight, ceilingWords(w)].filter(Boolean).join("\n");
 }
 
-/** The engine's answers for the winds already asked, by what was asked:
- *  each rule is the same answer for the same question, and the map's
- *  thousand METAR fields share a few dozen winds, where each field's marks
- *  were two calls into the .wasm at every rebuild (the speed audit of
- *  2026-11-27). The engine has no many-at-once form of either. Emptied
- *  past MOST, so it never grows without end. */
-const arrows = new Map<string, EngineAnswer<"wind_arrow">>();
-const barbs = new Map<string, EngineAnswer<"wind_barb">>();
-const MOST = 4096;
-function remembered<T>(kept: Map<string, T>, key: string, ask: () => T): T {
-  const had = kept.get(key);
-  if (had !== undefined) return had;
-  if (kept.size >= MOST) kept.clear();
-  const answer = ask();
-  kept.set(key, answer);
-  return answer;
-}
-
-/** A field's marks from its METAR, the picked airplane's demonstrated
- *  crosswind (null with none picked or no figure: the barb then never
- *  red, nothing assumed). */
-export function weatherMarksOf(w: PinWeather, demonstratedKt: number | null): WeatherMarks {
-  const arrowAsked = {
+/** Each field's marks from its METAR, with the picked airplane's
+ *  demonstrated crosswind (null with none picked or no figure: the barb
+ *  then never red, nothing assumed), in the order given. The engine is
+ *  asked once for them all (wind_marks), where each field was two calls
+ *  into the .wasm at every rebuild of the map's hundreds of METAR fields
+ *  (the speed audit of 2026-11-27). */
+export function weatherMarksOfAll(ws: readonly PinWeather[], demonstratedKt: number | null): WeatherMarks[] {
+  if (ws.length === 0) return [];
+  const fields = ws.map((w) => ({
     speed_kt: w.wind_speed_kt ?? null,
     gust_kt: w.wind_gust_kt ?? null,
     crosswind_kt: w.crosswind_kt ?? null,
     demonstrated_kt: demonstratedKt,
-  };
-  const shown = remembered(arrows, JSON.stringify(arrowAsked), () => callEngine("wind_arrow", arrowAsked));
-  const directed = w.wind_dir_true_deg != null;
-  const speed = w.wind_speed_kt;
-  const drawn = speed == null ? null : remembered(barbs, String(speed), () => callEngine("wind_barb", { speed_kt: speed }));
-  // Calm needs no direction; any other barb does, so a VRB wind is written.
-  const barb = drawn && (drawn.calm || directed) ? barbId(drawn, shown.over) : null;
-  const variable = drawn && !barb ? `VRB${String(Math.round(w.wind_speed_kt ?? 0)).padStart(2, "0")}` : "";
-  return { barb, dir: w.wind_dir_true_deg ?? 0, lines: stationLines(w), far: shown.shown && drawn !== null, over: shown.over, variable };
+  }));
+  const answers = callEngine("wind_marks", { fields });
+  return ws.map((w, n) => {
+    // One answer a field asked; none drawn should the engine ever answer short.
+    const { shown, over, barb: drawn } = answers[n] ?? { shown: false, over: false, barb: null };
+    // Calm needs no direction; any other barb does, so a VRB wind is written.
+    const barb = drawn && (drawn.calm || w.wind_dir_true_deg != null) ? barbId(drawn, over) : null;
+    const variable = drawn && !barb ? `VRB${String(Math.round(w.wind_speed_kt ?? 0)).padStart(2, "0")}` : "";
+    return { barb, dir: w.wind_dir_true_deg ?? 0, lines: stationLines(w), far: shown && drawn !== null, over, variable };
+  });
 }
 
 /** What a screen reader says for a field's mark: "KJVL, IFR, wind 220 at

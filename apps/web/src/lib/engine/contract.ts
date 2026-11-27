@@ -1173,6 +1173,7 @@ export type WeatherInForceAnswer = boolean;
 export type WindAloftAtAnswer = AloftAt | AloftAt[];
 export type WindAtAltitudeAnswer = WindAloft | null | (WindAloft | null)[];
 export type WindCalmAnswer = boolean;
+export type WindMarksAnswer = WindMark[];
 export type WindPickAnswer = {
   /**
    * The end as painted, "" where none is.
@@ -4198,6 +4199,13 @@ export interface EngineContract {
   wind_components: {
     input: WindComponentsInput;
     answer: WindComponentsAnswer;
+  };
+  /**
+   * wind_arrow and wind_barb for many fields in one call, in the order asked: the map's airport weather marks for every METAR in view at each rebuild. Each field's arrow as wind_arrow gives it (10 kt or more, or gusting, the owner's pick, 2026-11-10; red past the airplane's maximum demonstrated crosswind, the POH's, 14 CFR 23.233(a) before amendment 23-64) and its barb as wind_barb (FAA-H-8083-28B, 25.2.3.4.5), null where no wind is reported.
+   */
+  wind_marks: {
+    input: WindMarksInput;
+    answer: WindMarksAnswer;
   };
   /**
    * The wind a field's runways are chosen by (lib/pattern WindPick, AC 90-66C 11.5), or null with no wind to go by.
@@ -15061,6 +15069,32 @@ export interface WindComponentsInput {
 export interface WindComponentsAnswer {
   headwind_kt: number;
   crosswind_kt: number;
+}
+export interface WindMarksInput {
+  fields: WindMarksField[];
+}
+export interface WindMarksField {
+  speed_kt?: number | null;
+  gust_kt?: number | null;
+  /**
+   * The field's least crosswind (least_crosswind).
+   */
+  crosswind_kt?: number | null;
+  /**
+   * The picked airplane's maximum demonstrated crosswind; null with none picked or no figure.
+   */
+  demonstrated_kt?: number | null;
+}
+export interface WindMark {
+  shown: boolean;
+  over: boolean;
+  barb: WindMarkBarb | null;
+}
+export interface WindMarkBarb {
+  calm: boolean;
+  flags: number;
+  barbs: number;
+  half_barbs: number;
 }
 export interface WindPickInput {
   runways?: Runway[] | null;

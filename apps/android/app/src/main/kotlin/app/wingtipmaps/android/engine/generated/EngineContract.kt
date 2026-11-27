@@ -15162,6 +15162,45 @@ object EngineContract {
     )
 
     @Serializable
+    data class WindMarksAnswerItem(
+        val shown: Boolean,
+        val over: Boolean,
+        val barb: EngineContract.WindMarksAnswerItemBarb? = null,
+    )
+
+    @Serializable
+    data class WindMarksAnswerItemBarb(
+        val calm: Boolean,
+        val flags: Int,
+        val barbs: Int,
+        @SerialName("half_barbs")
+        val halfBarbs: Int,
+    )
+
+    @Serializable
+    data class WindMarksInput(
+        val fields: List<EngineContract.WindMarksInputFieldsItem>,
+    )
+
+    @Serializable
+    data class WindMarksInputFieldsItem(
+        @SerialName("speed_kt")
+        val speedKt: Double? = null,
+        @SerialName("gust_kt")
+        val gustKt: Double? = null,
+        /**
+         * The field's least crosswind (least_crosswind).
+         */
+        @SerialName("crosswind_kt")
+        val crosswindKt: Double? = null,
+        /**
+         * The picked airplane's maximum demonstrated crosswind; null with none picked or no figure.
+         */
+        @SerialName("demonstrated_kt")
+        val demonstratedKt: Double? = null,
+    )
+
+    @Serializable
     data class WindPickAnswer(
         /**
          * The end as painted, "" where none is.

@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../fixtures/airportWeatherMarks.json";
 import { callEngine } from "../../engine/engine";
-import { ceilingWords, spokenWeather, stationLines, visibilityWords, weatherMarksOf, type PinWeather } from "./airportWeather";
+import { ceilingWords, spokenWeather, stationLines, visibilityWords, weatherMarksOfAll, type PinWeather } from "./airportWeather";
 import { barbId, stationPictures } from "./stationModel";
+
+function weatherMarksOf(w: PinWeather, demonstrated: number | null) {
+  const [marks] = weatherMarksOfAll([w], demonstrated);
+  if (!marks) throw new Error("no marks for the field asked");
+  return marks;
+}
 
 const pin = (w: Partial<PinWeather>): PinWeather => ({
   wind_dir_true_deg: null,
@@ -69,6 +75,14 @@ describe("a field's marks", () => {
     expect(weatherMarksOf(pin({ wind_dir_true_deg: 90, wind_speed_kt: 2 }), null)).toMatchObject({ barb: "wx-barb|calm" });
     // A variable wind: no barb can point it, so it is written as the METAR does.
     expect(weatherMarksOf(pin({ wind_speed_kt: 6, wind_gust_kt: 16 }), 15)).toMatchObject({ barb: null, far: true, variable: "VRB06" });
+  });
+
+  it("asks for many fields at once and answers each in its order", () => {
+    const ws = [pin({ wind_dir_true_deg: 220, wind_speed_kt: 18, wind_gust_kt: 26, crosswind_kt: 17 }), pin({}), pin({ wind_speed_kt: 0 })];
+    const all = weatherMarksOfAll(ws, 15);
+    expect(all.map((m) => m.barb)).toEqual(["wx-barb|0|2|0|over", null, "wx-barb|calm"]);
+    expect(all.map((m) => m.far)).toEqual([true, false, false]);
+    expect(weatherMarksOfAll([], 15)).toEqual([]);
   });
 
   it("draws a barb's feathers on the clockwise side of a north-pointing stem, a lone half-barb in from the end", () => {

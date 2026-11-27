@@ -244,10 +244,10 @@ visibility_reportable
 vor_check_limit_deg
 weather_in_force
 weather_worse
-wind_arrow
 wind_barb
 wind_calm
 wind_components
+wind_marks
 wind_pick
 wind_steady_or_gust
 wind_triangle

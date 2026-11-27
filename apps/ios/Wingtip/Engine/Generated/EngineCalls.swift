@@ -2140,6 +2140,11 @@ nonisolated extension Engine {
         try Self.rule("wind_components", EngineContract.WindComponentsInput(fromDeg: fromDeg, kt: kt, headingDeg: headingDeg))
     }
 
+    /// wind_arrow and wind_barb for many fields in one call, in the order asked: the map's airport weather marks for every METAR in view at each rebuild. Each field's arrow as wind_arrow gives it (10 kt or more, or gusting, the owner's pick, 2026-11-10; red past the airplane's maximum demonstrated crosswind, the POH's, 14 CFR 23.233(a) before amendment 23-64) and its barb as wind_barb (FAA-H-8083-28B, 25.2.3.4.5), null where no wind is reported.
+    static func windMarks(fields: [EngineContract.WindMarksInputFieldsItem]) throws -> [EngineContract.WindMarksAnswerItem] {
+        try Self.rule("wind_marks", EngineContract.WindMarksInput(fields: fields))
+    }
+
     /// The wind a field's runways are chosen by (lib/pattern WindPick, AC 90-66C 11.5), or null with no wind to go by.
     static func windPick(runways: [EngineContract.Runway]? = nil, nearby: EngineContract.WindPickInputNearby? = nil, forecastAt: Double? = nil) throws -> EngineContract.WindPickAnswer? {
         try Self.rule("wind_pick", EngineContract.WindPickInput(runways: runways, nearby: nearby, forecastAt: forecastAt))

@@ -14583,6 +14583,46 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct WindMarksAnswerItem: Codable, Equatable, Sendable {
+        var shown: Bool
+        var over: Bool
+        var barb: EngineContract.WindMarksAnswerItemBarb?
+    }
+
+    nonisolated struct WindMarksAnswerItemBarb: Codable, Equatable, Sendable {
+        var calm: Bool
+        var flags: Int
+        var barbs: Int
+        var halfBarbs: Int
+
+        enum CodingKeys: String, CodingKey {
+            case calm
+            case flags
+            case barbs
+            case halfBarbs = "half_barbs"
+        }
+    }
+
+    nonisolated struct WindMarksInput: Codable, Equatable, Sendable {
+        var fields: [EngineContract.WindMarksInputFieldsItem]
+    }
+
+    nonisolated struct WindMarksInputFieldsItem: Codable, Equatable, Sendable {
+        var speedKt: Double?
+        var gustKt: Double?
+        /// The field's least crosswind (least_crosswind).
+        var crosswindKt: Double?
+        /// The picked airplane's maximum demonstrated crosswind; null with none picked or no figure.
+        var demonstratedKt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case speedKt = "speed_kt"
+            case gustKt = "gust_kt"
+            case crosswindKt = "crosswind_kt"
+            case demonstratedKt = "demonstrated_kt"
+        }
+    }
+
     nonisolated struct WindPickAnswer: Codable, Equatable, Sendable {
         /// The end as painted, "" where none is.
         var ident: String
