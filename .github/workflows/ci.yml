@@ -1300,7 +1300,7 @@ jobs:
         with:
           python-version-file: .tool-versions
       - run: pip install cfn-lint==1.60.0
-      - run: cfn-lint infra/cloudformation/template.yaml
+      - run: cfn-lint infra/cloudformation/*.yaml
       - name: docker compose config (infra/docker-compose.prod.yml)
         run: |
           printf '%s\n' IMAGE_REGISTRY=registry.example/wingtip PUBLIC_HOST=app.example.com \

@@ -33,7 +33,7 @@ confirmed once), or from the gateway's monitor to `APP_ALERT_EMAILS`.
 
 | The email says | From | Runbook |
 |---|---|---|
-| `HealthAlarm`: not answering its health check | Route 53, through CloudFront, every 30 s | [A service down](#a-service-down), then [A Spot interruption](#a-spot-interruption) |
+| `HealthAlarm`: not answering its health check (made only by a stack in us-east-1; README-AWS, "The first deploy") | Route 53, through CloudFront, every 30 s | [A service down](#a-service-down), then [A Spot interruption](#a-spot-interruption) |
 | `ServicesAlarm`: a service not running or healthy for 15 minutes | the server's `health.sh` | [A service down](#a-service-down) |
 | `GatewayAlertAlarm`, or the gateway's own mail: `DOWN` / `BACK` lines | the gateway's minute check (`UptimeWatch`) | [A service down](#a-service-down) or [A feed outage](#a-feed-outage), by the line |
 | `RootDiskAlarm` / `DataDiskAlarm`: over 85% | `health.sh` | [The disk filling](#the-disk-filling) |
@@ -172,7 +172,7 @@ too, and the planner fetches a corridor's again as routes need them.
 Nothing under `postgres` or `data/labels` is ever deleted by hand. To grow the disk, which gp3 does in place with the server up:
 
 ```bash
-aws cloudformation deploy --region us-east-1 --stack-name wingtip \
+aws cloudformation deploy --region us-east-2 --stack-name wingtip \
   --template-file infra/cloudformation/template.yaml --capabilities CAPABILITY_IAM \
   --parameter-overrides DataVolumeGb=60 --no-execute-changeset   # look, then execute
 # then on the server, once the volume says "optimizing":
@@ -188,7 +188,7 @@ keeps the last 20 images of each service.
 2. Deploy it:
 
    ```bash
-   aws ssm send-command --region us-east-1 --targets Key=tag:Name,Values=<ServerName> \
+   aws ssm send-command --region us-east-2 --targets Key=tag:Name,Values=<ServerName> \
      --document-name AWS-RunShellScript \
      --parameters 'commands=["/srv/wingtip/repo/infra/server/deploy.sh <full 40-character hash>"]'
    ```
@@ -352,18 +352,28 @@ in a loop. The signs: `HealthAlarm` or `ServicesAlarm` with no Spot
 interruption behind it, the planner slow in its logs, or the budget's 80%
 mail with CloudFront's requests the cause in Cost Explorer.
 
-Turn the limit on, which makes the AWS WAF web ACL (`TileRateLimit`) and
-puts it on the distribution: 429 to an address past 3,000 tile requests,
-or 3,000 other planner requests, in five minutes. Every other parameter
-keeps its value:
+Turn the limit on, which makes the AWS WAF web ACL (`TileRateLimit`, in
+edge.yaml since decision 0064) and puts it on the distribution: 429 to an
+address past 3,000 tile requests, or 3,000 other planner requests, in five
+minutes. Two deploys, the edge stack in us-east-1 and then the main stack
+with its output; every other parameter keeps its value:
 
 ```bash
-aws cloudformation deploy --region us-east-1 --stack-name wingtip \
+aws cloudformation deploy --region us-east-1 --stack-name wingtip-edge \
+  --template-file infra/cloudformation/edge.yaml \
+  --parameter-overrides EdgeRateLimit=on
+ACL=$(aws cloudformation describe-stacks --region us-east-1 --stack-name wingtip-edge \
+  --query "Stacks[0].Outputs[?OutputKey=='WebAclArn'].OutputValue" --output text)
+aws cloudformation deploy --region us-east-2 --stack-name wingtip \
   --template-file infra/cloudformation/template.yaml \
   --capabilities CAPABILITY_IAM \
-  --parameter-overrides EdgeRateLimit=on
+  --parameter-overrides WebAclArn="$ACL"
 ```
 
-The distribution takes some minutes to deploy the change. It costs about
-$7.20 a month from then (README-AWS.md, "What it costs");
-`EdgeRateLimit=off` takes it away again.
+On the owner's account as it is (a new AWS experience project), AWS
+offers no WAF for CloudFront and no CloudFormation in us-east-1, so this
+needs advanced features activated and the project's policies widened
+first (README-AWS.md). The distribution takes some minutes to deploy the
+change. It costs about $7.20 a month from then (README-AWS.md, "What it
+costs"); `WebAclArn=` (empty) on the main stack takes it off, then
+`EdgeRateLimit=off` on the edge stack deletes it.

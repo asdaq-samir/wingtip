@@ -113,7 +113,7 @@ XCODE = (
 XCODE_NOTE = "First engine/bindings/ffi/build-xcframework.sh and xcodegen, as scripts/dev/check.sh ios runs them."
 GRADLE = "(cd apps/android && ./gradlew --quiet testDebugUnitTest --tests '{}')"
 GRADLE_NOTE = "With JAVA_HOME, ANDROID_HOME and the engine as scripts/dev/check.sh android sets them; lint is `./gradlew lintDebug`."
-CFN = 'docker run --rm -v "$PWD/infra/cloudformation:/d" -w /d python:3-slim sh -c "pip install -q cfn-lint && cfn-lint template.yaml"'
+CFN = 'docker run --rm -v "$PWD/infra/cloudformation:/d" -w /d python:3-slim sh -c "pip install -q cfn-lint && cfn-lint *.yaml"'
 WEB_LEG = "The web leg's checks start from it: `PART=web scripts/ci/guards.sh` is the leg, where the host has npm."
 LEGS = "Its leg, where no guard is named: `PART=web|engine scripts/ci/guards.sh`. Not `repo` whole: its log ends `failed: <names>`."
 # On the Mac guards.sh skips a check whose tool is missing: these five fetch theirs with uv, uvx, pipx or npx.
