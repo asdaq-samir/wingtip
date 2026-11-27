@@ -4528,8 +4528,9 @@ data class HoldLeg (
 )
 
 /**
- * GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP
- * and FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it
+ * GET /api/icing/route: the NWS's current and forecast icing (the CIP
+ * analysis and the IFI forecast grids the weather service keeps; AIM
+ * 7-1-4) on each leg at the altitude flown, the worst of it
  * and the Go / No-Go's line (the engine's icing_forecast_route); the
  * legs it had no forecast for; the hour the forecast was issued.
  */

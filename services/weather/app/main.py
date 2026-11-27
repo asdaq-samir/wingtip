@@ -89,9 +89,11 @@ PRODUCTS = (
 def products() -> tuple[Product, ...]:
     """The products this service fetches: every one, but the flow layer
     only while WEATHER_FLOW_ON says so (settings.flow_on), so a parked
-    layer costs no download and no memory."""
-    on = get_settings().flow_on
-    return tuple(p for p in PRODUCTS if on or p.name != "flow")
+    layer costs no download and no memory, and the icing grids unless
+    WEATHER_ICING_ON is off (settings.icing_on, the test stack's)."""
+    settings = get_settings()
+    off = {name for name, on in (("flow", settings.flow_on), (icing.STORE_NAME, settings.icing_on)) if not on}
+    return tuple(p for p in PRODUCTS if p.name not in off)
 
 
 #: What a fetch may fail with: its source, in its own words.

@@ -1,18 +1,19 @@
-//! Forecast icing on an IFR route (#216, item 6): the icing severity the
-//! Aviation Weather Center forecasts on each leg at the altitude it is
-//! flown, and the layer the icing is in, read from the AWC's vertical
-//! cross-sections along the leg -- the icing its Graphical Forecasts for
-//! Aviation draw (AIM 7-1-4: "icing ... forecasts are available ... from the
-//! surface up to 30,000 ft MSL"), which the AWC makes from its Current and
-//! Forecast Icing Products (CIP, FIP). The planner fetches each leg's
-//! section for the hour the airplane is on it (wingtip.icing_forecast); what
-//! the section says for the flight is decided here.
+//! Forecast icing on an IFR route (#216, item 6): the icing severity
+//! forecast on each leg at the altitude it is flown, and the layer the icing
+//! is in, read from a vertical section along the leg (AIM 7-1-4: "icing ...
+//! forecasts are available ... from the surface up to 30,000 ft MSL"). The
+//! planner samples each leg's section out of the NWS's Current Icing
+//! Product analysis and its In-Flight Icing forecast grids, which the
+//! weather service keeps (wingtip.icing_forecast; NWS SCN 26-87 and 25-80);
+//! what the section says for the flight is decided here.
 //!
 //! A section is `width` columns along the leg by `data_levels` levels up,
 //! its `values` level-fastest (`values[level + column * data_levels]`, as
-//! the AWC's own page reads them), each the AWC's severity category: 0
-//! none, 1 trace, 2 light, 3 moderate, 4 heavy (the GFA's legend: "Trace,
-//! Light, Mod, Heavy"), a negative value no forecast there. `sfc_hgt` is
+//! the AWC's own page reads them), each the severity category: 0 none, 1
+//! trace, 2 light, 3 moderate, 4 severe (GRIB2 code table 4.228, "none,
+//! trace, light, moderate, and severe", as NWS SCN 26-87 gives the CIP's
+//! and the IFI's; AIM 7-1-19's scale ends at severe too), a negative value
+//! no forecast there. `sfc_hgt` is
 //! the ground under each column in metres; a level under it is ground, not
 //! air, and is not read.
 //!
@@ -31,9 +32,9 @@ use crate::json::{self, Value};
 use wingtip_core::sort::StableSort;
 use wingtip_core::units::FT_PER_M;
 
-/// The AWC's severity categories by their number (the GFA's legend; "heavy"
-/// is the AWC's word where AIM 7-1-19's scale ends at "severe").
-pub const SEVERITY: [&str; 5] = ["none", "trace", "light", "moderate", "heavy"];
+/// The severity categories by their number (GRIB2 code table 4.228 as the
+/// NWS's CIP and IFI give them; AIM 7-1-19's scale).
+pub const SEVERITY: [&str; 5] = ["none", "trace", "light", "moderate", "severe"];
 
 type R<T> = Result<T, String>;
 

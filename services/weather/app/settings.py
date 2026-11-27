@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     #: review, 2026-11-21), off by default in every app, and its GFS, HRRR
     #: and DAFS downloads are the service's largest feed and memory.
     flow_on: bool = False
+    #: Whether the Brief's forecast icing grids (app.icing: the NWS CIP and
+    #: IFI, about 110 MB an hour) are fetched. On but for the browser-test
+    #: stack (infra/docker-compose.ci.yml), whose icing answers are mocked.
+    icing_on: bool = True
     #: The map's flow layer (app.flow): the HRRR runs hourly, so looked for
     #: four times an hour while planning; a frame already held is not
     #: downloaded again. Every three hours otherwise.

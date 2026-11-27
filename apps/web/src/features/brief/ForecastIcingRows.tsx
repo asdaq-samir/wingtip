@@ -36,7 +36,7 @@ export default function ForecastIcingRows({ vm, legs }: { vm: FlightBriefing; le
     <ListGroup
       title={WORDING.forecastIcing}
       // The source and its issue, a credit.
-      footer={`AWC CIP and FIP, issued ${clockAndZulu(new Date(found.issued))}`}
+      footer={`NWS current and forecast icing (CIP, IFI), issued ${clockAndZulu(new Date(found.issued))}`}
       className="pt-2"
     >
       {found.legs.map((leg) => {

@@ -12034,7 +12034,7 @@
         "type": "object"
       },
       "IcingForecast": {
-        "description": "GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP\nand FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it\nand the Go / No-Go's line (the engine's icing_forecast_route); the\nlegs it had no forecast for; the hour the forecast was issued.",
+        "description": "GET /api/icing/route: the NWS's current and forecast icing (the CIP\nanalysis and the IFI forecast grids the weather service keeps; AIM\n7-1-4) on each leg at the altitude flown, the worst of it\nand the Go / No-Go's line (the engine's icing_forecast_route); the\nlegs it had no forecast for; the hour the forecast was issued.",
         "properties": {
           "issued": {
             "title": "Issued",

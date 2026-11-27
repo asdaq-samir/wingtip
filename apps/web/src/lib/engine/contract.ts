@@ -9257,7 +9257,7 @@ export interface IcingForecastRouteInput {
       width: number;
       data_levels: number;
       /**
-       * The AWC's severity, 0 none to 4 heavy, negative none forecast, level-fastest.
+       * The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest.
        */
       values: number[];
       /**
@@ -9272,7 +9272,7 @@ export interface IcingForecastRouteAnswer {
   legs: {
     index: number;
     altitude_ft: number;
-    severity: "none" | "trace" | "light" | "moderate" | "heavy" | null;
+    severity: "none" | "trace" | "light" | "moderate" | "severe" | null;
     share: number | null;
     layer: {
       bottom_ft: number;
@@ -9281,7 +9281,7 @@ export interface IcingForecastRouteAnswer {
     valid_s: number | null;
   }[];
   worst: {
-    severity: "trace" | "light" | "moderate" | "heavy";
+    severity: "trace" | "light" | "moderate" | "severe";
     altitudes_ft: number[];
     legs: number[];
   } | null;

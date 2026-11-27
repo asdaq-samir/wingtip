@@ -6715,7 +6715,7 @@ nonisolated enum EngineContract {
     nonisolated struct IcingForecastRouteInputLegsItemSection: Codable, Equatable, Sendable {
         var width: Double
         var dataLevels: Double
-        /// The AWC's severity, 0 none to 4 heavy, negative none forecast, level-fastest.
+        /// The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest.
         var values: [Double]
         /// The ground under each column, m.
         var sfcHgt: [Double]?

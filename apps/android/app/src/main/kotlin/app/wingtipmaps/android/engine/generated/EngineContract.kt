@@ -6891,7 +6891,7 @@ object EngineContract {
         @SerialName("data_levels")
         val dataLevels: Double,
         /**
-         * The AWC's severity, 0 none to 4 heavy, negative none forecast, level-fastest.
+         * The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest.
          */
         val values: List<Double>,
         /**

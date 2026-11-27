@@ -71,6 +71,9 @@ services:
     image: wingtip-weather:ci
     environment:
       WEATHER_REPLAY: /workspace/apps/web/e2e/fixtures/weather
+      # The NWS icing grids (app.icing, about 110 MB an hour) are not in the
+      # recording and the icing spec mocks the planner's answer: not fetched.
+      WEATHER_ICING_ON: "0"
     healthcheck:
       start_interval: 1s
   planner:
