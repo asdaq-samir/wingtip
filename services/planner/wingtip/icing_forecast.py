@@ -18,14 +18,12 @@ its input are unchanged.
 
 Never less than the worst the store knows (the review of 2026-11-27, which
 found the IFI alone a category or two under the AWC's sections on some
-legs): a leg is read off the stored hour nearest its middle, the CIP's
-for a leg flown in its hour, and off every other stored hour within an
-hour of its middle as well -- the hours either side, the CIP beside the
-IFI's same hour -- each point and level the worst of them. That merged
-section gives the severity, the layer and the line; the share of the leg
-in icing is the nearest hour's own, as its grid gives it, not raised by
-the merging -- unless that hour has none at the altitude, when the merged
-section's share goes with the severity it found.
+legs; the owner: "Grids, worst of nearby hours"): which stored hours a leg
+is read off -- the nearest its middle, the CIP's for a leg flown in its
+hour, and every other within an hour -- and how they merge, each point and
+level the worst of them, the share the nearest hour's own, are the
+engine's (icing_forecast_hours, icing_forecast_route); here each picked
+hour is read off its grid along the leg and handed on.
 
 A level the store has no forecast at -- above the products' 30,000 ft, a
 place off their grid, the CIP's levels under the ground -- is -1, which
@@ -57,32 +55,12 @@ STORE_NAME = "icing-forecast"
 #: Points read along a leg, as many as the AWC's sections had columns.
 COLUMNS = 300
 
-#: How far past the stored cycle's last hour a leg is still read from it:
-#: the nearest hour, as each hour's forecast stands for the half hour
-#: either side of it.
-HALF_HOUR_S = 1800
-
 #: The store's mark for no forecast; the engine's "negative, none".
 NONE = -1
 
 
 class IcingForecastUnavailable(RuntimeError):
     """The weather store holds no forecast icing that may be served."""
-
-
-#: How near a leg's middle another stored hour is read beside the nearest:
-#: the hours either side of it.
-NEAR_S = 3600
-
-
-def _primary(hours: list[dict], valid_s: float) -> dict | None:
-    """The stored hour nearest `valid_s`, the CIP's where it and an IFI
-    hour are as near; the first for a time before them all, None for one
-    more than half an hour past the last."""
-    times = [utc.epoch(h["valid"]) for h in hours]
-    if not times or valid_s > max(times) + HALF_HOUR_S:
-        return None
-    return min(zip(times, hours), key=lambda th: (abs(th[0] - valid_s), th[1].get("source") != "cip"))[1]
 
 
 def _ground_m(lats: np.ndarray, lons: np.ndarray) -> list[float] | None:
@@ -139,26 +117,20 @@ class _Grids:
         return _values(self.held[name], self.data["grid"], self.data["levels_ft"], lats, lons)
 
 
-def _leg(grids: _Grids, a: tuple, b: tuple, valid_s: float) -> tuple[dict | None, dict | None]:
-    """A leg's two sections: the nearest stored hour's, and the worst of
-    every stored hour within NEAR_S of its middle; None, None where none
-    is stored for it."""
+def _leg(grids: _Grids, a: tuple, b: tuple, picked: list[int]) -> list[dict | None]:
+    """A leg's sections off the stored hours the engine picked for it
+    (icing_forecast_hours), the nearest first, the ground under it on that
+    one; None for an hour whose grid could not be read, and the others not
+    read where the nearest's could not be, the leg then unchecked."""
+    if not picked:
+        return []
     hours = grids.data["hours"]
-    nearest = _primary(hours, valid_s)
-    if nearest is None:
-        return None, None
     lats, lons = geo.great_circle_points(a, b, COLUMNS)
-    own = grids.values(nearest, lats, lons)
+    own = grids.values(hours[int(picked[0])], lats, lons)
     if own is None:
-        return None, None
-    worst = own
-    for hour in hours:
-        if hour is not nearest and abs(utc.epoch(hour["valid"]) - valid_s) < NEAR_S:
-            other = grids.values(hour, lats, lons)
-            if other is not None:
-                worst = np.maximum(worst, other)
-    ground = _ground_m(lats, lons)
-    return _section(own, ground), _section(worst, ground)
+        return [None]
+    others = [grids.values(hours[int(i)], lats, lons) for i in picked[1:]]
+    return [_section(own, _ground_m(lats, lons)), *(None if v is None else _section(v, None) for v in others)]
 
 
 def along(
@@ -188,21 +160,18 @@ def along(
     for minutes, after in zip(leg_minutes, ground):
         middles.append(t + minutes * 30)
         t += (minutes + after) * 60
+    picked = engine(
+        "icing_forecast_hours",
+        hours=[{"valid_s": utc.epoch(h["valid"]), "source": h.get("source")} for h in data["hours"]],
+        middles_s=middles,
+    )["legs"]
     grids = _Grids(data)
-    read = [_leg(grids, fixes[i], fixes[i + 1], middles[i]) for i in range(legs)]
-
-    def ask(which: int) -> dict:
-        return engine(
-            "icing_forecast_route",
-            levels_ft=LEVELS_FT,
-            legs=[{"altitude_ft": alt, "section": read[i][which], "valid_s": middles[i]} for i, alt in enumerate(altitudes_ft)],
-        )
-
-    nearest, worst = ask(0), ask(1)
-    # The worst's severity, layer and line; the nearest hour's own share,
-    # but where that hour has no icing at the altitude and another near it
-    # has, the worst's: a share of none beside a severity is no answer.
-    for leg, own in zip(worst["legs"], nearest["legs"]):
-        if own["share"] and leg["severity"] not in (None, "none"):
-            leg["share"] = own["share"]
-    return {**worst, "issued": data.get("cycle") or data.get("analysis")}
+    answer = engine(
+        "icing_forecast_route",
+        levels_ft=LEVELS_FT,
+        legs=[
+            {"altitude_ft": alt, "hours": _leg(grids, fixes[i], fixes[i + 1], picked[i]), "valid_s": middles[i]}
+            for i, alt in enumerate(altitudes_ft)
+        ],
+    )
+    return {**answer, "issued": data.get("cycle") or data.get("analysis")}

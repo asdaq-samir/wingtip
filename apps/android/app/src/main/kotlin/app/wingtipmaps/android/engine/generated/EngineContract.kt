@@ -6876,6 +6876,40 @@ object EngineContract {
     )
 
     @Serializable
+    data class IcingForecastHoursAnswer(
+        /**
+         * For each leg, the hours it is read off by index, the nearest first; empty for none.
+         */
+        val legs: List<List<Double>>,
+    )
+
+    @Serializable
+    data class IcingForecastHoursInput(
+        /**
+         * The stored hours.
+         */
+        val hours: List<EngineContract.IcingForecastHoursInputHoursItem>,
+        /**
+         * Each leg's middle, UNIX seconds.
+         */
+        @SerialName("middles_s")
+        val middlesS: List<Double>,
+    )
+
+    @Serializable
+    data class IcingForecastHoursInputHoursItem(
+        /**
+         * Valid time, UNIX seconds.
+         */
+        @SerialName("valid_s")
+        val validS: Double,
+        /**
+         * "cip" for the analysis, "ifi" for a forecast hour.
+         */
+        val source: String? = null,
+    )
+
+    @Serializable
     data class IcingForecastRouteAnswer(
         val legs: List<EngineContract.IcingForecastRouteAnswerLegsItem>,
         val worst: EngineContract.IcingForecastRouteAnswerWorst? = null,
@@ -6926,15 +6960,35 @@ object EngineContract {
         @SerialName("altitude_ft")
         val altitudeFt: Double,
         /**
-         * The AWC's cross-section along the leg, null where it could not be had.
+         * One section along the leg, null where it could not be had.
          */
         val section: EngineContract.IcingForecastRouteInputLegsItemSection? = null,
         @SerialName("valid_s")
         val validS: Double? = null,
+        /**
+         * The sections of the stored hours near the leg, the nearest first (icing_forecast_hours' order), null for an hour whose grid could not be read; the ground (sfc_hgt) is the nearest's. Empty, or the nearest null: the leg unchecked. Sent in place of `section`.
+         */
+        val hours: List<EngineContract.IcingForecastRouteInputLegsItemHoursItem?>? = null,
+    )
+
+    @Serializable
+    data class IcingForecastRouteInputLegsItemHoursItem(
+        val width: Double,
+        @SerialName("data_levels")
+        val dataLevels: Double,
+        /**
+         * The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest.
+         */
+        val values: List<Double>,
+        /**
+         * The ground under each column, m.
+         */
+        @SerialName("sfc_hgt")
+        val sfcHgt: List<Double>? = null,
     )
 
     /**
-     * The AWC's cross-section along the leg, null where it could not be had.
+     * One section along the leg, null where it could not be had.
      */
     @Serializable
     data class IcingForecastRouteInputLegsItemSection(

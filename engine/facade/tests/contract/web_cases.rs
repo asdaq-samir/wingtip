@@ -78,6 +78,9 @@ pub(super) fn cases(c: &mut Checker) {
     for case in icing["routes"].as_array().unwrap() {
         c.ask("icing_forecast_route", json!({ "levels_ft": icing["levels_ft"], "legs": case["legs"] }));
     }
+    for case in icing["hours"].as_array().unwrap() {
+        c.ask("icing_forecast_hours", case["input"].clone());
+    }
 
     // The in-flight copilot (copilot.json).
     let copilot = fixture("copilot.json");

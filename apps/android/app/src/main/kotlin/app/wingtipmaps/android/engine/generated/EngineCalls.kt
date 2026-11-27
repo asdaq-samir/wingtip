@@ -1285,7 +1285,13 @@ fun Engine.holdsRead(text: String): Result<List<EngineContract.HoldsReadAnswerIt
     rule("holds_read", EngineContract.HoldsReadInput(text = text))
 
 /**
- * Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the AWC's icing cross-section along each leg (its GFA's, from CIP and FIP), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked.
+ * Which stored icing hours each leg of an IFR route is read off (#216; the owner, 2026-11-27, "Grids, worst of nearby hours"), by index into `hours`: the hour nearest the leg's middle first -- the CIP's analysis where it and an IFI hour are as near, the earliest for a time before them all -- then every other within an hour of the middle, in the order given; none for a middle more than half an hour past the last hour, the stored hours being an hour apart and each standing for the half hour either side of it. The planner samples those hours along the leg and sends them to icing_forecast_route as the leg's `hours`.
+ */
+fun Engine.icingForecastHours(hours: List<EngineContract.IcingForecastHoursInputHoursItem>, middlesS: List<Double>): Result<EngineContract.IcingForecastHoursAnswer> =
+    rule("icing_forecast_hours", EngineContract.IcingForecastHoursInput(hours = hours, middlesS = middlesS))
+
+/**
+ * Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the NWS's icing grids sampled along each leg (the CIP analysis and the IFI forecast, NWS SCN 26-87), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked. A leg may send the stored hours near it (`hours`, as icing_forecast_hours picks them, the nearest first) in place of one section: they merge as the owner chose (2026-11-27, "Grids, worst of nearby hours"), each point and level the worst of them, the share the nearest hour's own unless it has no icing at the altitude where the merged has.
  */
 fun Engine.icingForecastRoute(levelsFt: List<Double>, legs: List<EngineContract.IcingForecastRouteInputLegsItem>): Result<EngineContract.IcingForecastRouteAnswer> =
     rule("icing_forecast_route", EngineContract.IcingForecastRouteInput(levelsFt = levelsFt, legs = legs))
