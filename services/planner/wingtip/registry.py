@@ -29,6 +29,8 @@ import zipfile
 from pathlib import Path
 
 from . import outside, registry_history
+from .registry_reader import _file, _reading
+from .registry_reader import addresses as _addresses
 from . import registry_codes as codes
 from .atomic import atomic_path
 from .faa_data import zip_csv
@@ -240,6 +242,16 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
         _BUILDING.clear()
 
 
+def addresses(n_numbers: frozenset[str], directory: Path = DEFAULT_DIR) -> frozenset[str]:
+    """The Mode S addresses of these N-numbers (registry_reader.addresses)."""
+    return _addresses(n_numbers, Path(directory) / DB_NAME)
+
+
+def version(directory: Path = DEFAULT_DIR) -> tuple | None:
+    """Which registry file is on disk (its path, inode and mtime); None where none is."""
+    return _file(Path(directory) / DB_NAME)
+
+
 def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Path = DEFAULT_DIR) -> dict | None:
     """An airplane's registration by its transponder's ICAO address or its
     N-number; None where the registry is not read yet or has no such
@@ -251,11 +263,7 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
     if not db_path.exists():
         return None
     n = (n_number or "").strip().upper().replace("-", "")
-    # closing(): sqlite3's own `with` commits or rolls back but never
-    # closes, and each lookup left a connection for the collector (a
-    # ResourceWarning since Python 3.13).
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
-        db.row_factory = sqlite3.Row
+    with _reading(db_path) as db:
         row = None
         # adsb.lol marks a TIS-B / ADS-R pseudo-address with "~": it is not a
         # Mode S code the FAA assigned, so it must not match an owner's.
@@ -315,8 +323,7 @@ def _last_registration(db: sqlite3.Connection, hex_id: str | None, n: str) -> di
 def _one(db_path: Path, table: str, code: str | None) -> dict | None:
     if not code or not db_path.exists():
         return None
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
-        db.row_factory = sqlite3.Row
+    with _reading(db_path) as db:
         try:
             row = db.execute(f"SELECT * FROM {table} WHERE code = ?", (code,)).fetchone()
         except sqlite3.OperationalError:

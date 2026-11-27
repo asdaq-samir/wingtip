@@ -224,3 +224,18 @@ def test_a_tis_b_pseudo_address_is_not_matched_to_an_owners_address(archive, tmp
     assert registry.lookup(hex_id="~a89c1e", directory=tmp_path) is None
     # Its self-reported registration can still be looked up.
     assert registry.lookup(hex_id="~a89c1e", n_number="N654FL", directory=tmp_path)["n_number"] == "N654FL"
+
+
+def test_a_lists_n_numbers_give_their_addresses_and_a_rebuilt_file_is_read_afresh(archive, tmp_path):
+    db_path = tmp_path / registry.DB_NAME
+    registry.build(archive, db_path)
+    assert registry.addresses(frozenset({"N654FL", "EJA123", "N99999"}), tmp_path) == frozenset({"a89c1e"})
+    before = registry.version(tmp_path)
+    assert registry.lookup(hex_id="a89c1e", directory=tmp_path)["n_number"] == "N654FL"
+    # Rebuilt in place (a new file, a new inode): the kept connections go with the old one.
+    db_path.unlink()
+    assert registry.lookup(hex_id="a89c1e", directory=tmp_path) is None
+    assert registry.addresses(frozenset({"N654FL"}), tmp_path) == frozenset()
+    registry.build(archive, db_path)
+    assert registry.version(tmp_path) != before
+    assert registry.lookup(hex_id="a89c1e", directory=tmp_path)["n_number"] == "N654FL"

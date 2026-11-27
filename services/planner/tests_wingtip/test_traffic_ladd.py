@@ -30,12 +30,15 @@ def test_a_list_is_each_lines_first_field_and_not_its_header(tmp_path):
 
 def test_a_listed_aircraft_is_hidden_by_its_call_sign_registration_or_address(tmp_path, monkeypatch):
     keep_list(tmp_path, "N529CF\nEJA123\nN3429J\n")
+    # The registry asked once a list for its N-numbers' addresses, not a track at a time.
+    asked = []
+    monkeypatch.setattr(registry, "addresses", lambda n: asked.append(n) or (frozenset({"a3c858"}) if "N3429J" in n else frozenset()))
     assert ladd.hidden(PLANE, tmp_path)
     assert ladd.hidden({**PLANE, "registration": None, "callsign": "EJA123"}, tmp_path)
     # A track with no flight plan named, found by its Mode S address's N-number.
-    monkeypatch.setattr(registry, "lookup", lambda hex_id=None, n_number=None: {"n_number": "N3429J"} if hex_id == "a3c858" else None)
     assert ladd.hidden({"hex": "a3c858", "callsign": None, "registration": None}, tmp_path)
     assert not ladd.hidden({"hex": "abcdef", "callsign": "UAL1", "registration": None}, tmp_path)
+    assert len(asked) == 1
 
 
 def test_with_no_current_list_the_radar_is_shown_to_no_one_unless_the_stack_is_not_public(tmp_path, monkeypatch):
