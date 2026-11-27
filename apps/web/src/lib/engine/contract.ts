@@ -822,6 +822,7 @@ export type OwnAltitudeCautionAnswer = {
   reasons: string[];
 } | null;
 export type OwnShipHexAnswer = string | null;
+export type OxygenWordsAnswer = string | null;
 export type PassengerBriefingAnswer = PassengerItem[];
 export type PassengerNightOnTheWayAnswer = boolean;
 export type PatternExitAnswer = string;
@@ -2430,7 +2431,7 @@ export interface EngineContract {
     answer: GonogoBalanceAnswer;
   };
   /**
-   * The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).
+   * The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the flight is planned over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a)), or a pressurised one over FL250 (its 10-minute supply, 91.211(b)(1)(i)) and FL350 (a pilot's mask, (b)(1)(ii)) (a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).
    */
   gonogo_brief: {
     input: GonogoBriefInput;
@@ -2493,10 +2494,10 @@ export interface EngineContract {
     answer: GonogoIcingUncheckedAnswer;
   };
   /**
-   * The Go / No-Go's input (gonogo_brief's `verdict`, all but the risk) put together from the briefing, the nav log and the loading, one copy for the web and the planner: the weather (VFR flight not recommended dropped under IFR, as its check is 14 CFR 91.169's; the sources not answered by name, under IFR the forecast icing not had and a ceiling with no height said unchecked, 14 CFR 91.103; the worst forecast in words, the visibility to the hundredth down), the airspace (gonogo_route_figures' TFRs, unchecked where the briefing failed or tfr.faa.gov did not answer), the altitude (the nav log's cautions, the altitude flown as the FL chip says it, the highest leg and the airplane's oxygen for 14 CFR 91.211(a)), the fuel (gonogo_route_figures'), the runways (gonogo_runway_findings) and the balance (worked only with the pilot's own load, 14 CFR 91.9(a); "2,407 lb at 41.2 in"). Each section pending while what it waits on is awaited.
+   * The Go / No-Go's input (gonogo_brief's `verdict`, all but the risk) put together from the briefing, the nav log and the loading, one copy for the web and the planner: the weather (VFR flight not recommended dropped under IFR, as its check is 14 CFR 91.169's; the sources not answered by name, under IFR the forecast icing not had and a ceiling with no height at a field landed at or a TAF station said unchecked, built here from the METARs and the forecast, 14 CFR 91.103; the worst forecast in words, the visibility to the hundredth down), the airspace (gonogo_route_figures' TFRs, unchecked where the briefing failed or tfr.faa.gov did not answer), the altitude (the nav log's cautions, the altitude flown as the FL chip says it, the highest leg -- with no legs, the plan picked's highest step -- and the airplane's oxygen and cabin for 14 CFR 91.211(a) and (b)), the fuel (gonogo_route_figures'), the runways (gonogo_runway_findings) and the balance (worked only with the pilot's own load, 14 CFR 91.9(a); "2,407 lb at 41.2 in"). Each section pending while what it waits on is awaited.
    */
   gonogo_input: {
-    input: GonogoInputInput;
+    input: GonogoFacts1;
     answer: VerdictInput;
   };
   /**
@@ -2528,7 +2529,7 @@ export interface EngineContract {
     answer: GonogoRiskLineAnswer;
   };
   /**
-   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).
+   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those). With `tfrs`, which crossed TFRs are in force is decided here; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
    */
   gonogo_route_figures: {
     input: GonogoRouteFiguresInput;
@@ -3193,7 +3194,7 @@ export interface EngineContract {
     answer: OurCallAnswer;
   };
   /**
-   * What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
+   * What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights, or a pressurised airplane past (b)'s FL250 and FL350; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
    */
   own_altitude_caution: {
     input: OwnAltitudeCautionInput;
@@ -3205,6 +3206,13 @@ export interface EngineContract {
   own_ship_hex: {
     input: OwnShipHexInput;
     answer: OwnShipHexAnswer;
+  };
+  /**
+   * What 14 CFR 91.211 asks of a flight up to `highest_ft` MSL, in a pilot's words: in an airplane with no pressurised cabin, its cabin at the altitude flown, (a)(1) over 12,500 ft the crew's oxygen for any of it past 30 minutes, (a)(2) over 14,000 ft the crew's for all of it, (a)(3) over 15,000 ft every occupant provided with it, none where it carries supplemental oxygen; with a pressurised cabin, (b)(1)(i) above FL250 a 10-minute supply for every occupant (none where it carries oxygen) and (b)(1)(ii) above FL350 one pilot at the controls wearing a mask. Each height is the rule's "above". Null where none is asked.
+   */
+  oxygen_words: {
+    input: OxygenWordsInput;
+    answer: OxygenWordsAnswer;
   };
   /**
    * The passengers' briefing in the order of the FAA's SAFETY briefing (FAA Safety Briefing, Jan/Feb 2007 and Jul/Aug 2014): 14 CFR 91.107(a)(1)'s belts and (a)(2), (3)'s fastened for taxi, takeoff and landing, the rest the Private Pilot ACS's PA.II.B.S2 guidance, each with where it comes from.
@@ -3697,7 +3705,7 @@ export interface EngineContract {
     answer: RouteTypedAnswer;
   };
   /**
-   * The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.
+   * The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`, or `unchecked` where a field's list could not be had. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.
    */
   route_typed_picks: {
     input: RouteTypedPicksInput;
@@ -6887,13 +6895,17 @@ export interface VerdictInput {
      */
     flown?: string | null;
     /**
-     * The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log.
+     * The highest altitude planned, feet MSL, for 14 CFR 91.211's oxygen (gonogo_brief's oxygen finding); null before the nav log.
      */
     highest_ft?: number | null;
     /**
-     * Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked.
+     * Whether the airplane picked carries supplemental oxygen (its profile's supplemental_oxygen). Read as JavaScript reads it; false, the safer side, with no airplane picked.
      */
     oxygen?: boolean | null;
+    /**
+     * Whether its cabin is pressurised (its profile's pressurized): 14 CFR 91.211(b)'s FL250 and FL350 then, not (a)'s heights. False with no airplane picked.
+     */
+    pressurized?: boolean | null;
   };
   fuel: {
     /**
@@ -8423,8 +8435,22 @@ export interface GonogoBalanceAnswer {
    */
   takeoff_words: string;
 }
+/**
+ * `verdict`, the sections built (gonogo_input's answer and the risk), or `facts`, gonogo_input's input, which is then built here with `risk` beside it.
+ */
 export interface GonogoBriefInput {
-  verdict: VerdictInput;
+  verdict?: VerdictInput;
+  facts?: GonogoFacts;
+  /**
+   * With `facts`: the risk assessment's level and line (gonogo_risk, gonogo_risk_line); null before the briefing.
+   */
+  risk?: {
+    /**
+     * "low", "caution" or "high".
+     */
+    level: string;
+    line: string;
+  } | null;
   /**
    * /api/alternate's answer; null while it is awaited or where none was asked.
    */
@@ -8437,6 +8463,148 @@ export interface GonogoBriefInput {
    * An airplane is picked.
    */
   airplane: boolean;
+}
+/**
+ * The flight's facts the Go / No-Go is put together from (gonogo_input; gonogo_brief's `facts`): the briefing's, the nav log's, the loading's and the route's own figures (gonogo_route_figures).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "GonogoFacts".
+ */
+export interface GonogoFacts {
+  /**
+   * The briefing is in.
+   */
+  briefed: boolean;
+  /**
+   * Why the briefing could not be had, in a line; null where it did not fail.
+   */
+  failed: string | null;
+  /**
+   * The flight is planned IFR.
+   */
+  ifr: boolean;
+  /**
+   * The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing.
+   */
+  weather_unavailable?: string[];
+  /**
+   * The briefing's worst forecast along the route, and the stations whose forecast ceiling has no height; null with no briefing.
+   */
+  forecast?: {
+    min_ceiling_ft?: number | null;
+    min_visibility_sm?: number | null;
+    /**
+     * The TAF stations along the route whose forecast has a broken or overcast layer with no height as its lowest.
+     */
+    ceiling_unknown_at?: string[] | null;
+  } | null;
+  /**
+   * The briefing's reasons for AIM 7-1-5's "VFR flight not recommended"; dropped under IFR.
+   */
+  vfr_not_recommended?: string[];
+  /**
+   * Where the weather is under the pilot's own minimums (minimums).
+   */
+  under_minimums?: string[];
+  /**
+   * The icing finding's lines, in order: one line of them, joined.
+   */
+  icing?: string[];
+  /**
+   * Under IFR, the forecast icing could not be had.
+   */
+  icing_unchecked?: boolean;
+  /**
+   * Every field the flight lands at, each once: whose current report's ceiling with no height is said unchecked (14 CFR 91.103).
+   */
+  landings?: string[];
+  /**
+   * The briefing's METARs by ident (each null where none came); a report's `ceiling_unknown` (a broken or overcast layer with no height as its lowest, "OVC///") is read.
+   */
+  metars?: {
+    [k: string]: {
+      ceiling_unknown?: boolean | null;
+    } | null;
+  } | null;
+  /**
+   * The SIGMETs and G-AIRMETs along the route, by name.
+   */
+  hazards?: string[];
+  /**
+   * The ITWS alerts in force now at the route's airports, in words.
+   */
+  terminal_alerts?: string[];
+  /**
+   * The Command Center's programs at the route's airports, in words.
+   */
+  flow_programs?: string[];
+  /**
+   * gonogo_route_figures' answer: the fuel's and the TFRs'.
+   */
+  route_figures: {
+    least_margin_gal?: number | null;
+    required_gal?: number | null;
+    reserve_min?: number | null;
+    tfrs_in_force: string[];
+    tfrs_near: number;
+  };
+  /**
+   * The special-use areas the legs cross, each with when it is in use at the pass.
+   */
+  special_use?: {
+    name: string;
+    when: string;
+  }[];
+  /**
+   * The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.
+   */
+  nav?: {
+    flown?: string | null;
+    altitude_ft?: number | null;
+    options?: {
+      kind: string;
+      steps: {
+        altitude_ft: number;
+      }[];
+    }[];
+    cautions?: {
+      reasons: string[];
+    }[];
+  } | null;
+  /**
+   * No VFR altitude fits, in a line.
+   */
+  problem?: string | null;
+  /**
+   * Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211); with none, the plan picked's highest step (`nav`).
+   */
+  legs_ft?: number[];
+  /**
+   * The nav log's totals are in.
+   */
+  totals?: boolean;
+  /**
+   * The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding (14 CFR 91.211(a), (b)).
+   */
+  aircraft?: {} | null;
+  /**
+   * The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).
+   */
+  runway_checks?: {}[];
+  /**
+   * The airplane has a POH loading.
+   */
+  loading?: boolean;
+  /**
+   * gonogo_balance's answer with the pilot's own load; null with no load.
+   */
+  loaded?: {
+    takeoff: {
+      weight_lb: number;
+      arm_in?: number | null;
+    };
+    problems: string[];
+  } | null;
 }
 /**
  * A field the route uses, as the host has it from NASR APT_BASE and APT_CON.
@@ -8650,7 +8818,10 @@ export interface GonogoIcingUncheckedInput {
    */
   flown_ft?: number[] | null;
 }
-export interface GonogoInputInput {
+/**
+ * The flight's facts the Go / No-Go is put together from (gonogo_input; gonogo_brief's `facts`): the briefing's, the nav log's, the loading's and the route's own figures (gonogo_route_figures).
+ */
+export interface GonogoFacts1 {
   /**
    * The briefing is in.
    */
@@ -8668,11 +8839,15 @@ export interface GonogoInputInput {
    */
   weather_unavailable?: string[];
   /**
-   * The briefing's worst forecast along the route; null with no briefing.
+   * The briefing's worst forecast along the route, and the stations whose forecast ceiling has no height; null with no briefing.
    */
   forecast?: {
     min_ceiling_ft?: number | null;
     min_visibility_sm?: number | null;
+    /**
+     * The TAF stations along the route whose forecast has a broken or overcast layer with no height as its lowest.
+     */
+    ceiling_unknown_at?: string[] | null;
   } | null;
   /**
    * The briefing's reasons for AIM 7-1-5's "VFR flight not recommended"; dropped under IFR.
@@ -8691,9 +8866,17 @@ export interface GonogoInputInput {
    */
   icing_unchecked?: boolean;
   /**
-   * The fields whose ceiling is reported or forecast with no height.
+   * Every field the flight lands at, each once: whose current report's ceiling with no height is said unchecked (14 CFR 91.103).
    */
-  ceilings_unknown?: string[];
+  landings?: string[];
+  /**
+   * The briefing's METARs by ident (each null where none came); a report's `ceiling_unknown` (a broken or overcast layer with no height as its lowest, "OVC///") is read.
+   */
+  metars?: {
+    [k: string]: {
+      ceiling_unknown?: boolean | null;
+    } | null;
+  } | null;
   /**
    * The SIGMETs and G-AIRMETs along the route, by name.
    */
@@ -8744,7 +8927,7 @@ export interface GonogoInputInput {
    */
   problem?: string | null;
   /**
-   * Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211(a)).
+   * Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211); with none, the plan picked's highest step (`nav`).
    */
   legs_ft?: number[];
   /**
@@ -8752,7 +8935,7 @@ export interface GonogoInputInput {
    */
   totals?: boolean;
   /**
-   * The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding.
+   * The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding (14 CFR 91.211(a), (b)).
    */
   aircraft?: {} | null;
   /**
@@ -8855,13 +9038,60 @@ export interface GonogoRouteFiguresInput {
       | null;
   } | null;
   /**
-   * How many TFRs the briefing lists along the route.
+   * How many TFRs the briefing lists along the route, with `crossed`.
    */
   tfr_count?: number | null;
   /**
-   * The NOTAM ids of the TFRs the route crosses while they are in force.
+   * The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.
    */
-  crossed: string[];
+  crossed?: string[];
+  /**
+   * The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` ("during") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.
+   */
+  tfrs?:
+    | {
+        notam_id?: string | null;
+        crosses?: boolean | null;
+        along_track_nm?: number | null;
+        on_route?: {
+          when?: string | null;
+        } | null;
+        /**
+         * ISO 8601 UTC; none, open that way.
+         */
+        effective?: string | null;
+        expires?: string | null;
+      }[]
+    | null;
+  /**
+   * The nav log's legs, for when the flight passes each TFR.
+   */
+  legs?:
+    | {
+        distance_nm: number;
+        ete_min?: number | null;
+      }[]
+    | null;
+  /**
+   * The departure, microseconds since 1970.
+   */
+  depart_us?: number | null;
+  /**
+   * Planned IFR: VFR not recommended's reasons are dropped (14 CFR 91.169).
+   */
+  ifr?: boolean | null;
+  /**
+   * The briefing's reasons for AIM 7-1-5's "VFR flight not recommended".
+   */
+  vfr_not_recommended?: string[] | null;
+  /**
+   * The SIGMETs and G-AIRMETs along the route, by name.
+   */
+  hazards?: string[] | null;
+  /**
+   * The briefing's sources that did not answer.
+   */
+  weather_unavailable?: string[] | null;
 }
 export interface GonogoRouteFiguresAnswer {
   least_margin_gal: number | null;
@@ -8869,6 +9099,14 @@ export interface GonogoRouteFiguresAnswer {
   reserve_min: number | null;
   tfrs_in_force: string[];
   tfrs_near: number;
+  /**
+   * The reasons that count: none under IFR.
+   */
+  vfr_not_recommended: string[];
+  /**
+   * The hazards the risk assessment counts: none where both SIGMETs and G-AIRMETs failed.
+   */
+  hazard_count: number;
 }
 export interface GonogoRunwayChecksInput {
   aircraft?: {
@@ -11569,13 +11807,27 @@ export interface OwnAltitudeCautionInput {
    */
   between: [string, string];
   /**
-   * The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away.
+   * The airplane: `supplemental_oxygen` true takes 91.211(a)'s cautions away, and its (b)(1)(i) supply; `pressurized` true puts (b)'s FL250 and FL350 in (a)'s place.
    */
   profile?: {} | null;
 }
 export interface OwnShipHexInput {
   planes: TrafficPlane[];
   fix?: OwnShipFix | null;
+}
+export interface OxygenWordsInput {
+  /**
+   * The highest altitude flown, feet MSL.
+   */
+  highest_ft: number;
+  /**
+   * The airplane carries supplemental oxygen; false, the safer side, where not known.
+   */
+  supplemental_oxygen?: boolean | null;
+  /**
+   * Its cabin is pressurised.
+   */
+  pressurized?: boolean | null;
 }
 export interface PassengerBriefingInput {}
 export interface PassengerItem {
@@ -13737,7 +13989,7 @@ export interface RouteTypedPicksInput {
     after: string | null;
   }[];
   /**
-   * The route's departure and its procedures as the planner lists them; null where it has none or they could not be had.
+   * The route's departure and its procedures as the planner lists them; null where it has none or they could not be had. Null where its list could not be had.
    */
   departure: {
     ident: string;
@@ -13755,7 +14007,7 @@ export interface RouteTypedPicksInput {
     }[];
   } | null;
   /**
-   * The route's destination and its procedures, the same; null likewise.
+   * The route's destination and its procedures, the same; null likewise. Null where its list could not be had.
    */
   arrival: {
     ident: string;
@@ -13781,16 +14033,16 @@ export interface RouteTypedPicksAnswer {
     ident: string;
     id: string;
     kind: "departure" | "arrival";
-    /**
-     * The procedure's name as listed, its id where none.
-     */
-    name: string;
     transition: string | null;
   }[];
   /**
-   * The names neither field publishes as that kind, in the order typed.
+   * The names neither field publishes as that kind, in the order typed: both fields' lists were had.
    */
   missed: string[];
+  /**
+   * The names not found where a field's list could not be had (null): not looked at there, so not said unpublished (14 CFR 91.103).
+   */
+  unchecked: string[];
 }
 export interface RouteWayWarningInput {
   /**

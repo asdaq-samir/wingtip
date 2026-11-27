@@ -39,15 +39,14 @@ fn any_distance(c: &Value, flag: &str) -> bool {
     c.get("distances").and_then(Value::as_array).is_some_and(|ds| ds.iter().any(|d| truth(d, flag)))
 }
 
-/// Whether the airplane has a table to read: a non-empty object or list.
-/// An empty `{}` or `[]` is no table (the planner's `bool({})` was false),
-/// so the distances were not worked from the POH (14 CFR 91.103(b)).
+/// Whether the airplane has a table to read: a POH short-field table with
+/// its weights (`weights_lb`) and a grid for each (`tables`), neither
+/// empty. An empty `{}` or `[]` is no table (the planner's `bool({})` was
+/// false), and nor is a hollow one, `{"tables": []}`, which has no figure
+/// to read: the distances were not worked from the POH (14 CFR 91.103(b)).
 fn table(aircraft: &Value, key: &str) -> bool {
-    match aircraft.get(key) {
-        Some(Value::Object(m)) => !m.is_empty(),
-        Some(Value::Array(a)) => !a.is_empty(),
-        _ => false,
-    }
+    let listed = |t: &Value, k| t.get(k).and_then(Value::as_array).is_some_and(|a| !a.is_empty());
+    aircraft.get(key).is_some_and(|t| listed(t, "weights_lb") && listed(t, "tables"))
 }
 
 /// `gonogo_runway_findings`: `{planned, briefed, aircraft, checks}` -- the

@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::route::answers::answer",
-  "description": "The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.",
+  "description": "The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`, or `unchecked` where a field's list could not be had. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.",
   "type": "object",
   "properties": {
     "input": {
@@ -83,7 +83,7 @@
             "ident",
             "procedures"
           ],
-          "description": "The route's departure and its procedures as the planner lists them; null where it has none or they could not be had."
+          "description": "The route's departure and its procedures as the planner lists them; null where it has none or they could not be had. Null where its list could not be had."
         },
         "arrival": {
           "type": [
@@ -132,7 +132,7 @@
             "ident",
             "procedures"
           ],
-          "description": "The route's destination and its procedures, the same; null likewise."
+          "description": "The route's destination and its procedures, the same; null likewise. Null where its list could not be had."
         }
       },
       "required": [
@@ -165,10 +165,6 @@
                   "arrival"
                 ]
               },
-              "name": {
-                "type": "string",
-                "description": "The procedure's name as listed, its id where none."
-              },
               "transition": {
                 "type": [
                   "string",
@@ -180,7 +176,6 @@
               "ident",
               "id",
               "kind",
-              "name",
               "transition"
             ],
             "additionalProperties": false
@@ -191,12 +186,20 @@
           "items": {
             "type": "string"
           },
-          "description": "The names neither field publishes as that kind, in the order typed."
+          "description": "The names neither field publishes as that kind, in the order typed: both fields' lists were had."
+        },
+        "unchecked": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The names not found where a field's list could not be had (null): not looked at there, so not said unpublished (14 CFR 91.103)."
         }
       },
       "required": [
         "picks",
-        "missed"
+        "missed",
+        "unchecked"
       ],
       "additionalProperties": false
     }

@@ -82,6 +82,43 @@ pub fn oxygen_words(highest_ft: f64) -> Option<&'static str> {
     }
 }
 
+/// 14 CFR 91.211(b)(1), an airplane with a pressurised cabin, by its
+/// flight altitude (a pressure altitude, the flight level): (i) "above
+/// flight level 250", a 10-minute supply of supplemental oxygen for each
+/// occupant, for a descent should the cabin lose pressure; (ii) "above
+/// flight level 350", one pilot at the controls wearing and using an
+/// oxygen mask, unless two pilots at the controls each have a
+/// quick-donning mask, at or below FL410. Each is the rule's "above".
+pub const OXYGEN_PRESSURISED_SUPPLY_FT: f64 = 25_000.0;
+pub const OXYGEN_PRESSURISED_MASK_FT: f64 = 35_000.0;
+
+/// What 14 CFR 91.211 asks of a flight up to `highest_ft`, by the
+/// airplane: with no pressurised cabin, its cabin at the altitude flown,
+/// (a)'s three heights (oxygen_words), none where it carries supplemental
+/// oxygen (`carried`); with a pressurised cabin, (a) is its cabin's,
+/// kept under 12,500 ft as it is pressurised, and (b)(1)'s two flight
+/// levels apply: above FL250 the 10-minute supply for every occupant
+/// (none said where it carries oxygen), above FL350 the mask, which
+/// carrying oxygen does not answer. One copy for the Go / No-Go's oxygen
+/// finding and a pilot's own altitude's caution. Unknown airplane: none
+/// carried, not pressurised, the safer side.
+pub fn oxygen_asked(highest_ft: f64, carried: bool, pressurized: bool) -> Option<&'static str> {
+    if !pressurized {
+        return if carried { None } else { oxygen_words(highest_ft) };
+    }
+    if highest_ft > OXYGEN_PRESSURISED_MASK_FT {
+        Some(if carried {
+            "Above FL350 in a pressurised cabin: one pilot at the controls wearing and using an oxygen mask, unless two pilots there each have a quick-donning mask at or below FL410 (14 CFR 91.211(b)(1)(ii))"
+        } else {
+            "Above FL350 in a pressurised cabin: one pilot at the controls wearing and using an oxygen mask, unless two pilots there each have a quick-donning mask at or below FL410, and a 10-minute supply for every occupant (14 CFR 91.211(b)(1))"
+        })
+    } else if highest_ft > OXYGEN_PRESSURISED_SUPPLY_FT && !carried {
+        Some("Above FL250 in a pressurised cabin: a 10-minute supply of oxygen for every occupant, for a descent if the cabin loses pressure (14 CFR 91.211(b)(1)(i))")
+    } else {
+        None
+    }
+}
+
 /// The highest altitude for the flight rules flown.
 pub fn highest_ft(ifr: bool) -> f64 {
     if ifr {
@@ -136,5 +173,22 @@ mod tests {
         assert_eq!(wheel.last(), Some(&17_500.0));
         assert_eq!(wheel.len(), 34);
         assert_eq!(vfr_altitudes(1_400.0).first(), Some(&1_500.0));
+    }
+
+    #[test]
+    fn oxygen_by_the_airplane_91_211_a_and_b() {
+        // (a): no pressurised cabin, nothing carried; "above" each height.
+        assert!(oxygen_asked(12_500.0, false, false).is_none());
+        assert!(oxygen_asked(12_600.0, false, false).unwrap().contains("(a)(1)"));
+        assert!(oxygen_asked(14_500.0, true, false).is_none());
+        // (b)(1)(i): pressurised, FL250 itself asks nothing, above it the supply.
+        assert!(oxygen_asked(16_000.0, false, true).is_none());
+        assert!(oxygen_asked(25_000.0, false, true).is_none());
+        assert!(oxygen_asked(26_000.0, false, true).unwrap().ends_with("(14 CFR 91.211(b)(1)(i))"));
+        assert!(oxygen_asked(26_000.0, true, true).is_none());
+        // (b)(1)(ii): above FL350 the mask, oxygen carried or not.
+        assert!(oxygen_asked(35_000.0, true, true).is_none());
+        assert!(oxygen_asked(37_000.0, true, true).unwrap().ends_with("(14 CFR 91.211(b)(1)(ii))"));
+        assert!(oxygen_asked(37_000.0, false, true).unwrap().ends_with("(14 CFR 91.211(b)(1))"));
     }
 }

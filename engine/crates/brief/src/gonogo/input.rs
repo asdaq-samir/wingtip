@@ -94,6 +94,61 @@ fn flown_words(i: In, nav: &Value) -> R<String> {
     })
 }
 
+/// The highest altitude the flight is planned at, feet MSL, for 14 CFR
+/// 91.211's oxygen: the legs' highest; with no legs (the winds aloft
+/// failed, so no leg was flown out: wingtip.flight_plan's NoWinds), the
+/// plan picked's highest step, or a pilot's own altitude; with none
+/// picked, the least any plan's highest step is, the height every plan
+/// offered climbs past, so a finding is never lost for the legs not
+/// coming, nor one said that some plan would not need. None before the
+/// nav log.
+fn highest_planned(i: In, legs_ft: &[f64], nav: Option<&Value>) -> R<Option<f64>> {
+    if let Some(high) = legs_ft.iter().copied().reduce(f64::max) {
+        return Ok(Some(high));
+    }
+    let Some(nav) = nav else { return Ok(None) };
+    let flown = i.opt_str(nav, "flown")?;
+    if flown.as_deref() == Some("custom") {
+        return i.opt_num(nav, "altitude_ft");
+    }
+    let mut highs = Vec::new();
+    for o in i.list(nav, "options")? {
+        let kind = i.opt_str(o, "kind")?;
+        if flown.is_some() && kind != flown {
+            continue;
+        }
+        let steps = i.list(o, "steps")?.iter().map(|s| i.num(s, "altitude_ft")).collect::<R<Vec<f64>>>()?;
+        highs.extend(steps.into_iter().reduce(f64::max));
+    }
+    Ok(highs.into_iter().reduce(f64::min))
+}
+
+/// The fields whose ceiling could not be held against anything: every
+/// field landed at (`landings`) whose current report (`metars`, the
+/// briefing's) has a broken or overcast layer with no height as its lowest
+/// ("OVC///"), then every TAF station along the route the forecast says
+/// so of (its `ceiling_unknown_at`), each once. The ceiling there is not
+/// known (14 CFR 1.1, ceiling), so a minimum is neither met nor missed:
+/// said unchecked (14 CFR 91.103, all the available information).
+fn ceilings_unknown(i: In, v: &Value) -> R<Vec<String>> {
+    let metars = v.get("metars");
+    let mut found: Vec<String> = i
+        .strings(v, "landings")?
+        .into_iter()
+        .filter(|f| metars.and_then(|m| m.get(f)).is_some_and(|m| truth(m, "ceiling_unknown")))
+        .collect();
+    if let Some(f) = i.obj(v, "forecast")? {
+        found.extend(i.strings(f, "ceiling_unknown_at")?);
+    }
+    let mut seen = Vec::new();
+    found.retain(|f| {
+        let new = !seen.contains(f);
+        seen.push(f.clone());
+        new
+    });
+    Ok(found)
+}
+
 /// `gonogo_input`: the sections gonogo_brief reads, from the flight's facts
 /// (the contract file lists them).
 pub fn call(name: &str, v: &Value) -> R<String> {
@@ -114,7 +169,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
     if ifr && truth(v, "icing_unchecked") {
         unchecked.push("the forecast icing".into());
     }
-    let ceilings = i.strings(v, "ceilings_unknown")?;
+    let ceilings = ceilings_unknown(i, v)?;
     if !ceilings.is_empty() {
         unchecked.push(format!("the ceiling at {}", ceilings.join(", ")));
     }
@@ -129,7 +184,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
     let weather = obj(vec![
         ("pending", Value::Bool(!briefed && !failed_said)),
         ("failed", opt_string(failed)),
-        ("vfr_not_recommended", strings(if ifr { vec![] } else { i.strings(v, "vfr_not_recommended")? })),
+        ("vfr_not_recommended", strings(super::route_figures::vfr_flown(ifr, i.strings(v, "vfr_not_recommended")?))),
         ("under_minimums", strings(i.strings(v, "under_minimums")?)),
         ("icing", opt_string((!icing.is_empty()).then(|| icing.join("; ")))),
         ("hazards", strings(i.strings(v, "hazards")?)),
@@ -148,6 +203,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
     ]);
     let legs_ft = i.nums(v, "legs_ft")?;
     let aircraft = v.get("aircraft").filter(|a| matches!(a, Value::Object(_)));
+    let has = |key| aircraft.is_some_and(|a| truth(a, key));
     let altitude = obj(vec![
         ("pending", Value::Bool(!planned)),
         ("problem", opt_string(i.opt_str(v, "problem")?)),
@@ -159,9 +215,11 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             }),
         ),
         ("flown", opt_string(nav.map(|n| flown_words(i, n)).transpose()?)),
-        // The engine's oxygen finding (14 CFR 91.211(a)): the highest leg, and the airplane's oxygen.
-        ("highest_ft", opt_number(legs_ft.iter().copied().reduce(f64::max))),
-        ("oxygen", Value::Bool(aircraft.is_some_and(|a| truth(a, "supplemental_oxygen") || truth(a, "pressurized")))),
+        // The engine's oxygen finding (14 CFR 91.211): the highest altitude
+        // planned, and the airplane's oxygen and cabin.
+        ("highest_ft", opt_number(highest_planned(i, &legs_ft, nav)?)),
+        ("oxygen", Value::Bool(has("supplemental_oxygen"))),
+        ("pressurized", Value::Bool(has("pressurized"))),
     ]);
     let fuel = obj(vec![
         ("pending", Value::Bool(!truth(v, "totals"))),

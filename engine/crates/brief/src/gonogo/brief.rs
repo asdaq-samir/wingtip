@@ -12,7 +12,7 @@ use super::calls::{alternates, truth, verdict_input, In};
 use super::permission::{permission_item, read_fields};
 use super::verdict::{self, item_json, Item};
 use crate::json::{self, Value};
-use wingtip_flight::limits::oxygen_words;
+use wingtip_flight::limits::oxygen_asked;
 
 type R<T> = Result<T, String>;
 
@@ -34,17 +34,20 @@ pub fn assemble(items: Vec<Item>, alternate: Option<(&str, &str)>, fields: Optio
         .collect()
 }
 
-/// The oxygen finding, after the altitude's: what 14 CFR 91.211(a) asks
-/// of the highest altitude the nav log flies (`highest_ft`), its cabin
-/// at it, where the airplane is not known to carry oxygen or a pressurised
-/// cabin (`oxygen`; with none picked, not known: the safer side). A
+/// The oxygen finding, after the altitude's: what 14 CFR 91.211 asks of
+/// the highest altitude the nav log flies (`highest_ft`) in the airplane
+/// (wingtip_flight::limits::oxygen_asked): (a), its cabin at that
+/// altitude, where it is not known to carry oxygen (`oxygen`) or a
+/// pressurised cabin (`pressurized`); (b)(1)'s FL250 and FL350 where it is
+/// pressurised. With none picked, neither is known: the safer side. A
 /// caution, not a stop: the pilot may carry portable oxygen the planner
 /// cannot see (the owner, 2026-10-23: a warning, never a limit). FL-145
 /// for 13 hours said nothing of it (the UI audit's A2). None at or under
-/// 12,500 ft, or before the nav log.
+/// 12,500 ft unpressurised, or before the nav log.
 pub fn oxygen_item(altitude: Option<&Value>) -> Option<Item> {
-    let altitude = altitude.filter(|a| !truth(a, "oxygen"))?;
-    let words = oxygen_words(altitude.get("highest_ft").and_then(Value::as_f64)?)?;
+    let altitude = altitude?;
+    let highest = altitude.get("highest_ft").and_then(Value::as_f64)?;
+    let words = oxygen_asked(highest, truth(altitude, "oxygen"), truth(altitude, "pressurized"))?;
     let section = Some("Cruise Altitude".to_owned());
     Some(Item {
         key: "oxygen".into(),
@@ -67,7 +70,23 @@ fn with_oxygen(mut items: Vec<Item>, oxygen: Option<Item>) -> Vec<Item> {
 /// written with the line over them.
 pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
-    let given = i.obj(v, "verdict")?.map_or_else(|| i.err("verdict", "is missing"), Ok)?;
+    // The facts (gonogo_input's input) put together here, the risk beside
+    // them, where a caller sends those rather than the sections built:
+    // the web, which then makes no copy of the shapes either way.
+    let built = match i.obj(v, "facts")? {
+        Some(facts) => {
+            let Value::Object(mut sections) = json::parse(&super::input::call("gonogo_input", facts)?)? else {
+                return i.err("facts", "made no sections");
+            };
+            sections.push(("risk".to_owned(), v.get("risk").cloned().unwrap_or(Value::Null)));
+            Some(Value::Object(sections))
+        }
+        None => None,
+    };
+    let given = match &built {
+        Some(b) => b,
+        None => i.obj(v, "verdict")?.map_or_else(|| i.err("verdict", "is missing"), Ok)?,
+    };
     let mut input = verdict_input(i, given)?;
     // The oxygen said once, in its own finding: a pilot's own altitude's
     // cautions (altitude::cautions) say it too, last.
@@ -142,9 +161,31 @@ mod tests {
         assert!(at(r#"{"highest_ft": 15000}"#).unwrap().detail.ends_with("(14 CFR 91.211(a)(2))"));
         assert!(at(r#"{"highest_ft": 15100}"#).unwrap().detail.contains("(3)"));
         assert!(at(r#"{"highest_ft": 14500, "oxygen": true}"#).is_none());
+        // 91.211(b)(1): a pressurised airplane is no longer passed over
+        // whole; above FL250 its supply, above FL350 the mask.
+        assert!(at(r#"{"highest_ft": 14500, "pressurized": true}"#).is_none());
+        assert!(at(r#"{"highest_ft": 28000, "pressurized": true}"#).unwrap().detail.contains("(b)(1)(i)"));
+        assert!(at(r#"{"highest_ft": 39000, "pressurized": true, "oxygen": true}"#).unwrap().detail.contains("(b)(1)(ii)"));
         assert!(at(r#"{"highest_ft": null}"#).is_none());
         let got = with_oxygen(vec![item("weather", "ok"), item("altitude", "ok"), item("risk", "ok")], at(r#"{"highest_ft": 14500}"#));
         assert_eq!(keys(&got), ["weather", "altitude", "oxygen", "risk"]);
+    }
+
+    #[test]
+    fn the_facts_are_put_together_here_with_the_risk_beside_them() {
+        // gonogo_input's input sent as `facts`: the sections built by it,
+        // the risk added, the findings as from the sections themselves.
+        let facts = r#"{"briefed": true, "failed": null, "ifr": false, "route_figures": {"least_margin_gal": 4, "required_gal": 21.5, "reserve_min": 30, "tfrs_in_force": [], "tfrs_near": 0},
+            "nav": {"flown": "custom", "altitude_ft": 27000, "options": [], "cautions": []}, "legs_ft": [27000], "totals": true,
+            "aircraft": {"pressurized": true}}"#;
+        let asked = format!(r#"{{"facts": {facts}, "risk": {{"level": "low", "line": "Low"}}, "airplane": false}}"#);
+        let got = json::parse(&call("gonogo_brief", &json::parse(&asked).unwrap()).unwrap()).unwrap();
+        let items = got.get("items").and_then(Value::as_array).unwrap();
+        let keys: Vec<&str> = items.iter().filter_map(|i| i.get("key").and_then(Value::as_str)).collect();
+        assert_eq!(keys, ["weather", "airspace", "altitude", "oxygen", "risk"]);
+        let oxygen = items.iter().find(|i| i.get("key").and_then(Value::as_str) == Some("oxygen")).unwrap();
+        assert!(oxygen.get("detail").and_then(Value::as_str).unwrap().ends_with("(14 CFR 91.211(b)(1)(i))"));
+        assert!(call("gonogo_brief", &json::parse(r#"{"airplane": true}"#).unwrap()).unwrap_err().contains("\"verdict\" is missing"));
     }
 
     #[test]
