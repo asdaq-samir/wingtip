@@ -49,7 +49,7 @@ const zoneFormats = new Map<string, Intl.DateTimeFormat | null>();
 /** One Intl formatter for a zone and its options, made the first time it
  *  is asked for and kept (making one is costly, the note above); null
  *  where the browser does not know the zone. Every per-zone formatter in
- *  the app is this one cache's (the code audit of 2026-11-23, R5-9). */
+ *  the app is this one cache's. */
 export function formatIn(timeZone: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat | null {
   const key = `${timeZone} ${JSON.stringify(options)}`;
   if (!zoneFormats.has(key)) {

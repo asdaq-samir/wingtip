@@ -241,7 +241,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
 
   return (
     // Its sides the page's own sixteen (TabPage), where its own sixteen
-    // more put the list 32 in (the sheet audit's F-P1).
+    // more put the list 32 in.
     <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
       {problem && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{problem}</FieldError>}
       {unheard && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{unheard}</FieldError>}

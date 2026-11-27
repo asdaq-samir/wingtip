@@ -52,7 +52,7 @@ export const useAirplaneChosen = (): boolean => usePreferences((s) => airplaneCh
  *  they sign out (useLogout): their Home, Favorites and recents, their
  *  personal minimums and loads, the airplanes they follow and their
  *  alerts, and the airplane they fly. The next person on the device had
- *  them all, the tail number and its figures too (the audit's finding).
+ *  them all, the tail number and its figures too.
  *  How the map is drawn stays, the device's. */
 export function forgetPilot() {
   usePreferences.setState({

@@ -96,7 +96,7 @@ export function ResultRow({
         <span className={cn("block truncate font-semibold", tint ? "text-tint" : "text-foreground", TEXT.row)}>{title}</span>
         {detail && <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>{detail}</span>}
         {/* Side by side, each half the row, never on two lines: at 19.65 px
-            Fly Here and Depart From wrapped (the sheet audit's F-S5). */}
+            Fly Here and Depart From wrapped. */}
         {actions && <span className="flex gap-2 pt-1.5">{actions}</span>}
       </span>
       {end}

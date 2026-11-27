@@ -91,7 +91,7 @@ export default function PlaceCard({
    *  place, and Address last (PlaceActions). */
   asStop?: boolean;
 }) {
-  // Asked again every five minutes in sight (lib/shown): its METAR stayed the one it opened with (the audit's finding).
+  // Asked again every five minutes in sight (lib/shown): its METAR stayed the one it opened with.
   const asked = { ...airportQuery(ident), refetchInterval: 5 * 60_000, subscribed: useShown() };
   const answer = useQuery(asked);
   const { data: place, error, refetch, isFetching } = answer;

@@ -161,7 +161,7 @@ export default function AirspaceCard({
   const testIds = { directTo: "point-direct", addToRoute: "point-add", holdHere: "point-hold" };
   // Held from the first frame while the point is asked about: the tiles,
   // not to be pressed till it is named, and its name's line, as both came
-  // in over the bands once it answered (the flicker audit's FL-11).
+  // in over the bands once it answered.
   const naming = !!named || isLoading;
   const actions = naming
     ? CARD_ACTIONS.point.map((name) => ({ ...ACTION[name], go: handlers[name], testId: testIds[name] })).filter((a) => a.go)

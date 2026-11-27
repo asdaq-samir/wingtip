@@ -35,7 +35,7 @@ export function useSideGlide(panel: HTMLElement | null, size: PanelState, radius
     const glide = timing("drawer");
     const clip = (cut: number) => `inset(0 0 ${Math.max(0, cut)}px 0 round ${radius}px)`;
     // A second tap part way through goes on from where the glide is, not
-    // from its first frame (the r5-ui audit's L2, 2026-11-23): the clip
+    // from its first frame: the clip
     // drawn now, read before the glide under way is let go.
     const going = panel.getAnimations().filter((a) => a.id === GLIDE);
     const shut0 = panel.parentElement?.querySelector<HTMLElement>(":scope > [data-side-glide]");

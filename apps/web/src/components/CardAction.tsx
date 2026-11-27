@@ -70,7 +70,7 @@ export function CardAction({
   const look = cn(
     // No edge on any, Fly Here's filled one too: the stock button's
     // clear one inset its fill a point, out of line with the tiles beside
-    // and under it (the sheet audit's F-B2). Its glyph a fixed 20 px while
+    // and under it. Its glyph a fixed 20 px while
     // its word grows, so the tiles stay inside the half sheet at a larger
     // text size: size.glyph-card-action, a token, not an accident (the
     // scale audit's Q2, the owner, 2026-11-21).
