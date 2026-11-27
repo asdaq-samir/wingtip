@@ -20,7 +20,19 @@ const MAX_LATITUDE = 85.0511287798;
  *  sphere of 6,378,137 m). The web's one place for the earth's size;
  *  MapLibre's MercatorCoordinate is not used for it because it takes the
  *  mean radius (6,371,008.8 m), a tenth of a percent short of the tiles'. */
-export const WORLD_WIDTH_M = 40075016.686;
+const WORLD_WIDTH_M = 40075016.686;
+
+/** The Web Mercator world's width on the ground at `lat`, m: the equator's
+ *  shrunk by the parallel's cosine, so a share of the world's width times
+ *  this is that many metres east and west there. Its own cosine, not
+ *  lib/geo's lonScale, so this file stays free of the engine's module
+ *  (Keep for the Air reaches it from the page's first script). */
+export const worldMetresAt = (lat: number) => WORLD_WIDTH_M * Math.cos((lat * Math.PI) / 180);
+
+/** Ground metres a screen point covers at `lat` and MapLibre's `zoom`: its
+ *  camera's world is 512 points wide at zoom 0 (its tileSize), not the
+ *  raster tiles' 256. */
+export const metresPerPoint = (lat: number, zoom: number) => worldMetresAt(lat) / (512 * 2 ** zoom);
 
 /** Where a longitude falls across the Web Mercator world, 0 at 180 W to 1
  *  at 180 E. */

@@ -1,5 +1,5 @@
 import type { ExpressionSpecification, LayerSpecification, LineLayerSpecification } from "maplibre-gl";
-import { lonNear, unwrapLine } from "../../geo";
+import { lonNear, lonScale, unwrapLine } from "../../geo";
 import { CHART } from "../../tokens";
 
 /** The route and its checkpoints as GL data and layers (the chart's style is glStyle). */
@@ -51,7 +51,7 @@ export function routeFeature(
 function along(line: [number, number][], p: { lat: number; lon: number }, after: number): number {
   let best = after,
     bestD = Infinity;
-  const kx = Math.cos((p.lat * Math.PI) / 180);
+  const kx = lonScale(p.lat);
   for (let i = Math.floor(after); i < line.length - 1; i++) {
     const [la, lo] = line[i]!,
       [lb, ob] = line[i + 1]!;

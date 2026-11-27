@@ -1,5 +1,5 @@
 import { flatNm, lonScale, M_PER_FT, M_PER_NM, NM_PER_DEG } from "../../../lib/geo";
-import { WORLD_WIDTH_M, latOf, mercX, mercY } from "../../../lib/map/tileMath";
+import { latOf, mercX, mercY, worldMetresAt } from "../../../lib/map/tileMath";
 import type { AloftPoint } from "./geometry";
 
 /**
@@ -85,7 +85,7 @@ export function piecesNear(tile: { z: number; x: number; y: number }, pieces: Co
     west = tile.x * span,
     north = tile.y * span;
   const poleLat = Math.max(Math.abs(latOf(north)), Math.abs(latOf(north + span)));
-  const reach = (corridorNm * M_PER_NM) / (WORLD_WIDTH_M * Math.cos((poleLat * Math.PI) / 180));
+  const reach = (corridorNm * M_PER_NM) / worldMetresAt(poleLat);
   return pieces.filter(
     (p) =>
       Math.max(p.ax, p.bx) >= west - reach &&
@@ -116,7 +116,7 @@ export function heightsOverPlan(
     north = tile.y * span;
   for (let row = 0; row < size; row++) {
     const py = north + ((row + 0.5) / size) * span;
-    const r = (corridorNm * M_PER_NM) / (WORLD_WIDTH_M * Math.cos((latOf(py) * Math.PI) / 180));
+    const r = (corridorNm * M_PER_NM) / worldMetresAt(latOf(py));
     const r2 = r * r;
     for (let col = 0; col < size; col++) {
       const px = west + ((col + 0.5) / size) * span;
