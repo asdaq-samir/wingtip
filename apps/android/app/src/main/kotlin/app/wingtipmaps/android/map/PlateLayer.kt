@@ -98,9 +98,9 @@ class PlateLayer(private val density: Float) {
             finals.setGeoJson(drawing.finals)
         } else {
             style.addSource(GeoJsonSource(FINALS, drawing.finals))
-            // The final approach's cyan, ForeFlight's (design/tokens.json).
+            // The final approach's cyan, ForeFlight's (design/tokens.json), dimmed at night with the chart by its colour.
             val line = LineLayer(FINALS, FINALS).withProperties(
-                PropertyFactory.lineColor(WingtipColors.Chart.FINAL_APPROACH_HEX.toColorInt()),
+                PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.FINAL_APPROACH_HEX.toColorInt())),
                 PropertyFactory.lineWidth(FINAL_WIDTH),
                 PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
             )
@@ -119,6 +119,8 @@ class PlateLayer(private val density: Float) {
             PropertyFactory.iconOffset(arrayOf(TAG_OFFSET, 0f)),
             PropertyFactory.iconAllowOverlap(true),
             PropertyFactory.iconIgnorePlacement(true),
+            // A picture, so at night at the chart's light by its opacity, as the style's own icons (MapDim).
+            PropertyFactory.iconOpacity(MapDim.opacity()),
         )
         // From the procedures' words' zoom (map.zoom.procedure-words), as the
         // web's PlateTagsGl: farther out an approach's tags piled on its

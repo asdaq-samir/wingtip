@@ -3,7 +3,6 @@
 # target): "<path> <lines>", each at its size then. None is added; a file
 # leaves once it is within 300 (`python3 scripts/ci/file_sizes.py --write`).
 
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/ModelWeatherLayer.kt 333
 engine/crates/procedures/src/occurrence.rs 338
 engine/crates/route/src/approach/scene.rs 332
 engine/crates/route/src/approach/tags.rs 316

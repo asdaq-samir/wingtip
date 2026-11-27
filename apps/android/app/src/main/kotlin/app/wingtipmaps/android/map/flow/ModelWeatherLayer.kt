@@ -3,13 +3,10 @@ package app.wingtipmaps.android.map.flow
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.view.View
-import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.generated.WeatherArea
 import app.wingtipmaps.android.api.planned
-import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.aviationGridBands
 import app.wingtipmaps.android.engine.generated.gairmetHazards
@@ -23,26 +20,15 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.addJsonArray
-import kotlinx.serialization.json.addJsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
 import okhttp3.coroutines.executeAsync
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngQuad
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
-import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.Layer
-import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.RasterLayer
-import org.maplibre.android.style.layers.SymbolLayer
-import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.android.style.sources.ImageSource
 import org.maplibre.android.style.sources.RasterSource
 import org.maplibre.android.style.sources.TileSet
@@ -63,21 +49,6 @@ import java.time.Instant
 object ModelWeatherLayer {
     private const val FIELD = "flow-field"
     private const val RADAR = "flow-radar"
-    private const val AIRMETS = "flow-gairmets"
-    private const val AIRMET_LINE = "flow-gairmet-line"
-    private const val AIRMET_LABEL = "flow-gairmet-label"
-
-    /** Each G-AIRMET's colour by its hazard, as aviationweather.gov's map
-     *  tells them apart (the web's weatherColours AREA_COLOURS). */
-    private val AREA_INKS = mapOf(
-        "Icing" to WingtipColors.Weather.ICING_HEX, "ICE" to WingtipColors.Weather.ICING_HEX,
-        "Turbulence" to WingtipColors.Weather.TURBULENCE_HEX, "TURB" to WingtipColors.Weather.TURBULENCE_HEX,
-        "IFR conditions" to WingtipColors.Weather.IFR_HEX, "IFR" to WingtipColors.Weather.IFR_HEX,
-        "Mountains obscured" to WingtipColors.Weather.MOUNTAINS_HEX, "MTN OBSCN" to WingtipColors.Weather.MOUNTAINS_HEX,
-        "Low-level wind shear" to WingtipColors.Weather.SHEAR_HEX, "Strong surface winds" to WingtipColors.Weather.WIND_HEX,
-        "ASH" to WingtipColors.Weather.ASH_HEX,
-    )
-
     /** The looks, made once from the engine's bands; null where the engine
      *  could not answer, and nothing is drawn. */
     val looks: Map<FlowKind, FlowLook>? by lazy {
@@ -207,7 +178,7 @@ object ModelWeatherLayer {
             // (aviationweather.gov: "Contiguous 48 United States"), the web's CONUS.
             val map = Planner.api.weatherOnTheMap(south = 18.0, west = -130.0, north = 56.0, east = -61.0, at = at.toDouble()).planned()
             val labels = Engine.gairmetHazards().getOrNull()?.labels.orEmpty()
-            airmets = geoJson(map.advisories.orEmpty().filter { it.kind == "gairmet" }, labels)
+            airmets = AirmetLayer.geoJson(map.advisories.orEmpty().filter { it.kind == "gairmet" }, labels)
             redraw(view)
         } catch (e: CancellationException) {
             throw e
@@ -216,29 +187,6 @@ object ModelWeatherLayer {
         }
     }
 
-    /** Each G-AIRMET an outline closed back at its first point, longitude
-     *  first, with its colour and its label. */
-    fun geoJson(areas: List<WeatherArea>, labels: Map<String, String>): String = buildJsonObject {
-        put("type", "FeatureCollection")
-        putJsonArray("features") {
-            for (a in areas) {
-                val ring = a.coords.filter { it.size >= 2 }
-                if (ring.size < 2) continue
-                addJsonObject {
-                    put("type", "Feature")
-                    putJsonObject("properties") {
-                        put("colour", AREA_INKS[a.hazard.orEmpty()] ?: WingtipColors.Weather.OTHER_HEX)
-                        put("label", labels[a.hazard.orEmpty()] ?: a.hazard.orEmpty())
-                    }
-                    putJsonObject("geometry") {
-                        put("type", "LineString")
-                        putJsonArray("coordinates") { for (p in ring + listOf(ring.first())) addJsonArray { add(p[1]); add(p[0]) } }
-                    }
-                }
-            }
-        }
-    }.toString()
-
     private fun redraw(view: MapView) {
         view.getMapAsync { map -> map.getStyle(::draw) }
     }
@@ -246,7 +194,7 @@ object ModelWeatherLayer {
     private fun draw(style: Style) {
         field(style, painted)
         radar(style, radar)
-        airmets(style, airmets)
+        AirmetLayer.draw(style, airmets, ::below)
     }
 
     private fun field(style: Style, picture: Pair<Painted, Float>?) {
@@ -290,38 +238,6 @@ object ModelWeatherLayer {
         val url = if (tiles.startsWith("/")) Config.gateway + Config.plannerPath(tiles) else tiles
         style.addSource(RasterSource(RADAR, TileSet("2.2.0", url).apply { maxZoom = 10f }, 256))
         below(style, RasterLayer(RADAR, RADAR).withProperties(PropertyFactory.rasterOpacity(0.9f), PropertyFactory.rasterFadeDuration(0f)))
-    }
-
-    private fun airmets(style: Style, json: String?) {
-        if (json == null) {
-            for (id in listOf(AIRMET_LABEL, AIRMET_LINE)) style.getLayer(id)?.let(style::removeLayer)
-            style.getSource(AIRMETS)?.let(style::removeSource)
-            return
-        }
-        val source = style.getSourceAs<GeoJsonSource>(AIRMETS)
-        if (source != null) {
-            source.setGeoJson(json)
-            return
-        }
-        style.addSource(GeoJsonSource(AIRMETS, json))
-        val colour = Expression.toColor(Expression.get("colour"))
-        val line = LineLayer(AIRMET_LINE, AIRMETS).withProperties(
-            PropertyFactory.lineColor(colour),
-            PropertyFactory.lineWidth(1.5f),
-            PropertyFactory.lineDasharray(arrayOf(3f, 2.5f)),
-        )
-        val label = SymbolLayer(AIRMET_LABEL, AIRMETS).withProperties(
-            PropertyFactory.symbolPlacement(Property.SYMBOL_PLACEMENT_LINE),
-            PropertyFactory.textField(Expression.get("label")),
-            PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
-            PropertyFactory.textSize(app.wingtipmaps.android.map.MapLabels.lateSize(11f)),
-            PropertyFactory.symbolSpacing(320f),
-            PropertyFactory.textColor(colour),
-            PropertyFactory.textHaloColor(WingtipColors.Chart.CASING_HEX.toColorInt()),
-            PropertyFactory.textHaloWidth(2f),
-        )
-        below(style, line)
-        below(style, label)
     }
 
     /** Over the chart and its relief, under the route and the marks (the
