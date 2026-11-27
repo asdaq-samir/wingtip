@@ -455,7 +455,7 @@ jobs:
                 - scripts/build/design-tokens.sh
                 - scripts/build/design_tokens*.py
                 - scripts/build/map-style.sh
-                - scripts/build/map_style.py
+                - scripts/build/map_style*.py
                 - scripts/build/screens.*
                 - docs/navigation.md
                 - apps/ios/Wingtip/Navigation/Generated/**

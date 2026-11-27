@@ -39,7 +39,7 @@ check "The design tokens" "scripts/build/design-tokens.sh --check" -- \
   apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated "$A/design/generated" \
   services/jobs/charts/map_zoom.py
 check "The map's overlay layers" "scripts/build/map-style.sh --check" -- \
-  design/map-style.json design/tokens.json 'scripts/build/map-style.sh' 'scripts/build/map_style.py' \
+  design/map-style.json design/tokens.json 'scripts/build/map-style.sh' 'scripts/build/map_style*.py' \
   apps/web/src/lib/generated/overlayLayers.ts "$A/map/generated"
 check "The screens and their links" "scripts/build/screens.sh --check" -- \
   design/screens.json 'scripts/build/screens.*' docs/navigation.md \
