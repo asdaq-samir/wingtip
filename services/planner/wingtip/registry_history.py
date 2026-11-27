@@ -46,6 +46,7 @@ CREATE TABLE deregistered (n_number TEXT, serial TEXT, model_code TEXT, engine_c
     mode_s_hex TEXT, kit TEXT, co_owners INTEGER);
 CREATE INDEX deregistered_n ON deregistered (n_number);
 CREATE INDEX deregistered_serial ON deregistered (serial);
+CREATE INDEX deregistered_mode_s ON deregistered (mode_s_hex);
 CREATE TABLE documents (n_number TEXT, document_id TEXT, kind_code TEXT, received TEXT, entered TEXT,
     corrected TEXT, correction TEXT);
 CREATE INDEX documents_n ON documents (n_number);

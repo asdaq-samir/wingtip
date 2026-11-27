@@ -53,8 +53,10 @@ MAX_AGE_S = 24 * 3600
 #: The file's shape: user_version, so a copy of an older shape is read
 #: again from the FAA's download rather than asked for columns it lacks
 #: (2: the reference files in full, every MASTER field and the
-#: deregistered, document and reserved files, 2026-11-14).
-SCHEMA = 2
+#: deregistered, document and reserved files, 2026-11-14; 3: the
+#: deregistered rows indexed by address, where a lookup by it read all
+#: 383,846 of them, 65 ms, now 0.02 ms, 2026-11-27).
+SCHEMA = 3
 
 _LOCK = threading.Lock()
 _BUILDING = threading.Event()
