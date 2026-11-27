@@ -12,6 +12,7 @@ import { CHART, MAP_ZOOM } from "../../tokens";
 import { chartBrightness, chartContrast, NIGHT_DIM } from "../chartLook";
 import { labelText } from "./layers/common";
 import { ringOfPlacedField } from "./placedRings";
+import { DIM_BY_COLOUR } from "./mapDim";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -263,7 +264,15 @@ export function airspaceLayers(font: string[]): LayerSpecification[] {
     const ink = AIRSPACE_INK[c];
     // A Class C's or D's ring only with its field drawn (ringOfPlacedField); a Class B's always, as its field's mark is.
     const shown = (opacity: number) => (c === "B" ? opacity : ringOfPlacedField(opacity));
-    const common = { type: "line" as const, ...from, minzoom: glZoom(AIRSPACE_FROM[c]), filter: ["==", ["get", "class"], c] as never };
+    // Dimmed at night by their colour (mapDim's DIM_BY_COLOUR), as the course is: the rings' opacity differs by
+    // feature (shown), and that times the Dimmer's global state laid every overlay tile out again at each step of it.
+    const common = {
+      type: "line" as const,
+      metadata: DIM_BY_COLOUR,
+      ...from,
+      minzoom: glZoom(AIRSPACE_FROM[c]),
+      filter: ["==", ["get", "class"], c] as never,
+    };
     return [
       {
         id: `airspace-${c}-band`,

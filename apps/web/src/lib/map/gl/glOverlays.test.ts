@@ -101,7 +101,7 @@ describe("the overlay tiles' layers", () => {
     );
   });
 
-  it("leave the open card's field's mark and ident to the ring's own, by its feature state", () => {
+  it("leave the open card's field's ident to the ring's own, by its feature state, its mark drawn over", () => {
     const { map, set } = fakeMap(["airports"]);
     markSelectedAirport(map, "KMSN", true);
     expect(set.state.get("feature:KMSN")).toEqual({ selected: true });
@@ -109,11 +109,15 @@ describe("the overlay tiles' layers", () => {
     expect(set.state.get("feature:KMSN")).toEqual({ selected: false });
     const style = overlayStyle(TILES, ORIGIN);
     const airports = style.layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
-    // Hidden by its paint and the feature's state, so a tap lays no tile
-    // out again; at the Dimmer's share at night as every word on the chart (mapDim).
-    const hidden = ["*", ["coalesce", ["global-state", "mapDim"], 1], ["case", ["boolean", ["feature-state", "selected"], false], 0, 1]];
-    expect(airports.paint!["text-opacity"]).toEqual(hidden);
-    expect(airports.paint!["icon-opacity"]).toEqual(hidden);
+    // Hidden by its colours and the feature's state, so a tap lays no tile
+    // out again; its opacities the Dimmer's share at night alone, constants a
+    // Dimmer's step only repaints (mapDim).
+    const selected = ["boolean", ["feature-state", "selected"], false];
+    expect(airports.paint!["text-color"]).toEqual(expect.arrayContaining(["case", selected, "transparent"]));
+    expect(airports.paint!["text-halo-color"]).toEqual(expect.arrayContaining(["case", selected, "transparent"]));
+    const dim = ["*", ["coalesce", ["global-state", "mapDim"], 1], 1];
+    expect(airports.paint!["text-opacity"]).toEqual(dim);
+    expect(airports.paint!["icon-opacity"]).toEqual(dim);
     expect(JSON.stringify(airports.filter)).not.toContain("selected");
     // The fields on a source of their own, each by its ident; the rest on another, each ring by its field's.
     expect(airports.source).toBe(AIRPORTS_SOURCE);

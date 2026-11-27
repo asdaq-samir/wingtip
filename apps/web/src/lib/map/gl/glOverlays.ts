@@ -10,6 +10,7 @@ import { OVERLAY_SOURCE, SUA_LAYERS, airspaceLayers, glZoom, specialUseLayers } 
 import { GL_FONT_BOLD, LABEL_HALO, labelHalo, labelInk, labelText } from "./layers/common";
 import { specialUseLabelLayer } from "./glSuaLabels";
 import { OVERLAY_PICTURES } from "./glOverlayPictures";
+import { runwayLayers } from "./glRunways";
 import { CHART, MAP_ZOOM } from "../../tokens";
 import { dimLayer } from "./mapDim";
 
@@ -143,10 +144,9 @@ function airportMarksLayers(from: { source: string; "source-layer"?: string }): 
       "text-padding": 1,
     },
     paint: {
-      "text-color": labelInk(AIRPORT_IDENT_INK),
-      ...labelHalo("airportIdent"),
-      "text-opacity": SELECTED_HIDDEN,
-      "icon-opacity": SELECTED_HIDDEN,
+      "text-color": unlessSelected(labelInk(AIRPORT_IDENT_INK)),
+      "text-halo-color": unlessSelected(labelHalo("airportIdent")["text-halo-color"]!),
+      "text-halo-width": labelHalo("airportIdent")["text-halo-width"]!,
     },
   });
   return [
@@ -215,60 +215,6 @@ const VOR_ZOOM = MAP_ZOOM.vor;
 const FIX_ZOOM = MAP_ZOOM.fix;
 /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE). */
 const VOR_KINDS = ["VORTAC", "VOR/DME", "VOR"];
-
-/** From MapLibre's 12, where the sectional has faded into the imagery
- *  (closeZoom): before it a runway is under a pixel or two wide and the
- *  chart's own airport symbol says more. */
-const RUNWAYS_FROM = 12;
-
-/** The runways' look, as ForeFlight draws them over its base map: a
- *  dark grey surface (a soft one lighter), a dashed white centreline, and
- *  each end's number in bold white on a dark halo, turned to read from
- *  the approach end (text-rotate is the end's true heading, so the
- *  number's top points down the runway, as it is painted). From NASR
- *  APT_RWY and APT_RWY_END: each runway's surveyed ends and width. */
-function runwayLayers(): LayerSpecification[] {
-  const from = { source: OVERLAY_SOURCE, "source-layer": "runways" };
-  return [
-    {
-      id: "runway-surface",
-      type: "fill",
-      ...from,
-      minzoom: RUNWAYS_FROM,
-      filter: ["==", ["get", "part"], "surface"],
-      paint: {
-        "fill-color": ["case", ["get", "hard"], CHART.runwayHard, CHART.runwaySoft],
-        "fill-outline-color": CHART.casing,
-        "fill-opacity": 0.95,
-      },
-    },
-    {
-      id: "runway-centreline",
-      type: "line",
-      ...from,
-      minzoom: RUNWAYS_FROM + 1,
-      filter: ["==", ["get", "part"], "centreline"],
-      paint: { "line-color": CHART.casing, "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.75, 16, 2], "line-dasharray": [4, 3] },
-    },
-    {
-      id: "runway-ends",
-      type: "symbol",
-      ...from,
-      minzoom: RUNWAYS_FROM + 0.5,
-      filter: ["==", ["get", "part"], "end"],
-      layout: {
-        "text-field": ["get", "end_id"],
-        ...labelText("runwayNumber"),
-        "text-rotation-alignment": "map",
-        "text-rotate": ["get", "heading"],
-        // Up the number's own page, which is down the runway from its end.
-        "text-offset": [0, -1.1],
-        "text-allow-overlap": true,
-      },
-      paint: { "text-color": CHART.casing, ...labelHalo("runwayNumber") },
-    },
-  ];
-}
 
 /** The ids of the layers each setting turns off (applyOverlayFilters). */
 export const AIRSPACE_TILE_LAYERS = [
@@ -348,9 +294,13 @@ export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
 // skipped when the value is the same; one read by a filter or the layout lays the layer's source out again.
 const ROUTE_AIRPORTS = "routeAirports";
 const ROUTE_WAYPOINTS = "routeWaypoints";
-// The open card's field left to AirportsGl's own mark and larger ident, by its feature state: a tap repaints only.
-// Not the map's global state: one a data-driven paint reads lays every tile of its source out again as it changes.
-const SELECTED_HIDDEN: ExpressionSpecification = ["case", ["boolean", ["feature-state", "selected"], false], 0, 1];
+/** The open card's field's ident left to AirportsGl's larger one, by its feature state: a tap repaints only. Hidden by
+ *  its colours, its opacities constants times the Dimmer (mapDim): an opacity by feature state times the Dimmer's global
+ *  state laid every airports tile out again at each step of the Dimmer. Its mark is not hidden: AirportsGl's
+ *  SELECTED_MARK is the same picture at the same size over it. */
+function unlessSelected(colour: ExpressionSpecification | string): ExpressionSpecification {
+  return ["case", ["boolean", ["feature-state", "selected"], false], "transparent", colour] as ExpressionSpecification;
+}
 
 /** Not one of the idents the route draws itself, held in the state (an
  *  unset state is none: MapLibre's `in` is false for a null list). */

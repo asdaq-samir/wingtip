@@ -17,7 +17,9 @@ const PLACED = "placed";
  *  and 6). An opacity by feature state, not a filter by the map's global
  *  state: a filter's change laid every overlay tile out again at each rest
  *  of the map, the airspace, airports, fixes and runways with it (the map
- *  speed audit, 2026-11-27); a state's change repaints only. */
+ *  speed audit, 2026-11-27); a state's change repaints only. Not times the
+ *  Dimmer: the rings are dimmed by their colour (glStyle), as an opacity by
+ *  feature times its global state relaid the tiles at each of its steps. */
 export function ringOfPlacedField(opacity: number): ExpressionSpecification {
   return [
     "case",
