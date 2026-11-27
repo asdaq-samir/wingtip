@@ -272,7 +272,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             chartTileMax = maxZoom
             map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
             val written = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather).also { writtenJson = it; writtenLayers = null }
-            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac)
+            val json = MapDim.style(app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac))
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is shown, so a slow tile never leaves it hidden.
@@ -305,7 +305,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (destroyed) return
         view.getMapAsync { map ->
             map.getStyle { style ->
-                val paint = look.paint(night)
+                val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax) } // the marks at the chart's light (MapDim)
                 relabel(style)
                 RouteLegLayer.paint(style, night)
                 style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(

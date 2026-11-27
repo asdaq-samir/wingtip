@@ -117,6 +117,9 @@ object StationLayer {
             PropertyFactory.textColor(Expression.switchCase(Expression.eq(Expression.get("over"), true), red, ink)),
             PropertyFactory.textHaloColor(Expression.color(WingtipColors.Chart.CASING_HEX.toColorInt())),
             PropertyFactory.textHaloWidth(2f),
+            // At the Dimmer's light at night, as all drawn on the chart (MapDim).
+            PropertyFactory.iconOpacity(MapDim.opacity()),
+            PropertyFactory.textOpacity(MapDim.opacity()),
         )
     }
 
@@ -139,6 +142,7 @@ object StationLayer {
                 PropertyFactory.textHaloWidth(2f),
                 PropertyFactory.textAllowOverlap(true),
                 PropertyFactory.textIgnorePlacement(true),
+                PropertyFactory.textOpacity(MapDim.opacity()),
             ),
             // Farther out, only where the wind earns it, giving way to one
             // another rather than piled up.
@@ -159,6 +163,7 @@ object StationLayer {
                 PropertyFactory.iconTranslateAnchor(Property.ICON_TRANSLATE_ANCHOR_VIEWPORT),
                 PropertyFactory.iconAllowOverlap(true),
                 PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconOpacity(MapDim.opacity()),
             ).also { it.minZoom = farthest },
         )
     }
