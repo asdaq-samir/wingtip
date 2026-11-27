@@ -809,16 +809,6 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
   initial-value: 1;
 }
 
-/* The finger's movement on a sheet, handed by script to the few parts that
-   read it (sheet/sheetFollow), and inherited by nothing: a plain custom
-   property on the popup restyled the whole sheet at every move of a
-   finger (the animation audit of 2026-11-23, H1). */
-@property --sheet-swipe {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
 @property --glass-fill {
   syntax: "*";
   inherits: false;
