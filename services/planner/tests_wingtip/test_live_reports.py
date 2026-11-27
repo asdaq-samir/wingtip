@@ -143,7 +143,7 @@ def test_each_runway_ends_rvr_is_kept_in_feet_and_six_thousand_is_the_most():
     assert rvr.heard(fixture("stdds_rvr.xml"), now=NOW) == len(ends)
     assert {e["runway"] for e in rvr.at_airport("DFW", now=NOW)} == {e["runway"] for e in ends}
     # Ten minutes on it is no longer RVR now.
-    assert rvr.at_airport("KDFW", now=NOW + rvr.RVR_FRESH_S + 1) == []
+    assert rvr.at_airport("KDFW", now=NOW + 10 * 60 + 1) == []
 
 
 def test_a_reading_of_00_or_ff_is_no_reading_never_zero():

@@ -189,8 +189,9 @@ def clearance_words(response: Response, near: str = Query(default=""), dep: str 
     for p in (listed or {}).get("procedures", []):
         m = re.fullmatch(r"([A-Z]+)\d", p["id"]) if p["kind"] == "departure" else None
         if m:
-            words.append(f"{names.get(m.group(1), m.group(1).title())} departure")
+            words.append(f"{names.get(m.group(1), engine('title_case', text=m.group(1)))} departure")
     words += sorted({n for n in names.values()})
-    words += sorted({p["ident"].title() for p in places if p["what"] == "fix" and len(p["ident"]) == 5})
+    fives = [p["ident"] for p in places if p["what"] == "fix" and len(p["ident"]) == 5]
+    words += sorted(set(engine("title_case", texts=fives))) if fives else []
     seen: set[str] = set()
     return {"words": [w for w in words if not (w in seen or seen.add(w))][:MOST_WORDS]}

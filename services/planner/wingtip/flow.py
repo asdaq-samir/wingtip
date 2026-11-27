@@ -23,7 +23,8 @@ CNX") and flow constrained areas (FXA, not read).
   airport it names until its stop time.
 
 Kept in wingtip.live_reports (kind "flow"), one report an airport and
-program or restriction, until its end. Words only: what a program means
+program or restriction, until its end (the engine's flow_ends: six hours
+for one given none). Words only: what a program means
 for a flight is the engine's (the Go / No-Go's flow finding).
 """
 
@@ -34,6 +35,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from . import live_reports, utc
+from .engine import ask as engine
 
 KIND = "flow"
 #: The programs a title names, the most specific first.
@@ -42,11 +44,15 @@ PROGRAMS = (
     ("GROUND STOP", "ground stop"),
     ("AIRSPACE FLOW PROGRAM", "airspace flow program"),
 )
-#: How long a program with no end given is kept, s.
-OPEN_ENDED_S = 6 * 3600
 _TITLE = re.compile(r"ADVZY\s+(\d+)\s+([A-Z0-9]+)(?:/([A-Z0-9]+))?\s+(\d\d/\d\d/\d{4})\s+(.*)")
 _FIELD = re.compile(r"^\s*([A-Z][A-Z /]+?):\s*(.*?)\s*$", re.M)
 _MINUTES = re.compile(r"(\d+)")
+
+
+def _ends(found: dict, now: float) -> float:
+    """When it stops being kept: its own end, else the engine's (flow_ends,
+    six hours for a program the Command Center gives no end for)."""
+    return engine("flow_ends", heard=now, ends=found["ends"] or None)["ends"]
 
 
 def _local(tag: str) -> str:
@@ -140,9 +146,7 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
         if found["cancelled"]:
             live_reports.drop(KIND, key)
         else:
-            live_reports.put(
-                KIND, key, found, place=found["airport"], starts=found["starts"], ends=found["ends"] or now + OPEN_ENDED_S, now=now
-            )
+            live_reports.put(KIND, key, found, place=found["airport"], starts=found["starts"], ends=_ends(found, now), now=now)
         return 1
     if _find(root, "restrictionMessage") is not None:
         found = restriction(root)
@@ -155,7 +159,7 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
                 r,
                 place=r["airport"],
                 starts=r["starts"],
-                ends=r["ends"] or now + OPEN_ENDED_S,
+                ends=_ends(r, now),
                 now=now,
             )
         return len(found)

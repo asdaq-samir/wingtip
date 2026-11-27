@@ -174,6 +174,21 @@ nonisolated enum EngineContract {
         var figure: String
     }
 
+    nonisolated struct AirplaneShortTypeAnswer: Codable, Equatable, Sendable {
+        var makeShort: String?
+        var modelShort: String?
+
+        enum CodingKeys: String, CodingKey {
+            case makeShort = "make_short"
+            case modelShort = "model_short"
+        }
+    }
+
+    nonisolated struct AirplaneShortTypeInput: Codable, Equatable, Sendable {
+        var manufacturer: String?
+        var model: String?
+    }
+
     nonisolated struct AirportDataWordsInput: Codable, Equatable, Sendable {
         /// The planner's AirportPlace data_source.
         var dataSource: String?
@@ -4263,6 +4278,18 @@ nonisolated enum EngineContract {
         var lon: Double
     }
 
+    nonisolated struct FlowEndsAnswer: Codable, Equatable, Sendable {
+        /// When it is no longer kept, Unix seconds.
+        var ends: Double
+    }
+
+    nonisolated struct FlowEndsInput: Codable, Equatable, Sendable {
+        /// When it was heard, Unix seconds.
+        var heard: Double
+        /// Its own end, Unix seconds, where the advisory or restriction gives one.
+        var ends: Double?
+    }
+
     nonisolated struct FlowLevelsAnswer: Codable, Equatable, Sendable {
         var wind: [EngineContract.FlowLevelsAnswerWindItem]
         var icing: [EngineContract.FlowLevelsAnswerIcingItem]
@@ -8134,6 +8161,13 @@ nonisolated enum EngineContract {
 
     nonisolated struct MorseInput: Codable, Equatable, Sendable {
         var ident: String?
+    }
+
+    nonisolated struct NameCaseInput: Codable, Equatable, Sendable {
+        var text: String?
+        /// A long list's rows in one call; where given, text is not read.
+        var texts: [String?]?
+        var kind: String?
     }
 
     nonisolated struct NavaidHoursInput: Codable, Equatable, Sendable {
@@ -12021,6 +12055,39 @@ nonisolated enum EngineContract {
         var text: String
     }
 
+    nonisolated struct RouteTypedAnswer: Codable, Equatable, Sendable {
+        /// The words read, DCT and the level group taken out.
+        var words: [String]
+        /// The points among them in order, each a stop's form, the procedures left out.
+        var points: [String]
+        /// The SIDs and STARs among the words, each with the nearest point before and after it (route_procedures).
+        var procedures: [EngineContract.RouteTypedAnswerProceduresItem]
+        /// The cruise the first level group asked for, feet.
+        var cruiseFt: Double?
+        var goesOn: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case words
+            case points
+            case procedures
+            case cruiseFt = "cruise_ft"
+            case goesOn = "goes_on"
+        }
+    }
+
+    nonisolated struct RouteTypedAnswerProceduresItem: Codable, Equatable, Sendable {
+        var name: String
+        var before: String?
+        var after: String?
+    }
+
+    nonisolated struct RouteTypedInput: Codable, Equatable, Sendable {
+        /// The words typed, each trimmed and uppercased here; blanks left out.
+        var words: [String]
+        /// false where the caller has nowhere to send procedures: every word is then read as a point.
+        var procedures: Bool?
+    }
+
     nonisolated struct RouteWayWarningInput: Codable, Equatable, Sendable {
         /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
         var kinds: [String]
@@ -12531,6 +12598,16 @@ nonisolated enum EngineContract {
             case midpointFt = "midpoint_ft"
             case rolloutFt = "rollout_ft"
         }
+    }
+
+    nonisolated struct RvrEndsAnswer: Codable, Equatable, Sendable {
+        /// When it is no longer the runway's RVR, Unix seconds.
+        var ends: Double
+    }
+
+    nonisolated struct RvrEndsInput: Codable, Equatable, Sendable {
+        /// When it was heard, Unix seconds.
+        var heard: Double
     }
 
     nonisolated struct RvrReadingsAnswer: Codable, Equatable, Sendable {

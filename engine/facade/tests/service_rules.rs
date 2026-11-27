@@ -3,10 +3,12 @@
 //! (wingtip_core::geo), a G-AIRMET snapshot's window
 //! (wingtip_weather::gairmet_window), and the planner's as it keeps a live
 //! feed or reads a kept one: an RVR system's readings (rvr_read), how long
-//! a D-ATIS is the airport's (datis_kept), whether a station's report is
-//! near a field (near_report), how far round a point towns are looked for
-//! (wingtip_altitude's congested_reach) and whether a track starts at a
-//! takeoff (wingtip_procedures::track_start) -- held to the shared cases in
+//! a D-ATIS, an RVR reading and a flow program are kept (datis_kept),
+//! whether a station's report is near a field (near_report), how far round
+//! a point towns are looked for (wingtip_altitude's congested_reach),
+//! whether a track starts at a takeoff (wingtip_procedures::track_start),
+//! and a name in the FAA's capitals and an airplane's short type
+//! (wingtip_wording's names) -- held to the shared cases in
 //! apps/web/src/lib/fixtures/serviceRules.json, each input and answer held
 //! to the contract (engine/contract/engine.schema.json).
 
@@ -26,8 +28,8 @@ fn each_rule_answers_as_the_fixture_says_in_the_contracts_shape() {
     let validator = jsonschema::draft7::new(&schema).expect("the contract is a draft 7 schema");
     let fixture = read_json("apps/web/src/lib/fixtures/serviceRules.json");
     for rule in [
-        "model_wind_levels", "velocity_track", "gairmet_window", "rvr_readings", "datis_ends", "report_near", "congested_reach",
-        "track_left_from",
+        "model_wind_levels", "velocity_track", "gairmet_window", "rvr_readings", "datis_ends", "rvr_ends", "flow_ends", "report_near",
+        "congested_reach", "track_left_from", "name_case", "airplane_short_type",
     ] {
         for case in fixture[rule].as_array().unwrap() {
             let text = call(rule, &case["input"].to_string()).unwrap_or_else(|e| panic!("{}: {e}", case["about"]));

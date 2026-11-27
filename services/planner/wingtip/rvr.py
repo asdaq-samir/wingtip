@@ -18,7 +18,8 @@ are kept as not reported, never as a value, and a pilot then takes the
 visibility (14 CFR 91.175(h)(1)).
 
 Kept in wingtip.live_reports (kind "rvr"), a report a runway end, until
-RVR_FRESH_S after it was heard: a reading ten minutes old is not RVR now.
+the engine's rvr_ends (ten minutes after it was heard, AIM 7-1-13's
+minute updates): a reading that old is not RVR now.
 How a reading is read and whether it is the system's most is the
 engine's (rvr_readings), and what a reading means against a minimum is
 the engine's too (rvr_check).
@@ -33,8 +34,6 @@ from . import live_reports
 from .engine import ask as engine
 
 KIND = "rvr"
-#: How long a runway's reading is given after it was heard, s.
-RVR_FRESH_S = 600
 #: The parts of a runway each reading is of, as the message names them.
 PARTS = ("touchdown", "midpoint", "rollout")
 
@@ -101,7 +100,7 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
             f"{live_reports.ident(airport)}:{end['runway']}",
             {"airport": airport, **end},
             place=airport,
-            ends=now + RVR_FRESH_S,
+            ends=engine("rvr_ends", heard=now)["ends"],
             now=now,
         )
     return len(ends)
@@ -109,5 +108,5 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
 
 def at_airport(airport: str, now: float | None = None) -> list[dict]:
     """An airport's runway ends' latest readings, each with when it was
-    heard; none where it has no RVR or none heard in RVR_FRESH_S."""
+    heard; none where it has no RVR or none heard within the engine's rvr_ends."""
     return live_reports.at(KIND, [airport], now=now)

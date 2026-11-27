@@ -762,6 +762,7 @@ export type ModelWindLevelsAnswer = {
 }[];
 export type MorseAnswer = string;
 export type NNumberAnswer = boolean;
+export type NameCaseAnswer = string | string[];
 export type NavaidHoursAnswer = string | null;
 export type NavLogApproachEndAnswer = {
   end_altitude_ft: number;
@@ -1264,6 +1265,13 @@ export interface EngineContract {
   airplane_needs: {
     input: AirplaneNeedsInput;
     answer: AirplaneNeedsAnswer;
+  };
+  /**
+   * What an airplane is in a few words, from the aircraft registry's maker and model (ACFTREF): its maker without the words that say what kind of company it is ("AIRBUS S A S" Airbus, "PIPER AIRCRAFT INC" Piper) and its model without the variant ("A321-271NX" A321; one starting with letters alone keeps its number, "PA-28-140" PA-28). The owner's "Maybe just Airbus A321" (2026-11-27). A name's shortening, no aviation rule.
+   */
+  airplane_short_type: {
+    input: AirplaneShortTypeInput;
+    answer: AirplaneShortTypeAnswer;
   };
   /**
    * How far a field's figures are to be trusted, in the card's words: "Owner-reported, last updated Aug 2023" where NASR's INSPECT_METHOD_CODE is 1 or 2 (the 5010-1 and 5010-2 mailouts: the owner's own figures, never inspected), null where they were inspected (F, S, C) or the source is not known.
@@ -2218,6 +2226,13 @@ export interface EngineContract {
     answer: FlowCellAnswer;
   };
   /**
+   * When a traffic management program or restriction (TFMS flow information: a ground stop, ground delay program, airspace flow program or a facility's restriction) stops being kept: its own end where the Command Center gives one, else six hours after it was heard, a design bound (the ATCSCC advises each program's effective period and its revisions, FAA JO 7210.3 chapter 17).
+   */
+  flow_ends: {
+    input: FlowEndsInput;
+    answer: FlowEndsAnswer;
+  };
+  /**
    * The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
    */
   flow_levels: {
@@ -2946,6 +2961,13 @@ export interface EngineContract {
     answer: NNumberAnswer;
   };
   /**
+   * A name the FAA writes in capitals, written as a name is, where faa_words' sentence case and place_name do not fit: a registrant's (kind person, the default: each word capitalised, a company's form such as LLC, Inc's INC as Inc, and a word with figures kept; the aircraft registry's MASTER and DEREG), a maker's (maker: its initials kept too, IAE, CFM; ACFTREF), a facility's (facility: its RCO or TWR kept; NASR's frequencies) or a street address (street: its compass points NE and ordinals 1st as written; NASR's contacts, the Census geocoder). From text, or each of texts as a list (a null row answers ""). A name's spelling, no aviation rule.
+   */
+  name_case: {
+    input: NameCaseInput;
+    answer: NameCaseAnswer;
+  };
+  /**
    * A navaid's hours as filed ("24" is "Continuous"), or null where none are filed.
    */
   navaid_hours: {
@@ -3639,6 +3661,13 @@ export interface EngineContract {
     answer: RouteReadAnswer;
   };
   /**
+   * A route typed or pasted, read as the route box and Type Route take it: each word as item 15 of a flight plan has it (AIM Appendix 4, route_read: DCT out, a speed and level group the cruise asked for), a position's "@42.1,-88.2" kept whole, the SIDs and STARs among the words (route_procedures; AIM 5-2-9, 5-4-1) the route's procedures, not points, and the rest the points whose form is a stop's (point_kind). goes_on where the words end in a procedure, its field still to be typed. Which field publishes a procedure, and as which kind, is the caller's, from the field's procedures.
+   */
+  route_typed: {
+    input: RouteTypedInput;
+    answer: RouteTypedAnswer;
+  };
+  /**
    * A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
    */
   route_way_warning: {
@@ -3728,6 +3757,13 @@ export interface EngineContract {
   rvr_check: {
     input: RvrCheckInput;
     answer: RvrCheckAnswer;
+  };
+  /**
+   * When a runway's RVR reading heard at a time stops being the runway's: ten minutes after it was heard. AIM 7-1-13 has RVR 'updated approximately once every minute', so a reading not followed in ten is one the system or the feed stopped sending; a design bound that errs toward no RVR, the pilot then taking the visibility (14 CFR 91.175(h)(1)).
+   */
+  rvr_ends: {
+    input: RvrEndsInput;
+    answer: RvrEndsAnswer;
   };
   /**
    * An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet ("35" is 3,500 ft; "00", "FF" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.
@@ -4396,6 +4432,14 @@ export interface AirplaneNeedsAnswer {
    * The inputs' names in order: a figure's key (taxi_fuel_gal, glide_ratio ...), a table (loading, takeoff, landing), or airplane.
    */
   missing: string[];
+}
+export interface AirplaneShortTypeInput {
+  manufacturer?: string | null;
+  model?: string | null;
+}
+export interface AirplaneShortTypeAnswer {
+  make_short: string | null;
+  model_short: string | null;
 }
 export interface AirportDataWordsInput {
   /**
@@ -7735,6 +7779,22 @@ export interface FlowCellInput {
   lat: number;
   lon: number;
 }
+export interface FlowEndsInput {
+  /**
+   * When it was heard, Unix seconds.
+   */
+  heard: number;
+  /**
+   * Its own end, Unix seconds, where the advisory or restriction gives one.
+   */
+  ends?: number | null;
+}
+export interface FlowEndsAnswer {
+  /**
+   * When it is no longer kept, Unix seconds.
+   */
+  ends: number;
+}
 export interface FlowLevelsInput {}
 export interface FlowLevelsAnswer {
   wind: {
@@ -10256,6 +10316,14 @@ export interface MorseInput {
 }
 export interface NNumberInput {
   text?: string | null;
+}
+export interface NameCaseInput {
+  text?: string | null;
+  /**
+   * A long list's rows in one call; where given, text is not read.
+   */
+  texts?: (string | null)[];
+  kind?: "person" | "maker" | "facility" | "street" | null;
 }
 export interface NavaidHoursInput {
   hours?: string | null;
@@ -13340,6 +13408,39 @@ export interface RouteReadAnswer {
     ft: number;
   }[];
 }
+export interface RouteTypedInput {
+  /**
+   * The words typed, each trimmed and uppercased here; blanks left out.
+   */
+  words: string[];
+  /**
+   * false where the caller has nowhere to send procedures: every word is then read as a point.
+   */
+  procedures?: boolean | null;
+}
+export interface RouteTypedAnswer {
+  /**
+   * The words read, DCT and the level group taken out.
+   */
+  words: string[];
+  /**
+   * The points among them in order, each a stop's form, the procedures left out.
+   */
+  points: string[];
+  /**
+   * The SIDs and STARs among the words, each with the nearest point before and after it (route_procedures).
+   */
+  procedures: {
+    name: string;
+    before: string | null;
+    after: string | null;
+  }[];
+  /**
+   * The cruise the first level group asked for, feet.
+   */
+  cruise_ft: number | null;
+  goes_on: boolean;
+}
 export interface RouteWayWarningInput {
   /**
    * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
@@ -13669,6 +13770,18 @@ export interface RvrCheckAnswer {
      */
     comparable_sm: number | null;
   }[];
+}
+export interface RvrEndsInput {
+  /**
+   * When it was heard, Unix seconds.
+   */
+  heard: number;
+}
+export interface RvrEndsAnswer {
+  /**
+   * When it is no longer the runway's RVR, Unix seconds.
+   */
+  ends: number;
 }
 export interface RvrReadingsInput {
   /**

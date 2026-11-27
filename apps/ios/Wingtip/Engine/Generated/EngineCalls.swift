@@ -45,6 +45,11 @@ nonisolated extension Engine {
         try Self.rule("airplane_needs", EngineContract.AirplaneNeedsInput(profile: profile, figure: figure))
     }
 
+    /// What an airplane is in a few words, from the aircraft registry's maker and model (ACFTREF): its maker without the words that say what kind of company it is ("AIRBUS S A S" Airbus, "PIPER AIRCRAFT INC" Piper) and its model without the variant ("A321-271NX" A321; one starting with letters alone keeps its number, "PA-28-140" PA-28). The owner's "Maybe just Airbus A321" (2026-11-27). A name's shortening, no aviation rule.
+    static func airplaneShortType(manufacturer: String? = nil, model: String? = nil) throws -> EngineContract.AirplaneShortTypeAnswer {
+        try Self.rule("airplane_short_type", EngineContract.AirplaneShortTypeInput(manufacturer: manufacturer, model: model))
+    }
+
     /// How far a field's figures are to be trusted, in the card's words: "Owner-reported, last updated Aug 2023" where NASR's INSPECT_METHOD_CODE is 1 or 2 (the 5010-1 and 5010-2 mailouts: the owner's own figures, never inspected), null where they were inspected (F, S, C) or the source is not known.
     static func airportDataWords(dataSource: String? = nil, infoDate: String? = nil) throws -> String? {
         try Self.rule("airport_data_words", EngineContract.AirportDataWordsInput(dataSource: dataSource, infoDate: infoDate))
@@ -725,6 +730,11 @@ nonisolated extension Engine {
         try Self.rule("flow_cell", EngineContract.FlowCellInput(bounds: bounds, width: width, height: height, lat: lat, lon: lon))
     }
 
+    /// When a traffic management program or restriction (TFMS flow information: a ground stop, ground delay program, airspace flow program or a facility's restriction) stops being kept: its own end where the Command Center gives one, else six hours after it was heard, a design bound (the ATCSCC advises each program's effective period and its revisions, FAA JO 7210.3 chapter 17).
+    static func flowEnds(heard: Double, ends: Double? = nil) throws -> EngineContract.FlowEndsAnswer {
+        try Self.rule("flow_ends", EngineContract.FlowEndsInput(heard: heard, ends: ends))
+    }
+
     /// The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
     static func flowLevels() throws -> EngineContract.FlowLevelsAnswer {
         try Self.rule("flow_levels", EngineContract.FlowLevelsInput())
@@ -1245,6 +1255,11 @@ nonisolated extension Engine {
         try Self.rule("n_number", EngineContract.NNumberInput(text: text))
     }
 
+    /// A name the FAA writes in capitals, written as a name is, where faa_words' sentence case and place_name do not fit: a registrant's (kind person, the default: each word capitalised, a company's form such as LLC, Inc's INC as Inc, and a word with figures kept; the aircraft registry's MASTER and DEREG), a maker's (maker: its initials kept too, IAE, CFM; ACFTREF), a facility's (facility: its RCO or TWR kept; NASR's frequencies) or a street address (street: its compass points NE and ordinals 1st as written; NASR's contacts, the Census geocoder). From text, or each of texts as a list (a null row answers ""). A name's spelling, no aviation rule.
+    static func nameCase(text: String? = nil, texts: [String?]? = nil, kind: String? = nil) throws -> OpenAPIValueContainer {
+        try Self.rule("name_case", EngineContract.NameCaseInput(text: text, texts: texts, kind: kind))
+    }
+
     /// A navaid's hours as filed ("24" is "Continuous"), or null where none are filed.
     static func navaidHours(hours: String? = nil) throws -> String? {
         try Self.rule("navaid_hours", EngineContract.NavaidHoursInput(hours: hours))
@@ -1740,6 +1755,11 @@ nonisolated extension Engine {
         try Self.rule("route_read", EngineContract.RouteReadInput(text: text))
     }
 
+    /// A route typed or pasted, read as the route box and Type Route take it: each word as item 15 of a flight plan has it (AIM Appendix 4, route_read: DCT out, a speed and level group the cruise asked for), a position's "@42.1,-88.2" kept whole, the SIDs and STARs among the words (route_procedures; AIM 5-2-9, 5-4-1) the route's procedures, not points, and the rest the points whose form is a stop's (point_kind). goes_on where the words end in a procedure, its field still to be typed. Which field publishes a procedure, and as which kind, is the caller's, from the field's procedures.
+    static func routeTyped(words: [String], procedures: Bool? = nil) throws -> EngineContract.RouteTypedAnswer {
+        try Self.rule("route_typed", EngineContract.RouteTypedInput(words: words, procedures: procedures))
+    }
+
     /// A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
     static func routeWayWarning(kinds: [String]) throws -> String? {
         try Self.rule("route_way_warning", EngineContract.RouteWayWarningInput(kinds: kinds))
@@ -1803,6 +1823,11 @@ nonisolated extension Engine {
     /// Each runway end's lowest RVR reading against a minimum, an RVR (ft) or a visibility (SM) by 14 CFR 91.175(h)(2)'s comparable values; a minimum between rows asks the next row up, one past 1 1/4 SM is not judged.
     static func rvrCheck(runways: [EngineContract.RvrCheckInputRunwaysItem], minimumRvrFt: Double? = nil, minimumSm: Double? = nil) throws -> EngineContract.RvrCheckAnswer {
         try Self.rule("rvr_check", EngineContract.RvrCheckInput(runways: runways, minimumRvrFt: minimumRvrFt, minimumSm: minimumSm))
+    }
+
+    /// When a runway's RVR reading heard at a time stops being the runway's: ten minutes after it was heard. AIM 7-1-13 has RVR 'updated approximately once every minute', so a reading not followed in ten is one the system or the feed stopped sending; a design bound that errs toward no RVR, the pilot then taking the visibility (14 CFR 91.175(h)(1)).
+    static func rvrEnds(heard: Double) throws -> EngineContract.RvrEndsAnswer {
+        try Self.rule("rvr_ends", EngineContract.RvrEndsInput(heard: heard))
     }
 
     /// An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet ("35" is 3,500 ft; "00", "FF" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.

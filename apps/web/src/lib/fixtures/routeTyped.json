@@ -1,0 +1,124 @@
+{
+  "why": "route_typed's cases: a route typed or pasted, read once for the web's route box (features/route/routeEdit readTyped) and the phones' Type Route, held by the engine (engine/facade/tests/time_ago.rs).",
+  "cases": [
+    {
+      "why": "A filed IFR route: the SID and STAR are procedures, each with the points either side, the rest points",
+      "input": {
+        "words": [
+          "kmsp",
+          "BAEE1",
+          "BAE",
+          "OSH",
+          "OSHH2",
+          "KATW"
+        ]
+      },
+      "expected": {
+        "words": [
+          "KMSP",
+          "BAEE1",
+          "BAE",
+          "OSH",
+          "OSHH2",
+          "KATW"
+        ],
+        "points": [
+          "KMSP",
+          "BAE",
+          "OSH",
+          "KATW"
+        ],
+        "procedures": [
+          {
+            "name": "BAEE1",
+            "before": "KMSP",
+            "after": "BAE"
+          },
+          {
+            "name": "OSHH2",
+            "before": "OSH",
+            "after": "KATW"
+          }
+        ],
+        "cruise_ft": null,
+        "goes_on": false
+      }
+    },
+    {
+      "why": "Words ending in a STAR: its field still to be typed, the route goes on",
+      "input": {
+        "words": [
+          "OSH",
+          "OSHH2"
+        ]
+      },
+      "expected": {
+        "words": [
+          "OSH",
+          "OSHH2"
+        ],
+        "points": [
+          "OSH"
+        ],
+        "procedures": [
+          {
+            "name": "OSHH2",
+            "before": "OSH",
+            "after": null
+          }
+        ],
+        "cruise_ft": null,
+        "goes_on": true
+      }
+    },
+    {
+      "why": "With nowhere to send them, procedures are read as points",
+      "input": {
+        "words": [
+          "BAEE1",
+          "BAE"
+        ],
+        "procedures": false
+      },
+      "expected": {
+        "words": [
+          "BAEE1",
+          "BAE"
+        ],
+        "points": [
+          "BAEE1",
+          "BAE"
+        ],
+        "procedures": [],
+        "cruise_ft": null,
+        "goes_on": false
+      }
+    },
+    {
+      "why": "DCT out, a level group the cruise (AIM Appendix 4, item 15), a position kept whole but no stop",
+      "input": {
+        "words": [
+          "KDLH",
+          "DCT",
+          "N0120F045",
+          "@42.1,-88.2",
+          "KMSN"
+        ]
+      },
+      "expected": {
+        "words": [
+          "KDLH",
+          "@42.1,-88.2",
+          "KMSN"
+        ],
+        "points": [
+          "KDLH",
+          "KMSN"
+        ],
+        "procedures": [],
+        "cruise_ft": 4500.0,
+        "goes_on": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "x-call": "wingtip_weather::datis_kept::call",
+  "description": "When a traffic management program or restriction (TFMS flow information: a ground stop, ground delay program, airspace flow program or a facility's restriction) stops being kept: its own end where the Command Center gives one, else six hours after it was heard, a design bound (the ATCSCC advises each program's effective period and its revisions, FAA JO 7210.3 chapter 17).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FlowEndsInput",
+      "type": "object",
+      "properties": {
+        "heard": {
+          "type": "number",
+          "description": "When it was heard, Unix seconds."
+        },
+        "ends": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Its own end, Unix seconds, where the advisory or restriction gives one."
+        }
+      },
+      "required": [
+        "heard"
+      ]
+    },
+    "answer": {
+      "title": "FlowEndsAnswer",
+      "type": "object",
+      "properties": {
+        "ends": {
+          "type": "number",
+          "description": "When it is no longer kept, Unix seconds."
+        }
+      },
+      "required": [
+        "ends"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

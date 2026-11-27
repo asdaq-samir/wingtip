@@ -270,7 +270,7 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
     found["fractional"] = bool(found["fractional"])
     # A file of the older shape (SCHEMA 1) until the next read has none.
     found["co_owner_names"] = json.loads(found.get("co_owner_names") or "[]")
-    return found
+    return codes.short_type(found)
 
 
 def _last_registration(db: sqlite3.Connection, hex_id: str | None, n: str) -> dict | None:
@@ -297,15 +297,17 @@ def _last_registration(db: sqlite3.Connection, hex_id: str | None, n: str) -> di
     found.pop("status_code", None)
     found.pop("export_country", None)
     cancelled = found.pop("cancel_date", None)
-    return {
-        **found,
-        "status": "Deregistered",
-        "standing": "lapsed",
-        "fractional": False,
-        "co_owner_names": [],
-        "expires": None,
-        "last_action": cancelled or found.get("last_action"),
-    }
+    return codes.short_type(
+        {
+            **found,
+            "status": "Deregistered",
+            "standing": "lapsed",
+            "fractional": False,
+            "co_owner_names": [],
+            "expires": None,
+            "last_action": cancelled or found.get("last_action"),
+        }
+    )
 
 
 def _one(db_path: Path, table: str, code: str | None) -> dict | None:

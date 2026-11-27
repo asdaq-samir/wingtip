@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import re
 
+from .engine import ask as engine
+
 #: MASTER's and DEREG's Type Registrant.
 REGISTRANT = {
     "1": "Individual",
@@ -205,27 +207,23 @@ RESERVATION = {
     "CE": "N-number change expired",
 }
 
-#: Words of a name kept in capitals: a company's form.
-_KEPT = frozenset({"LLC", "LLP", "LP", "PC", "PLLC", "USA", "US", "II", "III", "IV", "FBO", "DBA"})
-#: Words of three letters or fewer in a maker's name written as words,
-#: not as its initials.
-_WORDS = frozenset({"INC", "CO", "LTD", "AND", "THE", "OF", "DE", "LA", "Y", "DEL", "EL", "VAN", "VON"})
-
 
 def name_case(text: str, maker: bool = False) -> str:
     """A name in the FAA's capitals as a name is written: "ROCA ROJA Y
     CABALLO GRIS DE IDAHO LLC" as "Roca Roja Y Caballo Gris De Idaho LLC",
     "UNITED AIRLINES INC" as "United Airlines Inc"; a company's form and a
     word with figures kept, and in a maker's name (`maker`) its initials
-    too ("IAE", "CFM"), which in a person's ("JOE") are a name."""
+    too ("IAE", "CFM"), which in a person's ("JOE") are a name. The
+    engine's name_case."""
+    return engine("name_case", text=text, kind="maker" if maker else "person")
 
-    def word(w: str) -> str:
-        bare = w.strip(".,&")
-        if bare in _KEPT or any(c.isdigit() for c in w) or (maker and len(bare) <= 3 and bare.isalpha() and bare not in _WORDS):
-            return w
-        return w.capitalize()
 
-    return " ".join(word(w) for w in text.split())
+def short_type(found: dict) -> dict:
+    """The record with its type in a few words, the engine's
+    airplane_short_type: "make_short" ("Airbus" for "AIRBUS S A S") and
+    "model_short" ("A321" for "A321-271NX"), for the card's line and
+    facts strip."""
+    return {**found, **engine("airplane_short_type", manufacturer=found.get("manufacturer"), model=found.get("model"))}
 
 
 def name_or_none(text: str | None, maker: bool = False) -> str | None:

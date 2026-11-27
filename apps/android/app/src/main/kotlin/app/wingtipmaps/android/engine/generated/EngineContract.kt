@@ -206,6 +206,20 @@ object EngineContract {
     )
 
     @Serializable
+    data class AirplaneShortTypeAnswer(
+        @SerialName("make_short")
+        val makeShort: String? = null,
+        @SerialName("model_short")
+        val modelShort: String? = null,
+    )
+
+    @Serializable
+    data class AirplaneShortTypeInput(
+        val manufacturer: String? = null,
+        val model: String? = null,
+    )
+
+    @Serializable
     data class AirportDataWordsInput(
         /**
          * The planner's AirportPlace data_source.
@@ -4347,6 +4361,26 @@ object EngineContract {
     )
 
     @Serializable
+    data class FlowEndsAnswer(
+        /**
+         * When it is no longer kept, Unix seconds.
+         */
+        val ends: Double,
+    )
+
+    @Serializable
+    data class FlowEndsInput(
+        /**
+         * When it was heard, Unix seconds.
+         */
+        val heard: Double,
+        /**
+         * Its own end, Unix seconds, where the advisory or restriction gives one.
+         */
+        val ends: Double? = null,
+    )
+
+    @Serializable
     data class FlowLevelsAnswer(
         val wind: List<EngineContract.FlowLevelsAnswerWindItem>,
         val icing: List<EngineContract.FlowLevelsAnswerIcingItem>,
@@ -8351,6 +8385,16 @@ object EngineContract {
     @Serializable
     data class MorseInput(
         val ident: String? = null,
+    )
+
+    @Serializable
+    data class NameCaseInput(
+        val text: String? = null,
+        /**
+         * A long list's rows in one call; where given, text is not read.
+         */
+        val texts: List<String?>? = null,
+        val kind: String? = null,
     )
 
     @Serializable
@@ -12437,6 +12481,48 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteTypedAnswer(
+        /**
+         * The words read, DCT and the level group taken out.
+         */
+        val words: List<String>,
+        /**
+         * The points among them in order, each a stop's form, the procedures left out.
+         */
+        val points: List<String>,
+        /**
+         * The SIDs and STARs among the words, each with the nearest point before and after it (route_procedures).
+         */
+        val procedures: List<EngineContract.RouteTypedAnswerProceduresItem>,
+        /**
+         * The cruise the first level group asked for, feet.
+         */
+        @SerialName("cruise_ft")
+        val cruiseFt: Double? = null,
+        @SerialName("goes_on")
+        val goesOn: Boolean,
+    )
+
+    @Serializable
+    data class RouteTypedAnswerProceduresItem(
+        val name: String,
+        val before: String? = null,
+        val after: String? = null,
+    )
+
+    @Serializable
+    data class RouteTypedInput(
+        /**
+         * The words typed, each trimmed and uppercased here; blanks left out.
+         */
+        val words: List<String>,
+        /**
+         * false where the caller has nowhere to send procedures: every word is then read as a point.
+         */
+        val procedures: Boolean? = null,
+    )
+
+    @Serializable
     data class RouteWayWarningInput(
         /**
          * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
@@ -12966,6 +13052,22 @@ object EngineContract {
         val midpointFt: Double? = null,
         @SerialName("rollout_ft")
         val rolloutFt: Double? = null,
+    )
+
+    @Serializable
+    data class RvrEndsAnswer(
+        /**
+         * When it is no longer the runway's RVR, Unix seconds.
+         */
+        val ends: Double,
+    )
+
+    @Serializable
+    data class RvrEndsInput(
+        /**
+         * When it was heard, Unix seconds.
+         */
+        val heard: Double,
     )
 
     @Serializable
