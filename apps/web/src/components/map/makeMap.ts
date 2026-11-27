@@ -264,9 +264,12 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     m.once("render", ready);
   };
   const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
-  // At its first rest at the latest, once the chart has come.
+  // At its first rest at the latest, once the chart has come; at once
+  // with nothing to wait for (the chart None and no overlay archive known
+  // yet), where the map stood blank till REVEAL_LATEST_MS, 2.5 s.
+  const nothingWatched = noChart && !overlayIds.length;
   const rested = () => {
-    if (asked) ready();
+    if (asked || nothingWatched) ready();
   };
   m.on("sourcedata", tileIn);
   m.on("idle", rested);
