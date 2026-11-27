@@ -26,7 +26,12 @@
 # module out stack first, the stack growing down from 1 MiB to 0 and the
 # data from 1 MiB on, so the low 1 KiB is touched only by a stack within
 # a kilobyte of overflowing. Together 3.5 KB off the gzipped module
-# (2026-11-23, twiggy and gzip -9 on the build of the day).
+# (2026-11-23, twiggy and gzip -9 on the build of the day). --flatten
+# --rereloop first, then -Oz twice: the control flow rebuilt from scratch
+# before the size passes, 9.4 KB off the module and 1.5 KB gzipped
+# (2026-11-27), every rule case in apps/web/src/lib/fixtures/rules
+# answering the same and no speed lost in Node; opt-level "s" for
+# wingtip-core instead was 7 KB larger, and -O4 first 12 KB.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
@@ -75,7 +80,7 @@ docker run --rm --platform linux/amd64 -m 3g \
     cargo build --locked -p wingtip-wasm --target wasm32-unknown-unknown --profile wasm 2>&1 | tail -3
     echo "$BINARYEN_SHA256  /tools/$TARBALL" | sha256sum -c - >/dev/null
     mkdir /tmp/binaryen && tar xzf "/tools/$TARBALL" -C /tmp/binaryen --strip-components=1
-    /tmp/binaryen/bin/wasm-opt -Oz --converge --low-memory-unused --strip-debug --strip-producers \
+    /tmp/binaryen/bin/wasm-opt --flatten --rereloop -Oz -Oz --converge --low-memory-unused --strip-debug --strip-producers \
       --enable-mutable-globals --enable-sign-ext --enable-reference-types --enable-multivalue \
       --enable-bulk-memory --enable-nontrapping-float-to-int \
       /tmp/target/wasm32-unknown-unknown/wasm/wingtip_wasm.wasm -o /out/wingtip-engine.wasm
