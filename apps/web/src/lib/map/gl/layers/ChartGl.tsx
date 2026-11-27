@@ -5,7 +5,7 @@ import { chartQuery } from "../../../queryClient";
 import { usePreferences } from "../../../preferences";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
 import { useChartLook } from "../useChartLook";
-import { chartPaint, chartRole, chartSource, chartStyle, type ChartStyle } from "../glStyle";
+import { chartLayersAs, chartPaint, chartRole, chartSource, chartStyle, type ChartStyle } from "../glStyle";
 import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
@@ -181,11 +181,7 @@ function ChartSources({
   const visibility = shown ? "visible" : "none";
   // Added hidden where it is the kept one, so it fetches nothing at all
   // (useGlLayer reads its specs once, as the part mounts).
-  useGlLayer(
-    "chart",
-    spec.sources,
-    spec.layers.map((l) => ({ ...l, layout: { visibility } })),
-  );
+  useGlLayer("chart", spec.sources, chartLayersAs(spec, visibility));
   const names = ids.join();
   useEffect(() => {
     for (const id of names.split(",")) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility);
@@ -200,15 +196,6 @@ function ChartSources({
   }, [map, spec, fade, shown]);
   useEffect(() => {
     if (!shown) return;
-    // The frame the chart's first tile is drawn in, for the speed
-    // measurements (a canvas is no Largest Contentful Paint candidate, as
-    // an image is): `chart-drawn`, once a page.
-    const drawn = (e: { sourceId?: string; tile?: unknown }) => {
-      if (chartRole(e.sourceId) !== "chart" || !e.tile) return;
-      map.off("sourcedata", drawn);
-      if (!performance.getEntriesByName("chart-drawn").length) map.once("render", () => performance.mark("chart-drawn"));
-    };
-    map.on("sourcedata", drawn);
     // The level of the chart's tiles drawn now, on the map's element, for
     // the browser tests: the zoom rounded, as raster tiles are chosen, no
     // further than the chart's own last level.
@@ -223,7 +210,6 @@ function ChartSources({
     map.on("moveend", level);
     map.on("zoom", level);
     return () => {
-      map.off("sourcedata", drawn);
       map.off("moveend", level);
       map.off("zoom", level);
     };

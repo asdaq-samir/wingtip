@@ -14,11 +14,9 @@ import type {
 import { dimLayer, dimmedOpacity, isDimmed } from "./mapDim";
 
 /**
- * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is
- * a React component that says, through these hooks, what it adds -- its
- * sources and its style layers, in one of the map's slots -- what data it
- * gives them, and what a tap on it does. The map (GlMapShell) owns the
- * camera, the sheet and the one tap that goes to the nearest thing.
+ * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is a React component that says, through these
+ * hooks, what it adds -- its sources and its style layers, in one of the map's slots -- what data it gives them, and
+ * what a tap on it does. The map (GlMapShell) owns the camera, the sheet and the one tap that goes to the nearest thing.
  */
 
 /** Where a layer is drawn, bottom to top: land and water where the
@@ -155,22 +153,28 @@ const addedOf = (map: MlMap) => {
   return kept;
 };
 
-/** The map is being handed to the next tree that draws it (GlMapShell's
- *  park): the layers of the tree leaving stay where they are, for the
- *  next to claim as they are rather than draw again from nothing. */
+/** The map is being handed to the next tree that draws it (GlMapShell's park): the layers of the tree leaving stay
+ *  where they are, for the next to claim as they are rather than draw again from nothing. */
 export function parkLayers(map: MlMap) {
   parked.add(map);
 }
 
-/** The map taken up again: every layer of the last tree is unclaimed
- *  until the new tree adds the same. */
+/** The map taken up again: every layer of the last tree is unclaimed until the new tree adds the same. */
 export function adoptLayers(map: MlMap) {
   parked.delete(map);
   unclaimed.set(map, new Set(addedOf(map).keys()));
 }
 
-/** Once the new tree has added its own: the last tree's layers it did not
- *  claim taken away, its layers first and then their sources. */
+/** What a new map's first style drew already (makeMap's chart), as a tree adding the same specs would have added
+ *  them: claimed where the first tree adds the same, swept where it does not (sweepLayers). */
+export function firstStyleLayers(map: MlMap, sources: Record<string, SourceSpecification>, layers: LayerSpecification[]) {
+  const kept = addedOf(map);
+  for (const [id, source] of Object.entries(sources)) kept.set(`s:${id}`, JSON.stringify(source));
+  for (const layer of layers) kept.set(`l:${layer.id}`, JSON.stringify(layer));
+  unclaimed.set(map, new Set(kept.keys()));
+}
+
+/** Once the new tree has added its own: the last tree's layers it did not claim taken away, layers then sources. */
 export function sweepLayers(map: MlMap) {
   const left = unclaimed.get(map);
   unclaimed.delete(map);

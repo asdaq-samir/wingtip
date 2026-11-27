@@ -14,6 +14,10 @@ import { CHART, MAP_ZOOM } from "../../tokens";
 import { dimLayer } from "./mapDim";
 
 export { OVERLAY_SOURCE };
+/** The airports' own source on OVERLAY_SOURCE's archive: a change of the map's state their symbols read (each field's
+ *  weather, the settings, the route's fields) lays out again every tile of their source, and on their own that is the
+ *  airports alone, not the airspace, fixes and runways too (the map speed audit, 2026-11-27). */
+export const AIRPORTS_SOURCE = "faa-airports";
 
 /** The chart's own ink for a fix's ident. */
 const FIX_INK = CHART.fixInk;
@@ -25,15 +29,12 @@ const FIX_INK = CHART.fixInk;
 const VFR_GREEN = CHART.vfrGreenText;
 
 /**
- * The cycle's FAA overlays from its vector tiles (lib/map/sources/overlayTiles,
- * wingtip.vector_tiles), as the map's first style holds them (GlMapShell): the Class B, C and D, the airports, the VORs, the low
- * enroute chart's fixes, the VFR waypoints and the runways, each drawn
- * per tile as the chart is, with nothing asked of the planner for the
- * view and no wait on the engine. What changes over them -- which fields
- * the settings hide, the route's own fields, each field's weather -- is set on the layers here (applyOverlayFilters, setOverlayExclusion,
- * setAirportWeather); their taps and cards are the layers' components'
- * (AirportsGl, AirspaceGl, NavaidsGl), which build what a card needs from
- * the tapped feature's fields.
+ * The cycle's FAA overlays from its vector tiles (lib/map/sources/overlayTiles, wingtip.vector_tiles), as the map's
+ * first style holds them (GlMapShell): the Class B, C and D, the airports, the VORs, the low enroute chart's fixes, the
+ * VFR waypoints and the runways, each drawn per tile as the chart is, with nothing asked of the planner for the view.
+ * What changes over them -- which fields the settings hide, the route's own fields, each field's weather, the open
+ * card's field -- is set here (applyOverlayFilters, setOverlayExclusion, setAirportWeather, markSelectedAirport); their
+ * taps and cards are the layers' components' (AirportsGl, AirspaceGl, NavaidsGl).
  */
 
 // ---- The marks' pictures --------------------------------------------------
@@ -87,11 +88,18 @@ const AIRPORT_ICON_NAMED: ExpressionSpecification = [
   TILE_AIRPORT_ICON,
 ];
 
-/** The fields that are drawn whatever their name: a Class B's (field_mark_rank's largest; the owner, 2026-11-17,
- *  "all the class B airports show even when zoomed out") and the one whose card is open (AirportsGl rings it). */
-function keptField(): ExpressionSpecification {
-  return ["any", ["==", ["get", "size"], "largest"], ["==", ["get", "ident"], ["coalesce", ["global-state", SELECTED_AIRPORT], ""]]];
-}
+/** The fields drawn whatever their name: a Class B's (field_mark_rank's largest; the owner, 2026-11-17, "all the class
+ *  B airports show even when zoomed out"). The open card's is AirportsGl's own layer's: a tap changes no filter. */
+const KEPT_FIELD: ExpressionSpecification = ["==", ["get", "size"], "largest"];
+
+/** No armed services' or private field unless asked for (a joint-use one always), by the settings (applyOverlayFilters). */
+export const AIRPORT_SHOWN: ExpressionSpecification[] = [
+  ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]],
+  ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]],
+];
+
+/** A field's mark's size, the tile layers' and the open card's field's alike (airportIconSize). */
+export const AIRPORT_ICON_SIZE = airportIconSize(glZoom(AIRPORTS_FARTHEST_ZOOM), glZoom(10), glZoom(13));
 
 /** A Class C's field (field_mark_rank's larger): its own layer, placed before the other fields, as symbol-sort-key
  *  orders only within a tile and a small field across a tile's edge took a Class C's room, leaving its ring bare. */
@@ -114,21 +122,12 @@ function airportMarksLayers(from: { source: string; "source-layer"?: string }): 
     type: "symbol",
     ...from,
     minzoom: glZoom(AIRPORTS_FARTHEST_ZOOM),
-    // The armed services' own fields and private ones unless asked for (a
-    // joint-use field always drawn), and none the route draws itself: read
-    // from the map's state, which the settings and the route set.
-    filter: [
-      "all",
-      ["any", ["boolean", ["global-state", SHOW_MILITARY], false], ["!=", ["get", "military"], "military"]],
-      ["any", ["boolean", ["global-state", SHOW_PRIVATE], false], ["!=", ["get", "use"], "private"]],
-      notOwn(ROUTE_AIRPORTS),
-      kept ? keptField() : ["!", keptField()],
-      tier,
-    ],
+    // The fields the settings show, and none the route draws itself.
+    filter: ["all", ...AIRPORT_SHOWN, notOwn(ROUTE_AIRPORTS), kept ? KEPT_FIELD : ["!", KEPT_FIELD], tier],
     layout: {
       "icon-image": kept ? TILE_AIRPORT_ICON : AIRPORT_ICON_NAMED,
       // Each field at its own size step, the biggest largest (airportIconSize).
-      "icon-size": airportIconSize(glZoom(AIRPORTS_FARTHEST_ZOOM), glZoom(10), glZoom(13)),
+      "icon-size": AIRPORT_ICON_SIZE,
       "icon-allow-overlap": kept,
       // Two px round each mark at every zoom: out at a few states the towered fields then stand side by side in rank
       // order, as ForeFlight's do, where 27 px round each (to the app's zoom 7) left one field a metro (2026-11-21).
@@ -143,7 +142,12 @@ function airportMarksLayers(from: { source: string; "source-layer"?: string }): 
       "text-optional": kept,
       "text-padding": 1,
     },
-    paint: { "text-color": labelInk(AIRPORT_IDENT_INK), ...labelHalo("airportIdent"), "text-opacity": SELECTED_HIDDEN },
+    paint: {
+      "text-color": labelInk(AIRPORT_IDENT_INK),
+      ...labelHalo("airportIdent"),
+      "text-opacity": SELECTED_HIDDEN,
+      "icon-opacity": SELECTED_HIDDEN,
+    },
   });
   return [
     layer("airports", false, ["!", CLASS_C_FIELD]),
@@ -284,7 +288,7 @@ const ROUTE_ONLY_HIDDEN = [...AIRPORT_TILE_LAYERS, "vfr-waypoints", "vfr-waypoin
 export function overlayStyle(
   tiles: OverlayTiles,
   origin?: string,
-): { source: SourceSpecification; layers: Partial<Record<Slot, LayerSpecification[]>> } {
+): { sources: Record<string, SourceSpecification>; layers: Partial<Record<Slot, LayerSpecification[]>> } {
   const from = (layer: string) => ({ source: OVERLAY_SOURCE, "source-layer": layer });
   const lines: LayerSpecification[] = [
     ...runwayLayers(),
@@ -311,10 +315,16 @@ export function overlayStyle(
       filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]],
       minzoom: glZoom(VOR_ZOOM),
     }),
-    ...airportMarksLayers(from("airports")),
+    ...airportMarksLayers({ source: AIRPORTS_SOURCE, "source-layer": "airports" }),
   ];
+  // Each field's and each ring's id its ident, for the states a tap and a placed field set (feature-state, which
+  // repaints and lays out nothing).
+  const sources = {
+    [OVERLAY_SOURCE]: { ...overlaySource(tiles, origin), promoteId: { airspace: "ident" } },
+    [AIRPORTS_SOURCE]: { ...overlaySource(tiles, origin), promoteId: { airports: "ident" } },
+  };
   // At the Dimmer's brightness at night, as everything drawn on the chart (mapDim).
-  return { source: overlaySource(tiles, origin), layers: { lines: lines.map(dimLayer), marks: marks.map(dimLayer) } };
+  return { sources, layers: { lines: lines.map(dimLayer), marks: marks.map(dimLayer) } };
 }
 
 /** The overlays added to a map made without them (their name came after
@@ -324,7 +334,7 @@ export function overlayStyle(
 export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
   if (map.getSource(OVERLAY_SOURCE)) return;
   const style = overlayStyle(tiles, origin);
-  map.addSource(OVERLAY_SOURCE, style.source);
+  for (const [id, source] of Object.entries(style.sources)) map.addSource(id, source);
   SLOTS.forEach((slot, i) => {
     const ids = map.getStyle().layers.map((l) => l.id);
     const before = ids[i === 0 ? 0 : ids.indexOf(slotId(SLOTS[i - 1]!)) + 1]!;
@@ -334,17 +344,13 @@ export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
 
 // ---- What changes over them ----------------------------------------------
 
-// The map's global state the tile layers read (MapLibre's `global-state`
-// expression): each change one setGlobalStateProperty, which MapLibre
-// skips when the value is the same and applies to the layers that read
-// it, rather than a filter or expression built again by hand.
+// The map's global state the tile layers read (MapLibre's `global-state`): each change one setGlobalStateProperty,
+// skipped when the value is the same; one read by a filter or the layout lays the layer's source out again.
 const ROUTE_AIRPORTS = "routeAirports";
 const ROUTE_WAYPOINTS = "routeWaypoints";
-const SELECTED_AIRPORT = "selectedAirport";
-// The open card's ident hidden in paint (AirportsGl writes it larger): a tap repaints, not a re-layout of every tile.
-const SELECTED_HIDDEN: ExpressionSpecification = ["case", ["==", ["get", "ident"], ["global-state", SELECTED_AIRPORT]], 0, 1];
-const SHOW_MILITARY = "showMilitary";
-const SHOW_PRIVATE = "showPrivate";
+// The open card's field left to AirportsGl's own mark and larger ident, by its feature state: a tap repaints only.
+// Not the map's global state: one a data-driven paint reads lays every tile of its source out again as it changes.
+const SELECTED_HIDDEN: ExpressionSpecification = ["case", ["boolean", ["feature-state", "selected"], false], 0, 1];
 
 /** Not one of the idents the route draws itself, held in the state (an
  *  unset state is none: MapLibre's `in` is false for a null list). */
@@ -369,8 +375,8 @@ export function applyOverlayFilters(map: MlMap, emergency = false, routeOnly = f
   visible(AIRSPACE_TILE_LAYERS, prefs.aeronautical && !routeOnly);
   visible(NAVAID_TILE_LAYERS, prefs.aeronautical && !routeOnly);
   visible(ROUTE_ONLY_HIDDEN, !routeOnly);
-  setState(map, SHOW_MILITARY, prefs.privateMilitary || emergency);
-  setState(map, SHOW_PRIVATE, prefs.privateMilitary || emergency);
+  setState(map, "showMilitary", prefs.privateMilitary || emergency);
+  setState(map, "showPrivate", prefs.privateMilitary || emergency);
 }
 
 /** The idents the route draws itself (its fields' chips, its waypoints),
@@ -379,10 +385,10 @@ export function setOverlayExclusion(map: MlMap, kind: "airports" | "waypoints", 
   setState(map, kind === "airports" ? ROUTE_AIRPORTS : ROUTE_WAYPOINTS, [...new Set(idents)].sort());
 }
 
-/** The field whose card is open: its ident left off the tile layer,
- *  which the ring's own layer writes larger (AirportsGl). */
-export function setSelectedAirport(map: MlMap, ident: string | null) {
-  setState(map, SELECTED_AIRPORT, ident);
+/** The field whose card is open, `on` or no longer: its tile mark and ident hidden, AirportsGl drawing them. */
+export function markSelectedAirport(map: MlMap, id: string, on: boolean) {
+  if (map.style && map.getSource(AIRPORTS_SOURCE))
+    map.setFeatureState({ source: AIRPORTS_SOURCE, sourceLayer: "airports", id }, { selected: on });
 }
 
 /** Each field's weather disc from its METAR (its flight category's colour,

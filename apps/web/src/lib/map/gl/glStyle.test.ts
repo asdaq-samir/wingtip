@@ -16,6 +16,7 @@ import {
 } from "./glStyle";
 import { legPiece, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
 import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryFrom } from "./closeZoom";
+import { ringOfPlacedField } from "./placedRings";
 
 const chart = {
   chart_cycle: "10-29-2026",
@@ -112,8 +113,12 @@ describe("airspaceLayers", () => {
     ]);
     expect(layers.every((l) => "source" in l && l.source === OVERLAY_SOURCE)).toBe(true);
     const band = layers.find((l) => l.id === "airspace-C-band") as LineLayerSpecification;
-    // Inwards, wider as the map comes in, the line's own ink faint.
-    expect(band.paint).toMatchObject({ "line-color": "#e02ad8", "line-opacity": 0.3 });
+    // Inwards, wider as the map comes in, the line's own ink faint; a Class C's
+    // ring only with its field drawn, by its feature state (placedRings), a
+    // Class B's always.
+    expect(band.paint).toMatchObject({ "line-color": "#e02ad8", "line-opacity": ringOfPlacedField(0.3) });
+    expect(band.filter).toEqual(["==", ["get", "class"], "C"]);
+    expect((layers.find((l) => l.id === "airspace-B-band") as LineLayerSpecification).paint!["line-opacity"]).toBe(0.3);
     const offset = band.paint!["line-offset"] as unknown as (string | number)[];
     expect(offset.slice(3).filter((_, i) => i % 2 === 1)).toEqual([3, 4.5, 6.5, 9.5]);
   });

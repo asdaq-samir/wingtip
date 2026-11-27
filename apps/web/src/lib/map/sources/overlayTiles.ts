@@ -1,6 +1,7 @@
 import { PMTiles, Protocol } from "pmtiles";
 import type { OverlayTiles } from "../../api/types";
 import { tileOf } from "../tileMath";
+import { keepTile, keptTile } from "./tileStore";
 
 /**
  * The map's FAA overlays as vector tiles, for a MapLibre map: the cycle's
@@ -8,8 +9,9 @@ import { tileOf } from "../tileMath";
  * one PMTiles archive the planner builds once a cycle
  * (wingtip.vector_tiles) and serves in byte ranges
  * (/api/overlay-tiles/{name}.pmtiles), read here by protomaps' own
- * `pmtiles` library -- stock, nothing hand-rolled but the small cache of
- * tiles fetched ahead (prefetchRing). A map registers the protocol once,
+ * `pmtiles` library -- stock, nothing hand-rolled but the tiles kept: in
+ * memory as they are fetched (and ahead, prefetchRing), and between visits
+ * (tileStore). A map registers the protocol once,
  * asks `api.overlayTiles()` for the cycle's archive, and adds
  * `overlaySource(tiles)` as a vector source in its first style
  * (lib/map/gl/glOverlays); its layers then draw from the source layers in
@@ -41,25 +43,51 @@ interface ProtocolHost {
 const protocol = new Protocol({ metadata: false });
 const registered = new WeakSet<ProtocolHost>();
 
-/** The tiles fetched ahead of the map asking (prefetchRing), by their
- *  pmtiles:// address, each handed over once and then let go; at most
- *  PREFETCH_KEPT, the oldest dropped first. */
-const ahead = new Map<string, Promise<Uint8Array | null>>();
-const PREFETCH_KEPT = 160;
+/** The tiles fetched lately or ahead of the map asking (prefetchRing), by
+ *  their pmtiles:// address, for every source that reads the archive (the
+ *  airports' own and the rest, glOverlays) to have from one fetch; at most
+ *  RECENT_KEPT, the oldest dropped first. */
+const recent = new Map<string, Promise<Uint8Array>>();
+const RECENT_KEPT = 200;
 /** Every tile fetched ahead already, so a rest after a rest asks only for
  *  the new ones; a few views' worth, then forgotten. */
 const asked = new Set<string>();
 const ASKED_KEPT = 4000;
 
-/** The protocol's tile, from the tiles fetched ahead where it is one. */
+const TILE_URL = /^pmtiles:\/\/(.+\/([^/]+)\.pmtiles)\/(\d+)\/(\d+)\/(\d+)$/;
+
+/** A tile's bytes: fetched lately, else kept from an earlier visit
+ *  (tileStore), else read from the archive and kept. A tile the archive
+ *  lacks is empty, as pmtiles' own protocol answers for vector tiles. */
+function fetchTile(url: string): Promise<Uint8Array> | null {
+  const got = recent.get(url);
+  if (got) return got;
+  const m = TILE_URL.exec(url);
+  if (!m) return null;
+  const [, archiveUrl, name, z, x, y] = m as unknown as [string, string, string, string, string, string];
+  const at = [+z, +x, +y] as const;
+  const read = (async () => {
+    const kept = await keptTile(name, ...at);
+    if (kept) return kept;
+    const r = await archiveAt(archiveUrl).getZxy(...at);
+    const data = r ? new Uint8Array(r.data) : new Uint8Array();
+    if (data.length) void keepTile(name, ...at, data);
+    return data;
+  })();
+  recent.set(url, read);
+  read.catch(() => recent.delete(url));
+  while (recent.size > RECENT_KEPT) recent.delete(recent.keys().next().value!);
+  return read;
+}
+
+/** The protocol's tile, through fetchTile; each answer a copy, as MapLibre
+ *  hands the bytes to its worker. */
 const tile: Protocol["tilev4"] = async (params, abort) => {
-  const early = ahead.get(params.url);
-  if (early) {
-    ahead.delete(params.url);
-    const data = await early;
-    if (data) return { data, cacheControl: undefined, expires: undefined };
-  }
-  return protocol.tilev4(params, abort);
+  const read = params.type === "json" ? null : fetchTile(params.url);
+  if (!read) return protocol.tilev4(params, abort);
+  const data = await read;
+  abort.signal.throwIfAborted();
+  return { data: data.slice(), cacheControl: undefined, expires: undefined };
 };
 
 /** The `pmtiles://` protocol added to a MapLibre once, however many maps
@@ -79,7 +107,9 @@ function overlayArchiveUrl(tiles: Pick<OverlayTiles, "name">, origin: string = l
 
 /** The archive's reader, the protocol's own, made once an address. */
 function archiveOf(tiles: Pick<OverlayTiles, "name">, origin?: string): PMTiles {
-  const url = overlayArchiveUrl(tiles, origin);
+  return archiveAt(overlayArchiveUrl(tiles, origin));
+}
+function archiveAt(url: string): PMTiles {
   let archive = protocol.get(url);
   if (!archive) {
     archive = new PMTiles(url);
@@ -155,20 +185,14 @@ export function prefetchRing(
 ): void {
   if (Math.floor(mapZoom) < tiles.min_zoom) return;
   const z = Math.min(tiles.max_zoom, Math.floor(mapZoom));
-  const archive = archiveOf(tiles, origin);
   const base = `pmtiles://${overlayArchiveUrl(tiles, origin)}`;
   for (const [x, y] of ringAround(tileRange(box, z), z)) {
     const url = `${base}/${z}/${x}/${y}`;
     if (asked.has(url)) continue;
     if (asked.size > ASKED_KEPT) asked.clear();
     asked.add(url);
-    ahead.set(
-      url,
-      archive
-        .getZxy(z, x, y)
-        .then((r) => (r ? new Uint8Array(r.data) : new Uint8Array()))
-        .catch(() => null),
-    );
-    while (ahead.size > PREFETCH_KEPT) ahead.delete(ahead.keys().next().value!);
+    fetchTile(url)?.catch(() => {
+      /* the map asks again as it needs the tile */
+    });
   }
 }
