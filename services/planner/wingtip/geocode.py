@@ -23,7 +23,9 @@ import zipfile
 
 import requests
 
-from . import outside
+from cachetools import LRUCache
+
+from . import outside, ratelimit
 from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
@@ -56,8 +58,19 @@ _RETRY_AT = 0.0
 #: answer past its time is still given when the geocoder does not answer,
 #: since an address does not move.
 ADDRESS_TTL_S = 3600
+#: The addresses kept at most, the least lately asked going first: the
+#: whole set was emptied at once at this many.
 ADDRESS_CACHE_MAX = 512
-_ADDRESSES: dict = {}
+_ADDRESSES: LRUCache = LRUCache(maxsize=ADDRESS_CACHE_MAX)
+#: How long the geocoder may take to answer, s: a search waits on it, and
+#: the field searches again as the pilot types (it was 8).
+GEOCODER_TIMEOUT_S = 3
+#: After the geocoder fails or does not answer in time it is not asked for
+#: this long, s, and searches answer with towns and airports alone: during a
+#: Census outage every keystroke of every pilot's search waited its whole
+#: timeout on a worker thread (round 6's audit, N4).
+GEOCODER_HOLD_S = 60
+_GEOCODER = ratelimit.Gate()
 
 
 def _towns_of(zipped: bytes) -> list:
@@ -163,11 +176,16 @@ def find_addresses(query: str, limit: int = 4) -> list:
         kept = _ADDRESSES.get(key)
     if kept and time.monotonic() < kept[0]:
         return kept[1][:limit]
+    if _GEOCODER.held(time.monotonic()):
+        return kept[1][:limit] if kept else []
     try:
         # Not wingtip.outside's retrying session: urllib3 logs a retried
         # request's URL, and this one carries the typed address.
         resp = requests.get(
-            GEOCODER_URL, headers=HEADERS, timeout=8, params={"address": query.strip(), "benchmark": "Public_AR_Current", "format": "json"}
+            GEOCODER_URL,
+            headers=HEADERS,
+            timeout=GEOCODER_TIMEOUT_S,
+            params={"address": query.strip(), "benchmark": "Public_AR_Current", "format": "json"},
         )
         resp.raise_for_status()
         matches = resp.json().get("result", {}).get("addressMatches", [])
@@ -175,6 +193,7 @@ def find_addresses(query: str, limit: int = 4) -> list:
         # The error's own text carries the URL, and with it the typed address:
         # only its kind is logged (docs/privacy-inventory.md, the Census row).
         log.warning("The Census geocoder did not answer for an address: %s", type(err).__name__)
+        _GEOCODER.hold(GEOCODER_HOLD_S, time.monotonic())
         return kept[1][:limit] if kept else []
     found = [
         {"label": _address_label(m["matchedAddress"]), "lat": m["coordinates"]["y"], "lon": m["coordinates"]["x"]}
@@ -182,8 +201,6 @@ def find_addresses(query: str, limit: int = 4) -> list:
         if m.get("matchedAddress") and m.get("coordinates")
     ]
     with _LOCK:
-        if len(_ADDRESSES) >= ADDRESS_CACHE_MAX:
-            _ADDRESSES.clear()
         _ADDRESSES[key] = (time.monotonic() + ADDRESS_TTL_S, found)
     return found
 
