@@ -151,8 +151,23 @@ export function shelfLabelsOf(pieces: VolumePiece[], eye: [number, number] | nul
  *  and facing the screen, kept off each other by MapLibre's own
  *  collision: each shelf's nearest place first, then Class B, C and D, the
  *  lower floor first; a label of a volume the plan is not at fainter,
- *  still legible. */
-export function shelfLabelLayer(id: string, source: string): SymbolLayerSpecification {
+ *  still legible. Two layers, the held labels (`id`, placed first) over
+ *  the fainter (shelfFadedId), each its opacity a constant: one by feature
+ *  times the Dimmer had MapLibre lay the source out again at each step of
+ *  the slider at night (the round-4 themes audit). */
+export function shelfLabelLayers(id: string, source: string): SymbolLayerSpecification[] {
+  const held = shelfLabelLayer(id, source, true);
+  return [
+    { ...shelfLabelLayer(shelfFadedId(id), source, false), filter: ["!", ["get", "held"]] },
+    { ...held, filter: ["get", "held"] },
+  ];
+}
+
+/** The fainter shelf labels' layer, under the held ones. */
+export const shelfFadedId = (id: string) => `${id}-faded`;
+
+function shelfLabelLayer(id: string, source: string, held: boolean): SymbolLayerSpecification {
+  const opacity = held ? 1 : MAP.airspaceLabelFaded;
   return {
     id,
     type: "symbol",
@@ -183,10 +198,6 @@ export function shelfLabelLayer(id: string, source: string): SymbolLayerSpecific
       "symbol-height-offset": ["get", "top_m"],
       "symbol-height-anchor": "absolute",
     },
-    paint: {
-      "text-color": CHART.casing,
-      "text-opacity": ["case", ["get", "held"], 1, MAP.airspaceLabelFaded],
-      "icon-opacity": ["case", ["get", "held"], 1, MAP.airspaceLabelFaded],
-    },
+    paint: { "text-color": CHART.casing, "text-opacity": opacity, "icon-opacity": opacity },
   };
 }

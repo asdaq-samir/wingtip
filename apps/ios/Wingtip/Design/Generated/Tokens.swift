@@ -1165,6 +1165,17 @@ nonisolated enum WingtipMapLabel {
     static let flowPin = Kind(size: [(0, 13)], bold: true, halo: .none)
 }
 
+/// The chart's Dimmer and Contrast and the plates' see-through on the map (design/tokens.json's chart-look group).
+nonisolated enum WingtipChartLook {
+    static let nightDim: Double = 0.5
+    static let dimMax: Double = 0.7
+    static let contrastMin: Double = -0.3
+    static let contrastMax: Double = 0.4
+    static let step: Double = 0.05
+    static let plateOpacity: Double = 0.85
+    static let plateLeastOpacity: Double = 0.1
+}
+
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.
 nonisolated enum WingtipFlow {
     typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)

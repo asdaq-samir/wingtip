@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LayerSpecification } from "maplibre-gl";
-import { dimLayer, dimmedOpacity, isDimmed, mapDimOf } from "./mapDim";
+import { DIM_BY_COLOUR, dimLayer, dimmedColour, dimmedOpacity, dimmedPaint, isDimmed, mapDimOf } from "./mapDim";
 
 const DIM = ["coalesce", ["global-state", "mapDim"], 1];
 
@@ -15,6 +15,9 @@ describe("the Dimmer over what is drawn on the chart", () => {
     expect(dimmedOpacity(0.8)).toEqual(["*", DIM, 0.8]);
     expect(dimmedOpacity(undefined)).toEqual(["*", DIM, 1]);
     expect(dimmedOpacity(["get", "o"])).toEqual(["*", DIM, ["get", "o"]]);
+    // A fade's target: the dim now as a figure, which MapLibre eases to (glFadeIn).
+    expect(dimmedOpacity(0.8, 0.5)).toEqual(["*", 0.5, 0.8]);
+    expect(dimmedPaint({ type: "line" }, "line-opacity", 0.8, 0.5)).toEqual(["*", 0.5, 0.8]);
   });
 
   it("puts the dim into each output of a zoom curve, where MapLibre allows the zoom", () => {
@@ -31,13 +34,22 @@ describe("the Dimmer over what is drawn on the chart", () => {
   });
 
   it("reaches words, icons, lines and circles, never a raster or a wash", () => {
-    expect(isDimmed("symbol", "text-opacity")).toBe(true);
-    expect(isDimmed("line", "line-opacity")).toBe(true);
-    expect(isDimmed("raster", "raster-opacity")).toBe(false);
-    expect(isDimmed("fill", "fill-opacity")).toBe(false);
+    expect(isDimmed({ type: "symbol" }, "text-opacity")).toBe(true);
+    expect(isDimmed({ type: "line" }, "line-opacity")).toBe(true);
+    expect(isDimmed({ type: "raster" }, "raster-opacity")).toBe(false);
+    expect(isDimmed({ type: "fill" }, "fill-opacity")).toBe(false);
     const raster = { id: "r", type: "raster", source: "s" } as LayerSpecification;
     expect(dimLayer(raster)).toBe(raster);
     const words = dimLayer({ id: "w", type: "symbol", source: "s", paint: { "text-color": "#000" } } as LayerSpecification);
     expect(words.paint).toEqual({ "text-color": "#000", "icon-opacity": ["*", DIM, 1], "text-opacity": ["*", DIM, 1] });
+  });
+
+  it("dims a layer marked so by its colours, its opacities left alone", () => {
+    const line = { type: "line", metadata: DIM_BY_COLOUR };
+    expect(dimmedPaint(line, "line-color", "#e600e6")).toEqual(["interpolate", ["linear"], DIM, 0, "black", 1, "#e600e6"]);
+    expect(dimmedPaint(line, "line-opacity", 0.35)).toBe(0.35);
+    expect(dimmedPaint({ type: "line" }, "line-color", "#e600e6")).toBe("#e600e6");
+    const spec = { id: "l", type: "line", source: "s", metadata: DIM_BY_COLOUR, paint: { "line-color": "#fff", "line-opacity": 0.35 } };
+    expect(dimLayer(spec as LayerSpecification).paint).toEqual({ "line-color": dimmedColour("#fff"), "line-opacity": 0.35 });
   });
 });

@@ -7,6 +7,7 @@ import { deckSlot, useDeckLayers, useDeckTap } from "../../../lib/map/gl/deckLay
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { applyOverlaySettings } from "../../../lib/map/gl/overlayFilters";
 import { useGlView } from "../../../lib/map/gl/useGlView";
+import { useMapDim } from "../../../lib/map/gl/useChartLook";
 import { suaTabLayout } from "../../../lib/map/gl/glSuaLabels";
 import { GL_FONT_BOLD, TAP } from "../../../lib/map/gl/layers/common";
 import { useAddressKey, useMarkKey } from "../../../lib/address";
@@ -17,7 +18,7 @@ import { inForce } from "../tfrMarks";
 import { DEM } from "./dem";
 import type { GroundPoint } from "./airspaceHeights";
 import { KINDS, VolumeDrawing, boxOf, classesAt, kindOf, labelsOf, suaOfVolume, volumesQuery, type VolumePiece } from "./airspaceVolumes";
-import { shadeOf, shelfLabelLayer, shelfLabelsOf } from "./airspaceShelves";
+import { shadeOf, shelfFadedId, shelfLabelLayers, shelfLabelsOf } from "./airspaceShelves";
 import { SuaVolumeCard } from "./SuaVolumeCard";
 import { pickOnMap } from "../../../lib/map/mapPick";
 
@@ -206,11 +207,15 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tick: the terrain came in
     [drawing, features, map, tick, altitudes, stretch],
   );
+  // At night at the chart's brightness (mapDim), as the map's own lines
+  // are: deck.gl draws outside MapLibre's global state (AIM 8-1-6).
+  const opacity = useMapDim();
   const layers = useMemo(
     () => [
       new SolidPolygonLayer<VolumePiece>({
         id: FILLS,
         data: pieces,
+        opacity,
         extruded: true,
         // Its base is its polygon's own height, its floor; deck.gl adds this.
         getPolygon: (p) => p.polygon as never,
@@ -226,6 +231,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
       new PathLayer<{ path: number[][]; piece: VolumePiece }>({
         id: RIMS,
         data: pieces.flatMap((p) => p.rims.map((path) => ({ path, piece: p }))),
+        opacity,
         getPath: (r) => r.path as never,
         getColor: ({ piece: p }) => shadeOf(KINDS[p.kind].ink, p.floorFt, RIM_ALPHA, p.holds),
         getWidth: RIM_PX,
@@ -233,7 +239,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
         ...deckSlot("lines"),
       }),
     ],
-    [pieces],
+    [pieces, opacity],
   );
   useDeckLayers("airspace-3d", layers);
 
@@ -242,8 +248,8 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   // mark is placed first and never hidden by one. The areas' names under
   // the shelves' tabs (MapLibre places the upper layer's first), so where
   // they meet at a low tilt each shelf keeps its own altitudes.
-  useGlLayer("lines", { [SHELVES]: { type: "geojson", data: EMPTY } }, [shelfLabelLayer(SHELVES, SHELVES)]);
-  useGlLayer("lines", { [LABELS]: { type: "geojson", data: EMPTY } }, [LABEL_LAYER], SHELVES);
+  useGlLayer("lines", { [SHELVES]: { type: "geojson", data: EMPTY } }, shelfLabelLayers(SHELVES, SHELVES));
+  useGlLayer("lines", { [LABELS]: { type: "geojson", data: EMPTY } }, [LABEL_LAYER], shelfFadedId(SHELVES));
   useGlData(
     LABELS,
     useMemo(() => labelsOf(pieces), [pieces]),

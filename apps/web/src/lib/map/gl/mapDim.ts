@@ -33,11 +33,12 @@ export function mapDimOf(night: boolean, chartBrightness: number): number {
   return night ? Math.min(1, Math.max(0, chartBrightness)) : 1;
 }
 
-/** One opacity times the dim. MapLibre takes the zoom only as the input
+/** One opacity times the dim (or `by`, the dim now as a figure, which a
+ *  fade eases to: glFadeIn). MapLibre takes the zoom only as the input
  *  of a top-level interpolate or step, so there the dim goes into each
  *  stop's output; anything else is multiplied whole. */
-export function dimmedOpacity(value: unknown): unknown {
-  const times = (v: unknown) => ["*", DIM, v];
+export function dimmedOpacity(value: unknown, by: unknown = DIM): unknown {
+  const times = (v: unknown) => ["*", by, v];
   if (Array.isArray(value) && (value[0] === "interpolate" || value[0] === "interpolate-hcl" || value[0] === "interpolate-lab")) {
     const [op, how, input, ...stops] = value as unknown[];
     return [op, how, input, ...stops.map((s, i) => (i % 2 === 1 ? times(s) : s))];
@@ -49,17 +50,51 @@ export function dimmedOpacity(value: unknown): unknown {
   return times(value ?? 1);
 }
 
-/** Whether a layer type's paint property is one the dim reaches. */
-export function isDimmed(type: string | undefined, prop: string): boolean {
-  return !!type && (DIMMED[type as LayerSpecification["type"]] ?? []).includes(prop);
+/** What a layer marked so (DIM_BY_COLOUR) has its colours dimmed in, by
+ *  layer type, its opacities left as they are. */
+const COLOURS: Partial<Record<LayerSpecification["type"], readonly string[]>> = {
+  line: ["line-color"],
+  circle: ["circle-color", "circle-stroke-color"],
+  symbol: ["text-color", "icon-color"],
+};
+
+/** A layer's metadata that has it take the dim in its colours rather than
+ *  its opacities: the colour times the chart's brightness, as the chart's
+ *  own raster-brightness-max dims its inks, where a see-through line
+ *  over the dimmed chart loses its contrast with it (the route's magenta
+ *  at the night's default Dimmer: 1.16 to 1 over the paper by opacity,
+ *  2.4 to 1 by colour). Only for a constant colour: one by feature would
+ *  have MapLibre lay its source out again at every move of the Dimmer. */
+export const DIM_BY_COLOUR = { "wingtip:dim": "colour" } as const;
+
+type Dimmable = { type?: string; metadata?: unknown } | null | undefined;
+const byColour = (layer: Dimmable) => (layer?.metadata as Record<string, unknown> | undefined)?.["wingtip:dim"] === "colour";
+const propsOf = (layer: Dimmable) =>
+  layer?.type ? ((byColour(layer) ? COLOURS : DIMMED)[layer.type as LayerSpecification["type"]] ?? []) : [];
+
+/** One colour times the dim: black at none, itself at 1. */
+export function dimmedColour(colour: unknown): unknown {
+  return ["interpolate", ["linear"], DIM, 0, "black", 1, colour];
+}
+
+/** Whether a layer's paint property is one the dim reaches. */
+export function isDimmed(layer: Dimmable, prop: string): boolean {
+  return propsOf(layer).includes(prop);
+}
+
+/** A paint value as it is set on a layer: times the dim where the dim
+ *  reaches it (an opacity, or a colour of a layer dimmed by colour). */
+export function dimmedPaint(layer: Dimmable, prop: string, value: unknown, by?: number): unknown {
+  if (!isDimmed(layer, prop)) return value;
+  return byColour(layer) ? dimmedColour(value) : dimmedOpacity(value, by);
 }
 
 /** A layer as it is added to the map: its opacities, its own or 1, times
- *  the dim. */
+ *  the dim; or, marked DIM_BY_COLOUR, the colours it sets. */
 export function dimLayer<T extends LayerSpecification>(layer: T): T {
-  const props = DIMMED[layer.type];
-  if (!props) return layer;
+  const props = propsOf(layer);
+  if (!props.length) return layer;
   const paint = { ...((layer as { paint?: Record<string, unknown> }).paint ?? {}) };
-  for (const p of props) paint[p] = dimmedOpacity(paint[p]);
+  for (const p of props) if (!byColour(layer) || paint[p] !== undefined) paint[p] = dimmedPaint(layer, p, paint[p]);
   return { ...layer, paint } as T;
 }

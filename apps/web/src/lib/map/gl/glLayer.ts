@@ -1,6 +1,5 @@
 import type { PickKind } from "../mapPick";
 import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
-import { prefersReducedMotion } from "../../motion";
 import { toDrawnLine } from "./legTap";
 import type {
   FilterSpecification,
@@ -11,7 +10,8 @@ import type {
   MapMouseEvent,
   SourceSpecification,
 } from "maplibre-gl";
-import { dimLayer, dimmedOpacity, isDimmed } from "./mapDim";
+import { MAP_DIM, dimLayer, dimmedPaint } from "./mapDim";
+import { keptMapDim } from "./useChartLook";
 
 /**
  * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is a React component that says, through these
@@ -212,6 +212,10 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
       kept.set(key, as);
       left?.delete(key);
     }
+    // The Dimmer's share on the map before its first layer is drawn, where
+    // ChartGl has not set it yet: read at 1, a load at night drew every
+    // word and line at full light for its first frames (AIM 8-1-6).
+    if (layers.length && map.getGlobalState()[MAP_DIM] === undefined) map.setGlobalStateProperty(MAP_DIM, keptMapDim());
     for (const layer of layers) {
       const key = `l:${layer.id}`,
         as = JSON.stringify(layer);
@@ -235,63 +239,6 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
       }
     };
   }, [map, slot, under]);
-}
-
-/** How long a layer of what changes over the chart -- weather, traffic,
- *  TFRs -- takes to fade in as its first data comes, rather than snap on. */
-const FADE_IN_MS = 250;
-
-/** Each layer type's opacities, the paint a fade sets. */
-const OPACITIES: Partial<Record<LayerSpecification["type"], string[]>> = {
-  fill: ["fill-opacity"],
-  line: ["line-opacity"],
-  circle: ["circle-opacity", "circle-stroke-opacity"],
-  symbol: ["icon-opacity", "text-opacity"],
-  raster: ["raster-opacity"],
-};
-
-/** The layers (useGlLayer's, called before this) clear as they are added,
- *  then, once `shown` is true, faded to their own opacities over
- *  FADE_IN_MS (at once under reduced motion). The opacities must be
- *  constants or zoom expressions, which MapLibre eases; one that differs
- *  by feature it would only switch. */
-export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
-  const { map } = useGlMap();
-  const spec = useRef(layers);
-  const state = useRef<"new" | "clear" | "done">("new");
-  useEffect(() => {
-    const each = (paint: (id: string, prop: string, to: unknown) => void) => {
-      for (const layer of spec.current) {
-        if (!map.getLayer(layer.id)) continue;
-        for (const prop of OPACITIES[layer.type] ?? [])
-          paint(layer.id, prop, (layer.paint as Record<string, unknown> | undefined)?.[prop] ?? 1);
-      }
-    };
-    const set = (id: string, k: string, v: unknown) => map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
-    const fade = () => {
-      if (state.current === "done") return;
-      state.current = "done";
-      each((id, prop, to) => {
-        set(id, `${prop}-transition`, { duration: prefersReducedMotion() ? 0 : FADE_IN_MS, delay: 0 });
-        set(id, prop, isDimmed(map.getLayer(id)?.type, prop) ? dimmedOpacity(to) : to);
-      });
-    };
-    if (state.current === "new") {
-      state.current = "clear";
-      each((id, prop) => {
-        set(id, `${prop}-transition`, { duration: 0, delay: 0 });
-        set(id, prop, 0);
-      });
-      // Drawn clear once before the fade, or MapLibre has nothing to ease from.
-      if (shown) {
-        map.once("render", fade);
-        return () => {
-          map.off("render", fade);
-        };
-      }
-    }
-    if (shown) fade();
-  }, [map, shown]);
 }
 
 /** A GeoJSON source's data, set as it changes. */
@@ -360,11 +307,11 @@ export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
     const apply = () => {
       for (const id of ids.split(",")) {
         if (!map.getLayer(id)) continue;
-        const type = map.getLayer(id)?.type;
+        const layer = map.getLayer(id);
         for (const [k, set] of values) {
           const name = k as Parameters<MlMap["setPaintProperty"]>[1];
-          // An opacity keeps the Dimmer's share at night (mapDim).
-          const v = isDimmed(type, k) ? dimmedOpacity(set) : set;
+          // An opacity, or a colour dimmed by colour, keeps the Dimmer's share at night (mapDim).
+          const v = dimmedPaint(layer, k, set);
           // Only where it differs: setting it changes the style, which
           // would ask for this again.
           if (JSON.stringify(map.getPaintProperty(id, name)) !== JSON.stringify(v)) map.setPaintProperty(id, name, v as never);

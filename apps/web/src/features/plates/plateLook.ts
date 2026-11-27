@@ -4,6 +4,7 @@ import type { ProcedureDrawing } from "../../lib/api/types";
 import { persist } from "zustand/middleware";
 import { usePreferences } from "../../lib/preferences";
 import { useDarkTheme } from "../../lib/map/gl/useDarkTheme";
+import { CHART_LOOK } from "../../lib/tokens";
 
 /** A d-TPP approach page's shape as the planner draws it: its room in
  *  the card beside the map before the page comes, so nothing moves. */
@@ -11,11 +12,11 @@ export const PLATE_SHAPE = "387 / 594";
 
 /** How solid a plate's page is at first: enough to read the plate, the
  *  chart still faintly under it, as ForeFlight opens one on the map
- *  (the iPhone's and Android's PlateLook, the same figure). */
-export const PLATE_OPACITY = 0.85;
+ *  (design/tokens.json's chart-look, the phones' PlateLook's figure too). */
+export const PLATE_OPACITY = CHART_LOOK.plateOpacity;
 /** Never wholly clear: a page at nought would still take the map's taps
  *  with nothing on the screen to show for it. */
-export const LEAST_PLATE_OPACITY = 0.1;
+export const LEAST_PLATE_OPACITY = CHART_LOOK.plateLeastOpacity;
 
 interface PlateLook {
   /** The page's opacity, clear (LEAST_PLATE_OPACITY) to solid (1). */

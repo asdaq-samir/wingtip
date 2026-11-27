@@ -101,3 +101,14 @@ export const MAP_LABEL = {
     flowPin: { size: 13, bold: true, halo: "none" },
   },
 } as const satisfies { kind: Record<string, MapLabelKind>; [rest: string]: unknown };
+
+/** The chart's Dimmer and Contrast and the plates' see-through on the map (design/tokens.json's chart-look group). */
+export const CHART_LOOK = {
+  nightDim: 0.5,
+  dimMax: 0.7,
+  contrastMin: -0.3,
+  contrastMax: 0.4,
+  step: 0.05,
+  plateOpacity: 0.85,
+  plateLeastOpacity: 0.1,
+} as const;

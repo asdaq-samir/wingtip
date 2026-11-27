@@ -1,4 +1,5 @@
 import { Monitor, Moon, Palette, Sun, SunDim, SunMedium } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useTheme } from "next-themes";
 import { BRANDS } from "../lib/brand";
 import { usePreferences, type Brand, type ChartLight, type OwnShipLook } from "../lib/preferences";
@@ -30,14 +31,22 @@ interface LookPick<V extends string> {
   options: PullDownOption<V>[];
 }
 
-/** A look's swatch beside its name in the menu: its tint on its sheet by
- *  day (tokens' LOOK_SWATCH), so Wingtip and Chart ink, both blue, are
- *  told apart by their paper. Edged, so a white sheet holds on a white menu. */
+/** A look's swatch beside its name in the menu: its tint on its sheet
+ *  (tokens' LOOK_SWATCH), by day, and at night (.dark) the night's pair,
+ *  so the menu shows each look as it is drawn now and no day sheet
+ *  glares in a dark cockpit (AIM 8-1-6; the round-4 themes audit).
+ *  Wingtip and Chart ink, both blue by day, are told apart by their paper.
+ *  Edged, so a white sheet holds on a white menu. */
 function Swatch({ brand }: { brand: Brand }) {
-  const { tint, ground } = LOOK_SWATCH[brand];
+  const { day, night } = LOOK_SWATCH[brand];
+  const colours = { "--day-ground": day.ground, "--night-ground": night.ground, "--day-tint": day.tint, "--night-tint": night.tint };
   return (
-    <span aria-hidden className="grid size-4 shrink-0 place-items-center rounded-full border border-input" style={{ background: ground }}>
-      <span className="size-2 rounded-full" style={{ background: tint }} />
+    <span
+      aria-hidden
+      className="grid size-4 shrink-0 place-items-center rounded-full border border-input bg-(--day-ground) dark:bg-(--night-ground)"
+      style={colours as CSSProperties}
+    >
+      <span className="size-2 rounded-full bg-(--day-tint) dark:bg-(--night-tint)" />
     </span>
   );
 }

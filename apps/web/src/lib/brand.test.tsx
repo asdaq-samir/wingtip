@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
-import { BrandLook, applyKeptBrand } from "./brand";
+import { BrandLook, followKeptBrand } from "./brand";
 import { usePreferences } from "./preferences";
 
 /** The browser's bar in the page's own ground, whatever the look and
@@ -28,12 +28,17 @@ describe("BrandLook's theme colour", () => {
   });
 });
 
-/** The kept look on <html> before React draws, so a load is never drawn
- *  in Wingtip's blue first (the themes audit, 2026-11-27). */
-describe("applyKeptBrand", () => {
-  it("puts the kept look on <html> at once", () => {
+/** The one writer of the look on <html>: the kept look at once, before
+ *  React draws, and each change after (the themes audit, 2026-11-27). */
+describe("followKeptBrand", () => {
+  it("puts the kept look on <html> at once and follows a change", () => {
     usePreferences.setState({ brand: "ink" });
-    applyKeptBrand();
+    const stop = followKeptBrand();
     expect(document.documentElement.dataset.brand).toBe("ink");
+    usePreferences.setState({ brand: "cockpit" });
+    expect(document.documentElement.dataset.brand).toBe("cockpit");
+    stop();
+    usePreferences.setState({ brand: "wingtip" });
+    expect(document.documentElement.dataset.brand).toBe("cockpit");
   });
 });
