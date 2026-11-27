@@ -12,12 +12,12 @@ from cachetools import TTLCache
 
 from wingtip import airports, ratelimit, registry, traffic, weather
 from wingtip.traffic import adsbx as adsbx_part  # the name adsbx is the usage file's fixture
-from wingtip.traffic import adsb_lol, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched
+from wingtip.traffic import adsb_lol, alerts, bases, common, flights, globe, lookup, radar, recorded, routes, store, view, watched
 from wingtip.config import get_settings
 
 
 # Every part of the package, for standing in for one of its names.
-_PARTS = (traffic, adsb_lol, adsbx_part, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched)
+_PARTS = (traffic, adsb_lol, adsbx_part, alerts, bases, common, flights, globe, lookup, radar, recorded, routes, store, view, watched)
 
 
 def stand_in(monkeypatch, name, value):
@@ -68,7 +68,7 @@ def clock_fixture(monkeypatch, tmp_path):
     # Recorded tracks, the radar and the views are in the live store, which
     # the suite's conftest puts in each test's own folder.
     stand_in(monkeypatch, "_REGIONS", {})
-    stand_in(monkeypatch, "_STATE", {"next_ask": 0.0, "search_at": -1e9})
+    stand_in(monkeypatch, "_STATE", {"next_ask": 0.0, "search_at": -1e9, "timeouts": 0, "searches_held_until": -1e9})
     stand_in(monkeypatch, "_LOL", ratelimit.Gate())
     stand_in(monkeypatch, "_FLIGHTS", {})
     stand_in(monkeypatch, "_FOUND", TTLCache(maxsize=256, ttl=traffic.FOUND_TTL_S, timer=clock))

@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from wingtip import airports, traffic, weather
-from wingtip.traffic import adsb_lol, common, flights, recorded, store, watched
+from wingtip.traffic import common, flights, globe, recorded, store, watched
 
 from .traffic_world import CESSNA, _answer, stand_in
 from .traffic_world import adsbx_fixture, clock_fixture  # noqa: F401 -- the fixtures, by the names the runner gives them
@@ -67,7 +67,7 @@ def test_a_followed_airplane_is_asked_of_adsb_lol_in_the_background_and_stays_fo
     # A restart: the store opened again, the airplane still followed.
     store.reset()
     assert traffic.followed() == ["a128b9"]
-    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     asked = []
     stand_in(monkeypatch, "_paced", lambda url: asked.append(url) or {"ac": [CESSNA]})
     assert traffic.follow_round() == 1
@@ -84,7 +84,7 @@ def test_a_follow_round_ends_where_adsb_lol_turns_the_planner_away(clock, monkey
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
     traffic.follow("a128b9")
     traffic.follow("a3c858")
-    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     asked = []
 
     def refused(url):
@@ -112,7 +112,7 @@ def test_an_airplane_adsb_lol_hears_on_the_ground_has_landed_where_it_is_not_una
     # The globe's trace refused and nothing recorded: the API's report of it
     # taxiing is its state (the owner's N570GJ at O'Hare, 2026-11-27).
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
-    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     taxiing = {**CESSNA, "alt_baro": "ground", "gs": 10.2, "seen_pos": 24.0}
     stand_in(monkeypatch, "_paced", lambda url: {"ac": [taxiing]})
     kord = {"ident": "KORD", "name": "Chicago O'Hare Intl", "city": None, "region": None}
@@ -123,7 +123,7 @@ def test_an_airplane_adsb_lol_hears_on_the_ground_has_landed_where_it_is_not_una
 
 
 def test_an_airplane_nothing_hears_is_not_heard_and_one_none_can_be_asked_of_is_unavailable(clock, monkeypatch):
-    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     stand_in(monkeypatch, "_paced", lambda url: {"ac": []})
     stand_in(monkeypatch, "_adsbx", lambda path, search=False: [])
     state = traffic.status("a128b9")
@@ -247,12 +247,12 @@ def test_the_globe_turning_the_planner_away_is_not_asked_again_for_a_while(clock
     stand_in(monkeypatch, "_TRACES", {})
     wall = Mock(status_code=403, headers={"content-type": "text/html"})
     with patch("requests.get", return_value=wall) as get:
-        assert adsb_lol._trace("a0b7d8") is None
-        assert adsb_lol._recent_trace("a0b7d8") is traffic.UNREAD
+        assert globe._trace("a0b7d8") is None
+        assert globe._recent_trace("a0b7d8") is traffic.UNREAD
         assert flights._day_trace("a0b7d8", __import__("datetime").date(2026, 10, 22)) is traffic.UNREAD
         assert get.call_count == 1
         clock.now += traffic.GLOBE_BACKOFF_S + 1
-        adsb_lol._trace("a0b7d8")
+        globe._trace("a0b7d8")
         assert get.call_count == 2
 
 

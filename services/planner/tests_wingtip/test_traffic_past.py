@@ -9,7 +9,7 @@ import requests
 from cachetools import TTLCache
 
 from wingtip import airports, traffic
-from wingtip.traffic import adsb_lol, flights
+from wingtip.traffic import adsb_lol, flights, globe
 
 from .traffic_world import CESSNA, _answer, _turned_away, stand_in
 from .traffic_world import adsbx_fixture, clock_fixture  # noqa: F401 -- the fixtures, by the names the runner gives them
@@ -288,7 +288,7 @@ def test_with_the_archive_closed_opensky_is_asked_for_the_whole_fortnight_in_one
     from wingtip.traffic import opensky
 
     rounds, warmed = [], []
-    stand_in(monkeypatch, "_day_trace", lambda hex_id, day: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_day_trace", lambda hex_id, day: globe.UNREAD)
     stand_in(monkeypatch, "_trace", lambda hex_id: None)
     monkeypatch.setattr(opensky, "on", lambda: True)
     monkeypatch.setattr(opensky, "flights", lambda hex_id, days, today, ask: rounds.append(days) or ([], 0))
