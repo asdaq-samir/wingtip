@@ -116,7 +116,7 @@ export { type AirplaneRow, useAirplaneHits } from "./useAirplaneHits";
 export { type Description, descriptionKey } from "./useCheckpointNotes";
 export { useLoad } from "./useLoad";
 export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./usePanelView";
-export { type BriefingState, type PlanParams, type Unflyable, navlogQuery } from "./planQuery";
+export { type BriefingState, type PlanParams, type Unflyable, navlogQuery, prefetchRoute } from "./planQuery";
 export { usePlan } from "./usePlan";
 export { usePlanSetters } from "./usePlanSetters";
 export { type Browsing, type FuelCard, useRouteWays } from "./useRouteWays";

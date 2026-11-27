@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useMemo } from "react";
-import { airportQuery, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
-import { navlogQuery, suggestedStopAt } from "../../plan";
+import { airportQuery, queryClient } from "../../../lib/queryClient";
+import { prefetchRoute, suggestedStopAt } from "../../plan";
 import { useSuggestedStops } from "../../stops";
 import { fuelStopsAt, useMapActions, waypointStopsOf } from "../../route";
 import { sameField } from "../../../lib/procedures";
@@ -34,10 +34,7 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
     : "";
   const prefetchAhead = useEffectEvent(() => {
     if (!nextStops) return;
-    const ahead = { ...planParams, stops: nextStops };
-    void queryClient.prefetchQuery(courseQuery(ahead.dep, ahead.dest, nextStops));
-    if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(ahead.dep, ahead.dest, nextStops));
-    void queryClient.prefetchQuery(navlogQuery(ahead, showWaypoints));
+    prefetchRoute({ ...planParams, stops: nextStops }, showWaypoints);
     // And the new stops' cards, whose reports their runways are picked into
     // the wind from as they land in the route: in by then, not asked after.
     for (const ident of nextStops) void queryClient.prefetchQuery(airportQuery(ident));

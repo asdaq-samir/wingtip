@@ -1,5 +1,6 @@
 import { experimental_streamedQuery as streamedQuery } from "@tanstack/react-query";
 import { ApiError, api, isUnknownPlace, plannerUnreachable } from "../../lib/api/client";
+import { checkpointsQuery, courseQuery, queryClient } from "../../lib/queryClient";
 import { inBatches, ended } from "../../lib/api/streams";
 import { retryDelay } from "../../lib/queryRetry";
 import type { AircraftChoice, AltitudeChoice, Briefing, Detour, NavLogMessage } from "../../lib/api/types";
@@ -141,6 +142,16 @@ export function planKeyOf({
     tanks,
     patterns,
   ];
+}
+
+/** A route's three asks before the page draws it -- its course, its
+ *  checkpoints where they are on, its nav log -- as the page will ask
+ *  them: Fly Here's at the tap (useFlyHere), the next fuel stops' ahead of
+ *  the pilot (usePlanStops), written once where each wrote the trio. */
+export function prefetchRoute(plan: PlanParams, checkpointsToo: boolean) {
+  void queryClient.prefetchQuery(courseQuery(plan.dep, plan.dest, plan.stops));
+  if (checkpointsToo) void queryClient.prefetchQuery(checkpointsQuery(plan.dep, plan.dest, plan.stops));
+  void queryClient.prefetchQuery(navlogQuery(plan, checkpointsToo));
 }
 
 /** A plan's nav log, with its checkpoints or point to point: the page's
