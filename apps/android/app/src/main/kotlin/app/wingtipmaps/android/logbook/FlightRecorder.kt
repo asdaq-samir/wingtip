@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -21,9 +22,52 @@ import java.io.File
 /** The track recorded and the end of the flight last offered (the web's
  *  recorder's Recorded). `askedTo` is the engine's block end, ms; `flown`,
  *  whether the airplane has reached flying speed in these points (the
- *  iPhone's Kept.flown): until it has, there is no flight to read. */
+ *  iPhone's Kept.flown): until it has, there is no flight to read.
+ *  `atSpeed`, whether the last point was at flying speed, sets how often
+ *  the engine reads the track (LogbookDraftModel); not kept in the file. */
 @Serializable
-data class Recorded(val points: List<DraftTrackPoint> = emptyList(), val askedTo: Double? = null, val flown: Boolean = false)
+data class Recorded(
+    val points: List<DraftTrackPoint> = emptyList(),
+    val askedTo: Double? = null,
+    val flown: Boolean = false,
+    @Transient val atSpeed: Boolean = false,
+)
+
+/**
+ * The recorded track, appended to without a copy (the round-4 phones
+ * audit, 2026-11-27: each point copied the whole list, some 3,000 points
+ * four hours in): each point a new view of the first `size` points of
+ * one array of FlightRecorder.MOST, never grown, so a view handed to
+ * another thread (the file's write, the planner's draft) holds points
+ * written before it was made and is never touched again. A view behind
+ * the array's end (an older one appended to) is copied first.
+ */
+internal class Track private constructor(private val all: Array<DraftTrackPoint?>, private val filled: IntArray, override val size: Int) : AbstractList<DraftTrackPoint>() {
+    override fun get(index: Int): DraftTrackPoint {
+        if (index !in 0 until size) throw IndexOutOfBoundsException("$index of $size")
+        return all[index]!!
+    }
+
+    /** This track with `point` after its last; the same array where this
+     *  is its newest view and there is room. */
+    fun appended(point: DraftTrackPoint): Track {
+        if (size == filled[0] && size < all.size) {
+            all[size] = point
+            filled[0] = size + 1
+            return Track(all, filled, size + 1)
+        }
+        return of(this + point)
+    }
+
+    companion object {
+        fun of(points: List<DraftTrackPoint>): Track {
+            if (points is Track) return points
+            val all = arrayOfNulls<DraftTrackPoint>(maxOf(FlightRecorder.MOST, points.size))
+            points.forEachIndexed { i, p -> all[i] = p }
+            return Track(all, intArrayOf(points.size), points.size)
+        }
+    }
+}
 
 /** Where the recorded flight is kept: the phone's file, a fake in the tests. */
 interface RecordedFlight {
@@ -76,13 +120,15 @@ class FlightRecorder(
         val last = had.points.lastOrNull()
         val t = fix.atMs.toDouble()
         if (last != null && t - last.t < EVERY_MS) return
-        val takeoff = !had.flown && (known?.getOrDefault(false) ?: underway(fix.groundspeedKt))
+        val atSpeed = known?.getOrDefault(false) ?: underway(fix.groundspeedKt)
+        val takeoff = !had.flown && atSpeed
         val flown = had.flown || takeoff
         // A file kept from before this rule may hold hours of ground: the
         // first fix on the ground lets it go, so MOST is never reached parked.
-        val kept = if (flown) had.points else had.points.filter { t - it.t <= GROUND_KEPT_MS }
+        val kept = Track.of(if (flown) had.points else had.points.filter { t - it.t <= GROUND_KEPT_MS })
         if (kept.size >= MOST) return
-        _recorded.value = had.copy(points = kept + DraftTrackPoint(altFt = fix.altitudeFt, lat = fix.lat, lon = fix.lon, t = t), flown = flown)
+        val point = DraftTrackPoint(altFt = fix.altitudeFt, lat = fix.lat, lon = fix.lon, t = t)
+        _recorded.value = had.copy(points = kept.appended(point), flown = flown, atSpeed = atSpeed)
         // On the ground the file is written each few minutes, not each
         // half minute: what a kill then loses is a little taxi, while the
         // flight itself is written from the takeoff on.
