@@ -91,8 +91,8 @@ export function watchSheetMotion(popup: HTMLElement): () => void {
  * finger nor sliding (followPopup): false at once as either starts, true
  * two frames after both end, so a slide a tap or an opening has just set
  * going (its transitionrun a frame on) is seen first, as useRestSize's
- * size is. What stays still at the screen's foot beside the card (its tab
- * bar, sheet/CardFoot) comes in once the card has come to rest under it.
+ * size is. A card's tab bar at the screen's foot (sheet/CardFoot) goes
+ * once its card has come to rest at the pill.
  */
 export function usePopupStill(popup: HTMLElement | null, wanted: boolean): boolean {
   const [moving, setMoving] = useState(true);

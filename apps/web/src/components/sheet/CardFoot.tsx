@@ -8,21 +8,17 @@ import { observeHeight } from "./footBarHeight";
  * screen's foot, outside every sliding popup -- a sibling of the sheet's
  * popup in its viewport (SheetDrawer), as FPL's foot bar is (sheet/FootBar)
  * -- where the card's floating tab bar is put (CardTabBar), so the card
- * slides behind it and nothing in it follows the card (the sheet-motion
- * audit of 2026-11-23: anything that stays still at the foot lives outside
- * the sliding panel, never counter-moved inside it). Where the bar stood
- * in the card's popup, held at the screen's foot by the Drawer's offset
- * and the finger's movement on the Drawer's curve, it could slide apart
- * from the card on the iPhone mid-drag.
+ * slides behind it and nothing in it follows the card: anything that stays
+ * still at the foot lives outside the sliding panel, never counter-moved
+ * inside it.
  *
- * In sight (`shown`) while its card is the top one, open, above the pill
- * and at rest (CardStack's usePopupStill): it fades in, opacity alone, once
- * the card has come up under it, never ahead of it nor under a finger; out
- * of sight at once as the card goes or a finger takes it. Its height,
- * measured as it resizes (the ResizeObserver's first report the first), is
- * told (cardFeet's useCardFootHeight) for the card's end room and scroll
- * padding, and kept while it is out of sight, so the card's end room does
- * not jump between its guess and the bar's height at every drag.
+ * In sight (`shown`) while its card is the top one and open, through its
+ * drags and slides (CardStack), and out of sight once the card rests at
+ * the pill; it fades in, opacity alone, as it comes, and goes at once.
+ * Its height, measured as it resizes (the ResizeObserver's first report
+ * the first), is told (cardFeet's useCardFootHeight) for the card's end
+ * room and scroll padding, and kept while it is out of sight, so the
+ * card's end room keeps the bar's height from one opening to the next.
  */
 export function CardFootSlot({ id, shown }: { id: string; shown: boolean }) {
   const host = useCardFeet((s) => s.host);

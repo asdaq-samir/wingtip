@@ -195,9 +195,11 @@ function CardDrawer({
   };
   const topSlot = onPhone && fromBottom && riding;
   // Its tab bar's slot at the screen's foot, in sight while it is the top
-  // card, open and above the pill, and come to rest (usePopupStill): not
-  // while it still rises to its size, nor under a finger (sheet/CardFoot).
-  const footShown = usePopupStill(popup, top && entry.state === "open" && entry.at !== undefined && at !== "peek");
+  // card and open, through every drag and slide, as FPL's foot bar is
+  // (sheet/FootBar): out of sight only once the card rests at the pill
+  // (usePopupStill), so a drag or a size tap never blinks it.
+  const restsAtPill = usePopupStill(popup, at === "peek");
+  const footShown = top && entry.state === "open" && entry.at !== undefined && !restsAtPill;
   const footPx = useCardFootHeight(id);
   return (
     <Drawer.Root
