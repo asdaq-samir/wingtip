@@ -3,7 +3,6 @@ import { useDrawnStretch } from "./heightStretch";
 import { useEffect, useEffectEvent } from "react";
 import { deckColour, deckSlot, putDeckLayers, useDeckLayers } from "../../../lib/map/gl/deckLayers";
 import { EMPTY, drawnWithData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import type { GeoJSONSource } from "maplibre-gl";
 import { TAP } from "../../../lib/map/gl/layers/common";
 import { TRAFFIC_COLOURS } from "../../../lib/map/marks/icons";
 import { useOwnFix } from "../../../lib/map/position/ownShip";
@@ -11,21 +10,29 @@ import { useTracking, type Report } from "../../../lib/map/position/tracking";
 import { usePreferences, type HeightStretch } from "../../../lib/preferences";
 import { CHART } from "../../../lib/tokens";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "../layers/trafficMarks";
+import { sendTraffic } from "../layers/trafficSend";
 import { carryS, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../../../lib/traffic";
 import { standAtM } from "./trafficAloft";
 import { useGeo, type Geo } from "../../../lib/geo";
 import { pickOnMap } from "../../../lib/map/mapPick";
 
 /** How often the airplanes are carried on along their tracks, ms: about
- *  the 2D map's own step close in (TrafficGl's FRAME_MS). */
-const STEP_MS = 200;
+ *  the 2D map's own step close in (TrafficGl's FRAME_MS) while one is
+ *  followed, the camera's ease running between steps; else once a second,
+ *  an airplane at 120 kt moving a pixel or two in it at the 3D view's
+ *  scales (the round-2 speed audit: five a second for nothing). */
+const FOLLOW_STEP_MS = 200;
+const STEP_MS = 1000;
 const POINTS = "traffic-aloft";
 const TRENDS = "traffic-aloft-trends";
 const IDS = { marks: "traffic-aloft", tags: "traffic-aloft-tags", trends: "traffic-aloft-trend-lines" };
 /** The 2D map's own layers (trafficMarks), each mark and tag lifted to
  *  its `alt_m`; the trend source stays empty, as a minute's line ahead is
  *  drawn on the flat map only. */
-const SOURCES = { [POINTS]: { type: "geojson" as const, data: EMPTY }, [TRENDS]: { type: "geojson" as const, data: EMPTY } };
+const SOURCES = {
+  [POINTS]: { type: "geojson" as const, data: EMPTY, promoteId: "hex" },
+  [TRENDS]: { type: "geojson" as const, data: EMPTY },
+};
 const LAYERS = trafficLayers(IDS, { points: POINTS, trends: TRENDS });
 
 /**
@@ -81,17 +88,18 @@ function Aloft({ geo }: { geo: Geo }) {
   useEffect(() => {
     let timer = 0;
     const run = () => {
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
       timer = 0;
       if (document.hidden) return;
       step();
-      timer = window.setInterval(() => step(), STEP_MS);
+      const { hex: tracked, follow } = useTracking.getState();
+      timer = window.setTimeout(run, tracked && follow ? FOLLOW_STEP_MS : STEP_MS);
     };
     run();
     document.addEventListener("visibilitychange", run);
     return () => {
       document.removeEventListener("visibilitychange", run);
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
     };
   }, [map]);
 
@@ -106,6 +114,12 @@ function Aloft({ geo }: { geo: Geo }) {
 
 const KEY = "traffic-aloft";
 const NONE: never[] = [];
+
+/** The drop lines' data deck.gl was last given, by map: the same array
+ *  while the same airplanes are drawn, each moved in place and the layer's
+ *  positions and colours asked again by `step` (updateTriggers), so a step
+ *  recomputes those alone, not every attribute as for new data. */
+const dropped = new WeakMap<object, { drawn: Drawn[]; hexes: string; step: number }>();
 
 /** Each airplane seen carried on to now, at its height over the ground as
  *  drawn: its mark and tag to the map's source, its drop line to deck.gl. */
@@ -149,13 +163,21 @@ function drawAloft(
       },
     });
   }
-  const points: GeoJSON.FeatureCollection = { type: "FeatureCollection", features };
-  map.getSource<GeoJSONSource>(POINTS)?.setData(points);
-  drawnWithData(map, POINTS, points);
+  // Only the airplanes that changed, by hex (trafficSend).
+  sendTraffic(map, POINTS, features);
+  drawnWithData(map, POINTS, { type: "FeatureCollection", features });
+  const hexes = drawn.map((d) => d.hex).join();
+  let held = dropped.get(map);
+  if (held?.hexes === hexes) {
+    held.drawn.forEach((d, i) => Object.assign(d, drawn[i]));
+    held.step += 1;
+  } else dropped.set(map, (held = { drawn, hexes, step: 0 }));
+  const step = held.step;
   putDeckLayers(map, KEY, [
     new LineLayer<Drawn>({
       id: "traffic-aloft-drop",
-      data: drawn,
+      data: held.drawn,
+      updateTriggers: { getSourcePosition: step, getTargetPosition: step, getColor: step },
       getSourcePosition: (d) => [d.lon, d.lat, d.altM],
       getTargetPosition: (d) => [d.lon, d.lat, d.groundM],
       getColor: (d) => deckColour(d.near ? TRAFFIC_COLOURS.near : TRAFFIC_COLOURS.far, 0.8),
