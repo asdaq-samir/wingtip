@@ -1180,7 +1180,7 @@ nonisolated enum WingtipMapLabel {
     static let sizeRunway: Double = 16
     static let sizePicked: Double = 17
     static let halo: Double = 2
-    static let haloNight: Double = 0.85
+    static let haloNight: Double = 1
     static let scaleMax: Double = 1.2
     /// Each light-haloed word's ink after dark, by its day ink (map.label.night-ink).
     static let nightInk: [String: String] = ["#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#62d48e", "#1c1a17": "#eef1f5", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8fb4ff", "#b45309": "#fbbf24", "#7c3aed": "#bba1ff", "#78716c": "#cdc8c3", "#be185d": "#f58cc4", "#0f766e": "#4fd1c5", "#57534e": "#cfcac5", "#9333ea": "#c99cff"]

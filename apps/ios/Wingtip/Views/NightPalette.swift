@@ -51,9 +51,13 @@ nonisolated enum NightPalette {
 
     /// The halo behind a mark's words on the chart. By day white round the
     /// label's dark words; in dark appearance the words are light (.label)
-    /// and a white halo made them unreadable, so the halo is the night's
-    /// ground.
-    static let halo = UIColor(light: UIColor.white.withAlphaComponent(0.9), dark: ground.withAlphaComponent(0.9))
+    /// and a white halo made them unreadable, so the halo is the tag's
+    /// dark at map.label.halo-night's strength, full, as the web's: its
+    /// words dimmed by colour at night (MarkDim.word) read about 5:1 on it
+    /// at the default Dimmer, where a see-through halo let the dimmed
+    /// paper show through.
+    static let halo = UIColor(light: UIColor.white.withAlphaComponent(0.9),
+                              dark: WingtipColor.Chart.tag.withAlphaComponent(WingtipMapLabel.haloNight))
 
     /// The fill of a field's ring and own ship's disc on the chart.
     static let markFill = UIColor(light: UIColor.white.withAlphaComponent(0.85), dark: surface.withAlphaComponent(0.9))
