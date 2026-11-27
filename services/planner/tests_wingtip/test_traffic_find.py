@@ -26,7 +26,9 @@ def test_an_airplane_is_found_by_its_callsign_registration_or_address(clock):
     with patch("requests.get", side_effect=get):
         (ual,) = traffic.find("ual 2088")
         assert ual["callsign"] == "UAL2088" and ual["squawk"] == "3324" and ual["emergency"] is None
+        clock.now += adsb_lol.MIN_GAP_S
         assert [a["hex"] for a in traffic.find("N174HA")] == ["a128b9"]
+        clock.now += adsb_lol.MIN_GAP_S
         assert [a["hex"] for a in traffic.find("A128B9")] == ["a128b9"]
     assert [u.rsplit("/", 2)[-2:] for u in asked] == [
         ["callsign", "UAL2088"],
@@ -73,14 +75,17 @@ def test_an_airplane_whose_recent_trace_has_it_down_or_gone_is_not_in_the_air(cl
     assert len(asked) == 1
 
 
-def test_a_search_takes_its_turn_between_requests(clock):
+def test_a_search_takes_its_turn_between_requests_and_one_further_off_is_not_waited_for(clock):
     get, asked = _routed({"/point/": _answer([]), "/callsign/": _answer([]), "/reg/": _answer([])})
     asked_at = []
     with patch("requests.get", side_effect=lambda url, **kw: (asked_at.append(clock.now), get(url))[1]):
         traffic.near(42.3, -88.1, 25)
-        # A callsign with nothing, then the same as a registration: each five seconds after the one before.
-        assert traffic.find("FOO123") == []
-    assert asked_at == [1000.0, 1005.0, 1010.0]
+        clock.now += adsb_lol.MIN_GAP_S - adsb_lol.SEARCH_WAIT_S / 2
+        # A callsign with nothing, five seconds after the region; the same as a registration
+        # five more on, further off than a search waits (it waited 10 s): unchecked, at once.
+        with pytest.raises(traffic.TrafficUnavailable):
+            traffic.find("FOO123")
+    assert asked_at == [1000.0, 1005.0]
 
 
 def test_an_airplane_heard_about_a_region_is_found_there_at_once(clock):
@@ -107,11 +112,24 @@ def test_a_search_goes_ahead_of_the_regions_turns(clock):
 
     with patch("requests.get", side_effect=timed):
         traffic.near(42.3, -88.1, 25)
-        clock.now += 1
-        assert traffic.find("FOO123") == []
+        clock.now += adsb_lol.MIN_GAP_S - adsb_lol.SEARCH_WAIT_S / 2
+        with pytest.raises(traffic.TrafficUnavailable):
+            traffic.find("FOO123")
         # A region with nothing of its own takes the turn after the search's.
         traffic.near(45.0, -93.0, 25)
-    assert asked_at == [(1000.0, "point"), (1005.0, "callsign"), (1010.0, "reg"), (1015.0, "point")]
+    assert asked_at == [(1000.0, "point"), (1005.0, "callsign"), (1010.0, "point")]
+
+
+def test_a_search_adsb_lol_cannot_take_now_is_answered_from_the_faas_radar(clock, monkeypatch):
+    from wingtip.traffic import lookup
+
+    adsb_lol._LOL.hold(60, clock.now)
+    monkeypatch.setattr(lookup, "_heard_elsewhere_now", lambda hex_id: {**CESSNA, "hex": hex_id} if hex_id == "a128b9" else None)
+    with patch("requests.get", side_effect=lambda url, **kw: _status(503)):
+        found, credit = traffic.find_credited("a128b9")
+        assert [a["hex"] for a in found] == ["a128b9"] and credit == lookup.RADAR_SOURCE
+        with pytest.raises(traffic.TrafficUnavailable):
+            traffic.find("abcdef")
 
 
 def test_a_region_whose_turn_a_search_took_gives_way(clock, monkeypatch):

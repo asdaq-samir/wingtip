@@ -39,9 +39,9 @@ MAX_RADIUS_NM = 165
 FRESH_S = 5.0
 #: Never two requests to adsb.lol closer together than this.
 MIN_GAP_S = 5.0
-#: The longest a pilot's search waits for its turn, s, where it slept up to two gaps: further off, it is answered
-#: at once with what the regions hold and the FAA's record (/api/traffic/find, `checked` false).
-SEARCH_WAIT_S = MIN_GAP_S
+#: The longest a pilot's search waits for its turn, s (it was a gap, 5 s, and the request's 5 s after): further off,
+#: it is answered at once from the FAA's radar or with the FAA's record (/api/traffic/find, `checked` false).
+SEARCH_WAIT_S = 1.0
 #: Turned away or not answered, nothing is asked for this long (a 429's Retry-After where longer).
 BACKOFF_S = 15.0
 #: A region's last answer is given while adsb.lol cannot be asked, until it is this old; then it is unavailable.
@@ -208,7 +208,7 @@ RECENT_TTL_S = 5
 _RECENT: TTLCache = TTLCache(maxsize=256, ttl=RECENT_TTL_S)
 
 
-def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S) -> dict:
+def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOUT_S) -> dict:
     """adsb.lol's answer to a pilot's search, asked ahead of the regions'
     turns: a gap after the last request that went and the last search's,
     never two within MIN_GAP_S still (a region whose turn it falls near
@@ -224,7 +224,7 @@ def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S) -> dict:
         _sleep(slot - now)
     _LOL.asked(_clock())
     try:
-        resp = outside.live_get(url, headers=lol_headers(), timeout=TIMEOUT_S)
+        resp = outside.live_get(url, headers=lol_headers(), timeout=timeout)
         resp.raise_for_status()
         return resp.json()
     except (requests.RequestException, ValueError) as err:
