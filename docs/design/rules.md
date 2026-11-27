@@ -1361,8 +1361,9 @@ way: three homes, and every control in one of them.
    map is brighter than the chart under it (AIM 8-1-6; the themes audit,
    2026-11-27); a plate is white on black at night until the pilot picks.
    The base map's imagery and the weather loop's radar and satellite
-   take the chart's brightness, the terrain's hazard tint and the 3D
-   airspace its share as their opacity (round 4); the route is dimmed by
+   take the chart's brightness, the 3D airspace its share as its
+   opacity (round 4); the terrain's hazard tint is a warning and is never
+   dimmed, as own ship is not; the route is dimmed by
    its colours, solid, so it stays the most visible line, and once.
    Sunlight at night keeps the look's own dark grounds and lifts only the
    grey words and the edges, never its white sheets; the device's

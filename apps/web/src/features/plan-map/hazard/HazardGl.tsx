@@ -1,10 +1,9 @@
-import type { CircleLayerSpecification, ColorReliefLayerSpecification, ExpressionSpecification } from "maplibre-gl";
+import type { CircleLayerSpecification, ColorReliefLayerSpecification } from "maplibre-gl";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { api } from "../../../lib/api/client";
 import { slotId, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
-import { dimmedOpacity } from "../../../lib/map/gl/mapDim";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { CHART } from "../../../lib/tokens";
 import { usePreferences } from "../../../lib/preferences";
@@ -68,9 +67,10 @@ export default function HazardGl({ cruiseFt }: { cruiseFt: number | null }) {
         id: TINT,
         type: "color-relief",
         source: DEM,
-        // At night at the chart's brightness (mapDim), so its amber and red
-        // are no brighter than the chart they tint (AIM 8-1-6).
-        paint: { "color-relief-opacity": dimmedOpacity(1) as ExpressionSpecification, "color-relief-color": colours },
+        // Never dimmed with the chart at night: it is a terrain warning, and
+        // dimming it took its amber from about 1.6:1 to 1.3:1 against the
+        // paper; a warning stays conspicuous, as own ship does.
+        paint: { "color-relief-opacity": 1, "color-relief-color": colours },
       };
       map.addLayer(tint, slotId("imagery"));
     }
