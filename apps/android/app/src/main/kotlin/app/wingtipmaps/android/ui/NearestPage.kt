@@ -72,9 +72,12 @@ fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -
         } catch (e: Exception) {
             // The planner out of reach: the packs' fields on the phone,
             // said so (PhoneFields); with none kept here, the failure.
-            val near = withContext(Dispatchers.Default) { PhoneFields.near(CyclePacks.of(context), at.lat, at.lon, NEAREST) }
+            val phone = withContext(Dispatchers.Default) { runCatching { PhoneFields.near(CyclePacks.of(context), at.lat, at.lon, NEAREST) } }
+            (phone.exceptionOrNull() as? CancellationException)?.let { throw it }
+            val near = phone.getOrNull()
             if (near.isNullOrEmpty()) {
-                problem = Problems.say("The nearest fields could not be found", e)
+                // The engine's own failure said as its own, not as the planner's.
+                problem = Problems.say("The nearest fields could not be found", phone.exceptionOrNull() ?: e)
             } else {
                 fields = PhoneFields.nearestRows(near)
                 problem = null

@@ -39,7 +39,7 @@ object PhoneFields {
     }
 
     /** The `want` fields round the point, the engine's best_fields' order;
-     *  null where no pack covers the point at all. */
+     *  null where no pack covers the point at all; the engine's failure thrown. */
     fun near(packs: CyclePacks, lat: Double, lon: Double, want: Int): List<Near>? {
         val pins = read(lat, lon, want) { s, w, n, e -> packs.airportsInView(s, w, n, e) } ?: return null
         // Standing still at the field: the packs' ahead answers only its ground.
@@ -51,14 +51,15 @@ object PhoneFields {
      * gives, the one rule both phones read their boxes by: asked first with
      * no box, then again with the count found, until it answers null (enough
      * fields, or its widest box). Null where no pack covers a box asked, or
-     * the engine gave no first box.
+     * the engine gave no first box. The engine's own failure is thrown, as
+     * the iPhone's PackFields throws it, never read as no pack here.
      */
     fun read(lat: Double, lon: Double, want: Int, pins: Pins): List<AirportPin>? {
         val at = EngineContract.FieldsNearInputAt(lat, lon)
         var found: List<AirportPin>? = null
         var half: Double? = null
         while (true) {
-            val box = Engine.fieldsNear(at, want.toDouble(), half, found?.size?.toDouble()).getOrNull()?.box ?: return found
+            val box = Engine.fieldsNear(at, want.toDouble(), half, found?.size?.toDouble()).getOrThrow().box ?: return found
             found = pins.inBox(box.south, box.west, box.north, box.east) ?: return null
             half = box.halfDeg
         }

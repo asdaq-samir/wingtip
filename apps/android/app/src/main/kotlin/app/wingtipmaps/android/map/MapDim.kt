@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.map
 
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -38,8 +37,6 @@ object MapDim {
         "circle" to listOf("circle-opacity", "circle-stroke-opacity"),
         "symbol" to listOf("icon-opacity", "text-opacity"),
     )
-
-    private val json = Json { ignoreUnknownKeys = true }
 
     private val DIM: JsonArray = JsonArray(listOf(JsonPrimitive("coalesce"), JsonArray(listOf(JsonPrimitive("global-state"), JsonPrimitive(STATE))), JsonPrimitive(1)))
 
@@ -100,10 +97,9 @@ object MapDim {
         return JsonObject(layer + ("paint" to JsonObject(paint)))
     }
 
-    /** A style's JSON with every line, circle and symbol layer dimmed. */
-    fun style(style: String): String {
-        val root = json.parseToJsonElement(style).jsonObject
-        val layers = root["layers"]?.jsonArray ?: return style
-        return JsonObject(root + ("layers" to JsonArray(layers.map { layer(it.jsonObject) }))).toString()
+    /** A style with every line, circle and symbol layer dimmed. */
+    fun style(root: JsonObject): JsonObject {
+        val layers = root["layers"]?.jsonArray ?: return root
+        return JsonObject(root + ("layers" to JsonArray(layers.map { layer(it.jsonObject) })))
     }
 }

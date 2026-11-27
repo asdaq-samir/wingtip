@@ -19,6 +19,14 @@ import org.maplibre.android.style.layers.PropertyFactory
 object RouteLegLayer {
     const val ID = "route-selected"
 
+    /** The course's thin dark edge round its magenta (ChartMap's route), drawn from the same source. */
+    const val EDGE = "route-edge"
+
+    /** The edge's weight, the web's routeEdgePaint: nearly whole at night, where the dark rim holds the course
+     *  4.67:1 against the dimmed paper at the default Dimmer (0.6 gave 2.80:1; the round-6 themes audit's R5-3),
+     *  a soft rim by day. */
+    fun edgeOpacity(night: Boolean): Float = if (night) 0.9f else 0.55f
+
     /** The casing over `source`, under `below` (the route's edge). */
     fun add(style: Style, source: String, below: String, night: Boolean, selected: Int?) {
         if (style.getLayer(ID) != null) return
@@ -38,6 +46,7 @@ object RouteLegLayer {
 
     fun paint(style: Style, night: Boolean) {
         style.getLayerAs<LineLayer>(ID)?.setProperties(PropertyFactory.lineColor(MapDim.colour(green(night))))
+        style.getLayerAs<LineLayer>(EDGE)?.setProperties(PropertyFactory.lineOpacity(edgeOpacity(night)))
     }
 
     private fun filter(selected: Int?): Expression =

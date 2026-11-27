@@ -53,12 +53,14 @@ object TypedRoute {
      * the departure; AIM 5-4-1, a STAR into the destination): a departure
      * from `dep`, its transition the point typed after it where published,
      * else an arrival into `dest` by the point typed before it. The names
-     * neither field publishes come back as missed. `list` is a field's
-     * procedures, null where they could not be had; where the engine cannot
-     * answer, every typed name is missed, never a pick guessed.
+     * neither field publishes come back as missed; those not found where a
+     * field's list could not be had (`list` gave null) as unchecked, never
+     * said unpublished on a list not looked at (14 CFR 91.103, the web's
+     * useProcedurePicks). Where the engine cannot answer, every typed name
+     * is unchecked, never missed and never a pick guessed.
      */
-    suspend fun picks(read: Read, dep: String, dest: String, list: suspend (String) -> ProcedureList?): Pair<List<PlanProcedures.Pick>, List<String>> {
-        if (read.procedures.isEmpty()) return emptyList<PlanProcedures.Pick>() to emptyList()
+    suspend fun picks(read: Read, dep: String, dest: String, list: suspend (String) -> ProcedureList?): Picked {
+        if (read.procedures.isEmpty()) return Picked(emptyList(), emptyList(), emptyList())
         val lists = mutableMapOf<String, ProcedureList?>()
         suspend fun listed(field: String) = field.takeIf { it.isNotEmpty() }?.let { lists.getOrPut(it) { list(it) } }
         val departure = listed(dep)?.let { l ->
@@ -74,11 +76,14 @@ object TypedRoute {
             )
         }
         val typed = read.procedures.map { EngineContract.RouteTypedPicksInputProceduresItem(it.name, it.before, it.after) }
-        val answer = Engine.routeTypedPicks(typed, departure, arrival).getOrNull() ?: return emptyList<PlanProcedures.Pick>() to read.procedures.map { it.name }
+        val answer = Engine.routeTypedPicks(typed, departure, arrival).getOrNull() ?: return Picked(emptyList(), emptyList(), read.procedures.map { it.name })
         // The engine's pick names its procedure by id; its name is the field's own list's.
         val names = lists.values.filterNotNull().flatMap { l -> l.procedures.map { (it.kind to it.id) to it.name } }.toMap()
-        return answer.picks.map { PlanProcedures.Pick(it.ident, it.id, it.kind, names[it.kind to it.id] ?: it.id, it.transition) } to answer.missed
+        return Picked(answer.picks.map { PlanProcedures.Pick(it.ident, it.id, it.kind, names[it.kind to it.id] ?: it.id, it.transition) }, answer.missed, answer.unchecked)
     }
+
+    /** The typed procedures picked, those neither field publishes, and those that could not be checked. */
+    data class Picked(val picks: List<PlanProcedures.Pick>, val missed: List<String>, val unchecked: List<String>)
 
     /** How the typing went, for the box to say where it was typed. */
     sealed interface Outcome {
@@ -87,6 +92,9 @@ object TypedRoute {
 
         /** Typed procedures neither end publishes, by name, and the ends. */
         data class Missed(val names: List<String>, val dep: String, val dest: String) : Outcome
+
+        /** Typed procedures not found where an end's list did not load: not looked at, so not said unpublished. */
+        data class Unchecked(val names: List<String>, val dep: String, val dest: String) : Outcome
     }
 }
 
@@ -102,9 +110,13 @@ suspend fun Plan.typeRoute(text: String, list: suspend (String) -> ProcedureList
     val next = TypedRoute.extended(RouteEdits.Route(s.dep, s.stops, s.dest), read.points)
     val dep = next?.dep ?: s.dep
     val dest = next?.dest ?: s.dest
-    val (picks, missed) = TypedRoute.picks(read, dep, dest, list)
+    val (picks, missed, unchecked) = TypedRoute.picks(read, dep, dest, list)
     picks.forEach { PlanProcedures.pick(it.ident, it.kind, it) }
     read.cruiseFt?.let { setAltitude(it) }
     if (next != null) replaceRoute(next.dep, next.dest, next.stops) else if (picks.isNotEmpty()) plan()
-    return if (missed.isEmpty()) TypedRoute.Outcome.Done else TypedRoute.Outcome.Missed(missed, dep, dest)
+    return when {
+        missed.isNotEmpty() -> TypedRoute.Outcome.Missed(missed, dep, dest)
+        unchecked.isNotEmpty() -> TypedRoute.Outcome.Unchecked(unchecked, dep, dest)
+        else -> TypedRoute.Outcome.Done
+    }
 }

@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FilterDrama
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.FlightLand
-import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
@@ -44,6 +43,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.CropSquare
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.NearMe
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -144,7 +144,9 @@ object WingtipIcons {
 
     /** Fly Here, a new route to the field: the route's own glyph. */
     val flyHere = Icons.Filled.Route
-    val departFrom = Icons.Filled.FlightTakeoff
+
+    /** Favorite, off: the star's outline (its toggle fills it on). */
+    val favorite = Icons.Outlined.StarOutline
 
     /**
      * Direct To, drawn as the chart's and the avionics' D-arrow: a D with

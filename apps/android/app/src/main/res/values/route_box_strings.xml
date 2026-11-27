@@ -15,6 +15,9 @@
         <item quantity="one">%1$s is not a departure from %2$s or an arrival into %3$s. A SID is typed after the departure and a STAR before the destination, as in a filed route.</item>
         <item quantity="other">%1$s are not departures from %2$s or arrivals into %3$s. A SID is typed after the departure and a STAR before the destination, as in a filed route.</item>
     </plurals>
+    <!-- Typed SIDs or STARs not found where an end's procedures did not load: not looked at, so not said
+         unpublished (the web's useProcedurePicks words). -->
+    <string name="route_box_unchecked">%1$s could not be checked: the procedures of %2$s or %3$s did not load. Try again shortly, or pick it in Procedures.</string>
     <!-- The box's ✕ while the route is not yet whole: what there is of it cleared. -->
     <string name="route_box_clear">Clear the route</string>
     <!-- A field NASR lists closed, on its pill (decision 0043). -->

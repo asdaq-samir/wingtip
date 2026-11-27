@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class RouteUndo {
     enum class Kind(val loud: Boolean) {
-        REMOVED(true), MOVED(false), ADDED(false), DIRECT(true), FLY_HERE(true), DEPART_FROM(true), CLEARED(true), REPLACED(true), FUEL(false),
+        REMOVED(true), MOVED(false), ADDED(false), DIRECT(true), FLY_HERE(true), CLEARED(true), REPLACED(true), FUEL(false),
     }
 
     /** One edit: what it was and to which point, and all it changed --

@@ -187,7 +187,11 @@ object OverlayPictures {
     /** An airplane of the traffic (the web's trafficIcon): a chevron
      *  pointing up, which the layer turns to its track, in its colour with
      *  a white casing; a dot where it sends no track. The casing 2 dp on
-     *  the screen however the box is scaled. */
+     *  the screen however the box is scaled. A near airplane, a collision
+     *  hazard, is edged outside its casing in the course's dark edge
+     *  (route-edge) as the obstacles are: its amber on the white alone was
+     *  1.79:1 at night against the dimmed chart (the round-6 themes audit's
+     *  N5), where the dark rim stands off the paper by day and night. */
     private fun airplane(near: Boolean, hasTrack: Boolean, density: Float): Bitmap {
         val colour = ink(if (near) MapStyle.TRAFFIC_NEAR else MapStyle.TRAFFIC_FAR)
         val scale = TRAFFIC_MARK / 22f
@@ -195,6 +199,8 @@ object OverlayPictures {
         return picture(TRAFFIC_MARK + 4f, density, origin = 2f) {
             scale(scale, scale)
             val casing = 2f / scale
+            // One dp of the dark edge beyond the white casing's outer half, inside the box's 2-dp margin.
+            val edge = stroke(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt(), casing + 2f / scale).takeIf { near }
             if (hasTrack) {
                 val chevron = Path().apply {
                     moveTo(11f, 2f)
@@ -203,9 +209,11 @@ object OverlayPictures {
                     lineTo(4f, 19f)
                     close()
                 }
+                edge?.let { drawPath(chevron, it) }
                 drawPath(chevron, fill(colour))
                 drawPath(chevron, stroke(Color.WHITE, casing))
             } else {
+                edge?.let { drawCircle(11f, 11f, 5f, it) }
                 drawCircle(11f, 11f, 5f, fill(colour))
                 drawCircle(11f, 11f, 5f, stroke(Color.WHITE, casing))
             }

@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.map
 
-import android.graphics.Color
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
@@ -26,6 +25,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
+import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
@@ -34,6 +34,7 @@ import app.wingtipmaps.android.ui.A11y
 import app.wingtipmaps.android.ui.ChartLook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import org.maplibre.android.camera.CameraPosition
@@ -162,7 +163,7 @@ fun ChartMap(
     LaunchedEffect(holder, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.downloads() }
     // The Dimmer and Contrast read as they move (a State, so no recomposition), first before the first paint, so it is
     // never the default's; the words relabelled only as night turns.
-    LaunchedEffect(holder, night) { holder.look = look(); holder.paint(night); androidx.compose.runtime.snapshotFlow(look).collect { holder.look = it; holder.paint(night, relabel = false) } }
+    LaunchedEffect(holder, night) { snapshotFlow(look).collectIndexed { i, it -> holder.look = it; holder.paint(night, relabel = i == 0) } }
     // Edge to edge: the credits clear a cutout or a navigation bar at the left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
     LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
@@ -180,9 +181,10 @@ fun ChartMap(
     LaunchedEffect(holder, tracked) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { snapshotFlow { heard() }.collectLatest { holder.traffic(it, tracked) } } }
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
-    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField?.ident).also { MapTerrain.selected(selectedField?.ident) } }
+    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField?.ident) } }
     LaunchedEffect(holder, selectedField) { selectedField?.let { holder.showField(it.lat, it.lon) } }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
+    LaunchedEffect(holder) { holder.keepTfrs() }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
@@ -205,9 +207,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
     /** The dark theme, for the chart's paint in a style set anew. */
     var night = false
     var look = ChartLook()
-    /** What the sheet covers, read as the map opens and set as it settles,
-     *  so the map never opens with a padding the sheet has since left
-     *  (the web's #543). */
+    /** What the sheet covers, read as the map opens and set as it settles, so the map never opens with a padding the
+     *  sheet has since left (the web's #543). */
     private var bottomInset = 0
     private var leftInset = 0
     private var styled = false
@@ -224,15 +225,13 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastTerminal: Charts.Companion.Terminal? = null
     private var lastWeather: Map<String, String> = emptyMap()
     private var lastEmergency: EmergencyLine? = null
-    private var lastSelected: String? = null
+    private var lastSelected: MapField? = null
     private var lastTemplate: TileTemplate? = null
     /** The chart's tiles' last {z}, where the imagery takes over (CloseMap). */
     private var chartTileMax = 12
-    /** The traffic's and the trail's GeoJSON last made, set again as
-     *  they are when the style is set anew. */
+    /** The traffic's and the trail's GeoJSON last made, set again as they are when the style is set anew. */
     private val trafficOnMap = TrafficOnMap()
     /** The style as MapStyle wrote it, its layers read once a relabel asks. */
-    private var writtenJson: String? = null
     private var writtenLayers: List<kotlinx.serialization.json.JsonObject>? = null
     private var trailJson = lineJson(emptyList())
     private var lastGlide: List<List<Double>> = emptyList()
@@ -240,6 +239,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private val camera = MapCamera()
     private var lastLeg: Int? = null
     val plates = PlateLayer(density)
+    private val tfrs = TfrLayer()
 
     fun on(event: Lifecycle.Event) {
         if (destroyed) return
@@ -264,20 +264,20 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (created) view.onDestroy()
     }
 
-    /** The chart and the overlays as the map's style (MapStyle), with the
-     *  overlays' pictures and the switches and weather as they are, then
-     *  what is drawn over them once the style is in. */
-    fun style(template: TileTemplate?, minZoom: Int, maxZoom: Int, overlays: OverlayTiles?, line: List<List<Double>>) {
+    /** The chart and the overlays as the map's style (StyleTree), the switches and weather as they are, with the
+     *  overlays' pictures, then what is drawn over them once the style is in. */
+    suspend fun style(template: TileTemplate?, minZoom: Int, maxZoom: Int, overlays: OverlayTiles?, line: List<List<Double>>) {
         if (destroyed) return
+        if (template == null) return view.getMapAsync(::open)
+        val built = StyleTree.build(view.context.applicationContext, template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather, MapLabels.styled(lastLayers.largerLabels, view.context))
+        if (destroyed) return
+        writtenLayers = built.written
         view.getMapAsync { map ->
             open(map)
-            if (template == null) return@getMapAsync
             // Past the chart's own detail the imagery (CloseMap), to its zoom.
             chartTileMax = maxZoom.also { lastTemplate = template }
             map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
-            val written = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather).also { writtenJson = it; writtenLayers = null }
-            val json = MapDim.style(app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac))
-            val builder = Style.Builder().fromJson(json)
+            val builder = Style.Builder().fromJson(built.json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is shown, so a slow tile never leaves it hidden.
             if (!revealed) {
@@ -294,6 +294,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
                 SelectedAirportLayer.draw(style, lastSelected)
                 plates.draw(style)
+                tfrs.draw(style)
                 EmergencyLayer.draw(style, lastEmergency, below = OwnShipPuck.under(style))
                 // After what goes under it, so its layers are over them.
                 puck?.activate(style)
@@ -306,12 +307,12 @@ private class MapHolder(val view: MapView, private val density: Float) {
 
     /** The chart's paint by day or night (MapStyle.chartPaint); the words relabelled only as night turns, not at each Dimmer step. */
     fun paint(night: Boolean, relabel: Boolean = true) {
-        if (destroyed) return
+        if (destroyed || !styled) return // before the first style is in: its own callback paints, once
         view.getMapAsync { map ->
             map.getStyle { style ->
                 val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax) } // the marks at the chart's light (MapDim)
                 if (relabel) relabel(style)
-                RouteLegLayer.paint(style, night)
+                RouteLegLayer.paint(style, night).also { tfrs.paint(style, night) }
                 // A downloaded region's chart (offline-N) is the chart too: dimmed with it, never left at day's light.
                 val charts = MapStyle.CHART_LAYERS + style.layers.map { it.id }.filter { it.startsWith(app.wingtipmaps.android.offline.OfflineLayers.PREFIX) }
                 for (id in charts) {
@@ -394,7 +395,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
 
     /** The style's words at the switch's scale and the theme's inks (MapLabels.relabel). */
     private fun relabel(style: Style) {
-        val written = writtenLayers ?: writtenJson?.let { MapLabels.layersOf(it) }?.also { writtenLayers = it } ?: return
+        val written = writtenLayers ?: return
         MapLabels.relabel(style, written, MapLabels.scale(lastLayers.largerLabels, view.context), night)
     }
 
@@ -473,9 +474,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
     }
 
     /** The ring round the field whose card is open (SelectedAirportLayer). */
-    fun selectField(ident: String?) {
-        lastSelected = ident
-        redraw { style -> SelectedAirportLayer.draw(style, ident) }
+    fun selectField(field: MapField?) {
+        lastSelected = field
+        redraw { style -> SelectedAirportLayer.draw(style, field) }
     }
 
     /** The plates drawn, and the map brought to one newly put on it. */
@@ -484,6 +485,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (!destroyed && new != null) view.getMapAsync { it.animateCamera(PlateLayer.fit(new, density), OwnShipPuck.FOLLOW_MS) }
         redraw(plates::draw)
     }
+
+    suspend fun keepTfrs() = tfrs.keep(::redraw)
 
     private fun redraw(draw: (Style) -> Unit) {
         if (!destroyed) view.getMapAsync { map -> map.getStyle(draw) }
@@ -589,7 +592,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
         style.addSource(GeoJsonSource(TRAIL, geoJson))
         val layer = LineLayer(TRAIL, TRAIL).withProperties(
-            PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
+            PropertyFactory.lineColor(WingtipColors.Chart.MAP_BLUE_HEX.toColorInt()),
             PropertyFactory.lineWidth(2.5f),
             PropertyFactory.lineOpacity(MapDim.opacity(0.6f)),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
@@ -618,17 +621,17 @@ private class MapHolder(val view: MapView, private val density: Float) {
         // Widths as the web's at zoom 10 (glStyle's routeLayers).
         // At night dimmed by its colour with the chart (MapDim.colour, the web's DIM_BY_COLOUR): solid, its contrast kept.
         val layer = LineLayer(ROUTE, ROUTE).withProperties(
-            PropertyFactory.lineColor(MapDim.colour(COURSE_MAGENTA)),
+            PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.COURSE_HEX.toColorInt())),
             PropertyFactory.lineWidth(4.5f),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
         // The edge keeps the magenta legible: a dark rim by day and by night (the web's CHART.routeEdge), where a
-        // light one at night stood out of the dimmed chart at 1.75 to 1, brighter than the course it edged.
+        // light one at night stood out of the dimmed chart at 1.75 to 1; dimmed with the chart by colour as the course is.
         val edge = LineLayer(ROUTE_EDGE, ROUTE).withProperties(
-            PropertyFactory.lineColor(ROUTE_EDGE_INK),
+            PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt())),
             PropertyFactory.lineWidth(6.5f),
-            PropertyFactory.lineOpacity(0.6f),
+            PropertyFactory.lineOpacity(RouteLegLayer.edgeOpacity(night)),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
@@ -639,10 +642,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
 
     private companion object {
         const val ROUTE = "route"
-        const val ROUTE_EDGE = "route-edge"
-        /** The chart's magenta, the web's COURSE_MAGENTA. */
-        val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)
-        val ROUTE_EDGE_INK = app.wingtipmaps.android.design.generated.WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt()
+        const val ROUTE_EDGE = RouteLegLayer.EDGE
         const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's
          *  TAP.mark and TAP.line). */

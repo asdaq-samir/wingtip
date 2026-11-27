@@ -6,6 +6,7 @@ import app.wingtipmaps.android.api.generated.AirspaceAt
 import app.wingtipmaps.android.api.generated.DepartureEvents
 import app.wingtipmaps.android.api.generated.FlowAtAirports
 import app.wingtipmaps.android.api.generated.SaaStatuses
+import app.wingtipmaps.android.api.generated.Tfrs
 import kotlinx.serialization.decodeFromString
 
 // What the FAA's SWIM feeds say now, as the planner keeps it from ingest
@@ -46,3 +47,6 @@ suspend fun Planner.liveDepartures(ident: String): DepartureEvents =
  *  special-use areas and the TFRs there, as the web's airspace card asks. */
 suspend fun Planner.airspaceAt(lat: Double, lon: Double): AirspaceAt =
     api.airspaceAtPoint(lat, lon).planned()
+
+/** Every TFR in force or to come, each NOTAM's areas, for the map (/api/tfrs, wingtip.tfr; the web's tfrsQuery). */
+suspend fun Planner.tfrs(): Tfrs = api.tfrs().planned()

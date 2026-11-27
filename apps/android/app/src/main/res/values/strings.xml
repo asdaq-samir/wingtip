@@ -152,7 +152,6 @@
 
     <!-- Card actions (lib/cardActions.ts ACTION, docs/design/icons.md). -->
     <string name="action_fly_here">Fly Here</string>
-    <string name="action_depart_from">Depart From</string>
     <string name="action_hold_here">Hold Here</string>
     <string name="action_call">Call</string>
     <string name="action_address">Address</string>

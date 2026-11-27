@@ -17,7 +17,6 @@ import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.tiles.TileTemplate
 import app.wingtipmaps.android.ui.airspaceHours
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -41,7 +40,7 @@ class MapParityTest {
     )
 
     private fun style(layers: MapLayers = MapLayers(), weather: Map<String, String> = emptyMap()): JsonObject =
-        Json.parseToJsonElement(MapStyle.styleJson(template, 5, 12, tiles, false, layers, weather)).jsonObject
+        MapStyle.styleJson(template, 5, 12, tiles, false, layers, weather)
 
     private fun layer(style: JsonObject, id: String) =
         style["layers"]!!.jsonArray.first { it.jsonObject["id"]!!.jsonPrimitive.content == id }.jsonObject

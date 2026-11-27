@@ -16,7 +16,7 @@ class RouteUndoTest {
     fun onlyAnEditThatTookSomethingAwayIsLoud() {
         val loud = RouteUndo.Kind.entries.filter { it.loud }.toSet()
         assertEquals(
-            setOf(RouteUndo.Kind.REMOVED, RouteUndo.Kind.DIRECT, RouteUndo.Kind.FLY_HERE, RouteUndo.Kind.DEPART_FROM, RouteUndo.Kind.CLEARED, RouteUndo.Kind.REPLACED),
+            setOf(RouteUndo.Kind.REMOVED, RouteUndo.Kind.DIRECT, RouteUndo.Kind.FLY_HERE, RouteUndo.Kind.CLEARED, RouteUndo.Kind.REPLACED),
             loud,
         )
         assertFalse(RouteUndo.Kind.ADDED.loud)
