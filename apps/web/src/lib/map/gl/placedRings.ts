@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
-import type { ExpressionSpecification, Map as MlMap } from "maplibre-gl";
+import type { ExpressionSpecification, MapSourceDataEvent, Map as MlMap } from "maplibre-gl";
 import { isParked } from "./glLayer";
 
 /** The map's global state that says a map keeps its rings to the fields it
  *  draws (usePlacedFieldRings is on): a map that never sets it (the training
- *  map) draws every ring. Set once a map, so its one lay-out is the mount's. */
+ *  map) draws every ring. The plan's map is made with it on (makeMap's
+ *  `ringsByField`), so setting it at mount changes nothing and lays out no
+ *  tile; each real change of it lays every overlay tile out again. */
 export const RINGS_BY_FIELD = "ringsByField";
 
 /** Each ring's feature state (the overlay source's `airspace` ids are their
@@ -78,18 +80,45 @@ export function usePlacedFieldRings(map: MlMap, rings: string, fields: string, l
       placedOn.set(map, placed);
     };
     writeRef.current = write;
+    // Looked again only at a rest after something that can change what is
+    // placed: the camera's move, or a tile of the fields' or the rings'
+    // source come in or laid out again (a setting's filter, a theme's
+    // change). An idle comes after every frame drawn at rest too -- each
+    // of the traffic's updates, a weather mark's, a paint's -- and a
+    // whole-screen queryRenderedFeatures at each was some ten a second
+    // with traffic followed (the map audit, round 6).
+    let moved = true;
+    const changed = () => {
+      moved = true;
+    };
+    const tiled = (e: MapSourceDataEvent) => {
+      if (e.tile && (e.sourceId === fields || e.sourceId === rings)) moved = true;
+    };
+    const rest = () => {
+      if (!moved) return;
+      moved = false;
+      write();
+    };
     keeping.set(map, (keeping.get(map) ?? 0) + 1);
+    // A no-op on the plan's map, made with it on (makeMap), so its first
+    // mount lays out no overlay tile again.
     if (map.style) map.setGlobalStateProperty(RINGS_BY_FIELD, true);
-    map.on("idle", write);
+    map.on("moveend", changed);
+    map.on("sourcedata", tiled);
+    map.on("idle", rest);
     write();
     return () => {
       writeRef.current = () => {};
-      map.off("idle", write);
+      map.off("moveend", changed);
+      map.off("sourcedata", tiled);
+      map.off("idle", rest);
       keeping.set(map, (keeping.get(map) ?? 1) - 1);
       const letGo = () => {
         if (!map.style || keeping.get(map)) return;
         placedOn.delete(map);
-        map.setGlobalStateProperty(RINGS_BY_FIELD, null);
+        // Every ring again, said outright: a map made with them kept to
+        // their fields (makeMap's default for the plan's) would go back to it.
+        map.setGlobalStateProperty(RINGS_BY_FIELD, false);
         if (map.getSource(rings)) map.removeFeatureState({ source: rings, sourceLayer: "airspace" });
       };
       // A map being handed over keeps them a moment for the next tree's own.

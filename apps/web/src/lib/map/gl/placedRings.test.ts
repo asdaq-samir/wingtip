@@ -7,25 +7,33 @@ import { usePlacedFieldRings } from "./placedRings";
 const LAYERS = ["airports"];
 
 /** As much of a MapLibre map as the rings' keeper touches: the symbols
- *  placed at a rest are `drawn`, the route's own fields `own`. */
+ *  placed at a rest are `drawn`, the route's own fields `own`. `rest` is a
+ *  move's end and the idle after it; `idle` an idle alone (a frame drawn
+ *  at rest); `tile` a tile of a source come in. */
 function fakeMap() {
   const drawn = { now: [] as string[], own: [] as string[] };
-  const idle = new Set<() => void>();
+  const on = new Map<string, Set<(e?: unknown) => void>>();
+  const fire = (name: string, e?: unknown) => on.get(name)?.forEach((f) => f(e));
   const map = {
     style: {},
     getSource: () => ({}),
     getLayer: () => ({}),
-    on: (_: string, f: () => void) => idle.add(f),
-    off: (_: string, f: () => void) => idle.delete(f),
-    queryRenderedFeatures: () => drawn.now.map((faa_id) => ({ properties: { faa_id } })),
+    on: (name: string, f: () => void) => on.set(name, (on.get(name) ?? new Set()).add(f)),
+    off: (name: string, f: () => void) => on.get(name)?.delete(f),
+    queryRenderedFeatures: vi.fn(() => drawn.now.map((faa_id) => ({ properties: { faa_id } }))),
     querySourceFeatures: () => drawn.own.map((faa_id) => ({ properties: { faa_id } })),
     setFeatureState: vi.fn(),
     removeFeatureState: vi.fn(),
     setGlobalStateProperty: vi.fn(),
   };
-  const rest = () => idle.forEach((f) => f());
+  const rest = () => {
+    fire("moveend");
+    fire("idle");
+  };
+  const idle = () => fire("idle");
+  const tile = (sourceId: string) => fire("sourcedata", { sourceId, tile: {} });
   const states = () => map.setFeatureState.mock.calls.map(([f, s]) => `${(f as { id: string }).id}:${(s as { placed: boolean }).placed}`);
-  return { map, drawn, rest, states };
+  return { map, drawn, rest, idle, tile, states };
 }
 
 describe("the Class C and D rings kept to their fields", () => {
@@ -54,5 +62,30 @@ describe("the Class C and D rings kept to their fields", () => {
     rerender({ own: ["KOSH"] });
     expect(map.setGlobalStateProperty).toHaveBeenCalledOnce();
     expect(states()).toEqual(["OSH:true"]);
+  });
+
+  it("look again only at a rest after a move or a tile, not at every idle", () => {
+    const { map, drawn, rest, idle, tile, states } = fakeMap();
+    drawn.now = ["MSN"];
+    renderHook(() => usePlacedFieldRings(map as unknown as MlMap, "rings", "fields", LAYERS, []));
+    // The mount's look, then its first idle.
+    idle();
+    expect(map.queryRenderedFeatures).toHaveBeenCalledTimes(2);
+    // Frames at rest (traffic's updates, a paint): no look.
+    idle();
+    idle();
+    expect(map.queryRenderedFeatures).toHaveBeenCalledTimes(2);
+    // Another source's tile: none either.
+    tile("traffic");
+    idle();
+    expect(map.queryRenderedFeatures).toHaveBeenCalledTimes(2);
+    // The fields' tile laid out again: one look at the next idle.
+    drawn.now = ["MSN", "RFD"];
+    tile("fields");
+    idle();
+    expect(states()).toContain("RFD:true");
+    expect(map.queryRenderedFeatures).toHaveBeenCalledTimes(3);
+    rest();
+    expect(map.queryRenderedFeatures).toHaveBeenCalledTimes(4);
   });
 });

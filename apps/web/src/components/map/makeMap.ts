@@ -105,9 +105,10 @@ function firstChart() {
  * slots' empty layers with the chart and the cycle's FAA overlays
  * (glOverlays) among them, so the chart, the airspace, the airports and
  * the navaids load per tile from the first frame rather than each asking
- * once the page's tree has drawn.
+ * once the page's tree has drawn; `ringsByField` for a map whose airports
+ * keep the Class C and D rings to the fields drawn (placedRings).
  */
-export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.Map {
+export function makeMap(holder: HTMLDivElement, insets: MapInsets, ringsByField = false): maplibregl.Map {
   const last = useOwnShip.getState().lastFix;
   const [lat, lon] = last ? [last.lat, last.lon] : COUNTRY;
   const tiles = queryClient.getQueryData(overlayTilesQuery.queryKey) ?? null;
@@ -122,10 +123,11 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     version: 8,
     sources: { ...chart?.sources, ...overlays?.sources },
     layers,
-    // Every ring drawn until the plan's airports keep them to their fields
-    // (placedRings), a reset going back to it: off, as the training map,
-    // which draws no airports, never sets it.
-    state: { [RINGS_BY_FIELD]: { default: false } },
+    // The rings kept to their fields from the first frame on the plan's map,
+    // whose airports always do so (placedRings), so its mount lays out no
+    // overlay tile again; every ring on the training map, which draws no
+    // airports and never sets it.
+    state: { [RINGS_BY_FIELD]: { default: ringsByField } },
     // The same variable font under a second name: MapLibre draws a name
     // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
     "font-faces": {
