@@ -59,8 +59,13 @@ class TfrFacts(BaseModel):
     title: str | None = None
     floor_ft: float | None = None
     floor_ref: str | None = None
+    #: Its areas' floors given some AGL and some MSL, so the lowest one
+    #: depends on the ground under it (tfr_detail_read); floor_ft is then
+    #: only the smaller figure, and the card says it varies.
+    floor_varies: bool = False
     ceiling_ft: float | None = None
     ceiling_ref: str | None = None
+    ceiling_varies: bool = False
     instructions: list[str] = []
     text: str | None = None
     facility: TfrContact | None = None

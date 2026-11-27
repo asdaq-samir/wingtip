@@ -14,6 +14,8 @@
         "floor_ref": { "type": ["string", "null"], "description": "MSL, AGL or SFC." },
         "ceiling_ft": { "type": ["number", "null"] },
         "ceiling_ref": { "type": ["string", "null"], "description": "MSL or AGL." },
+        "floor_varies": { "type": ["boolean", "null"], "description": "Its areas' floors are given some AGL and some MSL (tfr_detail_read): the band then says the floors differ by area." },
+        "ceiling_varies": { "type": ["boolean", "null"], "description": "Likewise for its ceilings." },
         "over_field": { "type": ["boolean", "null"], "description": "Whether its area takes the field in." },
         "field": { "$ref": "#/definitions/TfrPoint" },
         "edge": { "$ref": "#/definitions/TfrPoint" }
