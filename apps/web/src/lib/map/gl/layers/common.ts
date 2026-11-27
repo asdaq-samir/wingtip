@@ -69,12 +69,19 @@ export const WORD_LIGHT = luminanceOf(MAP_LABEL.nightInk[CHART.towered]!);
  *  (the fixes' near white, the VFR green, the mountains' grey), so that at
  *  the words' light (LIGHT) every word is as light as the paper under the
  *  Dimmer and none brighter (AIM 8-1-6); one darker kept as it is. */
-const NIGHT_INK: Record<string, string> = Object.fromEntries(
+const LEVELLED: Record<string, string> = Object.fromEntries(
   Object.entries(MAP_LABEL.nightInk).map(([day, night]) => [
     day,
     scaledHex(night, Math.min(1, (WORD_LIGHT / luminanceOf(night)) ** (1 / ENCODE))),
   ]),
 );
+/** And the chart's white words (a runway's number, an altitude tab's, a
+ *  VOR's on its tag, the open card's field's) the fixes' near white, so
+ *  after dark they are dimmed by their ink with the rest at the words'
+ *  light, their dark halo or tab whole, where faded by their opacity they
+ *  were the brightest marks on the night map (the round-7 themes audit's
+ *  R7-5). */
+const NIGHT_INK: Record<string, string> = { ...LEVELLED, [CHART.casing]: LEVELLED[CHART.fixInk]! };
 
 /** A colour at the words' light after dark (LIGHT): black at none, itself
  *  at 1, as mapDim's dimmedColour takes the chart's brightness. */

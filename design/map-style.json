@@ -93,10 +93,6 @@
       "$comment": "A field's mark at the zooms its ident is named at, so no field is drawn bare.",
       "$value": ["step", ["zoom"], ["case", { "$use": "namedFar" }, { "$use": "tileAirportIcon" }, ""], { "$zoom": "{map.zoom.airport-public}" }, { "$use": "tileAirportIcon" }]
     },
-    "unlessSelected": {
-      "$comment": "The open card's field's ident left to AirportsGl's larger one, by its feature state: a tap repaints only.",
-      "$value": ["case", ["boolean", ["feature-state", "selected"], false], "transparent", { "$arg": "colour" }]
-    },
     "suaRestricted": {
       "$comment": "The FAA's TYPE_CODEs drawn in the restricted ink: prohibited, restricted, warning and danger areas (wingtip.sua TYPES); MOAs and alert areas magenta.",
       "$value": ["in", ["get", "type"], ["literal", ["P", "R", "W", "D"]]]
@@ -164,7 +160,7 @@
         "source-layer": "airports",
         "group": "airports",
         "minzoom": { "$zoom": "{map.zoom.airports-farthest}" },
-        "filter": ["all", { "$use": "militaryShown" }, { "$use": "privateShown" }, { "$use": "notRouteAirport" }, { "$arg": "kept" }, { "$arg": "tier" }],
+        "filter": ["all", { "$use": "militaryShown" }, { "$use": "privateShown" }, { "$use": "notRouteAirport" }, { "$arg": "kept" }, { "$arg": "tier" }, { "$arg": "tower" }],
         "layout": {
           "icon-size": { "$use": "airportIconSize" },
           "$comment": "Two px round each mark at every zoom: out at a few states the towered fields then stand side by side in rank order, as ForeFlight's do (2026-11-21).",
@@ -178,9 +174,11 @@
           "text-padding": 1
         },
         "paint": {
-          "text-color": { "$use": "unlessSelected", "colour": { "$ink": { "$use": "airportIdentInk" } } },
-          "text-halo-color": { "$use": "unlessSelected", "colour": { "$haloColour": "airport-ident" } },
-          "text-halo-width": "{map.label.halo}"
+          "$comment": "One ink a layer, the towered fields' or the rest's, and the open card's field's ident hidden by its opacity alone: a colour that read the feature (its tower, its selection) and the words' night light together laid every airports tile out again at each Dimmer or Contrast commit at night (the round-7 map audit's W1); an opacity by feature state with no global state in it repaints only.",
+          "text-color": { "$ink": { "$arg": "ink" } },
+          "text-halo-color": { "$haloColour": "airport-ident" },
+          "text-halo-width": "{map.label.halo}",
+          "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1]
         }
       }
     }
@@ -222,7 +220,7 @@
         "text-offset": [0, -1.1],
         "text-allow-overlap": true
       },
-      "paint": { "text-color": "{color.chart.casing}", "$halo": "runway-number" }
+      "paint": { "$comment": "White on the dark halo, dimmed at night by its ink with the light-haloed words, its halo whole (the round-7 themes audit's R7-5).", "text-color": { "$ink": "{color.chart.casing}" }, "$halo": "runway-number" }
     },
     {
       "$comment": "The special-use areas from map.zoom.special-use (at 6 California's MOAs and restricted areas, some 160 hatched lines, hid the fields): each boundary's band of short diagonal ticks along its inside (a line pattern, which MapLibre scales with the band's width), where two areas share an edge both drawn, each on its own side. ForeFlight's colours over the sectional (the owner's screenshot over Lake Michigan, 2026-11-08): restricted, prohibited, warning and danger areas orange-brown, MOAs and alert areas magenta.",
@@ -320,7 +318,7 @@
         "text-rotation-alignment": "map",
         "icon-rotation-alignment": "map"
       },
-      "paint": { "text-color": "{color.chart.casing}" }
+      "paint": { "$comment": "White on the tab, dimmed at night by its ink (R7-5).", "text-color": { "$ink": "{color.chart.casing}" } }
     },
     {
       "$comment": "A special-use area's tab, as ForeFlight writes it on a MOA's boundary (the owner's screenshot near Brady, TX, 2026-11-12): from the tiles' `special_use_labels`, one an area on its longest side, `tab` the engine's words (special_use_tab), `angle` its turn and `side` where the area lies; offset 1.2 em, about half its two lines, in its own turned frame, below where `side` is 1 and above where -1.",
@@ -339,7 +337,7 @@
         "icon-rotation-alignment": "map",
         "text-offset": ["case", ["==", ["get", "side"], 1], ["literal", [0, 1.2]], ["literal", [0, -1.2]]]
       },
-      "paint": { "text-color": "{color.chart.casing}" }
+      "paint": { "$comment": "White on the tab, dimmed at night by its ink (R7-5).", "text-color": { "$ink": "{color.chart.casing}" } }
     }
   ],
   "marks": [
@@ -392,31 +390,22 @@
       "minzoom": { "$zoom": "{map.zoom.vor}" }
     },
     {
+      "$comment": "A VOR's ident on its blue tag, the tag a signed distance field tinted the towered blue and dimmed at night by its colour with the words (its white turned to the fixes' night ink at the words' light, labelInk), so the two keep their contrast, 4.76:1 at the default Dimmer, where the tag faded by its opacity under words scaled by colour read 2.65:1 (the round-7 themes audit's R7-2).",
       "id": "navaids-idents",
       "$with": { "$use": "navaidIdents", "kind": "vor" },
+      "metadata": { "wingtip:dim": "colour" },
+      "paint": { "icon-color": "{color.chart.towered}" },
       "source": "faa-overlays",
       "source-layer": "navaids",
       "group": "navaids",
       "filter": ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]],
       "minzoom": { "$zoom": "{map.zoom.vor}" }
     },
-    {
-      "$comment": "Every field but a Class B's or a Class C's.",
-      "id": "airports",
-      "$with": { "$use": "airportMarks", "kept": ["!", { "$use": "keptField" }], "tier": ["!", { "$use": "classCField" }] },
-      "layout": { "icon-image": { "$use": "airportIconNamed" }, "icon-allow-overlap": false, "text-optional": false }
-    },
-    {
-      "$comment": "A Class C's field, placed before the others, so its ring, drawn from zoom 5 (decision 0052), stands with its field and name.",
-      "id": "airports-c",
-      "$with": { "$use": "airportMarks", "kept": ["!", { "$use": "keptField" }], "tier": { "$use": "classCField" } },
-      "layout": { "icon-image": { "$use": "airportIconNamed" }, "icon-allow-overlap": false, "text-optional": false }
-    },
-    {
-      "$comment": "A Class B's field, on top, so placed first: its mark always, only its name giving way.",
-      "id": "airports-kept",
-      "$with": { "$use": "airportMarks", "kept": { "$use": "keptField" }, "tier": ["literal", true] },
-      "layout": { "icon-image": { "$use": "tileAirportIcon" }, "icon-allow-overlap": true, "text-optional": true }
-    }
+    {"$comment": "Every field but a Class B's or a Class C's, the untowered in magenta and, over them so placed first, the towered in blue (Chart User's Guide, Airports): MapLibre places a higher layer first, and the towered fields are field_mark_rank's first tier, so rank order holds.", "id": "airports", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": ["!", {"$use": "classCField"}], "tower": ["!", {"$use": "towered"}], "ink": "{color.chart.untowered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"id": "airports-towered", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": ["!", {"$use": "classCField"}], "tower": {"$use": "towered"}, "ink": "{color.chart.towered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"$comment": "A Class C's field, placed before the others, so its ring, drawn from zoom 5 (decision 0052), stands with its field and name.", "id": "airports-c", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": {"$use": "classCField"}, "tower": ["!", {"$use": "towered"}], "ink": "{color.chart.untowered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"id": "airports-c-towered", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": {"$use": "classCField"}, "tower": {"$use": "towered"}, "ink": "{color.chart.towered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"$comment": "A Class B's field, on top, so placed first: its mark always, only its name giving way.", "id": "airports-kept", "$with": {"$use": "airportMarks", "kept": {"$use": "keptField"}, "tier": ["literal", true], "tower": ["!", {"$use": "towered"}], "ink": "{color.chart.untowered}"}, "layout": {"icon-image": {"$use": "tileAirportIcon"}, "icon-allow-overlap": true, "text-optional": true}},
+    {"id": "airports-kept-towered", "$with": {"$use": "airportMarks", "kept": {"$use": "keptField"}, "tier": ["literal", true], "tower": {"$use": "towered"}, "ink": "{color.chart.towered}"}, "layout": {"icon-image": {"$use": "tileAirportIcon"}, "icon-allow-overlap": true, "text-optional": true}}
   ]
 }

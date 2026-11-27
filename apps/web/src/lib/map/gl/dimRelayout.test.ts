@@ -51,11 +51,11 @@ describe("the Dimmer's step", () => {
     expect(routeLayers().flatMap((l) => relaidByDim(l))).toEqual([]);
   });
 
-  it("lays out again, at a commit at night, only the tiles' words coloured by feature", () => {
+  it("lays out none of the overlay tiles' layers again at a commit at night", () => {
     // The words' light (LABEL_NIGHT) follows the Dimmer as committed, and
-    // the theme: a field's tower and a fix's kind pick their ink, so those
-    // words' sources are laid out once a commit, never once a step, and no
-    // line, circle or icon with them (the themes audit, round 6, N1).
+    // the theme: no overlay word's ink reads a feature with it, a field's
+    // tower its own layer's and the open card's field hidden by its opacity
+    // (the round-7 map audit's W1), so a commit lays out no tile.
     const { layers } = overlayStyle(TILES, "https://wingtip.test");
     const relaid = [...(layers.lines ?? []), ...(layers.marks ?? [])].flatMap((l) => {
       const paint = (l as { paint?: Record<string, unknown> }).paint ?? {};
@@ -65,8 +65,7 @@ describe("the Dimmer's step", () => {
         )
         .map(([k]) => k);
     });
-    expect(relaid.length).toBeGreaterThan(0);
-    expect(new Set(relaid)).toEqual(new Set(["text-color", "text-halo-color"]));
+    expect(relaid).toEqual([]);
   });
 
   it("is caught where an opacity by feature reads it", () => {

@@ -23,7 +23,7 @@ import { MAP_ZOOM } from "../../../lib/tokens";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { usePlacedFieldRings } from "../../../lib/map/gl/placedRings";
-import { TAP, labelHalo, labelText, selectionRing } from "../../../lib/map/gl/layers/common";
+import { TAP, labelHalo, labelInk, labelText, selectionRing } from "../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
 import { useAirportWeatherShown } from "../../../lib/map/marks/useAirportWeatherShown";
@@ -56,7 +56,8 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
     "text-allow-overlap": true,
     "text-ignore-placement": true,
   },
-  paint: { "text-color": CHART.casing, ...labelHalo("airportPicked") },
+  // White on its dark rim, dimmed at night by its ink with the chart's other words, the rim whole (R7-5).
+  paint: { "text-color": labelInk(CHART.casing), ...labelHalo("airportPicked") },
 };
 /** The open card's field's mark, the tile layers' own picture and size
  *  (glOverlays) from the tile's fields copied onto the ring's feature,

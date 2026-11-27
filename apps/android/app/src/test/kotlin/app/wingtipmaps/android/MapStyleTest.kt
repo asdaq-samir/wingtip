@@ -84,7 +84,7 @@ class MapStyleTest {
                 "sua-labels",
                 MapStyle.ROUTE_SLOT,
                 "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents", "navaids", "navaids-idents",
-                "airports", "airports-c", "airports-kept",
+                "airports", "airports-towered", "airports-c", "airports-c-towered", "airports-kept", "airports-kept-towered",
             ) + TRAFFIC,
             ids(s),
         )
@@ -173,8 +173,11 @@ class MapStyleTest {
         assertEquals("2", layout["icon-padding"]!!.jsonPrimitive.content)
         // A towered or Class B field named wherever drawn, every other field from the app's 8.
         assertTrue(layout["text-field"].toString(), layout["text-field"].toString().startsWith("""["step",["zoom"],["case",["any","""))
-        val colour = airports["paint"]!!.jsonObject["text-color"].toString()
-        assertTrue(colour, colour.contains(""""${MapStyle.BLUE}","${MapStyle.MAGENTA}""""))
+        // One ink a layer, the untowered fields' magenta and the towered fields' blue, the open card's field's ident
+        // hidden by its opacity (W1).
+        assertEquals(MapStyle.MAGENTA, airports["paint"]!!.jsonObject["text-color"]!!.jsonPrimitive.content)
+        assertEquals(MapStyle.BLUE, layer(s, "airports-towered")["paint"]!!.jsonObject["text-color"]!!.jsonPrimitive.content)
+        assertEquals("""["case",["boolean",["feature-state","selected"],false],0,1]""", airports["paint"]!!.jsonObject["text-opacity"].toString())
     }
 
     @Test

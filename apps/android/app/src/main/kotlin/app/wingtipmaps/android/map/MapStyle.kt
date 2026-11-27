@@ -236,7 +236,7 @@ object MapStyle {
     val AIRSPACE_LAYERS: List<String> = OverlayStyle.GROUPS.getValue("airspace")
     val NAVAID_LAYERS: List<String> = OverlayStyle.GROUPS.getValue("navaids")
     val AIRSPACE_LINES = listOf("airspace-D", "airspace-C", "airspace-B")
-    /** The tile airports' layers, bottom to top: every field, a Class C's, then a Class B's (kept). */
+    /** The tile airports' layers, bottom to top: every field, a Class C's, then a Class B's (kept), each tier's towered over its others. */
     val AIRPORT_LAYERS: List<String> = OverlayStyle.GROUPS.getValue("airports")
     val AIRPORTS: String = AIRPORT_LAYERS.first()
     const val VORS = "navaids"

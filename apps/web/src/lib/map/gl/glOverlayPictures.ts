@@ -16,7 +16,7 @@ const FIX_BLUE = CHART.airspaceBlue;
  *  ForeFlight draws an enroute fix over the chart (blue, a white rim:
  *  the owner's screenshot over Lake Michigan, 2026-11-08), a VFR
  *  waypoint's green triangle (the owner's pick, 2026-11-07), and the
- *  VOR's blue ident box, stretched to its ident. */
+ *  VOR's ident box, stretched to its ident and tinted by its layer. */
 const NAVAID_PICTURES: Picture[] = [
   [
     "nav|vor",
@@ -33,10 +33,12 @@ const NAVAID_PICTURES: Picture[] = [
     () =>
       `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${CHART.vfrGreen}" stroke="${CHART.casing}" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
   ],
+  // The shape alone, in white, tinted the towered blue by its layer (design/map-style.json's navaids-idents), so at
+  // night it is dimmed by its colour with the VOR's words on it (R7-2).
   [
     "nav|tag",
-    () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="${BLUE}"/></svg>`,
-    { inset: 4 },
+    () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="${CHART.casing}"/></svg>`,
+    { inset: 4, sdf: true },
   ],
 ];
 

@@ -60,8 +60,10 @@ describe("the map's words (map.label)", () => {
       ["interpolate", ["linear"], LIGHT, 0, "black", 1, MAP_LABEL.nightInk[CHART.towered]],
       CHART.towered,
     ]);
-    // A colour with no night ink keeps its own (a VOR's white on its tag).
-    expect(night(CHART.casing)).toBe(CHART.casing);
+    // The chart's white (a VOR's on its tag, a runway's number, a tab's) the fixes' near white, levelled with the
+    // rest (R7-5); a colour with no night ink keeps its own.
+    expect(night(CHART.casing)).toBe(night(CHART.fixInk));
+    expect(night("#123456")).toBe("#123456");
     const get: ExpressionSpecification = ["get", "ink"];
     const match = ((labelInk(get) as unknown[])[2] as unknown[])[6] as unknown[];
     expect(match[0]).toBe("match");

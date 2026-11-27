@@ -17,6 +17,7 @@ import {
 } from "./glOverlays";
 import { volumeOfTile, vorOfTile } from "./glTileFeatures";
 import { glZoom } from "./glStyle";
+import { CHART } from "../../tokens";
 
 const TILES: OverlayTiles = {
   cycle: "2026-10-29",
@@ -73,9 +74,13 @@ describe("the overlay tiles' layers", () => {
       "vfr-waypoints-idents",
       "navaids",
       "navaids-idents",
+      // Each tier's towered fields over its others, one ink a layer (W1).
       "airports",
+      "airports-towered",
       "airports-c",
+      "airports-c-towered",
       "airports-kept",
+      "airports-kept-towered",
     ]);
     // Each class from its own zoom (AIRSPACE_FROM).
     const from = Object.fromEntries(layers.lines!.map((l) => [l.id, l.minzoom]));
@@ -109,15 +114,17 @@ describe("the overlay tiles' layers", () => {
     expect(set.state.get("feature:KMSN")).toEqual({ selected: false });
     const style = overlayStyle(TILES, ORIGIN);
     const airports = style.layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
-    // Hidden by its colours and the feature's state, so a tap lays no tile
-    // out again; its opacities the Dimmer's share at night alone, constants a
-    // Dimmer's step only repaints (mapDim).
+    // Hidden by its opacity and the feature's state alone, so a tap lays no tile out again, and its ink one colour a
+    // layer, read by no feature, so a night commit of the Dimmer lays none out either (W1); the words dimmed by their
+    // ink at night (labelInk), their opacity left as it is; the mark by the Dimmer's share, a constant a step repaints.
     const selected = ["boolean", ["feature-state", "selected"], false];
-    expect(airports.paint!["text-color"]).toEqual(expect.arrayContaining(["case", selected, "transparent"]));
-    expect(airports.paint!["text-halo-color"]).toEqual(expect.arrayContaining(["case", selected, "transparent"]));
+    expect(airports.paint!["text-opacity"]).toEqual(["case", selected, 0, 1]);
+    expect(JSON.stringify(airports.paint!["text-color"])).not.toContain("feature-state");
+    expect(JSON.stringify(airports.paint!["text-color"])).toContain(CHART.untowered);
+    const towered = style.layers.marks!.find((l) => l.id === "airports-towered") as SymbolLayerSpecification;
+    expect(JSON.stringify(towered.paint!["text-color"])).toContain(CHART.towered);
+    expect(towered.filter).toEqual(expect.arrayContaining([["==", ["get", "towered"], true]]));
     const dim = ["*", ["coalesce", ["global-state", "mapDim"], 1], 1];
-    // The words dimmed by their ink at night (labelInk), their opacity left whole; the mark by the Dimmer's share.
-    expect(airports.paint!["text-opacity"]).toBeUndefined();
     expect(airports.paint!["icon-opacity"]).toEqual(dim);
     expect(JSON.stringify(airports.filter)).not.toContain("selected");
     // The fields on a source of their own, each by its ident; the rest on another, each ring by its field's.
@@ -125,6 +132,30 @@ describe("the overlay tiles' layers", () => {
     expect(style.sources[AIRPORTS_SOURCE]).toMatchObject({ promoteId: { airports: "ident" } });
     expect(style.sources[OVERLAY_SOURCE]).toMatchObject({ promoteId: { airspace: "ident" } });
     expect(style.layers.lines!.every((l) => "source" in l && l.source === OVERLAY_SOURCE)).toBe(true);
+  });
+
+  it("dim the VOR's tag with its words, and the chart's white words, by their colour at night (R7-2, R7-5)", () => {
+    const style = overlayStyle(TILES, ORIGIN);
+    const all = [...style.layers.lines!, ...style.layers.marks!] as SymbolLayerSpecification[];
+    const of = (id: string) => all.find((l) => l.id === id)!;
+    // The tag a distance field in the towered blue, dimmed by its colour; neither faded by its opacity.
+    const vor = of("navaids-idents");
+    expect(vor.paint!["icon-color"]).toEqual([
+      "interpolate",
+      ["linear"],
+      ["coalesce", ["global-state", "mapDim"], 1],
+      0,
+      "black",
+      1,
+      CHART.towered,
+    ]);
+    expect(vor.paint!["icon-opacity"]).toBeUndefined();
+    // White words on a dark halo or tab at the words' light, the halo whole.
+    for (const id of ["navaids-idents", "runway-ends", "airspace-labels", "sua-labels"]) {
+      expect(JSON.stringify(of(id).paint!["text-color"]), id).toContain(JSON.stringify(["global-state", "labelNight"]));
+      expect(of(id).paint!["text-opacity"], id).toBeUndefined();
+    }
+    expect(of("runway-ends").paint!["text-halo-color"]).toBe(CHART.tag);
   });
 
   it("name the towered fields wherever they are drawn, from 5, and every other field from 8, each mark a little apart", () => {
@@ -177,7 +208,16 @@ describe("the overlay tiles' layers", () => {
       );
     // Each on a source of its own, so a route's edit lays out those tiles alone, not the airspace's and the fixes'.
     const byRoute = marks.filter((l) => /routeAirports|routeWaypoints/.test(JSON.stringify((l as SymbolLayerSpecification).filter)));
-    expect(byRoute.map((l) => l.id)).toEqual(["vfr-waypoints", "vfr-waypoints-idents", "airports", "airports-c", "airports-kept"]);
+    expect(byRoute.map((l) => l.id)).toEqual([
+      "vfr-waypoints",
+      "vfr-waypoints-idents",
+      "airports",
+      "airports-towered",
+      "airports-c",
+      "airports-c-towered",
+      "airports-kept",
+      "airports-kept-towered",
+    ]);
     expect(byRoute.some((l) => (l as SymbolLayerSpecification).source === OVERLAY_SOURCE)).toBe(false);
   });
 

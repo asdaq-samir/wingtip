@@ -43,7 +43,7 @@ export const OVERLAY_LINES: LayerSpecification[] = [{
     "text-allow-overlap": true,
   },
   "paint": {
-    "text-color": "#ffffff",
+    "text-color": labelInk("#ffffff"),
     ...labelHalo("runwayNumber"),
   },
 }, {
@@ -217,7 +217,7 @@ export const OVERLAY_LINES: LayerSpecification[] = [{
     "icon-rotation-alignment": "map",
   },
   "paint": {
-    "text-color": "#ffffff",
+    "text-color": labelInk("#ffffff"),
   },
 }, {
   "id": "sua-labels",
@@ -243,7 +243,7 @@ export const OVERLAY_LINES: LayerSpecification[] = [{
     "text-offset": ["case", ["==", ["get", "side"], 1], ["literal", [0, 1.2]], ["literal", [0, -1.2]]],
   },
   "paint": {
-    "text-color": "#ffffff",
+    "text-color": labelInk("#ffffff"),
   },
 }] as never;
 /** And over it: the navaids, the fixes and waypoints, the airports. */
@@ -343,8 +343,12 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
     "text-color": labelInk(["match", "vor", "vor", "#ffffff", "vfr", "#117a35", "#1c1a17"]),
     "text-halo-color": ["match", "vor", "vor", "transparent", labelHalo("fixIdent")["text-halo-color"]!],
     "text-halo-width": 2,
+    "icon-color": "#2465b8",
   },
   "id": "navaids-idents",
+  "metadata": {
+    "wingtip:dim": "colour",
+  },
   "source": "faa-overlays",
   "source-layer": "navaids",
   "filter": ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]],
@@ -354,7 +358,7 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "source": "faa-airports",
   "source-layer": "airports",
   "minzoom": 3,
-  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["!", ["==", ["get", "size"], "larger"]]],
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["!", ["==", ["get", "size"], "larger"]], ["!", ["==", ["get", "towered"], true]]],
   "layout": {
     "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
     "icon-padding": 2,
@@ -370,9 +374,10 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
     "text-optional": false,
   },
   "paint": {
-    "text-color": ["case", ["boolean", ["feature-state", "selected"], false], "transparent", labelInk(["case", ["==", ["get", "towered"], true], "#2465b8", "#c0309f"])],
-    "text-halo-color": ["case", ["boolean", ["feature-state", "selected"], false], "transparent", labelHalo("airportIdent")["text-halo-color"]!],
+    "text-color": labelInk("#c0309f"),
+    "text-halo-color": labelHalo("airportIdent")["text-halo-color"]!,
     "text-halo-width": 2,
+    "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1],
   },
   "id": "airports",
 }, {
@@ -380,7 +385,7 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "source": "faa-airports",
   "source-layer": "airports",
   "minzoom": 3,
-  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["==", ["get", "size"], "larger"]],
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["!", ["==", ["get", "size"], "larger"]], ["==", ["get", "towered"], true]],
   "layout": {
     "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
     "icon-padding": 2,
@@ -396,9 +401,37 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
     "text-optional": false,
   },
   "paint": {
-    "text-color": ["case", ["boolean", ["feature-state", "selected"], false], "transparent", labelInk(["case", ["==", ["get", "towered"], true], "#2465b8", "#c0309f"])],
-    "text-halo-color": ["case", ["boolean", ["feature-state", "selected"], false], "transparent", labelHalo("airportIdent")["text-halo-color"]!],
+    "text-color": labelInk("#2465b8"),
+    "text-halo-color": labelHalo("airportIdent")["text-halo-color"]!,
     "text-halo-width": 2,
+    "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1],
+  },
+  "id": "airports-towered",
+}, {
+  "type": "symbol",
+  "source": "faa-airports",
+  "source-layer": "airports",
+  "minzoom": 3,
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["==", ["get", "size"], "larger"], ["!", ["==", ["get", "towered"], true]]],
+  "layout": {
+    "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
+    "icon-padding": 2,
+    "symbol-sort-key": ["get", "rank"],
+    "text-field": ["step", ["zoom"], ["case", ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]], ["get", "ident"], ""], 7, ["get", "ident"]],
+    ...labelText("airportIdent"),
+    "text-anchor": "left",
+    "text-offset": [1.15, 0],
+    "icon-optional": false,
+    "text-padding": 1,
+    "icon-image": ["step", ["zoom"], ["case", ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]], ["concat", "apt|", ["coalesce", ["get", "airspace"], ""], "|", ["string", ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", "airportWeather"], ["literal", {}]]], ""], "|", ["case", ["==", ["get", "military"], "military"], "military", ["==", ["get", "use"], "private"], "private", ["==", ["get", "type"], "heliport"], "heliport", ""]], ""], 7, ["concat", "apt|", ["coalesce", ["get", "airspace"], ""], "|", ["string", ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", "airportWeather"], ["literal", {}]]], ""], "|", ["case", ["==", ["get", "military"], "military"], "military", ["==", ["get", "use"], "private"], "private", ["==", ["get", "type"], "heliport"], "heliport", ""]]],
+    "icon-allow-overlap": false,
+    "text-optional": false,
+  },
+  "paint": {
+    "text-color": labelInk("#c0309f"),
+    "text-halo-color": labelHalo("airportIdent")["text-halo-color"]!,
+    "text-halo-width": 2,
+    "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1],
   },
   "id": "airports-c",
 }, {
@@ -406,7 +439,34 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "source": "faa-airports",
   "source-layer": "airports",
   "minzoom": 3,
-  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["==", ["get", "size"], "largest"], ["literal", true]],
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["==", ["get", "size"], "larger"], ["==", ["get", "towered"], true]],
+  "layout": {
+    "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
+    "icon-padding": 2,
+    "symbol-sort-key": ["get", "rank"],
+    "text-field": ["step", ["zoom"], ["case", ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]], ["get", "ident"], ""], 7, ["get", "ident"]],
+    ...labelText("airportIdent"),
+    "text-anchor": "left",
+    "text-offset": [1.15, 0],
+    "icon-optional": false,
+    "text-padding": 1,
+    "icon-image": ["step", ["zoom"], ["case", ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]], ["concat", "apt|", ["coalesce", ["get", "airspace"], ""], "|", ["string", ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", "airportWeather"], ["literal", {}]]], ""], "|", ["case", ["==", ["get", "military"], "military"], "military", ["==", ["get", "use"], "private"], "private", ["==", ["get", "type"], "heliport"], "heliport", ""]], ""], 7, ["concat", "apt|", ["coalesce", ["get", "airspace"], ""], "|", ["string", ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", "airportWeather"], ["literal", {}]]], ""], "|", ["case", ["==", ["get", "military"], "military"], "military", ["==", ["get", "use"], "private"], "private", ["==", ["get", "type"], "heliport"], "heliport", ""]]],
+    "icon-allow-overlap": false,
+    "text-optional": false,
+  },
+  "paint": {
+    "text-color": labelInk("#2465b8"),
+    "text-halo-color": labelHalo("airportIdent")["text-halo-color"]!,
+    "text-halo-width": 2,
+    "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1],
+  },
+  "id": "airports-c-towered",
+}, {
+  "type": "symbol",
+  "source": "faa-airports",
+  "source-layer": "airports",
+  "minzoom": 3,
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["==", ["get", "size"], "largest"], ["literal", true], ["!", ["==", ["get", "towered"], true]]],
   "layout": {
     "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
     "icon-padding": 2,
@@ -422,14 +482,42 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
     "text-optional": true,
   },
   "paint": {
-    "text-color": ["case", ["boolean", ["feature-state", "selected"], false], "transparent", labelInk(["case", ["==", ["get", "towered"], true], "#2465b8", "#c0309f"])],
-    "text-halo-color": ["case", ["boolean", ["feature-state", "selected"], false], "transparent", labelHalo("airportIdent")["text-halo-color"]!],
+    "text-color": labelInk("#c0309f"),
+    "text-halo-color": labelHalo("airportIdent")["text-halo-color"]!,
     "text-halo-width": 2,
+    "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1],
   },
   "id": "airports-kept",
+}, {
+  "type": "symbol",
+  "source": "faa-airports",
+  "source-layer": "airports",
+  "minzoom": 3,
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["==", ["get", "size"], "largest"], ["literal", true], ["==", ["get", "towered"], true]],
+  "layout": {
+    "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
+    "icon-padding": 2,
+    "symbol-sort-key": ["get", "rank"],
+    "text-field": ["step", ["zoom"], ["case", ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]], ["get", "ident"], ""], 7, ["get", "ident"]],
+    ...labelText("airportIdent"),
+    "text-anchor": "left",
+    "text-offset": [1.15, 0],
+    "icon-optional": false,
+    "text-padding": 1,
+    "icon-image": ["concat", "apt|", ["coalesce", ["get", "airspace"], ""], "|", ["string", ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", "airportWeather"], ["literal", {}]]], ""], "|", ["case", ["==", ["get", "military"], "military"], "military", ["==", ["get", "use"], "private"], "private", ["==", ["get", "type"], "heliport"], "heliport", ""]],
+    "icon-allow-overlap": true,
+    "text-optional": true,
+  },
+  "paint": {
+    "text-color": labelInk("#2465b8"),
+    "text-halo-color": labelHalo("airportIdent")["text-halo-color"]!,
+    "text-halo-width": 2,
+    "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1],
+  },
+  "id": "airports-kept-towered",
 }] as never;
 /** The layers each switch turns off, by the switch. */
-export const OVERLAY_GROUPS = {"airspace": ["sua-band", "sua-line", "airspace-D-band", "airspace-D", "airspace-C-band", "airspace-C", "airspace-B-band", "airspace-B", "airspace-labels", "sua-labels"], "navaids": ["fixes", "fixes-idents", "navaids", "navaids-idents"], "waypoints": ["vfr-waypoints", "vfr-waypoints-idents"], "airports": ["airports", "airports-c", "airports-kept"]} as const;
+export const OVERLAY_GROUPS = {"airspace": ["sua-band", "sua-line", "airspace-D-band", "airspace-D", "airspace-C-band", "airspace-C", "airspace-B-band", "airspace-B", "airspace-labels", "sua-labels"], "navaids": ["fixes", "fixes-idents", "navaids", "navaids-idents"], "waypoints": ["vfr-waypoints", "vfr-waypoints-idents"], "airports": ["airports", "airports-towered", "airports-c", "airports-c-towered", "airports-kept", "airports-kept-towered"]} as const;
 /** The sources the layers draw from, by name: each app's own to add. */
 export const OVERLAY_SOURCES = { overlays: "faa-overlays", airports: "faa-airports", waypoints: "faa-vfr-waypoints" } as const;
 /** The map's global state the layers read (MapLibre's `global-state`), set by the app. */
