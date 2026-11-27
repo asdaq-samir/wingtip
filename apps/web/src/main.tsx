@@ -48,7 +48,7 @@ import "@fontsource/barlow/latin-700.css";
 import { loadEngine } from "./lib/engine/engine";
 import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
 import { usePreferences } from "./lib/preferences";
-import { THEME_KEY } from "./lib/prefs/migrate";
+import { THEME_KEY } from "./lib/prefs/theme";
 import { takeSharedLinkFrom } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it

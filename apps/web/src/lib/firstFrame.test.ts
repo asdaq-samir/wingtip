@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { THEME_KEY } from "./prefs/migrate";
+import { THEME_KEY } from "./prefs/theme";
 import { usePreferences } from "./preferences";
 
 /** public/first-frame.js, index.html's blocking head script: the night
