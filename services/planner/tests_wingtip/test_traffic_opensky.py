@@ -174,3 +174,59 @@ def test_days_kept_one_by_one_in_the_store_so_a_next_page_and_ingests_prefetch_a
     # An airplane's base: what is kept alone, a day not kept unread, nothing asked.
     assert opensky.flights("a74f08", [TODAY - dt.timedelta(days=9)], TODAY, ask=False) == ([], 1)
     assert len(asked) == 3
+
+
+def test_a_cards_newest_paths_asked_ahead_once_and_an_open_waits_for_the_one_being_asked(sky, monkeypatch):
+    import threading
+
+    from wingtip.traffic import store
+
+    let_go, asked = threading.Event(), []
+
+    def slow(url, params, timeout, **k):
+        asked.append((params["time"], timeout))
+        let_go.wait(5)
+        return _resp(200, {"path": [[params["time"], 41.98, -87.90, 3000.0, 90.0, False]]})
+
+    monkeypatch.setattr(opensky_api.requests, "get", slow)
+    listed = [{"id": 1795600000 - n * 86400, "source": opensky.OPENSKY_SOURCE} for n in range(5)]
+    now = 1795600000 + 3600
+    opensky.warm("a74f08", listed, now)
+    opensky.warm("a74f08", listed, now)
+    # The pilot opens the newest while it is being asked: waited for, not asked again.
+    opened = threading.Thread(target=lambda: asked.append(opensky.track("a74f08", 1795600000, now)))
+    opened.start()
+    let_go.set()
+    opened.join(5)
+    for f in listed[:3]:
+        for _ in range(50):
+            if store.opensky_path("a74f08", f["id"], 0) is not None:
+                break
+            threading.Event().wait(0.02)
+    gets = [a for a in asked if isinstance(a, tuple)]
+    # The newest three only, once each, with the background's longer time.
+    assert sorted(t for t, _ in gets) == sorted(f["id"] for f in listed[:3])
+    assert all(timeout == opensky_api.TIMEOUT_S for _, timeout in gets)
+    assert [p["alt_ft"] for p in asked[-1]] == [9843]
+
+
+def test_a_prefetch_that_could_not_read_a_path_leaves_the_day_for_the_next_run(sky, monkeypatch):
+    from wingtip.traffic import recorded
+
+    flight = {"firstSeen": 1795600000, "lastSeen": 1795606000, "estDepartureAirport": "KORD", "estArrivalAirport": "KORD"}
+
+    def tracks_down(url, params, **k):
+        sky.append(url)
+        if "tracks" in url:
+            raise opensky_api.requests.ConnectionError("down")
+        return _resp(200, [flight])
+
+    monkeypatch.setattr(opensky_api.requests, "get", tracks_down)
+    monkeypatch.setattr(recorded, "followed", lambda: ["a74f08"])
+    monkeypatch.setattr(opensky, "_PREFETCHED", {"day": None})
+    monkeypatch.setattr(opensky, "PREFETCH_FROM_HOUR_UTC", 0)
+    assert opensky.prefetch() == 0 and opensky._PREFETCHED["day"] is None
+    # The next run: the day's flights read from the store, the path asked again, the day done.
+    monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: sky.append(url) or _resp(200, {"path": []}))
+    assert opensky.prefetch() == 1 and opensky._PREFETCHED["day"] is not None
+    assert sum("flights" in u for u in sky) == 1 and sum("tracks" in u for u in sky) == 2

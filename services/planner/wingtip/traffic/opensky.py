@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from concurrent.futures import ThreadPoolExecutor
+import threading
+import time
+from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 from .. import airports
 from ..geo import distance_nm
@@ -24,7 +26,7 @@ from ..units import M_TO_FT
 from . import store
 from .legs import FIELD_APPROACH_NM, _field_at
 from .common import _number, _wall
-from .opensky_api import DAILY_CREDITS, FLIGHTS_TIMEOUT_S, _get, _left, _Unread, on
+from .opensky_api import DAILY_CREDITS, FLIGHTS_TIMEOUT_S, TIMEOUT_S, TRACK_TIMEOUT_S, _get, _left, _Unread, on
 
 log = logging.getLogger(__name__)
 
@@ -41,8 +43,15 @@ TRACK_DAYS = 30
 #: flights, whose pairs of days fall otherwise, asks again for none.
 KEEP_S = 26 * 3600
 #: Pairs of days asked side by side for one card, at most: each answer
-#: took up to several seconds one after another (2026-11-27).
-WORKERS = 4
+#: took up to several seconds one after another (2026-11-27). Seven, so a
+#: card's fourteen days (flights.HISTORY_DAYS_PER_ASK) go in one round:
+#: two rounds of four were up to 16 s.
+WORKERS = 7
+#: The newest of a card's OpenSky flights whose paths are asked ahead in
+#: the background once it lists them (`warm`), and how many at once: the
+#: first open of one waited on OpenSky's /tracks/all, 7 s (2026-11-27).
+WARM_FLIGHTS = 3
+WARM_WORKERS = 3
 #: The followed airplanes' yesterday asked for once a UTC day from this
 #: hour, after OpenSky's batch at night has built it, and their paths with
 #: it (prefetch, ingest's job): their flights then open at once. At most
@@ -50,7 +59,15 @@ WORKERS = 4
 PREFETCH_FROM_HOUR_UTC = 6
 PREFETCH_SHARE = 0.5
 PREFETCH_EVERY_S = 3600.0
+#: A run stops starting airplanes after this long, s, the day left undone
+#: for the next run (what it read is kept); and reads this many paths at once.
+PREFETCH_MOST_S = 600.0
+PREFETCH_WORKERS = 4
 _PREFETCHED: dict[str, dt.date | None] = {"day": None}
+#: Paths being asked for in the background, by (address, flight).
+_ASKING: dict[tuple[str, int], Future] = {}
+_ASKING_LOCK = threading.Lock()
+_WARM_POOL = ThreadPoolExecutor(max_workers=WARM_WORKERS, thread_name_prefix="opensky-path")
 
 
 def _field(icao: str | None) -> dict | None:
@@ -189,35 +206,72 @@ def flights(hex_id: str, days: list[dt.date], today: dt.date, ask: bool = True) 
     return [_with_path(f, store.opensky_path(hex_id, f["id"], since)) for f in _once(found)], unread
 
 
+def _path(hex_id: str, flight_id: int, timeout: float) -> list[dict] | None:
+    """A flight's path, kept KEEP_S in the store (an empty one too), else
+    asked of OpenSky within `timeout`; None where it could not be had."""
+    path = store.opensky_path(hex_id, flight_id, _wall() - KEEP_S)
+    if path is not None:
+        return path
+    try:
+        answer = _get("/tracks/all", {"icao24": hex_id, "time": flight_id}, "tracks", timeout)
+    except _Unread:
+        return None
+    path = [
+        {
+            "t": float(p[0]),
+            "lat": float(p[1]),
+            "lon": float(p[2]),
+            # Its barometric altitude, metres; none on the ground.
+            "alt_ft": None if p[5] or p[3] is None else round(float(p[3]) * M_TO_FT),
+            "gs_kt": None,
+            "track_deg": _number(p[4]),
+            "vrate_fpm": None,
+        }
+        for p in (answer or {}).get("path") or []
+        if isinstance(p, list) and len(p) >= 6 and _number(p[1]) is not None and _number(p[2]) is not None
+    ]
+    store.opensky_keep_path(hex_id, flight_id, path, _wall())
+    return path
+
+
 def track(hex_id: str, flight_id: int, now: float) -> list[dict] | None:
     """A flight's path from OpenSky as a past flight's points ({"t", "lat",
     "lon", "alt_ft" (None on the ground), "gs_kt", "track_deg",
     "vrate_fpm"}), where it is TRACK_DAYS old at the most; None where it
-    cannot be had. Kept KEEP_S in the store, an empty path too."""
+    cannot be had within TRACK_TIMEOUT_S. One being asked ahead (`warm`) is
+    waited for, not asked twice."""
     if now - flight_id > TRACK_DAYS * 86400 or not on():
         return None
-    path = store.opensky_path(hex_id, flight_id, _wall() - KEEP_S)
-    if path is None:
+    with _ASKING_LOCK:
+        asking = _ASKING.get((hex_id, flight_id))
+    if asking is not None:
         try:
-            answer = _get("/tracks/all", {"icao24": hex_id, "time": flight_id}, "tracks")
-        except _Unread:
+            return asking.result(timeout=TRACK_TIMEOUT_S) or None
+        except FutureTimeout:
             return None
-        path = [
-            {
-                "t": float(p[0]),
-                "lat": float(p[1]),
-                "lon": float(p[2]),
-                # Its barometric altitude, metres; none on the ground.
-                "alt_ft": None if p[5] or p[3] is None else round(float(p[3]) * M_TO_FT),
-                "gs_kt": None,
-                "track_deg": _number(p[4]),
-                "vrate_fpm": None,
-            }
-            for p in (answer or {}).get("path") or []
-            if isinstance(p, list) and len(p) >= 6 and _number(p[1]) is not None and _number(p[2]) is not None
-        ]
-        store.opensky_keep_path(hex_id, flight_id, path, _wall())
-    return path or None
+    return _path(hex_id, flight_id, TRACK_TIMEOUT_S) or None
+
+
+def warm(hex_id: str, flights: list[dict], now: float) -> None:
+    """The paths of the newest WARM_FLIGHTS of these (a card's list, newest
+    first) that OpenSky gave and none is kept for, asked in the background,
+    WARM_WORKERS at a time, so the one a pilot opens is mostly kept by then."""
+    since = _wall() - KEEP_S
+    for flight in [f for f in flights if f.get("source") == OPENSKY_SOURCE][:WARM_FLIGHTS]:
+        key = (hex_id, flight["id"])
+        if now - flight["id"] > TRACK_DAYS * 86400 or store.opensky_path(hex_id, flight["id"], since) is not None:
+            continue
+        with _ASKING_LOCK:
+            if key in _ASKING:
+                continue
+            _ASKING[key] = asking = _WARM_POOL.submit(_path, hex_id, flight["id"], TIMEOUT_S)
+        # Outside the lock: a callback on a future already done runs at once.
+        asking.add_done_callback(lambda _done, key=key: _forget(key))
+
+
+def _forget(key: tuple[str, int]) -> None:
+    with _ASKING_LOCK:
+        _ASKING.pop(key, None)
 
 
 def prefetch() -> int:
@@ -225,23 +279,35 @@ def prefetch() -> int:
     for once a UTC day, from PREFETCH_FROM_HOUR_UTC, within PREFETCH_SHARE
     of the day's credits, so their cards' flights open at once: ingest's
     job every PREFETCH_EVERY_S (ingest.main), into the live store the
-    planner reads. How many paths were read."""
+    planner reads. PREFETCH_WORKERS paths at a time, each given TIMEOUT_S;
+    the day is marked done only once every airplane's were had (or the
+    share was spent), a run cut at PREFETCH_MOST_S or a day or path not
+    had leaving it for the next, which reads what this one kept from the
+    store. It was marked before it ran, so one failure lost the day, and
+    asked its paths one after another. How many paths were read."""
     from .recorded import followed
 
     now = dt.datetime.now(dt.timezone.utc)
     today = now.date()
     if not on() or now.hour < PREFETCH_FROM_HOUR_UTC or _PREFETCHED["day"] == today:
         return 0
-    _PREFETCHED["day"] = today
     yesterday = today - dt.timedelta(days=1)
-    read = 0
-    for hex_id in followed():
-        if _spent_share("flights") >= PREFETCH_SHARE or _spent_share("tracks") >= PREFETCH_SHARE:  # OpenSky's own count
-            break
-        found, _ = flights(hex_id, [yesterday], today)
-        for flight in found:
-            read += track(hex_id, flight["id"], _wall()) is not None
-    log.info("OpenSky prefetch: %d paths of %d followed airplanes", read, len(followed()))
+    started, read, whole = time.monotonic(), 0, True
+    airplanes = followed()
+    with ThreadPoolExecutor(max_workers=PREFETCH_WORKERS) as pool:
+        for hex_id in airplanes:
+            if _spent_share("flights") >= PREFETCH_SHARE or _spent_share("tracks") >= PREFETCH_SHARE:  # OpenSky's own count
+                break
+            if time.monotonic() - started > PREFETCH_MOST_S:
+                whole = False
+                break
+            found, unread = flights(hex_id, [yesterday], today)
+            paths = list(pool.map(lambda f: _path(hex_id, f["id"], TIMEOUT_S), found))
+            read += sum(p is not None for p in paths)
+            whole = whole and not unread and all(p is not None for p in paths)
+    if whole:
+        _PREFETCHED["day"] = today
+    log.info("OpenSky prefetch: %d paths of %d followed airplanes%s", read, len(airplanes), "" if whole else ", the rest next run")
     return read
 
 
