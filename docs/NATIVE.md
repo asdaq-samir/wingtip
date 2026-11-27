@@ -457,6 +457,26 @@ these places:
   or leaves the box already asked for (`ViewFetch`, as the web's
   useGlView), the packs answering at once.
 
+- **A fix a second** (`OwnShip`): a view's body reads what changes
+  only when the screen would: the map its height to 10 ft (`markedFt`)
+  and the hazard colouring's height in 50 ft steps with whether the
+  airplane is at flying speed (`hazardFix`), so a fix in cruise runs
+  neither the map's body nor `ChartMap.updateUIView` nor the engine's
+  `hazard_view`; the cards their place to a thousandth of a degree
+  (`coarseCoordinate`) or whether there is a fix at all (`hasFix`), the
+  fix itself only in their actions. The flight recorder's reading of the
+  whole track (`logbook_from_track`, some 3,000 points four hours in)
+  runs off the main thread (2026-11-27).
+- **Launch** (`ScreenModels.loadKept`): the path flown, the recorder's
+  track and unsent tracks and the documents library (its shelf, its
+  trash, every info.json and kept.json) are read off the main thread
+  after the first frame, not in the app's init before it; nothing is
+  written over a file before it has been read, and a fix taken
+  meanwhile goes on after the track read.
+- **The loops** (`Repeating`): each wake may move by 15% of its
+  interval, so the receiver's, the traffic's, the Watch's, the Lock
+  Screen's and the widgets' wakes fall together.
+
 ## The map's look, beside the web's
 
 The web map's look of 2026-11-07/08 (#510, #537, #539, #541-#544) is

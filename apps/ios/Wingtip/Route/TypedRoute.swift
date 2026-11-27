@@ -10,8 +10,9 @@ import Foundation
 /// checked by the planner as it plans (a word it knows no place by is said
 /// on FPL with its Remove, PlanProblemView). A SID or a STAR typed among
 /// them ("KMSP BAEE1 BAE ... OSH OSHH2 KATW") is the route's procedure, not
-/// a point: the engine's `route_procedures` names them, as the web's route
-/// box reads them, each with the points typed either side of it.
+/// a point, named with the points typed either side of it. All of it is
+/// the engine's `route_typed`, one call for the whole text, as the web's
+/// route box reads it (routeEdit's readTyped).
 enum TypedRoute {
     struct Read: Equatable, Sendable {
         var dep: String
@@ -20,31 +21,22 @@ enum TypedRoute {
         /// The cruise a level group asked for, feet MSL; nil for none or VFR's.
         var cruiseFt: Double?
         /// The SIDs and STARs typed, to be picked at the route's ends.
-        var procedures: [EngineContract.RouteProceduresAnswerItem] = []
+        var procedures: [EngineContract.RouteTypedAnswerProceduresItem] = []
     }
 
     /// The route the words say; nil where they name fewer than two points.
     /// Thrown where the engine cannot read them.
     static func read(_ text: String) throws -> Read? {
-        var points: [String] = []
-        var cruiseFt: Double?
-        // Word by word, as the web's route field reads them (filedWords):
-        // a position's "@42.1,-88.2" kept whole, where the reader splits on
-        // its comma, and a level group anywhere the cruise asked for.
-        for word in text.split(whereSeparator: \.isWhitespace).map(String.init) {
-            if word.contains(",") {
-                points.append(word.uppercased())
-                continue
-            }
-            let read = try Engine.routeRead(text: word)
-            cruiseFt = cruiseFt ?? read.cruiseFt
-            points += read.points
-        }
-        let procedures = try Engine.routeProcedures(words: points)
-        let names = Set(procedures.map(\.name))
-        points.removeAll { names.contains($0) }
+        let read = try Engine.routeTyped(words: text.split(whereSeparator: \.isWhitespace).map(String.init))
+        // The words read, less the procedures: the engine's `points` also
+        // leaves out what is not a stop's ident, but a position's
+        // "@42.1,-88.2" (From My Position's, RouteExtras.position) is a
+        // stop here, and an airway typed is kept for FPL to say it knows
+        // no place by it, with its Remove (PlanProblemView), as before.
+        let names = Set(read.procedures.map(\.name))
+        let points = read.words.filter { !names.contains($0) }
         guard let dep = points.first, let dest = points.last, points.count >= 2 else { return nil }
-        return Read(dep: dep, stops: Array(points.dropFirst().dropLast()), dest: dest, cruiseFt: cruiseFt, procedures: procedures)
+        return Read(dep: dep, stops: Array(points.dropFirst().dropLast()), dest: dest, cruiseFt: read.cruiseFt, procedures: read.procedures)
     }
 
     /// The typed SIDs and STARs as picks, each found among its field's

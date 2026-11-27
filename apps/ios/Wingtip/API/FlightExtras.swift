@@ -182,3 +182,15 @@ extension Gateway {
         _ = try await call { try await $0.deleteTrack(path: .init(id: flight)) }
     }
 }
+
+extension APIAircraftRegistration {
+    /// Its maker and model in a few words, as the web's card and facts
+    /// strip say them: the planner's make_short and model_short (the
+    /// engine's airplane_short_type, "Piper PA-28-140" for "PIPER
+    /// AIRCRAFT INC PA-28-140"), each the registry's own where the planner
+    /// gives none; nil where there is neither.
+    var shortType: String? {
+        [makeShort ?? manufacturer, modelShort ?? model].compactMap { $0?.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: " ").nonEmpty
+    }
+}
