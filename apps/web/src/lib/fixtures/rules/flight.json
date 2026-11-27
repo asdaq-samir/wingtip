@@ -1183,6 +1183,268 @@
         }
       ],
       "source": "14 CFR 91.131(b)(2): \"no person may take off or land a civil aircraft at those airports listed in section 4 of appendix D to this part unless the pilot in command holds at least a private pilot certificate\"; part 91 appendix D, section 4 (eCFR, 2026-11-19) lists ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO and DCA."
+    },
+    {
+      "name": "Typed SID and STAR: a departure from the departure by the fix after it, an arrival into the destination by the fix before it",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "BAE"
+          },
+          {
+            "name": "OSHH2",
+            "before": "OSH",
+            "after": "KATW"
+          }
+        ],
+        "departure": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        },
+        "arrival": {
+          "ident": "KATW",
+          "procedures": [
+            {
+              "id": "OSHH2",
+              "kind": "arrival",
+              "name": "OSHH TWO",
+              "transitions": [
+                "OSH"
+              ]
+            },
+            {
+              "id": "I03",
+              "kind": "approach",
+              "name": "ILS RWY 03",
+              "transitions": []
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "equals": [
+            {
+              "ident": "C81",
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transition": "BAE"
+            },
+            {
+              "ident": "KATW",
+              "id": "OSHH2",
+              "kind": "arrival",
+              "name": "OSHH TWO",
+              "transition": "OSH"
+            }
+          ]
+        },
+        {
+          "path": "missed",
+          "length": 0
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it)."
+    },
+    {
+      "name": "Typed SID beside a point that is none of its transitions: the common route, no transition guessed",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "KATW"
+          }
+        ],
+        "departure": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        },
+        "arrival": {
+          "ident": "KATW",
+          "procedures": [
+            {
+              "id": "OSHH2",
+              "kind": "arrival",
+              "name": "OSHH TWO",
+              "transitions": [
+                "OSH"
+              ]
+            },
+            {
+              "id": "I03",
+              "kind": "approach",
+              "name": "ILS RWY 03",
+              "transitions": []
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "equals": [
+            {
+              "ident": "C81",
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transition": null
+            }
+          ]
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it)."
+    },
+    {
+      "name": "Typed procedures neither end publishes as that kind are missed: an arrival is no departure, an approach is neither",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "NOPE1",
+            "before": null,
+            "after": null
+          },
+          {
+            "name": "I03",
+            "before": null,
+            "after": null
+          }
+        ],
+        "departure": {
+          "ident": "KATW",
+          "procedures": [
+            {
+              "id": "OSHH2",
+              "kind": "arrival",
+              "name": "OSHH TWO",
+              "transitions": [
+                "OSH"
+              ]
+            },
+            {
+              "id": "I03",
+              "kind": "approach",
+              "name": "ILS RWY 03",
+              "transitions": []
+            }
+          ]
+        },
+        "arrival": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "length": 0
+        },
+        {
+          "path": "missed",
+          "equals": [
+            "NOPE1",
+            "I03"
+          ]
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it)."
+    },
+    {
+      "name": "Typed SIDs of one field: the later replaces the earlier; a field whose list could not be had is not searched",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "GRB"
+          },
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "BAE"
+          },
+          {
+            "name": "OSHH2",
+            "before": "OSH",
+            "after": "KATW"
+          }
+        ],
+        "departure": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        },
+        "arrival": null
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "equals": [
+            {
+              "ident": "C81",
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transition": "BAE"
+            }
+          ]
+        },
+        {
+          "path": "missed",
+          "equals": [
+            "OSHH2"
+          ]
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it)."
     }
   ]
 }

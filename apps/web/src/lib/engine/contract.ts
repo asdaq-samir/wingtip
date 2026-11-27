@@ -3690,6 +3690,13 @@ export interface EngineContract {
     answer: RouteTypedAnswer;
   };
   /**
+   * The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.
+   */
+  route_typed_picks: {
+    input: RouteTypedPicksInput;
+    answer: RouteTypedPicksAnswer;
+  };
+  /**
    * A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
    */
   route_way_warning: {
@@ -13588,6 +13595,71 @@ export interface RouteTypedAnswer {
    */
   cruise_ft: number | null;
   goes_on: boolean;
+}
+export interface RouteTypedPicksInput {
+  /**
+   * route_typed's procedures, in the order typed.
+   */
+  procedures: {
+    name: string;
+    before: string | null;
+    after: string | null;
+  }[];
+  /**
+   * The route's departure and its procedures as the planner lists them; null where it has none or they could not be had.
+   */
+  departure: {
+    ident: string;
+    procedures: {
+      /**
+       * "departure", "arrival" or "approach".
+       */
+      kind: string;
+      /**
+       * The procedure's coded identifier, "BAEE1".
+       */
+      id: string;
+      name?: string | null;
+      transitions: string[];
+    }[];
+  } | null;
+  /**
+   * The route's destination and its procedures, the same; null likewise.
+   */
+  arrival: {
+    ident: string;
+    procedures: {
+      /**
+       * "departure", "arrival" or "approach".
+       */
+      kind: string;
+      /**
+       * The procedure's coded identifier, "BAEE1".
+       */
+      id: string;
+      name?: string | null;
+      transitions: string[];
+    }[];
+  } | null;
+}
+export interface RouteTypedPicksAnswer {
+  /**
+   * Each field's departure or arrival picked, in the order typed.
+   */
+  picks: {
+    ident: string;
+    id: string;
+    kind: "departure" | "arrival";
+    /**
+     * The procedure's name as listed, its id where none.
+     */
+    name: string;
+    transition: string | null;
+  }[];
+  /**
+   * The names neither field publishes as that kind, in the order typed.
+   */
+  missed: string[];
 }
 export interface RouteWayWarningInput {
   /**

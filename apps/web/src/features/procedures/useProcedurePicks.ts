@@ -12,7 +12,7 @@ import {
   proceduresParam,
   sameField,
   transitionWords,
-  typedProcedure,
+  typedProcedures,
   type PickedProcedure,
   type TypedProcedure,
 } from "../../lib/procedures";
@@ -80,17 +80,18 @@ export function useProcedurePicks({
   const typeProcedures = useCallback(
     async (typed: TypedProcedure[], route: { dep: string; dest: string }) => {
       const list = (ident: string) => queryClient.fetchQuery(proceduresQuery(ident));
-      const found = await Promise.all(typed.map((t) => typedProcedure(t, route, list)));
-      // Onto the picks as the address has them once the lists are in.
-      const hits = found.flatMap((hit) => (hit ? [hit] : []));
-      const last = hits.at(-1)?.picked ?? null;
+      const { picks: hits, missed, lists } = await typedProcedures(typed, route, list);
+      // Onto the picks as the address has them once the lists are in, each
+      // in place of its field's pick of the kind.
+      const last = hits.at(-1) ?? null;
+      const kindOf = (ident: string, id: string) =>
+        lists.find((l) => sameField(l.airport, ident))?.procedures.find((p) => p.id === id)?.kind;
       const withHits = (now: PickedProcedure[]) =>
-        hits.reduce((next, hit) => {
-          const kindOf = (id: string) => hit.list.procedures.find((p) => p.id === id)?.kind;
-          return [...next.filter((p) => !(sameField(p.ident, hit.picked.ident) && kindOf(p.id) === hit.kind)), hit.picked];
-        }, now);
-      if (last) pickProcedures(withHits, last);
-      const missed = typed.filter((_, i) => !found[i]).map((t) => t.name);
+        hits.reduce(
+          (next, { kind, ...hit }) => [...next.filter((p) => !(sameField(p.ident, hit.ident) && kindOf(p.ident, p.id) === kind)), hit],
+          now,
+        );
+      if (last) pickProcedures(withHits, { ident: last.ident, id: last.id, transition: last.transition });
       if (missed.length) {
         showError(
           `${missed.join(" and ")} ${missed.length > 1 ? "are" : "is"} not a departure from ${route.dep || "the departure"} or an arrival into ${route.dest || "the destination"}`,

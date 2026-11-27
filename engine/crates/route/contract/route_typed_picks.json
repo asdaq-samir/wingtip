@@ -1,0 +1,209 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteTypedPicksInput",
+      "type": "object",
+      "properties": {
+        "procedures": {
+          "type": "array",
+          "description": "route_typed's procedures, in the order typed.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "before": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "after": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "before",
+              "after"
+            ]
+          }
+        },
+        "departure": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "procedures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "description": "\"departure\", \"arrival\" or \"approach\"."
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "The procedure's coded identifier, \"BAEE1\"."
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "transitions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "kind",
+                  "id",
+                  "transitions"
+                ]
+              }
+            }
+          },
+          "required": [
+            "ident",
+            "procedures"
+          ],
+          "description": "The route's departure and its procedures as the planner lists them; null where it has none or they could not be had."
+        },
+        "arrival": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "procedures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "description": "\"departure\", \"arrival\" or \"approach\"."
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "The procedure's coded identifier, \"BAEE1\"."
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "transitions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "kind",
+                  "id",
+                  "transitions"
+                ]
+              }
+            }
+          },
+          "required": [
+            "ident",
+            "procedures"
+          ],
+          "description": "The route's destination and its procedures, the same; null likewise."
+        }
+      },
+      "required": [
+        "procedures",
+        "departure",
+        "arrival"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "RouteTypedPicksAnswer",
+      "type": "object",
+      "properties": {
+        "picks": {
+          "type": "array",
+          "description": "Each field's departure or arrival picked, in the order typed.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "arrival"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "The procedure's name as listed, its id where none."
+              },
+              "transition": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "ident",
+              "id",
+              "kind",
+              "name",
+              "transition"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "missed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The names neither field publishes as that kind, in the order typed."
+        }
+      },
+      "required": [
+        "picks",
+        "missed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

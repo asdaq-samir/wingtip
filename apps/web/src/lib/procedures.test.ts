@@ -11,7 +11,7 @@ import {
   proceduresParam,
   sameField,
   speedWords,
-  typedProcedure,
+  typedProcedures,
 } from "./procedures";
 
 describe("speedWords", () => {
@@ -131,21 +131,28 @@ describe("a SID or a STAR typed in the route", () => {
   });
 
   it("is the departure's, by the fix after it, or the destination's, by the fix before it", async () => {
-    expect(await typedProcedure({ name: "BAEE1", before: "C81", after: "BAE" }, route, list)).toMatchObject({
-      picked: { ident: "C81", id: "BAEE1", transition: "BAE" },
-      kind: "departure",
-    });
-    expect(await typedProcedure({ name: "OSHH2", before: "OSH", after: "KATW" }, route, list)).toMatchObject({
-      picked: { ident: "KATW", id: "OSHH2", transition: "OSH" },
-      kind: "arrival",
-    });
+    const both = [
+      { name: "BAEE1", before: "C81", after: "BAE" },
+      { name: "OSHH2", before: "OSH", after: "KATW" },
+    ];
+    const { picks, missed, lists: found } = await typedProcedures(both, route, list);
+    expect(picks).toEqual([
+      { ident: "C81", id: "BAEE1", kind: "departure", transition: "BAE" },
+      { ident: "KATW", id: "OSHH2", kind: "arrival", transition: "OSH" },
+    ]);
+    expect(missed).toEqual([]);
+    expect(found.map((l) => l.airport)).toEqual(["C81", "KATW"]);
     // Beside a point that is none of its transitions: picked without one.
-    expect((await typedProcedure({ name: "BAEE1", before: "C81", after: "KATW" }, route, list))?.picked.transition).toBeNull();
+    const beside = await typedProcedures([{ name: "BAEE1", before: "C81", after: "KATW" }], route, list);
+    expect(beside.picks[0]?.transition).toBeNull();
   });
 
-  it("is nothing where neither end publishes it", async () => {
-    expect(await typedProcedure({ name: "NOPE1", before: null, after: null }, route, list)).toBeNull();
-    expect(await typedProcedure({ name: "OSHH2", before: null, after: null }, { dep: "KATW", dest: "C81" }, list)).toBeNull();
+  it("is nothing where neither end publishes it, or an end's list could not be had", async () => {
+    expect((await typedProcedures([{ name: "NOPE1", before: null, after: null }], route, list)).missed).toEqual(["NOPE1"]);
+    const reversed = await typedProcedures([{ name: "OSHH2", before: null, after: null }], { dep: "KATW", dest: "C81" }, list);
+    expect(reversed.picks).toEqual([]);
+    const unlisted = await typedProcedures([{ name: "BAEE1", before: null, after: null }], { dep: "C82", dest: "C81" }, list);
+    expect(unlisted.missed).toEqual(["BAEE1"]);
   });
 });
 

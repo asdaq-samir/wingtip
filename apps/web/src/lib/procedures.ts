@@ -93,30 +93,31 @@ export interface TypedProcedure {
   after: string | null;
 }
 
-/** A typed procedure as picked, found where it can be flown: a departure
- *  out of the route's departure, by the fix after it where that is one of
- *  its transitions; else an arrival into the destination, joined at the
- *  fix before it. With the kind, so the field's pick of that kind it
- *  replaces can be found; null where neither field publishes it. */
-export async function typedProcedure(
-  typed: TypedProcedure,
+/** The typed procedures as picked, each found where it can be flown (the
+ *  engine's route_typed_picks: a departure out of the route's departure,
+ *  by the fix after it where that is one of its transitions; else an
+ *  arrival into the destination, joined at the fix before it), with the
+ *  names neither field publishes. `lists`, each end's procedures, for the
+ *  field's pick of that kind it replaces to be found; an end whose list
+ *  could not be had is not searched. */
+export async function typedProcedures(
+  typed: TypedProcedure[],
   route: { dep: string; dest: string },
   list: (ident: string) => Promise<ProcedureList>,
-): Promise<{ picked: PickedProcedure; kind: "departure" | "arrival"; list: ProcedureList } | null> {
-  const ends = [
-    [route.dep, "departure", typed.after],
-    [route.dest, "arrival", typed.before],
-  ] as const;
-  for (const [field, kind, join] of ends) {
-    if (!field) continue;
-    const found = await list(field).catch(() => null);
-    const procedure = found?.procedures.find((p) => p.kind === kind && p.id === typed.name);
-    if (found && procedure) {
-      const transition = join && procedure.transitions.includes(join) ? join : null;
-      return { picked: { ident: field, id: procedure.id, transition }, kind, list: found };
-    }
-  }
-  return null;
+): Promise<{ picks: (PickedProcedure & { kind: "departure" | "arrival" })[]; missed: string[]; lists: ProcedureList[] }> {
+  const listed = (ident: string) => (ident ? list(ident).catch(() => null) : Promise.resolve(null));
+  const [dep, dest] = await Promise.all([listed(route.dep), listed(route.dest)]);
+  const end = (ident: string, found: ProcedureList | null) => (found ? { ident, procedures: found.procedures } : null);
+  const { picks, missed } = callEngine("route_typed_picks", {
+    procedures: typed,
+    departure: end(route.dep, dep),
+    arrival: end(route.dest, dest),
+  });
+  return {
+    picks: picks.map(({ ident, id, kind, transition }) => ({ ident, id, kind, transition })),
+    missed,
+    lists: [dep, dest].flatMap((l) => (l ? [l] : [])),
+  };
 }
 
 /** The picks the route flies: an approach only loaded left out (the

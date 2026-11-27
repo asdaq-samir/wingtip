@@ -1775,6 +1775,11 @@ nonisolated extension Engine {
         try Self.rule("route_typed", EngineContract.RouteTypedInput(words: words, procedures: procedures))
     }
 
+    /// The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.
+    static func routeTypedPicks(procedures: [EngineContract.RouteTypedPicksInputProceduresItem], departure: EngineContract.RouteTypedPicksInputDeparture? = nil, arrival: EngineContract.RouteTypedPicksInputArrival? = nil) throws -> EngineContract.RouteTypedPicksAnswer {
+        try Self.rule("route_typed_picks", EngineContract.RouteTypedPicksInput(procedures: procedures, departure: departure, arrival: arrival))
+    }
+
     /// A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
     static func routeWayWarning(kinds: [String]) throws -> String? {
         try Self.rule("route_way_warning", EngineContract.RouteWayWarningInput(kinds: kinds))

@@ -205,6 +205,7 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
             out.push_str("]}");
         }
         "route_typed" => return super::typed::answer(name, v),
+        "route_typed_picks" => return super::typed_picks::answer(name, v),
         "point_kind" => opt_str_json(&mut out, points::kind(text(name, v, "text")?).map(points::Kind::key)),
         "frd_read" => match points::frd(text(name, v, "text")?) {
             None => out.push_str("null"),

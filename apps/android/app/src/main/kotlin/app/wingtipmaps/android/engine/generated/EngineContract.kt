@@ -12682,6 +12682,99 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteTypedPicksAnswer(
+        /**
+         * Each field's departure or arrival picked, in the order typed.
+         */
+        val picks: List<EngineContract.RouteTypedPicksAnswerPicksItem>,
+        /**
+         * The names neither field publishes as that kind, in the order typed.
+         */
+        val missed: List<String>,
+    )
+
+    @Serializable
+    data class RouteTypedPicksAnswerPicksItem(
+        val ident: String,
+        val id: String,
+        val kind: String,
+        /**
+         * The procedure's name as listed, its id where none.
+         */
+        val name: String,
+        val transition: String? = null,
+    )
+
+    @Serializable
+    data class RouteTypedPicksInput(
+        /**
+         * route_typed's procedures, in the order typed.
+         */
+        val procedures: List<EngineContract.RouteTypedPicksInputProceduresItem>,
+        /**
+         * The route's departure and its procedures as the planner lists them; null where it has none or they could not be had.
+         */
+        val departure: EngineContract.RouteTypedPicksInputDeparture? = null,
+        /**
+         * The route's destination and its procedures, the same; null likewise.
+         */
+        val arrival: EngineContract.RouteTypedPicksInputArrival? = null,
+    )
+
+    /**
+     * The route's destination and its procedures, the same; null likewise.
+     */
+    @Serializable
+    data class RouteTypedPicksInputArrival(
+        val ident: String,
+        val procedures: List<EngineContract.RouteTypedPicksInputArrivalProceduresItem>,
+    )
+
+    @Serializable
+    data class RouteTypedPicksInputArrivalProceduresItem(
+        /**
+         * "departure", "arrival" or "approach".
+         */
+        val kind: String,
+        /**
+         * The procedure's coded identifier, "BAEE1".
+         */
+        val id: String,
+        val name: String? = null,
+        val transitions: List<String>,
+    )
+
+    /**
+     * The route's departure and its procedures as the planner lists them; null where it has none or they could not be had.
+     */
+    @Serializable
+    data class RouteTypedPicksInputDeparture(
+        val ident: String,
+        val procedures: List<EngineContract.RouteTypedPicksInputDepartureProceduresItem>,
+    )
+
+    @Serializable
+    data class RouteTypedPicksInputDepartureProceduresItem(
+        /**
+         * "departure", "arrival" or "approach".
+         */
+        val kind: String,
+        /**
+         * The procedure's coded identifier, "BAEE1".
+         */
+        val id: String,
+        val name: String? = null,
+        val transitions: List<String>,
+    )
+
+    @Serializable
+    data class RouteTypedPicksInputProceduresItem(
+        val name: String,
+        val before: String? = null,
+        val after: String? = null,
+    )
+
+    @Serializable
     data class RouteWayWarningInput(
         /**
          * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).

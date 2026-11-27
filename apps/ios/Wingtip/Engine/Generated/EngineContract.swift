@@ -12228,6 +12228,67 @@ nonisolated enum EngineContract {
         var procedures: Bool?
     }
 
+    nonisolated struct RouteTypedPicksAnswer: Codable, Equatable, Sendable {
+        /// Each field's departure or arrival picked, in the order typed.
+        var picks: [EngineContract.RouteTypedPicksAnswerPicksItem]
+        /// The names neither field publishes as that kind, in the order typed.
+        var missed: [String]
+    }
+
+    nonisolated struct RouteTypedPicksAnswerPicksItem: Codable, Equatable, Sendable {
+        var ident: String
+        var id: String
+        var kind: String
+        /// The procedure's name as listed, its id where none.
+        var name: String
+        var transition: String?
+    }
+
+    nonisolated struct RouteTypedPicksInput: Codable, Equatable, Sendable {
+        /// route_typed's procedures, in the order typed.
+        var procedures: [EngineContract.RouteTypedPicksInputProceduresItem]
+        /// The route's departure and its procedures as the planner lists them; null where it has none or they could not be had.
+        var departure: EngineContract.RouteTypedPicksInputDeparture?
+        /// The route's destination and its procedures, the same; null likewise.
+        var arrival: EngineContract.RouteTypedPicksInputArrival?
+    }
+
+    /// The route's destination and its procedures, the same; null likewise.
+    nonisolated struct RouteTypedPicksInputArrival: Codable, Equatable, Sendable {
+        var ident: String
+        var procedures: [EngineContract.RouteTypedPicksInputArrivalProceduresItem]
+    }
+
+    nonisolated struct RouteTypedPicksInputArrivalProceduresItem: Codable, Equatable, Sendable {
+        /// "departure", "arrival" or "approach".
+        var kind: String
+        /// The procedure's coded identifier, "BAEE1".
+        var id: String
+        var name: String?
+        var transitions: [String]
+    }
+
+    /// The route's departure and its procedures as the planner lists them; null where it has none or they could not be had.
+    nonisolated struct RouteTypedPicksInputDeparture: Codable, Equatable, Sendable {
+        var ident: String
+        var procedures: [EngineContract.RouteTypedPicksInputDepartureProceduresItem]
+    }
+
+    nonisolated struct RouteTypedPicksInputDepartureProceduresItem: Codable, Equatable, Sendable {
+        /// "departure", "arrival" or "approach".
+        var kind: String
+        /// The procedure's coded identifier, "BAEE1".
+        var id: String
+        var name: String?
+        var transitions: [String]
+    }
+
+    nonisolated struct RouteTypedPicksInputProceduresItem: Codable, Equatable, Sendable {
+        var name: String
+        var before: String?
+        var after: String?
+    }
+
     nonisolated struct RouteWayWarningInput: Codable, Equatable, Sendable {
         /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
         var kinds: [String]

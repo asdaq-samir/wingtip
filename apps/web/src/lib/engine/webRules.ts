@@ -209,6 +209,7 @@ export const WEB_RULES = [
   "route_position",
   "route_procedures",
   "route_typed",
+  "route_typed_picks",
   "route_way_warning",
   "runway_calm",
   "runway_closure_marks",
