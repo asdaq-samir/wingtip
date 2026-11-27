@@ -168,20 +168,30 @@ export function routeCasingPaint(night: boolean): Record<string, unknown> {
   return { "line-color": night ? CHART.routeGreenNight : CHART.routeGreen, "line-opacity": 1, "line-width": CASING_WIDTH };
 }
 
+/** At night the edges are the day's dark (CHART.routeEdge) at nearly its
+ *  full weight. The white at 0.35 they were, dimmed by colour to the
+ *  paper's own grey, was 1.00:1 against the paper and added nothing, the
+ *  magenta alone 2.67:1 over it at the default Dimmer and 1.84 at the
+ *  deepest; the dark rim is 4.67:1 against the paper there (the outer
+ *  4.89) and 2.30 at the deepest (2.35), so the course stands off the
+ *  dimmed chart's pale greens and towns as it does by day. */
+const NIGHT_EDGE_OPACITY = 0.9;
+const NIGHT_OUTER_OPACITY = 0.95;
+
 /** The dark edge round the green of a selected leg so it keeps its
  *  contrast against the sectional in each look: a soft rim by day, a
- *  stronger and wider one in sunlight, and at night a faint light one. */
+ *  stronger and wider one in sunlight and at night. */
 export function routeOuterPaint(night: boolean, sunlight: boolean): Record<string, unknown> {
-  if (night) return { "line-color": CHART.casing, "line-opacity": 0.35, "line-width": EDGE_WIDTH };
+  if (night) return { "line-color": CHART.routeEdge, "line-opacity": NIGHT_OUTER_OPACITY, "line-width": EDGE_WIDTH };
   if (sunlight) return { "line-color": CHART.routeEdge, "line-opacity": 0.95, "line-width": EDGE_WIDTH_SUN };
   return { "line-color": CHART.routeEdge, "line-opacity": 0.6, "line-width": EDGE_WIDTH };
 }
 
 /** The thin edge round the magenta alone, the whole course, selected or
- *  not: dark by day and in sunlight (the lifted chart's pastels wash a
- *  bare magenta out), a faint light one at night. No green. */
+ *  not: dark in every look (the lifted chart's pastels wash a bare magenta
+ *  out by day, the dimmed paper's grey at night). No green. */
 export function routeEdgePaint(night: boolean, sunlight: boolean): Record<string, unknown> {
-  if (night) return { "line-color": CHART.casing, "line-opacity": 0.35, "line-width": THIN_EDGE_WIDTH };
+  if (night) return { "line-color": CHART.routeEdge, "line-opacity": NIGHT_EDGE_OPACITY, "line-width": THIN_EDGE_WIDTH };
   if (sunlight) return { "line-color": CHART.routeEdge, "line-opacity": 0.9, "line-width": THIN_EDGE_WIDTH_SUN };
   return { "line-color": CHART.routeEdge, "line-opacity": 0.55, "line-width": THIN_EDGE_WIDTH };
 }
