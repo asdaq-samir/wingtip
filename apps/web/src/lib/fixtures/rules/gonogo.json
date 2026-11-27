@@ -813,14 +813,16 @@
                 "unknown": false,
                 "kind": "takeoff"
               }
-            ]
+            ],
+            "temp_assumed": true
           },
           {
             "ident": "KCCC",
             "headwind_kt": 10,
             "crosswind_over": false,
             "unchecked": "its elevation is not known",
-            "distances": []
+            "distances": [],
+            "temp_assumed": true
           },
           {
             "ident": "KAAA",
@@ -863,11 +865,14 @@
             ],
             "unchecked": [
               "KCCC"
+            ],
+            "standard_day": [
+              "KBBB"
             ]
           }
         }
       ],
-      "source": "14 CFR 91.103(b): \"For any flight, runway lengths at airports of intended use, and ... takeoff and landing distance information\"; the checks' flags are gonogo_runway_checks' (over the runway, past the POH's table, past its demonstrated crosswind, under SAFO 19001's 15 per cent to spare, the length or elevation not known)."
+      "source": "14 CFR 91.103(b): \"For any flight, runway lengths at airports of intended use, and ... takeoff and landing distance information\"; the checks' flags are gonogo_runway_checks' (over the runway, past the POH's table, past its demonstrated crosswind, under SAFO 19001's 15 per cent to spare, the length or elevation not known). No temperature reported: the distances are a standard day's, shorter than a hot day's (FAA-H-8083-25C ch. 11, density altitude), named only where distances were worked out."
     },
     {
       "name": "Runway findings: calm along the end is no tailwind, half a knot behind is",

@@ -95,6 +95,10 @@ pub struct Check {
     pub temp_c: Option<f64>,
     /// The temperature and altimeter were reported (a METAR).
     pub reported: bool,
+    /// The distances were worked out on a standard day's temperature, none
+    /// being reported: a hot day's are longer (FAA-H-8083-25C ch. 11), so
+    /// the Go / No-Go says so (14 CFR 91.103(b)).
+    pub temp_assumed: bool,
     /// The wind along that runway's end, negative for a tailwind: the
     /// steady headwind, but a tailwind's gusts where they are more behind
     /// the end (along_shown_kt), as its crosswind's are.
@@ -293,6 +297,7 @@ pub fn runway_checks(
             density_alt_ft: air.map(|a| density_altitude_ft(a.0, a.1)),
             temp_c: air.map(|a| a.1).or(metar.and_then(|m| m.temp_c)),
             reported: metar.is_some(),
+            temp_assumed: air.is_some() && metar.and_then(|m| m.temp_c).is_none(),
             headwind_kt: first.shown_headwind,
             crosswind_kt: crosswind_shown(first.crosswind, first.crosswind.round_ties_even(), airplane.demonstrated_kt),
             crosswind_over: airplane.demonstrated_kt.is_some_and(|d| first.crosswind > d),
@@ -345,7 +350,7 @@ pub fn checks_json(checks: &[Check]) -> String {
         json::opt_number(&mut out, c.density_alt_ft);
         out.push_str(",\"temp_c\":");
         json::opt_number(&mut out, c.temp_c);
-        out.push_str(&format!(",\"reported\":{},\"headwind_kt\":", c.reported));
+        out.push_str(&format!(",\"reported\":{},\"temp_assumed\":{},\"headwind_kt\":", c.reported, c.temp_assumed));
         json::number(&mut out, c.headwind_kt);
         out.push_str(",\"crosswind_kt\":");
         json::number(&mut out, c.crosswind_kt);

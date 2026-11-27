@@ -57,6 +57,7 @@ pub(crate) fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
             tailwind: i.strings(r, "tailwind")?,
             close: i.strings(r, "close")?,
             unchecked: i.strings(r, "unchecked")?,
+            standard_day: i.strings(r, "standard_day")?,
         },
         balance: verdict::Balance {
             pending: truth(b, "pending"),

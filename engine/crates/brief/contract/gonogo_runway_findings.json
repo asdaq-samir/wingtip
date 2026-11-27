@@ -134,6 +134,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "standard_day": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
         }
       },
       "required": [
@@ -144,7 +151,8 @@
         "beyond",
         "tailwind",
         "close",
-        "unchecked"
+        "unchecked",
+        "standard_day"
       ],
       "additionalProperties": false
     }

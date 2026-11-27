@@ -149,7 +149,7 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
         not_sent()
     } else if !r.short.is_empty() {
         ("stop", format!("Too short at {}", r.short.join(", ")))
-    } else if [&r.crosswind, &r.tailwind, &r.close, &r.beyond].iter().any(|l| !l.is_empty()) {
+    } else if [&r.crosswind, &r.tailwind, &r.close, &r.beyond, &r.standard_day].iter().any(|l| !l.is_empty()) {
         // Past the POH's table the distance is its edge's, not the
         // airplane's (FAA-H-8083-25C, chapter 11: performance charts hold
         // only within their stated conditions), so "within" is not known:
@@ -169,6 +169,13 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
         }
         if !r.beyond.is_empty() {
             parts.push(format!("Past the POH's tables at {}: its distances will be longer", r.beyond.join(", ")));
+        }
+        // No temperature reported: the distances are a standard day's
+        // (field_air), which on a hot day are short of what the airplane
+        // needs (FAA-H-8083-25C ch. 11, density altitude), so "within" is
+        // not known for the day (14 CFR 91.103(b)).
+        if !r.standard_day.is_empty() {
+            parts.push(format!("No temperature reported at {}: distances assume a standard day", r.standard_day.join(", ")));
         }
         ("caution", parts.join("; "))
     } else if !r.unchecked.is_empty() {

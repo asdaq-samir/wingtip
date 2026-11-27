@@ -483,6 +483,10 @@ export type GonogoRunwayChecksAnswer = {
    */
   reported: boolean;
   /**
+   * The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+   */
+  temp_assumed: boolean;
+  /**
    * The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind.
    */
   headwind_kt: number;
@@ -6971,6 +6975,10 @@ export interface VerdictInput {
      * Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
      */
     unchecked?: string[] | null;
+    /**
+     * Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+     */
+    standard_day?: string[] | null;
   };
   balance: {
     /**
@@ -9231,6 +9239,10 @@ export interface GonogoRunwayFindingsAnswer {
   tailwind: string[];
   close: string[];
   unchecked: string[];
+  /**
+   * Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+   */
+  standard_day: string[];
 }
 export interface GonogoRunwayFlownInput {
   runways?: Runway[] | null;

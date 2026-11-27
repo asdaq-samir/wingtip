@@ -14665,6 +14665,10 @@
                 "type": "boolean",
                 "description": "A METAR gave the temperature and altimeter."
               },
+              "temp_assumed": {
+                "type": "boolean",
+                "description": "The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
+              },
               "headwind_kt": {
                 "type": "number",
                 "description": "The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind."
@@ -14790,6 +14794,7 @@
               "density_alt_ft",
               "temp_c",
               "reported",
+              "temp_assumed",
               "headwind_kt",
               "crosswind_kt",
               "crosswind_over",
@@ -14943,6 +14948,13 @@
               "items": {
                 "type": "string"
               }
+            },
+            "standard_day": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
             }
           },
           "required": [
@@ -14953,7 +14965,8 @@
             "beyond",
             "tailwind",
             "close",
-            "unchecked"
+            "unchecked",
+            "standard_day"
           ],
           "additionalProperties": false
         }
@@ -45129,6 +45142,16 @@
                 "type": "string"
               },
               "description": "Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok."
+            },
+            "standard_day": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
             }
           }
         },

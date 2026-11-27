@@ -6104,6 +6104,8 @@ nonisolated enum EngineContract {
         var tempC: Double?
         /// A METAR gave the temperature and altimeter.
         var reported: Bool
+        /// The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+        var tempAssumed: Bool
         /// The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind.
         var headwindKt: Double
         var crosswindKt: Double
@@ -6128,6 +6130,7 @@ nonisolated enum EngineContract {
             case densityAltFt = "density_alt_ft"
             case tempC = "temp_c"
             case reported
+            case tempAssumed = "temp_assumed"
             case headwindKt = "headwind_kt"
             case crosswindKt = "crosswind_kt"
             case crosswindOver = "crosswind_over"
@@ -6229,6 +6232,20 @@ nonisolated enum EngineContract {
         var tailwind: [String]
         var close: [String]
         var unchecked: [String]
+        /// Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+        var standardDay: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case pending
+            case worked
+            case short
+            case crosswind
+            case beyond
+            case tailwind
+            case close
+            case unchecked
+            case standardDay = "standard_day"
+        }
     }
 
     nonisolated struct GonogoRunwayFindingsInput: Codable, Equatable, Sendable {
@@ -14593,6 +14610,20 @@ nonisolated enum EngineContract {
         var close: [String]?
         /// Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
         var unchecked: [String]?
+        /// Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)).
+        var standardDay: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case pending
+            case worked
+            case short
+            case crosswind
+            case beyond
+            case tailwind
+            case close
+            case unchecked
+            case standardDay = "standard_day"
+        }
     }
 
     nonisolated struct VerdictInputWeather: Codable, Equatable, Sendable {

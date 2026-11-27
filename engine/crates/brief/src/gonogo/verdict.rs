@@ -135,6 +135,9 @@ pub struct Runways {
     /// Fields whose distances could not be held against the runway: its
     /// length or the field's elevation is not known.
     pub unchecked: Vec<String>,
+    /// Fields with no temperature reported, whose distances were worked
+    /// out on a standard day's: a hot day's are longer.
+    pub standard_day: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
