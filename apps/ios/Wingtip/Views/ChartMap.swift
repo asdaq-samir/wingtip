@@ -291,6 +291,7 @@ struct ChartMap: UIViewRepresentable {
         let overlayDim = OverlayDim()
         // The Dimmer's shade and the night, the marks' and lines' dim.
         private var shade: CGFloat = 0, night = false
+        private var settling: Task<Void, Never>?
 
         /// The chart's renderer let go, its loads stopped, as its overlay
         /// is taken off for another.
@@ -305,17 +306,24 @@ struct ChartMap: UIViewRepresentable {
             (self.shade, self.night) = (shade, night)
             tiles?.shade = shade
             let brightness = MarkDim.alpha(shade: shade, night: night)
+            MarkDim.apply(brightness, on: map)
+            settling?.cancel()
+            guard turned else {
+                // A Dimmer step: the lines recoloured once the slider stands
+                // still (the web's useSettledMapDim), not every line drawn
+                // again at each step of the drag.
+                settling = Task { [weak self, weak map] in
+                    try? await Task.sleep(for: CourseRenderers.settle)
+                    guard !Task.isCancelled, let self, let map else { return }
+                    overlayDim.set(brightness, on: map)
+                }
+                return
+            }
             overlayDim.set(brightness, on: map)
-            if turned, let edge = courseEdge, let renderer = map.renderer(for: edge) as? MKOverlayPathRenderer {
+            if let edge = courseEdge, let renderer = map.renderer(for: edge) as? MKOverlayPathRenderer {
                 overlayDim.recolour(renderer, stroke: NightPalette.routeEdge(night: night))
             }
-            MarkDim.apply(brightness, on: map)
         }
-
-        /// The course's two strokes, points, as the web draws them where a
-        /// pilot reads a leg (glStyle's widths at zoom 10): the magenta core
-        /// and the thin edge round it.
-        static let courseWidth: CGFloat = 4.5, edgeWidth: CGFloat = 6.5
 
         /// The overlay's renderer, before the night's dim takes it (OverlayDim, MarkDim.swift).
         func made(_ mapView: MKMapView, for overlay: any MKOverlay) -> MKOverlayRenderer {
@@ -332,43 +340,7 @@ struct ChartMap: UIViewRepresentable {
             if let imagery = overlay as? CloseImageryOverlay { return CloseImagery.shared.renderer(imagery, zoom: Self.zoom(of: mapView)) }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
             if let renderer = extras.renderer(for: overlay) { return renderer }
-            if let edge = overlay as? CourseEdgePolyline {
-                let renderer = MKPolylineRenderer(polyline: edge)
-                renderer.strokeColor = NightPalette.routeEdge(night: night)
-                renderer.lineWidth = Self.edgeWidth
-                renderer.lineJoin = .round
-                renderer.lineCap = .round
-                return renderer
-            }
-            if let hazard = overlay as? HazardPolyline {
-                // The legs a hazard tapped in the Brief is on, wide in
-                // amber under the course (HazardLegsViews.swift).
-                let renderer = MKPolylineRenderer(polyline: hazard)
-                renderer.strokeColor = WingtipColor.Chart.caution.withAlphaComponent(0.6)
-                renderer.lineWidth = 10
-                renderer.lineCap = .round
-                renderer.lineJoin = .round
-                return renderer
-            }
-            if let procedure = overlay as? ProcedurePolyline {
-                // A procedure's path in the chart's procedure violet, as
-                // the web app draws a picked one.
-                let renderer = MKPolylineRenderer(polyline: procedure)
-                renderer.strokeColor = WingtipColor.Chart.procedure
-                renderer.lineWidth = 3
-                renderer.lineJoin = .round
-                return renderer
-            }
-            if let line = overlay as? MKPolyline {
-                // The web app's magenta course line, dimmed by its colour
-                // with the chart at night (OverlayDim).
-                let renderer = MKPolylineRenderer(polyline: line)
-                renderer.strokeColor = NightPalette.course
-                renderer.lineWidth = Self.courseWidth
-                renderer.lineJoin = .round
-                renderer.lineCap = .round
-                return renderer
-            }
+            if let renderer = CourseRenderers.renderer(for: overlay, night: night) { return renderer }
             return MKOverlayRenderer(overlay: overlay)
         }
 

@@ -87,7 +87,7 @@ final class RouteLegLayer: NSObject, UIGestureRecognizerDelegate {
         renderer.strokeColor = NightPalette.routeGreen(night: night)
         // Wider than the edge (ChartMap's edgeWidth), so the green shows
         // either side of it.
-        renderer.lineWidth = ChartMap.Coordinator.edgeWidth + 5
+        renderer.lineWidth = CourseRenderers.edgeWidth + 5
         renderer.lineCap = .round
         renderer.lineJoin = .round
         casingRenderer = renderer
