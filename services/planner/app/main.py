@@ -90,6 +90,9 @@ async def _lifespan(app: FastAPI):
     on = schedule.scheduler()
     schedule.every(on, feeds_watch.CHECK_EVERY_S, feeds_watch.check, name="feed-watch")
     schedule.every(on, traffic_store.PRUNE_EVERY_S, traffic_store.prune, name="live-store-prune")
+    # Each open card's airplane asked for, where adsb.lol does not hear it, so the map's poll only reads its track
+    # (wingtip.traffic.watch_round; round 6's audit, N1).
+    schedule.every(on, traffic_store.WATCH_GAP_S, traffic_store.watch_round, name="watched-airplanes", now=False)
     # On AWS, older cycles' chart sheets off the data disk (chart_upkeep.prune_behind_served).
     schedule.every(on, chart_upkeep.PRUNE_EVERY_S, chart_upkeep.prune_behind_served, name="chart-sheets-prune", now=False)
     # Each day's calls by route, to the file the gateway reads each night (app.usage_days).

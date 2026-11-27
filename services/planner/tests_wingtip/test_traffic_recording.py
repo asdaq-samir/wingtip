@@ -55,6 +55,23 @@ def test_an_airplane_whose_card_is_open_and_adsb_lol_does_not_hear_is_recorded_f
     assert state["airborne"] and state["aircraft"]["lat"] == 42.4
 
 
+def test_the_maps_poll_asks_nothing_and_the_watch_round_asks_each_open_card_then_lets_it_go(clock, monkeypatch):
+    """Round 6's audit, N1 and N9: a poll asked adsb.lol for every watched
+    airplane in the country behind its turn; now only the planner's watch
+    round asks, the poll reads the track, and a closed card is let go."""
+    stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
+    asked = []
+    stand_in(monkeypatch, "_paced", lambda url: asked.append(url) or {"ac": [CESSNA]})
+    stand_in(monkeypatch, "_region_answer", lambda region: (clock.now, []))
+    watched._WATCHED["a128b9"] = clock.now
+    assert traffic.near(42.35, -88.15, 30)["aircraft"] == [] and asked == []
+    assert traffic.watch_round() == 1 and len(asked) == 1
+    assert [p["hex"] for p in traffic.near(42.35, -88.15, 30)["aircraft"]] == ["a128b9"] and len(asked) == 1
+    clock.now += traffic.WATCH_FOR_S
+    assert traffic.watch_round() == 0 and len(asked) == 1
+    assert watched._WATCHED == {} and watched._WATCH_ASKED == {} and watched._WATCH_SOURCE == {} and watched._ANSWERED == {}
+
+
 def test_a_followed_airplane_is_asked_of_adsb_lol_in_the_background_and_stays_followed_across_a_restart(clock, monkeypatch, tmp_path):
     """The owner's N3429J (2026-10-19): FlightAware listed its day's two
     flights, the planner nothing -- recorded only while its card was open,

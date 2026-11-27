@@ -12,7 +12,7 @@ from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _numb
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
 from .globe import _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
-from .recorded import _last_recorded, _record, _recorded, followed
+from .recorded import _last_recorded, _record, followed
 from .radar import ELSEWHERE_RECORD_S, _heard_elsewhere_now
 
 log = logging.getLogger(__name__)
@@ -72,6 +72,9 @@ FOLLOW_QUIET_AFTER_S = 600.0
 FOLLOW_QUIET_EVERY_S = 120.0
 #: When each followed airplane was last asked for (_clock).
 _FOLLOW_ASKED: dict[str, float] = {}
+#: How long a report on the ground is kept, s: a day, as long as a
+#: followed airplane is followed unheard (recorded.FOLLOW_UNHEARD_S).
+ON_GROUND_KEEP_S = 86400.0
 
 
 def _follow_due(hex_id: str) -> bool:
@@ -125,6 +128,7 @@ def follow_round() -> int:
     round ends where adsb.lol is turning the planner away: the next
     round tries again. How many were heard."""
     heard = 0
+    _prune()
     # The card opened latest first, so a round adsb.lol cuts short has
     # asked for the airplanes pilots are looking at (security round 4, M5).
     for hex_id in followed():
@@ -199,23 +203,60 @@ def _watch(hex_id: str) -> None:
                 _WATCH_SOURCE[hex_id] = source
 
 
+def watch_round() -> int:
+    """Each airplane whose card is open (WATCH_FOR_S) asked for, where due
+    (`_watch`), and what is kept of the rest let go (`_prune`): the job the
+    planner runs every WATCH_GAP_S on its scheduler (app.main). The map's
+    poll only reads what this records (`_watched_near`): it asked for every
+    watched airplane anywhere in the country itself, each behind adsb.lol's
+    turn, so a pilot over Chicago waited 10 to 15 s for another's open card
+    over Florida (round 6's audit, N1). How many were asked about."""
+    _prune()
+    with _LOCK:
+        watched = [h for h, at in _WATCHED.items() if _clock() - at < WATCH_FOR_S]
+    for hex_id in watched:
+        _watch(hex_id)
+    return len(watched)
+
+
+def _prune() -> None:
+    """What is kept of each airplane let go once it says no more than none
+    would: a card closed past WATCH_FOR_S, an ask older than its gap, an
+    answer past WATCH_FOR_S, a quiet ask past FOLLOW_QUIET_EVERY_S, and a
+    report on the ground a day old. Nothing deleted them before, so every
+    card opened since the start stayed, and each poll walked them all under
+    the package's lock (round 6's audit, N9)."""
+    now, wall = _clock(), _wall()
+    with _LOCK:
+        for kept, older in (
+            (_WATCHED, WATCH_FOR_S),
+            (_WATCH_ASKED, WATCH_GAP_S),
+            (_ANSWERED, WATCH_FOR_S),
+            (_FOLLOW_ASKED, FOLLOW_QUIET_EVERY_S),
+        ):
+            for hex_id in [h for h, at in kept.items() if now - at >= older]:
+                del kept[hex_id]
+        for hex_id in [h for h, seen in _ON_GROUND.items() if wall - seen["t"] >= ON_GROUND_KEEP_S]:
+            del _ON_GROUND[hex_id]
+        for hex_id in [h for h in _WATCH_SOURCE if h not in _WATCHED]:
+            del _WATCH_SOURCE[hex_id]
+
+
 def _watched_near(lat: float, lon: float, radius_nm: float, have: set[str]) -> list[dict]:
     """The watched airplanes heard in the last STALE_S within `radius_nm`
     that a region's answer left out, as `_aircraft` gives each, its age
-    brought up to now: where adsb.lol does not hear one, the map has it."""
+    brought up to now: where adsb.lol does not hear one, the map has it.
+    Only what is recorded is read, nothing asked (`watch_round` asks)."""
     with _LOCK:
         watched = [h for h, at in _WATCHED.items() if _clock() - at < WATCH_FOR_S and h not in have]
     out = []
     for hex_id in watched:
         if _heard_elsewhere_now(hex_id) is not None:
             continue
-        _watch(hex_id)
-        track = _recorded(hex_id)
-        if not track:
+        last = _last_recorded(hex_id)
+        if last is None:
             continue
-        last = track[-1]
         age = _wall() - last["t"]
-        nm = distance_nm(lat, lon, last["lat"], last["lon"])
-        if age <= STALE_S and nm <= radius_nm:
+        if age <= STALE_S and distance_nm(lat, lon, last["lat"], last["lon"]) <= radius_nm:
             out.append({**last["plane"], "seen_s": round(age, 1)})
     return out
