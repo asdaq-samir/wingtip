@@ -6001,10 +6001,6 @@ nonisolated enum EngineContract {
     nonisolated struct GonogoRouteFiguresInput: Codable, Equatable, Sendable {
         /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
         var totals: EngineContract.GonogoRouteFiguresInputTotals?
-        /// How many TFRs the briefing lists along the route, with `crossed`.
-        var tfrCount: Double?
-        /// The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.
-        var crossed: [String]?
         /// The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` ("during") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.
         var tfrs: [EngineContract.GonogoRouteFiguresInputTfrsItem]?
         /// The nav log's legs, for when the flight passes each TFR.
@@ -6022,8 +6018,6 @@ nonisolated enum EngineContract {
 
         enum CodingKeys: String, CodingKey {
             case totals
-            case tfrCount = "tfr_count"
-            case crossed
             case tfrs
             case legs
             case departUs = "depart_us"

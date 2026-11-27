@@ -2540,7 +2540,7 @@ export interface EngineContract {
     answer: GonogoRiskLineAnswer;
   };
   /**
-   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those). With `tfrs`, which crossed TFRs are in force is decided here; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
+   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145), from the briefing's `tfrs`, by NOTAM id, with how many more it lists near it; none where no `tfrs` are sent; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.
    */
   gonogo_route_figures: {
     input: GonogoRouteFiguresInput;
@@ -9086,14 +9086,6 @@ export interface GonogoRouteFiguresInput {
         }[]
       | null;
   } | null;
-  /**
-   * How many TFRs the briefing lists along the route, with `crossed`.
-   */
-  tfr_count?: number | null;
-  /**
-   * The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.
-   */
-  crossed?: string[];
   /**
    * The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` ("during") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.
    */

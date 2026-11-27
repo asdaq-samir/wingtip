@@ -123,6 +123,7 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
     visibility_sm: 4,
     taf: null,
     good,
+    closed: false,
     meets_standard: true,
     reasons: [],
     distance_nm: 220,

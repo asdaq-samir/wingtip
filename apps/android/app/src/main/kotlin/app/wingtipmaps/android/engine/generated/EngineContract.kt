@@ -6208,15 +6208,6 @@ object EngineContract {
          */
         val totals: EngineContract.GonogoRouteFiguresInputTotals? = null,
         /**
-         * How many TFRs the briefing lists along the route, with `crossed`.
-         */
-        @SerialName("tfr_count")
-        val tfrCount: Double? = null,
-        /**
-         * The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.
-         */
-        val crossed: List<String>? = null,
-        /**
          * The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` ("during") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.
          */
         val tfrs: List<EngineContract.GonogoRouteFiguresInputTfrsItem>? = null,
