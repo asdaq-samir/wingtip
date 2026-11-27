@@ -1,6 +1,7 @@
 import { usePreferences } from "../../preferences";
 import { useSunlightOn } from "../../sunlight";
 import { chartBrightness } from "../chartLook";
+import { mapDimOf } from "./mapDim";
 import { useDarkTheme } from "./useDarkTheme";
 
 /** How the chart is drawn now: the dark theme's night look, sunlight,
@@ -20,4 +21,12 @@ export function useChartLook() {
 export function useChartBrightness(): number {
   const { dim, sunlight, night } = useChartLook();
   return chartBrightness(dim, sunlight, night);
+}
+
+/** What is drawn over the chart at night as a share of its light
+ *  (mapDimOf): the chart's brightness at night, 1 by day. For what MapLibre's
+ *  global state cannot reach, deck.gl's layers among them. */
+export function useMapDim(): number {
+  const { dim, sunlight, night } = useChartLook();
+  return mapDimOf(night, chartBrightness(dim, sunlight, night));
 }

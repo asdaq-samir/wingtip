@@ -132,7 +132,10 @@ export function OverlayGl() {
 
 function Usgs({ opacity }: { opacity: number }) {
   useTiles("overlay-usgs", "imagery", USGS_URL, USGS_MAX_ZOOM);
-  useGlPaint(["overlay-usgs"], { "raster-opacity": opacity });
+  // At the chart's brightness, the Dimmer's: an aerial over the dimmed
+  // chart at full light was two to three times as bright as the chart's
+  // paper in a dark cockpit (AIM 8-1-6; the round-4 themes audit).
+  useGlPaint(["overlay-usgs"], { "raster-opacity": opacity, "raster-brightness-max": useChartBrightness() });
   useImageryShown("usgs", opacity);
   useMapCredit("imagery", USGS_CREDIT);
   return null;
@@ -155,7 +158,8 @@ function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number 
 
 function OverlayTiles({ url, max, opacity }: { url: string; max: number; opacity: number }) {
   useTiles("overlay-google", "imagery", url, max, {}, glZoom(3));
-  useGlPaint(["overlay-google"], { "raster-opacity": opacity });
+  // At the chart's brightness, as the USGS's (Usgs).
+  useGlPaint(["overlay-google"], { "raster-opacity": opacity, "raster-brightness-max": useChartBrightness() });
   useImageryShown("google", opacity);
   return null;
 }

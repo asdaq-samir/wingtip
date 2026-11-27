@@ -7,6 +7,7 @@ import { deckSlot, useDeckLayers, useDeckTap } from "../../../lib/map/gl/deckLay
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { applyOverlaySettings } from "../../../lib/map/gl/overlayFilters";
 import { useGlView } from "../../../lib/map/gl/useGlView";
+import { useMapDim } from "../../../lib/map/gl/useChartLook";
 import { suaTabLayout } from "../../../lib/map/gl/glSuaLabels";
 import { GL_FONT_BOLD, TAP } from "../../../lib/map/gl/layers/common";
 import { useAddressKey, useMarkKey } from "../../../lib/address";
@@ -206,11 +207,15 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tick: the terrain came in
     [drawing, features, map, tick, altitudes, stretch],
   );
+  // At night at the chart's brightness (mapDim), as the map's own lines
+  // are: deck.gl draws outside MapLibre's global state (AIM 8-1-6).
+  const opacity = useMapDim();
   const layers = useMemo(
     () => [
       new SolidPolygonLayer<VolumePiece>({
         id: FILLS,
         data: pieces,
+        opacity,
         extruded: true,
         // Its base is its polygon's own height, its floor; deck.gl adds this.
         getPolygon: (p) => p.polygon as never,
@@ -226,6 +231,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
       new PathLayer<{ path: number[][]; piece: VolumePiece }>({
         id: RIMS,
         data: pieces.flatMap((p) => p.rims.map((path) => ({ path, piece: p }))),
+        opacity,
         getPath: (r) => r.path as never,
         getColor: ({ piece: p }) => shadeOf(KINDS[p.kind].ink, p.floorFt, RIM_ALPHA, p.holds),
         getWidth: RIM_PX,
@@ -233,7 +239,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
         ...deckSlot("lines"),
       }),
     ],
-    [pieces],
+    [pieces, opacity],
   );
   useDeckLayers("airspace-3d", layers);
 
