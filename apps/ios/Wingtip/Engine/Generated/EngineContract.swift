@@ -5919,6 +5919,51 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct GonogoRunwayFindingsAnswer: Codable, Equatable, Sendable {
+        var pending: Bool
+        var worked: Bool
+        var short: [String]
+        var crosswind: [String]
+        var beyond: [String]
+        var tailwind: [String]
+        var close: [String]
+        var unchecked: [String]
+    }
+
+    nonisolated struct GonogoRunwayFindingsInput: Codable, Equatable, Sendable {
+        /// The nav log is in.
+        var planned: Bool
+        /// The briefing is in.
+        var briefed: Bool
+        /// The nav log's airplane: its `takeoff` and `landing` tables, read as JavaScript reads them (present or not).
+        var aircraft: [String: OpenAPIValueContainer]?
+        /// The runway checks (gonogo_runway_checks), each with its field's ident.
+        var checks: [EngineContract.GonogoRunwayFindingsInputChecksItem]?
+    }
+
+    nonisolated struct GonogoRunwayFindingsInputChecksItem: Codable, Equatable, Sendable {
+        var ident: String
+        var headwindKt: Double
+        var crosswindOver: Bool
+        var unchecked: String?
+        var distances: [EngineContract.GonogoRunwayFindingsInputChecksItemDistancesItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case headwindKt = "headwind_kt"
+            case crosswindOver = "crosswind_over"
+            case unchecked
+            case distances
+        }
+    }
+
+    nonisolated struct GonogoRunwayFindingsInputChecksItemDistancesItem: Codable, Equatable, Sendable {
+        var over: Bool
+        var beyond: Bool
+        var close: Bool
+        var unknown: Bool
+    }
+
     nonisolated struct GonogoRunwayFlownInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.Runway]?
         /// The end picked.
@@ -6640,6 +6685,35 @@ nonisolated enum EngineContract {
         var hold: EngineContract.RouteHoldIn
     }
 
+    nonisolated struct IcingForecastHoursAnswer: Codable, Equatable, Sendable {
+        /// For each leg, the hours it is read off by index, the nearest first; empty for none.
+        var legs: [[Double]]
+    }
+
+    nonisolated struct IcingForecastHoursInput: Codable, Equatable, Sendable {
+        /// The stored hours.
+        var hours: [EngineContract.IcingForecastHoursInputHoursItem]
+        /// Each leg's middle, UNIX seconds.
+        var middlesS: [Double]
+
+        enum CodingKeys: String, CodingKey {
+            case hours
+            case middlesS = "middles_s"
+        }
+    }
+
+    nonisolated struct IcingForecastHoursInputHoursItem: Codable, Equatable, Sendable {
+        /// Valid time, UNIX seconds.
+        var validS: Double
+        /// "cip" for the analysis, "ifi" for a forecast hour.
+        var source: String?
+
+        enum CodingKeys: String, CodingKey {
+            case validS = "valid_s"
+            case source
+        }
+    }
+
     nonisolated struct IcingForecastRouteAnswer: Codable, Equatable, Sendable {
         var legs: [EngineContract.IcingForecastRouteAnswerLegsItem]
         var worst: EngineContract.IcingForecastRouteAnswerWorst?
@@ -6700,18 +6774,37 @@ nonisolated enum EngineContract {
 
     nonisolated struct IcingForecastRouteInputLegsItem: Codable, Equatable, Sendable {
         var altitudeFt: Double
-        /// The AWC's cross-section along the leg, null where it could not be had.
+        /// One section along the leg, null where it could not be had.
         var section: EngineContract.IcingForecastRouteInputLegsItemSection?
         var validS: Double?
+        /// The sections of the stored hours near the leg, the nearest first (icing_forecast_hours' order), null for an hour whose grid could not be read; the ground (sfc_hgt) is the nearest's. Empty, or the nearest null: the leg unchecked. Sent in place of `section`.
+        var hours: [EngineContract.IcingForecastRouteInputLegsItemHoursItem?]?
 
         enum CodingKeys: String, CodingKey {
             case altitudeFt = "altitude_ft"
             case section
             case validS = "valid_s"
+            case hours
         }
     }
 
-    /// The AWC's cross-section along the leg, null where it could not be had.
+    nonisolated struct IcingForecastRouteInputLegsItemHoursItem: Codable, Equatable, Sendable {
+        var width: Double
+        var dataLevels: Double
+        /// The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest.
+        var values: [Double]
+        /// The ground under each column, m.
+        var sfcHgt: [Double]?
+
+        enum CodingKeys: String, CodingKey {
+            case width
+            case dataLevels = "data_levels"
+            case values
+            case sfcHgt = "sfc_hgt"
+        }
+    }
+
+    /// One section along the leg, null where it could not be had.
     nonisolated struct IcingForecastRouteInputLegsItemSection: Codable, Equatable, Sendable {
         var width: Double
         var dataLevels: Double

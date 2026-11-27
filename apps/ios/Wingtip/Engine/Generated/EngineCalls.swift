@@ -945,6 +945,11 @@ nonisolated extension Engine {
         try Self.rule("gonogo_runway_checks", EngineContract.GonogoRunwayChecksInput(aircraft: aircraft, fields: fields, metars: metars, airports: airports, takeoffLb: takeoffLb, landingLb: landingLb, picks: picks))
     }
 
+    /// The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables or the nav log is awaited.
+    static func gonogoRunwayFindings(planned: Bool, briefed: Bool, aircraft: [String: OpenAPIValueContainer]? = nil, checks: [EngineContract.GonogoRunwayFindingsInputChecksItem]? = nil) throws -> EngineContract.GonogoRunwayFindingsAnswer {
+        try Self.rule("gonogo_runway_findings", EngineContract.GonogoRunwayFindingsInput(planned: planned, briefed: briefed, aircraft: aircraft, checks: checks))
+    }
+
     /// The runway and end flown: the one picked where it is there, else the one the wind favours.
     static func gonogoRunwayFlown(runways: [EngineContract.Runway]? = nil, picked: String? = nil) throws -> EngineContract.GonogoFlown {
         try Self.rule("gonogo_runway_flown", EngineContract.GonogoRunwayFlownInput(runways: runways, picked: picked))
@@ -1065,7 +1070,12 @@ nonisolated extension Engine {
         try Self.rule("holds_read", EngineContract.HoldsReadInput(text: text))
     }
 
-    /// Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the AWC's icing cross-section along each leg (its GFA's, from CIP and FIP), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked.
+    /// Which stored icing hours each leg of an IFR route is read off (#216; the owner, 2026-11-27, "Grids, worst of nearby hours"), by index into `hours`: the hour nearest the leg's middle first -- the CIP's analysis where it and an IFI hour are as near, the earliest for a time before them all -- then every other within an hour of the middle, in the order given; none for a middle more than half an hour past the last hour, the stored hours being an hour apart and each standing for the half hour either side of it. The planner samples those hours along the leg and sends them to icing_forecast_route as the leg's `hours`.
+    static func icingForecastHours(hours: [EngineContract.IcingForecastHoursInputHoursItem], middlesS: [Double]) throws -> EngineContract.IcingForecastHoursAnswer {
+        try Self.rule("icing_forecast_hours", EngineContract.IcingForecastHoursInput(hours: hours, middlesS: middlesS))
+    }
+
+    /// Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the NWS's icing grids sampled along each leg (the CIP analysis and the IFI forecast, NWS SCN 26-87), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked. A leg may send the stored hours near it (`hours`, as icing_forecast_hours picks them, the nearest first) in place of one section: they merge as the owner chose (2026-11-27, "Grids, worst of nearby hours"), each point and level the worst of them, the share the nearest hour's own unless it has no icing at the altitude where the merged has.
     static func icingForecastRoute(levelsFt: [Double], legs: [EngineContract.IcingForecastRouteInputLegsItem]) throws -> EngineContract.IcingForecastRouteAnswer {
         try Self.rule("icing_forecast_route", EngineContract.IcingForecastRouteInput(levelsFt: levelsFt, legs: legs))
     }

@@ -2528,6 +2528,13 @@ export interface EngineContract {
     answer: GonogoRunwayChecksAnswer;
   };
   /**
+   * The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables or the nav log is awaited.
+   */
+  gonogo_runway_findings: {
+    input: GonogoRunwayFindingsInput;
+    answer: GonogoRunwayFindingsAnswer;
+  };
+  /**
    * The runway and end flown: the one picked where it is there, else the one the wind favours.
    */
   gonogo_runway_flown: {
@@ -2696,7 +2703,14 @@ export interface EngineContract {
     answer: HoldsReadAnswer;
   };
   /**
-   * Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the AWC's icing cross-section along each leg (its GFA's, from CIP and FIP), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked.
+   * Which stored icing hours each leg of an IFR route is read off (#216; the owner, 2026-11-27, "Grids, worst of nearby hours"), by index into `hours`: the hour nearest the leg's middle first -- the CIP's analysis where it and an IFI hour are as near, the earliest for a time before them all -- then every other within an hour of the middle, in the order given; none for a middle more than half an hour past the last hour, the stored hours being an hour apart and each standing for the half hour either side of it. The planner samples those hours along the leg and sends them to icing_forecast_route as the leg's `hours`.
+   */
+  icing_forecast_hours: {
+    input: IcingForecastHoursInput;
+    answer: IcingForecastHoursAnswer;
+  };
+  /**
+   * Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the NWS's icing grids sampled along each leg (the CIP analysis and the IFI forecast, NWS SCN 26-87), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked. A leg may send the stored hours near it (`hours`, as icing_forecast_hours picks them, the nearest first) in place of one section: they merge as the owner chose (2026-11-27, "Grids, worst of nearby hours"), each point and level the worst of them, the share the nearest hour's own unless it has no icing at the altitude where the merged has.
    */
   icing_forecast_route: {
     input: IcingForecastRouteInput;
@@ -8722,6 +8736,47 @@ export interface GonogoMetar {
   wind_speed_kt?: number | null;
   wind_gust_kt?: number | null;
 }
+export interface GonogoRunwayFindingsInput {
+  /**
+   * The nav log is in.
+   */
+  planned: boolean;
+  /**
+   * The briefing is in.
+   */
+  briefed: boolean;
+  /**
+   * The nav log's airplane: its `takeoff` and `landing` tables, read as JavaScript reads them (present or not).
+   */
+  aircraft?: {} | null;
+  /**
+   * The runway checks (gonogo_runway_checks), each with its field's ident.
+   */
+  checks:
+    | {
+        ident: string;
+        headwind_kt: number;
+        crosswind_over: boolean;
+        unchecked: string | null;
+        distances: {
+          over: boolean;
+          beyond: boolean;
+          close: boolean;
+          unknown: boolean;
+        }[];
+      }[]
+    | null;
+}
+export interface GonogoRunwayFindingsAnswer {
+  pending: boolean;
+  worked: boolean;
+  short: string[];
+  crosswind: string[];
+  beyond: string[];
+  tailwind: string[];
+  close: string[];
+  unchecked: string[];
+}
 export interface GonogoRunwayFlownInput {
   runways?: Runway[] | null;
   /**
@@ -9243,6 +9298,31 @@ export interface HoldingLegMinutesInput {
 export interface HoldsReadInput {
   text: string;
 }
+export interface IcingForecastHoursInput {
+  /**
+   * The stored hours.
+   */
+  hours: {
+    /**
+     * Valid time, UNIX seconds.
+     */
+    valid_s: number;
+    /**
+     * "cip" for the analysis, "ifi" for a forecast hour.
+     */
+    source?: string | null;
+  }[];
+  /**
+   * Each leg's middle, UNIX seconds.
+   */
+  middles_s: number[];
+}
+export interface IcingForecastHoursAnswer {
+  /**
+   * For each leg, the hours it is read off by index, the nearest first; empty for none.
+   */
+  legs: number[][];
+}
 export interface IcingForecastRouteInput {
   /**
    * The sections' levels, ft MSL, climbing.
@@ -9251,7 +9331,7 @@ export interface IcingForecastRouteInput {
   legs: {
     altitude_ft: number;
     /**
-     * The AWC's cross-section along the leg, null where it could not be had.
+     * One section along the leg, null where it could not be had.
      */
     section?: {
       width: number;
@@ -9266,6 +9346,23 @@ export interface IcingForecastRouteInput {
       sfc_hgt?: number[];
     } | null;
     valid_s?: number | null;
+    /**
+     * The sections of the stored hours near the leg, the nearest first (icing_forecast_hours' order), null for an hour whose grid could not be read; the ground (sfc_hgt) is the nearest's. Empty, or the nearest null: the leg unchecked. Sent in place of `section`.
+     */
+    hours?:
+      | ({
+          width: number;
+          data_levels: number;
+          /**
+           * The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest.
+           */
+          values: number[];
+          /**
+           * The ground under each column, m.
+           */
+          sfc_hgt?: number[];
+        } | null)[]
+      | null;
   }[];
 }
 export interface IcingForecastRouteAnswer {

@@ -48,3 +48,13 @@ fn levels_that_do_not_climb_are_refused() {
     let input = json!({ "levels_ft": [4000, 3000], "legs": [] });
     assert!(call("icing_forecast_route", &input.to_string()).is_err());
 }
+
+#[test]
+fn each_leg_is_read_off_the_hours_near_its_middle() {
+    let all = fixture();
+    for case in all["hours"].as_array().unwrap() {
+        let text = call("icing_forecast_hours", &case["input"].to_string()).unwrap_or_else(|e| panic!("{}: {e}", case["about"]));
+        let got: Value = serde_json::from_str(&text).unwrap();
+        assert!(same(&got, &case["answer"]), "{}\ngot  {got}\nwant {}", case["about"], case["answer"]);
+    }
+}

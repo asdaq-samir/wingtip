@@ -25,6 +25,8 @@
 //!   (lib/frat, lib/airworthiness);
 //! - `runways`: the runway check at each field (lib/runwayCheck,
 //!   lib/takeoffLanding, lib/pattern's runwayFlown);
+//! - `runway_findings`: the fields each runway finding names, from the
+//!   checks (`gonogo_runway_findings`);
 //! - `weight_balance`: the weight and balance (lib/weightBalance);
 //! - `permission`: a private or military-only departure, destination or
 //!   stop, a row of its own after the seven;
@@ -52,6 +54,7 @@ pub mod minimums;
 pub mod pass_times;
 pub mod permission;
 pub mod route_figures;
+pub mod runway_findings;
 pub mod runways;
 pub mod verdict;
 pub mod weight_balance;

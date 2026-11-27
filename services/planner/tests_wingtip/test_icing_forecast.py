@@ -144,10 +144,17 @@ def test_a_leg_is_never_read_under_the_worst_stored_near_it():
     assert 0 < answer["legs"][0]["share"] == alone["legs"][0]["share"] < 1
 
 
-def test_the_cips_hour_is_the_nearest_where_an_ifi_hour_is_as_near():
-    hours = [{"valid": utc.iso(CYCLE), "source": "ifi"}, {"valid": utc.iso(CYCLE), "source": "cip"}]
-    assert icing_forecast._primary(hours, CYCLE.timestamp())["source"] == "cip"
-    assert icing_forecast._primary(hours, (CYCLE + timedelta(minutes=31)).timestamp()) is None
+def test_the_cip_and_the_ifis_same_hour_are_both_read():
+    # The CIP's analysis and the IFI's same hour, both on the leg's hour:
+    # both read, the worst of them; half an hour and a minute past, neither
+    # (the engine's icing_forecast_hours picks them, the CIP's first).
+    _store_hours([(0, "ifi", _grid((6000, 2))), (0, "cip", _grid(None))])
+    leg = [(41.9, -87.9), (42.5, -89.0)]
+    on_time = icing_forecast.along(leg, [6000], [0], None, CYCLE.timestamp(), now=CYCLE.timestamp())["legs"][0]
+    # The IFI's light is merged in; the share the CIP's own, none, gives way to the merged.
+    assert on_time["severity"] == "light" and on_time["share"] == 1
+    late = (CYCLE + timedelta(minutes=31)).timestamp()
+    assert icing_forecast.along(leg, [6000], [0], None, late, now=CYCLE.timestamp())["unchecked"] == [0]
 
 
 def test_icing_only_another_hour_has_takes_that_hours_share():
