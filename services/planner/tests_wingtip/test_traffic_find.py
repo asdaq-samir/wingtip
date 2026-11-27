@@ -5,6 +5,7 @@ search takes between the map's requests."""
 from unittest.mock import patch
 
 import pytest
+import requests
 
 from wingtip import registry, traffic
 from wingtip.traffic import adsb_lol
@@ -75,17 +76,51 @@ def test_an_airplane_whose_recent_trace_has_it_down_or_gone_is_not_in_the_air(cl
     assert len(asked) == 1
 
 
-def test_a_search_takes_its_turn_between_requests_and_one_further_off_is_not_waited_for(clock):
+def test_a_search_takes_its_turn_between_requests_and_its_second_way_goes_in_the_same_turn(clock):
     get, asked = _routed({"/point/": _answer([]), "/callsign/": _answer([]), "/reg/": _answer([])})
     asked_at = []
     with patch("requests.get", side_effect=lambda url, **kw: (asked_at.append(clock.now), get(url))[1]):
         traffic.near(42.3, -88.1, 25)
         clock.now += adsb_lol.MIN_GAP_S - adsb_lol.SEARCH_WAIT_S / 2
-        # A callsign with nothing, five seconds after the region; the same as a registration
-        # five more on, further off than a search waits (it waited 10 s): unchecked, at once.
-        with pytest.raises(traffic.TrafficUnavailable):
-            traffic.find("FOO123")
-    assert asked_at == [1000.0, 1005.0]
+        # A callsign with nothing, five seconds after the region; then the same as a registration
+        # at once, in its turn: its own turn, five more on, is further off than a search waits.
+        assert traffic.find("FOO123") == []
+    assert asked_at == [1000.0, 1005.0, 1005.0]
+    assert [u.rsplit("/", 2)[-2] for u in asked[1:]] == ["callsign", "reg"]
+
+
+def test_a_foreign_registration_typed_without_its_dash_is_found_by_registration(clock):
+    """Round 4's audit: "GABCD", which no airline's callsign pattern reads,
+    found nothing as a callsign, and its registration's try came a gap
+    later, past a search's wait, so it was never asked."""
+    briton = {**CESSNA, "hex": "406abc", "flight": "", "r": "G-ABCD", "t": "PA28"}
+    get, asked = _routed({"/callsign/GABCD": _answer([]), "/reg/GABCD": _answer([briton])})
+    with patch("requests.get", side_effect=get):
+        (found,) = traffic.find("g abcd")
+    assert found["hex"] == "406abc" and found["registration"] == "G-ABCD"
+    assert asked == ["https://api.adsb.lol/v2/callsign/GABCD", "https://api.adsb.lol/v2/reg/GABCD"]
+
+
+def test_a_search_that_times_out_holds_adsb_lol_for_no_one(clock):
+    """A search's 3 s timeout held the whole source for BACKOFF_S, the
+    map's regions with it (round 4's audit); a refusal still does."""
+
+    def slow(url, **kwargs):
+        if "/callsign/" in url:
+            raise requests.Timeout("read timed out")
+        return _answer([CESSNA])
+
+    with patch("requests.get", side_effect=slow), pytest.raises(traffic.TrafficUnavailable):
+        traffic.find("UAL2088")
+    assert not adsb_lol._LOL.held(clock.now)
+    clock.now += adsb_lol.MIN_GAP_S
+    with patch("requests.get", side_effect=slow) as get:
+        assert [a["hex"] for a in traffic.near(42.3, -88.1, 25)["aircraft"]] == ["a128b9"]
+    assert get.call_count == 1
+    clock.now += adsb_lol.MIN_GAP_S
+    with patch("requests.get", return_value=_status(429)), pytest.raises(traffic.TrafficUnavailable):
+        traffic.find("DAL1")
+    assert adsb_lol._LOL.held(clock.now + adsb_lol.BACKOFF_S - 1)
 
 
 def test_an_airplane_heard_about_a_region_is_found_there_at_once(clock):
@@ -113,11 +148,10 @@ def test_a_search_goes_ahead_of_the_regions_turns(clock):
     with patch("requests.get", side_effect=timed):
         traffic.near(42.3, -88.1, 25)
         clock.now += adsb_lol.MIN_GAP_S - adsb_lol.SEARCH_WAIT_S / 2
-        with pytest.raises(traffic.TrafficUnavailable):
-            traffic.find("FOO123")
+        assert traffic.find("FOO123") == []
         # A region with nothing of its own takes the turn after the search's.
         traffic.near(45.0, -93.0, 25)
-    assert asked_at == [(1000.0, "point"), (1005.0, "callsign"), (1010.0, "point")]
+    assert asked_at == [(1000.0, "point"), (1005.0, "callsign"), (1005.0, "reg"), (1010.0, "point")]
 
 
 def test_a_search_adsb_lol_cannot_take_now_is_answered_from_the_faas_radar(clock, monkeypatch):
