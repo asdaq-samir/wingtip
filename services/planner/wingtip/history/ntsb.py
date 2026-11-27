@@ -323,20 +323,17 @@ def cases(reg: str, path: Path | None = None) -> list[dict]:
     (cases since 2008, avall.mdb), newest first: its NTSB number, local
     date and place, kind, highest injury, the airplane's damage and phase,
     and the links to its CAROL report and docket. [] where the store is not
-    built; the kind and damage None in a store of the older shape until
-    ingest makes it again."""
+    built."""
     path = path or store_path()
     if not path.exists():
         return []
     wanted = registration(reg)
     names = sorted({wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set()))
-    newer = schema(path) >= 2
-    kind, damage = ("e.kind", "a.damage") if newer else ("NULL", "NULL")
     db = stores.read_only(path)
     try:
         rows = db.execute(
             f"""
-            SELECT e.ev_id, e.ntsb_no, e.date, e.city, e.state, e.country, {kind}, e.highest_injury, {damage}, a.phase
+            SELECT e.ev_id, e.ntsb_no, e.date, e.city, e.state, e.country, e.kind, e.highest_injury, a.damage, a.phase
             FROM aircraft a JOIN events e ON e.ev_id = a.ev_id
             WHERE a.registration IN ({",".join("?" * len(names))})
             ORDER BY e.date DESC, e.ntsb_no

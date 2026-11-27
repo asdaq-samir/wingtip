@@ -181,26 +181,6 @@ def test_the_development_key_is_made_once_into_its_own_file(tmp_path, monkeypatc
         recorded.share_of("pilot-a")
 
 
-def test_a_store_that_kept_the_key_loses_it_and_the_pilots_follows_once(wall):
-    """The round 7 audit, P-L1: the shares hashed with the store's key are
-    orphaned by the new one, so they go with it; ingest's own stay."""
-    store.reset()
-    store.STORE.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(store.STORE)
-    db.executescript(
-        "CREATE TABLE IF NOT EXISTS following (who TEXT, hex TEXT, since REAL, PRIMARY KEY (who, hex));"
-        "CREATE TABLE keys (name TEXT PRIMARY KEY, value BLOB);"
-        "INSERT INTO keys VALUES ('follow_share', x'00');"
-        "INSERT INTO following VALUES ('abc123def456', 'a00001', 1.0), ('', 'a00002', 1.0);"
-    )
-    db.close()
-    assert store.followed() == ["a00002"]
-    assert not _rows_of_master("keys")
-    traffic.follow("a00003", "pilot-a")
-    store.reset()
-    assert set(store.followed()) == {"a00002", "a00003"}
-
-
 def _rows_of_master(name: str) -> list[tuple]:
     db = sqlite3.connect(store.STORE)
     try:

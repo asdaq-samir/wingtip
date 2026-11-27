@@ -148,15 +148,11 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
 
 
 def _read(db_path: Path, sql: str, args: tuple) -> list[dict]:
-    """Rows of a query, [] where the file or its table (an older shape's,
-    until the next read) is not there."""
+    """Rows of a query, [] where the file is not there."""
     if not db_path.exists():
         return []
     with _reading(db_path) as db:
-        try:
-            return [dict(r) for r in db.execute(sql, args).fetchall()]
-        except sqlite3.OperationalError:
-            return []
+        return [dict(r) for r in db.execute(sql, args).fetchall()]
 
 
 #: The fewest characters of a serial number matched to another

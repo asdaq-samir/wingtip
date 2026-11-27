@@ -55,14 +55,11 @@ _SCHEMA = """
     CREATE TABLE IF NOT EXISTS radar (hex TEXT PRIMARY KEY, lat REAL, lon REAL, at REAL, plane TEXT);
     CREATE INDEX IF NOT EXISTS radar_at ON radar (at);
     CREATE TABLE IF NOT EXISTS looked (place TEXT PRIMARY KEY, lat REAL, lon REAL, radius REAL, at REAL);
-    DROP TABLE IF EXISTS followed;
     CREATE TABLE IF NOT EXISTS following (who TEXT, hex TEXT, since REAL, PRIMARY KEY (who, hex));
     CREATE INDEX IF NOT EXISTS following_hex ON following (hex);
     CREATE TABLE IF NOT EXISTS points (hex TEXT, t REAL, point TEXT, PRIMARY KEY (hex, t)) WITHOUT ROWID;
     CREATE INDEX IF NOT EXISTS points_t ON points (t);
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
-    DROP TABLE IF EXISTS opensky_days;
-    DROP TABLE IF EXISTS opensky_paths;
     CREATE TABLE IF NOT EXISTS opensky (hex TEXT, key TEXT, at REAL, body TEXT, PRIMARY KEY (hex, key)) WITHOUT ROWID;
     CREATE INDEX IF NOT EXISTS opensky_at ON opensky (at);
 """
@@ -78,27 +75,8 @@ def _connection() -> sqlite3.Connection:
         # traffic, never the file), as every store ingest and the planner share.
         db = stores.connect(STORE, autocommit=True)
         db.executescript(_SCHEMA)
-        _drop_the_store_key(db)
         _db = db
     return _db
-
-
-def _drop_the_store_key(db: sqlite3.Connection) -> None:
-    """Once, where a store still holds the key round 6 kept in it: the key
-    deleted, and with it every pilot's follows, whose shares were hashed
-    with it (or, before it, with no key at all) and would otherwise sit
-    orphaned in the largest-share eviction until they expired (the round 7
-    audit, P-L1). A pilot's next card opened follows again under the new
-    key; the follows no pilot asked (share "") stay."""
-    db.execute("BEGIN IMMEDIATE")
-    try:
-        if db.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'keys'").fetchone():
-            db.execute("DELETE FROM following WHERE who != ''")
-            db.execute("DROP TABLE keys")
-        db.execute("COMMIT")
-    except BaseException:
-        db.execute("ROLLBACK")
-        raise
 
 
 def reset() -> None:
