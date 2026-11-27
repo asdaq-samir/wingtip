@@ -36,9 +36,11 @@ level under it.
 
 from __future__ import annotations
 
+import threading
 import time
 
 import numpy as np
+from cachetools import LRUCache
 
 from . import geo, utc, weather_store
 from .engine import ask as engine
@@ -102,8 +104,46 @@ def section(grid: np.ndarray, at: dict, stored_levels: list[float], a: tuple, b:
     return _section(_values(grid, at, stored_levels, lats, lons), _ground_m(lats, lons))
 
 
+#: Each leg's points and the ground under them, by its ends: the same for
+#: every hour of a departure window, which read them again for each
+#: (round 6's audit, N7). A ground the terrain tiles could not give is not
+#: kept, so the next read asks again.
+_LEGS: LRUCache = LRUCache(maxsize=256)
+_LEGS_LOCK = threading.Lock()
+
+
+def _leg_points(a: tuple, b: tuple) -> tuple[np.ndarray, np.ndarray, list[float] | None]:
+    """(lats, lons, ground) of a leg's COLUMNS points, worked out once a leg."""
+    key = (tuple(a), tuple(b))
+    with _LEGS_LOCK:
+        held = _LEGS.get(key)
+    if held is not None:
+        return held
+    lats, lons = geo.great_circle_points(a, b, COLUMNS)
+    lats.setflags(write=False)
+    lons.setflags(write=False)
+    found = (lats, lons, _ground_m(lats, lons))
+    if found[2] is not None:
+        with _LEGS_LOCK:
+            _LEGS[key] = found
+    return found
+
+
 class _Grids:
-    """The stored hours' grids, each mapped once a request."""
+    """The stored hours' grids, each mapped once a copy of the store: kept
+    while the store's record is the same object (weather_store.read decodes
+    it once a file), so a departure window's hours and the next Go / No-Go
+    map the hour arrays once, where each read opened them again (N7)."""
+
+    _held: dict = {"data": None, "grids": None}
+    _lock = threading.Lock()
+
+    @classmethod
+    def of(cls, data: dict) -> _Grids:
+        with cls._lock:
+            if cls._held["data"] is not data:
+                cls._held.update(data=data, grids=cls(data))
+            return cls._held["grids"]
 
     def __init__(self, data: dict):
         self.data, self.held = data, {}
@@ -126,12 +166,12 @@ def _leg(grids: _Grids, a: tuple, b: tuple, picked: list[int]) -> list[dict | No
     if not picked:
         return []
     hours = grids.data["hours"]
-    lats, lons = geo.great_circle_points(a, b, COLUMNS)
+    lats, lons, ground = _leg_points(a, b)
     own = grids.values(hours[int(picked[0])], lats, lons)
     if own is None:
         return [None]
     others = [grids.values(hours[int(i)], lats, lons) for i in picked[1:]]
-    return [_section(own, _ground_m(lats, lons)), *(None if v is None else _section(v, None) for v in others)]
+    return [_section(own, ground), *(None if v is None else _section(v, None) for v in others)]
 
 
 def along(
@@ -166,7 +206,7 @@ def along(
         hours=[{"valid_s": utc.epoch(h["valid"]), "source": h.get("source")} for h in data["hours"]],
         middles_s=middles,
     )["legs"]
-    grids = _Grids(data)
+    grids = _Grids.of(data)
     answer = engine(
         "icing_forecast_route",
         levels_ft=LEVELS_FT,

@@ -51,6 +51,7 @@ def _store(severity_at: dict[int, tuple[int, int]], steps: int = 4, until: float
 @pytest.fixture(autouse=True)
 def _flat_ground(monkeypatch):
     monkeypatch.setattr(icing_forecast, "_ground_m", lambda lats, lons: [200.0] * len(lats))
+    icing_forecast._LEGS.clear()
 
 
 def test_the_levels_are_the_awcs_39():
@@ -163,3 +164,19 @@ def test_icing_only_another_hour_has_takes_that_hours_share():
     _store_hours([(1, "cip", _grid(None)), (2, "ifi", _grid((8000, 2), north))])
     leg = icing_forecast.along([(41.0, -90.0), (44.5, -89.0)], [8000], [20], None, depart, now=depart)["legs"][0]
     assert leg["severity"] == "light" and 0 < leg["share"] < 1
+
+
+def test_a_windows_hours_read_each_legs_ground_and_each_hours_grid_once(monkeypatch):
+    """Round 6's audit, N7: each departure hour of a window opened the hour
+    arrays again and worked the legs' points and ground out again."""
+    _store({2: (8000, 2)}, steps=5)
+    grounds, opened = [], []
+    monkeypatch.setattr(icing_forecast, "_ground_m", lambda lats, lons: grounds.append(1) or [200.0] * len(lats))
+    read_array = weather_store.read_array
+    monkeypatch.setattr(weather_store, "read_array", lambda name: opened.append(name) or read_array(name))
+    legs = [(41.9, -87.9), (42.5, -89.0), (43.1, -90.0)]
+    first = icing_forecast.along(legs, [8000, 9000], [60, 60], [30, 0], NOW, now=NOW)
+    for hour in range(1, 3):
+        icing_forecast.along(legs, [8000, 9000], [60, 60], [30, 0], NOW + hour * 1800, now=NOW)
+    assert len(grounds) == 2 and len(opened) == len(set(opened))
+    assert icing_forecast.along(legs, [8000, 9000], [60, 60], [30, 0], NOW, now=NOW) == first
