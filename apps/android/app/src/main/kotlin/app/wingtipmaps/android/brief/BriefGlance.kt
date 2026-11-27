@@ -11,9 +11,7 @@ import app.wingtipmaps.android.engine.generated.gairmetTitle
 import app.wingtipmaps.android.engine.generated.gonogoAdverseRows
 import app.wingtipmaps.android.engine.generated.gonogoRouteFigures
 import app.wingtipmaps.android.engine.generated.pirepConditions
-import app.wingtipmaps.android.engine.generated.routeAdiz
 import app.wingtipmaps.android.engine.generated.routeHeadwind
-import app.wingtipmaps.android.engine.generated.routeJurisdiction
 import app.wingtipmaps.android.engine.generated.sigmetHazard
 
 /**
@@ -42,7 +40,7 @@ data class BriefGlance(
     val beyondReserveGal: Double? = null,
     /** What the briefing could not check, in words ("SIGMETs", "pilot reports"). */
     val unchecked: List<String> = emptyList(),
-    /** The engine's lines for an ADIZ met and for leaving the United States. */
+    /** The lines for an ADIZ met and for leaving the United States: the planner's /api/course, the engine's words. */
     val adiz: String? = null,
     val outside: String? = null,
     /** The departure's and the destination's runway, distance and category (BriefFields). */
@@ -75,27 +73,22 @@ data class BriefGlance(
             airplane: Boolean,
             fields: Pair<FieldGlance?, FieldGlance?> = null to null,
             outOfCycle: String? = null,
-        ): BriefGlance {
-            val line = course?.courseLine.orEmpty().filter { it.size == 2 }
-            return BriefGlance(
-                depart = fields.first,
-                arrive = fields.second,
-                outOfCycle = outOfCycle,
-                adverse = briefing?.let(::adverse) ?: NONE,
-                ceilingFt = briefing?.forecast?.minCeilingFt,
-                visibilitySm = briefing?.forecast?.minVisibilitySm,
-                headwindKt = headwind(legs),
-                eteMin = totals?.eteMin,
-                beyondReserveGal = if (airplane) beyondReserve(totals) else null,
-                unchecked = briefing?.weatherUnavailable.orEmpty().mapNotNull { SOURCES[it] },
-                adiz = line.takeIf { it.isNotEmpty() }?.let { pts ->
-                    Engine.routeAdiz(pts.map { EngineContract.RouteAdizInputPointsItem(it[0], it[1]) }).getOrNull()?.brief?.line
-                },
-                outside = line.takeIf { it.isNotEmpty() }?.let { pts ->
-                    Engine.routeJurisdiction(pts.map { EngineContract.RouteJurisdictionInputPointsItem(it[0], it[1]) }).getOrNull()?.brief?.line
-                },
-            )
-        }
+        ): BriefGlance = BriefGlance(
+            depart = fields.first,
+            arrive = fields.second,
+            outOfCycle = outOfCycle,
+            adverse = briefing?.let(::adverse) ?: NONE,
+            ceilingFt = briefing?.forecast?.minCeilingFt,
+            visibilitySm = briefing?.forecast?.minVisibilitySm,
+            headwindKt = headwind(legs),
+            eteMin = totals?.eteMin,
+            beyondReserveGal = if (airplane) beyondReserve(totals) else null,
+            unchecked = briefing?.weatherUnavailable.orEmpty().mapNotNull { SOURCES[it] },
+            // The planner's course says both, the engine's route_adiz and route_jurisdiction asked once
+            // there, as the web's Brief reads them.
+            adiz = course?.adiz?.line,
+            outside = course?.outside?.line,
+        )
 
         /** The engine's route_headwind over the nav log's legs. */
         fun headwind(legs: List<Leg>): Double? = Engine.routeHeadwind(
