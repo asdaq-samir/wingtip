@@ -31,11 +31,9 @@ function FlightLiveBox({ live, onOpenAirport }: { live: FlightLive; onOpenAirpor
       chip={null}
       from={live.fromEnd}
       to={live.toEnd}
-      startedAt={live.startedAt}
       departedAt={live.departedAt}
       fix={fix}
       onOpenAirport={onOpenAirport}
-      airport={live.airport}
     />
   );
 }

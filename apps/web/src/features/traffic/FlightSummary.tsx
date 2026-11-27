@@ -110,7 +110,6 @@ function FlightSummary({
   from,
   to,
   progress,
-  startedAt,
   departedAt,
   now,
   fix,
@@ -118,7 +117,6 @@ function FlightSummary({
   cpa,
   arrives,
   onOpenAirport,
-  airport,
   pending = false,
   className,
 }: {
@@ -133,7 +131,7 @@ function FlightSummary({
   to: { ident: string; place: string | null } | null;
   /** How far along, 0 to 1, where both ends and where it is are known. */
   progress: number | null;
-  startedAt: number | null;
+  /** When it took off, while it flies (useFlightLive's). */
   departedAt: number | null;
   now: number;
   fix: Fix | null;
@@ -142,8 +140,6 @@ function FlightSummary({
   /** When it reaches the field it is bound for, Unix seconds (arrivalOf). */
   arrives: number | null;
   onOpenAirport?: (ident: string) => void;
-  /** The field the airport tap was for: the card's Airport tile's. */
-  airport: string | null;
   /** Its box's look where it is laid out (the airplane card's first slide). */
   className?: string;
 }) {
@@ -151,7 +147,7 @@ function FlightSummary({
   const squawk = plane?.squawk ?? null;
   const meaning = squawkMeaning(squawk);
   const climb = Math.abs(rate) >= 100 ? `${rate > 0 ? "↑" : "↓"} ${altFt(Math.abs(Math.round(rate / 100) * 100))} fpm` : "level";
-  const flown = plane && startedAt ? lasted(now / 1000 - startedAt) : null;
+  const flown = plane && departedAt ? lasted(now / 1000 - departedAt) : null;
   const open = (ident: string) => (onOpenAirport ? () => onOpenAirport(ident) : undefined);
   return (
     <div
@@ -210,7 +206,8 @@ function FlightSummary({
             at={departedAt ? clockTime(new Date(departedAt * 1000)) : null}
             onOpen={from.ident !== "?" ? open(from.ident) : undefined}
             testId={departedAt ? "flight-departed" : undefined}
-            openTestId={from.ident === airport ? "flight-airport" : undefined}
+            // The field it left, while it flies.
+            openTestId={plane ? "flight-airport" : undefined}
           />
           {/* As far along as it has flown, the stock Progress; a plain line
               where that cannot be said (no field it is bound for). */}
@@ -225,7 +222,6 @@ function FlightSummary({
             place={to?.place ?? null}
             onOpen={to ? open(to.ident) : undefined}
             testId={plane ? "flight-bound" : undefined}
-            openTestId={to && to.ident === airport && to.ident !== from.ident ? "flight-airport" : undefined}
           />
         </div>
       ) : (
