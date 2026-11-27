@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
-from wingtip import departure_window as forecast, runway_wind, weather, winds_aloft
+from wingtip import departure_window as forecast, runway_wind, single_flight, weather, winds_aloft
 
 from wingtip import planning as planning_module
 from ..gonogo import ask as engine
@@ -53,19 +53,30 @@ class Plans:
     map's grid at the hour where its timeline holds it, so each hour flies
     its own winds; the GFS stations' period past it) and,
     with an airplane, whether the flight is at night, which sets its
-    reserve. A dozen hours share a plan or two."""
+    reserve. Under the map's hourly grid each hour has a key, and so a plan,
+    of its own; past the grid's timeline the GFS stations' hours share one."""
 
     def __init__(self, q: PlanQuery, r, now: datetime, airplane: bool):
         self.q, self.r, self.now, self.airplane, self.kept = q, r, now, airplane, {}
-        # One plan at a time: two hours wanting the same plan wait for it
-        # rather than both working it out.
+        # Held only to look a plan up and to keep it.
         self.lock = threading.Lock()
 
     def _planned(self, key, depart: datetime) -> Planned:
+        """The plan for `key`, worked out once: two hours wanting the same
+        plan wait for it (one_at_a_time on this window's key), hours with
+        different keys plan at once. One lock across every plan made the
+        four workers plan one hour at a time (round 6's audit, N2)."""
         with self.lock:
-            if key not in self.kept:
-                self.kept[key] = plan_for(replace_depart(self.q, depart), self.r)
-            return self.kept[key]
+            if key in self.kept:
+                return self.kept[key]
+        with single_flight.one_at_a_time(("window plan", id(self), key)):
+            with self.lock:
+                if key in self.kept:
+                    return self.kept[key]
+            planned = plan_for(replace_depart(self.q, depart), self.r)
+            with self.lock:
+                self.kept[key] = planned
+            return planned
 
     def for_hour(self, depart: datetime) -> Planned:
         period = winds_aloft.winds_key_for(depart)
