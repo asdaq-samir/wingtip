@@ -1,6 +1,7 @@
 package app.wingtipmaps.android
 
 import android.app.assist.AssistContent
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -58,6 +59,12 @@ class MainActivity : ComponentActivity(), FileTaker {
 
     /** Why a file handed to the app was not taken, until it is read. */
     private val problem = MutableStateFlow<String?>(null)
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase)
+        // The app's Light or Dark in the window's theme before Android 12 (NightMode.override).
+        NightMode.override(newBase)?.let(::applyOverrideConfiguration)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // The launch's splash screen, the same from Android 8 on (the

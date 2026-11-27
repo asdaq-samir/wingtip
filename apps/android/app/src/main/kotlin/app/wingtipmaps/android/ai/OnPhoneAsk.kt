@@ -11,6 +11,7 @@ import app.wingtipmaps.android.api.Assistant
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantLine
 import app.wingtipmaps.android.api.AssistantSource
+import app.wingtipmaps.android.format.Format
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import org.xmlpull.v1.XmlPullParser
@@ -85,7 +86,7 @@ object OnPhoneAsk {
 
     /** "Find airport KPAO" from findAirport and its arguments. */
     fun label(name: String, args: String): String {
-        val words = name.replace(Regex("([a-z])([A-Z])"), "$1 $2").lowercase().replaceFirstChar { it.uppercase() }
+        val words = name.replace(Regex("([a-z])([A-Z])"), "$1 $2").lowercase().let(Format::capital)
         return listOf(words, args.trim()).filter { it.isNotEmpty() }.joinToString(" ")
     }
 

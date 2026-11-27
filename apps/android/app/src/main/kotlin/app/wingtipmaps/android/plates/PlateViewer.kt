@@ -75,5 +75,7 @@ fun PlateViewer(title: String, url: String, georeference: PlateGeoreference?, on
 private fun PlateWithOwnShip(page: Bitmap, georeference: PlateGeoreference?, flight: FlightModel, ink: ChartInk) {
     val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
     val at = PlatePosition.of(fix, georeference).getOrNull()
-    ZoomablePage(page, null, at?.let { PageMark(it.x, it.y, it.rotationDeg) }, ink.pageInk())
+    // White on black at night unless picked, no brighter than the chart (rememberPlateLook).
+    val look = rememberPlateLook()
+    ZoomablePage(page, null, at?.let { PageMark(it.x, it.y, it.rotationDeg) }, ink.pageInk(), inverted = look.inverted, brightness = look.brightness)
 }

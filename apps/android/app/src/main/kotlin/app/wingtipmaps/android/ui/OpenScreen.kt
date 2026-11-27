@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import app.wingtipmaps.android.Extra
 import app.wingtipmaps.android.Extras
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
@@ -103,7 +104,7 @@ internal object OpenScreen {
             return null
         }
         val named = screenOf(screen)
-            ?: return "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} is not on this phone yet."
+            ?: return "${Format.capital(screen.name.lowercase()).replace('_', ' ')} is not on this phone yet."
         ScreenRequests.ask(named)
         return null
     }

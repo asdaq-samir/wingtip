@@ -40,6 +40,16 @@ class OwnTrailTest {
     }
 
     @Test
+    fun theAnswerAlreadyAskedForTheFixIsTakenNotAskedAgain() {
+        var asked = 0
+        val trail = OwnTrail(file, underway = { asked++; true }, distance = flat, nowMs = { clockMs }, writing = Dispatchers.Unconfined)
+        assertFalse(trail.took(fix(42.0, -88.0, 100.0), known = Result.success(false)))
+        // The engine failing for the fix: the point is kept, as the trail's own rule.
+        assertTrue(trail.took(fix(42.0, -88.0, 100.0), known = Result.failure(IllegalStateException("no engine"))))
+        assertEquals(0, asked)
+    }
+
+    @Test
     fun aPointEveryTenthOfAMileOrTenSeconds() {
         val trail = trail()
         assertTrue(trail.took(fix(42.0, -88.0, 100.0)))

@@ -92,7 +92,7 @@ class IcingModel(private val ask: suspend (fixes: String, altFt: String, legMin:
     companion object {
         /** A severity as a row says it: "Light", "None"; "No forecast"
          *  for a leg the AWC had none for. */
-        fun severityWord(severity: String?): String = severity?.replaceFirstChar { it.uppercase() } ?: "No forecast"
+        fun severityWord(severity: String?): String = severity?.let(Format::capital) ?: "No forecast"
 
         fun rows(found: IcingForecast, legs: List<Leg>): List<Row> = found.legs.map { leg ->
             val on = legs.getOrNull(leg.index)

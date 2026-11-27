@@ -82,7 +82,7 @@ fun whenWords(row: EngineContract.GonogoAdverseRowsAnswerRowsItem, zone: ZoneId 
         }
     }
     val said = listOfNotNull(legs, at).joinToString(" · ")
-    return if (said.isEmpty()) "During the flight" else said.replaceFirstChar { it.uppercaseChar() }
+    return if (said.isEmpty()) "During the flight" else Format.capital(said)
 }
 
 private val ZONE = DateTimeFormatter.ofPattern("zzz", Locale.US)

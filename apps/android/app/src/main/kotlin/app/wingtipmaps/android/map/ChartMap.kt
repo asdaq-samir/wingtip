@@ -118,7 +118,7 @@ fun ChartMap(
     traffic: () -> List<TrafficDrawing.Target> = { emptyList() },
     tracked: String? = null,
     night: Boolean = false,
-    look: ChartLook = ChartLook(),
+    look: () -> ChartLook = { ChartLook() },
     bottomInset: Int = 0,
     opensAt: Pair<Double, Double>? = null,
     ownShip: () -> OwnShipMark = { OwnShipMark() },
@@ -142,7 +142,6 @@ fun ChartMap(
     holder.onView = onView
     holder.opensAt = opensAt
     holder.night = night
-    holder.look = look
 
     DisposableEffect(lifecycle, holder) {
         val observer = LifecycleEventObserver { _, event -> holder.on(event) }
@@ -160,7 +159,8 @@ fun ChartMap(
     // Night and Larger Map Labels change the style in place (paint, layers), never by a new style.
     LaunchedEffect(holder, template, minZoom, maxZoom, overlays) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.downloads() }
-    LaunchedEffect(holder, night, look) { holder.paint(night) }
+    // The Dimmer and Contrast read as they move (a State, so no recomposition), the words relabelled only as night turns.
+    LaunchedEffect(holder, night) { holder.paint(night); androidx.compose.runtime.snapshotFlow(look).collect { holder.look = it; holder.paint(night, relabel = false) } }
     // Edge to edge: the credits clear a cutout or a navigation bar at the left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
     LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
@@ -274,7 +274,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             chartTileMax = maxZoom.also { lastTemplate = template }
             map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
             val written = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather).also { writtenJson = it; writtenLayers = null }
-            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac)
+            val json = MapDim.style(app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac))
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is shown, so a slow tile never leaves it hidden.
@@ -302,13 +302,13 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
     }
 
-    /** The chart's paint by day or night (MapStyle.chartPaint). */
-    fun paint(night: Boolean) {
+    /** The chart's paint by day or night (MapStyle.chartPaint); the words relabelled only as night turns, not at each Dimmer step. */
+    fun paint(night: Boolean, relabel: Boolean = true) {
         if (destroyed) return
         view.getMapAsync { map ->
             map.getStyle { style ->
-                val paint = look.paint(night)
-                relabel(style)
+                val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax) } // the marks at the chart's light (MapDim)
+                if (relabel) relabel(style)
                 RouteLegLayer.paint(style, night)
                 style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
                     PropertyFactory.lineColor(edgeColour(night)),

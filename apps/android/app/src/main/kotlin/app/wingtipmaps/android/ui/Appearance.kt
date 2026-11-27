@@ -2,11 +2,14 @@ package app.wingtipmaps.android.ui
 
 import android.app.Activity
 import android.content.Context
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -20,10 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * The Map card's Appearance, the web's three: the phone's own light or
  * dark, Light and Dark. How far the chart is dimmed is the Map card's
- * Dimmer, one for each appearance (ChartLook), where Dark + Bright was the
- * chart undimmed under the dark screen until the web's 2026-11-18 change;
- * a kept one is Dark with a dark Dimmer of 0 (ChartLookPreference.migrate).
- * `key` is what the "wingtip" store keeps.
+ * Dimmer, one for each appearance (ChartLook). `key` is what the
+ * "wingtip" store keeps.
  */
 enum class Appearance(val key: String) {
     SYSTEM("system"), LIGHT("light"), DARK("dark");
@@ -49,7 +50,6 @@ object AppearancePreference {
     fun flow(context: Context): StateFlow<Appearance?> {
         if (state.value == null) {
             val kept = Kept.of(context, "wingtip")
-            ChartLookPreference.migrate(kept)
             state.value = Appearance.of(kept[KEY])
         }
         return state.asStateFlow()
@@ -68,17 +68,27 @@ fun rememberAppearance(): State<Appearance?> = AppearancePreference.flow(LocalCo
 
 /** Whether the screen is dark, as the theme decided it (WingtipTheme),
  *  and the Map card's Dimmer and Contrast, for what draws below it: the
- *  map's paint and a plate's. */
-class Shade(val dark: Boolean, val look: ChartLook = ChartLook())
+ *  map's paint and a plate's. The look is a State read where it is used
+ *  (`look`), so a slider's step redraws those readers only, not every
+ *  screen under the theme as a new Shade in the static local did (the
+ *  round-4 phones audit, 2026-11-27); the Shade itself is new only as
+ *  the screen turns dark or light. */
+@Stable
+class Shade(val dark: Boolean, private val looked: State<ChartLook?> = mutableStateOf(null)) {
+    val look: ChartLook get() = looked.value ?: ChartLook()
+}
 
 val LocalShade = staticCompositionLocalOf { Shade(dark = false) }
 
 /** The appearance as the theme reads it, the phone's dark asked once. */
 @Composable
 internal fun rememberShade(): Shade {
-    val system = isSystemInDarkTheme()
+    // The phone's own dark (NightMode.systemDark), read again as the configuration changes.
+    val system = LocalConfiguration.current.let { NightMode.systemDark(LocalContext.current) }
     val picked = rememberAppearance().value ?: Appearance.SYSTEM
-    return Shade(picked.dark(system), rememberChartLook().value ?: ChartLook())
+    val looked = rememberChartLook()
+    val dark = picked.dark(system)
+    return remember(dark, looked) { Shade(dark, looked) }
 }
 
 /** The status and navigation bars' icons light on a dark screen and dark

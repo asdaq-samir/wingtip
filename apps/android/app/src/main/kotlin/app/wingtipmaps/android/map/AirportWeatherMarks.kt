@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.map
 
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.ui.FlightCategory
 
 /**
  * What a reporting field's symbol wears for its weather, by the airport
@@ -14,17 +15,12 @@ import app.wingtipmaps.android.design.generated.WingtipColors
  */
 object AirportWeatherMarks {
     /** Each flight category's colour, the brand's category tokens (the
-     *  web's lib/map/flightCategory CATEGORY_COLOURS): green good, blue
-     *  marginal, red instrument, purple worse, in the colours a pilot
-     *  already reads them in. The category itself is the engine's
-     *  (`flight_category`, AIM 7-1-7), asked by the planner; only its
-     *  colour is the app's. */
-    val CATEGORY_COLOURS: Map<String, String> = linkedMapOf(
-        "VFR" to WingtipColors.Category.VFR_HEX,
-        "MVFR" to WingtipColors.Category.MVFR_HEX,
-        "IFR" to WingtipColors.Category.IFR_HEX,
-        "LIFR" to WingtipColors.Category.LIFR_HEX,
-    )
+     *  web's lib/map/flightCategory CATEGORY_COLOURS), from the one table
+     *  (FlightCategory): green good, blue marginal, red instrument,
+     *  purple worse, in the colours a pilot already reads them in. The
+     *  category itself is the engine's (`flight_category`, AIM 7-1-7),
+     *  asked by the planner; only its colour is the app's. */
+    val CATEGORY_COLOURS: Map<String, String> = FlightCategory.HEX
 
     private const val HALO = "h"
 

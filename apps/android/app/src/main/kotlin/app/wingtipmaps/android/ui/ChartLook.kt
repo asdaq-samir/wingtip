@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import android.app.UiModeManager
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.R
@@ -79,16 +79,25 @@ object ChartLookPreference {
     private val DIM_LIGHT = floatPreferencesKey("chart_dim_light")
     private val DIM_DARK = floatPreferencesKey("chart_dim_dark")
     private val CONTRAST = floatPreferencesKey("chart_contrast")
-    private val APPEARANCE = stringPreferencesKey("appearance")
     private val state = MutableStateFlow<ChartLook?>(null)
 
     fun flow(context: Context): StateFlow<ChartLook?> {
         if (state.value == null) {
             val kept = Kept.of(context, "wingtip")
-            migrate(kept)
             state.value = ChartLook(kept[DIM_LIGHT] ?: 0f, kept[DIM_DARK] ?: ChartLook.NIGHT_DIM, kept[CONTRAST] ?: 0f)
         }
         return state.asStateFlow()
+    }
+
+    /** A slider's place as it is dragged: the map follows it, and the
+     *  file is written once, as the drag ends (keep). */
+    fun drag(look: ChartLook) {
+        state.value = look
+    }
+
+    /** The place the drag ended at, written to the file. */
+    fun keep(context: Context) {
+        state.value?.let { set(context, it) }
     }
 
     fun set(context: Context, look: ChartLook) {
@@ -99,19 +108,6 @@ object ChartLookPreference {
         }
         state.value = look
     }
-
-    /** Appearance's Dark + Bright, gone as on the web (its preferences
-     *  version 12, 2026-11-18): a kept one becomes Dark with a dark Dimmer
-     *  of 0, the chart as printed as before. */
-    internal fun migrate(kept: Kept) {
-        if (kept[APPEARANCE] != DARK_BRIGHT) return
-        kept.edit {
-            it[APPEARANCE] = Appearance.DARK.key
-            it[DIM_DARK] = 0f
-        }
-    }
-
-    internal const val DARK_BRIGHT = "dark-bright"
 }
 
 @Composable
@@ -124,8 +120,33 @@ fun rememberChartLook(): State<ChartLook?> = ChartLookPreference.flow(LocalConte
  * the app's Dark or Light, not the phone's (the themes audit, 2026-11-27:
  * a pilot who set Dark launched into a white window). Set as Appearance is
  * picked and once at the start; the system keeps it across launches.
+ * Before Android 12 there is no such call: the activity's own
+ * configuration takes the pick as it is made (`override`, from
+ * MainActivity.attachBaseContext), so its window's DayNight theme is the
+ * app's from the first frame after the splash (the round-4 phones audit).
  */
 object NightMode {
+    /** The activity's uiMode with the app's Light or Dark in its night
+     *  bits, before Android 12 and where one is picked; null otherwise
+     *  (the system's own, or the phone's followed). Only uiMode is set,
+     *  so the rest of the configuration still follows the device. */
+    fun override(context: Context): Configuration? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return null
+        val night = when (AppearancePreference.flow(context).value) {
+            Appearance.LIGHT -> Configuration.UI_MODE_NIGHT_NO
+            Appearance.DARK -> Configuration.UI_MODE_NIGHT_YES
+            else -> return null
+        }
+        val type = context.resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+        return Configuration().apply { uiMode = type or night }
+    }
+
+    /** Whether the phone itself is dark: the application's configuration,
+     *  which `override` leaves the phone's, where the activity's may carry
+     *  the app's pick. */
+    fun systemDark(context: Context): Boolean =
+        (context.applicationContext.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
     fun apply(context: Context, appearance: Appearance) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         val mode = when (appearance) {
@@ -150,12 +171,16 @@ fun ChartLookRows() {
             stringResource(R.string.chart_dimmer), look.dim(dark), 0f..ChartLook.DIM_MAX, "chart-dimmer",
             start = { Icon(Icons.Filled.BrightnessHigh, contentDescription = stringResource(R.string.chart_dimmer_bright)) },
             end = { Icon(Icons.Filled.BrightnessLow, contentDescription = stringResource(R.string.chart_dimmer_dim)) },
-        ) { v -> ChartLookPreference.set(context, if (dark) look.copy(dimDark = v) else look.copy(dimLight = v)) }
+            onChange = { v -> ChartLookPreference.drag(if (dark) look.copy(dimDark = v) else look.copy(dimLight = v)) },
+            onDone = { ChartLookPreference.keep(context) },
+        )
         LookSlider(
             stringResource(R.string.chart_contrast), look.offset, ChartLook.CONTRAST_MIN..ChartLook.CONTRAST_MAX, "chart-contrast",
             start = { Icon(Icons.Outlined.Circle, contentDescription = stringResource(R.string.chart_contrast_flatter)) },
             end = { Icon(Icons.Filled.Contrast, contentDescription = stringResource(R.string.chart_contrast_harder)) },
-        ) { v -> ChartLookPreference.set(context, look.copy(contrast = v)) }
+            onChange = { v -> ChartLookPreference.drag(look.copy(contrast = v)) },
+            onDone = { ChartLookPreference.keep(context) },
+        )
     }
 }
 
@@ -168,10 +193,12 @@ private fun LookSlider(
     start: @Composable () -> Unit,
     end: @Composable () -> Unit,
     onChange: (Float) -> Unit,
+    onDone: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         start()
-        // Material's state-holding slider, as the plate's transparency: dragged, the map follows.
+        // Material's state-holding slider, as the plate's transparency:
+        // dragged, the map follows; let go, the place is kept.
         val stops = ((range.endInclusive - range.start) / ChartLook.STEP).roundToInt() - 1
         val state = remember(range) { SliderState(value = value, steps = stops, trackRange = range) }
         if (!state.isDragging) state.value = value
@@ -181,6 +208,7 @@ private fun LookSlider(
                 state.value = v
                 onChange(v)
             },
+            onValueChangeFinished = onDone,
             modifier = Modifier.weight(1f).testTag(tag).semantics { contentDescription = name },
         )
         end()

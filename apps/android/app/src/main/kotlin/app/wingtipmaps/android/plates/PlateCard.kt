@@ -30,7 +30,6 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.MapRules
 import app.wingtipmaps.android.ui.CardButtonGroup
 import app.wingtipmaps.android.ui.GroupAction
-import app.wingtipmaps.android.ui.LocalShade
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SettingsGroup
 import app.wingtipmaps.android.ui.SwitchSettingRow
@@ -105,7 +104,7 @@ fun PlateCard(pick: PlatePick, exit: CardExit) {
             SettingsGroup {
                 SwitchSettingRow(stringResource(R.string.plate_annotations), look.annotations, 0, 2, model::setAnnotations)
                 // The pilot's pick, else the dark screen (PlateLook.inverted).
-                SwitchSettingRow(stringResource(R.string.plate_invert), look.invert ?: LocalShade.current.dark, 1, 2, model::setInvert)
+                SwitchSettingRow(stringResource(R.string.plate_invert), rememberPlateLook().inverted, 1, 2, model::setInvert)
             }
             OpacityRow(look.opacity, onChange = model::dragOpacity, onDone = { model.keepOpacity() })
         }

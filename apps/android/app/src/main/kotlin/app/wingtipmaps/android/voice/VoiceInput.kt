@@ -9,6 +9,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import app.wingtipmaps.android.atc.RadioListener
+import app.wingtipmaps.android.format.Format
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -99,7 +100,7 @@ class VoiceInput private constructor(private val context: Context) {
 
         override fun onError(error: Int) {
             // Said where it is more than silence, so the field can say why.
-            _problem.value = RecognizerErrors.of(error).words?.let { it.replaceFirstChar(Char::uppercaseChar) + "." }
+            _problem.value = RecognizerErrors.of(error).words?.let { Format.capital(it) + "." }
             answer?.complete(_words.value.ifBlank { null })
         }
 

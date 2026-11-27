@@ -96,7 +96,7 @@ class PageRing(val x: Double, val y: Double, val name: String)
  * diagram's hot spots ringed (HotSpotRings).
  */
 @Composable
-fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageInk? = null, rings: List<PageRing> = emptyList(), inverted: Boolean = false) {
+fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageInk? = null, rings: List<PageRing> = emptyList(), inverted: Boolean = false, brightness: Float = 1f) {
     val zoom = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 8f))
     val image = remember(page) { page.asImageBitmap() }
     val you = stringResource(R.string.plate_you_are_here)
@@ -108,8 +108,9 @@ fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageI
         // The page holds still while it is marked, the ink taking the touches.
         val still = ink?.marking?.pen != null
         Box(if (still) Modifier.size(w, h) else Modifier.size(w, h).zoomable(zoom)) {
-            // White on black for the night where asked (a plate beside the map, PlateBeside).
-            Image(image, contentDescription = description, modifier = Modifier.fillMaxSize(), colorFilter = if (inverted) INVERT else null)
+            // White on black for the night where asked, and no brighter than the chart (PlateLook).
+            val filter = remember(inverted, brightness) { pageFilter(inverted, brightness) }
+            Image(image, contentDescription = description, modifier = Modifier.fillMaxSize(), colorFilter = filter)
             if (ink != null) MarkLayer(ink.marks, 1, page.width * k, page.height * k, ink.marking, ink.onMarked)
             if (rings.isNotEmpty()) HotSpotRings(rings)
             if (mark != null) {
@@ -157,8 +158,20 @@ private val HOT_SPOT = 18.dp
 /** Own ship's size on a page. */
 private val OWN_SHIP = 11.dp
 
-/** Each colour turned to its opposite, the page's white black and its ink
- *  white, as the map's plate is at night (Android's ColorMatrix). */
-private val INVERT = ColorFilter.colorMatrix(
-    ColorMatrix(floatArrayOf(-1f, 0f, 0f, 0f, 255f, 0f, -1f, 0f, 0f, 255f, 0f, 0f, -1f, 0f, 255f, 0f, 0f, 0f, 1f, 0f)),
-)
+/** The page's colours as drawn: each turned to its opposite where
+ *  `inverted` (the page's white black, its ink white, as the map's plate
+ *  is at night), then scaled by `brightness`, the chart's light less the
+ *  Dimmer, so the page never outshines the map. Null where it is the
+ *  page as printed. */
+internal fun pageFilter(inverted: Boolean, brightness: Float): ColorFilter? =
+    pageMatrix(inverted, brightness)?.let { ColorFilter.colorMatrix(ColorMatrix(it)) }
+
+/** pageFilter's 4x5 colour matrix (Android's ColorMatrix, whose offsets
+ *  are on 0-255): each channel c drawn as b·c, or b·(255 − c) inverted. */
+internal fun pageMatrix(inverted: Boolean, brightness: Float): FloatArray? {
+    val b = brightness.coerceIn(0f, 1f)
+    if (!inverted && b >= 1f) return null
+    val k = if (inverted) -b else b
+    val o = if (inverted) 255f * b else 0f
+    return floatArrayOf(k, 0f, 0f, 0f, o, 0f, k, 0f, 0f, o, 0f, 0f, k, 0f, o, 0f, 0f, 0f, 1f, 0f)
+}

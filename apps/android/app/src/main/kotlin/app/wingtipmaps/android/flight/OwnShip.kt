@@ -175,6 +175,15 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
     /** At flying speed at the last fix (the trail's `underway`). */
     private var flying = false
 
+    /** The engine's `underway` for the last fix, asked once and passed on
+     *  to the trail, the recorder and the instruments (InFlight, through
+     *  FlightSession), as the iPhone's OwnShip does: it was asked up to
+     *  three times a fix (the round-4 phones audit, 2026-11-27). */
+    private var underwayAt: Pair<Fix, Result<Boolean>>? = null
+
+    /** The answer asked for this fix, null for another. */
+    fun underwayOf(fix: Fix): Result<Boolean>? = underwayAt?.takeIf { it.first === fix }?.second
+
     /** Whether the provider is asked for its best each second. */
     private var precise = false
 
@@ -269,15 +278,17 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         // device fix handed back after the receiver's may be older than
         // the receiver's last, and is own ship again all the same.
         if (!reading) return
+        // Asked before the fix is told, so whoever reads it finds the answer.
+        val atSpeed = underway(fix.groundspeedKt).also { underwayAt = fix to it }
         _fix.value = fix
         kept.took(fix)
         // The path flown, and the phone's position kept with the screen
         // off only while flying and only once the pilot has said Start
         // Flight: offered as the airplane reaches flying speed, stopped as
         // it slows below it, when the next flight asks again.
-        flying(trail.took(fix))
+        flying(trail.took(fix, atSpeed))
         // The track the logbook is drawn from, ground and air alike.
-        FlightRecorder.of(context).took(fix)
+        FlightRecorder.of(context).took(fix, atSpeed)
     }
 
     private fun flying(now: Boolean) {
