@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 from cachetools import TTLCache
 
-from wingtip import airports
+from wingtip import airports, ratelimit
 from wingtip.config import get_settings
 from wingtip.traffic import opensky, opensky_api
 
@@ -29,7 +29,8 @@ def sky(monkeypatch):
     get_settings.cache_clear()
     monkeypatch.setattr(opensky, "_FLIGHTS", TTLCache(maxsize=16, ttl=60))
     monkeypatch.setattr(opensky, "_TRACKS", TTLCache(maxsize=16, ttl=60))
-    monkeypatch.setattr(opensky_api, "_BUDGET", {"flights": {"left": None, "until": 0.0}, "tracks": {"left": None, "until": 0.0}})
+    gate = {"hold_most_s": opensky_api.REFUSED_MOST_S, "reserve": opensky_api.RESERVE}
+    monkeypatch.setattr(opensky_api, "_BUDGET", {"flights": ratelimit.Gate(**gate), "tracks": ratelimit.Gate(**gate)})
     monkeypatch.setattr(opensky_api, "_TOKEN", {"value": None, "until": 0.0})
     monkeypatch.setattr(opensky_api.requests, "post", lambda *a, **k: _resp(200, {"access_token": "t", "expires_in": 1800}))
     places = {
@@ -78,7 +79,7 @@ def test_off_unanswered_or_out_of_credits_its_days_are_unread(sky, monkeypatch):
     assert opensky.flights("a74f08", [TODAY - dt.timedelta(days=1)], TODAY) == ([], 1)
     # OpenSky's own count under the reserve: not asked.
     today = dt.datetime.now(dt.timezone.utc).date()
-    opensky_api._BUDGET["flights"]["left"] = (opensky_api.RESERVE - 1, today)
+    opensky_api._BUDGET["flights"].counted(opensky_api.RESERVE - 1, today)
     monkeypatch.setattr(opensky_api.requests, "get", lambda *a, **k: pytest.fail("asked past the day's credits"))
     assert opensky.flights("a74f08", [TODAY - dt.timedelta(days=3)], TODAY) == ([], 1)
     monkeypatch.delenv("OPENSKY_CLIENT_ID")
@@ -156,4 +157,4 @@ def test_a_flight_listed_twice_is_listed_once_and_a_refusal_waits_a_day_at_the_m
     monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: asked.append(url) or _resp(429, None, refused))
     assert opensky.track("a89c1e", 1793826721, 1793826721 + 86400) is None
     assert opensky.track("a89c1e", 1793826721 + 1, 1793826721 + 86400) is None
-    assert len(asked) == 1 and opensky_api._BUDGET["tracks"]["until"] - opensky_api._clock() <= opensky_api.REFUSED_MOST_S
+    assert len(asked) == 1 and opensky_api._BUDGET["tracks"].until - opensky_api._clock() <= opensky_api.REFUSED_MOST_S

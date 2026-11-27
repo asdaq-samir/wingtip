@@ -7,7 +7,7 @@ import re
 import requests
 from cachetools import TTLCache
 
-from .. import geo
+from .. import geo, outside
 from .common import HEADERS, TIMEOUT_S, _LOCK, _number
 
 #: Virtual Radar Server's route database (its standing data, CC0), as
@@ -33,7 +33,7 @@ def _route_airports(callsign: str) -> list[dict] | None:
         if callsign in _ROUTES:
             return _ROUTES[callsign]
     try:
-        resp = requests.get(ROUTE_URL.format(prefix=callsign[:2], callsign=callsign), headers=HEADERS, timeout=TIMEOUT_S)
+        resp = outside.live_get(ROUTE_URL.format(prefix=callsign[:2], callsign=callsign), headers=HEADERS, timeout=TIMEOUT_S)
         if resp.status_code == 404:
             found = None
         else:

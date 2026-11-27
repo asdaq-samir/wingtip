@@ -4,11 +4,11 @@ month's requests."""
 from __future__ import annotations
 
 import json
-import math
 import time
 
 import requests
 
+from .. import outside, ratelimit
 from ..config import get_settings
 from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _wall
 
@@ -37,7 +37,7 @@ ADSBX_MIN_GAP_S = 30.0
 ADSBX_USAGE_FILE = get_settings().adsbx_usage_file
 #: Its credit, as the map says it where it draws what it gave.
 ADSBX_SOURCE = {"source": "ADS-B Exchange", "license": "ADS-B Exchange terms"}
-_ADSBX = {"last": -math.inf}
+_ADSBX = ratelimit.Gate(gap_s=ADSBX_MIN_GAP_S)
 
 
 def _adsbx_spend(search: bool = False) -> bool:
@@ -49,7 +49,7 @@ def _adsbx_spend(search: bool = False) -> bool:
         return False
     month = time.strftime("%Y-%m", time.gmtime(_wall()))
     with _LOCK:
-        if not search and _clock() - _ADSBX["last"] < ADSBX_MIN_GAP_S:
+        if not search and not _ADSBX.spaced(_clock()):
             return False
         try:
             used = json.loads(ADSBX_USAGE_FILE.read_text()) if ADSBX_USAGE_FILE.exists() else {}
@@ -64,7 +64,7 @@ def _adsbx_spend(search: bool = False) -> bool:
         except OSError:
             return False
         if not search:
-            _ADSBX["last"] = _clock()
+            _ADSBX.asked(_clock())
     return True
 
 
@@ -75,7 +75,7 @@ def _adsbx(path: str, search: bool = False) -> list[dict]:
     if not _adsbx_spend(search):
         raise TrafficUnavailable("ADS-B Exchange may not be asked now")
     try:
-        resp = requests.get(
+        resp = outside.live_get(
             ADSBX_URL.format(path=path),
             timeout=TIMEOUT_S,
             headers={**HEADERS, "x-rapidapi-key": get_settings().adsbx_rapidapi_key or "", "x-rapidapi-host": ADSBX_HOST},

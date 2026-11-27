@@ -43,7 +43,7 @@ def test_an_airplane_named_by_its_address_or_n_number_is_found_from_its_recent_t
     stand_in(monkeypatch, "_wall", lambda: 1791800120.0)
     monkeypatch.setattr(registry, "lookup", lambda **kw: {"n_number": "N174HA", "mode_s_hex": "A128B9"})
     # Behind a refusal's back-off, where the API would not be asked at all.
-    adsb_lol._STATE["blocked_until"] = clock.now + 60
+    adsb_lol._LOL.hold(60, clock.now)
     get, asked = _routed({"trace_recent_a128b9": _status(200, RECENT)})
     with patch("requests.get", side_effect=get):
         (plane,) = traffic.find("N174HA")
@@ -145,3 +145,12 @@ def test_a_search_answer_is_given_again_for_a_few_seconds(clock):
         clock.now += traffic.FOUND_TTL_S
         traffic.find("UAL2088")
         assert get.call_count == 2
+
+
+def test_a_search_whose_turn_is_more_than_a_gap_off_is_answered_at_once(clock):
+    # Behind a back-off seven seconds long, where it slept those seven seconds in the request: the
+    # route then answers with the FAA's record, unchecked (/api/traffic/find).
+    adsb_lol._LOL.hold(7, clock.now)
+    with patch("requests.get") as get, pytest.raises(traffic.TrafficUnavailable):
+        traffic.find("FOO123")
+    assert get.call_count == 0 and clock.now == 1000.0

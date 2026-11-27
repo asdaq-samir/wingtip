@@ -10,7 +10,7 @@ import pytest
 import requests
 from cachetools import TTLCache
 
-from wingtip import airports, registry, traffic, weather
+from wingtip import airports, ratelimit, registry, traffic, weather
 from wingtip.traffic import adsbx as adsbx_part  # the name adsbx is the usage file's fixture
 from wingtip.traffic import adsb_lol, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched
 from wingtip.config import get_settings
@@ -68,7 +68,8 @@ def clock_fixture(monkeypatch, tmp_path):
     # Recorded tracks, the radar and the views are in the live store, which
     # the suite's conftest puts in each test's own folder.
     stand_in(monkeypatch, "_REGIONS", {})
-    stand_in(monkeypatch, "_STATE", {"next_ask": 0.0, "last_ask": -1e9, "search_at": -1e9, "blocked_until": -1e9})
+    stand_in(monkeypatch, "_STATE", {"next_ask": 0.0, "search_at": -1e9})
+    stand_in(monkeypatch, "_LOL", ratelimit.Gate())
     stand_in(monkeypatch, "_FLIGHTS", {})
     stand_in(monkeypatch, "_FOUND", TTLCache(maxsize=256, ttl=traffic.FOUND_TTL_S, timer=clock))
     stand_in(monkeypatch, "_RECENT", TTLCache(maxsize=256, ttl=traffic.RECENT_TTL_S, timer=clock))
@@ -84,7 +85,7 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_WATCH_SOURCE", {})
     stand_in(monkeypatch, "_ON_GROUND", {})
     stand_in(monkeypatch, "_ANSWERED", {})
-    stand_in(monkeypatch, "_GLOBE", {"blocked_until": -1e9})
+    stand_in(monkeypatch, "_GLOBE", ratelimit.Gate())
     # The FAA's radar shown with no LADD list kept, as the owner's own stack
     # has it; the list's own tests hold it (test_traffic_ladd.py).
     monkeypatch.setenv("LADD_REQUIRED", "0")
@@ -165,7 +166,7 @@ def adsbx_fixture(clock, monkeypatch, tmp_path):
     monkeypatch.setenv("ADSBX_RAPIDAPI_KEY", "test-key")
     get_settings.cache_clear()
     stand_in(monkeypatch, "ADSBX_USAGE_FILE", tmp_path / "adsbx_usage.json")
-    stand_in(monkeypatch, "_ADSBX", {"last": -1e9})
+    stand_in(monkeypatch, "_ADSBX", ratelimit.Gate(gap_s=adsbx_part.ADSBX_MIN_GAP_S))
     stand_in(monkeypatch, "_FROM_ADSBX", set())
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
     return tmp_path / "adsbx_usage.json"

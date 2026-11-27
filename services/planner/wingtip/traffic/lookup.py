@@ -9,7 +9,7 @@ from cachetools import TTLCache
 from .. import registry
 from ..single_flight import one_at_a_time
 from .common import TrafficUnavailable, _LOCK, _aircraft
-from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _heard, _paced, _recent
+from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, SEARCH_WAIT_S, _heard, _paced, _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .routes import _CALLSIGN
 
@@ -151,7 +151,9 @@ def _asked(text: str, adsbx_tried: bool = False) -> tuple[list[dict], dict]:
         try:
             found = [
                 a
-                for a in (_aircraft(e) for e in _paced(FIND_URL.format(by=by, value=value)).get("ac") or [] if isinstance(e, dict))
+                for a in (
+                    _aircraft(e) for e in _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S).get("ac") or [] if isinstance(e, dict)
+                )
                 if a is not None
             ]
         except TrafficUnavailable:
