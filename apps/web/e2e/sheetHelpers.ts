@@ -89,6 +89,11 @@ const RANK = { peek: 0, half: 1, full: 2 } as const;
 export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
   const panel = frontSheet(page);
   await panel.waitFor();
+  // A card in the inspector's column (a wide iPad, MapPanel) is the
+  // window's height and has no grabber, as inSheet says: nothing to raise
+  // or lower, where the wait on its size ran out (the night's iOS audit,
+  // 2026-11-27: "card all the way up" on the 13-inch iPad on its side).
+  if (await panel.evaluate((el) => !!el.closest("[data-slot=map-inspector]"))) return;
   const grabber = page.getByTestId("sidebar-trigger-button");
   const size = async () => (await panel.getAttribute("data-panel")) as keyof typeof RANK;
   for (let steps = 0; steps < 6; steps++) {

@@ -1,9 +1,11 @@
 import { expect } from "@playwright/test";
 import {
+  cardHost,
   openRoute,
   typeRoute,
   controlsInSight,
   grabberTo,
+  inSheet,
   openProfile,
   openPanel,
   openTab,
@@ -149,7 +151,7 @@ export const FPL_SCREENS: Screen[] = [
       await page.goto("/app/plan?near=1");
       await settle(page);
       await openPanel(page);
-      await expect(sideDrawer(page).getByTestId("nearest-card")).toBeVisible();
+      await expect(cardHost(page).getByTestId("nearest-card")).toBeVisible();
     },
   },
   {
@@ -229,12 +231,20 @@ export const FPL_SCREENS: Screen[] = [
       await page.goto(`/app/plan?${ROUTE}&view=full`);
       await controlsInSight(page);
       await page.getByTestId("depart-date").click({ timeout: slow(30000) });
-      // Pulled all the way up for the month's last day: at half the card
-      // has the time over the calendar, which runs on under the fold
-      // (DepartPicker, the UI audit's B7), and a day there is out of
-      // sight, where the click waited on it till the test's six minutes.
-      await grabberTo(page, "full");
-      await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
+      // The picker open and its calendar in (its code comes as it opens)
+      // before a day is asked for: the night's iOS audit waited six minutes
+      // on a day of a calendar that was never in the page.
+      await expect(page.getByTestId("depart-picker")).toBeVisible({ timeout: slow(30000) });
+      const day = page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last();
+      await expect(day).toBeAttached({ timeout: slow(30000) });
+      // The month's last day in sight: at half the picker's own card has
+      // the time over the calendar, which runs on under the fold
+      // (DepartPicker, the UI audit's B7), so that card is pulled all the
+      // way up; a popover beside a side panel is in sight as it is, and
+      // the map's grabber is not pressed under it, which took the focus
+      // out of the popover and closed it.
+      await inSheet(page, day);
+      await day.click();
       // The time one button, its hours and minutes two wheels under it
       // (ui/time-field), opened so the audit measures them too.
       await page.getByTestId("depart-time").click();
