@@ -350,6 +350,9 @@ data class AircraftRegistration (
     @SerialName("last_action")
     val lastAction: String? = null,
 
+    @SerialName("make_short")
+    val makeShort: String? = null,
+
     val manufacturer: String? = null,
 
     @SerialName("mode_s_hex")
@@ -362,6 +365,9 @@ data class AircraftRegistration (
 
     @SerialName("model_code")
     val modelCode: String? = null,
+
+    @SerialName("model_short")
+    val modelShort: String? = null,
 
     @SerialName("n_number")
     val nNumber: String,
@@ -6758,11 +6764,12 @@ data class PastFlightSummary (
     val landed: Boolean,
 
     @SerialName("max_alt_ft")
-    val maxAltFt: Double,
+    val maxAltFt: Double? = null,
 
     val off: Double,
     val on: Double,
-    val origin: PastFlightField? = null
+    val origin: PastFlightField? = null,
+    val source: String? = null
 )
 
 @Serializable

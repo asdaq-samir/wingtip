@@ -738,12 +738,16 @@ extension Components {
             public var kit: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/last_action`.
             public var lastAction: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/make_short`.
+            public var makeShort: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/manufacturer`.
             public var manufacturer: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model`.
             public var model: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model_code`.
             public var modelCode: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model_short`.
+            public var modelShort: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/mode_s_hex`.
             public var modeSHex: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/mode_s_octal`.
@@ -793,9 +797,11 @@ extension Components {
             ///   - horsepower:
             ///   - kit:
             ///   - lastAction:
+            ///   - makeShort:
             ///   - manufacturer:
             ///   - model:
             ///   - modelCode:
+            ///   - modelShort:
             ///   - modeSHex:
             ///   - modeSOctal:
             ///   - nNumber:
@@ -829,9 +835,11 @@ extension Components {
                 horsepower: Swift.Int? = nil,
                 kit: Swift.String? = nil,
                 lastAction: Swift.String? = nil,
+                makeShort: Swift.String? = nil,
                 manufacturer: Swift.String? = nil,
                 model: Swift.String? = nil,
                 modelCode: Swift.String? = nil,
+                modelShort: Swift.String? = nil,
                 modeSHex: Swift.String? = nil,
                 modeSOctal: Swift.String? = nil,
                 nNumber: Swift.String,
@@ -865,9 +873,11 @@ extension Components {
                 self.horsepower = horsepower
                 self.kit = kit
                 self.lastAction = lastAction
+                self.makeShort = makeShort
                 self.manufacturer = manufacturer
                 self.model = model
                 self.modelCode = modelCode
+                self.modelShort = modelShort
                 self.modeSHex = modeSHex
                 self.modeSOctal = modeSOctal
                 self.nNumber = nNumber
@@ -902,9 +912,11 @@ extension Components {
                 case horsepower
                 case kit
                 case lastAction = "last_action"
+                case makeShort = "make_short"
                 case manufacturer
                 case model
                 case modelCode = "model_code"
+                case modelShort = "model_short"
                 case modeSHex = "mode_s_hex"
                 case modeSOctal = "mode_s_octal"
                 case nNumber = "n_number"
@@ -15281,13 +15293,15 @@ extension Components {
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/landed`.
             public var landed: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/max_alt_ft`.
-            public var maxAltFt: Swift.Double
+            public var maxAltFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/off`.
             public var off: Swift.Double
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/on`.
             public var on: Swift.Double
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/origin`.
             public var origin: Components.Schemas.PastFlightField?
+            /// - Remark: Generated from `#/components/schemas/PastFlightSummary/source`.
+            public var source: Swift.String?
             /// Creates a new `PastFlightSummary`.
             ///
             /// - Parameters:
@@ -15299,15 +15313,17 @@ extension Components {
             ///   - off:
             ///   - on:
             ///   - origin:
+            ///   - source:
             public init(
                 destination: Components.Schemas.PastFlightField? = nil,
                 id: Swift.Int,
                 inAir: Swift.Bool,
                 landed: Swift.Bool,
-                maxAltFt: Swift.Double,
+                maxAltFt: Swift.Double? = nil,
                 off: Swift.Double,
                 on: Swift.Double,
-                origin: Components.Schemas.PastFlightField? = nil
+                origin: Components.Schemas.PastFlightField? = nil,
+                source: Swift.String? = nil
             ) {
                 self.destination = destination
                 self.id = id
@@ -15317,6 +15333,7 @@ extension Components {
                 self.off = off
                 self.on = on
                 self.origin = origin
+                self.source = source
             }
             public enum CodingKeys: String, CodingKey {
                 case destination
@@ -15327,6 +15344,7 @@ extension Components {
                 case off
                 case on
                 case origin
+                case source
             }
         }
         /// An airplane's last flights found, ten at most, newest first, from

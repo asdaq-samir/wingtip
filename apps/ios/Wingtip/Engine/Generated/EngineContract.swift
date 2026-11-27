@@ -174,6 +174,21 @@ nonisolated enum EngineContract {
         var figure: String
     }
 
+    nonisolated struct AirplaneShortTypeAnswer: Codable, Equatable, Sendable {
+        var makeShort: String?
+        var modelShort: String?
+
+        enum CodingKeys: String, CodingKey {
+            case makeShort = "make_short"
+            case modelShort = "model_short"
+        }
+    }
+
+    nonisolated struct AirplaneShortTypeInput: Codable, Equatable, Sendable {
+        var manufacturer: String?
+        var model: String?
+    }
+
     nonisolated struct AirportDataWordsInput: Codable, Equatable, Sendable {
         /// The planner's AirportPlace data_source.
         var dataSource: String?
@@ -4263,6 +4278,18 @@ nonisolated enum EngineContract {
         var lon: Double
     }
 
+    nonisolated struct FlowEndsAnswer: Codable, Equatable, Sendable {
+        /// When it is no longer kept, Unix seconds.
+        var ends: Double
+    }
+
+    nonisolated struct FlowEndsInput: Codable, Equatable, Sendable {
+        /// When it was heard, Unix seconds.
+        var heard: Double
+        /// Its own end, Unix seconds, where the advisory or restriction gives one.
+        var ends: Double?
+    }
+
     nonisolated struct FlowLevelsAnswer: Codable, Equatable, Sendable {
         var wind: [EngineContract.FlowLevelsAnswerWindItem]
         var icing: [EngineContract.FlowLevelsAnswerIcingItem]
@@ -5785,6 +5812,10 @@ nonisolated enum EngineContract {
         /// Why the field's distances were not worked out (distances then empty): its elevation not known.
         var unchecked: String?
         var distances: [EngineContract.GonogoRunwayChecksAnswerItemDistancesItem]
+        /// The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok.
+        var finding: String
+        /// The finding's reason, the worst first; null for unknown and ok.
+        var fit: String?
 
         enum CodingKeys: String, CodingKey {
             case field
@@ -5802,6 +5833,8 @@ nonisolated enum EngineContract {
             case grass
             case unchecked
             case distances
+            case finding
+            case fit
         }
     }
 
@@ -5819,6 +5852,8 @@ nonisolated enum EngineContract {
         var beyond: Bool
         var runway: Int?
         var end: String?
+        /// Within the runway, but with less than SAFO 19001's 15 per cent to spare.
+        var close: Bool
 
         enum CodingKeys: String, CodingKey {
             case groundRollFt = "ground_roll_ft"
@@ -5830,6 +5865,7 @@ nonisolated enum EngineContract {
             case beyond
             case runway
             case end
+            case close
         }
     }
 
@@ -8125,6 +8161,13 @@ nonisolated enum EngineContract {
 
     nonisolated struct MorseInput: Codable, Equatable, Sendable {
         var ident: String?
+    }
+
+    nonisolated struct NameCaseInput: Codable, Equatable, Sendable {
+        var text: String?
+        /// A long list's rows in one call; where given, text is not read.
+        var texts: [String?]?
+        var kind: String?
     }
 
     nonisolated struct NavaidHoursInput: Codable, Equatable, Sendable {
@@ -12012,6 +12055,39 @@ nonisolated enum EngineContract {
         var text: String
     }
 
+    nonisolated struct RouteTypedAnswer: Codable, Equatable, Sendable {
+        /// The words read, DCT and the level group taken out.
+        var words: [String]
+        /// The points among them in order, each a stop's form, the procedures left out.
+        var points: [String]
+        /// The SIDs and STARs among the words, each with the nearest point before and after it (route_procedures).
+        var procedures: [EngineContract.RouteTypedAnswerProceduresItem]
+        /// The cruise the first level group asked for, feet.
+        var cruiseFt: Double?
+        var goesOn: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case words
+            case points
+            case procedures
+            case cruiseFt = "cruise_ft"
+            case goesOn = "goes_on"
+        }
+    }
+
+    nonisolated struct RouteTypedAnswerProceduresItem: Codable, Equatable, Sendable {
+        var name: String
+        var before: String?
+        var after: String?
+    }
+
+    nonisolated struct RouteTypedInput: Codable, Equatable, Sendable {
+        /// The words typed, each trimmed and uppercased here; blanks left out.
+        var words: [String]
+        /// false where the caller has nowhere to send procedures: every word is then read as a point.
+        var procedures: Bool?
+    }
+
     nonisolated struct RouteWayWarningInput: Codable, Equatable, Sendable {
         /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
         var kinds: [String]
@@ -12137,6 +12213,10 @@ nonisolated enum EngineContract {
         var beyond: Bool
         /// The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
         var tailwindKt: Double
+        /// How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok.
+        var finding: String
+        /// The finding's reason, the worst first; null for unknown and ok.
+        var fit: String?
 
         enum CodingKeys: String, CodingKey {
             case crosswindKt = "crosswind_kt"
@@ -12148,6 +12228,8 @@ nonisolated enum EngineContract {
             case unknown
             case beyond
             case tailwindKt = "tailwind_kt"
+            case finding
+            case fit
         }
     }
 
@@ -12516,6 +12598,16 @@ nonisolated enum EngineContract {
             case midpointFt = "midpoint_ft"
             case rolloutFt = "rollout_ft"
         }
+    }
+
+    nonisolated struct RvrEndsAnswer: Codable, Equatable, Sendable {
+        /// When it is no longer the runway's RVR, Unix seconds.
+        var ends: Double
+    }
+
+    nonisolated struct RvrEndsInput: Codable, Equatable, Sendable {
+        /// When it was heard, Unix seconds.
+        var heard: Double
     }
 
     nonisolated struct RvrReadingsAnswer: Codable, Equatable, Sendable {
@@ -13678,6 +13770,17 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct TrafficFiguresAnswer: Codable, Equatable, Sendable {
+        var staleS: Double
+
+        enum CodingKeys: String, CodingKey {
+            case staleS = "stale_s"
+        }
+    }
+
+    nonisolated struct TrafficFiguresInput: Codable, Equatable, Sendable {
+    }
+
     nonisolated struct TrafficFreshInput: Codable, Equatable, Sendable {
         var ageS: Double?
         var planes: [EngineContract.TrafficFreshInputPlanesItem]
@@ -14005,6 +14108,10 @@ nonisolated enum EngineContract {
         var crosswind: [String]?
         /// Fields whose distances were read past the POH's table: a caution.
         var beyond: [String]?
+        /// Fields whose runway has the wind behind it (the check's fit "tailwind"; AIM 4-3-6c): a caution.
+        var tailwind: [String]?
+        /// Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution.
+        var close: [String]?
         /// Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
         var unchecked: [String]?
     }

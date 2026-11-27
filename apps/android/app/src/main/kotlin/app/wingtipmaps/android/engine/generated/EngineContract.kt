@@ -206,6 +206,20 @@ object EngineContract {
     )
 
     @Serializable
+    data class AirplaneShortTypeAnswer(
+        @SerialName("make_short")
+        val makeShort: String? = null,
+        @SerialName("model_short")
+        val modelShort: String? = null,
+    )
+
+    @Serializable
+    data class AirplaneShortTypeInput(
+        val manufacturer: String? = null,
+        val model: String? = null,
+    )
+
+    @Serializable
     data class AirportDataWordsInput(
         /**
          * The planner's AirportPlace data_source.
@@ -4347,6 +4361,26 @@ object EngineContract {
     )
 
     @Serializable
+    data class FlowEndsAnswer(
+        /**
+         * When it is no longer kept, Unix seconds.
+         */
+        val ends: Double,
+    )
+
+    @Serializable
+    data class FlowEndsInput(
+        /**
+         * When it was heard, Unix seconds.
+         */
+        val heard: Double,
+        /**
+         * Its own end, Unix seconds, where the advisory or restriction gives one.
+         */
+        val ends: Double? = null,
+    )
+
+    @Serializable
     data class FlowLevelsAnswer(
         val wind: List<EngineContract.FlowLevelsAnswerWindItem>,
         val icing: List<EngineContract.FlowLevelsAnswerIcingItem>,
@@ -5935,6 +5969,14 @@ object EngineContract {
          */
         val unchecked: String? = null,
         val distances: List<EngineContract.GonogoRunwayChecksAnswerItemDistancesItem>,
+        /**
+         * The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok.
+         */
+        val finding: String,
+        /**
+         * The finding's reason, the worst first; null for unknown and ok.
+         */
+        val fit: String? = null,
     )
 
     @Serializable
@@ -5962,6 +6004,10 @@ object EngineContract {
         val beyond: Boolean,
         val runway: Int? = null,
         val end: String? = null,
+        /**
+         * Within the runway, but with less than SAFO 19001's 15 per cent to spare.
+         */
+        val close: Boolean,
     )
 
     @Serializable
@@ -8339,6 +8385,16 @@ object EngineContract {
     @Serializable
     data class MorseInput(
         val ident: String? = null,
+    )
+
+    @Serializable
+    data class NameCaseInput(
+        val text: String? = null,
+        /**
+         * A long list's rows in one call; where given, text is not read.
+         */
+        val texts: List<String?>? = null,
+        val kind: String? = null,
     )
 
     @Serializable
@@ -12425,6 +12481,48 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteTypedAnswer(
+        /**
+         * The words read, DCT and the level group taken out.
+         */
+        val words: List<String>,
+        /**
+         * The points among them in order, each a stop's form, the procedures left out.
+         */
+        val points: List<String>,
+        /**
+         * The SIDs and STARs among the words, each with the nearest point before and after it (route_procedures).
+         */
+        val procedures: List<EngineContract.RouteTypedAnswerProceduresItem>,
+        /**
+         * The cruise the first level group asked for, feet.
+         */
+        @SerialName("cruise_ft")
+        val cruiseFt: Double? = null,
+        @SerialName("goes_on")
+        val goesOn: Boolean,
+    )
+
+    @Serializable
+    data class RouteTypedAnswerProceduresItem(
+        val name: String,
+        val before: String? = null,
+        val after: String? = null,
+    )
+
+    @Serializable
+    data class RouteTypedInput(
+        /**
+         * The words typed, each trimmed and uppercased here; blanks left out.
+         */
+        val words: List<String>,
+        /**
+         * false where the caller has nowhere to send procedures: every word is then read as a point.
+         */
+        val procedures: Boolean? = null,
+    )
+
+    @Serializable
     data class RouteWayWarningInput(
         /**
          * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
@@ -12575,6 +12673,14 @@ object EngineContract {
          */
         @SerialName("tailwind_kt")
         val tailwindKt: Double,
+        /**
+         * How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok.
+         */
+        val finding: String,
+        /**
+         * The finding's reason, the worst first; null for unknown and ok.
+         */
+        val fit: String? = null,
     )
 
     @Serializable
@@ -12946,6 +13052,22 @@ object EngineContract {
         val midpointFt: Double? = null,
         @SerialName("rollout_ft")
         val rolloutFt: Double? = null,
+    )
+
+    @Serializable
+    data class RvrEndsAnswer(
+        /**
+         * When it is no longer the runway's RVR, Unix seconds.
+         */
+        val ends: Double,
+    )
+
+    @Serializable
+    data class RvrEndsInput(
+        /**
+         * When it was heard, Unix seconds.
+         */
+        val heard: Double,
     )
 
     @Serializable
@@ -14196,6 +14318,18 @@ object EngineContract {
     )
 
     @Serializable
+    data class TrafficFiguresAnswer(
+        @SerialName("stale_s")
+        val staleS: Double,
+    )
+
+    @Serializable
+    class TrafficFiguresInput {
+        override fun equals(other: Any?): Boolean = other is TrafficFiguresInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class TrafficFreshInput(
         @SerialName("age_s")
         val ageS: Double? = null,
@@ -14532,6 +14666,14 @@ object EngineContract {
          * Fields whose distances were read past the POH's table: a caution.
          */
         val beyond: List<String>? = null,
+        /**
+         * Fields whose runway has the wind behind it (the check's fit "tailwind"; AIM 4-3-6c): a caution.
+         */
+        val tailwind: List<String>? = null,
+        /**
+         * Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution.
+         */
+        val close: List<String>? = null,
         /**
          * Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok.
          */

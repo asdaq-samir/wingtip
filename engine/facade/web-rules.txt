@@ -205,7 +205,7 @@ route_headwind
 route_jurisdiction
 route_position
 route_procedures
-route_read
+route_typed
 route_way_warning
 runway_calm
 runway_closure_marks
@@ -232,6 +232,7 @@ thin_track
 time_ago
 title_case
 tokens
+traffic_figures
 traffic_fresh
 traffic_marks
 traffic_pattern

@@ -104,6 +104,11 @@ export interface VerdictInput {
     crosswind: string[];
     /** Fields whose distances were read past the POH's table. */
     beyond: string[];
+    /** Fields with the wind behind the runway (AIM 4-3-6c), and with less
+     *  than SAFO 19001's 15 per cent to spare: cautions, as FPL's runway
+     *  chips ring them (the engine's runway::fit). */
+    tailwind: string[];
+    close: string[];
     /** Fields whose distances could not be held to the runway: its length
      *  or the field's elevation not known. */
     unchecked: string[];

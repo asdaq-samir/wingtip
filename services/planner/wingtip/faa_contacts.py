@@ -8,6 +8,7 @@ import re
 
 import pandas as pd
 
+from .engine import ask as engine
 from .faa_apt_base import _read_apt_base_cached
 from .single_flight import once
 
@@ -19,10 +20,8 @@ _PO_BOX = re.compile(r"^\s*P\.?\s*O\.?\s*BOX\b", re.IGNORECASE)
 def _street_case(text: str) -> str:
     """The FAA's capitals set as an address is written: "2627 HOLLYWOOD
     WAY" as "2627 Hollywood Way", its compass points (NE) and ordinals
-    (1st) as they are written."""
-    words = text.strip().title()
-    words = re.sub(r"\b(Ne|Nw|Se|Sw)\b", lambda m: m.group(1).upper(), words)
-    return re.sub(r"(\d)(St|Nd|Rd|Th)\b", lambda m: m.group(1) + m.group(2).lower(), words)
+    (1st) as they are written (the engine's name_case)."""
+    return engine("name_case", text=text, kind="street")
 
 
 def _address_of(row) -> str | None:

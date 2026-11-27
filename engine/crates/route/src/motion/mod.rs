@@ -103,6 +103,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "traffic_marks" => traffic::marks_rule(v),
         "traffic_fresh" => traffic::fresh_rule(v),
+        "traffic_figures" => Ok(traffic::figures_json()),
         "own_ship_hex" => traffic::own_ship_hex_rule(v),
         "closest_approach" => traffic::closest_approach_rule(v),
         "airborne_now" => alerts::airborne_now_rule(v),

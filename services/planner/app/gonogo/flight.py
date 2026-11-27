@@ -367,6 +367,9 @@ def findings_for(
             "short": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["over"] for d in c["distances"]))),
             "crosswind": list(dict.fromkeys(c["field"]["ident"] for c in checks if c["crosswind_over"])),
             "beyond": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["beyond"] for d in c["distances"]))),
+            # The cautions FPL's runway chips ring too (the engine's runway::fit).
+            "tailwind": list(dict.fromkeys(c["field"]["ident"] for c in checks if c["headwind_kt"] < 0)),
+            "close": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["close"] for d in c["distances"]))),
             "unchecked": list(
                 dict.fromkeys(c["field"]["ident"] for c in checks if c["unchecked"] or any(d["unknown"] for d in c["distances"]))
             ),

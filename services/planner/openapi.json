@@ -840,6 +840,17 @@
             ],
             "title": "Last Action"
           },
+          "make_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make Short"
+          },
           "manufacturer": {
             "anyOf": [
               {
@@ -894,6 +905,17 @@
               }
             ],
             "title": "Model Code"
+          },
+          "model_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Short"
           },
           "n_number": {
             "title": "N Number",

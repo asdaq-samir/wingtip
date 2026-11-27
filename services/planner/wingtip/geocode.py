@@ -27,6 +27,7 @@ from . import outside
 from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
+from .engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -141,8 +142,14 @@ def _address_label(matched: str) -> str:
     parts = [p.strip() for p in matched.split(",")]
     if len(parts) >= 4:
         street, town, state, zip_code = parts[0], parts[1], parts[2], parts[3]
-        return f"{street.title()}, {town.title()}, {state} {zip_code}"
-    return matched.title()
+        return f"{_street(street)}, {engine('place_name', text=town)}, {state} {zip_code}"
+    return _street(matched)
+
+
+def _street(text: str) -> str:
+    """An address in the geocoder's capitals as it is written (the engine's
+    name_case): "4000 INTERNATIONAL LN" as "4000 International Ln"."""
+    return engine("name_case", text=text, kind="street")
 
 
 def find_addresses(query: str, limit: int = 4) -> list:

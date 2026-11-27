@@ -10,6 +10,7 @@
 
 pub mod cite;
 pub mod faa;
+pub mod names;
 pub mod navaid;
 pub mod proximity;
 pub mod radio;
@@ -138,6 +139,7 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
                 None => Ok(quoted(&rule(opt_text(name, v, "text")?.unwrap_or("")))),
             }
         }
+        "name_case" | "airplane_short_type" => names::answer(name, v),
         "sigmet_hazard" => Ok(quoted(&faa::sigmet_hazard(opt_text(name, v, "hazard")?, opt_text(name, v, "kind")?))),
         "gairmet_title" => Ok(quoted(&faa::gairmet_title(opt_text(name, v, "hazard")?.unwrap_or(""), opt_text(name, v, "severity")?))),
         "pirep_conditions" => {

@@ -11,6 +11,9 @@ const record = {
   n_number: "N654FL",
   manufacturer: "Piper",
   model: "PA-28-140",
+  // As the planner sends them (the engine's airplane_short_type).
+  make_short: "Piper",
+  model_short: "PA-28",
   year: 1971,
   seats: 4,
   engines: 1,

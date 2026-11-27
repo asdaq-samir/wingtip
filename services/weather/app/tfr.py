@@ -40,6 +40,7 @@ from wingtip import outside, weather_store
 # The site turns away a bare python-requests User-Agent, as the FAA's
 # others do (wingtip.faa_data).
 from wingtip.config import FAA_HEADERS as HEADERS
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -145,7 +146,8 @@ def tfrs(features: list) -> list:
             {
                 "notam_id": notam_id,
                 "title": props.get("TITLE"),
-                "kind": (props.get("LEGAL") or "").title() or None,
+                # "SECURITY" as "Security" (the engine's title_case).
+                "kind": engine("title_case", text=props.get("LEGAL") or "") or None,
                 "state": props.get("STATE"),
                 "modified": props.get("LAST_MODIFICATION_DATETIME") or "",
                 "polygons": [],

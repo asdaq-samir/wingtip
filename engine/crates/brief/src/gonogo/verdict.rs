@@ -127,6 +127,11 @@ pub struct Runways {
     /// hotter, heavier or a stronger tailwind than it goes -- so the
     /// figures are the table's edge, shorter than the airplane will need.
     pub beyond: Vec<String>,
+    /// Fields whose runway has the wind behind it (AIM 4-3-6c), and fields
+    /// with less than SAFO 19001's 15 per cent to spare: cautions, as
+    /// FPL's runway chips say them (runway::fit).
+    pub tailwind: Vec<String>,
+    pub close: Vec<String>,
     /// Fields whose distances could not be held against the runway: its
     /// length or the field's elevation is not known.
     pub unchecked: Vec<String>,

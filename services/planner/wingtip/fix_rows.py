@@ -9,6 +9,7 @@ import csv
 from pathlib import Path
 
 from . import geo
+from .engine import ask as engine
 from .figure import number
 
 #: What a fix is to a pilot, by NASR's FIX_USE_CODE.
@@ -122,7 +123,9 @@ def _read_navaids(path: Path) -> dict[str, list[dict]]:
                 "kind": kind,
                 "vfr": False,
                 "navaid": True,
-                "name": (row.get("NAME") or "").strip().title() or None,
+                # A navaid is named for its place: "LA CROSSE", "McCOOK" as
+                # a town is spelt (the engine's place_name).
+                "name": engine("place_name", text=(row.get("NAME") or "").strip()) or None,
                 "freq": (row.get("FREQ") or "").strip() or None,
                 "state": (row.get("STATE_CODE") or "").strip() or None,
                 "mag_var": _station_variation(row),

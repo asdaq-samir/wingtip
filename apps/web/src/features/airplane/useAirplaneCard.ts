@@ -6,7 +6,6 @@ import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import { aircraftKind } from "../../lib/aircraftKind";
 import type { KeptAircraft } from "../../lib/preferences";
 import { useMinuteClock } from "../../lib/useMinuteClock";
-import { shortType } from "../../components/airplane/shortType";
 import { statusLine } from "./airplaneStatus";
 
 /**
@@ -41,8 +40,10 @@ export function useAirplaneCard(tail: string, known: string | null = null) {
   // while its inputs are the same, so a Date.now() inside it froze the age.
   const now = useMinuteClock();
   // Its maker and model in a few words, as the facts strip says them (the
-  // owner, 2026-11-27: "Card title can also have the shorter name").
-  const line = record ? [shortType(record.manufacturer, record.model), record.year].filter(Boolean).join(", ") : null;
+  // owner, 2026-11-27: "Card title can also have the shorter name"), the planner's (the engine's
+  // airplane_short_type).
+  const short = record ? [record.make_short, record.model_short].filter(Boolean).join(" ") : null;
+  const line = record ? [short, record.year].filter(Boolean).join(", ") : null;
   return {
     record,
     details: details.data,

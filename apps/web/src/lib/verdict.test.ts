@@ -7,7 +7,7 @@ const quiet: VerdictInput = {
   airspace: { pending: false, unchecked: false, inForce: [], near: 0, specialUse: [] },
   altitude: { pending: false, problem: null, cautions: [], flown: "FL055 · Lowest" },
   fuel: { pending: false, marginGal: 12.4, requiredGal: 27.6, reserveMin: 30 },
-  runways: { pending: false, worked: true, short: [], crosswind: [], beyond: [], unchecked: [] },
+  runways: { pending: false, worked: true, short: [], crosswind: [], beyond: [], tailwind: [], close: [], unchecked: [] },
   balance: { pending: false, worked: true, problems: [], takeoff: "2,407 lb at 41.2 in" },
   risk: { level: "low", line: "Low · 2 points" },
 };

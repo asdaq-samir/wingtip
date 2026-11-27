@@ -261,6 +261,10 @@
                     "string",
                     "null"
                   ]
+                },
+                "close": {
+                  "type": "boolean",
+                  "description": "Within the runway, but with less than SAFO 19001's 15 per cent to spare."
                 }
               },
               "required": [
@@ -272,9 +276,35 @@
                 "unknown",
                 "beyond",
                 "runway",
-                "end"
+                "end",
+                "close"
               ]
             }
+          },
+          "finding": {
+            "type": "string",
+            "enum": [
+              "stop",
+              "caution",
+              "unknown",
+              "ok"
+            ],
+            "description": "The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok."
+          },
+          "fit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "short",
+              "crosswind",
+              "tailwind",
+              "close",
+              "beyond",
+              null
+            ],
+            "description": "The finding's reason, the worst first; null for unknown and ok."
           }
         },
         "required": [
@@ -292,7 +322,9 @@
           "crosswind_over",
           "grass",
           "unchecked",
-          "distances"
+          "distances",
+          "finding",
+          "fit"
         ]
       }
     }

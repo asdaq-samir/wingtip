@@ -1,5 +1,5 @@
 import { CardFact, CardFacts } from "../CardFacts";
-import { shortMaker, shortModel, shortWeight } from "./shortType";
+import { shortWeight } from "./shortType";
 import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types";
 
 /**
@@ -11,7 +11,7 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  * model's figures over the record's own where the card has them, each only
  * where there is one:
  *  - Its maker as the name, its model as the value ("Airbus" over "A321",
- *    shortMaker and shortModel), else traffic's own description split
+ *    the planner's make_short and model_short), else traffic's own description split
  *    at its first space.
  *  - Year: the year it was built.
  *  - Seats and Engines: the FAA's reference record (ACFTREF), else the
@@ -58,8 +58,8 @@ export function AirplaneFacts({
   // first space ("Airbus" over "A-350-1000"); a bare type code its value
   // under "Model".
   const words = type?.trim().split(/\s+/) ?? [];
-  const maker = shortMaker(record?.manufacturer) ?? (words.length > 1 ? words[0]! : null);
-  const made = record ? shortModel(record.model) : words.length ? (words.length > 1 ? words.slice(1).join(" ") : words[0]!) : null;
+  const maker = record?.make_short ?? (words.length > 1 ? words[0]! : null);
+  const made = record ? (record.model_short ?? null) : words.length ? (words.length > 1 ? words.slice(1).join(" ") : words[0]!) : null;
   const built = record?.year ?? year ?? null;
   const seats = model?.seats ?? record?.seats ?? null;
   const engines = model?.engines ?? record?.engines ?? null;

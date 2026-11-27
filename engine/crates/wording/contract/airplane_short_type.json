@@ -1,0 +1,53 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "What an airplane is in a few words, from the aircraft registry's maker and model (ACFTREF): its maker without the words that say what kind of company it is (\"AIRBUS S A S\" Airbus, \"PIPER AIRCRAFT INC\" Piper) and its model without the variant (\"A321-271NX\" A321; one starting with letters alone keeps its number, \"PA-28-140\" PA-28). The owner's \"Maybe just Airbus A321\" (2026-11-27). A name's shortening, no aviation rule.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirplaneShortTypeInput",
+      "type": "object",
+      "properties": {
+        "manufacturer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "AirplaneShortTypeAnswer",
+      "type": "object",
+      "properties": {
+        "make_short": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model_short": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "make_short",
+        "model_short"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

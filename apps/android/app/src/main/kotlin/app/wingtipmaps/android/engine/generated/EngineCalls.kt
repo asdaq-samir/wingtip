@@ -55,6 +55,12 @@ fun Engine.airplaneNeeds(profile: Map<String, JsonElement>? = null, figure: Stri
     rule("airplane_needs", EngineContract.AirplaneNeedsInput(profile = profile, figure = figure))
 
 /**
+ * What an airplane is in a few words, from the aircraft registry's maker and model (ACFTREF): its maker without the words that say what kind of company it is ("AIRBUS S A S" Airbus, "PIPER AIRCRAFT INC" Piper) and its model without the variant ("A321-271NX" A321; one starting with letters alone keeps its number, "PA-28-140" PA-28). The owner's "Maybe just Airbus A321" (2026-11-27). A name's shortening, no aviation rule.
+ */
+fun Engine.airplaneShortType(manufacturer: String? = null, model: String? = null): Result<EngineContract.AirplaneShortTypeAnswer> =
+    rule("airplane_short_type", EngineContract.AirplaneShortTypeInput(manufacturer = manufacturer, model = model))
+
+/**
  * How far a field's figures are to be trusted, in the card's words: "Owner-reported, last updated Aug 2023" where NASR's INSPECT_METHOD_CODE is 1 or 2 (the 5010-1 and 5010-2 mailouts: the owner's own figures, never inspected), null where they were inspected (F, S, C) or the source is not known.
  */
 fun Engine.airportDataWords(dataSource: String? = null, infoDate: String? = null): Result<String?> =
@@ -871,6 +877,12 @@ fun Engine.flowCell(bounds: List<Double>, width: Int, height: Int, lat: Double, 
     rule("flow_cell", EngineContract.FlowCellInput(bounds = bounds, width = width, height = height, lat = lat, lon = lon))
 
 /**
+ * When a traffic management program or restriction (TFMS flow information: a ground stop, ground delay program, airspace flow program or a facility's restriction) stops being kept: its own end where the Command Center gives one, else six hours after it was heard, a design bound (the ATCSCC advises each program's effective period and its revisions, FAA JO 7210.3 chapter 17).
+ */
+fun Engine.flowEnds(heard: Double, ends: Double? = null): Result<EngineContract.FlowEndsAnswer> =
+    rule("flow_ends", EngineContract.FlowEndsInput(heard = heard, ends = ends))
+
+/**
  * The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
  */
 fun Engine.flowLevels(): Result<EngineContract.FlowLevelsAnswer> =
@@ -1495,6 +1507,12 @@ fun Engine.nNumber(text: String? = null): Result<Boolean> =
     rule("n_number", EngineContract.NNumberInput(text = text))
 
 /**
+ * A name the FAA writes in capitals, written as a name is, where faa_words' sentence case and place_name do not fit: a registrant's (kind person, the default: each word capitalised, a company's form such as LLC, Inc's INC as Inc, and a word with figures kept; the aircraft registry's MASTER and DEREG), a maker's (maker: its initials kept too, IAE, CFM; ACFTREF), a facility's (facility: its RCO or TWR kept; NASR's frequencies) or a street address (street: its compass points NE and ordinals 1st as written; NASR's contacts, the Census geocoder). From text, or each of texts as a list (a null row answers ""). A name's spelling, no aviation rule.
+ */
+fun Engine.nameCase(text: String? = null, texts: List<String?>? = null, kind: String? = null): Result<JsonElement> =
+    rule("name_case", EngineContract.NameCaseInput(text = text, texts = texts, kind = kind))
+
+/**
  * A navaid's hours as filed ("24" is "Continuous"), or null where none are filed.
  */
 fun Engine.navaidHours(hours: String? = null): Result<String?> =
@@ -2089,6 +2107,12 @@ fun Engine.routeRead(text: String): Result<EngineContract.RouteReadAnswer> =
     rule("route_read", EngineContract.RouteReadInput(text = text))
 
 /**
+ * A route typed or pasted, read as the route box and Type Route take it: each word as item 15 of a flight plan has it (AIM Appendix 4, route_read: DCT out, a speed and level group the cruise asked for), a position's "@42.1,-88.2" kept whole, the SIDs and STARs among the words (route_procedures; AIM 5-2-9, 5-4-1) the route's procedures, not points, and the rest the points whose form is a stop's (point_kind). goes_on where the words end in a procedure, its field still to be typed. Which field publishes a procedure, and as which kind, is the caller's, from the field's procedures.
+ */
+fun Engine.routeTyped(words: List<String>, procedures: Boolean? = null): Result<EngineContract.RouteTypedAnswer> =
+    rule("route_typed", EngineContract.RouteTypedInput(words = words, procedures = procedures))
+
+/**
  * A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
  */
 fun Engine.routeWayWarning(kinds: List<String>): Result<String?> =
@@ -2165,6 +2189,12 @@ fun Engine.runwaysRead(text: String): Result<List<EngineContract.RunwaysReadAnsw
  */
 fun Engine.rvrCheck(runways: List<EngineContract.RvrCheckInputRunwaysItem>, minimumRvrFt: Double? = null, minimumSm: Double? = null): Result<EngineContract.RvrCheckAnswer> =
     rule("rvr_check", EngineContract.RvrCheckInput(runways = runways, minimumRvrFt = minimumRvrFt, minimumSm = minimumSm))
+
+/**
+ * When a runway's RVR reading heard at a time stops being the runway's: ten minutes after it was heard. AIM 7-1-13 has RVR 'updated approximately once every minute', so a reading not followed in ten is one the system or the feed stopped sending; a design bound that errs toward no RVR, the pilot then taking the visibility (14 CFR 91.175(h)(1)).
+ */
+fun Engine.rvrEnds(heard: Double): Result<EngineContract.RvrEndsAnswer> =
+    rule("rvr_ends", EngineContract.RvrEndsInput(heard = heard))
 
 /**
  * An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet ("35" is 3,500 ft; "00", "FF" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.
@@ -2369,6 +2399,12 @@ fun Engine.tokens(text: String): Result<List<EngineContract.HeardToken>> =
  */
 fun Engine.trackLeftFrom(distanceNm: Double, aboveFt: Double): Result<EngineContract.TrackLeftFromAnswer> =
     rule("track_left_from", EngineContract.TrackLeftFromInput(distanceNm = distanceNm, aboveFt = aboveFt))
+
+/**
+ * The figures the hosts' own traffic code holds to, one copy for them: stale_s, 30 s, past which a position heard (the planner's feed) or the map's last answer (the web, which then says traffic is not available) is too old to draw: the airplane is somewhere else by now. A design choice, no rule: seconds-old internet data is for knowing what is about, never for avoiding it.
+ */
+fun Engine.trafficFigures(): Result<EngineContract.TrafficFiguresAnswer> =
+    rule("traffic_figures", EngineContract.TrafficFiguresInput())
 
 /**
  * Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.

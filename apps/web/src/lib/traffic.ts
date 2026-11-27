@@ -102,10 +102,11 @@ export function ownShipHex(planes: TrafficAircraft[], fix: Fix | null): string |
   return callEngine("own_ship_hex", { planes: heard, fix: fix ? engineFix(fix) : null });
 }
 
-/** How long after its report an airplane is carried on along its track:
- *  past this it may have turned anywhere, and is not drawn (the planner
- *  leaves out positions as old, wingtip.traffic's STALE_S). */
-export const CARRY_S = 30;
+/** How long after its report an airplane is carried on along its track,
+ *  seconds: past this it may have turned anywhere, and is not drawn. The
+ *  engine's STALE_S (traffic_figures), which the planner leaves positions
+ *  as old out by, and past which the map's last answer is gone. */
+export const carryS = (): number => callEngine("traffic_figures", {}).stale_s;
 /** How far ahead its line reaches, seconds: ForeFlight's TrafficTrend
  *  vector shows where a target will be in the next 60. */
 const TREND_S = 60;

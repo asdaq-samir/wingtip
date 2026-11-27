@@ -80,6 +80,13 @@ fn the_runways_finding_is_a_caution_past_the_tables_and_unknown_where_not_checke
         (item.finding.as_str(), item.detail.as_str()),
         ("unknown", "Not checked at C81: runway length or field elevation not known")
     );
+    // A tailwind (AIM 4-3-6c) and less than SAFO 19001's 15 per cent to
+    // spare are cautions, as FPL's runway chips ring them (runway::fit).
+    let mut w = quiet();
+    w.runways.tailwind = strings(&["KDLH"]);
+    w.runways.close = strings(&["C81"]);
+    let item = finding(&w, "runways");
+    assert_eq!((item.finding.as_str(), item.detail.as_str()), ("caution", "Tailwind at KDLH; Less than 15% to spare at C81"));
     // A short runway is still the stop it was.
     v.runways.short = strings(&["KDLH"]);
     assert_eq!(finding(&v, "runways").finding, "stop");

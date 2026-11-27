@@ -190,6 +190,31 @@
         "tailwind_kt": {
           "type": "number",
           "description": "The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it)."
+        },
+        "finding": {
+          "type": "string",
+          "enum": [
+            "stop",
+            "caution",
+            "unknown",
+            "ok"
+          ],
+          "description": "How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok."
+        },
+        "fit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "short",
+            "crosswind",
+            "tailwind",
+            "close",
+            "beyond",
+            null
+          ],
+          "description": "The finding's reason, the worst first; null for unknown and ok."
         }
       },
       "required": [
@@ -201,7 +226,9 @@
         "close",
         "unknown",
         "beyond",
-        "tailwind_kt"
+        "tailwind_kt",
+        "finding",
+        "fit"
       ]
     }
   },

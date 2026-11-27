@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from . import field_status, geo_boxes
+from .engine import ask as engine
 from .faa_apt_base import _read_apt_base_cached
 from .single_flight import once
 
@@ -85,7 +86,7 @@ def _charted_open_airports(path: str, _mtime: float) -> tuple:
             "category": "airport",
             # The chart labels a field by name and identifier, so the
             # candidate carries both -- that is what you read off it.
-            "name": df["ARPT_NAME"].str.title() + " (" + df["ARPT_ID"] + ")",
+            "name": pd.Series(engine("title_case", texts=df["ARPT_NAME"].tolist()), index=df.index) + " (" + df["ARPT_ID"] + ")",
             "lat": lat,
             "lon": lon,
             "bbox_area_m2": 0.0,

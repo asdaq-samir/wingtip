@@ -115,6 +115,9 @@ export function verdictInput({
       short: [...new Set(checks.filter((c) => c.distances.some((d) => d.over)).map((c) => c.field.ident))],
       crosswind: [...new Set(checks.filter((c) => c.crosswindOver).map((c) => c.field.ident))],
       beyond: [...new Set(checks.filter((c) => c.distances.some((d) => d.beyond)).map((c) => c.field.ident))],
+      // The cautions FPL's runway chips ring too (the engine's fit): a tailwind, little to spare.
+      tailwind: [...new Set(checks.filter((c) => c.headwindKt < 0).map((c) => c.field.ident))],
+      close: [...new Set(checks.filter((c) => c.distances.some((d) => d.close)).map((c) => c.field.ident))],
       unchecked: [...new Set(checks.filter((c) => c.unchecked || c.distances.some((d) => d.unknown)).map((c) => c.field.ident))],
     },
     balance: {

@@ -75,6 +75,10 @@ class AircraftRegistration(BaseModel):
     serial: str | None = None
     manufacturer: str | None = None
     model: str | None = None
+    #: Its maker and model in a few words, the engine's airplane_short_type:
+    #: "Airbus" and "A321" for "AIRBUS S A S" and "A321-271NX".
+    make_short: str | None = None
+    model_short: str | None = None
     year: int | None = None
     aircraft_type: str | None = None
     engines: int | None = None
