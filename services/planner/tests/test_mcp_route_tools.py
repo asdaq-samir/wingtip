@@ -152,6 +152,10 @@ def test_airplane_performance_is_the_pilots_airplane_or_none(monkeypatch):
     roles = {r["role"]: r for r in short["runways"]}
     assert set(roles) == {"Departure", "Destination"}
     assert {d["kind"] for d in roles["Departure"]["distances"]} == {"takeoff"} and roles["Departure"]["length_ft"] == 10162
+    # The Brief's own runway finding for each field, and its reason: a
+    # 10,162 ft runway is plenty, with room to spare on every distance.
+    assert {(r["finding"], r["finding_reason"]) for r in short["runways"]} == {("ok", None)}
+    assert not any(d["close"] for r in short["runways"] for d in r["distances"])
     full = {"airport": "KDLH", "airplane_tail": "N123AB", "stations_lb": [170, 0, 0, 0], "fuel_gal": 40}
     loaded = answer(call("airplane_performance", {**full, "empty_weight_lb": 1642, "empty_moment_lb_in": 62600}))
     assert loaded["missing"] == [] and loaded["balance"]["takeoff"]["weight_lb"] > 1642 + 170
