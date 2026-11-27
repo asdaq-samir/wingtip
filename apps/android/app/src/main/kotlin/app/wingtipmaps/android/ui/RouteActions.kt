@@ -16,7 +16,6 @@ import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.route.RouteHome
-import app.wingtipmaps.android.route.departFrom
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -46,10 +45,10 @@ class RouteActions(
     fun canAirport(action: CardAction, place: AirportPlace?): Boolean = when (action) {
         // A field NASR lists as closed is never offered to fly to, depart
         // from or stop at (decision 0043): its card says Closed instead.
-        CardAction.FLY_HERE, CardAction.DEPART_FROM -> place != null && place.closed == null
+        CardAction.FLY_HERE -> place != null && place.closed == null
         CardAction.ADD_STOP -> place != null && place.closed == null && routed
         CardAction.CALL -> !place?.phone.isNullOrBlank()
-        CardAction.ADDRESS -> place != null
+        CardAction.ADDRESS, CardAction.FAVORITE -> place != null
         else -> false
     }
 
@@ -60,7 +59,6 @@ class RouteActions(
                 RouteHome.shared.flewTo(place.ident)
                 haptics?.tap(WingtipHaptic.DIRECT_TO)
             }
-            CardAction.DEPART_FROM -> plan.departFrom(place.ident)
             CardAction.ADD_STOP -> plan.addToRoute(Plan.ChartPoint(place.ident, place.lat, place.lon))
             CardAction.CALL -> place.phone?.let { CardIntents.call(context, it) }
             CardAction.ADDRESS -> CardIntents.address(context, place.lat, place.lon, place.address ?: place.name)

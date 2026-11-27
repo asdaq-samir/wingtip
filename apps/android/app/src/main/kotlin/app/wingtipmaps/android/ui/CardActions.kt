@@ -41,21 +41,26 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
  * app (the web's lib/cardActions.ts ACTION, docs/design/icons.md):
  *
  * - Fly Here: a new route from the airplane to this field.
- * - Depart From: this field the route's departure.
  * - Direct To: from the airplane to the point, then on along the route.
- * - Add as Stop: the field a landing on the way, as Maps' Add Stop.
+ * - Add Stop: the field a landing on the way, as Maps' Add Stop.
  * - Add to Route: the point a turn on the way, where it bends the route
  *   least; not a landing.
  * - Hold Here: a hold at the point (AIM 5-3-8).
+ * - Favorite: the field in the Favorites or out, a toggle in the row.
+ * - Address: the field in the maps app, by its street address where the
+ *   FAA lists one.
+ *
+ * Direct To, Add Stop and Add to Route are the generated wording's
+ * (wording_*); the rest have no wording entry and are this app's strings.
  */
 enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
     FLY_HERE(R.string.action_fly_here, WingtipIcons.flyHere),
-    DEPART_FROM(R.string.action_depart_from, WingtipIcons.departFrom),
     DIRECT_TO(R.string.wording_direct_to, WingtipIcons.directTo),
     ADD_STOP(R.string.wording_add_stop, WingtipIcons.addToRoute),
     ADD_TO_ROUTE(R.string.wording_add_to_route, WingtipIcons.addToRoute),
     HOLD_HERE(R.string.action_hold_here, WingtipIcons.holdHere),
     CALL(R.string.action_call, WingtipIcons.call),
+    FAVORITE(R.string.action_favorite, WingtipIcons.favorite),
     ADDRESS(R.string.action_address, WingtipIcons.address),
     COPY(R.string.action_copy, WingtipIcons.copy),
 }
@@ -63,10 +68,15 @@ enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
 /** Each kind of card's actions, in order (the web's CARD_ACTIONS); the
  *  first is the filled one. */
 enum class CardKind(val actions: List<CardAction>) {
-    /** Fly Here, Add as Stop and Call, then the Favorite tile (the owner,
-     *  2026-11-11: "fly here, add stop, call and address ... no need for
-     *  other buttons", then Favorite in Address's place). */
-    AIRPORT(listOf(CardAction.FLY_HERE, CardAction.ADD_STOP, CardAction.CALL)),
+    /** Fly Here, Add Stop, Call and Favorite (the owner, 2026-11-11: "fly
+     *  here, add stop, call and address ... no need for other buttons",
+     *  then Favorite in Address's place). */
+    AIRPORT(listOf(CardAction.FLY_HERE, CardAction.ADD_STOP, CardAction.CALL, CardAction.FAVORITE)),
+
+    /** An airport's, opened while the pilot adds a stop (the one search
+     *  asked for one): Add Stop first and filled, no Fly Here, Address
+     *  last (the owner, 2026-11-18). */
+    AIRPORT_AS_STOP(listOf(CardAction.ADD_STOP, CardAction.CALL, CardAction.FAVORITE, CardAction.ADDRESS)),
 
     /** A point on the map: the airspace card's. */
     POINT(listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE, CardAction.HOLD_HERE)),

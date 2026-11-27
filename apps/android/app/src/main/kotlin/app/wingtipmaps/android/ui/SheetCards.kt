@@ -84,7 +84,8 @@ private fun Card(
     val ownShip = control.ownShip
     when (page) {
         SheetPage.Home, SheetPage.Plan -> {}
-        is SheetPage.Airport -> AirportCard(page.ident, plan, exit, onDone = showPlan, model = airports)
+        // Opened while the one search asks for a stop: the card's Add Stop first (CardKind.AIRPORT_AS_STOP).
+        is SheetPage.Airport -> AirportCard(page.ident, plan, exit, onDone = { search.done().also { showPlan() } }, asStop = search.addingStop, model = airports)
         is SheetPage.Airplane -> AirplaneCard(page.at, plan, exit, onFlown = showPlan, onOpen = sheet::push)
         is SheetPage.Thing -> ThingCard(page.pick, plan, exit, onRouted = showPlan)
         is SheetPage.Leg -> RouteLegCard(page.index, plan, control.on, exit)
