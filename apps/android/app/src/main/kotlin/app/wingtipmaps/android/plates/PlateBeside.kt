@@ -45,7 +45,6 @@ import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
-import app.wingtipmaps.android.ui.LocalShade
 import app.wingtipmaps.android.ui.PageMark
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.WingtipIcons
@@ -125,7 +124,8 @@ fun MapWithPlate(map: @Composable () -> Unit) {
  *  under them, pinched and panned, own ship on it where the engine places
  *  it (PlatePosition: the plan view only). White on black as the map's
  *  plate is (PlateLook.inverted: the pick, else the dark screen), on black
- *  then, never a solid white pane in a dark cockpit (AIM 8-1-6). */
+ *  then, and no brighter than the chart (the Dimmer), never a solid white
+ *  pane in a dark cockpit (AIM 8-1-6). */
 @Composable
 private fun PlateBesidePane(plate: PlateBeside.Shown, flight: FlightModel = hiltViewModel()) {
     val context = LocalContext.current
@@ -133,19 +133,19 @@ private fun PlateBesidePane(plate: PlateBeside.Shown, flight: FlightModel = hilt
     val page by produceState<Result<android.graphics.Bitmap?>?>(null, plate.url) { value = runCatching { PlatePage.read(plate.url, cache) } }
     val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
     val at = PlatePosition.of(fix, plate.georeference).getOrNull()
-    val kept by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
-    val inverted = kept.invert ?: LocalShade.current.dark
+    val look = rememberPlateLook()
+    val inverted = look.inverted
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.End + WindowInsetsSides.Vertical))) {
             Row(Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs), verticalAlignment = Alignment.CenterVertically) {
                 Text(plate.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 IconButton(onClick = PlateBeside::close) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.plate_beside_close)) }
             }
-            Box(Modifier.weight(1f).fillMaxWidth().background(if (inverted) Color.Black else Color.White), contentAlignment = Alignment.Center) {
+            Box(Modifier.weight(1f).fillMaxWidth().background(if (inverted) Color.Black else Color(look.brightness, look.brightness, look.brightness)), contentAlignment = Alignment.Center) {
                 val read = page
                 val shown = read?.getOrNull()
                 when {
-                    shown != null -> ZoomablePage(shown, null, at?.let { PageMark(it.x, it.y, it.rotationDeg) }, inverted = inverted)
+                    shown != null -> ZoomablePage(shown, null, at?.let { PageMark(it.x, it.y, it.rotationDeg) }, inverted = inverted, brightness = look.brightness)
                     read != null -> ProblemLine(stringResource(R.string.plate_no_page))
                     else -> Loading()
                 }

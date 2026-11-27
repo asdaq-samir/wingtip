@@ -17,14 +17,23 @@ import app.wingtipmaps.android.ui.LocalShade
  */
 @Composable
 fun rememberPlatesShown(): PlatesShown {
-    val context = LocalContext.current
     val plateState by PlatesOnMap.shared.state.collectAsStateWithLifecycle()
-    val kept by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
-    // Inverted with the dark screen unless picked, and no brighter than the chart (PlateLook).
-    val shade = LocalShade.current
-    val plateLook = remember(kept, shade) { kept.copy(dark = shade.dark, brightness = 1f - shade.look.dim(shade.dark)) }
+    val plateLook = rememberPlateLook()
     val plateTags by PlateTagsModel.shared.tags.collectAsStateWithLifecycle()
     val drawnPlates = remember(plateState, plateLook) { plateState.drawn(plateLook) }
     LaunchedEffect(drawnPlates) { PlateTagsModel.shared.want(drawnPlates.map { it.pick }) }
     return remember(drawnPlates, plateLook, plateTags) { PlatesShown(drawnPlates, plateLook, PlateTagsModel.shared.drawing(drawnPlates, plateLook)) }
+}
+
+/** The plate's look as drawn here: the card's settings, inverted with
+ *  the dark screen unless picked, and no brighter than the chart (the
+ *  Dimmer; PlateLook). The one read for the map's plates, the plate
+ *  full screen or beside the map and the airport diagram, so none of
+ *  them is a white page in a dark cockpit (AIM 8-1-6). */
+@Composable
+fun rememberPlateLook(): PlateLook {
+    val context = LocalContext.current
+    val kept by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
+    val shade = LocalShade.current
+    return remember(kept, shade) { kept.copy(dark = shade.dark, brightness = 1f - shade.look.dim(shade.dark)) }
 }
