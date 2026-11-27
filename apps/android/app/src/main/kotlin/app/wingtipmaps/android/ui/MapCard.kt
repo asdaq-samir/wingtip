@@ -66,7 +66,7 @@ object MapCardTags {
  * what is on the map, and nothing else -- the layers as tiles three to a
  * row, each a glyph over its name, filled in the tint while on, then
  * Terrain Hazards (HazardRows), the radar and satellite loop and the model
- * weather. A gear in the card's
+ * weather, then Look: Theme, Appearance, the Dimmer and Contrast. A gear in the card's
  * bar, Material's place for its own actions, opens Settings at its Map
  * group (SettingsAt), its ← back to this card. There is no Map Settings
  * page any more; 3D is the round map button (ThreeDButton).
@@ -99,6 +99,15 @@ fun MapCard(exit: CardExit, open: (SheetPage) -> Unit) {
             // Settings' Extras has Model Weather on.
             WeatherLoopRows()
             if (rememberExtra(Extra.MODEL_WEATHER)) ModelWeatherRow()
+            // Look: the Theme and the Appearance, moved here from Settings as
+            // the web and the iPhone have them (the owner, 2026-11-14), and
+            // the chart's Dimmer and Contrast under them (ChartLook).
+            SectionTitle(stringResource(R.string.settings_look))
+            SettingsGroup {
+                ThemeRow(index = 0, count = 2)
+                AppearanceRow(index = 1, count = 2)
+            }
+            ChartLookRows()
         }
     }
 }

@@ -30,6 +30,7 @@ import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
 import app.wingtipmaps.android.ui.A11y
+import app.wingtipmaps.android.ui.ChartLook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -89,7 +90,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  *   terminal area chart pinned (`terminal`, where the chart has one).
  * @param weather each reporting field's weather pip by ident (AirportWeatherMarks).
  * @param traffic the airplanes heard (Traffic), read here alone, `tracked` the one ringed.
- * @param night the chart dimmed (MapStyle.chartPaint): a dark Appearance but Dark + Bright.
+ * @param night the dark Appearance; `look` the Map card's Dimmer and Contrast on the chart (ChartLook.paint).
  * @param bottomInset what the sheet covers of the map, in pixels: the
  *   map's padding, so its middle is the middle of what the sheet leaves.
  * @param opensAt where the map opens, the airplane's last position
@@ -117,6 +118,7 @@ fun ChartMap(
     traffic: () -> List<TrafficDrawing.Target> = { emptyList() },
     tracked: String? = null,
     night: Boolean = false,
+    look: ChartLook = ChartLook(),
     bottomInset: Int = 0,
     opensAt: Pair<Double, Double>? = null,
     ownShip: () -> OwnShipMark = { OwnShipMark() },
@@ -140,6 +142,7 @@ fun ChartMap(
     holder.onView = onView
     holder.opensAt = opensAt
     holder.night = night
+    holder.look = look
 
     DisposableEffect(lifecycle, holder) {
         val observer = LifecycleEventObserver { _, event -> holder.on(event) }
@@ -156,9 +159,8 @@ fun ChartMap(
 
     // Night and Larger Map Labels change the style in place (paint, layers), never by a new style.
     LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.style(template, minZoom, maxZoom, overlays, line) }
-    LaunchedEffect(holder, night) { holder.paint(night) }
-    // Edge to edge: the credits clear a cutout or a navigation bar at the
-    // left in landscape as well as the sheet below.
+    LaunchedEffect(holder, night, look) { holder.paint(night) }
+    // Edge to edge: the credits clear a cutout or a navigation bar at the left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
     LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
     LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints).also { MapTerrain.destination(routePoints.lastOrNull()?.ident).also { OwnShip.routeLine = line } } }
@@ -199,6 +201,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     var opensAt: Pair<Double, Double>? = null
     /** The dark theme, for the chart's paint in a style set anew. */
     var night = false
+    var look = ChartLook()
     /** What the sheet covers, read as the map opens and set as it settles,
      *  so the map never opens with a padding the sheet has since left
      *  (the web's #543). */
@@ -272,14 +275,14 @@ private class MapHolder(val view: MapView, private val density: Float) {
             val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
-            // At the latest this long after the style is set the map is
-            // shown, so a slow tile never leaves it hidden.
+            // At the latest this long after the style is set the map is shown, so a slow tile never leaves it hidden.
             if (!revealed) {
                 handler.removeCallbacks(latest)
                 handler.postDelayed(latest, REVEAL_LATEST_MS)
             }
             map.setStyle(builder) { style ->
                 styled = true
+                paint(night) // the Dimmer and Contrast over the style's own night paint
                 terminal(style, lastTerminal)
                 CloseMap.draw(style, chartTileMax)
                 route(style, line, lastPoints)
@@ -302,7 +305,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (destroyed) return
         view.getMapAsync { map ->
             map.getStyle { style ->
-                val paint = MapStyle.chartPaint(night)
+                val paint = look.paint(night)
                 relabel(style)
                 RouteLegLayer.paint(style, night)
                 style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
@@ -373,7 +376,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             maxZoom = spec.maxZoom.toFloat()
         }
         style.addSource(RasterSource(MapStyle.CHART_TERMINAL, tiles, 256))
-        val paint = MapStyle.chartPaint(night)
+        val paint = look.paint(night)
         val layer = RasterLayer(MapStyle.CHART_TERMINAL, MapStyle.CHART_TERMINAL).withProperties(
             PropertyFactory.rasterFadeDuration(0f),
             PropertyFactory.rasterResampling(Property.RASTER_RESAMPLING_LINEAR),
@@ -609,14 +612,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
             return
         }
         style.addSource(GeoJsonSource(ROUTE, geoJson))
-        // The course line as the web app draws it, and ForeFlight (the
-        // owner's screenshot, 2026-11-08): the chart's magenta core with a
-        // thin edge round it. ForeFlight shows the green outline only when
-        // the course is selected (the owner, 2026-11-09): the leg whose
-        // Route Leg sheet is open (RouteLegLayer). Over the
-        // airspace, under the navaids and the airports (the style's route
-        // slot), as the web's map lays them. Widths as the web's at zoom
-        // 10 (glStyle's routeLayers).
+        // The course line as the web app draws it, and ForeFlight (the owner's screenshot, 2026-11-08): the
+        // chart's magenta core with a thin edge round it. ForeFlight shows the green outline only when the course
+        // is selected (the owner, 2026-11-09): the leg whose Route Leg sheet is open (RouteLegLayer). Over the
+        // airspace, under the navaids and the airports (the style's route slot), as the web's map lays them.
+        // Widths as the web's at zoom 10 (glStyle's routeLayers).
         val layer = LineLayer(ROUTE, ROUTE).withProperties(
             PropertyFactory.lineColor(COURSE_MAGENTA),
             PropertyFactory.lineWidth(4.5f),

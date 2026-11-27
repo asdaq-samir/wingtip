@@ -26,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -94,7 +96,7 @@ class PageRing(val x: Double, val y: Double, val name: String)
  * diagram's hot spots ringed (HotSpotRings).
  */
 @Composable
-fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageInk? = null, rings: List<PageRing> = emptyList()) {
+fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageInk? = null, rings: List<PageRing> = emptyList(), inverted: Boolean = false) {
     val zoom = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 8f))
     val image = remember(page) { page.asImageBitmap() }
     val you = stringResource(R.string.plate_you_are_here)
@@ -106,7 +108,8 @@ fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageI
         // The page holds still while it is marked, the ink taking the touches.
         val still = ink?.marking?.pen != null
         Box(if (still) Modifier.size(w, h) else Modifier.size(w, h).zoomable(zoom)) {
-            Image(image, contentDescription = description, modifier = Modifier.fillMaxSize())
+            // White on black for the night where asked (a plate beside the map, PlateBeside).
+            Image(image, contentDescription = description, modifier = Modifier.fillMaxSize(), colorFilter = if (inverted) INVERT else null)
             if (ink != null) MarkLayer(ink.marks, 1, page.width * k, page.height * k, ink.marking, ink.onMarked)
             if (rings.isNotEmpty()) HotSpotRings(rings)
             if (mark != null) {
@@ -153,3 +156,9 @@ private val HOT_SPOT = 18.dp
 
 /** Own ship's size on a page. */
 private val OWN_SHIP = 11.dp
+
+/** Each colour turned to its opposite, the page's white black and its ink
+ *  white, as the map's plate is at night (Android's ColorMatrix). */
+private val INVERT = ColorFilter.colorMatrix(
+    ColorMatrix(floatArrayOf(-1f, 0f, 0f, 0f, 255f, 0f, -1f, 0f, 0f, 255f, 0f, 0f, -1f, 0f, 255f, 0f, 0f, 0f, 1f, 0f)),
+)

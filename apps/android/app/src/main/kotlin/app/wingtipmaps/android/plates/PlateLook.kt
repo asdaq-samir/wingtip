@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,13 +26,24 @@ import kotlinx.coroutines.launch
  * night (Invert Plate Colors), and how solid it is, from clear (0) to
  * solid (1); and whether plates are laid on the chart at all, the Map
  * Settings' Approach Plates switch (the web's `plates` preference, on).
+ *
+ * White on black is the pilot's pick (`invert`), else the dark screen
+ * (`dark`), as the reader's pages are (ReaderPage), and the page's light
+ * is capped at the chart's own (`brightness`, the Map card's Dimmer): a
+ * plate at night is never a white page on the dark map, which would undo
+ * the pilot's dark adaptation (AIM 8-1-6; the themes audit, 2026-11-27).
  */
 data class PlateLook(
     val annotations: Boolean = true,
-    val invert: Boolean = false,
+    val invert: Boolean? = null,
     val opacity: Float = DEFAULT_OPACITY,
     val shown: Boolean = true,
+    val dark: Boolean = false,
+    val brightness: Float = 1f,
 ) {
+    /** White on black as drawn: the pick, else the dark screen. */
+    val inverted: Boolean get() = invert ?: dark
+
     companion object {
         /** Nearly solid, so the page reads as ForeFlight's does as it opens,
          *  with a little of the chart showing through at its edges. */
@@ -62,7 +74,9 @@ class PlateLookStore(private val store: DataStore<Preferences>, private val scop
         _look.update { now ->
             PlateLook(
                 annotations = kept[ANNOTATIONS]?.takeUnless { ANNOTATIONS in touched } ?: now.annotations,
-                invert = kept[INVERT]?.takeUnless { INVERT in touched } ?: now.invert,
+                // Before version 2 a kept "false" was every pilot's who never touched the
+                // switch, a white plate at night: read as no pick, so it follows the screen.
+                invert = kept[INVERT]?.takeUnless { INVERT in touched || (it == false && (kept[VERSION] ?: 1) < 2) } ?: now.invert,
                 opacity = kept[OPACITY]?.takeUnless { OPACITY in touched }?.let(::clamped) ?: now.opacity,
                 shown = kept[SHOWN]?.takeUnless { SHOWN in touched } ?: now.shown,
             )
@@ -71,7 +85,17 @@ class PlateLookStore(private val store: DataStore<Preferences>, private val scop
 
     fun setAnnotations(on: Boolean): Job = keep(ANNOTATIONS, on) { it.copy(annotations = on) }
 
-    fun setInvert(on: Boolean): Job = keep(INVERT, on) { it.copy(invert = on) }
+    /** The pilot's pick, kept with version 2, so a "false" is theirs. */
+    fun setInvert(on: Boolean): Job {
+        touched += INVERT
+        _look.update { it.copy(invert = on) }
+        return scope.launch {
+            store.edit {
+                it[INVERT] = on
+                it[VERSION] = 2
+            }
+        }
+    }
 
     /** The slider's place, kept within LEAST_OPACITY and solid. */
     fun setOpacity(value: Float): Job = clamped(value).let { v -> keep(OPACITY, v) { it.copy(opacity = v) } }
@@ -96,6 +120,7 @@ class PlateLookStore(private val store: DataStore<Preferences>, private val scop
         private val INVERT = booleanPreferencesKey("plate_invert")
         private val OPACITY = floatPreferencesKey("plate_opacity")
         private val SHOWN = booleanPreferencesKey("map_plates")
+        private val VERSION = intPreferencesKey("plate_look_version")
 
         fun clamped(value: Float): Float = value.coerceIn(PlateLook.LEAST_OPACITY, 1f)
 

@@ -18,24 +18,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Settings' Appearance, the web's four (the owner, 2026-11-13: Chart at
- * Night folded into it): the phone's own light or dark, Light, Dark --
- * which dims the chart with the screen, the night's default -- and Dark +
- * Bright, dark with the chart as printed. `key` is what the "wingtip"
- * store keeps.
+ * The Map card's Appearance, the web's three: the phone's own light or
+ * dark, Light and Dark. How far the chart is dimmed is the Map card's
+ * Dimmer, one for each appearance (ChartLook), where Dark + Bright was the
+ * chart undimmed under the dark screen until the web's 2026-11-18 change;
+ * a kept one is Dark with a dark Dimmer of 0 (ChartLookPreference.migrate).
+ * `key` is what the "wingtip" store keeps.
  */
 enum class Appearance(val key: String) {
-    SYSTEM("system"), LIGHT("light"), DARK("dark"), DARK_BRIGHT("dark-bright");
+    SYSTEM("system"), LIGHT("light"), DARK("dark");
 
     /** Whether the screen is dark, the phone's own where it is followed. */
     fun dark(systemDark: Boolean): Boolean = when (this) {
         SYSTEM -> systemDark
         LIGHT -> false
-        DARK, DARK_BRIGHT -> true
+        DARK -> true
     }
-
-    /** Whether the chart is dimmed (MapStyle.chartPaint): dark but Dark + Bright. */
-    fun chartDimmed(systemDark: Boolean): Boolean = dark(systemDark) && this != DARK_BRIGHT
 
     companion object {
         fun of(key: String?): Appearance = entries.firstOrNull { it.key == key } ?: SYSTEM
@@ -49,31 +47,38 @@ object AppearancePreference {
     private val state = MutableStateFlow<Appearance?>(null)
 
     fun flow(context: Context): StateFlow<Appearance?> {
-        if (state.value == null) state.value = Appearance.of(Kept.of(context, "wingtip")[KEY])
+        if (state.value == null) {
+            val kept = Kept.of(context, "wingtip")
+            ChartLookPreference.migrate(kept)
+            state.value = Appearance.of(kept[KEY])
+        }
         return state.asStateFlow()
     }
 
     fun set(context: Context, appearance: Appearance) {
         Kept.of(context, "wingtip").edit { it[KEY] = appearance.key }
         state.value = appearance
+        // The launch's window in it too (NightMode).
+        NightMode.apply(context, appearance)
     }
 }
 
 @Composable
 fun rememberAppearance(): State<Appearance?> = AppearancePreference.flow(LocalContext.current).collectAsStateWithLifecycle()
 
-/** Whether the screen is dark and the chart dimmed, as the theme decided
- *  them (WingtipTheme), for what draws below it: the map's paint. */
-class Shade(val dark: Boolean, val chartDimmed: Boolean)
+/** Whether the screen is dark, as the theme decided it (WingtipTheme),
+ *  and the Map card's Dimmer and Contrast, for what draws below it: the
+ *  map's paint and a plate's. */
+class Shade(val dark: Boolean, val look: ChartLook = ChartLook())
 
-val LocalShade = staticCompositionLocalOf { Shade(dark = false, chartDimmed = false) }
+val LocalShade = staticCompositionLocalOf { Shade(dark = false) }
 
 /** The appearance as the theme reads it, the phone's dark asked once. */
 @Composable
 internal fun rememberShade(): Shade {
     val system = isSystemInDarkTheme()
     val picked = rememberAppearance().value ?: Appearance.SYSTEM
-    return Shade(picked.dark(system), picked.chartDimmed(system))
+    return Shade(picked.dark(system), rememberChartLook().value ?: ChartLook())
 }
 
 /** The status and navigation bars' icons light on a dark screen and dark

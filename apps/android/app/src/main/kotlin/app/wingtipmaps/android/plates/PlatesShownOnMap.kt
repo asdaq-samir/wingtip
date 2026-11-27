@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.map.PlatesShown
+import app.wingtipmaps.android.ui.LocalShade
 
 /**
  * The approach plates on the chart (MapPane's ChartMap), drawn as their
@@ -18,7 +19,10 @@ import app.wingtipmaps.android.map.PlatesShown
 fun rememberPlatesShown(): PlatesShown {
     val context = LocalContext.current
     val plateState by PlatesOnMap.shared.state.collectAsStateWithLifecycle()
-    val plateLook by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
+    val kept by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
+    // Inverted with the dark screen unless picked, and no brighter than the chart (PlateLook).
+    val shade = LocalShade.current
+    val plateLook = remember(kept, shade) { kept.copy(dark = shade.dark, brightness = 1f - shade.look.dim(shade.dark)) }
     val plateTags by PlateTagsModel.shared.tags.collectAsStateWithLifecycle()
     val drawnPlates = remember(plateState, plateLook) { plateState.drawn(plateLook) }
     LaunchedEffect(drawnPlates) { PlateTagsModel.shared.want(drawnPlates.map { it.pick }) }
