@@ -534,7 +534,7 @@ export type GonogoRunwayChecksAnswer = {
   /**
    * The finding's reason, the worst first; null for unknown and ok.
    */
-  fit: "short" | "crosswind" | "tailwind" | "close" | "beyond" | null;
+  fit: "short" | "crosswind" | "tailwind" | "close" | "beyond" | "standard_day" | null;
 }[];
 /**
  * The runway and end flown, by index, or null.
@@ -11998,6 +11998,20 @@ export interface PilotCurrencyInput {
    * YYYY-MM-DD.
    */
   today: string;
+  /**
+   * The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): "if the aircraft to be flown is an airplane with a tailwheel"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.
+   */
+  flying?: {
+    /**
+     * 14 CFR 61.5 category, "Airplane".
+     */
+    category?: string | null;
+    /**
+     * 14 CFR 61.5 class, "Single-engine land".
+     */
+    class?: string | null;
+    tailwheel?: boolean | null;
+  } | null;
 }
 /**
  * The gateway's LogbookEntry, camelCase: the columns the currency and 61.109 rules read. A column missing or null is none of it.
@@ -12049,21 +12063,37 @@ export interface LogbookEntry {
 }
 export interface PilotCurrencyAnswer {
   /**
-   * 90 days after the third most recent landing (61.57(a)); null with fewer than three.
+   * 90 days after the third most recent landing the logbook proves counts for the airplane judged (61.57(a)(1)): in its category and class, and in a tailwheel to a full stop; null with fewer than three. Never a guess: see dayPassengersUnknown.
    */
   dayPassengersUntil: string | null;
   /**
-   * 90 days after the third most recent night full-stop landing (61.57(b)).
+   * 90 days after the third most recent night full-stop landing the logbook proves counts for the airplane judged (61.57(b)(1)).
    */
   nightPassengersUntil: string | null;
   /**
-   * The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+   * The category and class passenger currency was judged in, "airplane/single-engine land": the airplane to be flown's (flying), else the newest flight's (61.57(a)(1)); null where neither says.
    */
   passengerClass: string | null;
   /**
-   * The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+   * No category and class to judge in: neither the airplane to be flown nor the newest flight says it, so no landing is counted (61.57(a)(1)).
    */
   passengerClassUnknown: boolean;
+  /**
+   * Whether the airplane judged has a tailwheel; null where the airplane to be flown doesn't say, judged as one, the stricter (61.57(a)(1)(ii)).
+   */
+  passengerTailwheel: boolean | null;
+  /**
+   * For a pilot judged in a tricycle whose logbook shows a tailwheel in the same class: the tailwheel's own, 90 days after the third most recent full-stop landing in one (61.57(a)(1)(ii)); else null.
+   */
+  tailwheelPassengersUntil: string | null;
+  /**
+   * What the logbook doesn't say, where the pilot would be current by day (61.57(a)(1)) if it were so, in a sentence beginning "Can't tell"; null where nothing unsaid matters.
+   */
+  dayPassengersUnknown: string | null;
+  /**
+   * The same at night (61.57(b)(1)).
+   */
+  nightPassengersUnknown: string | null;
   /**
    * YYYY-MM-DD; null where none can be had.
    */
@@ -12418,6 +12448,20 @@ export interface ProficiencyPlanInput {
    * How many days before a currency lapses its reminder shows; 30 where null.
    */
   remind_days?: number | null;
+  /**
+   * The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): "if the aircraft to be flown is an airplane with a tailwheel"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.
+   */
+  flying?: {
+    /**
+     * 14 CFR 61.5 category, "Airplane".
+     */
+    category?: string | null;
+    /**
+     * 14 CFR 61.5 class, "Single-engine land".
+     */
+    class?: string | null;
+    tailwheel?: boolean | null;
+  } | null;
 }
 /**
  * One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.
@@ -12790,6 +12834,10 @@ export interface ReadAtisAnswer {
     variable: boolean;
   } | null;
   visibility_sm: number | null;
+  /**
+   * Less than visibility_sm: "less than one quarter", a METAR's M1/4SM (FMH-1 chapter 6), said "less than 1/4 sm", never 1/4.
+   */
+  visibility_minus: boolean;
   sky: {
     cover: "few" | "scattered" | "broken" | "overcast" | "obscured" | "clear";
     base_ft: number | null;
@@ -12842,6 +12890,10 @@ export interface ReadDatisAnswer {
     variable: boolean;
   } | null;
   visibility_sm: number | null;
+  /**
+   * Less than visibility_sm: "less than one quarter", a METAR's M1/4SM (FMH-1 chapter 6), said "less than 1/4 sm", never 1/4.
+   */
+  visibility_minus: boolean;
   sky: {
     cover: "few" | "scattered" | "broken" | "overcast" | "obscured" | "clear";
     base_ft: number | null;
@@ -14319,6 +14371,10 @@ export interface RunwayEndFitAnswer {
    */
   beyond: boolean;
   /**
+   * The distance was worked out on a standard day's temperature at the field, none being reported: a hot day's is longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)(1)), so the fit is a caution, never "within" alone. False where no distance was worked out.
+   */
+  temp_assumed: boolean;
+  /**
    * The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
    */
   tailwind_kt: number;
@@ -14327,9 +14383,9 @@ export interface RunwayEndFitAnswer {
    */
   finding: "stop" | "caution" | "unknown" | "ok";
   /**
-   * The finding's reason, the worst first; null for unknown and ok.
+   * The finding's reason, the worst first; null for unknown and ok; standard_day where the distance assumed a standard day's temperature.
    */
-  fit: "short" | "crosswind" | "tailwind" | "close" | "beyond" | null;
+  fit: "short" | "crosswind" | "tailwind" | "close" | "beyond" | "standard_day" | null;
 }
 export interface RunwayEndHeadingInput {
   ident?: string | null;
@@ -15305,6 +15361,14 @@ export interface TfrReadInput {
    * MSL or AGL.
    */
   ceiling_ref?: string | null;
+  /**
+   * Its areas' floors are given some AGL and some MSL (tfr_detail_read): the band then says the floors differ by area.
+   */
+  floor_varies?: boolean | null;
+  /**
+   * Likewise for its ceilings.
+   */
+  ceiling_varies?: boolean | null;
   /**
    * Whether its area takes the field in.
    */

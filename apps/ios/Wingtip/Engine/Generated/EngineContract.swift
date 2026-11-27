@@ -10026,14 +10026,22 @@ nonisolated enum EngineContract {
     }
 
     nonisolated struct PilotCurrencyAnswer: Codable, Equatable, Sendable {
-        /// 90 days after the third most recent landing (61.57(a)); null with fewer than three.
+        /// 90 days after the third most recent landing the logbook proves counts for the airplane judged (61.57(a)(1)): in its category and class, and in a tailwheel to a full stop; null with fewer than three. Never a guess: see dayPassengersUnknown.
         var dayPassengersUntil: String?
-        /// 90 days after the third most recent night full-stop landing (61.57(b)).
+        /// 90 days after the third most recent night full-stop landing the logbook proves counts for the airplane judged (61.57(b)(1)).
         var nightPassengersUntil: String?
-        /// The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+        /// The category and class passenger currency was judged in, "airplane/single-engine land": the airplane to be flown's (flying), else the newest flight's (61.57(a)(1)); null where neither says.
         var passengerClass: String?
-        /// The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+        /// No category and class to judge in: neither the airplane to be flown nor the newest flight says it, so no landing is counted (61.57(a)(1)).
         var passengerClassUnknown: Bool
+        /// Whether the airplane judged has a tailwheel; null where the airplane to be flown doesn't say, judged as one, the stricter (61.57(a)(1)(ii)).
+        var passengerTailwheel: Bool?
+        /// For a pilot judged in a tricycle whose logbook shows a tailwheel in the same class: the tailwheel's own, 90 days after the third most recent full-stop landing in one (61.57(a)(1)(ii)); else null.
+        var tailwheelPassengersUntil: String?
+        /// What the logbook doesn't say, where the pilot would be current by day (61.57(a)(1)) if it were so, in a sentence beginning "Can't tell"; null where nothing unsaid matters.
+        var dayPassengersUnknown: String?
+        /// The same at night (61.57(b)(1)).
+        var nightPassengersUnknown: String?
         /// YYYY-MM-DD; null where none can be had.
         var flightReviewOn: String?
         /// The end of the 24th calendar month after the flight review's (61.56(c)).
@@ -10076,6 +10084,8 @@ nonisolated enum EngineContract {
         var ipcOn: String?
         /// YYYY-MM-DD.
         var today: String
+        /// The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): "if the aircraft to be flown is an airplane with a tailwheel"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.
+        var flying: EngineContract.PilotCurrencyInputFlying?
 
         enum CodingKeys: String, CodingKey {
             case entries
@@ -10083,7 +10093,17 @@ nonisolated enum EngineContract {
             case medicalExpiresOn = "medical_expires_on"
             case ipcOn = "ipc_on"
             case today
+            case flying
         }
+    }
+
+    /// The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): "if the aircraft to be flown is an airplane with a tailwheel"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.
+    nonisolated struct PilotCurrencyInputFlying: Codable, Equatable, Sendable {
+        /// 14 CFR 61.5 category, "Airplane".
+        var category: String?
+        /// 14 CFR 61.5 class, "Single-engine land".
+        var `class`: String?
+        var tailwheel: Bool?
     }
 
     nonisolated struct PilotExperienceAnswerItem: Codable, Equatable, Sendable {
@@ -10697,6 +10717,8 @@ nonisolated enum EngineContract {
         var places: [EngineContract.PracticePlace]?
         /// How many days before a currency lapses its reminder shows; 30 where null.
         var remindDays: Int?
+        /// The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): "if the aircraft to be flown is an airplane with a tailwheel"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.
+        var flying: EngineContract.ProficiencyPlanInputFlying?
 
         enum CodingKeys: String, CodingKey {
             case today
@@ -10709,7 +10731,17 @@ nonisolated enum EngineContract {
             case debriefs
             case places
             case remindDays = "remind_days"
+            case flying
         }
+    }
+
+    /// The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): "if the aircraft to be flown is an airplane with a tailwheel"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.
+    nonisolated struct ProficiencyPlanInputFlying: Codable, Equatable, Sendable {
+        /// 14 CFR 61.5 category, "Airplane".
+        var category: String?
+        /// 14 CFR 61.5 class, "Single-engine land".
+        var `class`: String?
+        var tailwheel: Bool?
     }
 
     nonisolated struct ProficiencyPlanInputHeldItem: Codable, Equatable, Sendable {
@@ -11041,6 +11073,8 @@ nonisolated enum EngineContract {
         var timeZ: String?
         var wind: EngineContract.ReadAtisAnswerWind?
         var visibilitySm: Double?
+        /// Less than visibility_sm: "less than one quarter", a METAR's M1/4SM (FMH-1 chapter 6), said "less than 1/4 sm", never 1/4.
+        var visibilityMinus: Bool
         var sky: [EngineContract.ReadAtisAnswerSkyItem]
         var tempC: Int?
         var dewpointC: Int?
@@ -11055,6 +11089,7 @@ nonisolated enum EngineContract {
             case timeZ = "time_z"
             case wind
             case visibilitySm = "visibility_sm"
+            case visibilityMinus = "visibility_minus"
             case sky
             case tempC = "temp_c"
             case dewpointC = "dewpoint_c"
@@ -11127,6 +11162,8 @@ nonisolated enum EngineContract {
         var timeZ: String?
         var wind: EngineContract.ReadDatisAnswerWind?
         var visibilitySm: Double?
+        /// Less than visibility_sm: "less than one quarter", a METAR's M1/4SM (FMH-1 chapter 6), said "less than 1/4 sm", never 1/4.
+        var visibilityMinus: Bool
         var sky: [EngineContract.ReadDatisAnswerSkyItem]
         var tempC: Int?
         var dewpointC: Int?
@@ -11141,6 +11178,7 @@ nonisolated enum EngineContract {
             case timeZ = "time_z"
             case wind
             case visibilitySm = "visibility_sm"
+            case visibilityMinus = "visibility_minus"
             case sky
             case tempC = "temp_c"
             case dewpointC = "dewpoint_c"
@@ -12738,11 +12776,13 @@ nonisolated enum EngineContract {
         var unknown: Bool
         /// The distance was read past the POH's table (higher, hotter, heavier or more tailwind than it goes): its edge's figures.
         var beyond: Bool
+        /// The distance was worked out on a standard day's temperature at the field, none being reported: a hot day's is longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)(1)), so the fit is a caution, never "within" alone. False where no distance was worked out.
+        var tempAssumed: Bool
         /// The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it).
         var tailwindKt: Double
         /// How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok.
         var finding: String
-        /// The finding's reason, the worst first; null for unknown and ok.
+        /// The finding's reason, the worst first; null for unknown and ok; standard_day where the distance assumed a standard day's temperature.
         var fit: String?
 
         enum CodingKeys: String, CodingKey {
@@ -12754,6 +12794,7 @@ nonisolated enum EngineContract {
             case close
             case unknown
             case beyond
+            case tempAssumed = "temp_assumed"
             case tailwindKt = "tailwind_kt"
             case finding
             case fit
@@ -14234,6 +14275,10 @@ nonisolated enum EngineContract {
         var ceilingFt: Double?
         /// MSL or AGL.
         var ceilingRef: String?
+        /// Its areas' floors are given some AGL and some MSL (tfr_detail_read): the band then says the floors differ by area.
+        var floorVaries: Bool?
+        /// Likewise for its ceilings.
+        var ceilingVaries: Bool?
         /// Whether its area takes the field in.
         var overField: Bool?
         var field: EngineContract.TfrPoint?
@@ -14247,6 +14292,8 @@ nonisolated enum EngineContract {
             case floorRef = "floor_ref"
             case ceilingFt = "ceiling_ft"
             case ceilingRef = "ceiling_ref"
+            case floorVaries = "floor_varies"
+            case ceilingVaries = "ceiling_varies"
             case overField = "over_field"
             case field
             case edge

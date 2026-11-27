@@ -5557,6 +5557,28 @@
             "title": "Approaches",
             "type": "integer"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class"
+          },
           "crossCountryHours": {
             "default": 0,
             "title": "Crosscountryhours",
@@ -5577,6 +5599,17 @@
             "format": "date",
             "title": "Flownon",
             "type": "string"
+          },
+          "fullStopLandings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fullstoplandings"
           },
           "holding": {
             "default": false,
@@ -5603,6 +5636,17 @@
             "default": 0,
             "title": "Solohours",
             "type": "number"
+          },
+          "tailwheel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailwheel"
           },
           "totalHours": {
             "default": 0,
@@ -6505,7 +6549,7 @@
           },
           "passengerClassUnknown": {
             "default": false,
-            "description": "Neither the airplane to be flown nor the newest flight says its category and class.",
+            "description": "Neither the airplane to be flown nor the newest flight says the class.",
             "title": "Passengerclassunknown",
             "type": "boolean"
           },
@@ -17247,6 +17291,39 @@
             ],
             "title": "Alt Ft"
           },
+          "alt_held": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Held"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "ground": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ground"
+          },
           "gs_kt": {
             "anyOf": [
               {
@@ -17291,6 +17368,17 @@
               }
             ],
             "title": "Vrate Fpm"
+          },
+          "vs_fpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs Fpm"
           }
         },
         "required": [
@@ -23994,6 +24082,11 @@
             ],
             "title": "Ceiling Ref"
           },
+          "ceiling_varies": {
+            "default": false,
+            "title": "Ceiling Varies",
+            "type": "boolean"
+          },
           "contact": {
             "anyOf": [
               {
@@ -24055,6 +24148,11 @@
               }
             ],
             "title": "Floor Ref"
+          },
+          "floor_varies": {
+            "default": false,
+            "title": "Floor Varies",
+            "type": "boolean"
           },
           "instructions": {
             "default": [],
@@ -34252,7 +34350,7 @@
     },
     "/api/traffic/flight/{hex_id}/history/{flight_id}": {
       "get": {
-        "description": "One of those flights' reports, for its track log and its replay\n(wingtip.traffic.past_flight); 404 where it is not one of them.",
+        "description": "One of those flights' reports, for its track log and its replay\n(wingtip.traffic.past_flight), made ready to replay by the engine\n(wingtip.traffic.replay_ready: gaps, a held or missing height carried at\nthe last good one); 404 where it is not one of them.",
         "operationId": "traffic_past_flight_api_traffic_flight__hex_id__history__flight_id__get",
         "parameters": [
           {

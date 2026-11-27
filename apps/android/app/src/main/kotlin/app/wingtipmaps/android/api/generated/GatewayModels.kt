@@ -415,6 +415,13 @@ data class CurrencyDto (
     val approachesInWindow: Int,
 
     val crossCountryHours: Double,
+
+    /**
+     * What the logbook doesn't say, where the pilot would be current by day if it were so,
+     * "Can't tell: ..." (61.57(a)(1)); null where nothing unsaid matters
+     */
+    val dayPassengersUnknown: String? = null,
+
     val dayPassengersUntil: String? = null,
     val flightReviewOn: String? = null,
     val flightReviewUntil: String? = null,
@@ -451,7 +458,33 @@ data class CurrencyDto (
     val landings: Int,
     val medicalExpiresOn: String? = null,
     val nightHours: Double,
+
+    /**
+     * The same at night (61.57(b)(1))
+     */
+    val nightPassengersUnknown: String? = null,
+
     val nightPassengersUntil: String? = null,
+
+    /**
+     * The category and class passenger currency was judged in, "airplane/single-engine land":
+     * the airplane to be flown's, else the newest flight's (14 CFR 61.57(a)(1)); null where
+     * neither says
+     */
+    val passengerClass: String? = null,
+
+    /**
+     * Whether the airplane judged has a tailwheel; null where not said, judged as one
+     * (61.57(a)(1)(ii))
+     */
+    val passengerTailwheel: Boolean? = null,
+
+    /**
+     * A tailwheel's own passenger currency, for a pilot judged in a tricycle who has flown a
+     * tailwheel in the class (61.57(a)(1)(ii))
+     */
+    val tailwheelPassengersUntil: String? = null,
+
     val totalHours: Double,
 
     /**
@@ -668,9 +701,11 @@ data class FlightSummaryDto (
 @Serializable
 data class LogbookEntryDto (
     val aircraft: String? = null,
+    val aircraftClass: String? = null,
     val aircraftType: String? = null,
     val airHours: Double,
     val approaches: Int,
+    val category: String? = null,
     val crossCountryHours: Double,
     val dayLandings: Int,
     val distanceNm: Double,
@@ -678,6 +713,7 @@ data class LogbookEntryDto (
     val flightId: Long? = null,
     val flownOn: String,
     val fromTrack: Boolean,
+    val fullStopLandings: Int? = null,
     val holding: Boolean,
     val id: Long,
     val instrumentHours: Double,
@@ -687,6 +723,7 @@ data class LogbookEntryDto (
     val remarks: String? = null,
     val route: String? = null,
     val soloHours: Double,
+    val tailwheel: Boolean? = null,
     val totalHours: Double,
     val touchAndGoes: Int,
     val toweredLandings: Int,
@@ -728,6 +765,7 @@ data class TrainingDto (
 data class EndorsementDto (
     val code: String,
     val endorsedOn: String,
+    val makeModel: String? = null,
     val until: String? = null
 )
 
@@ -950,7 +988,8 @@ data class DueItemRequest (
 
 @Serializable
 data class EndorsementRequest (
-    val endorsedOn: String
+    val endorsedOn: String,
+    val makeModel: String? = null
 )
 
 @Serializable
@@ -1067,9 +1106,21 @@ data class LogbookImportRequest (
 @Serializable
 data class LogbookEntryRequest (
     val aircraft: String? = null,
+
+    /**
+     * 14 CFR 61.5 class, "Single-engine land"; none where not said (61.57(a)(1))
+     */
+    val aircraftClass: String? = null,
+
     val aircraftType: String? = null,
     val airHours: Double,
     val approaches: Int,
+
+    /**
+     * 14 CFR 61.5 category, "Airplane"; none where not said (61.57(a)(1))
+     */
+    val category: String? = null,
+
     val crossCountryHours: Double,
     val dayLandings: Int,
     val distanceNm: Double,
@@ -1077,6 +1128,12 @@ data class LogbookEntryRequest (
     val flightId: Long? = null,
     val flownOn: String,
     val fromTrack: Boolean,
+
+    /**
+     * Landings to a full stop, day and night; none where not said (61.57(a)(1)(ii))
+     */
+    val fullStopLandings: Int? = null,
+
     val holding: Boolean,
     val instrumentHours: Double,
     val longestLegNm: Double,
@@ -1085,6 +1142,12 @@ data class LogbookEntryRequest (
     val remarks: String? = null,
     val route: String? = null,
     val soloHours: Double,
+
+    /**
+     * A tailwheel airplane (61.57(a)(1)(ii)); none where not said
+     */
+    val tailwheel: Boolean? = null,
+
     val totalHours: Double,
     val touchAndGoes: Int,
     val toweredLandings: Int,

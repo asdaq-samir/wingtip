@@ -22988,7 +22988,9 @@ public enum Operations {
     /// Traffic Past Flight
     ///
     /// One of those flights' reports, for its track log and its replay
-    /// (wingtip.traffic.past_flight); 404 where it is not one of them.
+    /// (wingtip.traffic.past_flight), made ready to replay by the engine
+    /// (wingtip.traffic.replay_ready: gaps, a held or missing height carried at
+    /// the last good one); 404 where it is not one of them.
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}/history/{flight_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/history/{flight_id}/get(traffic_past_flight)`.

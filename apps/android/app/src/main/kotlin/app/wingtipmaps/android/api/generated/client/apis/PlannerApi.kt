@@ -1933,7 +1933,7 @@ interface PlannerApi {
     /**
      * GET traffic/flight/{hex_id}/history/{flight_id}
      * Traffic Past Flight
-     * One of those flights&#39; reports, for its track log and its replay (wingtip.traffic.past_flight); 404 where it is not one of them.
+     * One of those flights&#39; reports, for its track log and its replay (wingtip.traffic.past_flight), made ready to replay by the engine (wingtip.traffic.replay_ready: gaps, a held or missing height carried at the last good one); 404 where it is not one of them.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error

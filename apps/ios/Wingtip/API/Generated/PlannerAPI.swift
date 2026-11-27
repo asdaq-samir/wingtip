@@ -170,6 +170,7 @@ typealias APIFlowLayer = PlannerAPI.Components.Schemas.FlowLayer
 typealias APIFlowProgram = PlannerAPI.Components.Schemas.FlowProgram
 typealias APIFlowSource = PlannerAPI.Components.Schemas.FlowSource
 typealias APIFlownSegment = PlannerAPI.Components.Schemas.FlownSegment
+typealias APIFlying = PlannerAPI.Components.Schemas.Flying
 typealias APIForecast = PlannerAPI.Components.Schemas.Forecast
 typealias APIForecastRun = PlannerAPI.Components.Schemas.ForecastRun
 typealias APIForecastRunAsk = PlannerAPI.Components.Schemas.ForecastRunAsk

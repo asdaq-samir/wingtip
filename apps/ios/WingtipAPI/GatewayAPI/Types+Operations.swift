@@ -6580,6 +6580,31 @@ public enum Operations {
     public enum Currency {
         public static let id: Swift.String = "currency"
         public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/logbook/currency/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/logbook/currency/GET/query/category`.
+                public var category: Swift.String?
+                /// - Remark: Generated from `#/paths/api/logbook/currency/GET/query/aircraftClass`.
+                public var aircraftClass: Swift.String?
+                /// - Remark: Generated from `#/paths/api/logbook/currency/GET/query/tailwheel`.
+                public var tailwheel: Swift.Bool?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - category:
+                ///   - aircraftClass:
+                ///   - tailwheel:
+                public init(
+                    category: Swift.String? = nil,
+                    aircraftClass: Swift.String? = nil,
+                    tailwheel: Swift.Bool? = nil
+                ) {
+                    self.category = category
+                    self.aircraftClass = aircraftClass
+                    self.tailwheel = tailwheel
+                }
+            }
+            public var query: Operations.Currency.Input.Query
             /// - Remark: Generated from `#/paths/api/logbook/currency/GET/header`.
             public struct Headers: Sendable, Hashable {
                 public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.Currency.AcceptableContentType>]
@@ -6595,8 +6620,13 @@ public enum Operations {
             /// Creates a new `Input`.
             ///
             /// - Parameters:
+            ///   - query:
             ///   - headers:
-            public init(headers: Operations.Currency.Input.Headers = .init()) {
+            public init(
+                query: Operations.Currency.Input.Query = .init(),
+                headers: Operations.Currency.Input.Headers = .init()
+            ) {
+                self.query = query
                 self.headers = headers
             }
         }

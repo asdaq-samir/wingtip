@@ -1064,6 +1064,10 @@ extension Components {
             public var approachesInWindow: Swift.Int
             /// - Remark: Generated from `#/components/schemas/CurrencyDto/crossCountryHours`.
             public var crossCountryHours: Swift.Double
+            /// What the logbook doesn't say, where the pilot would be current by day if it were so, "Can't tell: ..." (61.57(a)(1)); null where nothing unsaid matters
+            ///
+            /// - Remark: Generated from `#/components/schemas/CurrencyDto/dayPassengersUnknown`.
+            public var dayPassengersUnknown: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CurrencyDto/dayPassengersUntil`.
             public var dayPassengersUntil: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CurrencyDto/flightReviewOn`.
@@ -1098,8 +1102,24 @@ extension Components {
             public var medicalExpiresOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CurrencyDto/nightHours`.
             public var nightHours: Swift.Double
+            /// The same at night (61.57(b)(1))
+            ///
+            /// - Remark: Generated from `#/components/schemas/CurrencyDto/nightPassengersUnknown`.
+            public var nightPassengersUnknown: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CurrencyDto/nightPassengersUntil`.
             public var nightPassengersUntil: Swift.String?
+            /// The category and class passenger currency was judged in, "airplane/single-engine land": the airplane to be flown's, else the newest flight's (14 CFR 61.57(a)(1)); null where neither says
+            ///
+            /// - Remark: Generated from `#/components/schemas/CurrencyDto/passengerClass`.
+            public var passengerClass: Swift.String?
+            /// Whether the airplane judged has a tailwheel; null where not said, judged as one (61.57(a)(1)(ii))
+            ///
+            /// - Remark: Generated from `#/components/schemas/CurrencyDto/passengerTailwheel`.
+            public var passengerTailwheel: Swift.Bool?
+            /// A tailwheel's own passenger currency, for a pilot judged in a tricycle who has flown a tailwheel in the class (61.57(a)(1)(ii))
+            ///
+            /// - Remark: Generated from `#/components/schemas/CurrencyDto/tailwheelPassengersUntil`.
+            public var tailwheelPassengersUntil: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CurrencyDto/totalHours`.
             public var totalHours: Swift.Double
             /// Intercepting and tracking courses logged in them
@@ -1111,6 +1131,7 @@ extension Components {
             /// - Parameters:
             ///   - approachesInWindow: Approaches logged in the 6 calendar months before this one
             ///   - crossCountryHours:
+            ///   - dayPassengersUnknown: What the logbook doesn't say, where the pilot would be current by day if it were so, "Can't tell: ..." (61.57(a)(1)); null where nothing unsaid matters
             ///   - dayPassengersUntil:
             ///   - flightReviewOn:
             ///   - flightReviewUntil:
@@ -1123,12 +1144,17 @@ extension Components {
             ///   - landings:
             ///   - medicalExpiresOn:
             ///   - nightHours:
+            ///   - nightPassengersUnknown: The same at night (61.57(b)(1))
             ///   - nightPassengersUntil:
+            ///   - passengerClass: The category and class passenger currency was judged in, "airplane/single-engine land": the airplane to be flown's, else the newest flight's (14 CFR 61.57(a)(1)); null where neither says
+            ///   - passengerTailwheel: Whether the airplane judged has a tailwheel; null where not said, judged as one (61.57(a)(1)(ii))
+            ///   - tailwheelPassengersUntil: A tailwheel's own passenger currency, for a pilot judged in a tricycle who has flown a tailwheel in the class (61.57(a)(1)(ii))
             ///   - totalHours:
             ///   - trackingInWindow: Intercepting and tracking courses logged in them
             public init(
                 approachesInWindow: Swift.Int,
                 crossCountryHours: Swift.Double,
+                dayPassengersUnknown: Swift.String? = nil,
                 dayPassengersUntil: Swift.String? = nil,
                 flightReviewOn: Swift.String? = nil,
                 flightReviewUntil: Swift.String? = nil,
@@ -1141,12 +1167,17 @@ extension Components {
                 landings: Swift.Int,
                 medicalExpiresOn: Swift.String? = nil,
                 nightHours: Swift.Double,
+                nightPassengersUnknown: Swift.String? = nil,
                 nightPassengersUntil: Swift.String? = nil,
+                passengerClass: Swift.String? = nil,
+                passengerTailwheel: Swift.Bool? = nil,
+                tailwheelPassengersUntil: Swift.String? = nil,
                 totalHours: Swift.Double,
                 trackingInWindow: Swift.Bool
             ) {
                 self.approachesInWindow = approachesInWindow
                 self.crossCountryHours = crossCountryHours
+                self.dayPassengersUnknown = dayPassengersUnknown
                 self.dayPassengersUntil = dayPassengersUntil
                 self.flightReviewOn = flightReviewOn
                 self.flightReviewUntil = flightReviewUntil
@@ -1159,13 +1190,18 @@ extension Components {
                 self.landings = landings
                 self.medicalExpiresOn = medicalExpiresOn
                 self.nightHours = nightHours
+                self.nightPassengersUnknown = nightPassengersUnknown
                 self.nightPassengersUntil = nightPassengersUntil
+                self.passengerClass = passengerClass
+                self.passengerTailwheel = passengerTailwheel
+                self.tailwheelPassengersUntil = tailwheelPassengersUntil
                 self.totalHours = totalHours
                 self.trackingInWindow = trackingInWindow
             }
             public enum CodingKeys: String, CodingKey {
                 case approachesInWindow
                 case crossCountryHours
+                case dayPassengersUnknown
                 case dayPassengersUntil
                 case flightReviewOn
                 case flightReviewUntil
@@ -1178,7 +1214,11 @@ extension Components {
                 case landings
                 case medicalExpiresOn
                 case nightHours
+                case nightPassengersUnknown
                 case nightPassengersUntil
+                case passengerClass
+                case passengerTailwheel
+                case tailwheelPassengersUntil
                 case totalHours
                 case trackingInWindow
             }
@@ -1574,6 +1614,8 @@ extension Components {
             public var code: Swift.String
             /// - Remark: Generated from `#/components/schemas/EndorsementDto/endorsedOn`.
             public var endorsedOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/EndorsementDto/makeModel`.
+            public var makeModel: Swift.String?
             /// - Remark: Generated from `#/components/schemas/EndorsementDto/until`.
             public var until: Swift.String?
             /// Creates a new `EndorsementDto`.
@@ -1581,19 +1623,23 @@ extension Components {
             /// - Parameters:
             ///   - code:
             ///   - endorsedOn:
+            ///   - makeModel:
             ///   - until:
             public init(
                 code: Swift.String,
                 endorsedOn: Swift.String,
+                makeModel: Swift.String? = nil,
                 until: Swift.String? = nil
             ) {
                 self.code = code
                 self.endorsedOn = endorsedOn
+                self.makeModel = makeModel
                 self.until = until
             }
             public enum CodingKeys: String, CodingKey {
                 case code
                 case endorsedOn
+                case makeModel
                 case until
             }
         }
@@ -1683,15 +1729,23 @@ extension Components {
         public struct EndorsementRequest: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/EndorsementRequest/endorsedOn`.
             public var endorsedOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/EndorsementRequest/makeModel`.
+            public var makeModel: Swift.String?
             /// Creates a new `EndorsementRequest`.
             ///
             /// - Parameters:
             ///   - endorsedOn:
-            public init(endorsedOn: Swift.String) {
+            ///   - makeModel:
+            public init(
+                endorsedOn: Swift.String,
+                makeModel: Swift.String? = nil
+            ) {
                 self.endorsedOn = endorsedOn
+                self.makeModel = makeModel
             }
             public enum CodingKeys: String, CodingKey {
                 case endorsedOn
+                case makeModel
             }
         }
         /// - Remark: Generated from `#/components/schemas/ExperienceItemDto`.
@@ -2971,12 +3025,16 @@ extension Components {
         public struct LogbookEntryDto: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/aircraft`.
             public var aircraft: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/aircraftClass`.
+            public var aircraftClass: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/aircraftType`.
             public var aircraftType: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/airHours`.
             public var airHours: Swift.Double
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/approaches`.
             public var approaches: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/category`.
+            public var category: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/crossCountryHours`.
             public var crossCountryHours: Swift.Double
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/dayLandings`.
@@ -2991,6 +3049,8 @@ extension Components {
             public var flownOn: Swift.String
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/fromTrack`.
             public var fromTrack: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/fullStopLandings`.
+            public var fullStopLandings: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/holding`.
             public var holding: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/id`.
@@ -3009,6 +3069,8 @@ extension Components {
             public var route: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/soloHours`.
             public var soloHours: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/tailwheel`.
+            public var tailwheel: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/totalHours`.
             public var totalHours: Swift.Double
             /// - Remark: Generated from `#/components/schemas/LogbookEntryDto/touchAndGoes`.
@@ -3021,9 +3083,11 @@ extension Components {
             ///
             /// - Parameters:
             ///   - aircraft:
+            ///   - aircraftClass:
             ///   - aircraftType:
             ///   - airHours:
             ///   - approaches:
+            ///   - category:
             ///   - crossCountryHours:
             ///   - dayLandings:
             ///   - distanceNm:
@@ -3031,6 +3095,7 @@ extension Components {
             ///   - flightId:
             ///   - flownOn:
             ///   - fromTrack:
+            ///   - fullStopLandings:
             ///   - holding:
             ///   - id:
             ///   - instrumentHours:
@@ -3040,15 +3105,18 @@ extension Components {
             ///   - remarks:
             ///   - route:
             ///   - soloHours:
+            ///   - tailwheel:
             ///   - totalHours:
             ///   - touchAndGoes:
             ///   - toweredLandings:
             ///   - tracking:
             public init(
                 aircraft: Swift.String? = nil,
+                aircraftClass: Swift.String? = nil,
                 aircraftType: Swift.String? = nil,
                 airHours: Swift.Double,
                 approaches: Swift.Int,
+                category: Swift.String? = nil,
                 crossCountryHours: Swift.Double,
                 dayLandings: Swift.Int,
                 distanceNm: Swift.Double,
@@ -3056,6 +3124,7 @@ extension Components {
                 flightId: Swift.Int? = nil,
                 flownOn: Swift.String,
                 fromTrack: Swift.Bool,
+                fullStopLandings: Swift.Int? = nil,
                 holding: Swift.Bool,
                 id: Swift.Int,
                 instrumentHours: Swift.Double,
@@ -3065,15 +3134,18 @@ extension Components {
                 remarks: Swift.String? = nil,
                 route: Swift.String? = nil,
                 soloHours: Swift.Double,
+                tailwheel: Swift.Bool? = nil,
                 totalHours: Swift.Double,
                 touchAndGoes: Swift.Int,
                 toweredLandings: Swift.Int,
                 tracking: Swift.Bool
             ) {
                 self.aircraft = aircraft
+                self.aircraftClass = aircraftClass
                 self.aircraftType = aircraftType
                 self.airHours = airHours
                 self.approaches = approaches
+                self.category = category
                 self.crossCountryHours = crossCountryHours
                 self.dayLandings = dayLandings
                 self.distanceNm = distanceNm
@@ -3081,6 +3153,7 @@ extension Components {
                 self.flightId = flightId
                 self.flownOn = flownOn
                 self.fromTrack = fromTrack
+                self.fullStopLandings = fullStopLandings
                 self.holding = holding
                 self.id = id
                 self.instrumentHours = instrumentHours
@@ -3090,6 +3163,7 @@ extension Components {
                 self.remarks = remarks
                 self.route = route
                 self.soloHours = soloHours
+                self.tailwheel = tailwheel
                 self.totalHours = totalHours
                 self.touchAndGoes = touchAndGoes
                 self.toweredLandings = toweredLandings
@@ -3097,9 +3171,11 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case aircraft
+                case aircraftClass
                 case aircraftType
                 case airHours
                 case approaches
+                case category
                 case crossCountryHours
                 case dayLandings
                 case distanceNm
@@ -3107,6 +3183,7 @@ extension Components {
                 case flightId
                 case flownOn
                 case fromTrack
+                case fullStopLandings
                 case holding
                 case id
                 case instrumentHours
@@ -3116,6 +3193,7 @@ extension Components {
                 case remarks
                 case route
                 case soloHours
+                case tailwheel
                 case totalHours
                 case touchAndGoes
                 case toweredLandings
@@ -3126,12 +3204,20 @@ extension Components {
         public struct LogbookEntryRequest: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/aircraft`.
             public var aircraft: Swift.String?
+            /// 14 CFR 61.5 class, "Single-engine land"; none where not said (61.57(a)(1))
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/aircraftClass`.
+            public var aircraftClass: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/aircraftType`.
             public var aircraftType: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/airHours`.
             public var airHours: Swift.Double
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/approaches`.
             public var approaches: Swift.Int
+            /// 14 CFR 61.5 category, "Airplane"; none where not said (61.57(a)(1))
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/category`.
+            public var category: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/crossCountryHours`.
             public var crossCountryHours: Swift.Double
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/dayLandings`.
@@ -3146,6 +3232,10 @@ extension Components {
             public var flownOn: Swift.String
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/fromTrack`.
             public var fromTrack: Swift.Bool
+            /// Landings to a full stop, day and night; none where not said (61.57(a)(1)(ii))
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/fullStopLandings`.
+            public var fullStopLandings: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/holding`.
             public var holding: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/instrumentHours`.
@@ -3162,6 +3252,10 @@ extension Components {
             public var route: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/soloHours`.
             public var soloHours: Swift.Double
+            /// A tailwheel airplane (61.57(a)(1)(ii)); none where not said
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/tailwheel`.
+            public var tailwheel: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/totalHours`.
             public var totalHours: Swift.Double
             /// - Remark: Generated from `#/components/schemas/LogbookEntryRequest/touchAndGoes`.
@@ -3174,9 +3268,11 @@ extension Components {
             ///
             /// - Parameters:
             ///   - aircraft:
+            ///   - aircraftClass: 14 CFR 61.5 class, "Single-engine land"; none where not said (61.57(a)(1))
             ///   - aircraftType:
             ///   - airHours:
             ///   - approaches:
+            ///   - category: 14 CFR 61.5 category, "Airplane"; none where not said (61.57(a)(1))
             ///   - crossCountryHours:
             ///   - dayLandings:
             ///   - distanceNm:
@@ -3184,6 +3280,7 @@ extension Components {
             ///   - flightId:
             ///   - flownOn:
             ///   - fromTrack:
+            ///   - fullStopLandings: Landings to a full stop, day and night; none where not said (61.57(a)(1)(ii))
             ///   - holding:
             ///   - instrumentHours:
             ///   - longestLegNm:
@@ -3192,15 +3289,18 @@ extension Components {
             ///   - remarks:
             ///   - route:
             ///   - soloHours:
+            ///   - tailwheel: A tailwheel airplane (61.57(a)(1)(ii)); none where not said
             ///   - totalHours:
             ///   - touchAndGoes:
             ///   - toweredLandings:
             ///   - tracking:
             public init(
                 aircraft: Swift.String? = nil,
+                aircraftClass: Swift.String? = nil,
                 aircraftType: Swift.String? = nil,
                 airHours: Swift.Double,
                 approaches: Swift.Int,
+                category: Swift.String? = nil,
                 crossCountryHours: Swift.Double,
                 dayLandings: Swift.Int,
                 distanceNm: Swift.Double,
@@ -3208,6 +3308,7 @@ extension Components {
                 flightId: Swift.Int? = nil,
                 flownOn: Swift.String,
                 fromTrack: Swift.Bool,
+                fullStopLandings: Swift.Int? = nil,
                 holding: Swift.Bool,
                 instrumentHours: Swift.Double,
                 longestLegNm: Swift.Double,
@@ -3216,15 +3317,18 @@ extension Components {
                 remarks: Swift.String? = nil,
                 route: Swift.String? = nil,
                 soloHours: Swift.Double,
+                tailwheel: Swift.Bool? = nil,
                 totalHours: Swift.Double,
                 touchAndGoes: Swift.Int,
                 toweredLandings: Swift.Int,
                 tracking: Swift.Bool
             ) {
                 self.aircraft = aircraft
+                self.aircraftClass = aircraftClass
                 self.aircraftType = aircraftType
                 self.airHours = airHours
                 self.approaches = approaches
+                self.category = category
                 self.crossCountryHours = crossCountryHours
                 self.dayLandings = dayLandings
                 self.distanceNm = distanceNm
@@ -3232,6 +3336,7 @@ extension Components {
                 self.flightId = flightId
                 self.flownOn = flownOn
                 self.fromTrack = fromTrack
+                self.fullStopLandings = fullStopLandings
                 self.holding = holding
                 self.instrumentHours = instrumentHours
                 self.longestLegNm = longestLegNm
@@ -3240,6 +3345,7 @@ extension Components {
                 self.remarks = remarks
                 self.route = route
                 self.soloHours = soloHours
+                self.tailwheel = tailwheel
                 self.totalHours = totalHours
                 self.touchAndGoes = touchAndGoes
                 self.toweredLandings = toweredLandings
@@ -3247,9 +3353,11 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case aircraft
+                case aircraftClass
                 case aircraftType
                 case airHours
                 case approaches
+                case category
                 case crossCountryHours
                 case dayLandings
                 case distanceNm
@@ -3257,6 +3365,7 @@ extension Components {
                 case flightId
                 case flownOn
                 case fromTrack
+                case fullStopLandings
                 case holding
                 case instrumentHours
                 case longestLegNm
@@ -3265,6 +3374,7 @@ extension Components {
                 case remarks
                 case route
                 case soloHours
+                case tailwheel
                 case totalHours
                 case touchAndGoes
                 case toweredLandings
