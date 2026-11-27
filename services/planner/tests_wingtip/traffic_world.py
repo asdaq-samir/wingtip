@@ -75,6 +75,7 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_RECENT", TTLCache(maxsize=256, ttl=traffic.RECENT_TTL_S, timer=clock))
     # The FAA's registry, wherever a copy is on disk, is not this module's.
     monkeypatch.setattr(registry, "lookup", lambda **kwargs: None)
+    monkeypatch.setattr(registry, "addresses", lambda n_numbers: frozenset())
     # Nor the world's fields, which a past flight's ends fall back to.
     monkeypatch.setattr(airports, "nearest_abroad", lambda lat, lon, limit=3: [])
     stand_in(monkeypatch, "_clock", clock)

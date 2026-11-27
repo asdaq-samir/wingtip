@@ -32,12 +32,12 @@ zip code and county are not.
 
 from __future__ import annotations
 
-import contextlib
 import sqlite3
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from . import registry_codes as codes
+from .registry_reader import _reading
 
 _SCHEMA = """
 CREATE TABLE deregistered (n_number TEXT, serial TEXT, model_code TEXT, engine_code TEXT, year INTEGER,
@@ -152,8 +152,7 @@ def _read(db_path: Path, sql: str, args: tuple) -> list[dict]:
     until the next read) is not there."""
     if not db_path.exists():
         return []
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
-        db.row_factory = sqlite3.Row
+    with _reading(db_path) as db:
         try:
             return [dict(r) for r in db.execute(sql, args).fetchall()]
         except sqlite3.OperationalError:

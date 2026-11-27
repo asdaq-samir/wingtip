@@ -22,9 +22,9 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-import wingtip_native
 
 from . import utc
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def cycle(kind: str, effective: date | None = None, on: date | datetime | None =
     (now, to the minute: before 0901Z on a changeover day the old edition is
     still the one in force, from 0901Z the new one)."""
     asked = {"kind": kind, "effective": effective.isoformat() if effective else None, "on": _on(on)}
-    return json.loads(wingtip_native.call("data_cycle", json.dumps(asked)))
+    return engine("data_cycle", **asked)
 
 
 def start_on(kind: str, on: date | datetime | None = None) -> date:

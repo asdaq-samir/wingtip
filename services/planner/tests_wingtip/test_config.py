@@ -58,3 +58,11 @@ def test_a_short_connector_secret_stops_the_planner_without_saying_it(monkeypatc
     monkeypatch.setenv("MCP_INTERNAL_TOKEN", "x" * 32)
     get_settings.cache_clear()
     assert get_settings().mcp_internal_token == "x" * 32
+
+
+def test_one_user_agent_its_purpose_added_and_a_browsers_form_for_the_sites_that_want_one():
+    from wingtip.config import FAA_HEADERS, REQUEST_HEADERS, user_agent
+
+    assert REQUEST_HEADERS["User-Agent"] == "wingtip-maps/0.1" and FAA_HEADERS["User-Agent"] == "Mozilla/5.0 (compatible; wingtip-maps/0.1)"
+    assert user_agent("VFR flight planner; terrain floor") == "wingtip-maps/0.1 (VFR flight planner; terrain floor)"
+    assert user_agent("terrain floor", browser=True) == "Mozilla/5.0 (compatible; wingtip-maps/0.1; terrain floor)"

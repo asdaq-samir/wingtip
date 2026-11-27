@@ -42,6 +42,7 @@ import numpy as np
 
 from . import geo, utc, weather_store
 from .engine import ask as engine
+from .grid_index import grid_index
 from .units import M_PER_FT
 
 #: The section's levels, ft MSL, as the AWC's page plots them (its cross
@@ -76,15 +77,15 @@ def _ground_m(lats: np.ndarray, lons: np.ndarray) -> list[float] | None:
 
 def _values(grid: np.ndarray, at: dict, stored_levels: list[float], lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
     """A stored hour's severity under the points, COLUMNS x LEVELS_FT,
-    NONE where the store has none."""
-    rows = np.rint((lats - at["south"]) / at["step_deg"]).astype(np.int64)
-    cols = np.rint((lons - at["west"]) / at["step_deg"]).astype(np.int64)
-    inside = (rows >= 0) & (rows < at["rows"]) & (cols >= 0) & (cols < at["cols"])
+    NONE where the store has none: one fancy-indexed read of the levels
+    stored, where a loop over the 39 levels took about 4 ms an hour read."""
+    rows, cols, inside = grid_index(lats, lons, at)
     out = np.full((len(lats), len(LEVELS_FT)), NONE, dtype=np.int64)
-    for level, ft in enumerate(LEVELS_FT):
-        if ft in stored_levels:
-            stored = np.asarray(grid[stored_levels.index(ft)])
-            out[inside, level] = stored[rows[inside], cols[inside]]
+    pairs = [(level, stored_levels.index(ft)) for level, ft in enumerate(LEVELS_FT) if ft in stored_levels]
+    if pairs and inside.any():
+        levels, stored = (np.array(side) for side in zip(*pairs))
+        points = np.flatnonzero(inside)
+        out[points[:, None], levels[None, :]] = grid[stored[None, :], rows[points][:, None], cols[points][:, None]]
     return out
 
 

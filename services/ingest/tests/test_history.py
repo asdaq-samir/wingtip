@@ -6,7 +6,7 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 
-from wingtip import schedule
+from wingtip import registry, schedule
 from wingtip.history import notam_archive, ntsb as ntsb_store
 
 from ingest import history, ntsb
@@ -29,6 +29,9 @@ def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now():
     assert jobs["notam-archive"].trigger.interval.total_seconds() == history.SNAPSHOT_EVERY_S
     assert jobs["ntsb"].trigger.interval.total_seconds() == history.NTSB_EVERY_S
     assert all(job.next_run_time is not None for job in jobs.values())
+    # The FAA's aircraft registry, read here rather than in the planner's one process.
+    assert jobs["aircraft-registry"].func is registry.refresh
+    assert jobs["aircraft-registry"].trigger.interval.total_seconds() == history.REGISTRY_EVERY_S
 
 
 PAGE = (Path(__file__).parent / "fixtures" / "avdata_2026-11-12.html").read_text()

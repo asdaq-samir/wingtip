@@ -1,7 +1,9 @@
 """The planner's warm-up and its periodic checks (started by app.main's
 lifespan): the reference data every request reads, loaded at start
 rather than under the first pilot's request, and what is checked again
-once it is warm (the FAA's editions, the registry, the chart cycle)."""
+once it is warm (the FAA's editions, the chart cycle). The FAA's
+aircraft registry is ingest's to read (ingest.history), off the
+planner's process."""
 
 import csv
 import logging
@@ -22,7 +24,6 @@ from wingtip import (
     places,
     publication_prune,
     publications,
-    registry,
     remarks,
     sua,
     water,
@@ -38,12 +39,9 @@ from .settings import get_settings
 
 log = logging.getLogger(__name__)
 
-# How often the FAA's files are checked for a new edition, whether those
-# on disk are still in their cycle, and whether the registry is a day old.
+# How often the FAA's files are checked for a new edition, and whether
+# those on disk are still in their cycle.
 EDITIONS_CHECK_EVERY_S = 6 * 3600
-#: Whether the FAA's aircraft registry is downloaded and read here
-#: (wingtip.registry): on, but on a test stack (infra/docker-compose.ci.yml).
-REGISTRY_REFRESH = get_settings().registry_refresh
 #: Whether a new edition of the FAA's NASR files (airports, frequencies,
 #: navaids, Class B/C/D) and its obstacle file is fetched here
 #: (check_faa_editions): on, but on a test stack. Its own switch, not the
@@ -168,12 +166,6 @@ def _schedule_checks(on: BaseScheduler) -> None:
     # And a minute after each 0901Z: an edition takes over then, not at the
     # six-hourly check's next turn.
     schedule.daily_at(on, 9, 2, at_changeover, name="faa-changeover")
-    # The aircraft registry, read again once it is a day old (each check a
-    # look at the file's age): now as well, so a warm-up read that failed is
-    # tried again, and after a good one refresh() sees a fresh file and does
-    # nothing.
-    if REGISTRY_REFRESH:
-        schedule.every(on, EDITIONS_CHECK_EVERY_S, registry.refresh, name="aircraft-registry")
     # The documents library (wingtip.library), now and once a day.
     if FAA_LIBRARY_REFRESH:
         schedule.every(on, LIBRARY_CHECK_EVERY_S, library.refresh, name="faa-library")
@@ -286,17 +278,6 @@ def warm_reference_data(on: BaseScheduler) -> None:
         geocode.preload()
     except Exception:  # noqa: BLE001
         log.exception("towns warm-up failed")
-    # And the FAA's aircraft registry (wingtip.registry), for a tracked
-    # airplane's card: 73 MB from the FAA and half a minute's read, once a
-    # day; a card before it is in shows no registration. Its own switch
-    # (REGISTRY_REFRESH), not the charts': the server draws no charts
-    # (CHARTS_AUTO_REFRESH=0 there too), and gated on that, it never read
-    # the registry at all. Off on a test stack, which downloads nothing it need not.
-    if REGISTRY_REFRESH:
-        try:
-            registry.refresh()
-        except Exception:  # noqa: BLE001 -- the next day's check tries again
-            log.exception("aircraft registry not read")
 
     # The cycle pack, from the files read above, where the one on disk is
     # not of them: a new cycle's first start writes it (a minute or so),

@@ -21,7 +21,6 @@ nearest-point search finds it (checked at six points across the grid,
 
 from __future__ import annotations
 
-import json
 import logging
 import math
 import sys
@@ -29,11 +28,11 @@ import threading
 from datetime import datetime, timezone
 
 import numpy as np
-import wingtip_native
 from pyproj import Proj
 
 from . import utc, weather_store
 from .units import M_PER_SM, M_TO_FT
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -105,7 +104,7 @@ def flight_category(ceiling_ft: float | None, visibility_sm: float) -> str:
     (wingtip_engine::forecast, through wingtip_native), the one copy the web
     app's categoryOf and the phones share."""
     asked = {"ceiling_ft": None if ceiling_ft is None else _finite(ceiling_ft), "visibility_sm": _finite(visibility_sm)}
-    return json.loads(wingtip_native.call("flight_category", json.dumps(asked)))
+    return engine("flight_category", **asked)
 
 
 def _finite(x: float) -> float:

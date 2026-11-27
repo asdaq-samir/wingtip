@@ -63,7 +63,7 @@ def test_the_photo_with_its_photographer_and_link_its_urls_unchanged(asked):
     assert (found["photographer"], found["link"], found["width"]) == ("A Spotter", ANSWER["photos"][0]["link"], 420)
     # By its address first, then its registration, naming us with a contact.
     assert [u.rsplit("/", 2)[-2] for u, _ in asked] == ["hex", "reg"]
-    assert asked[0][1] == "WingtipMaps/1.0 (+https://example.org/contact)"
+    assert asked[0][1] == "wingtip-maps/0.1 (+https://example.org/contact)"
     # Kept: asked once a day.
     aircraft_photo.photo("a89c1e", "N654FL")
     assert len(asked) == 2

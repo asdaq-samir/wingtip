@@ -26,6 +26,7 @@ import sqlite3
 import zipfile
 from pathlib import Path
 
+from . import stores
 from .atomic import atomic_path
 from .faa_data import zip_csv
 from .config import get_settings
@@ -93,7 +94,7 @@ def instructors_named(name: str) -> list[dict] | None:
     path = store_path()
     if not path.exists():
         return None
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    db = stores.read_only(path)
     try:
         rows = db.execute("SELECT id, first_middle, last_suffix, expires FROM instructors WHERE last_key = ?", (last_key(name),)).fetchall()
     except sqlite3.Error:

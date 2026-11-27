@@ -32,7 +32,6 @@ planner's wingtip.modelwinds (#535).
 
 from __future__ import annotations
 
-import json
 import logging
 import math
 import time
@@ -40,10 +39,10 @@ from datetime import datetime, timedelta, timezone
 
 import numpy as np
 from cachetools import TTLCache
-import wingtip_native
 from wingtip import utc, weather_store
 
 from . import nomads
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -267,7 +266,7 @@ def fetch_period(fcst_hr: str) -> None:
         return
     fields, run, step = got
     period = period_of(run, step, fcst_hr)
-    until = json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": "winds", "valid_to": utc.epoch(period["use_to"])})))
+    until = engine("weather_expires_at", product="winds", valid_to=utc.epoch(period["use_to"]))
     weather_store.write(
         f"winds-{fcst_hr}",
         {"stations": _at_stations(fields), "period": period},
@@ -368,7 +367,7 @@ def _at_stations(fields: dict) -> dict:
     out = {}
     for code, (lat, lon) in STATIONS.items():
         grib = [{key: _at(fields[(var, hpa)], lat, lon) for key, var in _GRIB_KEYS} for hpa in LEVELS_HPA]
-        read = json.loads(wingtip_native.call("model_wind_levels", json.dumps({"levels": grib})))
+        read = engine("model_wind_levels", levels=grib)
         levels = {
             int(round(level["altitude_ft"])): {
                 "wind_dir_true_deg": round(level["wind_dir_true_deg"]),

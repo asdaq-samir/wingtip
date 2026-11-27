@@ -26,6 +26,7 @@ import struct
 
 import gribberish
 import numpy as np
+from wingtip.grid_index import grid_cells
 from wingtip.icing_forecast import LEVELS_FT
 from wingtip.units import M_PER_FT
 
@@ -57,11 +58,9 @@ def grid_record() -> dict:
 
 
 def cells(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
-    """Each point's cell, row * COLS + col with row 0 the south; -1 outside."""
-    rows = np.rint((lats - SOUTH) / STEP_DEG).astype(np.int64)
-    cols = np.rint((lons - WEST) / STEP_DEG).astype(np.int64)
-    inside = (rows >= 0) & (rows < ROWS) & (cols >= 0) & (cols < COLS)
-    return np.where(inside, rows * COLS + cols, -1)
+    """Each point's cell, row * COLS + col with row 0 the south; -1 outside
+    (wingtip.grid_index, as the planner reads the stored grid)."""
+    return grid_cells(lats, lons, grid_record())
 
 
 def _reducer(where: np.ndarray):

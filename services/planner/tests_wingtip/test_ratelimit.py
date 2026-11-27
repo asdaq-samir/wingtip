@@ -26,3 +26,16 @@ def test_a_gap_between_asks_and_the_sources_own_count_of_what_is_left():
     assert gate.spent(DAY) and gate.remaining(DAY) == 199
     # Yesterday's count says nothing of today.
     assert gate.remaining(DAY + dt.timedelta(days=1)) is None and not gate.spent(DAY + dt.timedelta(days=1))
+
+
+def test_each_turn_comes_a_gap_after_the_last_the_first_at_once():
+    clock, slept = [100.0], []
+
+    def sleep(seconds):
+        slept.append(seconds)
+        clock[0] += seconds
+
+    gate = Gate(gap_s=0.5)
+    for _ in range(3):
+        gate.turn(lambda: clock[0], sleep)
+    assert slept == [0.5, 0.5] and gate.last == 101.0

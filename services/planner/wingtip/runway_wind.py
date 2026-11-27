@@ -14,16 +14,8 @@ the phones (the generated `call`) ask; these keep their names and dicts and only
 them across.
 """
 
-import json
-
-import wingtip_native
-
 from .magnetic import magnetic_variation_deg
-
-
-def _ask(name: str, **given):
-    """The engine's rule `name` on the input given, its answer parsed."""
-    return json.loads(wingtip_native.call(name, json.dumps(given)))
+from .engine import ask as _ask
 
 
 def end_heading_true_deg(ident: str | None, heading_true_deg: float | None, variation_deg: float) -> float | None:

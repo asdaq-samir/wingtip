@@ -43,7 +43,7 @@ from pathlib import Path
 
 import requests
 
-from .. import outside
+from .. import outside, stores
 from ..config import REQUEST_HEADERS, get_settings
 
 METAR_URL = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
@@ -79,9 +79,7 @@ def _connection() -> sqlite3.Connection:
     global _db
     if _db is None:
         path = _store_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        db = sqlite3.connect(path, check_same_thread=False, timeout=10.0, isolation_level=None)
-        db.execute("PRAGMA journal_mode=WAL")
+        db = stores.connect(path, autocommit=True)
         db.execute(
             "CREATE TABLE IF NOT EXISTS days (kind TEXT, station TEXT, day TEXT, fetched_at REAL, reports TEXT, "
             "PRIMARY KEY (kind, station, day))"

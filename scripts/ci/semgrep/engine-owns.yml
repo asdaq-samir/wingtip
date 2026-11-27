@@ -55,3 +55,22 @@ rules:
           - metavariable-regex:
               metavariable: $N
               regex: ^(6371(\.0+)?|6371008\.8|6371000(\.0+)?|3440\.0\d*|3440\.1)$
+  - id: engine-asked-by-hand-python
+    message: >-
+      The engine asked by hand, wingtip_native.call with its own JSON. In
+      Python it is asked through wingtip.engine's ask (`from wingtip.engine
+      import ask`), the one way in, which parses the answer and sends a
+      date as text; about thirty sites and three private copies wrote
+      their own (round-3 audit, 2026-11-27). Only engine.py itself, the
+      tracing that wraps the call, and the tests of the native module call
+      it; wingtip_native.call_numbers (terrain_detour) is its own call.
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude:
+        - "services/planner/wingtip/engine.py"
+        - "services/planner/wingtip/tracing.py"
+        - "services/planner/tests_wingtip/test_tracing.py"
+        - "services/planner/tests_wingtip/test_native.py"
+        - "services/planner/tests_wingtip/test_planner_rules.py"
+    pattern: wingtip_native.call(...)

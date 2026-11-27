@@ -5,8 +5,18 @@ data downloads -- and the one way this package reads a service's own
 reason out of an error response (upstream_detail). A plain request to
 an outside source is retried by wingtip.outside's session instead."""
 
+import zipfile
+
 import requests
 from tenacity import Retrying, retry_if_exception_type, retry_if_not_exception_type, stop_after_attempt, wait_exponential_jitter
+
+
+#: What goes wrong reading a download's body after the request was
+#: answered, which wingtip.outside's session does not ask again for: the
+#: connection dropped or stalled mid-body, or a zip cut short. A loop
+#: round a request through outside retries these only, not the statuses
+#: and refused connections the session has already asked again for.
+BODY_CUT_OFF = (requests.exceptions.ChunkedEncodingError, requests.exceptions.ReadTimeout, zipfile.BadZipFile)
 
 
 def with_retries(

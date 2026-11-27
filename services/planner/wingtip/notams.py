@@ -29,13 +29,11 @@ international ones too.
 from __future__ import annotations
 
 import html
-import json
 import re
 import sqlite3
 import threading
 import time
 
-import wingtip_native
 
 from . import stores, utc
 from .config import Settings, get_settings
@@ -178,7 +176,7 @@ def notams(xml: str) -> list[dict]:
     its domestic place and number, else its place and ICAO number. Read by
     the engine (notam.rs, `notams_fns`), as a phone reads one; none where
     the message is not XML."""
-    return json.loads(wingtip_native.call("notams_fns", json.dumps({"text": xml})))
+    return engine("notams_fns", text=xml)
 
 
 def _ours(notam: dict) -> bool:

@@ -83,7 +83,7 @@ def test_an_archive_gives_up_only_the_files_the_planner_reads(tmp_path, monkeypa
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr(faa_data.requests, "get", lambda *a, **k: Answer())
+    monkeypatch.setattr(faa_data.outside, "get", lambda *a, **k: Answer())
     faa_data.download_and_extract("https://example/DOF.zip", tmp_path, only=["DOF.DAT", "APT_BASE.csv"])
     assert sorted(p.name for p in tmp_path.iterdir()) == ["DOF.DAT"]
 

@@ -280,3 +280,21 @@ def test_the_bases_asked_for_are_given_as_they_are_found(clock, monkeypatch):
     again = traffic.based(["a89c1e"])
     assert again == {"based": {"a89c1e": lwm}, "pending": []}
     assert looked == ["a89c1e"]
+
+
+def test_with_the_archive_closed_opensky_is_asked_for_the_whole_fortnight_in_one_round(clock, monkeypatch):
+    import datetime as dt
+
+    from wingtip.traffic import opensky
+
+    rounds, warmed = [], []
+    stand_in(monkeypatch, "_day_trace", lambda hex_id, day: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_trace", lambda hex_id: None)
+    monkeypatch.setattr(opensky, "on", lambda: True)
+    monkeypatch.setattr(opensky, "flights", lambda hex_id, days, today, ask: rounds.append(days) or ([], 0))
+    monkeypatch.setattr(opensky, "warm", lambda hex_id, shown, now: warmed.append(hex_id))
+    today = dt.date(2026, 10, 11)
+    found = traffic.history("a89c1e", today=today)
+    # Thirteen days before today in one call, where it was a week a call, one after the other.
+    assert len(rounds) == 1 and sorted(rounds[0]) == [today - dt.timedelta(days=n) for n in range(traffic.HISTORY_DAYS_PER_ASK - 1, 0, -1)]
+    assert found["unread_days"] == 0 and warmed == ["a89c1e"]

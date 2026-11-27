@@ -294,6 +294,12 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
             batch = [day - dt.timedelta(days=n) for n in range(HISTORY_BATCH) if day - dt.timedelta(days=n) >= stop]
             past = list(pool.map(lambda d: _day_trace(hex_id, d), batch))
             missed = [d for d, t in zip(batch, past) if t is UNREAD]
+            if missed == batch and opensky.on():
+                # The archive gave none of them (its globe turning the
+                # planner away): OpenSky asked for every day left of this
+                # ask in one round, where it was a round a batch, 16 s.
+                missed += [day - dt.timedelta(days=n) for n in range(HISTORY_BATCH, (day - stop).days + 1)]
+                batch = missed
             more, still = opensky.flights(hex_id, missed, today, ask) if missed and opensky.on() else ([], len(missed))
             elsewhere += more
             unread += still
@@ -312,6 +318,8 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     )
     flights.reverse()
     shown = flights[:limit]
+    if ask and opensky.on():
+        opensky.warm(hex_id, shown, time.time())
     # Where the next ask starts: the last shown's day where more were found
     # than shown (those that took off before it, by `before`), else the
     # first day not read yet, while the archive has it.

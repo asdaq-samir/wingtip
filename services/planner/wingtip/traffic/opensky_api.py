@@ -38,6 +38,11 @@ TIMEOUT_S = 20.0
 #: How long a flight list may take, s: a pilot's card waits on it, and
 #: the days OpenSky does not answer in time are counted as not read.
 FLIGHTS_TIMEOUT_S = 8.0
+#: How long a path a pilot opened may take, s: its card waits on it (a
+#: first open took 7 s and more, 2026-11-27). The paths of the flights a
+#: card lists are asked ahead in the background, with TIMEOUT_S
+#: (opensky.warm), so most are kept before they are opened.
+TRACK_TIMEOUT_S = 8.0
 _TOKEN = {"value": None, "until": 0.0}
 #: One token asked for at a time: the days asked side by side
 #: (flights.history) all want one at once.

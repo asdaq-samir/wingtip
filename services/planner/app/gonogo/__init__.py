@@ -19,13 +19,7 @@ web file it mirrors, and the tests are the web's cases.
 `flight` assembles their inputs from the planner's own plan and
 briefing, and POST /api/go-no-go (app.routers.gonogo) answers with them."""
 
-import json
-
-import wingtip_native
-
-
-def ask(name: str, **given):
-    """The engine's rule `name` on the input given (wingtip_engine::call,
-    gonogo::calls lists the Go / No-Go's), its answer parsed. Dates and
-    datetimes are sent as the planner's JSON sends them."""
-    return json.loads(wingtip_native.call(name, json.dumps(given, default=str)))
+# The engine's rule by name (wingtip_engine::call, gonogo::calls lists the
+# Go / No-Go's), its answer parsed, dates sent as text: wingtip.engine's
+# `ask`, the planner's one way in, here for the Go / No-Go's modules.
+from wingtip.engine import ask as ask

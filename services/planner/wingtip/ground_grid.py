@@ -40,6 +40,7 @@ import requests
 from cachetools import TTLCache
 
 from . import geo, geo_boxes, outside
+from .config import user_agent
 from .elevation import terrarium_m
 from .units import M_TO_FT
 
@@ -52,7 +53,7 @@ COLS = int((EAST - WEST) * PER_DEG)
 #: The tiles it is read from.
 ZOOM = 11
 TILE_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
-HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; terrain floor)"}
+HEADERS = {"User-Agent": user_agent("VFR flight planner; terrain floor")}
 DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "ground_grid"
 #: The grid's files, named for how its tiles were read: v2 since its
 #: voids, spikes and sea floor were read as wingtip.elevation.terrarium_m

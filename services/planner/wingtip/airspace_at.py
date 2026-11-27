@@ -21,7 +21,6 @@ WKB, the boxes and the walk in Rust, and nothing to index at the start.
 
 from __future__ import annotations
 
-import json
 import mmap
 from pathlib import Path
 
@@ -31,11 +30,12 @@ import wingtip_native
 
 from . import cycle_pack
 from .single_flight import once
+from wingtip.engine import ask as engine
 
 #: The shapefile's "up to but not including Class A" ceiling, and one that
 #: is not a number, read as Class A's floor (14 CFR 71.33): the engine's
 #: one copy (wingtip_flight::limits::CLASS_A_FLOOR_FT), asked once.
-CLASS_A_FLOOR_FT = float(json.loads(wingtip_native.call("altitude_limits", "{}"))["class_a_floor_ft"])
+CLASS_A_FLOOR_FT = float(engine("altitude_limits")["class_a_floor_ft"])
 #: Those airports (14 CFR part 91, appendix D, section 1). Not the Class B
 #: shapefile's primary airports: it names 30, and BWI, Andrews, Dulles,
 #: Hobby, LaGuardia, Newark and Miramar have veils of their own beyond
@@ -204,7 +204,7 @@ def column(lat: float, lon: float, ground_ft: float, volumes: list[dict], in_vei
     `airspace_column`), the phones' very ones; the volumes are this
     module's, read from the shapefile or the cycle pack (volumes_at)."""
     asked = [{k: v.get(k) for k in ("class", "name", "ident", "floor_ft", "floor_ref", "ceiling_ft")} for v in volumes]
-    return json.loads(wingtip_native.call("airspace_column", json.dumps({"ground_ft": ground_ft, "volumes": asked, "in_veil": in_veil})))
+    return engine("airspace_column", ground_ft=ground_ft, volumes=asked, in_veil=in_veil)
 
 
 def surface_airspace(lat: float, lon: float, elevation_ft: float | None, shp_path) -> dict:
@@ -214,7 +214,7 @@ def surface_airspace(lat: float, lon: float, elevation_ft: float | None, shp_pat
     the phones' very rule, on the volumes holding the field (volumes_at). As
     {"airspace_class", "surface_airspace"}, the card's two."""
     asked = [{k: v[k] for k in ("class", "floor_ft", "floor_ref", "hours")} for v in volumes_at(lat, lon, shp_path)]
-    answer = json.loads(wingtip_native.call("surface_airspace", json.dumps({"elevation_ft": elevation_ft, "volumes": asked})))
+    answer = engine("surface_airspace", elevation_ft=elevation_ft, volumes=asked)
     return {"airspace_class": answer["class"], "surface_airspace": answer}
 
 
@@ -240,4 +240,4 @@ def mode_c_veil(lat: float, lon: float, class_b_airports) -> dict | None:
     "distance_nm"}; None outside every veil. The engine's (rules.rs,
     `mode_c_veil`), as a phone works it out from its pack."""
     airports = [{k: a.get(k) for k in ("ident", "name", "lat", "lon")} for a in class_b_airports]
-    return json.loads(wingtip_native.call("mode_c_veil", json.dumps({"lat": lat, "lon": lon, "airports": airports})))
+    return engine("mode_c_veil", lat=lat, lon=lon, airports=airports)

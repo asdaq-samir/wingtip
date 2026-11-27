@@ -30,13 +30,13 @@ import zipfile
 from pathlib import Path
 
 import numpy as np
-import requests
 from scipy.spatial import KDTree
 
+from . import outside
 from .atomic import atomic_path
 from .config import DATA_DIR
 from .geo import _unit_sphere, bearing_deg, distance_nm
-from .retry import with_retries
+from .retry import BODY_CUT_OFF, with_retries
 
 log = logging.getLogger(__name__)
 
@@ -123,14 +123,15 @@ def _download(out: Path = PLACES_PATH) -> None:
     with tempfile.TemporaryFile() as blob:
 
         def fetch():
-            with requests.get(GNIS_URL, stream=True, timeout=120) as resp:
+            with outside.get(GNIS_URL, stream=True, timeout=120) as resp:
                 resp.raise_for_status()
                 blob.seek(0)
                 blob.truncate()
                 for chunk in resp.iter_content(1 << 20):
                     blob.write(chunk)
 
-        with_retries(fetch, describe="USGS GNIS download")
+        # The request is retried by outside's session; this, a body cut off.
+        with_retries(fetch, describe="USGS GNIS download", transient=BODY_CUT_OFF)
         blob.seek(0)
         with zipfile.ZipFile(blob) as z:
             member = next(n for n in z.namelist() if n.lower().endswith(".txt"))

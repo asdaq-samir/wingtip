@@ -11,12 +11,10 @@ from __future__ import annotations
 
 import bisect
 import csv
-import json
 import math
 import threading
 import time
 
-import wingtip_native
 
 from . import faa_data, geo, geo_boxes, magnetic
 from .engine import ask as engine
@@ -202,14 +200,14 @@ def parse_frd(ident: str) -> tuple[str, int, float] | None:
     `ident` is not one, or its course is past 360 or its distance nothing
     or past 999 nm: the engine's reading (wingtip_engine::route::points),
     the web app's lib/identSchema frdOf too."""
-    frd = json.loads(wingtip_native.call("frd_read", json.dumps({"text": ident})))
+    frd = engine("frd_read", text=ident)
     return None if frd is None else (frd["base"], int(frd["course"]), float(frd["distance_nm"]))
 
 
 def frd_ident(base: str, course: int, distance_nm: float) -> str:
     """The point's ident as the route writes it: "VPBNG/090/30", the
     course to the degree and the distance to a tenth (the engine's)."""
-    return json.loads(wingtip_native.call("frd_write", json.dumps({"base": base, "course": course, "distance_nm": distance_nm})))
+    return engine("frd_write", base=base, course=course, distance_nm=distance_nm)
 
 
 def frd_point(ident: str, near: tuple = (), locate=None) -> dict | None:

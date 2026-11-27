@@ -11,10 +11,16 @@ from ..single_flight import one_at_a_time
 from .common import TrafficUnavailable, _LOCK, _aircraft
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, SEARCH_WAIT_S, _heard, _paced, _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
+from .radar import _heard_elsewhere_now
 from .routes import _CALLSIGN
 
 _HEX = re.compile(r"^~?[0-9a-f]{6}$")
 _N_NUMBER = re.compile(r"^N[1-9][0-9A-Z]{0,4}$")
+
+#: How long a search's request to adsb.lol's API may take, s: a pilot waits on it.
+SEARCH_TIMEOUT_S = 3.0
+#: The FAA's terminal radar's credit, for a search answered from it (ingest's, through SWIM).
+RADAR_SOURCE = {"source": "FAA radar, through SWIM", "license": "FAA SWIM terms"}
 
 #: A search's answer from adsb.lol is given again this long, s.
 FOUND_TTL_S = 15
@@ -70,7 +76,7 @@ def find_credited(query: str) -> tuple[list[dict], dict]:
             # receivers are not adsb.lol's and an airplane heard only
             # by adsb.lol's would be missed in the air. The FAA's
             # record never waits on this: /api/traffic/registered.
-            answer = (recent, ADSB_LOL_SOURCE) if recent is not None else _asked(text, adsbx_tried=True)
+            answer = (recent, ADSB_LOL_SOURCE) if recent is not None else _asked_or_radar(text, hex_id)
         # Stored before the gate is let go, so a search arriving after
         # finds it.
         with _LOCK:
@@ -135,6 +141,21 @@ def registered(query: str) -> dict | None:
     return registry.lookup(n_number=text) if _N_NUMBER.fullmatch(text) else None
 
 
+def _asked_or_radar(text: str, hex_id: str | None) -> tuple[list[dict], dict]:
+    """adsb.lol's API's answer (`_asked`, ADS-B Exchange tried already);
+    where its turn is more than SEARCH_WAIT_S off or it does not answer,
+    the FAA's radar's report of the airplane named by its address, where
+    ingest heard it, at once; else TrafficUnavailable, the FAA's record
+    then answered (`checked` false)."""
+    try:
+        return _asked(text, adsbx_tried=True)
+    except TrafficUnavailable:
+        heard = _heard_elsewhere_now(hex_id) if hex_id else None
+        if heard is None:
+            raise
+        return [heard], RADAR_SOURCE
+
+
 def _asked(text: str, adsbx_tried: bool = False) -> tuple[list[dict], dict]:
     """adsb.lol's answer to a search, and its credit: by address, callsign
     or registration, as the text reads, the next way where one finds none;
@@ -152,7 +173,9 @@ def _asked(text: str, adsbx_tried: bool = False) -> tuple[list[dict], dict]:
             found = [
                 a
                 for a in (
-                    _aircraft(e) for e in _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S).get("ac") or [] if isinstance(e, dict)
+                    _aircraft(e)
+                    for e in _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S, SEARCH_TIMEOUT_S).get("ac") or []
+                    if isinstance(e, dict)
                 )
                 if a is not None
             ]

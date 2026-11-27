@@ -13,6 +13,7 @@ the readme gives are the fixed-width record's.
 
 from __future__ import annotations
 
+import functools
 import re
 
 from .engine import ask as engine
@@ -214,7 +215,20 @@ def name_case(text: str, maker: bool = False) -> str:
     "UNITED AIRLINES INC" as "United Airlines Inc"; a company's form and a
     word with figures kept, and in a maker's name (`maker`) its initials
     too ("IAE", "CFM"), which in a person's ("JOE") are a name. The
-    engine's name_case."""
+    engine's name_case, its answers kept (_cased)."""
+    return _cased(text, maker)
+
+
+#: Names kept as cased, the most used: a registry rebuild asks about 3.4
+#: million names of which most are a maker's, an engine's, a town's or a
+#: country's again (319,586 airplanes had 35,016 makers and 14,235 towns,
+#: 2026-11-27), each an engine call. An owner's name mostly comes once and
+#: goes out of the cache, which holds the repeats in a few megabytes.
+NAMES_KEPT = 1 << 16
+
+
+@functools.lru_cache(maxsize=NAMES_KEPT)
+def _cased(text: str, maker: bool) -> str:
     return engine("name_case", text=text, kind="maker" if maker else "person")
 
 
