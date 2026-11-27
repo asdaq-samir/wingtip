@@ -7,7 +7,7 @@ import type { Box } from "../../lib/map/view";
 const FARTHEST_ZOOM = 4;
 
 /** The most fields the planner answers with at once. */
-const AIRPORTS_LIMIT = 1000;
+export const AIRPORTS_LIMIT = 1000;
 
 /** The METARs the overlay tiles' fields wear their weather from
  *  (AirportsGl), the fields themselves being in the tiles: the planner

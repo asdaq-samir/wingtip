@@ -28,8 +28,12 @@ export function sendTraffic<P extends { hex: string }>(
 ) {
   const source = map.getSource<GeoJSONSource>(id);
   if (!source) return;
-  // One feature an id: a hex heard twice in an answer is drawn once.
-  features = features.filter((f, i) => features.findIndex((g) => g.properties.hex === f.properties.hex) === i);
+  // One feature an id: a hex heard twice in an answer is drawn once, its
+  // first. A Set, as this runs at each frame sent (ten a second while an
+  // airplane is followed), where a findIndex per feature was n² over a
+  // busy terminal area's 500 targets.
+  const heard = new Set<string>();
+  features = features.filter((f) => !heard.has(f.properties.hex) && !!heard.add(f.properties.hex));
   const next: Sent = new Map(features.map((f) => [f.properties.hex, sentOf(f, moving)]));
   const was = lastSent.get(source);
   lastSent.set(source, next);

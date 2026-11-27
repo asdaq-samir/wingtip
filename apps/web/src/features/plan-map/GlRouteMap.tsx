@@ -136,7 +136,7 @@ interface GlRouteMapProps {
 export default function GlRouteMap(p: GlRouteMapProps) {
   const { course } = p;
   return (
-    <GlMapShell course={course} focus={p.focus} focusZoom={p.focusZoom} place={p.place}>
+    <GlMapShell ringsByField course={course} focus={p.focus} focusZoom={p.focusZoom} place={p.place}>
       <Layers {...p} />
     </GlMapShell>
   );
@@ -152,7 +152,7 @@ export default function GlRouteMap(p: GlRouteMapProps) {
  */
 export function GlBootMap() {
   return (
-    <GlMapShell bare course={null} focus={null} focusZoom={0} place={null}>
+    <GlMapShell bare ringsByField course={null} focus={null} focusZoom={0} place={null}>
       <LandWaterGl />
       <ChartGl course={null} />
       <OverlayGl />

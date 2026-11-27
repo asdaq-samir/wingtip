@@ -4,6 +4,7 @@ import type { OverlayTiles } from "../../api/types";
 import { OVERLAY_LAYERS } from "../sources/overlayTiles";
 import { overlayStyle } from "./glOverlays";
 import { routeLayers } from "./glRoute";
+import { LABEL_NIGHT } from "./layers/common";
 import { dimLayer, MAP_DIM } from "./mapDim";
 
 const TILES: OverlayTiles = {
@@ -48,6 +49,24 @@ describe("the Dimmer's step", () => {
 
   it("lays out none of the route's layers again", () => {
     expect(routeLayers().flatMap((l) => relaidByDim(l))).toEqual([]);
+  });
+
+  it("lays out again, at a commit at night, only the tiles' words coloured by feature", () => {
+    // The words' light (LABEL_NIGHT) follows the Dimmer as committed, and
+    // the theme: a field's tower and a fix's kind pick their ink, so those
+    // words' sources are laid out once a commit, never once a step, and no
+    // line, circle or icon with them (the themes audit, round 6, N1).
+    const { layers } = overlayStyle(TILES, "https://wingtip.test");
+    const relaid = [...(layers.lines ?? []), ...(layers.marks ?? [])].flatMap((l) => {
+      const paint = (l as { paint?: Record<string, unknown> }).paint ?? {};
+      return Object.entries(paint)
+        .filter(
+          ([, v]) => reads(v, (e) => e[0] === "global-state" && e[1] === LABEL_NIGHT) && reads(v, (e) => BY_FEATURE.has(String(e[0]))),
+        )
+        .map(([k]) => k);
+    });
+    expect(relaid.length).toBeGreaterThan(0);
+    expect(new Set(relaid)).toEqual(new Set(["text-color", "text-halo-color"]));
   });
 
   it("is caught where an opacity by feature reads it", () => {

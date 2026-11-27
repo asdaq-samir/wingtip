@@ -13,7 +13,7 @@ import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/g
 import { useGlFadeIn } from "../../../lib/map/gl/glFadeIn";
 import { TAP, labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { DIM_BY_COLOUR } from "../../../lib/map/gl/mapDim";
+import { DIM_WARNING } from "../../../lib/map/gl/mapDim";
 import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
 const SOURCE = "tfrs";
@@ -41,13 +41,16 @@ const FILL_LATER: FillLayerSpecification = {
   paint: { "fill-color": TFR_RED, "fill-opacity": 0.06 },
 };
 const LAYERS = [FILL, FILL_LATER];
-/** The edges and the numbers dimmed at night by their colour, the chart's
- *  own way (mapDim's DIM_BY_COLOUR; the owner, 2026-11-27, "Dim by
- *  colour"): the red over the paper at the default Dimmer 2.99:1, where
- *  the red made see-through by the dim was 1.27:1 (1.92 and 1.06 at the
- *  deepest). A restriction a pilot must know of (14 CFR 91.103) stays
- *  plain on the dimmed chart. */
-const metadata = DIM_BY_COLOUR;
+/** The edges dimmed at night by their colour as a warning (mapDim's
+ *  DIM_WARNING; the owner, 2026-11-27, "Dim by colour"): the red under
+ *  the paper's own light, so it holds 3:1 over the paper at the default
+ *  Dimmer across the whole Contrast range (3.10:1 at -30%, 3.67:1 at the
+ *  night's own; times the chart's brightness alone it was 2.57:1 at -30%,
+ *  the themes audit, round 6, N3; see-through, 1.27:1). The numbers are
+ *  words, lit by their night ink on their dark halo (labelInk). A
+ *  restriction a pilot must know of (14 CFR 91.103) stays plain on the
+ *  dimmed chart. */
+const metadata = DIM_WARNING;
 const LINE: LineLayerSpecification = {
   id: "tfrs-line",
   type: "line",

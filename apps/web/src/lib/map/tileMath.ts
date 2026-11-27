@@ -45,6 +45,9 @@ export function mercY(lat: number): number {
   return (1 - Math.asinh(Math.tan(phi)) / Math.PI) / 2;
 }
 
+/** The longitude at `x` across the Web Mercator world (mercX's inverse). */
+export const lonOf = (x: number) => x * 360 - 180;
+
 /** The latitude at `y` down the Web Mercator world (mercY's inverse). */
 export const latOf = (y: number) => (Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180) / Math.PI;
 

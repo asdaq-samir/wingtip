@@ -1,4 +1,6 @@
 import type { ExpressionSpecification, LayerSpecification } from "maplibre-gl";
+import { linearOf } from "../../rgb";
+import { ENCODE, LABEL_NIGHT, WORD_LIGHT } from "./layers/common";
 
 /**
  * The Dimmer over what is drawn on the chart, not the chart's tiles alone
@@ -66,16 +68,87 @@ const COLOURS: Partial<Record<LayerSpecification["type"], readonly string[]>> = 
  *  2.4 to 1 by colour). Only for a constant colour: one by feature would
  *  have MapLibre lay its source out again at every move of the Dimmer. */
 export const DIM_BY_COLOUR = { "wingtip:dim": "colour" } as const;
+/** And a night warning's (a TFR's edge, an obstacle in the red): by its
+ *  colour too, times WARNING_DIM, which follows the paper's light under
+ *  the Contrast as well as the Dimmer, so it holds 3:1 over the paper at
+ *  the default Dimmer whatever the Contrast (warningLight). */
+export const DIM_WARNING = { "wingtip:dim": "warning" } as const;
 
-type Dimmable = { type?: string; metadata?: unknown } | null | undefined;
-const byColour = (layer: Dimmable) => (layer?.metadata as Record<string, unknown> | undefined)?.["wingtip:dim"] === "colour";
-const propsOf = (layer: Dimmable) =>
-  layer?.type ? ((byColour(layer) ? COLOURS : DIMMED)[layer.type as LayerSpecification["type"]] ?? []) : [];
+type Dimmable = { type?: string; metadata?: unknown; paint?: unknown; getPaintProperty?: (name: never) => unknown } | null | undefined;
+const dimKind = (layer: Dimmable) => (layer?.metadata as Record<string, unknown> | undefined)?.["wingtip:dim"];
+const byColour = (layer: Dimmable) => dimKind(layer) === "colour" || dimKind(layer) === "warning";
+
+function reads(value: unknown, state: string): boolean {
+  if (!Array.isArray(value)) return false;
+  return (value[0] === "global-state" && value[1] === state) || value.some((v) => reads(v, state));
+}
+
+/** Whether a symbol layer's words are dimmed by their own ink (labelInk,
+ *  which reads the words' light, LABEL_NIGHT): their opacity and colour
+ *  are then left whole here, as fading them faded their halo with them
+ *  (the themes audit, round 6, N1). A spec's paint, or a style layer's. */
+function wordsDimmed(layer: Dimmable): boolean {
+  if (layer?.type !== "symbol") return false;
+  const colour =
+    typeof layer.getPaintProperty === "function"
+      ? layer.getPaintProperty("text-color" as never)
+      : (layer.paint as Record<string, unknown> | undefined)?.["text-color"];
+  return reads(colour, LABEL_NIGHT);
+}
+
+const propsOf = (layer: Dimmable) => {
+  const props = layer?.type ? ((byColour(layer) ? COLOURS : DIMMED)[layer.type as LayerSpecification["type"]] ?? []) : [];
+  return wordsDimmed(layer) ? props.filter((p) => p !== "text-opacity" && p !== "text-color") : props;
+};
+
+/** The night's raster-contrast as MapLibre's raster shader applies it, a
+ *  grey's factor about the middle: 1/(1-k) for a k over 0, 1+k under. */
+const contrastFactor = (k: number) => (k > 0 ? 1 / (1 - k) : 1 + k);
+
+/** The chart's white as the raster shader draws it, encoded sRGB 0 to 1:
+ *  raster-contrast first, about the middle, then raster-brightness-max,
+ *  the paper the map's marks and words are read against. */
+export function paperOf(brightness: number, contrast: number): number {
+  return Math.min(1, (0.5 * contrastFactor(contrast) + 0.5) * Math.min(1, Math.max(0, brightness)));
+}
+
+/**
+ * The share of their night inks the map's light-haloed words take after
+ * dark (common's LABEL_NIGHT), 0 by day: the factor that brings the
+ * words' light (common's WORD_LIGHT, every night ink brought to it) to the
+ * paper's, so a word is as light as the chart under it and no lighter
+ * (AIM 8-1-6), and on its dark halo, kept whole, reads about 5:1 at the
+ * night's default Dimmer, where by opacity it was about 2:1 (the themes
+ * audit, round 6, N1). Never 0 at night (0 is the day), and in
+ * hundredths, as each new figure lays the words' sources out again.
+ */
+export function wordLight(night: boolean, brightness: number, contrast: number): number {
+  if (!night) return 0;
+  const share = (linearOf(paperOf(brightness, contrast)) / WORD_LIGHT) ** (1 / ENCODE);
+  return Math.max(0.01, Math.min(1, Math.round(share * 100) / 100));
+}
+
+/** A night warning's colour's share of light against the paper's: 0.85,
+ *  so the TFR's red holds 3:1 over the paper across the whole Contrast
+ *  range at the default Dimmer (3.10:1 at -30%, where it was 2.57:1 times
+ *  the chart's brightness alone; mapContrast.test). */
+const WARNING_UNDER_PAPER = 0.85;
+
+/** The map's global state a warning dimmed by colour reads (DIM_WARNING):
+ *  1 by day, at night the paper's light (paperOf) times
+ *  WARNING_UNDER_PAPER, so the warning follows the Contrast too, never
+ *  brighter than the chart. */
+export const WARNING_DIM = "warningDim";
+
+export function warningLight(night: boolean, brightness: number, contrast: number): number {
+  return night ? Math.round(Math.min(1, WARNING_UNDER_PAPER * paperOf(brightness, contrast)) * 100) / 100 : 1;
+}
 
 /** One colour times the dim: black at none, itself at 1. */
-export function dimmedColour(colour: unknown): unknown {
-  return ["interpolate", ["linear"], DIM, 0, "black", 1, colour];
+export function dimmedColour(colour: unknown, by: unknown = DIM): unknown {
+  return ["interpolate", ["linear"], by, 0, "black", 1, colour];
 }
+const WARN = ["coalesce", ["global-state", WARNING_DIM], 1] as unknown as ExpressionSpecification;
 
 /** Whether a layer's paint property is one the dim reaches. */
 export function isDimmed(layer: Dimmable, prop: string): boolean {
@@ -86,6 +159,7 @@ export function isDimmed(layer: Dimmable, prop: string): boolean {
  *  reaches it (an opacity, or a colour of a layer dimmed by colour). */
 export function dimmedPaint(layer: Dimmable, prop: string, value: unknown, by?: number): unknown {
   if (!isDimmed(layer, prop)) return value;
+  if (dimKind(layer) === "warning") return dimmedColour(value, WARN);
   return byColour(layer) ? dimmedColour(value) : dimmedOpacity(value, by);
 }
 

@@ -54,6 +54,10 @@ interface Props {
   /** The map alone, while a route in the address waits for the engine
    *  (GlBootMap): no buttons, banners or ruler, and no taps until it is. */
   bare?: boolean;
+  /** Made with the Class C and D rings kept to the fields drawn
+   *  (makeMap's `ringsByField`): the planner's maps, the boot map handed
+   *  to it among them, whose airports keep them so (placedRings). */
+  ringsByField?: boolean;
 }
 
 /**
@@ -73,7 +77,7 @@ interface Props {
  * parked as that tree goes and taken up by the planner's, its chart and
  * overlays kept, rather than a second map drawn from nothing.
  */
-export default function GlMapShell({ course, focus, focusZoom, place, children, bare = false }: Props) {
+export default function GlMapShell({ course, focus, focusZoom, place, children, bare = false, ringsByField = false }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [overlays, setOverlays] = useState(false);
@@ -81,6 +85,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const [revealed, setRevealed] = useState(() => !!parked && "revealed" in parked.holder.dataset);
   const insets = useMapInsets();
   const insetsRef = useRef(insets);
+  // Read as the map is made, once (a map lives on from tree to tree).
+  const ringsRef = useRef(ringsByField);
   // What a tap opened a card for, brought into sight once the card is up if it hides it.
   const { note: noteTap, take: takeTap } = useTappedInSight(map, insetsRef, padOf);
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
@@ -123,7 +129,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       holder.className = "h-full w-full bg-(--chart-map-ground) dark:bg-(--chart-map-ground-night)";
       holder.dataset.testid = "gl-map";
       host.appendChild(holder);
-      m = makeMap(holder, insetsRef.current);
+      m = makeMap(holder, insetsRef.current, ringsRef.current);
     }
     // Whether its first style has the overlay tiles: a map made without
     // them (no archive yet, or its name too slow to come) has them added

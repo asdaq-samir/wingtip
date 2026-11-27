@@ -1,9 +1,10 @@
 import { useWeatherAgeCredit } from "../../../lib/map/marks/weatherAge";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { MapGeoJSONFeature, MapSourceDataEvent, SymbolLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../lib/api/client";
-import { airportsQuery } from "../airportsQuery";
+import { AIRPORTS_LIMIT, airportsQuery } from "../airportsQuery";
+import { useAirportWeatherState, useSameFields, type WeatherAnswer } from "./airportWeatherState";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { prefetchAirport } from "../../../lib/queryClient";
@@ -14,7 +15,6 @@ import {
   AIRPORT_TILE_LAYERS,
   OVERLAY_SOURCE,
   markSelectedAirport,
-  setAirportWeather,
   setOverlayExclusion,
 } from "../../../lib/map/gl/glOverlays";
 import { TILE_AIRPORT_ICON } from "../../../lib/map/gl/airportIcons";
@@ -117,12 +117,15 @@ export function AirportsGl(props: Props) {
   return overlays ? <TileAirports {...props} /> : null;
 }
 
+/** The most reporting fields asked for along the route. */
+const ROUTE_LIMIT = 1000;
+
 /** The reporting fields along the route, for their weather. */
 function useAlongRoute(route: Props["route"]) {
   const routeKey = route ? `${route.south},${route.west},${route.north},${route.east}` : null;
   return useQuery({
     queryKey: ["airportsReporting", routeKey],
-    queryFn: () => api.airportsInView({ ...route!, limit: 1000, reporting: true }),
+    queryFn: () => api.airportsInView({ ...route!, limit: ROUTE_LIMIT, reporting: true }),
     enabled: !!route,
     staleTime: WEATHER_EVERY_MS,
     refetchInterval: WEATHER_EVERY_MS,
@@ -254,28 +257,27 @@ function TileAirports(props: Props) {
     };
   }, [map, selectedIdent]);
   const { box, level } = useGlView();
-  const { data: inView, dataUpdatedAt } = useQuery({
-    ...airportsQuery(box, level),
-    refetchInterval: WEATHER_EVERY_MS,
-    placeholderData: keepPreviousData,
-  });
+  const {
+    data: inView,
+    dataUpdatedAt,
+    isPlaceholderData,
+  } = useQuery({ ...airportsQuery(box, level), refetchInterval: WEATHER_EVERY_MS, placeholderData: keepPreviousData });
   // Their age in the map's small print once it is old (weatherAge).
   useWeatherAgeCredit(IN_VIEW_PATH, dataUpdatedAt);
   const alongRoute = useAlongRoute(route);
-  const colours = useMemo(() => {
-    const out = new Map<string, string>();
-    for (const list of [alongRoute, inView])
-      for (const a of list ?? []) if (a.flight_category) out.set(a.ident, colourOf(a.flight_category));
-    return out;
-  }, [alongRoute, inView]);
+  // Each answer with the box it answers: the view's only once it is this
+  // box's own, not the last box's held while it comes.
+  const viewAnswer = useMemo<WeatherAnswer>(
+    () => (inView && !isPlaceholderData ? { fields: inView, box: box.box, full: inView.length >= AIRPORTS_LIMIT } : null),
+    [inView, isPlaceholderData, box.box],
+  );
+  const routeAnswer = useMemo<WeatherAnswer>(
+    () => (alongRoute && route ? { fields: alongRoute, box: route, full: alongRoute.length >= ROUTE_LIMIT } : null),
+    [alongRoute, route],
+  );
   const off = useAirportWeatherShown() === "off";
-  const known = useRef(colours);
-  useEffect(() => {
-    known.current = colours;
-    // Off: no colour for any field, so each disc is the no-report grey.
-    setAirportWeather(map, off ? new Map() : colours);
-  }, [map, colours, off]);
-  const reporting = useMemo(() => [...(alongRoute ?? []), ...(inView ?? [])], [alongRoute, inView]);
+  const known = useAirportWeatherState(map, [routeAnswer, viewAnswer], off);
+  const reporting = useSameFields(alongRoute, inView);
   useAirportTaps(props, (f) => {
     const p = f.properties;
     const use = p.military === "military" ? "military" : p.use === "private" ? "private" : "";
@@ -285,7 +287,7 @@ function TileAirports(props: Props) {
       space: p.airspace ?? "",
       size: p.size ?? "",
       use,
-      weather: known.current.get(String(p.ident)) ?? colourOf(null),
+      weather: known.current.get(String(p.ident))?.colour ?? colourOf(null),
     };
   });
   // The same fields for a screen reader and a keyboard, which cannot see
