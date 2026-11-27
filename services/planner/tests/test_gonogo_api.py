@@ -117,6 +117,9 @@ SOLO = {"empty_weight_lb": 1642, "empty_arm_in": 38.1, "stations_lb": [170, 0, 0
 
 
 def test_a_quiet_flight_with_the_pilots_load_is_nothing_found_against_it(stubbed):
+    # Both fields reporting a temperature: the distances are the day's, not a standard day's.
+    c81 = briefing()["metars"]["C81"]
+    stubbed["briefing"] = briefing(metars={"C81": c81, "KDLH": c81})
     resp = client.post("/api/go-no-go", json=ask(load=SOLO))
     assert resp.status_code == 200
     body = resp.json()
@@ -189,6 +192,15 @@ def test_a_route_with_no_legal_altitude_is_no_go_and_the_rest_waits_as_on_the_we
     assert (items["altitude"]["finding"], items["altitude"]["detail"]) == ("stop", "No legal altitude past KDLH")
     assert items["fuel"]["finding"] == "pending"
     assert body["line"]["finding"] == "stop"
+
+
+def test_a_field_with_no_temperature_reported_is_a_runway_caution(stubbed):
+    # KDLH with no METAR: its landing distance is a standard day's (FAA-H-8083-25C ch. 11).
+    items = by_key(client.post("/api/go-no-go", json=ask(load=SOLO)).json())
+    assert (items["runways"]["finding"], items["runways"]["detail"]) == (
+        "caution",
+        "No temperature reported at KDLH: distances assume a standard day",
+    )
 
 
 def test_a_briefing_that_failed_is_said_as_not_fetched(stubbed):

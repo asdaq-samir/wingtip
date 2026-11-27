@@ -2575,6 +2575,18 @@ data class Currency (
      */
     val nightPassengersUntil: String? = null,
 
+    /**
+     * The category and class the passenger currency was judged in, the newest flight's
+     * (61.57(a)(1)).
+     */
+    val passengerClass: String? = null,
+
+    /**
+     * The newest flight says no category and class, so every landing was counted: the logbook
+     * can't tell.
+     */
+    val passengerClassUnknown: Boolean? = null,
+
     val totalHours: Double,
     val trackingInWindow: Boolean
 )
@@ -2624,6 +2636,18 @@ data class CurrencyAsk (
 @Serializable
 data class LogbookEntry (
     val approaches: Int? = null,
+
+    /**
+     * 14 CFR 61.5 category, "Airplane".
+     */
+    val category: String? = null,
+
+    /**
+     * 14 CFR 61.5 class, "Single-engine land".
+     */
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
     val crossCountryHours: Double? = null,
 
     /**
@@ -2634,6 +2658,12 @@ data class LogbookEntry (
     val distanceNm: Double? = null,
     val dualHours: Double? = null,
     val flownOn: String,
+
+    /**
+     * Landings to a full stop, day and night, where logged.
+     */
+    val fullStopLandings: Int? = null,
+
     val holding: Boolean? = null,
     val instrumentHours: Double? = null,
     val longestLegNm: Double? = null,
@@ -2645,6 +2675,7 @@ data class LogbookEntry (
     val nightLandings: Int? = null,
 
     val soloHours: Double? = null,
+    val tailwheel: Boolean? = null,
     val totalHours: Double? = null,
     val toweredLandings: Int? = null,
     val tracking: Boolean? = null

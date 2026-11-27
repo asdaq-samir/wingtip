@@ -47,7 +47,7 @@ router = APIRouter()
 
 
 def _entries(entries: list[LogbookEntry]) -> list[dict]:
-    return [e.model_dump(mode="json") for e in entries]
+    return [e.model_dump(mode="json", by_alias=True) for e in entries]
 
 
 def _ask(name: str, **given):

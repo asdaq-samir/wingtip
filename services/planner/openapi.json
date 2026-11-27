@@ -6456,6 +6456,24 @@
             "description": "90 days after the third most recent night full-stop landing (61.57(b)).",
             "title": "Nightpassengersuntil"
           },
+          "passengerClass": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The category and class the passenger currency was judged in, the newest flight's (61.57(a)(1)).",
+            "title": "Passengerclass"
+          },
+          "passengerClassUnknown": {
+            "default": false,
+            "description": "The newest flight says no category and class, so every landing was counted: the logbook can't tell.",
+            "title": "Passengerclassunknown",
+            "type": "boolean"
+          },
           "totalHours": {
             "title": "Totalhours",
             "type": "number"
@@ -14106,6 +14124,30 @@
             "title": "Approaches",
             "type": "integer"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 category, \"Airplane\".",
+            "title": "Category"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 class, \"Single-engine land\".",
+            "title": "Class"
+          },
           "crossCountryHours": {
             "default": 0,
             "title": "Crosscountryhours",
@@ -14131,6 +14173,18 @@
             "format": "date",
             "title": "Flownon",
             "type": "string"
+          },
+          "fullStopLandings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Landings to a full stop, day and night, where logged.",
+            "title": "Fullstoplandings"
           },
           "holding": {
             "default": false,
@@ -14162,6 +14216,11 @@
             "default": 0,
             "title": "Solohours",
             "type": "number"
+          },
+          "tailwheel": {
+            "default": false,
+            "title": "Tailwheel",
+            "type": "boolean"
           },
           "totalHours": {
             "default": 0,
