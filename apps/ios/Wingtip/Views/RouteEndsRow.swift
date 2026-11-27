@@ -56,8 +56,11 @@ struct RouteEndsRow: View {
     /// from the present position as a Direct to is (RouteExtras.position);
     /// with no fix the From field's own prompt asks for it.
     @ViewBuilder private var fromPosition: some View {
-        if plan.dep.isEmpty, !plan.dest.isEmpty, let fix = ownShip.fix {
+        // Whether there is a fix, not the fix, read here, so the row is not
+        // drawn again at every fix (OwnShip.hasFix).
+        if plan.dep.isEmpty, !plan.dest.isEmpty, ownShip.hasFix {
             Button {
+                guard let fix = ownShip.fix else { return }
                 focused.wrappedValue = nil
                 plan.dep = RouteExtras.position(fix)
                 plan.plan()

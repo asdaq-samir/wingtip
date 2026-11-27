@@ -97,7 +97,9 @@ struct NavaidCard: View {
 
     @ViewBuilder private func head(_ vor: VorPin) -> some View {
         let at = CLLocationCoordinate2D(latitude: vor.lat, longitude: vor.lon)
-        let fix = dryRun.fix ?? ownShip.fix
+        // Whether there is a fix read here, the fix only in Direct To's
+        // action, so the card is not drawn again at every fix (OwnShip.hasFix).
+        let hasFix = dryRun.fix != nil || ownShip.hasFix
         Section {
             VStack(spacing: WingtipSpace.xs) {
                 Text("\(vor.ident) \(vor.kind)").font(WingtipType.card).accessibilityAddTraits(.isHeader)
@@ -107,9 +109,9 @@ struct NavaidCard: View {
             .frame(maxWidth: .infinity)
             .listRowBackground(Color.clear)
             GlassRow {
-                Button { plan.drop(vor.ident, at: at, then: .direct, from: fix) } label: { CardActionLabel(.directTo) }
+                Button { plan.drop(vor.ident, at: at, then: .direct, from: dryRun.fix ?? ownShip.fix) } label: { CardActionLabel(.directTo) }
                     .glassProminentButton()
-                    .disabled(plan.course == nil || fix == nil)
+                    .disabled(plan.course == nil || !hasFix)
                 Button { plan.drop(vor.ident, at: at, then: .add, from: nil) } label: { CardActionLabel(.addToRoute) }
                     .glassButton()
                     .disabled(plan.course == nil)
@@ -130,7 +132,7 @@ struct NavaidCard: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-            if let fix, let on = NavaidWords.radial(vor, from: fix.coordinate) {
+            if let place = dryRun.fix?.coordinate ?? ownShip.coarseCoordinate, let on = NavaidWords.radial(vor, from: place) {
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text("On the \(Format.heading(on.radial)) radial · \(Format.distance(on.nm))").font(.headline.monospacedDigit())
                     Text("\(Format.heading(on.toCourse))° to fly to it").font(.subheadline).foregroundStyle(.secondary)

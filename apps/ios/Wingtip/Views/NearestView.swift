@@ -20,10 +20,14 @@ struct NearestView: View {
     @State private var noFixYet = false
 
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
+    /// Where the airplane is as the list reads it: own ship's place to a
+    /// thousandth of a degree (OwnShip.coarseCoordinate), so a fix a
+    /// second does not draw the list again; the fix itself only in actions.
+    private var place: CLLocationCoordinate2D? { dryRun.fix?.coordinate ?? ownShip.coarseCoordinate }
 
     var body: some View {
         List {
-            if fix == nil {
+            if place == nil {
                 noPosition
             }
             if from == .device, !fields.isEmpty {
@@ -52,8 +56,8 @@ struct NearestView: View {
         .navigationTitle("Nearest")
         // Nearest needs the position: asked for here the first time.
         .onAppear { ownShip.askLocation() }
-        .task(id: fix.map { "\(($0.coordinate.latitude * 60).rounded()),\(($0.coordinate.longitude * 60).rounded())" }) {
-            guard let at = fix?.coordinate else { return }
+        .task(id: place.map { "\(($0.latitude * 60).rounded()),\(($0.longitude * 60).rounded())" }) {
+            guard let at = place else { return }
             do {
                 (fields, from) = try await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude)
                 problem = nil
