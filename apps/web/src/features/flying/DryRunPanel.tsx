@@ -101,8 +101,10 @@ export function DryRunControls({
   const grab = (event: PointerEvent<HTMLSpanElement>) => {
     if (event.button !== 0) return;
     held.current = { was: usePastFlight.getState().playing };
-    // The map jumps with the finger while it is down (OwnShipGl), not eased.
+    // The map jumps with the finger while it is down (OwnShipGl), not
+    // eased, after a glide to where the press put the airplane.
     scrub.held = true;
+    scrub.moved = false;
     pausePastFlight();
   };
   const letGo = () => {
