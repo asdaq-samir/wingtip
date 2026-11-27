@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Map as MlMap } from "maplibre-gl";
-import { sendTraffic } from "./trafficSend";
+import { sendTraffic, trafficFrameMs } from "./trafficSend";
 
 const plane = (hex: string, lon: number, label = "") => ({
   type: "Feature" as const,
@@ -35,5 +35,27 @@ describe("a frame of traffic sent to the map", () => {
     expect(source.setData).toHaveBeenCalledWith({ type: "FeatureCollection", features: [plane("a1", -88)] });
     sendTraffic(map, "traffic", [plane("a1", -88)]);
     expect(source.updateData).not.toHaveBeenCalled();
+  });
+
+  it("sends a height that changes with the place as a property updated in place, not the airplane put back whole", () => {
+    const { map, source } = fakeMap();
+    const aloft = (lon: number, alt_m: number) => ({ ...plane("a1", lon), properties: { hex: "a1", label: "", alt_m } });
+    sendTraffic(map, "aloft", [aloft(-88, 900)], ["alt_m"]);
+    sendTraffic(map, "aloft", [aloft(-88, 910)], ["alt_m"]);
+    expect(source.updateData).toHaveBeenLastCalledWith({
+      remove: [],
+      add: [],
+      update: [{ id: "a1", newGeometry: aloft(-88, 910).geometry, addOrUpdateProperties: [{ key: "alt_m", value: 910 }] }],
+    });
+  });
+});
+
+describe("how often a frame of traffic is drawn", () => {
+  it("steps once a second at the chart's scales, four a second close in, ten while followed close in", () => {
+    expect(trafficFrameMs(9, false)).toBe(1000);
+    expect(trafficFrameMs(12, false)).toBe(250);
+    expect(trafficFrameMs(11, false)).toBe(500);
+    expect(trafficFrameMs(10, true)).toBe(100);
+    expect(trafficFrameMs(5, true)).toBe(1000);
   });
 });
