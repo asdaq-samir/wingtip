@@ -127,7 +127,7 @@ final nonisolated class PlateRenderer: MKOverlayRenderer {
             return look
         }
         if was.opacity != next.opacity { alpha = CGFloat(next.opacity) }
-        if was.inverted != next.inverted { setNeedsDisplay() }
+        if was.inverted != next.inverted || was.shade != next.shade { setNeedsDisplay() }
     }
 
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
@@ -150,6 +150,13 @@ final nonisolated class PlateRenderer: MKOverlayRenderer {
             // White under a difference is each colour's opposite: the
             // page's white black, its ink white, for the night.
             context.setBlendMode(.difference)
+            context.fill(page)
+        }
+        if look.shade > 0 {
+            // The Dimmer's shade, as on the chart's tiles: the plate no
+            // brighter than the chart under it (AIM 8-1-6).
+            context.setBlendMode(.normal)
+            context.setFillColor(NightPalette.ground.withAlphaComponent(look.shade).cgColor)
             context.fill(page)
         }
         context.restoreGState()

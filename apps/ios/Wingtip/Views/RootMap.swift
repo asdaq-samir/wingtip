@@ -39,7 +39,10 @@ struct RootMap: View {
     @AppStorage(MapExtrasInput.Keys.plates) private var platesOn = true
     // The plate card's look (PlateLook.Keys), kept on the device.
     @AppStorage(PlateLook.Keys.opacity) private var plateOpacity = PlateLook.defaultOpacity
-    @AppStorage(PlateLook.Keys.inverted) private var plateInverted = false
+    @AppStorage(PlateLook.Keys.inverted) private var plateInverted: Bool?
+    @Environment(\.colorScheme) private var colorScheme
+    /// The chart's Dimmer, which shades a plate as it does the chart.
+    private var chartLook = ChartLookKept()
     @AppStorage(PlateLook.Keys.annotations) private var plateAnnotations = true
     // The Map card's Terrain Hazards (HazardRows); no clearance kept is the engine's default.
     @AppStorage(TerrainHazard.Keys.setting) private var hazardSetting = TerrainHazard.Setting.off
@@ -92,7 +95,8 @@ struct RootMap: View {
                 route: Set(plan.course.map { [$0.departure, $0.destination] + ($0.stops ?? []) }?.map(\.ident) ?? []),
                 plates: platesOn, approaches: plan.procedures,
                 hiddenPlates: HiddenPlates.shared.keys,
-                plateLook: PlateLook(opacity: plateOpacity, inverted: plateInverted, annotations: plateAnnotations),
+                plateLook: PlateLook(opacity: plateOpacity, inverted: PlateLook.inverted(kept: plateInverted, dark: colorScheme == .dark),
+                                     annotations: plateAnnotations, shade: chartLook.shade(dark: colorScheme == .dark)),
                 // A plate's page tapped: its card, half way up, as a field's.
                 onPlate: { key in nav.open(.plate(key)) },
                 // A finger held on the chart: the airspace there, half way

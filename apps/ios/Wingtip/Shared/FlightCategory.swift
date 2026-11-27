@@ -21,8 +21,25 @@ enum FlightCategory {
         }
     }
 
-    /// A chip's fill under white words, or the words' own colour.
+    /// A chip's fill under white words.
     static func words(_ category: String?) -> UIColor {
         category?.uppercased() == "LIFR" ? WingtipColor.Category.lifrChip : mark(category)
+    }
+
+    /// A category set as words with no chip under them: the scheme's ink,
+    /// the mark's hue at 4.5:1 and more on every surface by day and a
+    /// lighter one at night (color.theme's category-*-ink; the owner,
+    /// 2026-11-27: "Lighter word colour at night"), where the FAA colours
+    /// were 1.9 to 4.0:1 on the night's surfaces.
+    static func ink(_ category: String?) -> UIColor {
+        let role: KeyPath<WingtipPalette, UIColor> = switch category?.uppercased() {
+        case "VFR": \.categoryVfrInk
+        case "MVFR": \.categoryMvfrInk
+        case "IFR": \.categoryIfrInk
+        case "LIFR": \.categoryLifrInk
+        default: \.categoryUnknownInk
+        }
+        // Resolved by the view it is drawn in (the widgets have no NightPalette).
+        return UIColor { ($0.userInterfaceStyle == .dark ? WingtipPalette.dark : WingtipPalette.light)[keyPath: role] }
     }
 }

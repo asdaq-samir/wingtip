@@ -45,13 +45,14 @@ struct NightPaletteTests {
         #expect(hex(NightPalette.trafficNear, night) == 0xF59E0B)
     }
 
-    @Test func theChartIsDimmedOnlyAtNightAndOnlyWhenTheSettingSaysSo() throws {
-        #expect(ChartNight.dimmed.shade(dark: true) == 0.5)
-        #expect(ChartNight.dimmed.shade(dark: false) == 0)
-        #expect(ChartNight.normal.shade(dark: true) == 0)
-        #expect(ChartNight.normal.shade(dark: false) == 0)
-        #expect(ChartNight(rawValue: "dimmed") == .dimmed)
-        #expect(ChartNight.allCases.map(\.label) == ["Normal", "Dimmed"])
+    @Test func theChartIsDimmedByTheDimmerKeptForTheAppearanceDrawn() throws {
+        // The web's defaults (lib/map/chartLook): none by day, half at night.
+        #expect(ChartLook.shade(dimLight: 0, dimDark: ChartLook.nightDim, dark: true) == 0.5)
+        #expect(ChartLook.shade(dimLight: 0, dimDark: ChartLook.nightDim, dark: false) == 0)
+        // Never past the deepest dim, never under none.
+        #expect(ChartLook.shade(dimLight: 0, dimDark: 0.9, dark: true) == 0.7)
+        #expect(ChartLook.shade(dimLight: -0.2, dimDark: 0.5, dark: false) == 0)
+        #expect(ChartLook.offset(0.9) == ChartLook.contrastMax && ChartLook.offset(-0.9) == ChartLook.contrastMin)
     }
 
     @Test func contrastIsWCAGsRatio() throws {

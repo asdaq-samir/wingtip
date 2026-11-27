@@ -81,6 +81,8 @@ struct MapSettingsView: View {
             Section("Look") {
                 ThemeRow()
                 AppearanceRow()
+                // The chart's Dimmer and Contrast, as the web's (ChartLook).
+                ChartLookRows()
                 // The map's words follow the text size, up to 1.2 times
                 // (owner rec 26; MapLabelLook), as the web's switch.
                 Toggle("Larger Map Labels", isOn: $largerLabels)

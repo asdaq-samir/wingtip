@@ -52,6 +52,22 @@ struct PlateTests {
         #expect(renderer.look.opacity == 0.4)
     }
 
+    @Test func aPlateFollowsTheAppearanceUntilThePilotPicks() throws {
+        // Dark adaptation (AIM 8-1-6): white on black at night unless picked.
+        #expect(PlateLook.inverted(kept: nil, dark: true))
+        #expect(!PlateLook.inverted(kept: nil, dark: false))
+        #expect(!PlateLook.inverted(kept: false, dark: true))
+        let defaults = try #require(UserDefaults(suiteName: "PlateTests.migrate"))
+        defaults.removePersistentDomain(forName: "PlateTests.migrate")
+        defaults.set(false, forKey: PlateLook.Keys.inverted)
+        PlateLook.migrate(defaults)
+        #expect(defaults.object(forKey: PlateLook.Keys.inverted) == nil)
+        // Once migrated, a "false" picked after is the pilot's.
+        defaults.set(false, forKey: PlateLook.Keys.inverted)
+        PlateLook.migrate(defaults)
+        #expect(defaults.object(forKey: PlateLook.Keys.inverted) as? Bool == false)
+    }
+
     @Test func invertAndAnnotationsReachTheRenderer() {
         let renderer = PlateRenderer(overlay: page(), look: PlateLook())
         #expect(!renderer.look.inverted && renderer.look.annotations)
