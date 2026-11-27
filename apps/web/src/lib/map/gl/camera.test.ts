@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Map as GlMap } from "maplibre-gl";
 import { useOwnShip } from "../position/ownShip";
 import { useTracking } from "../position/tracking";
+import { MOTION } from "../../tokens";
 import { cameraOf } from "./camera";
 
 type Listener = (e: { originalEvent?: unknown }) => void;
@@ -228,7 +229,19 @@ describe("the camera's one owner", () => {
     const { map, calls } = fakeMap();
     cameraOf(map).follow("dry-run", [3, 0], { jump: "glide" });
     nextFrame();
-    expect(calls).toEqual([{ name: "easeTo", options: expect.objectContaining({ center: [3, 0], duration: 250 }) }]);
+    expect(calls).toEqual([{ name: "easeTo", options: expect.objectContaining({ center: [3, 0], duration: MOTION.page * 1000 }) }]);
+  });
+
+  it("carries the glide on to the finger's next point rather than cutting it off with a jump", () => {
+    const { map, calls } = fakeMap();
+    const camera = cameraOf(map);
+    camera.follow("dry-run", [3, 0], { jump: "glide" });
+    nextFrame();
+    camera.follow("dry-run", [3.5, 0], { jump: true });
+    nextFrame();
+    expect(calls.map((c) => c.name)).toEqual(["easeTo", "easeTo"]);
+    expect(calls[1]!.options.center).toEqual([3.5, 0]);
+    expect(calls[1]!.options.duration).toBeLessThanOrEqual(MOTION.page * 1000);
   });
 
   it("keeps a tracked airplane where it is on the screen, moving the map by its own move, not drawing it to the middle", () => {
