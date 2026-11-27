@@ -2209,6 +2209,12 @@ fun Engine.runwayProximity(fix: EngineContract.RunwayProximityInputFix, elevatio
     rule("runway_proximity", EngineContract.RunwayProximityInput(fix = fix, elevationFt = elevationFt, patternAglFt = patternAglFt, runways = runways, hotSpots = hotSpots))
 
 /**
+ * Where the airport card's runway sketch lays each runway, the picture runway_closure_marks places its crosses on: one layout for every app. A runway with both ends surveyed is drawn between them (NASR APT_RWY_END LAT_DECIMAL and LONG_DECIMAL, OurAirports' for a field NASR does not list), in nautical miles east and north of the field's point on the engine's flat frame (a minute of latitude a mile, a minute of longitude cos(latitude) of one). Where no runway of the field has both ends surveyed, each is guessed through the field's point along its first end's true heading (APT_RWY_END TRUE_ALIGNMENT) for its length (APT_RWY RWY_LEN), the first end where a landing on it starts; the guess is the drawing's alone (`guessed`), none is guessed beside a surveyed runway, and none within a degree of a heading already guessed (a field's parallels). Its drawn width is APT_RWY RWY_WIDTH, else 75 ft, an assumption for the drawing only and no FAA figure. A runway with fewer than two ends (a helipad) is not drawn; one with two ends and nothing to place it by is counted in `left_out`.
+ */
+fun Engine.runwaySketch(lat: Double, lon: Double, runways: List<EngineContract.RunwaySketchInputRunwaysItem>): Result<EngineContract.RunwaySketchAnswer> =
+    rule("runway_sketch", EngineContract.RunwaySketchInput(lat = lat, lon = lon, runways = runways))
+
+/**
  * Each runway's favoured end, the planner's RunwayWind or null.
  */
 fun Engine.runwayWithWinds(runways: List<EngineContract.RunwayWithWindsInputRunwaysItem>? = null, metar: EngineContract.MetarWindIn? = null, variationDeg: Double, recent: EngineContract.RecentWindIn? = null): Result<List<EngineContract.RunwayWindOut>> =

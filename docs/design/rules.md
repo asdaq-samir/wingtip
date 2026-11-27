@@ -306,6 +306,11 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    2026-11-23). The card's grabber and its ground above the bar take the
    drag; the bar is for taps.
    This replaces T4's tabs under the actions and its one-line report.
+   The sketch's runways are laid out by the engine (`runway_sketch`):
+   between NASR's surveyed ends, else, where no runway has them, guessed
+   along a runway's true heading through the field's point, 75 ft wide
+   where NASR gives no width (the drawing's assumption); the web and iOS
+   draw its answer.
    A closed runway is crossed out on the pictures' runway sketch where
    the airport marks it on the ground, the engine's
    `runway_closure_marks` (2026-11-17; AC 150/5340-1M 5.6 and 5.7, AIM

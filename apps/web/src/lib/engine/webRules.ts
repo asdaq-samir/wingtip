@@ -210,6 +210,7 @@ export const WEB_RULES = [
   "runway_crosswind",
   "runway_end_fit",
   "runway_proximity",
+  "runway_sketch",
   "rvr_check",
   "same_field",
   "service_volume",

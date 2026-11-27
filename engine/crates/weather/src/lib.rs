@@ -26,7 +26,9 @@
 //!   its most (AIM 7-1-13);
 //! - runway_closure: where a closed runway's crosses go on a sketch of
 //!   the field (AC 150/5340-1M 5.6 and 5.7, AIM 2-3-6), and the part of a
-//!   runway a NOTAM closes where its words say which;
+//!   runway a NOTAM closes where its words say which; its sketch, where
+//!   the sketch lays the field's runways (NASR APT_RWY_END's ends, else a
+//!   guess along a runway's heading);
 //! - datis_kept: how long a digital ATIS is still the airport's, two of
 //!   its hourly updates (AIM 4-1-13);
 //! - near_report: whether a station's report is near enough to say a

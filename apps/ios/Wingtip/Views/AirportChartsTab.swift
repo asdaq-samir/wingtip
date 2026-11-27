@@ -57,7 +57,7 @@ struct AirportChartsTab: View {
     /// The sketch full screen, for a field the FAA draws no diagram for.
     @MainActor
     static func sketch(_ place: AirportPlace) -> ShownPicture {
-        let renderer = ImageRenderer(content: RunwaySketch(runways: place.runways)
+        let renderer = ImageRenderer(content: RunwaySketch(runways: place.runways, lat: place.lat, lon: place.lon)
             .frame(width: 900, height: 900).background(Color.white).environment(\.colorScheme, .light))
         renderer.scale = 2
         let image = renderer.uiImage
@@ -66,7 +66,7 @@ struct AirportChartsTab: View {
 
     var body: some View {
         let charts = place.procedures ?? []
-        let sketched = !RunwaySketch.strips(place.runways).isEmpty
+        let sketched = !RunwaySketch.strips(place.runways, lat: place.lat, lon: place.lon).isEmpty
         Section("Airport") {
             ForEach(Self.publicationNotes(place), id: \.title) { note in
                 VStack(alignment: .leading) {

@@ -208,29 +208,24 @@ struct RunwayDetails: View {
     }
 }
 
-/// The field's runways drawn north up from where the FAA surveys their
-/// ends, for a field with no FAA diagram (the web app's RunwaySketch): a
-/// picture of where they lie, not a chart to taxi by.
+/// The field's runways drawn north up as the engine lays them
+/// (runway_sketch: between NASR's surveyed ends, else guessed along a
+/// runway's true heading through the field's point), the same layout as
+/// the web app's RunwaySketch, for a field with no FAA diagram: a picture
+/// of where they lie, not a chart to taxi by.
 struct RunwaySketch: View {
     let runways: [Runway]
+    /// The field's point the engine lays the runways about.
+    let lat: Double, lon: Double
 
-    /// The runways with both ends surveyed, as pairs of points.
-    static func strips(_ runways: [Runway]) -> [(ends: [String], a: CGPoint, b: CGPoint)] {
-        let surveyed = runways.compactMap { runway -> (ends: [String], a: (Double, Double), b: (Double, Double))? in
-            let ends = (runway.runwayEnds ?? []).filter { $0.lat != nil && $0.lon != nil }
-            guard ends.count >= 2, let a = ends.first, let b = ends.last else { return nil }
-            return ([a.ident, b.ident], (a.lat!, a.lon!), (b.lat!, b.lon!))
-        }
-        guard let first = surveyed.first else { return [] }
-        let squeeze = cos(first.a.0 * .pi / 180)
-        return surveyed.map { strip in
-            (strip.ends, CGPoint(x: strip.a.1 * squeeze, y: -strip.a.0), CGPoint(x: strip.b.1 * squeeze, y: -strip.b.0))
-        }
+    /// The engine's strips (RunwaySketchLayout), none where it lays none.
+    static func strips(_ runways: [Runway], lat: Double, lon: Double) -> [RunwaySketchLayout.Strip] {
+        RunwaySketchLayout.strips(runways, lat: lat, lon: lon)
     }
 
     var body: some View {
         Canvas { context, size in
-            let strips = Self.strips(runways)
+            let strips = Self.strips(runways, lat: lat, lon: lon)
             let xs = strips.flatMap { [$0.a.x, $0.b.x] }, ys = strips.flatMap { [$0.a.y, $0.b.y] }
             guard let minX = xs.min(), let maxX = xs.max(), let minY = ys.min(), let maxY = ys.max() else { return }
             let span = max(maxX - minX, maxY - minY, 1e-6)
@@ -252,7 +247,7 @@ struct RunwaySketch: View {
                 context.draw(Text(AirportWords.runwayNumber(strip.ends[1])).font(.caption2.weight(.bold)), at: CGPoint(x: pb.x - dx, y: pb.y - dy))
             }
         }
-        .accessibilityLabel("Runways \(Self.strips(runways).map { $0.ends.joined(separator: "/") }.joined(separator: ", ")), north up")
+        .accessibilityLabel("Runways \(Self.strips(runways, lat: lat, lon: lon).map { $0.ends.joined(separator: "/") }.joined(separator: ", ")), north up")
     }
 }
 
@@ -319,7 +314,7 @@ private enum PreviewData {
 }
 
 #Preview("RunwaySketch") {
-    RunwaySketch(runways: PreviewData.runways)
+    RunwaySketch(runways: PreviewData.runways, lat: 43.9850, lon: -88.5570)
         .frame(width: 300, height: 300)
 }
 
