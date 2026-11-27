@@ -8,7 +8,7 @@ import pytest
 
 from wingtip import airports, ratelimit
 from wingtip.config import get_settings
-from wingtip.traffic import opensky, opensky_api
+from wingtip.traffic import opensky, opensky_api, opensky_prefetch
 
 TODAY = dt.date(2026, 11, 27)
 
@@ -132,11 +132,11 @@ def test_the_followed_airplanes_yesterday_prefetched_once_a_day_after_the_batch(
         opensky_api.requests, "get", lambda url, params, **k: sky.append(url) or _resp(200, {"path": []} if "tracks" in url else [flight])
     )
     monkeypatch.setattr(recorded, "followed", lambda: ["a74f08"])
-    monkeypatch.setattr(opensky, "_PREFETCHED", {"day": None})
-    monkeypatch.setattr(opensky, "PREFETCH_FROM_HOUR_UTC", 0)
-    opensky.prefetch()
+    monkeypatch.setattr(opensky_prefetch, "_PREFETCHED", {"day": None})
+    monkeypatch.setattr(opensky_prefetch, "PREFETCH_FROM_HOUR_UTC", 0)
+    opensky_prefetch.prefetch()
     assert sum("flights" in u for u in sky) == 1 and sum("tracks" in u for u in sky) == 1
-    opensky.prefetch()
+    opensky_prefetch.prefetch()
     assert len(sky) == 2
 
 
@@ -223,10 +223,10 @@ def test_a_prefetch_that_could_not_read_a_path_leaves_the_day_for_the_next_run(s
 
     monkeypatch.setattr(opensky_api.requests, "get", tracks_down)
     monkeypatch.setattr(recorded, "followed", lambda: ["a74f08"])
-    monkeypatch.setattr(opensky, "_PREFETCHED", {"day": None})
-    monkeypatch.setattr(opensky, "PREFETCH_FROM_HOUR_UTC", 0)
-    assert opensky.prefetch() == 0 and opensky._PREFETCHED["day"] is None
+    monkeypatch.setattr(opensky_prefetch, "_PREFETCHED", {"day": None})
+    monkeypatch.setattr(opensky_prefetch, "PREFETCH_FROM_HOUR_UTC", 0)
+    assert opensky_prefetch.prefetch() == 0 and opensky_prefetch._PREFETCHED["day"] is None
     # The next run: the day's flights read from the store, the path asked again, the day done.
     monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: sky.append(url) or _resp(200, {"path": []}))
-    assert opensky.prefetch() == 1 and opensky._PREFETCHED["day"] is not None
+    assert opensky_prefetch.prefetch() == 1 and opensky_prefetch._PREFETCHED["day"] is not None
     assert sum("flights" in u for u in sky) == 1 and sum("tracks" in u for u in sky) == 2

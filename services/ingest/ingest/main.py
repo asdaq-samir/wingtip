@@ -33,7 +33,7 @@ import time
 
 from wingtip import log_lines, schedule, traffic, tracing
 from wingtip.config import get_settings as wingtip_settings
-from wingtip.traffic import opensky, store
+from wingtip.traffic import opensky_prefetch, store
 
 from . import history, nms, swim
 from .settings import get_settings
@@ -63,7 +63,7 @@ def run(stop: threading.Event) -> None:
     log.info("NMS-API: %s", "on" if nms.start(on) else "off (NMS_API_CLIENT_ID and NMS_API_CLIENT_SECRET unset)")
     schedule.every(on, traffic.FOLLOW_EVERY_S, traffic.follow_job, name="adsb-follow")
     # Off without OpenSky's client (OPENSKY_CLIENT_ID and _SECRET).
-    schedule.every(on, opensky.PREFETCH_EVERY_S, opensky.prefetch, name="opensky-prefetch", now=False)
+    schedule.every(on, opensky_prefetch.PREFETCH_EVERY_S, opensky_prefetch.prefetch, name="opensky-prefetch", now=False)
     if get_settings().history:
         history.jobs(on)
     # A beat that fails is logged by the scheduler; the health check sees the long gap.
