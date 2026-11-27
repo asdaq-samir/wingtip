@@ -3625,7 +3625,7 @@ export interface EngineContract {
     answer: RemarksReadAnswer;
   };
   /**
-   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those in the 10 s before, at the report's own time (a transponder's 25 ft steps, DO-260B), and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the rate the report sent (baro_rate_fpm, else geom_rate_fpm), else the slope of the heights reported in the 15 s before, as a VSI lags (FAA-H-8083-15B, Ch. 5): never from a report still to come; a held pressure altitude (`alt_held`, or unchanged for up to 60 s while the GNSS height or the rate sent moved more than 300 ft) left out of every fit and rate, its height the last good one carried forward, never null; ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
    */
   replay_track: {
     input: ReplayTrackInput;
@@ -13545,6 +13545,22 @@ export interface ReplayReport {
   gs_kt?: number | null;
   track_deg?: number | null;
   ground?: boolean | null;
+  /**
+   * The barometric rate sent, ft/min (readsb's baro_rate).
+   */
+  baro_rate_fpm?: number | null;
+  /**
+   * The GNSS rate sent, ft/min (readsb's geom_rate).
+   */
+  geom_rate_fpm?: number | null;
+  /**
+   * The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it.
+   */
+  alt_geom_ft?: number | null;
+  /**
+   * The caller's word that the pressure altitude is held (stale); null to let the engine tell.
+   */
+  alt_held?: boolean | null;
 }
 export interface ReplayTrackAnswer {
   points: ReplaySample[];
@@ -13556,6 +13572,10 @@ export interface ReplaySample {
   lat: number;
   lon: number;
   alt_ft: number | null;
+  /**
+   * The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null.
+   */
+  alt_held: boolean;
   gs_kt: number | null;
   track_deg: number | null;
   vs_fpm: number | null;

@@ -12340,6 +12340,11 @@ object EngineContract {
         val lon: Double,
         @SerialName("alt_ft")
         val altFt: Double? = null,
+        /**
+         * The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null.
+         */
+        @SerialName("alt_held")
+        val altHeld: Boolean,
         @SerialName("gs_kt")
         val gsKt: Double? = null,
         @SerialName("track_deg")
@@ -12377,6 +12382,26 @@ object EngineContract {
         @SerialName("track_deg")
         val trackDeg: Double? = null,
         val ground: Boolean? = null,
+        /**
+         * The barometric rate sent, ft/min (readsb's baro_rate).
+         */
+        @SerialName("baro_rate_fpm")
+        val baroRateFpm: Double? = null,
+        /**
+         * The GNSS rate sent, ft/min (readsb's geom_rate).
+         */
+        @SerialName("geom_rate_fpm")
+        val geomRateFpm: Double? = null,
+        /**
+         * The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it.
+         */
+        @SerialName("alt_geom_ft")
+        val altGeomFt: Double? = null,
+        /**
+         * The caller's word that the pressure altitude is held (stale); null to let the engine tell.
+         */
+        @SerialName("alt_held")
+        val altHeld: Boolean? = null,
     )
 
     @Serializable

@@ -11819,6 +11819,8 @@ nonisolated enum EngineContract {
         var lat: Double
         var lon: Double
         var altFt: Double?
+        /// The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null.
+        var altHeld: Bool
         var gsKt: Double?
         var trackDeg: Double?
         var vsFpm: Double?
@@ -11831,6 +11833,7 @@ nonisolated enum EngineContract {
             case lat
             case lon
             case altFt = "alt_ft"
+            case altHeld = "alt_held"
             case gsKt = "gs_kt"
             case trackDeg = "track_deg"
             case vsFpm = "vs_fpm"
@@ -11860,6 +11863,14 @@ nonisolated enum EngineContract {
         var gsKt: Double?
         var trackDeg: Double?
         var ground: Bool?
+        /// The barometric rate sent, ft/min (readsb's baro_rate).
+        var baroRateFpm: Double?
+        /// The GNSS rate sent, ft/min (readsb's geom_rate).
+        var geomRateFpm: Double?
+        /// The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it.
+        var altGeomFt: Double?
+        /// The caller's word that the pressure altitude is held (stale); null to let the engine tell.
+        var altHeld: Bool?
 
         enum CodingKeys: String, CodingKey {
             case t
@@ -11869,6 +11880,10 @@ nonisolated enum EngineContract {
             case gsKt = "gs_kt"
             case trackDeg = "track_deg"
             case ground
+            case baroRateFpm = "baro_rate_fpm"
+            case geomRateFpm = "geom_rate_fpm"
+            case altGeomFt = "alt_geom_ft"
+            case altHeld = "alt_held"
         }
     }
 
