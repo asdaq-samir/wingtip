@@ -10,7 +10,7 @@ import { api } from "./lib/api/client";
 import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
-import { BrandLook } from "./lib/brand";
+import { BrandLook, applyKeptBrand } from "./lib/brand";
 import SafariEdges from "./components/SafariEdges";
 import ErrorAlert from "./components/ErrorAlert";
 import { PageErrorBoundary } from "./components/PageError";
@@ -63,6 +63,7 @@ const engineLoaded = loadEngine();
 // The reader's text size from the iPhone's Settings, before the first
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
+applyKeptBrand();
 
 // The map's chunk (routeMapChunk) and the search's (routeBoxChunk),
 // fetched while the page draws.
