@@ -126,6 +126,7 @@ pub fn read_datis(text: &str) -> Atis {
             }
         });
         out.visibility_sm = m.visibility_sm;
+        out.visibility_minus = m.visibility_minus;
         out.sky = m
             .layers
             .iter()

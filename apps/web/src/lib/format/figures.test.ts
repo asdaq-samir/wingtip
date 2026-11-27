@@ -23,6 +23,8 @@ describe("figures written as the FAA writes them", () => {
     expect(miles(null)).toBe("—");
     // A metric report's float, to the hundredth and down, not every figure.
     expect(miles(2.4854847689493362)).toBe("2.48 sm");
+    // M1/4SM, less than a quarter mile (FMH-1 chapter 6), never "0.25 sm".
+    expect(miles(0.25, false, true)).toBe("less than 1/4 sm");
   });
 
   it("writes a reported visibility to the sixteenth below 3 sm and the whole mile above, always down", () => {

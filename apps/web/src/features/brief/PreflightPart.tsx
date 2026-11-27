@@ -112,6 +112,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
                       briefing.metars[dest]!.ceiling_ft ?? null,
                       briefing.metars[dest]!.visibility_sm ?? null,
                       briefing.metars[dest]!.visibility_plus,
+                      briefing.metars[dest]!.visibility_minus,
                     ),
                   ]
                     .filter(Boolean)

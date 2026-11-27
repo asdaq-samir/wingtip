@@ -52,6 +52,9 @@ pub struct Atis {
     pub time_z: Option<String>,
     pub wind: Option<Wind>,
     pub visibility_sm: Option<f64>,
+    /// Less than `visibility_sm`: "less than one quarter", a METAR's
+    /// "M1/4SM" (FMH-1 chapter 6), said as such, never as a quarter mile.
+    pub visibility_minus: bool,
     pub sky: Vec<Layer>,
     pub temp_c: Option<i64>,
     pub dewpoint_c: Option<i64>,
@@ -167,10 +170,13 @@ impl Read<'_> {
     }
 
     /// A visibility at `i` in statute miles: "one zero", "two and one
-    /// half", "three quarters", "less than one quarter", "2.5".
-    fn visibility_at(&self, i: usize) -> Option<(f64, usize)> {
+    /// half", "three quarters", "less than one quarter", "2.5"; and
+    /// whether it was "less than" it.
+    fn visibility_at(&self, i: usize) -> Option<(f64, bool, usize)> {
         let mut j = i;
+        let mut less = false;
         while matches!(self.word(j), "is" | "less" | "than" | "a") {
+            less |= self.word(j) == "less";
             j += 1;
         }
         let frac = |j: usize, whole: f64| -> Option<(f64, usize)> {
@@ -197,7 +203,7 @@ impl Read<'_> {
         while matches!(self.word(j), "statute" | "miles" | "mile" | "sm") {
             j += 1;
         }
-        Some((v, j))
+        Some((v, less, j))
     }
 
     /// A temperature at `i`: "one eight", "minus zero three", "18 celsius".

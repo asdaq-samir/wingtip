@@ -55,8 +55,11 @@ pub fn read(text: &str) -> Atis {
             }
             "wind" | "winds" => r.wind(i),
             "visibility" => match r.visibility_at(i + 1) {
-                Some((v, j)) => {
-                    r.out.visibility_sm.get_or_insert(v);
+                Some((v, less, j)) => {
+                    if r.out.visibility_sm.is_none() {
+                        r.out.visibility_sm = Some(v);
+                        r.out.visibility_minus = less;
+                    }
                     r.take(i, j);
                     j
                 }
