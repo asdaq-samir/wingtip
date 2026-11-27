@@ -50,6 +50,9 @@ AERIAL_MIN_M = 1600.0
 PHOTO_KEEP_S = 30 * 24 * 3600
 #: How long the aerial or a ground photo may take, s: about the card's own wait (each was 20).
 CARD_TIMEOUT_S = 8
+#: Each of the two JSON asks for a ground photo (Wikipedia's article image, then Commons' file, which needs its
+#: name: they cannot go together), s: both within CARD_TIMEOUT_S, where each was 10 inside one single flight.
+NAME_TIMEOUT_S = CARD_TIMEOUT_S / 2
 #: After a source fails, it is not asked for this long, s, and cards show
 #: what they have without it: while the USGS or Wikipedia was down every
 #: open waited up to 20 s or 2 x 10 s, and the shared session's retries on
@@ -131,6 +134,7 @@ def _fetch_aerial(ident: str, path: Path, box: tuple[float, float, float, float]
         _failed(_USGS)
         raise PhotoUnavailable(f"The USGS imagery could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
+        _failed(_USGS)
         raise PhotoUnavailable(f"The USGS answered {ident} with {response.headers.get('content-type')!r}, not a picture")
     with atomic_path(path) as partial:
         partial.write_bytes(response.content)
@@ -149,7 +153,7 @@ def _ask_ground_photo(wikipedia_link: str) -> dict | None:
             WIKIPEDIA_API,
             params={"action": "query", "format": "json", "prop": "pageimages", "piprop": "name", "titles": title, "redirects": 1},
             headers=HEADERS,
-            timeout=10,
+            timeout=NAME_TIMEOUT_S,
         )
         .json()
         .get("query", {})
@@ -170,7 +174,7 @@ def _ask_ground_photo(wikipedia_link: str) -> dict | None:
                 "iiurlwidth": AERIAL_PX[0],
             },
             headers=HEADERS,
-            timeout=10,
+            timeout=NAME_TIMEOUT_S,
         )
         .json()
         .get("query", {})
@@ -217,6 +221,7 @@ def _fetch_ground_photo(ident: str, url: str, path: Path) -> Path:
         _failed(_WIKIMEDIA)
         raise PhotoUnavailable(f"Commons' photo could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
+        _failed(_WIKIMEDIA)
         raise PhotoUnavailable(f"Commons answered {ident}'s photo with {response.headers.get('content-type')!r}")
     with atomic_path(path) as partial:
         partial.write_bytes(response.content)

@@ -18,6 +18,10 @@ this cycle's d-TPP (wingtip.publications, kind IAP) and the frequencies
 
 from __future__ import annotations
 
+import json
+import threading
+from collections import OrderedDict
+
 from wingtip import airports, publications, remarks
 from wingtip.engine import ask
 
@@ -53,24 +57,40 @@ def field_card(place: dict) -> dict:
 _ROLES = ["departure", "stop", "arrival", "alternate"]
 
 
+#: Each NOTAM's reading kept, by what it is read from (its text and ends, the field's names, whether a TFR, and the
+#: card's lists: the engine's answers are a function of exactly these): the four engine calls of a NOTAM are
+#: asked once, not on every open of a busy field's card (KORD's or KDEN's 100 to 200 NOTAMs; round 7's audit, C7).
+#: A new NOTAM or a changed card is a new key; the least recently used go past _KEEP.
+_KEEP = 2048
+_READINGS: OrderedDict[str, dict] = OrderedDict()
+_LOCK = threading.Lock()
+
+
+def _reading(text: str, tfr: bool, ends, card: dict, card_key: str) -> dict:
+    key = json.dumps([text, tfr, ends, card_key])
+    with _LOCK:
+        if key in _READINGS:
+            _READINGS.move_to_end(key)
+            return _READINGS[key]
+    idents = card["idents"]
+    got = {
+        "reading": ask("notam_read", text=text, idents=idents),
+        "card": ask("notam_card", text=text, idents=idents, ends=ends),
+        "subject": ask("notam_subject", **card, text=text, tfr=tfr),
+        # Every role it could reach in a plan, in the engine's order:
+        # the card keeps those its field plays, the first its chip.
+        "affects": ask("notam_affects", text=text, idents=idents, roles=_ROLES)["affects"],
+    }
+    with _LOCK:
+        _READINGS[key] = got
+        while len(_READINGS) > _KEEP:
+            _READINGS.popitem(last=False)
+    return got
+
+
 def read(notams: list[dict], card: dict) -> list[dict]:
     """Each ranked NOTAM with its `reading`, `card`, `subject` and
     `affects` beside it; a TFR's reading stays its tfr_read on the web,
     from its facts."""
-    idents = card["idents"]
-    out = []
-    for n in notams:
-        text, tfr = n["raw"], n.get("kind") == "tfr"
-        read_card = ask("notam_card", text=text, idents=idents, ends=n.get("ends"))
-        out.append(
-            {
-                **n,
-                "reading": ask("notam_read", text=text, idents=idents),
-                "card": read_card,
-                "subject": ask("notam_subject", **card, text=text, tfr=tfr),
-                # Every role it could reach in a plan, in the engine's order:
-                # the card keeps those its field plays, the first its chip.
-                "affects": ask("notam_affects", text=text, idents=idents, roles=_ROLES)["affects"],
-            }
-        )
-    return out
+    card_key = json.dumps(card, sort_keys=True)
+    return [{**n, **_reading(n["raw"], n.get("kind") == "tfr", n.get("ends"), card, card_key)} for n in notams]

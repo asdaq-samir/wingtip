@@ -165,6 +165,15 @@ def _street(text: str) -> str:
     return engine("name_case", text=text, kind="street")
 
 
+def _is_outage(err: Exception) -> bool:
+    """Whether a failed ask says the geocoder is down for everyone: a timeout, a lost connection, a 429 or a 5xx.
+    A 4xx or a body that is no JSON is about this one query."""
+    if isinstance(err, (requests.Timeout, requests.ConnectionError)):
+        return True
+    status = getattr(getattr(err, "response", None), "status_code", None)
+    return status is not None and (status == 429 or status >= 500)
+
+
 def find_addresses(query: str, limit: int = 4) -> list:
     """A street address typed, where the Census Bureau's geocoder places
     it: {"label", "lat", "lon"}; none for what is not an address (no house
@@ -193,8 +202,13 @@ def find_addresses(query: str, limit: int = 4) -> list:
         # The error's own text carries the URL, and with it the typed address:
         # only its kind is logged (docs/privacy-inventory.md, the Census row).
         log.warning("The Census geocoder did not answer for an address: %s", type(err).__name__)
-        _GEOCODER.hold(GEOCODER_HOLD_S, time.monotonic())
-        return kept[1][:limit] if kept else []
+        if _is_outage(err):
+            _GEOCODER.hold(GEOCODER_HOLD_S, time.monotonic())
+            return kept[1][:limit] if kept else []
+        # A refusal of this query's own text (a 400): none for this key alone, the geocoder asked on for the others.
+        with _LOCK:
+            _ADDRESSES[key] = (time.monotonic() + ADDRESS_TTL_S, [])
+        return []
     found = [
         {"label": _address_label(m["matchedAddress"]), "lat": m["coordinates"]["y"], "lon": m["coordinates"]["x"]}
         for m in matches[:limit]
