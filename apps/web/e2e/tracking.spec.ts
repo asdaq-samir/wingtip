@@ -233,7 +233,7 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("UAL2088", { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-info")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-figures-open")).toHaveCount(0);
+  await expect(card.getByTestId("airplane-figures-open")).toBeDisabled(); // greyed in its place (the owner, 2026-11-27)
   // Its own identifiers in the facts strip, the card having no record's sections.
   await expect(card.getByTestId("airplane-facts-mark")).toContainText("C-FSES");
   await expect(card.getByTestId("airplane-facts-address")).toContainText("A0B7D8");

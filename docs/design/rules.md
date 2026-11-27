@@ -446,13 +446,16 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   its "In the air" opens nothing more. Laid out as the airport card is:
   Share at the head's start, the title, ✕ at its end; the title its
   N-number, else its call sign; under it its call sign while it flies and
-  what it is ("Piper PA-28-181, 1998", else its ICAO type). Three action
-  tiles, the first filled, by its state: in the air **Track** (the map
-  keeps it in sight, a switch), **Alerts** (takes off, lands, comes near)
-  and **Favorite**; on the ground **Fly This** ("Flying This", greyed,
-  once it is the plan's airplane), Alerts and Favorite. Fly This is hidden
-  while it flies, and offered only for an airplane the planner can fly
-  (one the FAA's registry holds, or the pilot's own). Alerts is offered
+  what it is ("Piper PA-28, 1998", else its ICAO type). Four action
+  tiles, always the four in their places, the first filled, by its state:
+  in the air **Track** (the map keeps it in sight, a switch), on the
+  ground **Fly This** ("Flying This", greyed, once it is the plan's
+  airplane); then **Alerts** (takes off, lands, comes near),
+  **Favorite** and **Figures**. A tile that does nothing for this
+  airplane is greyed, not taken away (the owner, 2026-11-27: "Keep four
+  buttons on top, just disable the one when needed"): Fly This and
+  Figures for an airplane the planner cannot fly (it can fly one the
+  FAA's registry holds, or the pilot's own). Alerts is offered
   where its history is, greyed where the registry gives no ICAO address.
   Under the tiles one sideways row of slides, as the airport card's
   pictures (the owner, 2026-11-26): first its flight, in the air the

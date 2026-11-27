@@ -18,15 +18,16 @@ import AirplanePage from "./AirplanePage";
 import FiguresCard from "./FiguresCard";
 import { airplanePhotoSlide } from "./photoSlide";
 
-/** The row's columns by its tiles, spelled out for Tailwind. */
-const COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"] as const;
-
 /** Its actions, the first filled, by its state (the owner's design of
  *  2026-11-26): in the air Track (the map keeps it in the middle), on the
  *  ground Fly This for an airplane the planner can fly; then Alerts (takes
  *  off, lands, comes near), Favorite, and for an airplane the planner can
  *  fly Figures, its planning figures' card (the owner, 2026-11-26: "It
- *  should be the fourth button above"). */
+ *  should be the fourth button above"). Always the four, in their places,
+ *  one greyed where it does nothing for this airplane (the owner,
+ *  2026-11-27: "Keep four buttons on top, just disable the one when
+ *  needed"): Fly This and Figures for one the planner cannot fly, Alerts
+ *  with no ICAO address, Favorite with nothing to keep. */
 function Actions({ m }: { m: AirplaneCardModel }) {
   const { vm, live, hex } = m;
   const first = m.airborne ? (
@@ -48,18 +49,18 @@ function Actions({ m }: { m: AirplaneCardModel }) {
         />
       }
     />
-  ) : m.flyable ? (
+  ) : (
     <CardAction
       key="fly"
       icon={<ACTION.flyHere.icon />}
       label={vm.flying ? "Flying This" : "Fly This"}
       spoken={vm.flying ? "Flying this airplane" : "Fly this airplane"}
       filled
-      disabled={vm.flying}
+      disabled={vm.flying || !m.flyable}
       onClick={m.fly}
       testId="fly-this-airplane"
     />
-  ) : null;
+  );
   // Alerts by the ICAO address: greyed for an N-number the registry gives none.
   const alerts = hex ? (
     <AircraftAlertMenu
@@ -79,11 +80,18 @@ function Actions({ m }: { m: AirplaneCardModel }) {
     first,
     alerts,
     <FavoriteTile key="favorite" on={m.starred} disabled={!m.kept} onToggle={m.toggleFavorite} testId="airplane-favorite" />,
-    m.flyable && <CardAction key="figures" icon={<Gauge />} label="Figures" onClick={m.openFigures} testId="airplane-figures-open" />,
-  ].filter(Boolean);
+    <CardAction
+      key="figures"
+      icon={<Gauge />}
+      label="Figures"
+      disabled={!m.flyable}
+      onClick={m.openFigures}
+      testId="airplane-figures-open"
+    />,
+  ];
   // Every tile 56 tall, as the airport card's are (PlaceActions).
   return (
-    <div className={cn("grid gap-2 *:min-h-14", COLUMNS[tiles.length])} data-testid="airplane-actions">
+    <div className="grid grid-cols-4 gap-2 *:min-h-14" data-testid="airplane-actions">
       {tiles}
     </div>
   );

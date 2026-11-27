@@ -112,8 +112,8 @@ test("an airplane's card is laid out as an airport's: its actions the same size,
 test("an airplane's card in the air has Track, Alerts and Favorite in a row, Share and the close in its head, its flight's state and height in sight, and its airport a tap away", async ({
   page,
 }) => {
-  // The owner's design of 2026-11-26: in the air Track filled, Alerts and
-  // Favorite; no Fly This while it flies; Share at the head's start, ✕ at its end.
+  // The owner's design of 2026-11-26: in the air Track filled, Alerts,
+  // Favorite and Figures, the four always (2026-11-27); no Fly This while it flies; Share at the head's start, ✕ at its end.
   await sky(page, { ...DETAIL, departed: { ident: "C81", name: "Campbell Airport", at: Date.now() / 1000 - 3600 } });
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
@@ -122,7 +122,9 @@ test("an airplane's card in the air has Track, Alerts and Favorite in a row, Sha
   await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
   await settled(frontSheet(page)); // measured once it has slid up, not on its way
   const row = await Promise.all(
-    ["airplane-track", "airplane-alerts", "airplane-favorite"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
+    ["airplane-track", "airplane-alerts", "airplane-favorite", "airplane-figures-open"].map(
+      async (id) => (await card.getByTestId(id).boundingBox())!,
+    ),
   );
   for (let i = 1; i < row.length; i++) {
     expect(Math.abs(row[i]!.y - row[0]!.y), "one row").toBeLessThan(1);
