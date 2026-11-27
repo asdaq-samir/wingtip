@@ -43,6 +43,7 @@ import json
 import sqlite3
 import threading
 
+from .. import stores
 from ..config import get_settings
 
 STORE = get_settings().live_store
@@ -72,12 +73,9 @@ def _connection() -> sqlite3.Connection:
     write opens one, so a reader holds no lock between calls."""
     global _db
     if _db is None:
-        STORE.parent.mkdir(parents=True, exist_ok=True)
-        db = sqlite3.connect(STORE, check_same_thread=False, timeout=10.0, isolation_level=None)
-        db.execute("PRAGMA journal_mode=WAL")
-        # WAL's own safe setting: a power cut may lose the last moment of
-        # traffic, never the file.
-        db.execute("PRAGMA synchronous=NORMAL")
+        # WAL, synchronous NORMAL (a power cut may lose the last moment of
+        # traffic, never the file), as every store ingest and the planner share.
+        db = stores.connect(STORE, autocommit=True)
         db.executescript(_SCHEMA)
         _drop_the_store_key(db)
         _db = db

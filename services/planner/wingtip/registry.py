@@ -28,7 +28,7 @@ import time
 import zipfile
 from pathlib import Path
 
-from . import outside, registry_history
+from . import outside, registry_history, stores
 from .registry_reader import _file, _reading
 from .registry_reader import addresses as _addresses
 from . import registry_codes as codes
@@ -209,7 +209,7 @@ def schema(db_path: Path) -> int:
     """The shape of the registry file on disk (SCHEMA), 0 where there is none."""
     if not db_path.exists():
         return 0
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
+    with contextlib.closing(stores.read_only(db_path)) as db:
         return db.execute("PRAGMA user_version").fetchone()[0]
 
 

@@ -36,6 +36,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
+from .. import stores
 from ..atomic import atomic_path
 from ..config import get_settings
 
@@ -265,7 +266,7 @@ def events(reg: str, day: str, path: Path | None = None) -> list[dict]:
     wanted = registration(reg)
     names = {wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set())
     marks = ",".join("?" * len(names))
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    db = stores.read_only(path)
     try:
         rows = db.execute(
             f"""
@@ -310,7 +311,7 @@ def schema(path: Path | None = None) -> int:
     path = path or store_path()
     if not path.exists():
         return 0
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    db = stores.read_only(path)
     try:
         return db.execute("PRAGMA user_version").fetchone()[0]
     finally:
@@ -331,7 +332,7 @@ def cases(reg: str, path: Path | None = None) -> list[dict]:
     names = sorted({wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set()))
     newer = schema(path) >= 2
     kind, damage = ("e.kind", "a.damage") if newer else ("NULL", "NULL")
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    db = stores.read_only(path)
     try:
         rows = db.execute(
             f"""

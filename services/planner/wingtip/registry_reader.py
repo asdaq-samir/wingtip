@@ -10,6 +10,8 @@ import sqlite3
 import threading
 from pathlib import Path
 
+from . import stores
+
 #: Read-only connections to the file, kept between lookups and handed one
 #: to a thread at a time: a lookup opened its own, about 1 ms of each of
 #: the radar's per-track LADD checks (88 tracks, 79 ms a poll, 2026-11-27).
@@ -48,7 +50,7 @@ def _reading(db_path: Path):
     for old in stale:  # type: ignore[union-attr]
         old.close()
     if db is None:
-        db = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, check_same_thread=False)
+        db = stores.read_only(db_path)
         db.row_factory = sqlite3.Row
     try:
         yield db

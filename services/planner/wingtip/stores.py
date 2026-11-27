@@ -32,7 +32,7 @@ def adopt(store: Path, former: Path) -> bool:
         return False
     store.parent.mkdir(parents=True, exist_ok=True)
     part = store.with_name(f"{store.name}.{os.getpid()}.part")
-    source = sqlite3.connect(f"file:{former}?mode=ro", uri=True)
+    source = read_only(former)
     try:
         copy = sqlite3.connect(part)
         try:
@@ -50,16 +50,25 @@ def adopt(store: Path, former: Path) -> bool:
         part.unlink(missing_ok=True)
 
 
-def connect(store: Path, former: Path | None = None) -> sqlite3.Connection:
+def connect(store: Path, former: Path | None = None, autocommit: bool = False) -> sqlite3.Connection:
     """A connection to `store` (made where there is none, from `former`
     where that has one), in WAL mode, waiting up to ten seconds for the
-    other process's write."""
+    other process's write; each statement its own transaction where
+    `autocommit` (a store whose readers must hold no lock between calls),
+    else Python's own transactions."""
     store = Path(store)
     if former is not None:
         adopt(store, former)
     store.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(store, check_same_thread=False, timeout=10.0)
+    db = sqlite3.connect(store, check_same_thread=False, timeout=10.0, **({"isolation_level": None} if autocommit else {}))
     db.execute("PRAGMA journal_mode=WAL")
     # WAL's own safe setting: a power cut may lose the last write, never the file.
     db.execute("PRAGMA synchronous=NORMAL")
     return db
+
+
+def read_only(path: Path) -> sqlite3.Connection:
+    """A read-only connection to a file another process or a rebuild
+    writes (the registry, the NTSB's and the airmen's stores), usable from
+    any thread one at a time; it never makes the file or writes to it."""
+    return sqlite3.connect(f"file:{path}?mode=ro", uri=True, check_same_thread=False)
