@@ -181,7 +181,7 @@ fun ChartMap(
     LaunchedEffect(holder, tracked) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { snapshotFlow { heard() }.collectLatest { holder.traffic(it, tracked) } } }
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
-    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField?.ident).also { MapTerrain.selected(selectedField?.ident) } }
+    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField?.ident) } }
     LaunchedEffect(holder, selectedField) { selectedField?.let { holder.showField(it.lat, it.lon) } }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
 
@@ -225,7 +225,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastTerminal: Charts.Companion.Terminal? = null
     private var lastWeather: Map<String, String> = emptyMap()
     private var lastEmergency: EmergencyLine? = null
-    private var lastSelected: String? = null
+    private var lastSelected: MapField? = null
     private var lastTemplate: TileTemplate? = null
     /** The chart's tiles' last {z}, where the imagery takes over (CloseMap). */
     private var chartTileMax = 12
@@ -473,9 +473,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
     }
 
     /** The ring round the field whose card is open (SelectedAirportLayer). */
-    fun selectField(ident: String?) {
-        lastSelected = ident
-        redraw { style -> SelectedAirportLayer.draw(style, ident) }
+    fun selectField(field: MapField?) {
+        lastSelected = field
+        redraw { style -> SelectedAirportLayer.draw(style, field) }
     }
 
     /** The plates drawn, and the map brought to one newly put on it. */
