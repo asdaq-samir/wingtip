@@ -6,7 +6,8 @@ import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";
 import type { PlanViewModel } from "./usePlanView";
-import { useKept, useSteady } from "./useKept";
+import { useKept } from "./useKept";
+import { useSteady } from "../../../lib/steady";
 
 /**
  * The flight flown: on paper from the Profile card (useDryRun), and in the

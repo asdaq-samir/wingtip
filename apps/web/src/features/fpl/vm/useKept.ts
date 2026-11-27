@@ -1,15 +1,5 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
-
-/** Whether two objects (or arrays) hold the same values under the same keys. */
-export function sameFields(a: object, b: object): boolean {
-  if (a === b) return true;
-  if (Array.isArray(a) !== Array.isArray(b)) return false;
-  const keys = Object.keys(a);
-  if (keys.length !== Object.keys(b).length) return false;
-  const x = a as Record<string, unknown>,
-    y = b as Record<string, unknown>;
-  return keys.every((k) => Object.hasOwn(y, k) && Object.is(x[k], y[k]));
-}
+import { useRef } from "react";
+import { sameFields } from "../../../lib/steady";
 
 /**
  * The object made last render, while each of its values is the same as
@@ -34,20 +24,4 @@ export function useKept<T extends object>(next: T): T {
   if (!sameFields(kept.current, next)) kept.current = next;
   // eslint-disable-next-line react-hooks/refs -- as above
   return kept.current;
-}
-
-/**
- * The same function at every render, calling the one made last: for a
- * handler a hook outside FPL makes afresh each render (useDryRun's start
- * and stop), so the slice that carries it stays the same object (useKept).
- * Called from a tap, never as a render goes, so the last committed one is
- * the one called.
- */
-export function useSteady<A extends unknown[], R>(fn: (...args: A) => R): (...args: A) => R {
-  "use no memo"; // As useKept.
-  const latest = useRef(fn);
-  useLayoutEffect(() => {
-    latest.current = fn;
-  });
-  return useCallback((...args: A) => latest.current(...args), []);
 }

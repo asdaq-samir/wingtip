@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { raiseCard, setCard, useSheetCards, type CardFrame, type CardState } from "../../lib/sheetCards";
 import { useShown } from "../../lib/shown";
 import { drawnFace } from "../../lib/map/gl/glFace";
+import { useLatest } from "../../lib/steady";
 
 /**
  * A card's own nested Drawer over the map's sheet (CardStack), held while
@@ -35,10 +36,7 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
   const [placed, setPlaced] = useState(false);
   if (slot && !placed) setPlaced(true);
   // The caller's latest, read as the Drawer tells it something.
-  const latest = useRef(frame);
-  useLayoutEffect(() => {
-    latest.current = frame;
-  });
+  const latest = useLatest(frame);
   const { fullScreen, title, testId, label, labelledBy } = frame;
   const state: CardState = shown ? "open" : "kept";
   const opened = useRef({ fullScreen, state });
@@ -71,7 +69,7 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
         stack: s.stack.flatMap((e) => (e.id !== id ? [e] : e.at === undefined ? [] : [{ ...e, state: "leaving" as const }])),
       }));
     };
-  }, [id, host]);
+  }, [id, host, latest]);
   useLayoutEffect(() => setCard(id, { state }), [id, state]);
   // Opened again by the pilot, it opens by the card rule's 2 as a new card
   // does (CardStack's cardOpening), not at the size it was put away at, and

@@ -9,7 +9,8 @@
 import { Profiler } from "react";
 import { cleanup, render, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { sameFields, useKept, useSteady } from "./useKept";
+import { useKept } from "./useKept";
+import { sameFields, useSteady } from "../../../lib/steady";
 
 afterEach(cleanup);
 
