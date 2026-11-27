@@ -1364,7 +1364,11 @@ way: three homes, and every control in one of them.
    take the chart's brightness, the 3D airspace its share as its
    opacity (round 4); the terrain's hazard tint is a warning and is never
    dimmed, as own ship is not; the route is dimmed by
-   its colours, solid, so it stays the most visible line, and once.
+   its colours, solid, so it stays the most visible line, and once, its
+   edges the day's dark (round 5); a TFR's edge and number and an
+   obstacle's ring are dimmed by their colours too, not made see-through
+   (the owner, 2026-11-27: "Dim by colour"; about 3:1 over the paper at
+   the default Dimmer).
    Sunlight at night keeps the look's own dark grounds and lifts only the
    grey words and the edges, never its white sheets; the device's
    Increase Contrast does the same by day and at night. Appearance's Dark +

@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { api } from "../../../lib/api/client";
 import { slotId, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
+import { DIM_BY_COLOUR } from "../../../lib/map/gl/mapDim";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { CHART } from "../../../lib/tokens";
 import { usePreferences } from "../../../lib/preferences";
@@ -14,21 +15,33 @@ import { useHazardView } from "./useHazardView";
 
 const TINT = "terrain-hazard";
 const OBSTACLES = "obstacles-hazard";
-/** The obstacles the colouring rings, under the chart's own symbols' size. */
-const OBSTACLE_LAYER: CircleLayerSpecification = {
-  id: OBSTACLES,
-  type: "circle",
-  source: OBSTACLES,
-  minzoom: glZoom(9),
-  paint: {
-    "circle-color": ["match", ["get", "level"], "warning", LEVEL_COLOUR.warning, LEVEL_COLOUR.caution],
-    "circle-radius": ["interpolate", ["linear"], ["zoom"], glZoom(9), 3, glZoom(13), 6],
-    "circle-stroke-color": CHART.casing,
-    "circle-stroke-width": 1,
-  },
-};
+/** The obstacles the colouring rings, under the chart's own symbols' size,
+ *  a layer for each level so each colour is a constant: at night they are
+ *  dimmed by colour with the chart (mapDim's DIM_BY_COLOUR; the owner,
+ *  2026-11-27, "Dim by colour"), the red 3.23:1 over the paper at the
+ *  default Dimmer where see-through it was 1.48:1 (2.01 and 1.05 at the
+ *  deepest); a colour by feature would have the Dimmer lay the source out
+ *  again at each step. The amber, lighter than the dimmed paper, is 1.60:1
+ *  by colour (1.47 see-through), 1.36 at the deepest (1.65). */
+function obstacleLayer(level: keyof typeof LEVEL_COLOUR): CircleLayerSpecification {
+  return {
+    id: `${OBSTACLES}-${level}`,
+    type: "circle",
+    source: OBSTACLES,
+    metadata: DIM_BY_COLOUR,
+    minzoom: glZoom(9),
+    filter: ["==", ["get", "level"], level],
+    paint: {
+      "circle-color": LEVEL_COLOUR[level],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], glZoom(9), 3, glZoom(13), 6],
+      "circle-stroke-color": CHART.casing,
+      "circle-stroke-width": 1,
+    },
+  };
+}
 const SOURCES = { [OBSTACLES]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } } };
-const LAYERS = [OBSTACLE_LAYER];
+// The warning over the caution.
+const LAYERS = [obstacleLayer("caution"), obstacleLayer("warning")];
 
 /**
  * Hazard colouring, ForeFlight's Hazard Advisor on the chart: the ground
