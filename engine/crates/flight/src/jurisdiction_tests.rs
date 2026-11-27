@@ -183,7 +183,7 @@ fn a_leg_across_a_province_neither_field_is_in_is_said_on_the_leg() {
 fn the_outlines_name_only_known_places() {
     // code_of stops on a code it does not know; reading the file here
     // proves every C and P line is one, so none reads as another country.
-    let (countries, provinces) = crate::jurisdiction::outline_codes().unwrap();
+    let (countries, provinces) = crate::borders::outline_codes().unwrap();
     assert_eq!(countries, vec!["US", "CA", "MX", "BS"]);
     assert_eq!(provinces, vec!["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]);
 }
@@ -192,12 +192,12 @@ fn the_outlines_name_only_known_places() {
 fn an_unknown_code_fails_the_read_never_panics() {
     // The round 7 audit, E-L4: in WebAssembly a panic takes the whole
     // engine down, not the one call.
-    let err = crate::jurisdiction::read(b"CZZR\x03\x00\x00\xd0\x0f\x00\xcf\x0f\xd0\x0f").err().unwrap();
+    let err = crate::borders::read(b"CZZR\x03\x00\x00\xd0\x0f\x00\xcf\x0f\xd0\x0f").err().unwrap();
     assert!(err.contains("ZZ"), "{err}");
     // Bytes cut short inside a ring, or a ring before any place, fail too.
-    assert!(crate::jurisdiction::read(b"CUSR\x03\x00").is_err());
-    assert!(crate::jurisdiction::read(b"R\x01\x00\x00").is_err());
-    let err = crate::jurisdiction::read(b"CZZ").err().unwrap();
+    assert!(crate::borders::read(b"CUSR\x03\x00").is_err());
+    assert!(crate::borders::read(b"R\x01\x00\x00").is_err());
+    let err = crate::borders::read(b"CZZ").err().unwrap();
     assert!(err.contains("ZZ"), "{err}");
     assert!(crate::jurisdiction::outlines_read().is_ok());
 }

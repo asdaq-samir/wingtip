@@ -27,7 +27,7 @@ degree from another country are left out. Coordinates are kept in
 thousandths of a degree, each after a ring's first as the step from the
 one before, so the file stays small in the web's WebAssembly.
 
-The file is bytes, read by jurisdiction.rs's `read`, a record after
+The file is bytes, read by the engine's borders.rs `read`, a record after
 another: "C" and a country's two-letter code, or "P" and a province's;
 then each of its rings, "R", its count of points and the points, longitude
 then latitude, each number a zigzag LEB128 varint (as protobuf's sint64:
