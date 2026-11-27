@@ -111,9 +111,6 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // The map shown as one thing (the web's #541, #542): the loading mark
     // over it until the chart and the overlays are drawn, then faded once.
     var revealed by remember { mutableStateOf(false) }
-    // The dark screen, and the Map card's Dimmer and Contrast on the chart (ChartLook).
-    val night = LocalShade.current.dark
-    val chartLook = LocalShade.current.look
     val context = LocalContext.current
     val layers by remember { MapLayersStore.of(context) }.layers.collectAsStateWithLifecycle()
     val mapWeather: MapWeather = hiltViewModel()
@@ -239,8 +236,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             weather = weather,
             traffic = { if (trafficOn) targets.value else emptyList() },
             tracked = tracked,
-            night = night,
-            look = chartLook,
+            // The dark screen, and the Map card's Dimmer and Contrast on the chart (ChartLook).
+            night = LocalShade.current.dark,
+            look = LocalShade.current.look,
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
             ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix ?: app.wingtipmaps.android.airplane.PastFlightReplay.state.fix) },
