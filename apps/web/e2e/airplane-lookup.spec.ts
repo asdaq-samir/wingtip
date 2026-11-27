@@ -113,7 +113,7 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   // the tabs Flights, Info and Figures in the bar at its foot, opened from the search on Info.
   await row.click();
   const card = page.getByTestId("airplane-profile");
-  await expect(card).toContainText("Piper PA-28-140, 1971", { timeout: slow(15_000) });
+  await expect(card).toContainText("Piper PA-28, 1971", { timeout: slow(15_000) });
   for (const id of ["fly-this-airplane", "airplane-alerts", "airplane-favorite"])
     await expect(card.getByTestId("airplane-actions").getByTestId(id)).toBeVisible();
   await expect(card.getByTestId("airplane-track")).toHaveCount(0);

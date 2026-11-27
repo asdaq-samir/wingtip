@@ -6,6 +6,7 @@ import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import { aircraftKind } from "../../lib/aircraftKind";
 import type { KeptAircraft } from "../../lib/preferences";
 import { useMinuteClock } from "../../lib/useMinuteClock";
+import { shortType } from "../../components/airplane/shortType";
 import { statusLine } from "./airplaneStatus";
 
 /**
@@ -39,14 +40,16 @@ export function useAirplaneCard(tail: string, known: string | null = null) {
   // "landed 20m ago" as of this minute: the compiler keeps a call's answer
   // while its inputs are the same, so a Date.now() inside it froze the age.
   const now = useMinuteClock();
-  const line = record ? [[record.manufacturer, record.model].filter(Boolean).join(" "), record.year].filter(Boolean).join(", ") : null;
+  // Its maker and model in a few words, as the facts strip says them (the
+  // owner, 2026-11-27: "Card title can also have the shorter name").
+  const line = record ? [shortType(record.manufacturer, record.model), record.year].filter(Boolean).join(", ") : null;
   return {
     record,
     details: details.data,
     detailsFailed: details.isError,
     photo: photo.isError ? null : photo.data,
     hex,
-    /** Under its name: "Piper PA-28-140, 1971", the registry's; null where it has none. */
+    /** Under its name: "Piper PA-28, 1971", the registry's in a few words; null where it has none. */
     line,
     status: statusLine(inAir, flights, now),
     /** In the air by the live find: its report, for the card to track it (AirplaneCard). */
