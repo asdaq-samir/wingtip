@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.map
 
-import android.graphics.Color
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
@@ -26,6 +25,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
+import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
@@ -589,7 +589,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
         style.addSource(GeoJsonSource(TRAIL, geoJson))
         val layer = LineLayer(TRAIL, TRAIL).withProperties(
-            PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
+            PropertyFactory.lineColor(WingtipColors.Chart.MAP_BLUE_HEX.toColorInt()),
             PropertyFactory.lineWidth(2.5f),
             PropertyFactory.lineOpacity(MapDim.opacity(0.6f)),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
@@ -618,17 +618,17 @@ private class MapHolder(val view: MapView, private val density: Float) {
         // Widths as the web's at zoom 10 (glStyle's routeLayers).
         // At night dimmed by its colour with the chart (MapDim.colour, the web's DIM_BY_COLOUR): solid, its contrast kept.
         val layer = LineLayer(ROUTE, ROUTE).withProperties(
-            PropertyFactory.lineColor(MapDim.colour(COURSE_MAGENTA)),
+            PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.COURSE_HEX.toColorInt())),
             PropertyFactory.lineWidth(4.5f),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
         // The edge keeps the magenta legible: a dark rim by day and by night (the web's CHART.routeEdge), where a
-        // light one at night stood out of the dimmed chart at 1.75 to 1, brighter than the course it edged.
+        // light one at night stood out of the dimmed chart at 1.75 to 1; dimmed with the chart by colour as the course is.
         val edge = LineLayer(ROUTE_EDGE, ROUTE).withProperties(
-            PropertyFactory.lineColor(ROUTE_EDGE_INK),
+            PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt())),
             PropertyFactory.lineWidth(6.5f),
-            PropertyFactory.lineOpacity(0.6f),
+            PropertyFactory.lineOpacity(RouteLegLayer.edgeOpacity(night)),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
@@ -639,10 +639,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
 
     private companion object {
         const val ROUTE = "route"
-        const val ROUTE_EDGE = "route-edge"
-        /** The chart's magenta, the web's COURSE_MAGENTA. */
-        val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)
-        val ROUTE_EDGE_INK = app.wingtipmaps.android.design.generated.WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt()
+        const val ROUTE_EDGE = RouteLegLayer.EDGE
         const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's
          *  TAP.mark and TAP.line). */
