@@ -61,7 +61,11 @@ fun Modifier.timelineThread(thread: TimelineThread, first: Boolean, last: Boolea
         val width = WingtipSpace.Xxs.toPx()
         if (!first) drawLine(WingtipColors.Chart.Course, Offset(x, -gap.toPx()), Offset(x, centre - clear), width)
         if (!last) drawLine(WingtipColors.Chart.Course, Offset(x, centre + clear), Offset(x, size.height + gap.toPx()), width)
-        dot?.let { drawCircle(it, DOT.toPx(), Offset(x, centre)) }
+        dot?.let {
+            // Cased, so a red dot keeps its edge on the night's card (FlightCategory.RING).
+            drawCircle(FlightCategory.RING, DOT.toPx(), Offset(x, centre))
+            drawCircle(it, DOT.toPx() - FlightCategory.RING_WIDTH.toPx(), Offset(x, centre))
+        }
     }
 
 /** The leading mark's room, where the line's x is read from. */

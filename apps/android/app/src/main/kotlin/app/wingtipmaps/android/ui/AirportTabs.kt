@@ -1,8 +1,10 @@
 package app.wingtipmaps.android.ui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -79,7 +81,7 @@ fun AirportTabBar(section: AirportSection, onPick: (AirportSection) -> Unit, cat
                     BadgedBox(
                         badge = {
                             when {
-                                s == AirportSection.WEATHER && category != null -> Badge(containerColor = FlightCategory.mark(category))
+                                s == AirportSection.WEATHER && category != null -> Badge(Modifier.border(FlightCategory.RING_WIDTH, FlightCategory.RING, CircleShape), containerColor = FlightCategory.mark(category))
                                 s == AirportSection.CHARTS && hint != null -> Badge { Text(hint) }
                             }
                         },
