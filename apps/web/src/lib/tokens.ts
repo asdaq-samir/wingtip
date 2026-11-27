@@ -298,18 +298,7 @@ export const MAP = {
   routeTagOffEndsNm: 2,
 } as const;
 
-export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
-
-/** The chart's Dimmer and Contrast and the plates' see-through on the map (design/tokens.json's chart-look group). */
-export const CHART_LOOK = {
-  nightDim: 0.5,
-  dimMax: 0.7,
-  contrastMin: -0.3,
-  contrastMax: 0.4,
-  step: 0.05,
-  plateOpacity: 0.85,
-  plateLeastOpacity: 0.1,
-} as const;
+export { CHART_LOOK, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
 type FlowStop = [number, [number, number, number, number]];

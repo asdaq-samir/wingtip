@@ -1,6 +1,8 @@
 """The chart's Dimmer and Contrast and the plates' see-through in each
-platform's own terms, for design_tokens_flow.py (which appends them to the
-map's figures, so the generator's main file does not grow).
+platform's own terms: the phones' appended to the map's figures by
+design_tokens_flow.py, the web's to generated/mapTokens.ts by
+design_tokens_zoom.py (re-exported by lib/tokens, which stays within its
+400 lines), so the generator's main file does not grow.
 
 design/tokens.json's `chart-look` group is single numbers, 0 to 1 or an
 offset on the chart's contrast: the web's CHART_LOOK (lib/map/chartLook,

@@ -13,6 +13,7 @@ import re
 import textwrap
 from pathlib import Path
 
+import design_tokens_chartlook as chartlook
 import design_tokens_label as label
 
 PYTHON = Path("services/jobs/charts/map_zoom.py")
@@ -20,7 +21,7 @@ PYTHON = Path("services/jobs/charts/map_zoom.py")
 # re-exports, so lib/tokens stays within the 400-line budget
 # (scripts/ci/file_sizes.py; generated/ folders are left out of it).
 WEB = Path("apps/web/src/lib/generated/mapTokens.ts")
-TS_REEXPORT = 'export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
+TS_REEXPORT = 'export { CHART_LOOK, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
 HEAD = "From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1."
 
 
@@ -70,5 +71,6 @@ def python(tree, banner):
 def outputs(tree, root, banner):
     """The files written whole beside the four token files, by path: the
     charts job's zooms and the web's MAP_ZOOM, with its MAP_LABEL
-    (design_tokens_label)."""
-    return {root / PYTHON: python(tree, banner), root / WEB: "/* %s */\n\n%s\n\n%s\n" % (banner, ts(tree), label.ts(tree))}
+    (design_tokens_label) and CHART_LOOK (design_tokens_chartlook)."""
+    web = "/* %s */\n\n%s\n\n%s\n\n%s\n" % (banner, ts(tree), label.ts(tree), chartlook.ts(tree))
+    return {root / PYTHON: python(tree, banner), root / WEB: web}
