@@ -43,15 +43,18 @@ class CookieStore(private val shelf: CookieShelf) : CookieJar {
         }
     }
 
-    private val kept = HashMap<String, Cookie>()
-
-    init {
-        val saved = shelf.read()
-        if (saved != null) {
+    /** The shelf read on first use, not as the jar is made: the read waits
+     *  on DataStore, the Keystore and the decryption, which the first
+     *  call's own thread (OkHttp's, or the start's warm-up) takes rather
+     *  than the main thread as the client is built. */
+    private val kept: HashMap<String, Cookie> by lazy {
+        val read = HashMap<String, Cookie>()
+        shelf.read()?.let { saved ->
             runCatching { Gateway.json.decodeFromString<List<Kept>>(saved) }.getOrNull()?.forEach { k ->
-                runCatching { k.cookie() }.getOrNull()?.let { kept[key(it)] = it }
+                runCatching { k.cookie() }.getOrNull()?.let { read[key(it)] = it }
             }
         }
+        read
     }
 
     /** One slot per name, domain and path, as a browser keeps them. */
