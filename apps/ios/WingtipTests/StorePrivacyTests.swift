@@ -61,14 +61,16 @@ struct StorePrivacyTests {
 
     // MARK: Signing out and deleting the account (the store audit's P7)
 
-    @Test func forgettingTheDeviceDeletesThePathTheTrackAndTheCache() throws {
+    @Test func forgettingTheDeviceDeletesThePathTheTrackAndTheCache() async throws {
         let file = FileManager.default.temporaryDirectory.appending(path: "recorder-\(UUID().uuidString).json")
         try Data(#"{"points":[{"t":1,"lat":42,"lon":-88}],"flown":true}"#.utf8).write(to: file)
         let recorder = FlightRecorder(file: file)
+        await recorder.load()
         #expect(!recorder.points.isEmpty)
         try FileManager.default.createDirectory(at: OwnTrail.file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("[]".utf8).write(to: OwnTrail.file)
         let trail = OwnTrail()
+        await trail.load()
         let cache = URLCache(memoryCapacity: 1 << 20, diskCapacity: 0)
         let request = URLRequest(url: URL(string: "https://example.com/api/me")!)
         cache.storeCachedResponse(CachedURLResponse(response: URLResponse(url: request.url!, mimeType: "application/json", expectedContentLength: 2, textEncodingName: nil),
