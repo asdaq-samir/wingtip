@@ -344,19 +344,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
     }
 
-    /** Each reporting field's weather pip on the tile airports (the web's
-     *  setAirportWeather). */
+    /** Each reporting field's weather pip on the tile airports (the web's setAirportWeather), on their own source. */
     fun weather(colours: Map<String, String>) {
         if (colours == lastWeather) return
         lastWeather = colours
-        if (destroyed) return
-        view.getMapAsync { map ->
-            map.getStyle { style ->
-                style.getLayer(MapStyle.AIRPORTS)?.setProperties(
-                    PropertyFactory.iconImage(Expression.raw(MapStyle.airportIcon(colours).toString())),
-                )
-            }
-        }
+        redraw { style -> style.getLayer(MapStyle.AIRPORTS)?.setProperties(PropertyFactory.iconImage(Expression.raw(MapStyle.airportIcon(colours).toString()))) }
     }
 
     /** The terminal area chart over the base while pinned, at every zoom

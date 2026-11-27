@@ -42,8 +42,10 @@ object MapStyle {
     const val CHART_TERMINAL = "chart-terminal"
     val CHART_LAYERS = listOf(CHART_UNDER, CHART, CHART_TERMINAL)
 
-    /** The overlay tiles' source, as the web's OVERLAY_SOURCE. */
+    /** The overlay tiles' source (the web's OVERLAY_SOURCE), and the airports' own on its archive (AIRPORTS_SOURCE):
+     *  a weather answer or a tapped field lays out the fields' tiles alone (the map speed audit, 2026-11-27). */
     const val OVERLAY_SOURCE = "faa-overlays"
+    const val AIRPORTS_SOURCE = "faa-airports"
 
     /** Where the route and the path flown go: over the airspace and the
      *  runways, under the navaids and the airports (the web's "route"
@@ -185,7 +187,7 @@ object MapStyle {
                 }
                 put(CHART, rasterSource(tiles, minZoom, maxZoom))
                 if (overlays != null) {
-                    putJsonObject(OVERLAY_SOURCE) {
+                    for (id in listOf(OVERLAY_SOURCE, AIRPORTS_SOURCE)) putJsonObject(id) {
                         put("type", "vector")
                         put("url", overlayUrl(overlays))
                     }
@@ -569,17 +571,15 @@ object MapStyle {
     fun airportIcon(colours: Map<String, String>): JsonArray =
         e("concat", "apt|", e("coalesce", e("get", "airspace"), ""), "|", weatherExpression(colours), "|", AIRPORT_USE)
 
-    /** The airports' one symbol layer (the web's airportMarksLayer): the
-     *  mark by its ring, weather and use, sized by the field, its ident beside it in bold
-     *  in the field's ink (the sectional sets an airport's name in the
-     *  symbol's colour, Chart User's Guide, Airports), kept apart by
-     *  MapLibre's collision in `rank` order, the fields the switches hide
-     *  left off (airportsFilter). */
+    /** The airports' one symbol layer (the web's airportMarksLayer): the mark by its ring, weather and use, sized by
+     *  the field, its ident beside it in bold in the field's ink (the sectional sets an airport's name in the symbol's
+     *  colour, Chart User's Guide, Airports), kept apart by MapLibre's collision in `rank` order, on the airports' own
+     *  source (AIRPORTS_SOURCE), the fields the switches hide left off (airportsFilter). */
     private fun airportsLayer(layers: MapLayers, weather: Map<String, String>): JsonObject = buildJsonObject {
         val farthest = glZoom(AIRPORTS_FARTHEST_ZOOM)
         put("id", AIRPORTS)
         put("type", "symbol")
-        from("airports")
+        from("airports", AIRPORTS_SOURCE)
         put("minzoom", farthest)
         put("filter", airportsFilter(layers))
         putJsonObject("layout") {
@@ -732,8 +732,8 @@ object MapStyle {
         )
     }
 
-    private fun kotlinx.serialization.json.JsonObjectBuilder.from(layer: String) {
-        put("source", OVERLAY_SOURCE)
+    private fun kotlinx.serialization.json.JsonObjectBuilder.from(layer: String, source: String = OVERLAY_SOURCE) {
+        put("source", source)
         put("source-layer", layer)
     }
 
