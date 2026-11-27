@@ -187,9 +187,7 @@ fn plane_of(name: &str, v: &Value) -> Result<Plane, String> {
     })
 }
 
-fn list<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a [Value], String> {
-    v.get(key).and_then(Value::as_array).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a list"))
-}
+use wingtip_core::ask::list_in as list;
 
 /// Own ship's place for `traffic_marks`, where the phone has a fix.
 fn own_at(name: &str, v: &Value) -> Result<Option<(f64, f64)>, String> {

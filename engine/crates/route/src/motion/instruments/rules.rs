@@ -12,13 +12,7 @@ pub(super) fn pair(n: &str, v: &Value) -> Result<(f64, f64), String> {
     }
 }
 
-pub(super) fn list<'a>(n: &str, v: &'a Value, key: &str) -> Result<&'a [Value], String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(&[]),
-        Some(Value::Array(items)) => Ok(items),
-        Some(_) => Err(format!("{n}: \"{key}\" is not a list")),
-    }
-}
+pub(super) use wingtip_core::ask::opt_list_in as list;
 
 pub(super) fn ahead_json(out: &mut String, a: &Option<Ahead>) {
     let Some(a) = a else {

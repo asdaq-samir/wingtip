@@ -139,13 +139,7 @@ pub(crate) fn flag(name: &str, v: &Value, key: &str) -> R<bool> {
     }
 }
 
-pub(crate) fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(&[]),
-        Some(Value::Array(items)) => Ok(items),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a list")),
-    }
-}
+pub(crate) use wingtip_core::ask::opt_list_in as list;
 
 /// A [lat, lon] pair.
 pub(crate) fn pair(name: &str, v: &Value) -> R<(f64, f64)> {

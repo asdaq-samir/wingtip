@@ -65,13 +65,7 @@ struct Advisory {
     on_route: bool,
 }
 
-fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(&[]),
-        Some(Value::Array(items)) => Ok(items),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a list")),
-    }
-}
+use wingtip_core::ask::opt_list_in as list;
 
 fn flag(v: &Value, key: &str) -> bool {
     matches!(v.get(key), Some(Value::Bool(true)))
