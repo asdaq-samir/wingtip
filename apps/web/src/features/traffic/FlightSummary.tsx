@@ -176,6 +176,14 @@ function FlightSummary({
               {badge?.tone === "air" && flown && " · "}
               {flown}
             </span>
+            {/* Its everyday code on its state's line (the owner, 2026-11-27:
+                "Squawk can go to in the air card"); an emergency's is its
+                badge and its own line below. */}
+            {squawk && !meaning && (
+              <span className="text-muted-foreground tabular-nums" data-testid="flight-squawk">
+                Squawk {squawk}
+              </span>
+            )}
             {/* How long ago it was heard, greyed once the engine says its
                 position is old (LiveAge, traffic_fresh; decision 0045). */}
             <LiveAge
