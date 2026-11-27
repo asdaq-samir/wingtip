@@ -14,6 +14,7 @@ import { tapOpens } from "./sheetLayout";
 import { useCardScrollRoom } from "./cardScrollRoom";
 import { CardFootSlot } from "./CardFoot";
 import { inCardFoot, useCardFootHeight } from "./cardFeet";
+import { usePopupStill } from "./sheetMotion";
 
 export interface StackProps {
   /** A phone's sheet: the cards are drawers with its sizes and its swipe.
@@ -194,8 +195,9 @@ function CardDrawer({
   };
   const topSlot = onPhone && fromBottom && riding;
   // Its tab bar's slot at the screen's foot, in sight while it is the top
-  // card, open and above the pill (sheet/CardFoot).
-  const footShown = top && entry.state === "open" && entry.at !== undefined && at !== "peek";
+  // card, open and above the pill, and come to rest (usePopupStill): not
+  // while it still rises to its size, nor under a finger (sheet/CardFoot).
+  const footShown = usePopupStill(popup, top && entry.state === "open" && entry.at !== undefined && at !== "peek");
   const footPx = useCardFootHeight(id);
   return (
     <Drawer.Root

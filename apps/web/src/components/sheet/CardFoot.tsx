@@ -14,22 +14,26 @@ import { CARD_FOOT, putCardFoot, useCardFeet, useCardFootSlot } from "./cardFeet
  * and the finger's movement on the Drawer's curve, it could slide apart
  * from the card on the iPhone mid-drag.
  *
- * In sight (`shown`) while its card is the top one, open, and above the
- * pill, set as a let-go or a tap picks the card's size, so it changes once
- * as the finger lifts, never with the finger; out of sight at once as the
- * card goes. Its height, measured as it resizes, is told (cardFeet's
- * useCardFootHeight) for the card's end room and scroll padding.
+ * In sight (`shown`) while its card is the top one, open, above the pill
+ * and at rest (CardStack's usePopupStill): it fades in, opacity alone, once
+ * the card has come up under it, never ahead of it nor under a finger; out
+ * of sight at once as the card goes or a finger takes it. Its height,
+ * measured as it resizes (the ResizeObserver's first report the first), is
+ * told (cardFeet's useCardFootHeight) for the card's end room and scroll
+ * padding, and kept while it is out of sight, so the card's end room does
+ * not jump between its guess and the bar's height at every drag.
  */
 export function CardFootSlot({ id, shown }: { id: string; shown: boolean }) {
   const host = useCardFeet((s) => s.host);
   const [el, setEl] = useState<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
     if (!el) return;
-    putCardFoot(id, { el, shown, height: shown ? el.offsetHeight : 0 });
+    const kept = () => useCardFeet.getState().feet[id]?.height ?? 0;
+    putCardFoot(id, { el, shown, height: kept() });
     if (!shown || typeof ResizeObserver === "undefined") return;
     const watch = new ResizeObserver(([entry]) => {
-      const height = Math.round(entry?.borderBoxSize[0]?.blockSize ?? el.offsetHeight);
-      if (useCardFeet.getState().feet[id]?.height !== height) putCardFoot(id, { el, shown, height });
+      const height = Math.round(entry?.borderBoxSize[0]?.blockSize ?? 0);
+      if (kept() !== height) putCardFoot(id, { el, shown, height });
     });
     watch.observe(el);
     return () => watch.disconnect();
@@ -41,8 +45,10 @@ export function CardFootSlot({ id, shown }: { id: string; shown: boolean }) {
       ref={setEl}
       {...{ [CARD_FOOT]: id }}
       hidden={!shown}
-      // Its own ground takes no touch: only the bar's capsule does.
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 print:hidden"
+      // Its own ground takes no touch: only the bar's capsule does. In by
+      // a short fade from its first style (@starting-style) as it is
+      // shown, out at once (display: none), as a card's controls give way.
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 transition-opacity duration-(--motion-fade) ease-(--motion-sheet-ease) starting:opacity-0 print:hidden"
     />,
     host,
   );

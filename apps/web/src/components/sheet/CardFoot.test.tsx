@@ -5,13 +5,14 @@
  * moved against the card's slide; elsewhere it stays in the card. The
  * slot's height is the card's room under it.
  */
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, renderHook, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, expect, test } from "vitest";
 import { CardId } from "../../lib/sheetCards";
 import { CardFootSlot, InCardFoot } from "./CardFoot";
 import { cardFeetHost, inCardFoot, putCardFoot, useCardFeet, useCardFootHeight } from "./cardFeet";
 import { useCardScrollRoom } from "./cardScrollRoom";
+import { usePopupStill } from "./sheetMotion";
 
 afterEach(() => {
   cleanup();
@@ -79,4 +80,42 @@ test("the slot's height is the card's end room and scroll padding under the bar"
   expect(screen.getByTestId("scroller").style.getPropertyValue("scroll-padding-bottom")).toBe("76px");
   rerender(both(0));
   expect(screen.getByTestId("scroller").style.getPropertyValue("scroll-padding-bottom")).toBe("");
+});
+
+test("the slot's last height is kept while it is out of sight, so the card's end room holds through a drag", () => {
+  act(() => putCardFoot("kosh", { el: document.createElement("div"), shown: true, height: 76 }));
+  function Room() {
+    return <span data-testid="room">{useCardFootHeight("kosh")}</span>;
+  }
+  render(
+    <>
+      <Card shown={false} />
+      <Room />
+    </>,
+  );
+  expect(screen.queryByTestId("bar")).toBeNull();
+  expect(screen.getByTestId("room").textContent).toBe("76");
+});
+
+test("the bar waits for its card to come to rest: not while it slides or a finger has it", async () => {
+  const popup = document.createElement("div");
+  const frames = () => act(() => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
+  const slide = (type: string) => {
+    const event = new Event(type) as TransitionEvent;
+    Object.defineProperty(event, "propertyName", { value: "transform" });
+    act(() => popup.dispatchEvent(event));
+  };
+  const { result } = renderHook(() => usePopupStill(popup, true));
+  slide("transitionrun");
+  await frames();
+  expect(result.current).toBe(false);
+  slide("transitionend");
+  await frames();
+  await frames();
+  expect(result.current).toBe(true);
+  await act(async () => {
+    popup.setAttribute("data-swiping", "");
+    await Promise.resolve();
+  });
+  expect(result.current).toBe(false);
 });

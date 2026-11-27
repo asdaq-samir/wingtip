@@ -296,6 +296,15 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in the one floating bar FPL's actions are drawn in too (`components/FloatingBar`; the owner, 2026-11-18: "Yes make it common. Also I meant shorter not narrower, but apply the same height and width for both"): items 48 points tall in a 56-point capsule, the glyph 24 over the word on the `tab-bar` type (12/16 regular, iOS 26's tab bar), its items one width on every bar, 73 points (a quarter of 18.75 rem less the capsule's sides, so four tabs make it 300 and FPL's three 227; growing with the text size as the words do, capped at a quarter of the room there is, never narrower than its words; the owner, 2026-11-21: "fpl and other tabs placement look different"), 4 points over the screen's foot or the home indicator's inset, so FPL's figures at half clear it), centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
+   On a phone's bottom sheet the bar comes in, a short fade, once the card
+   has come to rest under it, and goes at once as a finger takes the card.
+   It stands outside the card's sliding popup, so a drag that starts on
+   its capsule does not move the card: Base UI's Drawer has no part that
+   hands a drag on another element to an open drawer (its `SwipeArea`
+   only opens a closed one), and the bar inside the popup, counter-moved,
+   slid apart from the card on the iPhone (the sheet-motion audit of
+   2026-11-23). The card's grabber and its ground above the bar take the
+   drag; the bar is for taps.
    This replaces T4's tabs under the actions and its one-line report.
    A closed runway is crossed out on the pictures' runway sketch where
    the airport marks it on the ground, the engine's

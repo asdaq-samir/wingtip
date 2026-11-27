@@ -867,9 +867,14 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    buttons: on a phone's bottom sheet in the card's foot slot, a fixed
    slot at the screen's foot beside the sliding cards (`sheet/CardFoot`),
    so the card slides behind it at every height; in sight while the card
-   is the top one and above the pill, changed as a drag is let go, never
-   with the finger; the slot's height the card's end room and scroll
-   padding (`useCardFootHeight`), so the last row scrolls clear of it.
+   is the top one, above the pill and at rest (`usePopupStill`: Base UI's
+   data-swiping and the popup's own transform transition, two frames
+   after both end), fading in on opacity alone (`@starting-style`, the
+   motion's `fade`) once the card has come up under it, never ahead of
+   it, and gone at once as a finger takes the card; the slot's height,
+   kept while it is out of sight, the card's end room and scroll
+   padding (`useCardFootHeight`), so the last row scrolls clear of it
+   and the end room does not jump at every drag.
    Beside the side panel and on a top sheet it is sticky at the foot of
    the card's scroller, its own room in the flow the last row's. Glass (`liquid-glass`) because it floats over the
    card, the one place glass stays (rules.md; the owner, 2026-11-10), at
