@@ -3837,6 +3837,11 @@ object EngineContract {
          */
         @SerialName("flight_on")
         val flightOn: String? = null,
+        /**
+         * The solo cross-country's make and model, "C172": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met.
+         */
+        @SerialName("make_model")
+        val makeModel: String? = null,
     )
 
     @Serializable

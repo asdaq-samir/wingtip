@@ -124,6 +124,11 @@ class EndorsementsAsk(BaseModel):
 
     held: list[HeldEndorsement]
     flightOn: date | None = None
+    makeModel: str | None = Field(
+        default=None,
+        description="The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; "
+        "none and the checks can't tell.",
+    )
 
 
 class ReviewCheck(BaseModel):

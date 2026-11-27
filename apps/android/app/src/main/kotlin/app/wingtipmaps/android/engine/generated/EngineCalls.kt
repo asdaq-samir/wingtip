@@ -699,8 +699,8 @@ fun Engine.endorsementLapse(until: String? = null, untilKind: String? = null, si
 /**
  * What a student's endorsements say: each one's last good day (90 days for a solo endorsement, 14 CFR 61.87(n), (p), the night solo's, 61.87(o), and Class B's, 61.95(a)(2), (b)(2); AC 61-65K A.5-A.7, A.12, A.13; null for one that does not run out), the day their solo endorsement runs out, and, for a solo cross-country on flight_on, what their record answers of 61.93(d): (4) a solo cross-country endorsement (61.93(c)(1), (2)) and (5) a solo endorsement within the 90 days before the flight.
  */
-fun Engine.endorsementRecords(held: List<EngineContract.EndorsementRecordsInputHeldItem>? = null, flightOn: String? = null): Result<EngineContract.EndorsementRecordsAnswer> =
-    rule("endorsement_records", EngineContract.EndorsementRecordsInput(held = held, flightOn = flightOn))
+fun Engine.endorsementRecords(held: List<EngineContract.EndorsementRecordsInputHeldItem>? = null, flightOn: String? = null, makeModel: String? = null): Result<EngineContract.EndorsementRecordsAnswer> =
+    rule("endorsement_records", EngineContract.EndorsementRecordsInput(held = held, flightOn = flightOn, makeModel = makeModel))
 
 /**
  * An endorsement's words as they will be signed.

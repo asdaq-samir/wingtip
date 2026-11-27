@@ -3799,10 +3799,13 @@ nonisolated enum EngineContract {
         var held: [EngineContract.EndorsementRecordsInputHeldItem]?
         /// YYYY-MM-DD
         var flightOn: String?
+        /// The solo cross-country's make and model, "C172": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met.
+        var makeModel: String?
 
         enum CodingKeys: String, CodingKey {
             case held
             case flightOn = "flight_on"
+            case makeModel = "make_model"
         }
     }
 

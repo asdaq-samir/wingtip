@@ -7442,6 +7442,10 @@ export interface EndorsementRecordsInput {
    * YYYY-MM-DD
    */
   flight_on?: string | null;
+  /**
+   * The solo cross-country's make and model, "C172": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met.
+   */
+  make_model?: string | null;
 }
 export interface EndorsementRecordsAnswer {
   /**

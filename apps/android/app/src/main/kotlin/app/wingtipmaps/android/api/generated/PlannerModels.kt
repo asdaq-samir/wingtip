@@ -7601,7 +7601,13 @@ data class RecordsBatchAsk (
 @Serializable
 data class EndorsementsAsk (
     val flightOn: String? = null,
-    val held: List<HeldEndorsement>
+    val held: List<HeldEndorsement>,
+
+    /**
+     * The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the
+     * endorsements to it; none and the checks can't tell.
+     */
+    val makeModel: String? = null
 )
 
 /**

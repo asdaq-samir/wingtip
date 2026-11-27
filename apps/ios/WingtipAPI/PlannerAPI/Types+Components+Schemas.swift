@@ -8553,21 +8553,29 @@ extension Components {
             public var flightOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/EndorsementsAsk/held`.
             public var held: [Components.Schemas.HeldEndorsement]
+            /// The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; none and the checks can't tell.
+            ///
+            /// - Remark: Generated from `#/components/schemas/EndorsementsAsk/makeModel`.
+            public var makeModel: Swift.String?
             /// Creates a new `EndorsementsAsk`.
             ///
             /// - Parameters:
             ///   - flightOn:
             ///   - held:
+            ///   - makeModel: The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; none and the checks can't tell.
             public init(
                 flightOn: Swift.String? = nil,
-                held: [Components.Schemas.HeldEndorsement]
+                held: [Components.Schemas.HeldEndorsement],
+                makeModel: Swift.String? = nil
             ) {
                 self.flightOn = flightOn
                 self.held = held
+                self.makeModel = makeModel
             }
             public enum CodingKeys: String, CodingKey {
                 case flightOn
                 case held
+                case makeModel
             }
         }
         /// The FAA's reference record of an engine (ENGINE.txt): horsepower for
