@@ -122,6 +122,22 @@ def test_an_airplane_adsb_lol_hears_on_the_ground_has_landed_where_it_is_not_una
     assert state["arrived"] == {**kord, "at": 1791800000.0 - 24.0}
 
 
+def test_an_airplane_nothing_hears_is_not_heard_and_one_none_can_be_asked_of_is_unavailable(clock, monkeypatch):
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_paced", lambda url: {"ac": []})
+    stand_in(monkeypatch, "_adsbx", lambda path, search=False: [])
+    state = traffic.status("a128b9")
+    assert state["heard_s"] is None and not state["airborne"]
+
+    def refused(*args, **kwargs):
+        raise traffic.TrafficUnavailable("turned away")
+
+    stand_in(monkeypatch, "_paced", refused)
+    stand_in(monkeypatch, "_adsbx", refused)
+    with pytest.raises(traffic.TrafficUnavailable):
+        traffic.status("a0b7d8")
+
+
 def test_a_recorded_track_begun_in_the_air_says_no_departure(clock, monkeypatch):
     """N3429J's card opened over Burlington at 2,000 ft: not "left KBUU"."""
     monkeypatch.setattr(

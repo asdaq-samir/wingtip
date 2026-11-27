@@ -83,6 +83,7 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_FOLLOW_ASKED", {})
     stand_in(monkeypatch, "_WATCH_SOURCE", {})
     stand_in(monkeypatch, "_ON_GROUND", {})
+    stand_in(monkeypatch, "_ANSWERED", {})
     stand_in(monkeypatch, "_GLOBE", {"blocked_until": -1e9})
     # The FAA's radar shown with no LADD list kept, as the owner's own stack
     # has it; the list's own tests hold it (test_traffic_ladd.py).
@@ -125,6 +126,9 @@ def _status(code, body=None):
     resp = Mock()
     resp.status_code = code
     resp.json = Mock(return_value=body)
+    # As requests' own: an error's status raises, so a refusal reads as one.
+    if code >= 400:
+        resp.raise_for_status = Mock(side_effect=requests.HTTPError(f"{code}", response=resp))
     return resp
 
 

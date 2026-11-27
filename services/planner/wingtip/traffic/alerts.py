@@ -6,7 +6,7 @@ from .. import airports
 from .common import STALE_S, TrafficUnavailable, _number, _wall
 from .adsb_lol import UNREAD, _last_heard, _recent_trace, _trace
 from .recorded import _recorded
-from .watched import _on_ground, _watch
+from .watched import _answered, _on_ground, _watch
 from .flights import DEPARTED_WITHIN_NM, _points
 from .legs import LEG_GAP_S, _field_at, _left_from
 
@@ -79,6 +79,11 @@ def status(hex_id: str) -> dict:
         ground = _on_ground(hex_id)
         if ground is not None and (not recorded or ground["t"] > recorded[-1]["t"]):
             return _ground_status(hex_id, ground)
+        if not recorded and _answered(hex_id):
+            # Asked, and nothing hears it now: not heard, which the card
+            # says as such, not that adsb.lol did not answer (N570GJ once
+            # parked at O'Hare, 2026-11-27).
+            return {"hex": hex_id, "heard_s": None, "airborne": False, "aircraft": None, "departed": None, "arrived": None}
         if not recorded:
             raise TrafficUnavailable("adsb.lol's recent trace could not be read")
         return _recorded_status(hex_id, recorded)

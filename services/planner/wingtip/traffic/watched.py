@@ -45,6 +45,8 @@ _WATCH_SOURCE: dict[str, str] = {}
 #: said adsb.lol did not answer (the owner's N570GJ taxiing at O'Hare,
 #: 2026-11-27).
 _ON_GROUND: dict[str, dict] = {}
+#: When a source last answered for each watched airplane (`_answered`).
+_ANSWERED: dict[str, float] = {}
 
 #: How often each followed airplane is asked for in the background, s:
 #: its flights recorded as FlightAware records them, card open or not
@@ -100,6 +102,13 @@ def _lol_by_hex(hex_id: str) -> list[dict]:
             with _LOCK:
                 _ON_GROUND[hex_id] = {"lat": lat, "lon": lon, "t": round(_wall() - seen, 1)}
     return [a for a in (_aircraft(e) for e in entries if isinstance(e, dict)) if a is not None]
+
+
+def _answered(hex_id: str) -> bool:
+    """A source answered when this airplane was last asked for (`_watch`),
+    within WATCH_FOR_S, even with nothing of it: not heard, not unavailable."""
+    with _LOCK:
+        return _clock() - _ANSWERED.get(hex_id, -math.inf) < WATCH_FOR_S
 
 
 def _on_ground(hex_id: str) -> dict | None:
@@ -160,16 +169,21 @@ def _watch(hex_id: str) -> None:
         if now - _WATCH_ASKED.get(hex_id, -math.inf) < WATCH_GAP_S:
             return
         _WATCH_ASKED[hex_id] = now
+    answered = True
     try:
         planes = _lol_by_hex(hex_id)
     except TrafficUnavailable:
-        planes = []
+        planes, answered = [], False
     source = ADSB_LOL_SOURCE["source"]
     if not planes:
         try:
             planes, source = _adsbx(f"icao/{hex_id}", search=True), ADSBX_SOURCE["source"]
+            answered = True
         except TrafficUnavailable:
             planes = []
+    if answered:
+        with _LOCK:
+            _ANSWERED[hex_id] = now
     for plane in planes:
         if plane["hex"].lower().lstrip("~") == hex_id.lstrip("~"):
             _record(hex_id, plane)
