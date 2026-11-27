@@ -131,6 +131,11 @@ test("You's Documents lists the shelf with its editions, and a PDF added stays o
   const reader = page.getByTestId("document-reader");
   await expect(reader.getByTestId("document-pdf").locator(".page canvas, .page .canvasWrapper")).not.toHaveCount(0);
   await reader.getByTestId("document-reader-close").click();
+  // Closed, and ?doc= off the address, before the reload: a reload that
+  // came first opened the reader again over the console, and its text
+  // layer took the click on the Documents row (the nights of 11-25 to 11-27).
+  await expect(reader).toHaveCount(0);
+  await expect(page).not.toHaveURL(/[?&]doc=/);
 
   // Still there after a reload: IndexedDB, not the page's memory.
   await page.reload();

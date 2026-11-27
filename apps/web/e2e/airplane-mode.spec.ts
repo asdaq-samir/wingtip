@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { library, openConsole, showTabs } from "./helpers";
+import { consolePage, library, openConsole, showTabs } from "./helpers";
 
 /**
  * Airplane mode: a list asked for with no connection says "No connection"
@@ -28,9 +28,16 @@ test("a list asked for in airplane mode says No connection, and answers by itsel
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);
+  // The console's Account page drawn, its libraries' rows in, while still
+  // online: offline before then, the page's own code still to come never
+  // came and its tab was never drawn (the night of 2026-11-27, 30 s on
+  // "Account"). The spec is about the lists' words offline, not the page's
+  // loading.
+  const console = page.getByTestId("console-sheet");
+  await consolePage(console, "Account");
+  await expect(console.getByTestId("library-section")).toBeVisible();
   await context.setOffline(true);
 
-  const console = page.getByTestId("console-sheet");
   await library(console, "Logbook");
   // Each of the page's lists says so in its own place: the logbook's
   // flights and what is coming up (/api/paperwork, asked offline too).
