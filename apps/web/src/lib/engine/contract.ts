@@ -4223,7 +4223,7 @@ export interface EngineContract {
     answer: WindArrowAnswer;
   };
   /**
-   * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
+   * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends; a light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's 9900, under 5 kt) taken as 0 kt with the nearest level's direction, never skipped (the next level's wind in its place understated time and fuel, 14 CFR 91.151, 91.167); null with no level, never calm. A list for "altitudes".
    */
   wind_at_altitude: {
     input: WindAtAltitudeInput;
