@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import PastFlights from "../../components/airplane/PastFlights";
 import AirplaneInfo from "./AirplaneInfo";
-import type { AirplaneCardModel } from "./useAirplaneCardModel";
+import type { AirplaneSlices } from "./useAirplaneCardModel";
 
 /**
  * The airplane card's Info tab, the one it opens on (the owner,
@@ -13,7 +13,7 @@ import type { AirplaneCardModel } from "./useAirplaneCardModel";
  * airplane with no Figures. Traffic the FAA's registry does not hold has no
  * record to show, said so.
  */
-export function InfoPage({ m, poh }: { m: AirplaneCardModel; poh: ReactNode }) {
+export function InfoPage({ m, poh }: { m: AirplaneSlices<"card" | "hex" | "live" | "tail">; poh: ReactNode }) {
   const { hex, tail, live, card } = m;
   return tail ? (
     <>
@@ -39,12 +39,12 @@ export function InfoPage({ m, poh }: { m: AirplaneCardModel; poh: ReactNode }) {
  * in the background as the card opens (useAirplaneCard), so they are in
  * when the tab is picked: OpenSky's take seconds (the owner, 2026-11-27).
  */
-export function FlightsPage({ m }: { m: AirplaneCardModel }) {
+export function FlightsPage({ m }: { m: AirplaneSlices<"hex" | "live" | "nav"> }) {
   const { hex, live } = m;
   return hex ? (
     <PastFlights
       hex={hex}
-      onOpen={m.openPast}
+      onOpen={m.nav.openPast}
       play
       title={live.plane ? "Earlier" : "Flights"}
       type={live.detail?.type ?? live.plane?.type ?? null}

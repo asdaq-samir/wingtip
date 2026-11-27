@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { SheetCard } from "../../components/SheetCard";
 import type { FigureKey } from "../../lib/airplane/figures";
 import FiguresTab from "./FiguresTab";
-import type { AirplaneCardModel } from "./useAirplaneCardModel";
+import type { AirplaneSlices } from "./useAirplaneCardModel";
 
 /**
  * An airplane's planning figures, a card of their own over its card, opened
@@ -12,12 +12,20 @@ import type { AirplaneCardModel } from "./useAirplaneCardModel";
  * card. Every figure edited in place, a missing one asked for there, then
  * its POH's row.
  */
-export default function FiguresCard({ m, poh, focus }: { m: AirplaneCardModel; poh: ReactNode; focus: FigureKey | null }) {
+export default function FiguresCard({
+  m,
+  poh,
+  focus,
+}: {
+  m: AirplaneSlices<"head" | "nav" | "profile">;
+  poh: ReactNode;
+  focus: FigureKey | null;
+}) {
   return (
     <SheetCard
       title="Figures"
-      description={m.title}
-      onClose={m.closeFigures}
+      description={m.head.title}
+      onClose={m.nav.closeFigures}
       testId="airplane-figures"
       // On the figure it was opened for, where it was one.
       initialFocus={() => {
@@ -26,7 +34,7 @@ export default function FiguresCard({ m, poh, focus }: { m: AirplaneCardModel; p
         return field ?? true;
       }}
     >
-      <FiguresTab vm={m.vm} poh={poh} />
+      <FiguresTab vm={m.profile} poh={poh} />
     </SheetCard>
   );
 }

@@ -15,7 +15,7 @@ import { TEXT } from "../../lib/text";
 import { PohRow } from "../documents/lazy";
 import { FlightNowBox, FlightPictures, liveFacts } from "../traffic/lazy";
 import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
-import { useAirplaneCardModel, type AirplaneCardModel, type AirplaneTab } from "./useAirplaneCardModel";
+import { useAirplaneCardModel, type AirplaneSlices, type AirplaneTab } from "./useAirplaneCardModel";
 import { FlightsPage, InfoPage } from "./AirplanePage";
 import FiguresCard from "./FiguresCard";
 import { airplanePhotoSlide } from "./photoSlide";
@@ -30,24 +30,25 @@ import { airplanePhotoSlide } from "./photoSlide";
  *  2026-11-27: "Keep four buttons on top, just disable the one when
  *  needed"): Fly This and Figures for one the planner cannot fly, Alerts
  *  with no ICAO address, Favorite with nothing to keep. */
-function Actions({ m }: { m: AirplaneCardModel }) {
-  const { vm, live, hex } = m;
-  const first = m.airborne ? (
+function Actions({ m }: { m: AirplaneSlices<"actions" | "head" | "hex" | "live"> }) {
+  const { actions: a, live, hex } = m;
+  const { title } = m.head;
+  const first = a.airborne ? (
     <TogglePrimitive
       key="track"
-      pressed={m.following}
+      pressed={a.following}
       disabled={!live.plane}
-      onPressedChange={m.follow}
+      onPressedChange={a.follow}
       render={
         <CardAction
           icon={<Crosshair />}
           label="Track"
           filled
-          pressed={m.following}
+          pressed={a.following}
           testId="airplane-track"
           // The pressed state says whether the map keeps it in sight (WAI-ARIA APG, Button);
           // the visible word in its name (WCAG 2.5.3).
-          spoken={`Track ${m.title} on the map`}
+          spoken={`Track ${title} on the map`}
         />
       }
     />
@@ -55,11 +56,11 @@ function Actions({ m }: { m: AirplaneCardModel }) {
     <CardAction
       key="fly"
       icon={<ACTION.flyHere.icon />}
-      label={vm.flying ? "Flying This" : "Fly This"}
-      spoken={vm.flying ? "Flying this airplane" : "Fly this airplane"}
+      label={a.flying ? "Flying This" : "Fly This"}
+      spoken={a.flying ? "Flying this airplane" : "Fly this airplane"}
       filled
-      disabled={vm.flying || !m.flyable}
-      onClick={m.fly}
+      disabled={a.flying || !a.flyable}
+      onClick={a.fly}
       testId="fly-this-airplane"
     />
   );
@@ -68,8 +69,8 @@ function Actions({ m }: { m: AirplaneCardModel }) {
     <AircraftAlertMenu
       key="alerts"
       hex={hex}
-      name={m.title}
-      airborne={m.airborne}
+      name={title}
+      airborne={a.airborne}
       from={live.fromField}
       to={live.toField}
       label="Alerts"
@@ -81,13 +82,13 @@ function Actions({ m }: { m: AirplaneCardModel }) {
   const tiles = [
     first,
     alerts,
-    <FavoriteTile key="favorite" on={m.starred} disabled={!m.kept} onToggle={m.toggleFavorite} testId="airplane-favorite" />,
+    <FavoriteTile key="favorite" on={a.starred} disabled={!a.kept} onToggle={a.toggleFavorite} testId="airplane-favorite" />,
     <CardAction
       key="figures"
       icon={<Gauge />}
       label="Figures"
-      disabled={!m.flyable}
-      onClick={m.openFigures}
+      disabled={!a.flyable}
+      onClick={a.openFigures}
       testId="airplane-figures-open"
     />,
   ];
@@ -128,18 +129,18 @@ export default function AirplaneCard({
 }) {
   // Its Figures open from the start where one of them was asked for.
   const m = useAirplaneCardModel({ tail, hex, figures: figures || !!focus });
-  const { card, live } = m;
+  const { card, live, head, nav } = m;
   // Its POH on Figures, else on the page: one row.
   const poh = m.tail ? <PohRow tail={m.tail} model={m.pohModel} /> : null;
   return (
-    <SheetCard head={false} onClose={m.close} testId="airplane-profile">
+    <SheetCard head={false} onClose={head.close} testId="airplane-profile">
       {/* The airport card's head (CardTitle): Share at its start, its name
           with its call sign and what it is under it, ✕ at its end. */}
       <CardTitle
-        title={m.title}
-        sub={m.sub}
-        onClose={m.close}
-        onShare={m.share}
+        title={head.title}
+        sub={head.sub}
+        onClose={head.close}
+        onShare={head.share}
         testId="airplane-head"
         titleTestId="airplane-name"
         closeTestId="sheet-card-close"
@@ -164,14 +165,14 @@ export default function AirplaneCard({
       {/* Two tabs in the glass bar at its foot, as the airport card's: Info,
           where it opens, and Flights (the owner, 2026-11-27). */}
       <CardTabPages
-        tab={m.tab}
-        onPick={m.pick}
-        top={m.setTop}
+        tab={nav.tab}
+        onPick={nav.pick}
+        top={nav.setTop}
         bar={
           <CardTabBar<AirplaneTab>
             testId="airplane-tab-bar"
             tabTestId="airplane-tab-"
-            onPick={m.pick}
+            onPick={nav.pick}
             tabs={[
               { value: "info", label: "Info", icon: Info },
               { value: "flights", label: "Flights", icon: History, hint: card.flightCount ? String(card.flightCount) : null },
@@ -181,15 +182,20 @@ export default function AirplaneCard({
       >
         <CardTabPanel value="info">
           {/* Its photos and where it has flown (the owner, 2026-11-27: "info can show the pictures"). */}
-          <FlightPictures live={live} title={m.title} photo={airplanePhotoSlide(m.tail, card.photo)} trafficPhoto={m.tail ? null : m.hex} />
-          <InfoPage m={m} poh={m.flyable ? null : poh} />
+          <FlightPictures
+            live={live}
+            title={head.title}
+            photo={airplanePhotoSlide(m.tail, card.photo)}
+            trafficPhoto={m.tail ? null : m.hex}
+          />
+          <InfoPage m={m} poh={m.actions.flyable ? null : poh} />
         </CardTabPanel>
         <CardTabPanel value="flights">
           {/* Its flight now, then its flights (the owner, 2026-11-27: "flights can show the in the air card"). */}
           <FlightNowBox
             live={live}
-            title={m.title}
-            onOpenAirport={m.openAirport}
+            title={head.title}
+            onOpenAirport={nav.openAirport}
             ground={
               <p
                 role="status"
@@ -203,7 +209,7 @@ export default function AirplaneCard({
           <FlightsPage m={m} />
         </CardTabPanel>
       </CardTabPages>
-      {m.figuresOpen && <FiguresCard m={m} poh={poh} focus={focus} />}
+      {nav.figuresOpen && <FiguresCard m={m} poh={poh} focus={focus} />}
     </SheetCard>
   );
 }
