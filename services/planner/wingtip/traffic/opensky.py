@@ -23,7 +23,7 @@ from cachetools import TTLCache
 from .. import airports
 from ..config import get_settings
 from ..units import M_TO_FT
-from .common import HEADERS, TIMEOUT_S, _LOCK, _clock, _number
+from .common import HEADERS, _LOCK, _clock, _number
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +40,9 @@ TRACK_DAYS = 30
 #: track 4 (the REST page's table). Counted here from the UTC day's start.
 DAILY_CREDITS = 3600
 FLIGHTS_COST, TRACK_COST = 30, 4
+#: How long one of its answers may take, s: a track took longer than the
+#: 5 s the live feeds are given (N570GJ's, 2026-11-27).
+TIMEOUT_S = 20.0
 #: A past day's flights and a past flight's path no longer change, s.
 KEEP_S = 12 * 3600
 
