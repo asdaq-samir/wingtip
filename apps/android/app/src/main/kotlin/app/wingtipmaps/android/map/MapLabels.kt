@@ -3,7 +3,6 @@ package app.wingtipmaps.android.map
 import android.content.Context
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipMapLabel
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -41,8 +40,6 @@ import kotlin.math.roundToInt
  *   keeps its own.
  */
 object MapLabels {
-    private val json = Json { ignoreUnknownKeys = true }
-
     /** How far the map's words grow: the font scale with the switch on,
      *  1 to scale-max; 1 off. */
     fun scale(on: Boolean, context: Context): Float = capped(on, context.resources.configuration.fontScale)
@@ -70,12 +67,10 @@ object MapLabels {
     fun lateSize(dp: Float): Float = dp * late
 
     /** The style with its words scaled and, at night, inked for the dark. */
-    fun adjust(style: String, scale: Float, night: Boolean): String {
+    fun adjust(style: JsonObject, scale: Float, night: Boolean): JsonObject {
         if (scale == 1f && !night) return style
-        val root = json.parseToJsonElement(style).jsonObject
-        val layers = root["layers"]?.jsonArray ?: return style
-        val out = JsonObject(root + ("layers" to JsonArray(layers.map { layer(it.jsonObject, scale, night) })))
-        return out.toString()
+        val layers = style["layers"]?.jsonArray ?: return style
+        return JsonObject(style + ("layers" to JsonArray(layers.map { layer(it.jsonObject, scale, night) })))
     }
 
     fun layer(layer: JsonObject, scale: Float, night: Boolean): JsonObject {
@@ -128,10 +123,6 @@ object MapLabels {
             layer.setProperties(PropertyFactory.textSize(size * scale / was))
         }
     }
-
-    /** A style's layers, as `relabel` takes them. */
-    fun layersOf(style: String): List<JsonObject> =
-        json.parseToJsonElement(style).jsonObject["layers"]?.jsonArray?.map { it.jsonObject }.orEmpty()
 
     /** A style's value as a layer takes it: a number, a colour's words,
      *  or an expression. */

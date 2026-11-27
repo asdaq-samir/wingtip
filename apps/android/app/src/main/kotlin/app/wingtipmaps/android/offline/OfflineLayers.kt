@@ -9,7 +9,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.tiles.TileTemplate
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -49,12 +48,11 @@ object OfflineLayers {
 
     /** `style` with a source and a layer for each archive; as it was where
      *  there are none, or the style has no chart layer. */
-    fun withDownloads(style: String, archives: List<File>): String {
-        if (archives.isEmpty()) return style
-        val root = Json.parseToJsonElement(style).jsonObject
-        val layers = root["layers"]?.jsonArray ?: return style
+    fun withDownloads(root: JsonObject, archives: List<File>): JsonObject {
+        if (archives.isEmpty()) return root
+        val layers = root["layers"]?.jsonArray ?: return root
         val chart = layers.indexOfFirst { it.jsonObject["id"]?.jsonPrimitive?.content == CHART }
-        if (chart < 0) return style
+        if (chart < 0) return root
         val paint = layers[chart].jsonObject["paint"] ?: JsonObject(emptyMap())
         val sources = root["sources"]?.jsonObject.orEmpty().toMutableMap()
         val added = archives.mapIndexed { i, file ->
@@ -74,7 +72,7 @@ object OfflineLayers {
             }
         }
         val list = layers.toMutableList().apply { addAll(chart + 1, added) }
-        return JsonObject(root + mapOf("sources" to JsonObject(sources), "layers" to JsonArray(list))).toString()
+        return JsonObject(root + mapOf("sources" to JsonObject(sources), "layers" to JsonArray(list)))
     }
 
     /** The regions on a style already drawn, as withDownloads puts them in a first style: the archives of the chart
@@ -120,6 +118,6 @@ object OfflineLayers {
 
     /** `json`, the map's style for `template`, with the regions downloaded
      *  for the air drawn over the network's chart. */
-    fun styled(context: Context, template: TileTemplate, json: String, terminal: Boolean): String =
+    fun styled(context: Context, template: TileTemplate, json: JsonObject, terminal: Boolean): JsonObject =
         withDownloads(json, archives(OfflineStore.of(context), template.cycle, template.kind, template.scale, terminal))
 }

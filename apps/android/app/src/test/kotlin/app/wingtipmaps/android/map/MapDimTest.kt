@@ -38,7 +38,7 @@ class MapDimTest {
     @Test
     fun linesCirclesAndSymbolsAreDimmedAndRastersAndFillsAreNot() {
         val style = """{"layers":[{"id":"a","type":"symbol"},{"id":"b","type":"raster"},{"id":"c","type":"fill","paint":{"fill-opacity":0.9}},{"id":"d","type":"circle","paint":{"circle-opacity":0.5}}]}"""
-        val layers = Json.parseToJsonElement(MapDim.style(style)).jsonObject["layers"]!!.jsonArray.map { it.jsonObject }
+        val layers = MapDim.style(Json.parseToJsonElement(style).jsonObject)["layers"]!!.jsonArray.map { it.jsonObject }
         assertEquals(setOf("icon-opacity", "text-opacity"), layers[0]["paint"]!!.jsonObject.keys)
         assertEquals(null, layers[1]["paint"])
         assertEquals("0.9", layers[2]["paint"]!!.jsonObject["fill-opacity"].toString())

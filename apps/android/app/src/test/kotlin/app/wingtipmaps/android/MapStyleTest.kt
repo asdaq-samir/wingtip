@@ -7,7 +7,6 @@ import app.wingtipmaps.android.api.generated.OverlayTilesLayer
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.SpecialUseLayers
 import app.wingtipmaps.android.tiles.TileTemplate
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -30,7 +29,7 @@ class MapStyleTest {
     )
 
     private fun style(overlays: OverlayTiles?, night: Boolean = false): JsonObject =
-        Json.parseToJsonElement(MapStyle.styleJson(template, 5, 12, overlays, night)).jsonObject
+        MapStyle.styleJson(template, 5, 12, overlays, night)
 
     private val TRAFFIC = listOf(MapStyle.TRAFFIC_TREND, MapStyle.TRAFFIC_TRACKED, MapStyle.TRAFFIC, MapStyle.TRAFFIC_LABELS)
 

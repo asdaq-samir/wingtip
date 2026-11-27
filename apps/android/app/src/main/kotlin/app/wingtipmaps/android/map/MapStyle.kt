@@ -175,7 +175,7 @@ object MapStyle {
         night: Boolean,
         layers: MapLayers = MapLayers(),
         weather: Map<String, String> = emptyMap(),
-    ): String =
+    ): JsonObject =
         buildJsonObject {
             put("version", 8)
             put("glyphs", GLYPHS)
@@ -219,7 +219,7 @@ object MapStyle {
                 for (layer in overlayLayers(overlays, lines = false, layers, weather)) add(layer)
                 for (layer in trafficLayers()) add(layer)
             }
-        }.toString()
+        }
 
     private fun rasterSource(tiles: JsonArray, minZoom: Int, maxZoom: Int) = buildJsonObject {
         put("type", "raster")
