@@ -12,7 +12,7 @@ from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _numb
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced, _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .recorded import _last_recorded, _record, _recorded, followed
-from .radar import _heard_elsewhere_now
+from .radar import ELSEWHERE_RECORD_S, _heard_elsewhere_now
 
 log = logging.getLogger(__name__)
 
@@ -160,9 +160,16 @@ def _watch(hex_id: str) -> None:
     not answer; what is heard in the air
     recorded, and whose it was. Quiet where none may be asked or answers:
     the next ask tries again."""
-    # The FAA's radar has it now (ingest): recorded from there, nothing
-    # asked of adsb.lol or spent of ADS-B Exchange.
-    if _heard_elsewhere_now(hex_id) is not None:
+    # The FAA's radar has it now (ingest): recorded from there, a point
+    # each ELSEWHERE_RECORD_S, nothing asked of adsb.lol or spent of ADS-B
+    # Exchange. The radar records only the airplanes followed, so one whose
+    # card is open is recorded here: N570GJ flew into O'Hare under the
+    # radar with its card open and had no flight to show (2026-11-27).
+    elsewhere = _heard_elsewhere_now(hex_id)
+    if elsewhere is not None:
+        last = _last_recorded(hex_id)
+        if last is None or _wall() - elsewhere["seen_s"] - last["t"] >= ELSEWHERE_RECORD_S:
+            _record(hex_id, elsewhere)
         return
     now = _clock()
     with _LOCK:

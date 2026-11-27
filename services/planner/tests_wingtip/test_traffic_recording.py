@@ -182,14 +182,20 @@ def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_reco
     traffic.heard_elsewhere(plane, wall["now"] - 2)
     stand_in(monkeypatch, "_region_answer", lambda region: (clock.now, []))
     assert [p["hex"] for p in traffic.near(42.35, -88.15, 30)["aircraft"]] == ["a3c858"]
-    # Not followed: nothing recorded.
+    # Not followed: nothing recorded by the radar itself.
     assert recorded._recorded("a3c858") == []
+    # Its card open (watched): its radar report recorded there, nothing
+    # asked of adsb.lol, once a quarter minute however often it is asked.
+    stand_in(monkeypatch, "_paced", lambda url: pytest.fail("asked adsb.lol"))
+    watched._watch("a3c858")
+    watched._watch("a3c858")
+    assert len(recorded._recorded("a3c858")) == 1
     traffic.follow("a3c858")
     for k in range(1, 7):
         wall["now"] += 5
         traffic.heard_elsewhere({**plane, "lat": 42.30 + 0.01 * k}, wall["now"])
-    # A report every five seconds, recorded every fifteen.
-    assert len(recorded._recorded("a3c858")) == 2
+    # A report every five seconds, recorded every fifteen, after the card's.
+    assert len(recorded._recorded("a3c858")) == 3
     # Heard by the radar now: nothing asked of adsb.lol or ADS-B Exchange.
     stand_in(monkeypatch, "_paced", lambda url: pytest.fail("asked adsb.lol"))
     stand_in(monkeypatch, "_adsbx", lambda path, search=False: pytest.fail("asked ADS-B Exchange"))
