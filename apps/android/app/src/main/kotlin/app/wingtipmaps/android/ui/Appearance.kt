@@ -23,10 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * The Map card's Appearance, the web's three: the phone's own light or
  * dark, Light and Dark. How far the chart is dimmed is the Map card's
- * Dimmer, one for each appearance (ChartLook), where Dark + Bright was the
- * chart undimmed under the dark screen until the web's 2026-11-18 change;
- * a kept one is Dark with a dark Dimmer of 0 (ChartLookPreference.migrate).
- * `key` is what the "wingtip" store keeps.
+ * Dimmer, one for each appearance (ChartLook). `key` is what the
+ * "wingtip" store keeps.
  */
 enum class Appearance(val key: String) {
     SYSTEM("system"), LIGHT("light"), DARK("dark");
@@ -52,7 +50,6 @@ object AppearancePreference {
     fun flow(context: Context): StateFlow<Appearance?> {
         if (state.value == null) {
             val kept = Kept.of(context, "wingtip")
-            ChartLookPreference.migrate(kept)
             state.value = Appearance.of(kept[KEY])
         }
         return state.asStateFlow()

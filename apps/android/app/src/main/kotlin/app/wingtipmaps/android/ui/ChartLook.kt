@@ -28,7 +28,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.R
@@ -80,13 +79,11 @@ object ChartLookPreference {
     private val DIM_LIGHT = floatPreferencesKey("chart_dim_light")
     private val DIM_DARK = floatPreferencesKey("chart_dim_dark")
     private val CONTRAST = floatPreferencesKey("chart_contrast")
-    private val APPEARANCE = stringPreferencesKey("appearance")
     private val state = MutableStateFlow<ChartLook?>(null)
 
     fun flow(context: Context): StateFlow<ChartLook?> {
         if (state.value == null) {
             val kept = Kept.of(context, "wingtip")
-            migrate(kept)
             state.value = ChartLook(kept[DIM_LIGHT] ?: 0f, kept[DIM_DARK] ?: ChartLook.NIGHT_DIM, kept[CONTRAST] ?: 0f)
         }
         return state.asStateFlow()
@@ -111,19 +108,6 @@ object ChartLookPreference {
         }
         state.value = look
     }
-
-    /** Appearance's Dark + Bright, gone as on the web (its preferences
-     *  version 12, 2026-11-18): a kept one becomes Dark with a dark Dimmer
-     *  of 0, the chart as printed as before. */
-    internal fun migrate(kept: Kept) {
-        if (kept[APPEARANCE] != DARK_BRIGHT) return
-        kept.edit {
-            it[APPEARANCE] = Appearance.DARK.key
-            it[DIM_DARK] = 0f
-        }
-    }
-
-    internal const val DARK_BRIGHT = "dark-bright"
 }
 
 @Composable
