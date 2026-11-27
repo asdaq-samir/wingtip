@@ -4,14 +4,13 @@ import type { Course } from "../../../api/types";
 import { chartQuery } from "../../../queryClient";
 import { usePreferences } from "../../../preferences";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
-import { useChartLook } from "../useChartLook";
+import { useChartLook, useMapDim } from "../useChartLook";
 import { chartLayersAs, chartPaint, chartRole, chartSource, chartStyle, type ChartStyle } from "../glStyle";
 import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
 import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
 import { MAP_DIM } from "../mapDim";
-import { useSettledMapDim } from "../useSettledMapDim";
 import { testDriven } from "../useGlProbe";
 import { useCloseImagery } from "../useCloseImagery";
 import { useChartMissed } from "../useChartMissed";
@@ -100,13 +99,13 @@ export function ChartGl({ course }: { course: Course | null }) {
   // What is drawn on the chart at its brightness at night (mapDim): one
   // global state every symbol's, line's and circle's opacity (or, dimmed
   // by colour, its colour) reads, eased on the style's transition
-  // (MapLibre eases a constant paint from the state before), set once the
-  // Dimmer stands still (useSettledMapDim) while the chart's own paint
-  // follows it live. No paint by feature reads it where this app can help
+  // (MapLibre eases a constant paint from the state before), set as the
+  // Dimmer is committed (useMapDim, chartLookPreview) while the chart's
+  // own paint follows it live. No paint by feature reads it where this app can help
   // it (useGlLines' ink, the shelves' two layers, the rings and the
   // selections hidden by colour; dimRelayout.test): such a one has
   // MapLibre lay its source out again at every step of the Dimmer.
-  const mapDim = useSettledMapDim(night, sunlight, dim);
+  const mapDim = useMapDim();
   useEffect(() => {
     if (map.style) map.setGlobalStateProperty(MAP_DIM, mapDim);
   }, [map, mapDim]);

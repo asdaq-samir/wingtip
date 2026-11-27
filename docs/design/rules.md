@@ -1355,7 +1355,9 @@ way: three homes, and every control in one of them.
    light sensor misreading in a dark cockpit cannot blind the pilot (the
    owner, 2026-11-18); sunlight still adds its contrast. Contrast is an offset on the look's own
    contrast by day, at night or in sunlight, -30% to +40%, 0 the look as it
-   is. Both set the chart's layers as they move. At night the Dimmer
+   is. Both set the chart's layers as they move, in memory, and are kept,
+   with what is drawn on the chart following, as the finger lifts (the
+   slider's commit; round 6). At night the Dimmer
    reaches what is drawn on the chart too -- its words, marks, lines and
    an approach plate, at the chart's own brightness -- so nothing on the
    map is brighter than the chart under it (AIM 8-1-6; the themes audit,
@@ -1368,7 +1370,10 @@ way: three homes, and every control in one of them.
    edges the day's dark (round 5); a TFR's edge and number and an
    obstacle's ring are dimmed by their colours too, not made see-through
    (the owner, 2026-11-27: "Dim by colour"; about 3:1 over the paper at
-   the default Dimmer).
+   the default Dimmer). The Dimmer keeps its whole range: past about 65%
+   the paper is too dark for any warning to reach 3:1 against it, even
+   black, and that is the pilot's choice (the owner, 2026-11-27: "Allow
+   it, say so"; warn, never limit).
    Sunlight at night keeps the look's own dark grounds and lifts only the
    grey words and the edges, never its white sheets; the device's
    Increase Contrast does the same by day and at night. Appearance's Dark +
