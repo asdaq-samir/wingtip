@@ -27,6 +27,10 @@ Nothing in any table names a pilot or an account; `following` counts
 each pilot's share by a hash it cannot be read back from. The planner prunes all
 three on a schedule (wingtip.traffic.radar.prune, from app.main), not
 only when ingest or a request happens to write.
+- gates: an outside source's manners both processes keep to (adsb.lol's:
+  the planner's regions, searches and cards and ingest's follow round),
+  when its last ask went or is to go and until when a refusal holds it,
+  in Unix seconds (wingtip.traffic.shared_gate).
 - beats: what ingest last said of each feed and of itself (its health).
 - opensky: an airplane's past flights of a UTC day (key "day:<ISO day>")
   and a flight's path (key "path:<its id>") as the OpenSky Network gave
@@ -64,6 +68,7 @@ _SCHEMA = """
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
     CREATE TABLE IF NOT EXISTS opensky (hex TEXT, key TEXT, at REAL, body TEXT, PRIMARY KEY (hex, key)) WITHOUT ROWID;
     CREATE INDEX IF NOT EXISTS opensky_at ON opensky (at);
+    CREATE TABLE IF NOT EXISTS gates (name TEXT PRIMARY KEY, last REAL, until REAL);
 """
 
 

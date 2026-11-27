@@ -10,6 +10,7 @@ import threading
 import requests
 
 from .. import outside, ratelimit
+from .shared_gate import SharedGate
 from ..geo import distance_nm
 from .common import TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _sleep, lol_headers, refused_for_s
 
@@ -35,7 +36,8 @@ WIDE_REGION_RADIUS_NM = 250
 MAX_RADIUS_NM = 165
 #: A region's answer is given again, not asked for, this long.
 FRESH_S = 5.0
-#: Never two requests to adsb.lol closer together than this.
+#: Never two requests to adsb.lol closer together than this, from the
+#: planner and ingest together (shared_gate).
 MIN_GAP_S = 5.0
 #: The longest a pilot's search waits for its turn, s (it was a gap, 5 s, and the request's 5 s after): further off,
 #: it is answered at once from the FAA's radar or with the FAA's record (/api/traffic/find, `checked` false).
@@ -53,10 +55,11 @@ KEEP_S = 60.0
 #: Each region's last answer: (when it came, monotonic, airplanes).
 _REGIONS: dict = {}
 #: When adsb.lol may next be asked for a region (the regions' turns taken in order from it) and a search's turn;
-#: in _LOL (wingtip.ratelimit) when the last request went, and until when nothing is asked after a refusal.
+#: in _LOL when the last request went, and until when nothing is asked after a refusal: kept in the live store, so
+#: ingest's follow round and the planner keep to one gap and one hold (wingtip.traffic.shared_gate).
 #: `timeouts` and `searches_held_until`: searches not answered in their time in a row, and the hold they started.
 _STATE = {"next_ask": 0.0, "search_at": -math.inf, "timeouts": 0, "searches_held_until": -math.inf}
-_LOL = ratelimit.Gate()
+_LOL: ratelimit.Gate | SharedGate = SharedGate("adsb.lol")
 #: Regions being asked for now; the rest of a region's askers wait on this.
 _FLIGHTS: dict = {}
 
@@ -136,15 +139,19 @@ def _region_answer(region: tuple[float, float, int]) -> tuple[float, list[dict]]
                 # was taken: it goes first, and the region is given its
                 # last answer, or waits for a turn after the search's.
                 go = abs(_STATE["search_at"] - slot) >= MIN_GAP_S
-                if go:
-                    _LOL.asked(now)
-                    break
-                if kept:
+                # Its turn taken in the gate ingest's follow round keeps
+                # to too: a gap after its last ask, two gaps at most.
+                taken = _LOL.take(now, now, MIN_GAP_S, 2 * MIN_GAP_S) if go else None
+                if taken is not None or kept or go:
                     break
                 slot = _region_turn(now)
-        if not go:
-            return held
-        asked = now
+        if taken is None:
+            if kept:
+                return held
+            raise TrafficUnavailable("adsb.lol's next turn is too far off")
+        if taken > now:
+            _sleep(taken - now)
+        asked = taken
         try:
             answer = (asked, _ask(region))
         except TrafficUnavailable:
@@ -203,13 +210,15 @@ def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOU
         now = _clock()
         if now < _STATE["searches_held_until"]:
             raise TrafficUnavailable("adsb.lol has not answered the last searches in their time")
-        slot = now if same_turn else max(now, _LOL.last + MIN_GAP_S, _STATE["search_at"] + MIN_GAP_S, _LOL.until)
-        if slot - now > wait_most_s or _LOL.held(now):
+        # The turn taken in the gate both processes keep to: a gap after
+        # the last request and the last search's, a same-turn second way at once.
+        earliest = now if same_turn else max(now, _STATE["search_at"] + MIN_GAP_S)
+        slot = None if _LOL.held(now) else _LOL.take(now, earliest, 0.0 if same_turn else MIN_GAP_S, wait_most_s)
+        if slot is None:
             raise TrafficUnavailable("adsb.lol's next turn is too far off")
         _STATE["search_at"] = slot
     if slot > now:
         _sleep(slot - now)
-    _LOL.asked(_clock())
     try:
         resp = outside.live_get(url, headers=lol_headers(), timeout=timeout)
         resp.raise_for_status()

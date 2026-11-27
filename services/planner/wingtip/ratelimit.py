@@ -51,6 +51,17 @@ class Gate:
         with self._lock:
             self.last = max(self.last, now)
 
+    def take(self, now: float, earliest: float, gap_s: float, wait_most_s: float) -> float | None:
+        """The next turn at or after `earliest`, `gap_s` after the last ask
+        and past a hold, taken (marked as the last ask) where it is within
+        `wait_most_s` of `now`; None, nothing taken, where it is further."""
+        with self._lock:
+            slot = max(earliest, self.last + gap_s, self.until)
+            if slot - now > wait_most_s:
+                return None
+            self.last = slot
+            return slot
+
     def turn(self, clock, sleep) -> None:
         """This ask's turn, `gap_s` after the last one's: slept for with
         `sleep` where it is still to come, by `clock`'s time. Taken under
