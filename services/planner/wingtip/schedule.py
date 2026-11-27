@@ -12,7 +12,7 @@ traceback) and runs again at its next turn, so no job catches its own
 failures only to keep the loop going."""
 
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -31,10 +31,13 @@ def scheduler(*, workers: int = 10, blocking: bool = False) -> BaseScheduler:
     return kind(executors={"default": ThreadPoolExecutor(workers)}, job_defaults=_JOB_DEFAULTS, timezone=UTC)
 
 
-def every(on: BaseScheduler, seconds: float, job: Callable[..., object], *, name: str, now: bool = True, args: tuple = ()) -> None:
-    """`job(*args)` every `seconds`: the first turn at once where `now`,
-    else one interval from here."""
-    first = {"next_run_time": datetime.now(UTC)} if now else {}
+def every(
+    on: BaseScheduler, seconds: float, job: Callable[..., object], *, name: str, now: bool = True, after: float = 0.0, args: tuple = ()
+) -> None:
+    """`job(*args)` every `seconds`: the first turn at once where `now` (or
+    `after` seconds on, so heavy first turns are not run together), else
+    one interval from here."""
+    first = {"next_run_time": datetime.now(UTC) + timedelta(seconds=after)} if now else {}
     on.add_job(job, "interval", seconds=seconds, args=args, id=name, name=name, **first)
 
 
