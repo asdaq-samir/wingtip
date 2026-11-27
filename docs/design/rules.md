@@ -1413,7 +1413,11 @@ None first, the Approach Plates switch under them while a chart is
 drawn, the four layers (Aeronautical, Weather, Traffic, Private/Military;
 the web's words are Private & Military since 2026-11-14)
 as the stock toggle's button style, and Look, Theme and Appearance as
-menus (2026-11-14), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
+menus (2026-11-14), Appearance the web's three since Dark + Bright went
+(a kept one is Dark with the chart undimmed), and the chart's Dimmer
+(one for light, one for dark) and Contrast as two stock sliders under
+them (`Design/ChartLook`, the web's 2026-11-18 rows, the themes audit
+2026-11-27), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
 imagery already comes in by itself close in). Show Route As (Route Box or
 Strip) went with the route's ••• menu's other items; the web has one
 layout since 2026-11-17 (decision 0047), the iPhone's to follow at the

@@ -78,25 +78,6 @@ nonisolated enum NightPalette {
     }
 }
 
-/// The chart in dark appearance, from Setup: as printed, or dimmed so the
-/// white paper chart does not take the pilot's night vision. Dimmed unless
-/// asked otherwise, as the web app's Settings has it (Chart at night).
-enum ChartNight: String, CaseIterable, Identifiable {
-    case normal, dimmed
-
-    /// The key Setup and the map share, as the web app's preference.
-    static let key = "chartAtNight"
-
-    var id: String { rawValue }
-    var label: String { self == .normal ? "Normal" : "Dimmed" }
-
-    /// How much of the night's ground is laid over each tile: none by day
-    /// or as printed; at night the paper down to about a fifth of its
-    /// light, as the web app's brightness(0.5) filter takes it, its black
-    /// type still 5:1 on it.
-    func shade(dark: Bool) -> CGFloat { dark && self == .dimmed ? 0.5 : 0 }
-}
-
 extension UILabel {
     /// A soft halo round a mark's words on the chart, so they read over
     /// any of its colours: NightPalette.halo for the appearance, resolved

@@ -44,10 +44,10 @@ struct ChartMap: UIViewRepresentable {
     /// The route's legs, the one open and the tap that opens one
     /// (RouteLegLayer).
     var routeLegs = RouteLegInput()
-    /// Dark appearance and Setup's Chart at night, for the chart's dimming
-    /// and the course's night magenta (NightPalette).
+    /// Dark appearance and the Map card's Dimmer and Contrast (ChartLook),
+    /// for the chart's dimming and the course's night magenta (NightPalette).
     @Environment(\.colorScheme) var colorScheme
-    @AppStorage(ChartNight.key) var chartNight = ChartNight.dimmed.rawValue
+    var chartLook = ChartLookKept()
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
@@ -107,8 +107,8 @@ struct ChartMap: UIViewRepresentable {
         context.coordinator.onAirport = onAirport
         context.coordinator.onNavaid = onNavaid
         context.coordinator.onReveal = onReveal
-        let shade = (ChartNight(rawValue: chartNight) ?? .dimmed).shade(dark: colorScheme == .dark)
-        context.coordinator.dim(shade)
+        let shade = chartLook.shade(dark: colorScheme == .dark)
+        context.coordinator.dim(shade, night: colorScheme == .dark)
         context.coordinator.open(map, bottomInset: bottomInset)
         context.coordinator.onRegion = onRegion
         context.coordinator.useFields(extras.fieldSwitches(military: militaryFields, privateFields: privateFields), on: map)
@@ -129,9 +129,8 @@ struct ChartMap: UIViewRepresentable {
             context.coordinator.fitted = fitRequest
             map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
         }
-        // The day's lift on the chart (ChartLift), none on the dimmed one at
-        // night: a change of either draws the chart again from the store.
-        let lift = shade == 0
+        // The day's lift by day and the Contrast's offset on it (ChartLift): a change draws the chart again.
+        let lift = colorScheme != .dark, contrast = chartLook.offset
         // Chart None (Charts.picked): no FAA chart, Apple's muted map
         // under the overlays, and nothing to wait for before it shows.
         if template == nil, let current = context.coordinator.overlay {
@@ -141,12 +140,12 @@ struct ChartMap: UIViewRepresentable {
         }
         if template == nil { context.coordinator.noChart() }
         context.coordinator.overlays.show(aeronautical: aeronautical, on: map, chart: context.coordinator.overlay)
-        if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift {
+        if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift || context.coordinator.overlay?.contrast != contrast {
             if let current = context.coordinator.overlay {
                 context.coordinator.tilesStopped()
                 map.removeOverlay(current)
             }
-            let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift)
+            let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift, contrast: contrast)
             let coordinator = context.coordinator
             overlay.onTile = { coordinator.chartTile() }
             // Under everything else drawn over Apple's map but the imagery under it close in.
@@ -222,7 +221,7 @@ struct ChartMap: UIViewRepresentable {
                 map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
             }
         }
-        context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge, marks: context.coordinator.routeMarks)
+        context.coordinator.legLayer.update(map, routeLegs, night: colorScheme == .dark, below: context.coordinator.courseEdge, marks: context.coordinator.routeMarks)
         (map as? RaisedMapView)?.use(MapTerrain(rawValue: terrain) ?? .flat, field: course?.destination.ident)
     }
 
@@ -290,7 +289,8 @@ struct ChartMap: UIViewRepresentable {
         private var tiles: ChartTileRenderer?
         private var courseRenderer: MKPolylineRenderer?
         private var edgeRenderer: MKPolylineRenderer?
-        private var shade: CGFloat = 0
+        // The Dimmer's shade; the route's night edge follows the dark appearance alone, as the web's.
+        private var shade: CGFloat = 0, night = false
 
         /// The chart's renderer let go, its loads stopped, as its overlay
         /// is taken off for another.
@@ -299,12 +299,12 @@ struct ChartMap: UIViewRepresentable {
             tiles = nil
         }
 
-        func dim(_ shade: CGFloat) {
-            guard shade != self.shade else { return }
-            self.shade = shade
+        func dim(_ shade: CGFloat, night: Bool) {
+            guard shade != self.shade || night != self.night else { return }
+            (self.shade, self.night) = (shade, night)
             tiles?.shade = shade
             courseRenderer?.strokeColor = NightPalette.course
-            edgeRenderer?.strokeColor = NightPalette.routeEdge(night: shade > 0)
+            edgeRenderer?.strokeColor = NightPalette.routeEdge(night: night)
             edgeRenderer?.setNeedsDisplay()
             courseRenderer?.setNeedsDisplay()
         }
@@ -330,7 +330,7 @@ struct ChartMap: UIViewRepresentable {
             if let renderer = extras.renderer(for: overlay) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
-                renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)
+                renderer.strokeColor = NightPalette.routeEdge(night: night)
                 renderer.lineWidth = Self.edgeWidth
                 renderer.lineJoin = .round
                 renderer.lineCap = .round

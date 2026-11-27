@@ -48,7 +48,7 @@ struct FieldWeatherHead: View {
             if let category = metar.flightCategory {
                 Text(category)
                     .font(WingtipType.card)
-                    .foregroundStyle(Color(uiColor: FlightCategory.words(category)))
+                    .foregroundStyle(Color(uiColor: FlightCategory.ink(category)))
                     .accessibilityLabel(SpokenFigures.flightCategory(category))
             }
             let wind = metar.windSpeedKt != nil
