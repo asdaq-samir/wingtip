@@ -1,5 +1,5 @@
 import { CardFact, CardFacts } from "../CardFacts";
-import { shortType } from "./shortType";
+import { shortType, shortWeight } from "./shortType";
 import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types";
 
 /**
@@ -18,6 +18,11 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  *  Its registration's status and owner are its Registration section's,
  *  not the strip's (the owner, 2026-11-27: "Registration and owner can be
  *  removed from the strip").
+ *  - Weight: the FAA's weight class for its model (ACFTREF's AC-WEIGHT,
+ *    "Up to 12,499 lb"), written short ("≤12,499 lb").
+ *  Spread across the card with no sideways scroll, as the airport card's
+ *  are (`fit`; the owner, 2026-11-27: "keep the strip non-scrollable like
+ *  airport card"), a fact with no room wrapping to a second row.
  *  - Operator: who flies it now, where adsb.lol's detail names one (an
  *    airline is often not the registered owner).
  *  - For traffic the FAA's registry does not hold, its own registration
@@ -49,10 +54,11 @@ export function AirplaneFacts({
   const built = record?.year ?? year ?? null;
   const seats = model?.seats ?? record?.seats ?? null;
   const engines = model?.engines ?? record?.engines ?? null;
+  const weight = shortWeight(model?.weight_class);
   // No strip where there is nothing to say: its room is the pictures'.
   if (!record && !traffic && !made && (built == null || built === "")) return null;
   return (
-    <CardFacts testId={testId}>
+    <CardFacts testId={testId} fit>
       {made && (
         <CardFact label="Make/Model" testId={`${testId}-type`}>
           {made}
@@ -76,6 +82,11 @@ export function AirplaneFacts({
       {traffic && (
         <CardFact label="Registration" testId={`${testId}-mark`}>
           {traffic.mark ?? "Not in the FAA's registry"}
+        </CardFact>
+      )}
+      {weight && (
+        <CardFact label="Weight" testId={`${testId}-weight`}>
+          {weight}
         </CardFact>
       )}
       {operator && (

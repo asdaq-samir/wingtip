@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { AirplaneFacts } from "./AirplaneFacts";
+import { shortWeight } from "./shortType";
 import type { AircraftRegistration } from "../../lib/api/types";
 
 afterEach(cleanup);
@@ -31,10 +32,18 @@ describe("an airplane card's facts strip", () => {
     expect(fact("owner")).toBeNull();
   });
 
-  it("takes the FAA's reference model's seats and engines over the record's", () => {
-    render(<AirplaneFacts record={record} model={{ seats: 6, engines: 2 } as never} testId="facts" />);
+  it("takes the FAA's reference model's seats and engines over the record's, and its weight class short", () => {
+    render(<AirplaneFacts record={record} model={{ seats: 6, engines: 2, weight_class: "Up to 12,499 lb" } as never} testId="facts" />);
     expect(fact("seats")).toBe("Seats6");
     expect(fact("engines")).toBe("Engines2");
+    expect(fact("weight")).toBe("Weight≤12,499 lb");
+  });
+
+  it("writes every weight class short", () => {
+    expect(shortWeight("12,500 to 19,999 lb")).toBe("12,500–19,999 lb");
+    expect(shortWeight("20,000 lb and over")).toBe("≥20,000 lb");
+    expect(shortWeight("UAV up to 55 lb")).toBe("≤55 lb");
+    expect(shortWeight(null)).toBeNull();
   });
 
   it("falls back to the traffic's type and year with no record, and draws nothing with nothing to say", () => {

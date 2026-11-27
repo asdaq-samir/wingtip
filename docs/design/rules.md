@@ -314,7 +314,8 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"; one card an airplane since the owner's design of
    2026-11-26): its facts in the strip (Make/Model, Year, Seats, Engines,
-   Operator; its registration and owner in its Registration section, the
+   Weight, Operator, spread with no sideways scroll as the airport
+   card's, 2026-11-27; its registration and owner in its Registration section, the
    owner, 2026-11-27) under its actions and over its pictures (the
    owner, 2026-11-26: "It should be buttons, info strip and then the
    pictures"), the same picture tiles under it (its flight now first, then its
