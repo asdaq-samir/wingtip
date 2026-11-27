@@ -850,10 +850,12 @@ jobs:
             sh -c "timeout 600 npm ci --no-audit --no-fund 2>&1 | tail -20 | tee /out/npm.log"
       - name: Browser tests
         id: tests
-        # CI=1 doubles playwright.config.ts's waits. At night or by hand the
-        # whole iOS audit (WebKit, every device), on shards of its own.
+        # CI=1 doubles playwright.config.ts's waits. At night, by hand and in
+        # a wave's validation (the owner, 2026-11-27: "Add it";
+        # browser_specs.py deals it its own shards there too) the whole iOS
+        # audit (WebKit, every device), on shards of its own.
         env:
-          IOS_AUDIT: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && !inputs.wave && '1' || '' }}
+          IOS_AUDIT: ${{ (inputs.wave || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '1' || '' }}
           SCREENSHOTS: /out/screens
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.

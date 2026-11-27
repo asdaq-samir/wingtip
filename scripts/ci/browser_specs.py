@@ -7,7 +7,8 @@ AUDIT_SHARDS of their own, by project: over ten shards by --shard, six to
 eight of them met the 1800 s wrapper every night (CI audit 2026-11-23, H1). In
 a wave's validation (EVENT "wave", validate-wave.yml; decision 0054),
 every spec on the phone, desktop and WebKit phone projects, and the
-smoke set and the ipad-* specs on the iPad's WebKit, over WAVE_SHARDS: minutes, where the
+smoke set and the ipad-* specs on the iPad's WebKit, over WAVE_SHARDS, and the iOS audit on
+its AUDIT_SHARDS as at night (the owner, 2026-11-27): minutes, where the
 night's ten take half an hour. Dealt by time, as a pull request's are, from the night's
 seconds or else the last whole validation's (spec_seconds.py latest), and by Playwright's
 --shard where neither is there. A rerun of a wave's red run and a check of
@@ -192,14 +193,18 @@ def plan(event: str) -> dict[str, str]:
         print(f"night: the wave's set over {len(groups) - AUDIT_SHARDS} shards by time, the iOS audit on {AUDIT_SHARDS}", file=sys.stderr)
         return timed(groups)
     if event == "wave":
+        # The iOS audit on AUDIT_SHARDS of its own, by project, as at night (ci.yml sets IOS_AUDIT for a wave
+        # too): the owner, 2026-11-27, "Add it", so a wave green here is not red the first night after its merge.
+        audit = [" ".join(f"--project={p}" for p in projects) for projects in AUDIT_PROJECTS]
         # Dealt by time where a run timed them (spec_seconds.py), slowest first to the least loaded shard; else
         # Playwright's --shard, an equal count of tests a shard.
         if load(os.environ.get("SPEC_SECONDS"), "mobile"):
             every = every_spec()
             groups = wide(every)
-            print(f"wave: {len(every)} specs dealt by time over {len(groups)} shards", file=sys.stderr)
-            return timed(groups)
-        return {"run": "true", "args": WAVE_PROJECTS, "shards": shards(WAVE_SHARDS), "groups": ""}
+            print(f"wave: {len(every)} specs dealt by time over {len(groups)} shards, the iOS audit on {AUDIT_SHARDS}", file=sys.stderr)
+            return timed(groups + audit)
+        split = [f"{WAVE_PROJECTS} --shard={i}/{WAVE_SHARDS}" for i in range(1, WAVE_SHARDS + 1)]
+        return timed(split + audit)
     if event != "pull_request":
         return {"run": "true", "args": SMOKE, "shards": shards(SMOKE_SHARDS), "groups": ""}
     specs = reached("HEAD^1")
