@@ -129,6 +129,9 @@ step "phones' API models (api-models-apps.sh)" 1 "services/planner/openapi.json 
 step "design tokens (design-tokens.sh)" 0 "design/tokens.json scripts/build/design-tokens.sh scripts/build/design_tokens*" \
   "apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated $A/design/generated" \
   scripts/build/design-tokens.sh "scripts/build/design-tokens.sh --check"
+step "map overlay layers (map-style.sh)" 0 "design/map-style.json design/tokens.json scripts/build/map-style.sh scripts/build/map_style.py" \
+  "apps/web/src/lib/generated/overlayLayers.ts $A/map/generated" \
+  scripts/build/map-style.sh "scripts/build/map-style.sh --check"
 step "screens (screens.sh)" 0 "design/screens.json scripts/build/screens.*" \
   "docs/navigation.md apps/web/src/lib/navigation/generated apps/ios/Wingtip/Navigation/Generated $A/navigation/generated" \
   scripts/build/screens.sh "scripts/build/screens.sh --check"

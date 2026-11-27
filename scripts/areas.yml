@@ -35,6 +35,9 @@ areas:
       - design/**
       - scripts/build/design-tokens.sh
       - scripts/build/design_tokens*.py
+      # The map's overlay layers and both apps' generated copies, checked there.
+      - scripts/build/map-style.sh
+      - scripts/build/map_style.py
       # The screens' links and every app's generated list, checked there.
       - scripts/build/screens.*
       - docs/navigation.md
