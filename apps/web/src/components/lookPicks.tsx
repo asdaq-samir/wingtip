@@ -5,6 +5,7 @@ import { usePreferences, type Brand, type ChartLight, type OwnShipLook } from ".
 import { OWN_SHIP_LOOKS, ownShipSvg } from "../lib/map/position/ownShipLook";
 import type { PullDownOption } from "./PullDown";
 import { LayerMenuTile } from "./LayerTile";
+import { LOOK_SWATCH } from "../lib/tokens";
 
 /**
  * The app's look, two picks: Theme (Wingtip, Glass Cockpit, Chart ink,
@@ -29,11 +30,37 @@ interface LookPick<V extends string> {
   options: PullDownOption<V>[];
 }
 
+/** A look's swatch beside its name in the menu: its tint on its sheet by
+ *  day (tokens' LOOK_SWATCH), so Wingtip and Chart ink, both blue, are
+ *  told apart by their paper. Edged, so a white sheet holds on a white menu. */
+function Swatch({ brand }: { brand: Brand }) {
+  const { tint, ground } = LOOK_SWATCH[brand];
+  return (
+    <span aria-hidden className="grid size-4 shrink-0 place-items-center rounded-full border border-input" style={{ background: ground }}>
+      <span className="size-2 rounded-full" style={{ background: tint }} />
+    </span>
+  );
+}
+
 /** Theme: the look's brand, kept in the preferences. */
 function useThemePick(): LookPick<Brand> {
   const value = usePreferences((s) => s.brand);
   const onChange = usePreferences((s) => s.setBrand);
-  return { value, onChange, options: BRANDS.map((b) => ({ value: b.value, label: b.label, testId: `brand-${b.value}` })) };
+  return {
+    value,
+    onChange,
+    options: BRANDS.map((b) => ({
+      value: b.value,
+      label: (
+        <span className="flex items-center gap-2">
+          <Swatch brand={b.value} />
+          {b.label}
+        </span>
+      ),
+      text: b.label,
+      testId: `brand-${b.value}`,
+    })),
+  };
 }
 
 type Appearance = "system" | "light" | "dark";

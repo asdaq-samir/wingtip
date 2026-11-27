@@ -75,7 +75,7 @@ export const CATEGORY_CHIP: Record<string, string> = {
 };
 
 /** A field with no report: unknown, not fine. */
-export const CATEGORY_UNKNOWN = "#8fa3b0";
+export const CATEGORY_UNKNOWN = "#6b7f8c";
 
 /** Wingtip's mark. */
 export const BRAND = {
@@ -87,6 +87,14 @@ export const BRAND = {
   launchNight: "#0b1422",
   chartLand: "#d7e8c6",
 };
+
+/** Each look's tint on its sheet by day, for its swatch in the Theme menu. */
+export const LOOK_SWATCH = {
+  wingtip: { tint: "oklch(0.522 0.177 255.8)", ground: "#f2f2f7" },
+  cockpit: { tint: "#00707e", ground: "#f2f2f7" },
+  ink: { tint: "oklch(0.522 0.177 255.8)", ground: "#f7f2e7" },
+  native: { tint: "oklch(0.205 0 0)", ground: "oklch(1 0 0)" },
+} as const;
 
 export const BADGE = {
   tower: "#2465b8",

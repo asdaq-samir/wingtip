@@ -1346,7 +1346,14 @@ way: three homes, and every control in one of them.
    light sensor misreading in a dark cockpit cannot blind the pilot (the
    owner, 2026-11-18); sunlight still adds its contrast. Contrast is an offset on the look's own
    contrast by day, at night or in sunlight, -30% to +40%, 0 the look as it
-   is. Both set the chart's layers as they move. Appearance's Dark +
+   is. Both set the chart's layers as they move. At night the Dimmer
+   reaches what is drawn on the chart too -- its words, marks, lines and
+   an approach plate, at the chart's own brightness -- so nothing on the
+   map is brighter than the chart under it (AIM 8-1-6; the themes audit,
+   2026-11-27); a plate is white on black at night until the pilot picks.
+   Sunlight at night keeps the look's own dark grounds and lifts only the
+   grey words and the edges, never its white sheets; the device's
+   Increase Contrast does the same by day and at night. Appearance's Dark +
    Bright went with them: the night's look of the route, the sky and the
    rest follows the dark theme alone. Every section is four tiles two by two in the layers'
    size and form, the sections lined up (the owner, 2026-11-14: "every
@@ -1446,7 +1453,12 @@ stay text beside it, never in the badge.
    white words at 4.5:1 or more in every look (WCAG 1.4.3;
    `lib/looksContrast.test.ts`), its words the `badge` type role (iOS's
    Caption 1, semibold). A screen reader hears the status's word: it is
-   the badge's own text, never only its colour.
+   the badge's own text, never only its colour. A flight category set as
+   words with no chip (a search row's "MVFR") is in the scheme's
+   `category-*-ink` (`color.theme`), the dot's hue at 4.5:1 and more on
+   every surface, a lighter shade at night (the owner, 2026-11-27); its
+   dot, chip and map mark keep the FAA's colour, ringed in the chart's
+   casing on a dark surface as the map's marks are.
 3. **Where it is now (2026-11-14):** airport rows in the search and
    Nearest (Closed, Private, Military, Joint use); the airspace card's
    special-use areas (Active or Cold from SFDPS, else the engine's

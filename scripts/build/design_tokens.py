@@ -27,6 +27,7 @@ import design_tokens_zoom as zoom
 from design_tokens_webtype import fixed, rem, resolve_space, size_css, web_class, web_value
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
+from design_tokens_looks import css_block, sun_and_contrast, swatch_ts
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "tokens.json"
@@ -158,13 +159,6 @@ def flat_colours(tree, group):
 # ---------------------------------------------------------------- web
 
 
-def css_block(selector, decls):
-    lines = ["%s {" % selector]
-    lines += ["  --%s: %s;" % (k, v) for k, v in decls]
-    lines.append("}")
-    return "\n".join(lines)
-
-
 def font_stack(tree, path):
     return ", ".join(f if f in ("sans-serif", "serif", "monospace", "system-ui") else "'%s'" % f for f in lookup(tree, path)["$value"])
 
@@ -215,15 +209,14 @@ def gen_css(tree):
         ),
         css_block(':root[data-brand="cockpit"]:not(.dark)', decls("color", "look", "cockpit", "light")),
         css_block(':root.dark[data-brand="cockpit"]', decls("color", "look", "cockpit", "dark")),
-        "/* Chart ink, not in sunlight, whose own tokens win. */\n" + css_block(':root[data-brand="ink"]', ink_all),
-        css_block(':root[data-brand="ink"]:not(.dark):not([data-chart-light="bright"])', decls("color", "look", "ink", "light")),
-        css_block(':root.dark[data-brand="ink"]:not([data-chart-light="bright"])', decls("color", "look", "ink", "dark")),
+        "/* Chart ink; sunlight's blocks, after every look's, win. */\n" + css_block(':root[data-brand="ink"]', ink_all),
+        css_block(':root[data-brand="ink"]:not(.dark)', decls("color", "look", "ink", "light")),
+        css_block(':root.dark[data-brand="ink"]', decls("color", "look", "ink", "dark")),
         "/* Native: shadcn's stock theme and Tailwind's stock corners, shadows and type, but in sunlight. */\n"
         + css_block(':root[data-brand="native"]', stock.css(tree)),
-        css_block(':root[data-brand="native"]:not(.dark):not([data-chart-light="bright"])', decls(*NATIVE_WEB, "light")),
-        css_block(':root.dark[data-brand="native"]:not([data-chart-light="bright"])', decls(*NATIVE_WEB, "dark")),
-        "/* Sunlight, over day, night and every look. */\n"
-        + css_block(':root[data-chart-light="bright"],\n:root.dark[data-chart-light="bright"]', decls("color", "theme", "sunlight")),
+        css_block(':root[data-brand="native"]:not(.dark)', decls(*NATIVE_WEB, "light")),
+        css_block(':root.dark[data-brand="native"]', decls(*NATIVE_WEB, "dark")),
+        *sun_and_contrast(decls),
     ]
     return "\n\n".join(blocks) + "\n"
 
@@ -262,6 +255,7 @@ def gen_ts(tree):
         "/** A field with no report: unknown, not fine. */\nexport const CATEGORY_UNKNOWN = %s;"
         % q(hex6(flat_colours(tree, "color.category")["unknown"])),
         "/** Wingtip's mark. */\nexport const BRAND = %s;" % ts_obj(brand),
+        swatch_ts(tree, theme_group, lookup, ALIAS, NATIVE_WEB, ts_obj),
         *["export const %s = %s;" % (g.upper(), ts_obj(d)) for g, d in shared.items()],
         "/** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */\nexport const INK = %s;"
         % ts_obj(ink),

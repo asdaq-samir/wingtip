@@ -5,7 +5,7 @@ import { useScrollPlace } from "../../lib/scrollPlace";
 import { ChartMark } from "../../components/ChartMark";
 import { USE_WORDS } from "../../lib/airportIndex";
 import type { NearestAirport } from "../../lib/api/types";
-import { chipFillOf } from "../../lib/map/marks/flightCategory";
+import { inkOf } from "../../lib/map/marks/flightCategory";
 import { visibilityWords } from "../../lib/map/marks/airportWeather";
 import { clockAndZulu } from "../../lib/format";
 import { TEXT } from "../../lib/text";
@@ -17,10 +17,11 @@ import { useSearchResultRows, useSearchResults } from "./useSearchResults";
 import FilterChips from "./FilterChips";
 import FiltersPage from "./FiltersPage";
 
-/** A category's word in its own colour, as the map's chip has it. */
+/** A category's word in its own hue, as the map's chip has it: the
+ *  scheme's ink, 4.5:1 and more on the sheet by day and at night. */
 function Category({ category, children }: { category: string; children?: string }) {
   return (
-    <span className="font-semibold" style={{ color: chipFillOf(category) }}>
+    <span className="font-semibold" style={{ color: inkOf(category) }}>
       {children ?? category}
     </span>
   );
