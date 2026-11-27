@@ -41,6 +41,10 @@ export const routeQuery = (callsign: string | null, at: { lat: number; lon: numb
     queryKey: ["route", callsign, at ? Math.round(at.lat) : null, at ? Math.round(at.lon) : null],
     queryFn: () => api.trafficRoute({ callsign: callsign!, ...at }),
     enabled: !!callsign,
+    // The same callsign's route kept while it is asked again at each whole
+    // degree crossed: the card's "to" end went, and came back, every 60 nm
+    // or so of a tracked flight. Another callsign's is never shown for it.
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === callsign ? previous : undefined),
     staleTime: 30 * 60_000,
     meta: { silent: true },
   });

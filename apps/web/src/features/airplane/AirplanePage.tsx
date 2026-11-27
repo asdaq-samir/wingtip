@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import PastFlights from "../../components/airplane/PastFlights";
 import AirplaneInfo from "./AirplaneInfo";
+import type { AircraftRegistration } from "../../lib/api/types";
 import type { AirplaneSlices } from "./useAirplaneCardModel";
 
 /**
@@ -15,15 +16,41 @@ import type { AirplaneSlices } from "./useAirplaneCardModel";
  */
 export function InfoPage({ m, poh }: { m: AirplaneSlices<"card" | "hex" | "live" | "tail">; poh: ReactNode }) {
   const { hex, tail, live, card } = m;
+  return (
+    <InfoBody
+      tail={tail}
+      record={card.record ?? live.detail?.faa ?? null}
+      details={card.details}
+      detailsFailed={card.detailsFailed}
+      hex={hex}
+      callsign={live.plane?.callsign?.trim() || null}
+      poh={poh}
+    />
+  );
+}
+
+// Drawn again only when what it shows changes (memo): the card draws at
+// each of the traffic's 5-second polls, which change nothing here.
+const InfoBody = memo(function InfoBody({
+  tail,
+  record,
+  details,
+  detailsFailed,
+  hex,
+  callsign,
+  poh,
+}: {
+  tail: string | null;
+  record: AircraftRegistration | null;
+  details: AirplaneSlices<"card">["card"]["details"];
+  detailsFailed: boolean;
+  hex: string | null;
+  callsign: string | null;
+  poh: ReactNode;
+}) {
   return tail ? (
     <>
-      <AirplaneInfo
-        record={card.record ?? live.detail?.faa ?? null}
-        details={card.details}
-        detailsFailed={card.detailsFailed}
-        hex={hex}
-        callsign={live.plane?.callsign?.trim() || null}
-      />
+      <AirplaneInfo record={record} details={details} detailsFailed={detailsFailed} hex={hex} callsign={callsign} />
       {poh}
     </>
   ) : (
@@ -31,7 +58,7 @@ export function InfoPage({ m, poh }: { m: AirplaneSlices<"card" | "hex" | "live"
       <ListRow muted title="Not in the FAA's registry, so it has no public record here." />
     </ListGroup>
   );
-}
+});
 
 /**
  * The airplane card's Flights tab: its flights, "Earlier" while it flies,
@@ -41,17 +68,26 @@ export function InfoPage({ m, poh }: { m: AirplaneSlices<"card" | "hex" | "live"
  */
 export function FlightsPage({ m }: { m: AirplaneSlices<"hex" | "live" | "nav"> }) {
   const { hex, live } = m;
+  return <FlightsBody hex={hex} onOpen={m.nav.openPast} earlier={!!live.plane} type={live.detail?.type ?? live.plane?.type ?? null} />;
+}
+
+// As InfoBody: not drawn again at each poll.
+const FlightsBody = memo(function FlightsBody({
+  hex,
+  onOpen,
+  earlier,
+  type,
+}: {
+  hex: string | null;
+  onOpen: (id: number) => void;
+  earlier: boolean;
+  type: string | null;
+}) {
   return hex ? (
-    <PastFlights
-      hex={hex}
-      onOpen={m.nav.openPast}
-      play
-      title={live.plane ? "Earlier" : "Flights"}
-      type={live.detail?.type ?? live.plane?.type ?? null}
-    />
+    <PastFlights hex={hex} onOpen={onOpen} play title={earlier ? "Earlier" : "Flights"} type={type} />
   ) : (
     <ListGroup title="Flights">
       <ListRow muted title="No flights to show: the FAA's registry gives no address for this N-number." />
     </ListGroup>
   );
-}
+});

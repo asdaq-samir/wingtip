@@ -58,7 +58,8 @@ export function useAirportSearch(text: string, enabled = true, fixes = false) {
   }, [index, typed, by]);
   const { data, isPlaceholderData, isFetching } = useQuery({
     queryKey: ["airportSearch", q, fixes, by],
-    queryFn: () => api.airportSearch(q, fixes, by),
+    // A letter's ask let go once the next letter asks (react-query's signal).
+    queryFn: ({ signal }) => api.airportSearch(q, fixes, by, signal),
     // Airports alone and the copy in: nothing to ask.
     enabled: enabled && q.length > 0 && (fixes || !index),
     // The same letters' answer kept (SEARCH_FRESH_MS): with none, each

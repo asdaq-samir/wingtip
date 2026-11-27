@@ -86,9 +86,9 @@ export const plannerAirports = {
   /** DEP/DEST's own autocomplete -- airports whose ident or name
    *  starts with `q`. Empty `q` short-circuits server-side to `[]`, so
    *  this is safe to call on every keystroke including the first. */
-  airportSearch: (q: string, fixes = false, near = "") =>
+  airportSearch: (q: string, fixes = false, near = "", signal?: AbortSignal) =>
     planner
-      .GET("/api/airports/search", { params: { query: { q, fixes: fixes || undefined, near: near || undefined } } })
+      .GET("/api/airports/search", { params: { query: { q, fixes: fixes || undefined, near: near || undefined } }, signal })
       .then(data<AirportSearch>)
       .then((r) => r.airports),
 
