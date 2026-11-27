@@ -94,6 +94,15 @@ Parameters:
     Type: String
     Default: ""
     Description: Where the monthly budget alarm ($50, at 80% spent) and a failed nightly backup go. Empty for no alarm.
+  EdgeRateLimit:
+    Type: String
+    Default: "off"
+    AllowedValues: ["on", "off"]
+    Description: >-
+      The AWS WAF web ACL on the distribution (TileRateLimit, about $7.20 a month):
+      "on" answers 429 to an address past 3,000 tile requests, or 3,000 other planner
+      requests, in five minutes. Off at launch (the owner, 2026-11-27, decision 0063);
+      turned on if the server's load or the tile requests show abuse.
 
 Rules:
   UsEast1:
@@ -106,6 +115,7 @@ Conditions:
   CreateOidc: !Equals [!Ref CreateGitHubOidcProvider, "true"]
   HasMailDomain: !Not [!Equals [!Ref MailDomain, ""]]
   SpotServer: !Equals [!Ref ServerPricing, spot]
+  EdgeRateLimitOn: !Equals [!Ref EdgeRateLimit, "on"]
 
 Resources:
   # ---------------------------------------------------------------------
@@ -772,10 +782,13 @@ Resources:
   # about 40. Counted before the cache, so a hit counts too; an airport's
   # shared Wi-Fi of ten pilots panning at once stays under it. CLOUDFRONT
   # scope, which AWS takes only in us-east-1, where this stack is deployed
-  # (its Description). Its cost, $6 a month and $0.60 a million requests,
-  # is in docs/README-AWS.md.
+  # (its Description). Its cost, about $7 a month and $0.60 a million
+  # requests, is in docs/README-AWS.md. Made only with EdgeRateLimit=on:
+  # off at launch, the owner's choice of 2026-11-27 (decision 0063), which
+  # leaves N5 and M4 open until it is turned on.
   TileRateLimit:
     Type: AWS::WAFv2::WebACL
+    Condition: EdgeRateLimitOn
     Properties:
       Name: !Sub "${AWS::StackName}-tiles"
       Description: Rate limits on the tile paths of the planner and its other paths, everything else let through.
@@ -878,7 +891,7 @@ Resources:
     Properties:
       DistributionConfig:
         Enabled: true
-        WebACLId: !GetAtt TileRateLimit.Arn
+        WebACLId: !If [EdgeRateLimitOn, !GetAtt TileRateLimit.Arn, !Ref AWS::NoValue]
         Comment: !Sub "Wingtip Maps (${AWS::StackName})"
         Aliases: [!Ref PublicHost]
         ViewerCertificate:
