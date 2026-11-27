@@ -40,6 +40,20 @@ fn the_reasons_vfr_is_not_recommended() {
 }
 
 #[test]
+fn a_low_ceiling_with_no_category_still_warrants_it() {
+    // BKN009 with the visibility missing: no category settled, but 91.155(c)
+    // bars VFR beneath a ceiling under 1,000 ft. 1,000 itself does not.
+    let metars =
+        json::parse(r#"{"KAAA":{"ceiling_ft":900},"KBBB":{"ceiling_ft":1000},"KCCC":{"flight_category":"VFR","ceiling_ft":5000}}"#)
+            .unwrap();
+    let none = json::parse("{}").unwrap();
+    assert_eq!(
+        vfr_not_recommended_reasons(&["KAAA", "KBBB", "KCCC"], &metars, &none, 1000.0, 3.0),
+        vec!["KAAA currently reporting a 900 ft ceiling"]
+    );
+}
+
+#[test]
 fn pireps_are_told_in_route_order_urgent_first() {
     let r = fcsts(
         r#"[{"observed":1000,"lat":0.0,"lon":0.5,"altitude_ft":5000,"urgent":false},
