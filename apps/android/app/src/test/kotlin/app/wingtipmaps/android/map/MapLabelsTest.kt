@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.map
 
+import app.wingtipmaps.android.design.generated.WingtipMapLabel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -29,7 +30,8 @@ class MapLabelsTest {
     fun afterDarkALightHaloedWordTakesItsNightInk() {
         val paint = MapLabels.layer(layer("11", "\"#2465b8\"", "#ffffff"), 1f, night = true)["paint"]!!.jsonObject
         assertEquals("#82b4ff", paint["text-color"]!!.jsonPrimitive.content)
-        assertEquals("rgba(20, 24, 31, 0.85)", paint["text-halo-color"]!!.jsonPrimitive.content)
+        // The tag's dark (#14181f) at map.label.halo-night's strength, whole since round 6.
+        assertEquals(String.format(java.util.Locale.US, "rgba(20, 24, 31, %.2f)", WingtipMapLabel.HALO_NIGHT), paint["text-halo-color"]!!.jsonPrimitive.content)
         // A dark-haloed word is left as it is.
         val dark = MapLabels.layer(layer("11", "\"#ffffff\"", "#14181f"), 1f, night = true)["paint"]!!.jsonObject
         assertEquals("#ffffff", dark["text-color"]!!.jsonPrimitive.content)
