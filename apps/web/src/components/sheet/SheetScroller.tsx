@@ -57,9 +57,10 @@ interface ScrollerProps {
   head: string;
   /** The figures pinned at its foot, so its body is cut off there. */
   cut: boolean;
-  /** FPL's page: under its foot bar (sheet/FootBar, "bar") room at its
-   *  end as tall as the bar, so its last row scrolls clear above it. With
-   *  none its foot (SheetFoot) ends the page, clear of the home indicator. */
+  /** Under a foot bar beside the sheet (sheet/FootBar, SheetFoot's
+   *  BesideSheet: "bar") room at its end as tall as the bar, so its last
+   *  row scrolls clear above it. With none its foot (SheetFoot) ends the
+   *  page, clear of the home indicator. */
   endRoom?: "bar";
   /** Its band risen with the sheet from the pill (FPL's), frosted as at half from the finger's first move. */
   rises?: boolean;

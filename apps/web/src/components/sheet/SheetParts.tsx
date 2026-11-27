@@ -46,7 +46,8 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
   const parts = { layout, onFootTap };
   const barRow = slots.bar && <SheetBarRow bar={slots.bar} shown={barShown} hairline layout={layout} panelSize={panelSize} />;
 
-  // FPL's foot on a phone's bottom sheet is a bar beside the sheet, not in it (sheet/FootBar).
+  // A phone's bottom sheet's foot is a bar beside the sheet, not in it
+  // (sheet/FootBar, SheetFoot's BesideSheet; MapPanel's `foot`).
   const foot = !!slots.foot && !layout.footBar && (footShown || cardsUp) && (
     <SheetFoot foot={slots.foot} pillFoot={pillFoot} floats={!!pages?.floats} {...parts} />
   );
@@ -113,6 +114,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
         off={false}
         head={sheetHead}
         cut={footShown}
+        endRoom={layout.footBar ? "bar" : undefined}
         {...parts}
       />
     );

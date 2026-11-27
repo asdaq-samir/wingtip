@@ -177,7 +177,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   const plannedNm = parseFloat(await distNow());
 
   await pressDryRunStart(page, start);
-  const figures = sideDrawer(page).getByTestId("dry-run-figures");
+  const figures = sheetFoot(page).getByTestId("dry-run-figures");
   // The same figures from where the airplane is, flying: its Track.
   await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(["Distance", "ETE", "Track"]);
   await expect(figures.getByTestId("navlog-to")).toHaveCount(0);

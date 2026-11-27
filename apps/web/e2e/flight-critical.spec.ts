@@ -8,6 +8,7 @@ import {
   openProfile,
   pressDryRunStart,
   settle,
+  sheetFoot,
   sideDrawer,
   slow,
 } from "./helpers";
@@ -207,7 +208,7 @@ test(
     // figure strip at the foot (the calculations, dry run too) its display,
     // the distance left (no To in flight: the flying head names the next
     // point), the route's address holding the direct and the page still up.
-    const strip = sideDrawer(page).getByTestId("dry-run-figures");
+    const strip = sheetFoot(page).getByTestId("dry-run-figures");
     await expect(strip.getByTestId("navlog-to")).toHaveCount(0);
     const direct = page.getByTestId("flying-direct");
     await expect(direct).toBeVisible();

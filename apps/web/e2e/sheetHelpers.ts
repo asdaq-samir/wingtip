@@ -43,10 +43,11 @@ export async function settle(page: Page) {
  *  Its `data-panel` is its own size, under a card too (a card's is on its
  *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
-/** The panel with FPL's foot -- its figures and its tab bar (Brief, Nav
- *  Log, Routes, More): on a phone's sheet the foot is a fixed bar beside
- *  the sliding popup, not in it (sheet/FootBar, data-foot-bar), elsewhere
- *  the panel's own foot. */
+/** The panel with its foot -- FPL's figures and its tab bar (Brief, Nav
+ *  Log, Routes, More), the figures in flight and in a dry run: on a phone's
+ *  bottom sheet the foot is a fixed bar beside the sliding popup, not in it
+ *  (sheet/FootBar, SheetFoot's BesideSheet; data-foot-bar), elsewhere the
+ *  panel's own foot. */
 export const sheetFoot = (page: Page) => page.locator('[data-slot="map-panel"], [data-foot-bar]');
 /** A card with its floating tab bar (CardTabBar): on a phone's bottom
  *  sheet the bar stands in the card's foot slot, fixed at the screen's
@@ -142,9 +143,10 @@ export async function inSheet(page: Page, locator: Locator) {
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
     // either way above the route's figures pinned at its foot, and above
-    // FPL's foot bar beside the sheet (sheet/FootBar), the figures over its tabs.
+    // A phone's bottom sheet's foot bar beside the sheet (sheet/FootBar, FPL's
+    // figures over its tabs; in flight and a dry run SheetFoot's BesideSheet).
     const foot = (
-      sheet.querySelector("[data-testid=panel-foot]") ?? document.querySelector("[data-testid=foot-bar]:not(.invisible)")
+      sheet.querySelector("[data-testid=panel-foot]") ?? document.querySelector("[data-foot-bar]:not(.invisible)")
     )?.getBoundingClientRect();
     // A card's floating tab bar (CardTabBar) at that edge too, on a phone's
     // bottom sheet in the card's foot slot beside it (sheet/CardFoot), and
