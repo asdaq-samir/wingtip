@@ -7,6 +7,10 @@
 //! wind favours is still picked on the mean (wind::favoured_end).
 
 use super::wind::{crosswind_kt, headwind_kt, js_normalize};
+use crate::gonogo::calls::In;
+use crate::json::Value;
+
+type R<T> = Result<T, String>;
 
 /// Whether `d` lies in the arc from `from` clockwise to `to`, all true.
 fn within((from, to): (f64, f64), d: f64) -> bool {
@@ -39,6 +43,24 @@ pub fn worst_crosswind_kt(dir: f64, variable: Option<(f64, f64)>, kt: f64, headi
 /// any direction in it is from behind; the mean's with no arc.
 pub fn worst_headwind_kt(dir: f64, variable: Option<(f64, f64)>, kt: f64, heading: f64) -> f64 {
     directions(dir, variable, heading).into_iter().map(|d| headwind_kt(d, kt, heading)).fold(f64::INFINITY, f64::min)
+}
+
+/// A METAR's variable direction, `wind_variable_deg` [from, to] (the
+/// weather store's, awc_metars_read); None for none.
+pub(crate) fn variable(i: In, m: &Value) -> R<Option<(f64, f64)>> {
+    variable_at(i, m, "wind_variable_deg")
+}
+
+/// A variable direction's bounds [from, to] at `key`; None for none.
+pub(crate) fn variable_at(i: In, m: &Value, key: &str) -> R<Option<(f64, f64)>> {
+    match m.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Array(b)) if b.len() == 2 => match (b[0].as_f64(), b[1].as_f64()) {
+            (Some(from), Some(to)) => Ok(Some((from, to))),
+            _ => i.err(key, "holds a bound that is not a number"),
+        },
+        Some(_) => i.err(key, "is not [from, to]"),
+    }
 }
 
 #[cfg(test)]

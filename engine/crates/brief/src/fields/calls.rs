@@ -94,7 +94,7 @@ fn field(i: In, f: &Value) -> R<Field> {
                     dir_true_deg: m("dir_true_deg")?,
                     speed_kt: m("speed_kt")?,
                     gust_kt: m("gust_kt")?,
-                    variable_deg: metar.map_or(Ok(None), |w| crate::runway::calls::variable_at(i, w, "variable_deg"))?,
+                    variable_deg: metar.map_or(Ok(None), |w| crate::runway::wind_variable::variable_at(i, w, "variable_deg"))?,
                 })
             })
             .transpose()?,

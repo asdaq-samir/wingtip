@@ -219,27 +219,9 @@ pub(super) fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
             dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
             speed_kt: i.opt_num(m, "wind_speed_kt")?,
             gust_kt: i.opt_num(m, "wind_gust_kt")?,
-            variable_deg: variable(i, m)?,
+            variable_deg: super::wind_variable::variable(i, m)?,
         })),
         _ => Ok(None),
-    }
-}
-
-/// A METAR's variable direction, `wind_variable_deg` [from, to] (the
-/// weather store's, awc_metars_read); None for none.
-pub(crate) fn variable(i: In, m: &Value) -> R<Option<(f64, f64)>> {
-    variable_at(i, m, "wind_variable_deg")
-}
-
-/// A variable direction's bounds [from, to] at `key`; None for none.
-pub(crate) fn variable_at(i: In, m: &Value, key: &str) -> R<Option<(f64, f64)>> {
-    match m.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Array(b)) if b.len() == 2 => match (b[0].as_f64(), b[1].as_f64()) {
-            (Some(from), Some(to)) => Ok(Some((from, to))),
-            _ => i.err(key, "holds a bound that is not a number"),
-        },
-        Some(_) => i.err(key, "is not [from, to]"),
     }
 }
 
