@@ -28,7 +28,13 @@ issue #482.
   read from bytes the caller maps.
 - `bindings/py` (`wingtip_native`): the engine as wingtip imports it, through PyO3. It
   only carries arrays and mapped files across; every figure is the
-  engine's. wingtip imports it at module level, so every image that copies
+  engine's. Beside `call(name, json)` it has `call_numbers(name, json,
+  key, numbers)`, the same rule with one member's numbers handed over as
+  a numpy buffer of f64s, read in place rather than written into the
+  JSON: the terrain grids of route options and the way round high ground
+  (`wingtip.terrain_detour.ask_with_terrain`), 100,000 to 200,000 heights
+  a call, which as text cost tens of milliseconds to write and parse. The
+  rule and its contract are the same either way. wingtip imports it at module level, so every image that copies
   services/planner/wingtip needs it: the planner, the pipeline stages and ML are each built
   FROM wingtip's base image (services/Dockerfile.base), which compiles it
   and installs it with wingtip's requirements once for all of them

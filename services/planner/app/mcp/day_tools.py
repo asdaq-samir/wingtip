@@ -172,7 +172,7 @@ def register(server: MCPServer) -> None:
             loaded["landing"]["weight_lb"] if loaded else None,
         )
         runway = ("role", "end", "pressure_alt_ft", "density_alt_ft", "temp_c", "reported", "headwind_kt", "crosswind_kt")
-        distance = ("kind", "end", "ground_roll_ft", "total_ft", "over", "unknown", "beyond", "caveats")
+        distance = ("kind", "end", "ground_roll_ft", "total_ft", "over", "close", "unknown", "beyond", "caveats")
         return {
             # A closed field first, so it is said before any distance is
             # (decision 0043): the figures are its runways' as recorded.
@@ -188,6 +188,10 @@ def register(server: MCPServer) -> None:
                 rounded(pick(c, runway))
                 | {"runway": (c["runway"] or {}).get("ends"), "length_ft": (c["runway"] or {}).get("length_ft")}
                 | {"crosswind_over_demonstrated": c["crosswind_over"], "unchecked": c["unchecked"]}
+                # The engine's finding for the field, the one the Brief's
+                # runway row shows (stop, caution, unknown or ok), and its
+                # reason, the worst first (gonogo_runway_checks).
+                | {"finding": c["finding"], "finding_reason": c["fit"]}
                 | {"distances": [rounded(pick(d, distance)) for d in c["distances"]]}
                 for c in checks
             ],
