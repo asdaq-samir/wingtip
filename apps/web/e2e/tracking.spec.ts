@@ -28,20 +28,20 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   await (await findAirplane(page, "UAL2088")).click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, its call sign and what it is
-  // under it, opened on its Flight tab.
+  // under it, opened on its Flights tab while it flies.
   const card = page.getByTestId("airplane-profile");
   // At the pill's size, as every card opens; its pages all the way up.
   await grabberTo(page, "full");
   await expect(card).toContainText("N14511");
   await expect(card).toContainText("UAL2088 · Airbus A-321neo");
-  await expect(card.getByTestId("airplane-tab-flight")).toHaveAttribute("aria-selected", "true");
-  // The flight it is on in a card under the actions, as FlightAware's:
-  // where it left and where it is bound, and how it is flying.
+  await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
+  // The flight it is on, the first slide of the row under the actions, as
+  // FlightAware's: where it left and where it is bound, and how it is flying.
   await expect(card.getByTestId("flight-departed")).toContainText("TJSJ");
   await expect(card.getByTestId("flight-bound")).toContainText("KORD");
   await expect(card.getByTestId("flight-altitude")).toContainText("7,000 ft");
-  // On its Flight tab who flies it and its flight number's route, at the
-  // pilot's ask; its make and model are its Info tab's.
+  // In its Flights tab's Now group who flies it and its flight number's
+  // route, at the pilot's ask; its make and model are its Info tab's.
   await expect(card.getByTestId("flight-route")).toContainText("TJSJ → KORD");
   await expect(card.getByTestId("flight-route")).toContainText("San Juan to Chicago");
   await expect(card.getByTestId("flight-operator")).toHaveText("United Airlines Inc");
@@ -218,8 +218,8 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
         body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64"),
       }),
   );
-  // Traffic the FAA's registry does not hold (the design's "Unregistered"): its photo on its Flight
-  // tab, the card having no Info. The later route answers first.
+  // Traffic the FAA's registry does not hold (the design's "Unregistered"): its photo in the card's
+  // top row, its registration in its Flights tab, the card having no Info. The later route answers first.
   const foreign = { ...UAL, registration: "C-FSES" };
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/traffic"),
@@ -244,20 +244,23 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(link).toHaveAttribute("href", "https://www.planespotters.net/photo/1773250/n14511");
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).not.toHaveAttribute("rel", /nofollow/);
-  // Under its facts, as the airport card's pictures (C1); the sketch the
-  // strip's first, drawn with the card, and the photo, which comes after
-  // it, after it: a picture that arrives later never goes in front of the
-  // one in view (CardPictures, FL-23).
+  // The row under its actions, as the airport card's pictures (C1): its
+  // flight now first, always, then the photo and the sketch, a picture
+  // that arrives later never going in front of the one in view
+  // (CardPictures, FL-23; the owner's word, 2026-11-26).
   // At half a card's body does not scroll (index.css, the one scrolling
   // rule): pulled up to it, as a finger would (inSheet).
-  const sketch = card.getByTestId("flight-trail");
-  await inSheet(page, sketch);
-  await expect(sketch).toBeInViewport({ ratio: 0.9 });
-  // The stock carousel's own next page (PictureSlides), as a swipe is.
-  await card
-    .locator('[data-slot="carousel"]')
-    .evaluate((el) => el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
-  await expect(photo).toBeInViewport({ ratio: 0.9 });
+  const now = card.getByTestId("airplane-pictures").getByTestId(/^(flight-now|airplane-status)$/);
+  await inSheet(page, now);
+  await expect(now).toBeInViewport({ ratio: 0.9 });
+  await expect(card.getByTestId("airplane-pictures").getByTestId("flight-trail")).toBeAttached();
+  // The stock carousel's own next page (PictureSlides), as a swipe is, until the photo is in view.
+  await expect(async () => {
+    await card
+      .getByTestId("airplane-pictures")
+      .evaluate((el) => el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+    await expect(photo).toBeInViewport({ ratio: 0.9, timeout: 1_000 });
+  }).toPass({ timeout: slow(10_000) });
 });
 
 test("an alert set on an airplane goes off on the map when it lands, once, and Show opens its card", async ({ page }) => {

@@ -1,13 +1,15 @@
 /** The airplane card's tabs, in the bar's order (the owner's design, 2026-11-26). */
-export type AirplaneTab = "flight" | "flights" | "info" | "figures";
+export type AirplaneTab = "flights" | "info" | "figures";
 
 /**
- * The tabs the one airplane card has, and the one it is on: Flight with an
- * ICAO address to follow it by; Flights wherever it has an address or an N-number;
- * Info for an N-number; Figures for an airplane the planner can fly. It
- * opens on Figures where they were asked for, on Flight while it flies,
- * else on Info -- until the pilot picks one --
- * and on the first it has where that one is not offered.
+ * The tabs the one airplane card has, and the one it is on: Flights
+ * wherever it has an address or an N-number -- its flight now while it
+ * flies, then its earlier ones (Flight and Flights made one at the owner's
+ * word, 2026-11-26); Info for an N-number; Figures for an airplane the
+ * planner can fly. It opens on Figures where they were asked for, on
+ * Flights while it flies, else on Info -- until the pilot picks one --
+ * and on the first it has where that one is not offered: Flights for
+ * traffic the FAA's registry does not hold.
  */
 export function airplaneTabs(a: {
   hex: string | null;
@@ -19,14 +21,13 @@ export function airplaneTabs(a: {
   picked: AirplaneTab | null;
 }): { tabs: AirplaneTab[]; tab: AirplaneTab } {
   const tabs: AirplaneTab[] = [
-    ...(a.hex ? (["flight"] as const) : []),
     ...(a.hex || a.tail ? (["flights"] as const) : []),
     ...(a.tail ? (["info"] as const) : []),
     ...(a.flyable ? (["figures"] as const) : []),
   ];
-  // On Flight only while it flies: opened from traffic heard an hour ago it
-  // opened on an empty Flight (the owner's screenshot, 2026-11-26).
-  const opening: AirplaneTab = a.figures && a.flyable ? "figures" : a.airborne ? "flight" : "info";
+  // On Flights only while it flies: opened from traffic heard an hour ago it
+  // opened on an empty flight (the owner's screenshot, 2026-11-26).
+  const opening: AirplaneTab = a.figures && a.flyable ? "figures" : a.airborne ? "flights" : "info";
   const tab = [a.picked, opening].find((t): t is AirplaneTab => !!t && tabs.includes(t)) ?? tabs[0] ?? "info";
   return { tabs, tab };
 }

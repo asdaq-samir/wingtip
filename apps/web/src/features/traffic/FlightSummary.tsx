@@ -97,7 +97,7 @@ export function LiveSketch({ latest, ...props }: Omit<Parameters<typeof Airplane
 }
 
 /**
- * The flight under the actions (the owner's A2): its ends with a bar as far
+ * The flight, the airplane card's first slide (the owner's A2, then its word of 2026-11-26): its ends with a bar as far
  * along as it has flown, its height, climb, ground speed, track and time up
  * -- or, not heard now, where its last flight landed -- then an emergency's
  * code and, with own ship on, how far, which way and how near it comes.
@@ -120,6 +120,7 @@ function FlightSummary({
   onOpenAirport,
   airport,
   pending = false,
+  className,
 }: {
   /** Its ends, or its last flight's, still asked for: their lines held from
    *  the first frame, so nothing under them moves (the flicker audit's FL-10). */
@@ -143,6 +144,8 @@ function FlightSummary({
   onOpenAirport?: (ident: string) => void;
   /** The field the airport tap was for: the card's Airport tile's. */
   airport: string | null;
+  /** Its box's look where it is laid out (the airplane card's first slide). */
+  className?: string;
 }) {
   const rate = plane?.vertical_fpm ?? 0;
   const squawk = plane?.squawk ?? null;
@@ -152,7 +155,7 @@ function FlightSummary({
   const open = (ident: string) => (onOpenAirport ? () => onOpenAirport(ident) : undefined);
   return (
     <div
-      className="mt-3 flex flex-col gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-border/60"
+      className={cn("mt-3 flex flex-col gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-border/60", className)}
       data-testid={plane ? "flight-now" : "flight-last"}
     >
       <div className={cn("flex items-center gap-2 font-semibold", TEXT.note)}>

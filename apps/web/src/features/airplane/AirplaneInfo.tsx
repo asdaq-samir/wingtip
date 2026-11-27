@@ -12,7 +12,8 @@ function Fact({ title, value, testId }: { title: string; value: string | number 
 
 /**
  * The airplane card's Info tab (the owner's P1, 2026-11-14): its public
- * record in the order claude/plane-data set out -- Registration, Airplane,
+ * record in the order claude/plane-data set out -- Registration, Airplane
+ * (its identifiers too: ICAO address, Mode S octal, call sign),
  * Engine, Airworthiness, then where it is usually based, its safety and
  * ownership history and the documents filed (AirplaneHistory). The FAA
  * aircraft registry is public data, so its owner is shown for every airplane
@@ -27,10 +28,16 @@ export default function AirplaneInfo({
   record,
   details,
   detailsFailed,
+  hex,
+  callsign,
 }: {
   record: AircraftRegistration | null;
   details: AirplaneDetails | undefined;
   detailsFailed: boolean;
+  /** Its ICAO address, the registry's or the one its card was opened by. */
+  hex: string | null;
+  /** Its call sign while it is heard. */
+  callsign: string | null;
 }) {
   const history = <AirplaneHistory details={details} failed={detailsFailed} />;
   const full = details?.registration ?? record;
@@ -39,6 +46,8 @@ export default function AirplaneInfo({
       <div className="space-y-5" data-testid="airplane-info">
         <ListGroup>
           <ListRow muted title="The FAA's registry has no record of this N-number." />
+          <Fact title="ICAO Address" value={hex?.toUpperCase()} />
+          <Fact title="Callsign" value={callsign} />
         </ListGroup>
         {history}
       </div>
@@ -76,8 +85,11 @@ export default function AirplaneInfo({
         <Fact title="FAA Reference Cruise" value={ref?.cruise_mph ? `${ref.cruise_mph} mph, not for planning` : null} />
         <Fact title="Kit" value={full.kit} />
         <Fact title="Serial" value={full.serial} />
-        <Fact title="Mode S Address" value={full.mode_s_hex?.toUpperCase()} />
+        {/* Its identifiers here with the others (the owner, 2026-11-26): the
+            Mode S address is its ICAO address, the one it is heard by. */}
+        <Fact title="ICAO Address" value={(full.mode_s_hex ?? hex)?.toUpperCase()} />
         <Fact title="Mode S (Octal)" value={full.mode_s_octal} />
+        <Fact title="Callsign" value={callsign} />
       </ListGroup>
       {(full.engine || engine || power) && (
         <ListGroup title="Engine">

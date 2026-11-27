@@ -110,7 +110,7 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
 
   // Its card, the one airplane card (the owner's design, 2026-11-26): make, model and year under its
   // name, Share at the head's start, on the ground Fly This, Alerts and Favorite, one status line, and
-  // the tabs Flight, Flights, Info and Figures in the bar at its foot, opened from the search on Info.
+  // the tabs Flights, Info and Figures in the bar at its foot, opened from the search on Info.
   await row.click();
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("Piper PA-28-140, 1971", { timeout: slow(15_000) });
@@ -119,7 +119,8 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   await expect(card.getByTestId("airplane-track")).toHaveCount(0);
   await expect(page.getByTestId("airplane-share")).toBeVisible();
   await expect(card.getByTestId("airplane-actions").getByTestId("airplane-share")).toHaveCount(0);
-  for (const tab of ["flight", "flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
+  for (const tab of ["flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
+  await expect(card.getByTestId("airplane-tab-flight")).toHaveCount(0); // Flight and Flights one tab (the owner, 2026-11-26)
   await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-facts")).toBeVisible(); // Info's head alone (the owner, 2026-11-14)
@@ -217,10 +218,13 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(info.getByTestId("airplane-ntsb")).toHaveAttribute("href", /data\.ntsb\.gov/);
   await expect(info.getByTestId("airplane-based-field")).toContainText("6 of 9 takeoffs and landings");
   await expect(info.getByTestId("airplane-documents")).toContainText("Bill of sale");
-  // Its photo in the card's pictures, as the airport card's (C1), the photographer named on it and the
-  // picture its page's link; the owner in the facts strip, public as the FAA publishes it.
-  await expect(card.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
-  await expect(card.getByTestId("airplane-photo-open")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
+  // Its photo in the row under the actions, after its status, as the airport card's pictures (C1;
+  // the owner, 2026-11-26), the photographer named on it and the picture its page's link, and no
+  // longer in Info; the owner in the facts strip, public as the FAA publishes it.
+  const pictures = card.getByTestId("airplane-pictures");
+  await expect(pictures.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
+  await expect(pictures.getByTestId("airplane-photo-open")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
+  await expect(info.getByTestId("airplane-photo")).toHaveCount(0);
   await expect(card.getByTestId("airplane-facts-owner")).toContainText("Jane Q Pilot");
   await expect(card.getByTestId("airplane-facts-type")).toContainText("Piper PA-28-140");
   // Figures: the planning figures, as the card had them.
@@ -252,12 +256,13 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   await row.getByTestId("search-airplane-track").click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, in the air Track first, no Fly
-  // This, on its Flight tab with the flight's box in sight.
+  // This, on its Flights tab with the flight's slide in sight.
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-track")).toBeVisible();
   await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-tab-flight")).toHaveAttribute("aria-selected", "true");
+  await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
+  await expect(card.getByTestId("airplane-pictures").getByTestId("flight-now")).toBeVisible();
   await expect(page.getByTestId("airplane-profile")).toHaveCount(1);
 });
 
