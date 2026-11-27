@@ -82,6 +82,19 @@ public class LogbookEntry {
     private boolean fromTrack;
     private Long flightId;
 
+    // What passenger currency is judged by (V57, 14 CFR 61.57(a)(1)(ii)):
+    // the airplane's category and class, whether it had a tailwheel, and
+    // the landings to a full stop. Null where the pilot didn't say: the
+    // engine then counts the entry toward none and says it can't tell.
+    @Column(length = 20)
+    private String category;
+
+    @Column(name = "aircraft_class", length = 24)
+    private String aircraftClass;
+
+    private Boolean tailwheel;
+    private Integer fullStopLandings;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -142,6 +155,15 @@ public class LogbookEntry {
         this.touchAndGoes = touchAndGoes;
         this.fromTrack = fromTrack;
         this.flightId = flightId;
+        return this;
+    }
+
+    /** The airplane's columns, as the entry's form sends them. */
+    public LogbookEntry airplane(String category, String aircraftClass, Boolean tailwheel, Integer fullStopLandings) {
+        this.category = category;
+        this.aircraftClass = aircraftClass;
+        this.tailwheel = tailwheel;
+        this.fullStopLandings = fullStopLandings;
         return this;
     }
 

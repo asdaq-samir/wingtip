@@ -5,6 +5,7 @@ import static app.wingtipmaps.gateway.service.PlannerRules.rule;
 import static app.wingtipmaps.gateway.service.PlannerRules.sameLength;
 
 import app.wingtipmaps.gateway.domain.LogbookEntry;
+import app.wingtipmaps.gateway.dto.AirplaneFlown;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.EndorsementFieldDto;
 import app.wingtipmaps.gateway.dto.EndorsementKindDto;
@@ -15,6 +16,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementsAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerExperienceAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerFlying;
 import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
@@ -105,10 +107,29 @@ public class PlannerClient {
             LocalDate medicalExpiresOn,
             LocalDate ipcOn,
             LocalDate today) {
+        return currency(entries, flightReviewOn, medicalExpiresOn, ipcOn, today, null);
+    }
+
+    /** {@link #currency}, passengers judged for {@code flying}, the
+     *  airplane to be flown (14 CFR 61.57(a)(1)(ii)); null judges the
+     *  newest flight's. */
+    public CurrencyDto currency(
+            List<LogbookEntry> entries,
+            LocalDate flightReviewOn,
+            LocalDate medicalExpiresOn,
+            LocalDate ipcOn,
+            LocalDate today,
+            @Nullable AirplaneFlown flying) {
         PlannerCurrencyAsk ask = new PlannerCurrencyAsk(PlannerAsks.entriesOf(entries), today)
                 .flightReviewOn(flightReviewOn)
                 .medicalExpiresOn(medicalExpiresOn)
-                .ipcOn(ipcOn);
+                .ipcOn(ipcOn)
+                .flying(flying == null
+                        ? null
+                        : new PlannerFlying()
+                                .category(flying.category())
+                                .propertyClass(flying.aircraftClass())
+                                .tailwheel(flying.tailwheel()));
         return rule(
                 "the currency",
                 () -> planner.currency(ask),
@@ -129,7 +150,12 @@ public class PlannerClient {
                         c.getIpcNeededAfter(),
                         c.getApproachesInWindow(),
                         c.getHoldingInWindow(),
-                        c.getTrackingInWindow()));
+                        c.getTrackingInWindow(),
+                        c.getPassengerClass(),
+                        c.getPassengerTailwheel(),
+                        c.getTailwheelPassengersUntil(),
+                        c.getDayPassengersUnknown(),
+                        c.getNightPassengersUnknown()));
     }
 
     /**
@@ -175,12 +201,17 @@ public class PlannerClient {
      * engine's endorsement_records): each one's last good day in order
      * (null where it does not run out), the day the solo endorsement runs
      * out (14 CFR 61.87(n), (p)), and 61.93(d)'s checks for a solo
-     * cross-country on {@code flightOn} where it is given (PlannerAsks#checkOf).
+     * cross-country on {@code flightOn} where it is given (PlannerAsks#checkOf),
+     * in {@code makeModel}: 61.93(c)(2), (d)(4) and (5) hold the
+     * endorsements to "the make and model of aircraft to be flown", and
+     * with none the checks can't tell.
      *
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
-    public PlannerEndorsements endorsements(List<PlannerHeldEndorsement> held, LocalDate flightOn) {
-        PlannerEndorsementsAsk ask = new PlannerEndorsementsAsk(held).flightOn(flightOn);
+    public PlannerEndorsements endorsements(
+            List<PlannerHeldEndorsement> held, @Nullable LocalDate flightOn, @Nullable String makeModel) {
+        PlannerEndorsementsAsk ask =
+                new PlannerEndorsementsAsk(held).flightOn(flightOn).makeModel(makeModel);
         return rule("the endorsements", () -> planner.endorsements(ask), e -> e);
     }
 

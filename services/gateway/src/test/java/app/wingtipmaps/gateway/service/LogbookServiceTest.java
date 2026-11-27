@@ -73,6 +73,10 @@ class LogbookServiceTest {
                 0,
                 0,
                 false,
+                null,
+                null,
+                null,
+                null,
                 null);
     }
 
@@ -143,6 +147,10 @@ class LogbookServiceTest {
                 3.9,
                 1,
                 true,
-                flightId);
+                flightId,
+                "Airplane",
+                "Single-engine land",
+                false,
+                null);
     }
 }

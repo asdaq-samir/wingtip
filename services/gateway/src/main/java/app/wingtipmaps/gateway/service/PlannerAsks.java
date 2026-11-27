@@ -58,8 +58,26 @@ public final class PlannerAsks {
                         .longestLegNm(decimal(e.getLongestLegNm()))
                         .approaches(e.getApproaches())
                         .holding(e.isHolding())
-                        .tracking(e.isTracking()))
+                        .tracking(e.isTracking())
+                        // 14 CFR 61.57(a)(1)(ii): the category, class and
+                        // tailwheel passenger currency is judged by, null
+                        // where the pilot didn't say (the engine then says
+                        // it can't tell, never current).
+                        .category(e.getCategory())
+                        .propertyClass(e.getAircraftClass())
+                        .tailwheel(e.getTailwheel())
+                        .fullStopLandings(fullStops(e)))
                 .toList();
+    }
+
+    /** The landings to a full stop, as the pilot gave them; for an entry
+     *  drawn from the app's own track, whose touch-and-goes the engine
+     *  counted among the day landings, the rest of them; else none said. */
+    static Integer fullStops(LogbookEntry e) {
+        if (e.getFullStopLandings() != null) {
+            return e.getFullStopLandings();
+        }
+        return e.isFromTrack() ? Math.max(0, e.getDayLandings() - e.getTouchAndGoes()) + e.getNightLandings() : null;
     }
 
     /** An endorsement held, as the engine reads one: its code, the day it

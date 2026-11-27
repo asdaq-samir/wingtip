@@ -65,7 +65,7 @@ class TrainingControllerTest {
     private static final TrainingDto RECORD = new TrainingDto(
             List.of(new ExperienceItemDto("total", "61.109(a)", "Flight time", 12.5, 40, "h", false)),
             List.of("PA.I.E.K1"),
-            List.of(new EndorsementDto("pre-solo-knowledge", LocalDate.of(2026, 9, 1), null)),
+            List.of(new EndorsementDto("pre-solo-knowledge", LocalDate.of(2026, 9, 1), null, null)),
             List.of(),
             List.of(),
             "Avery B. Student",
@@ -126,7 +126,7 @@ class TrainingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"endorsedOn\": \"2026-10-01\"}"))
                 .andExpect(status().isOk());
-        verify(training).endorse(PILOT, "solo-xc-training", LocalDate.of(2026, 10, 1));
+        verify(training).endorse(PILOT, "solo-xc-training", LocalDate.of(2026, 10, 1), null);
         given(training.withdraw(PILOT, "nope")).willReturn(false);
         mockMvc.perform(delete("/api/training/endorsements/nope")
                         .with(oidcLogin())
@@ -154,7 +154,7 @@ class TrainingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"endorsedOn\": \"2026-10-01\"}"))
                 .andExpect(status().isBadRequest());
-        verify(training, never()).endorse(any(), any(), any());
+        verify(training, never()).endorse(any(), any(), any(), any());
     }
 
     @Test

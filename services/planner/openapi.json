@@ -5131,6 +5131,17 @@
             ],
             "title": "Flightreviewon"
           },
+          "flying": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Flying"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The airplane to be flown (14 CFR 61.57(a)(1)(ii)); none judges the newest flight's."
+          },
           "held": {
             "default": [],
             "items": {
@@ -6318,6 +6329,18 @@
             "title": "Crosscountryhours",
             "type": "number"
           },
+          "dayPassengersUnknown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the logbook doesn't say, where the pilot would be current by day if it were so: \"Can't tell: ...\".",
+            "title": "Daypassengersunknown"
+          },
           "dayPassengersUntil": {
             "anyOf": [
               {
@@ -6328,7 +6351,7 @@
                 "type": "null"
               }
             ],
-            "description": "90 days after the third most recent landing (14 CFR 61.57(a)).",
+            "description": "90 days after the third most recent landing the logbook proves counts for the airplane judged (14 CFR 61.57(a)(1)).",
             "title": "Daypassengersuntil"
           },
           "due": {
@@ -6443,6 +6466,18 @@
             "title": "Nighthours",
             "type": "number"
           },
+          "nightPassengersUnknown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The same at night (61.57(b)(1)).",
+            "title": "Nightpassengersunknown"
+          },
           "nightPassengersUntil": {
             "anyOf": [
               {
@@ -6453,7 +6488,7 @@
                 "type": "null"
               }
             ],
-            "description": "90 days after the third most recent night full-stop landing (61.57(b)).",
+            "description": "90 days after the third most recent night full-stop landing the logbook proves counts (61.57(b)(1)).",
             "title": "Nightpassengersuntil"
           },
           "passengerClass": {
@@ -6465,14 +6500,39 @@
                 "type": "null"
               }
             ],
-            "description": "The category and class the passenger currency was judged in, the newest flight's (61.57(a)(1)).",
+            "description": "The category and class judged: the airplane to be flown's, else the newest flight's (61.57(a)(1)).",
             "title": "Passengerclass"
           },
           "passengerClassUnknown": {
             "default": false,
-            "description": "The newest flight says no category and class, so every landing was counted: the logbook can't tell.",
+            "description": "Neither the airplane to be flown nor the newest flight says its category and class.",
             "title": "Passengerclassunknown",
             "type": "boolean"
+          },
+          "passengerTailwheel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether the airplane judged has a tailwheel; null not said, judged as one.",
+            "title": "Passengertailwheel"
+          },
+          "tailwheelPassengersUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A tailwheel's own, for a pilot judged in a tricycle who has flown one in the class (61.57(a)(1)(ii)).",
+            "title": "Tailwheelpassengersuntil"
           },
           "totalHours": {
             "title": "Totalhours",
@@ -6507,7 +6567,7 @@
         "type": "object"
       },
       "CurrencyAsk": {
-        "description": "The logbook, the dates the pilot gives and the day it is asked for\n(the pilot's own calendar's).",
+        "description": "The logbook, the dates the pilot gives, the airplane to be flown\nwhere known, and the day it is asked for (the pilot's own calendar's).",
         "properties": {
           "entries": {
             "items": {
@@ -6527,6 +6587,17 @@
               }
             ],
             "title": "Flightreviewon"
+          },
+          "flying": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Flying"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The airplane to be flown (61.57(a)(1)(ii)); none judges the newest flight's."
           },
           "ipcOn": {
             "anyOf": [
@@ -10745,6 +10816,48 @@
         "title": "FlownSegment",
         "type": "object"
       },
+      "Flying": {
+        "description": "The airplane to be flown, which 14 CFR 61.57(a)(1)(ii) judges\npassenger currency for: its category and class, and whether it has a\ntailwheel (null: not said, judged as one, the stricter).",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 category, \"Airplane\".",
+            "title": "Category"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 class, \"Single-engine land\".",
+            "title": "Class"
+          },
+          "tailwheel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailwheel"
+          }
+        },
+        "title": "Flying",
+        "type": "object"
+      },
       "Forecast": {
         "properties": {
           "ceiling_unknown_at": {
@@ -14218,9 +14331,16 @@
             "type": "number"
           },
           "tailwheel": {
-            "default": false,
-            "title": "Tailwheel",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A tailwheel airplane (61.57(a)(1)(ii)); null where not said.",
+            "title": "Tailwheel"
           },
           "totalHours": {
             "default": 0,

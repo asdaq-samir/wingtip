@@ -123,6 +123,7 @@ public class LogbookService {
                         r.toweredLandings(),
                         r.distanceNm(),
                         r.longestLegNm())
-                .instrument(r.approaches(), r.holding(), r.tracking());
+                .instrument(r.approaches(), r.holding(), r.tracking())
+                .airplane(Typed.text(r.category()), Typed.text(r.aircraftClass()), r.tailwheel(), r.fullStopLandings());
     }
 }

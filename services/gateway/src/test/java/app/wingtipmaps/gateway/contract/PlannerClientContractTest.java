@@ -93,8 +93,9 @@ class PlannerClientContractTest {
                                     List.of(
                                             PlannerAsks.held("solo", DAY, "C172"),
                                             PlannerAsks.held("solo-xc", DAY, null)),
-                                    DAY.plusDays(3))),
-            new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null)),
+                                    DAY.plusDays(3),
+                                    "C172")),
+            new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null, null)),
             new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
             new Call("instructorRecordsSince", c -> c.planner().instructorRecordsSince(DAY)),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),

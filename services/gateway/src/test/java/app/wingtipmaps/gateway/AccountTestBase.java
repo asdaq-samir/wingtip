@@ -143,7 +143,7 @@ abstract class AccountTestBase {
                 .set(LocalDate.of(2026, 10, 1), "Landing light out", true, DeferredFor.VFR_DAY, null, null));
         logbook.save(new LogbookEntry(pilot)
                 .set(LocalDate.of(2026, 10, 1), "N12345", "C172", "C81-KDLH", 2.5, 0, 2.5, 1, 0, null));
-        endorsements.save(new Endorsement(pilot.getId(), "A.1", LocalDate.of(2026, 9, 1)));
+        endorsements.save(new Endorsement(pilot.getId(), "A.1", LocalDate.of(2026, 9, 1), null));
         // An instructor asked in, an endorsement signed for them, and a solo
         // cross-country put to an instructor (V26) -- themselves, for the
         // schema's sake.

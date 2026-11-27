@@ -84,7 +84,7 @@ class LogbookPersistenceTest {
         assertThat(found.getDistanceNm()).isEqualTo(158);
         assertThat(found.getLongestLegNm()).isEqualTo(62);
 
-        endorsements.saveAndFlush(new Endorsement(pilot.getId(), "solo-90", LocalDate.of(2026, 9, 1)));
+        endorsements.saveAndFlush(new Endorsement(pilot.getId(), "solo-90", LocalDate.of(2026, 9, 1), "Cessna 172"));
         assertThat(endorsements.findByKeyPilotIdOrderByKeyCode(pilot.getId()))
                 .extracting(e -> e.getKey().code())
                 .containsExactly("solo-90");
