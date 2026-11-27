@@ -8,9 +8,10 @@ const LEAST = 0.75;
  * Words kept on one line, their type set smaller to fit its width (to
  * three quarters at the least) and cut with "…" past that: as iOS's
  * label shrinks to fit (adjustsFontSizeToFitWidth). CSS has no fit-to-
- * width of its own (the stock audit, 2026-11-11, W-NR5), so the line is
- * measured once as it is laid out and again only when its width changes
- * (a ResizeObserver), never per frame. The owner, 2026-11-11: "fit the
+ * width of its own, so the line is measured in its ResizeObserver alone,
+ * whose first call comes after the layout and before the paint, and again
+ * only when its width changes, never per frame: measured in the layout
+ * effect, it forced a layout in the middle of the card's opening. The owner, 2026-11-11: "fit the
  * airport name to its line".
  */
 export default function FitLine({ children, className, testId }: { children: ReactNode; className?: string; testId?: string }) {
@@ -26,8 +27,7 @@ export default function FitLine({ children, className, testId }: { children: Rea
       const scale = Math.max(LEAST, room / wants);
       el.style.fontSize = `${scale}em`;
     };
-    fit();
-    let width = el.clientWidth;
+    let width = -1;
     const watch = new ResizeObserver(() => {
       if (el.clientWidth === width) return;
       width = el.clientWidth;

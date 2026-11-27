@@ -1,9 +1,6 @@
 import { preconnect, preload } from "react-dom";
 import barlow400 from "@fontsource/barlow/files/barlow-latin-400-normal.woff2?url";
-import barlow500 from "@fontsource/barlow/files/barlow-latin-500-normal.woff2?url";
 import barlow600 from "@fontsource/barlow/files/barlow-latin-600-normal.woff2?url";
-import barlow700 from "@fontsource/barlow/files/barlow-latin-700-normal.woff2?url";
-import interUrl from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import type { ChartInfo } from "./api/types";
 import type { MapOverlay } from "./preferences";
 import { GOOGLE, USGS_URL } from "./map/sources/imagery";
@@ -17,10 +14,14 @@ const font = (href: string) => preload(href, { as: "font", type: "font/woff2", c
  * still running, with React DOM's resource hints (preload, preconnect),
  * which put each <link> in the head once however often they are called:
  *
- * - the app's face, Barlow's four weights (main.tsx's stylesheet), found
- *   otherwise only once the stylesheet is parsed and a word laid out;
- * - the map's own face, Inter, which MapLibre's style (GlMapShell) asks
- *   for only once the map's chunk has run;
+ * - the app's face in the two weights the first frame sets most, Barlow
+ *   400 (rows, prose, the search) and 600 (titles), found otherwise only
+ *   once the stylesheet is parsed and a word laid out. Its 500 and 700,
+ *   and the map's own face, Inter, which MapLibre's style (GlMapShell)
+ *   asks for once the map's chunk has run, load from their @font-face
+ *   when first set: preloaded at high priority beside the entry script,
+ *   the five files' 137 KB shared a cold connection with the script that
+ *   holds the first render, Inter alone 48 KB of it;
  * - a connection to where the chart's tiles come from, the CDN where the
  *   charts are published (the last chart answer kept in this browser
  *   names it; lib/queryClient chartQuery), the first tiles' handshake
@@ -33,7 +34,7 @@ const font = (href: string) => preload(href, { as: "font", type: "font/woff2", c
  * the route, are asked for at once by main.tsx.
  */
 export function preloadFirstLoad(chart: ChartInfo | undefined, overlay: MapOverlay): void {
-  for (const href of [barlow400, barlow500, barlow600, barlow700, interUrl]) font(href);
+  for (const href of [barlow400, barlow600]) font(href);
   preconnectTiles(chart);
   if (overlay === "usgs") preconnect(new URL(USGS_URL).origin, { crossOrigin: "anonymous" });
   else if (overlay.startsWith("google")) preconnect(GOOGLE, { crossOrigin: "anonymous" });
