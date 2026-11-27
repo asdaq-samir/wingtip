@@ -77,11 +77,18 @@ struct HazardTests {
         #expect(try TerrainHazard.clearances(picked: 2000).inUse == 2000)
     }
 
-    /// Rounded down, so the height asked with is never above the GPS's and
-    /// the red band never starts late.
-    @Test func theGPSHeightIsPassedIn50FtStepsRoundedDown() {
-        #expect(TerrainHazard.stepped(5524) == 5500 && TerrainHazard.stepped(5549) == 5500 && TerrainHazard.stepped(5550) == 5550)
-        #expect(TerrainHazard.stepped(-10) == -50 && TerrainHazard.stepped(nil) == nil)
+    /// The repaint key is the whole 50 ft step, rounded down as the engine
+    /// reads the height, so a few feet's wander asks nothing new; the
+    /// height itself goes to the engine as read.
+    @Test func theRepaintKeyIsTheWhole50FtStepRoundedDown() {
+        #expect(TerrainHazard.step(5524) == 110 && TerrainHazard.step(5549) == 110 && TerrainHazard.step(5550) == 111)
+        #expect(TerrainHazard.step(-10) == -1 && TerrainHazard.step(nil) == nil)
+        let asked = HazardInput(setting: .flight, speedKt: 100, gpsFt: 5524)
+        var wandered = asked
+        wandered.gpsFt = 5549
+        #expect(asked.same(wandered))
+        wandered.gpsFt = 5550
+        #expect(!asked.same(wandered))
     }
 
     @Test func theSideViewsObstaclesAreTheEnginesAsTheFixtureSays() throws {

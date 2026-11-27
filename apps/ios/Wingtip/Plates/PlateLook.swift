@@ -36,10 +36,10 @@ nonisolated struct PlateLook: Equatable {
 
     /// Solid enough to read the plate, the chart still faintly under it,
     /// as ForeFlight opens its plate on the map.
-    static let defaultOpacity = 0.85
+    static let defaultOpacity = WingtipChartLook.plateOpacity
     /// Never wholly clear: a page at nought would still take the map's
     /// taps with nothing to show for it.
-    static let leastOpacity = 0.1
+    static let leastOpacity = WingtipChartLook.plateLeastOpacity
 
     nonisolated enum Keys {
         static let opacity = "plate.opacity"

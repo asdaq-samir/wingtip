@@ -38,4 +38,24 @@ struct TypedRouteTests {
         #expect(TypedRoute.words(dep: "C81", stops: ["KJVL"], dest: "KMSN") == "C81 KJVL KMSN")
         #expect(TypedRoute.words(dep: "", stops: [], dest: "KMSN") == "KMSN")
     }
+
+    /// The typed SIDs and STARs are found by the engine's route_typed_picks:
+    /// a departure from the departure with the point after it as its
+    /// transition, an arrival into the destination, a name neither
+    /// publishes missed.
+    @Test @MainActor func typedProceduresArePickedByTheEngine() async throws {
+        let read = try #require(try TypedRoute.read("KMSP BAEE1 BAE NOPE1 OSH OSHH2 KATW"))
+        let lists: [String: ProcedureList] = [
+            "KMSP": ProcedureList(airport: "KMSP", cycle: "2611", procedures: [
+                APIProcedureSummary(id: "BAEE1", kind: "departure", name: "BAEE ONE", runwayTransitions: [], transitions: ["BAE"]),
+            ]),
+            "KATW": ProcedureList(airport: "KATW", cycle: "2611", procedures: [
+                APIProcedureSummary(id: "OSHH2", kind: "arrival", name: "OSHH TWO", runwayTransitions: [], transitions: []),
+            ]),
+        ]
+        let found = await TypedRoute.picks(read) { lists[$0] }
+        #expect(found.picks.map(\.id) == ["BAEE1", "OSHH2"])
+        #expect(found.picks.first?.transition == "BAE" && found.picks.first?.ident == "KMSP")
+        #expect(found.missed == ["NOPE1"])
+    }
 }

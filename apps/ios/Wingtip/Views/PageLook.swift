@@ -16,24 +16,34 @@ struct PageLook: Equatable {
     /// The ground round a page: black under an inverted one, else the paper's white.
     var paper: UIColor { inverted ? .black : .white }
 
-    /// The page as drawn under this look, the way PlatePage draws the plate
-    /// on the map: on the paper's white, turned over by a white fill in the
-    /// difference blend, then the Dimmer's shade. The picture itself where
-    /// there is nothing to change.
-    func drawn(_ image: UIImage) -> UIImage {
-        guard inverted || shade > 0 else { return image }
-        let format = UIGraphicsImageRendererFormat.preferred()
-        format.scale = image.scale
-        format.opaque = true
-        return UIGraphicsImageRenderer(size: image.size, format: format).image { context in
-            let page = CGRect(origin: .zero, size: image.size)
-            UIColor.white.setFill()
-            context.fill(page)
-            image.draw(in: page)
-            if inverted { context.fill(page, blendMode: .difference) }
-            if shade > 0 {
-                NightPalette.ground.withAlphaComponent(shade).setFill()
-                context.fill(page, blendMode: .normal)
+    /// The Dimmer's shade over a page, the night's ground at the look's
+    /// alpha (PagesScrollView sets it); it takes no touch.
+    static func shadeView(over page: UIView) -> UIView {
+        let shade = UIView(frame: page.bounds)
+        shade.backgroundColor = NightPalette.ground
+        shade.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        shade.isUserInteractionEnabled = false
+        return shade
+    }
+
+    /// The pages white on black, as PlatePage draws the plate on the map:
+    /// each on the paper's white, turned over by a white fill in the
+    /// difference blend. Drawn once off the main thread, at full
+    /// resolution, and kept by the viewer (PagesScrollView), so neither
+    /// opening a chart nor moving the Dimmer draws a page again on the
+    /// main thread; the Dimmer's shade is a view over the page.
+    @concurrent
+    static func inverted(_ images: [UIImage]) async -> [UIImage] {
+        images.map { image in
+            let format = UIGraphicsImageRendererFormat.preferred()
+            format.scale = image.scale
+            format.opaque = true
+            return UIGraphicsImageRenderer(size: image.size, format: format).image { context in
+                let page = CGRect(origin: .zero, size: image.size)
+                UIColor.white.setFill()
+                context.fill(page)
+                image.draw(in: page)
+                context.fill(page, blendMode: .difference)
             }
         }
     }

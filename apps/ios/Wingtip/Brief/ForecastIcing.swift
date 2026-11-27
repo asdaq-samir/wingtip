@@ -68,7 +68,7 @@ final class ForecastIcing {
     /// leg the AWC had none for (the web's severityWord).
     static func severityWord(_ severity: String?) -> String {
         guard let severity, !severity.isEmpty else { return "No forecast" }
-        return severity.prefix(1).uppercased() + severity.dropFirst()
+        return Format.capital(severity)
     }
 
     /// Whether a leg's forecast finds icing at its altitude.

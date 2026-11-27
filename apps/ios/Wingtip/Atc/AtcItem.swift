@@ -12,7 +12,6 @@ extension EngineContract.AtcItem {
     /// headings in three figures (AIM 4-2-10), times in UTC with a Z
     /// (AIM 4-2-12).
     var words: String {
-        func capital(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
         // Three figures, north as 360, never 000 (FAA Order JO 7110.65,
         // 2-4-17), as the web's threeFigures: Format.heading less its sign.
         func three(_ d: Int) -> String { String(Format.heading(Double(d)).dropLast()) }
@@ -21,18 +20,18 @@ extension EngineContract.AtcItem {
         let points = ["north": "N", "northeast": "NE", "east": "E", "southeast": "SE", "south": "S", "southwest": "SW", "west": "W", "northwest": "NW"]
         switch kind {
         case "altitude":
-            return "\(capital(verb ?? "maintain"))\(limit.map { " \($0)" } ?? "") \(altitude(ft))"
+            return "\(Format.capital(verb ?? "maintain"))\(limit.map { " \($0)" } ?? "") \(altitude(ft))"
         case "expect":
             return "Expect \(altitude(ft))" + (min.map { " \(Int($0)) min after departure" } ?? "")
         case "heading":
             if let byDeg { return ["Turn", turn, "\(Int(byDeg))°"].compactMap { $0 }.joined(separator: " ") }
             guard let deg else { return "Runway heading" }
-            return "\(turn.map { "\(capital($0)) heading" } ?? "Heading") \(three(deg))"
+            return "\(turn.map { "\(Format.capital($0)) heading" } ?? "Heading") \(three(deg))"
         case "direct":
             return "Direct \((said ?? "").uppercased())"
         case "route":
             let via = (places ?? []).map { $0.uppercased() }.joined(separator: ", ")
-            return (limit.map { "Cleared to \(capital($0))" } ?? "Cleared") + (via.isEmpty ? "" : " via \(via)") + (asFiled == true ? ", then as filed" : "")
+            return (limit.map { "Cleared to \(Format.capital($0))" } ?? "Cleared") + (via.isEmpty ? "" : " via \(via)") + (asFiled == true ? ", then as filed" : "")
         case "class_b":
             return "Cleared into Class B"
         case "hold":
@@ -44,7 +43,7 @@ extension EngineContract.AtcItem {
             if let efc { parts.append("EFC \(efc)Z") }
             return parts.joined(separator: ", ")
         case "frequency":
-            return "\(facility.map { "\(capital($0)) " } ?? "Contact ")\(mhz ?? "")"
+            return "\(facility.map { "\(Format.capital($0)) " } ?? "Contact ")\(mhz ?? "")"
         case "squawk":
             return "Squawk \(code ?? "")"
         case "altimeter":
@@ -56,7 +55,7 @@ extension EngineContract.AtcItem {
             if what == "hold short" { return "Hold short runway \(runway ?? "")" }
             return "Runway \(runway ?? "")" + (what.flatMap { said[$0] }.map { ", \($0)" } ?? "")
         default:
-            return capital(kind.replacingOccurrences(of: "_", with: " "))
+            return Format.capital(kind.replacingOccurrences(of: "_", with: " "))
         }
     }
 }

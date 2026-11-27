@@ -55,7 +55,12 @@ struct DiagramPage {
     /// engine (diagram_labels), where each is drawn by PDFKit, the fit by
     /// the engine (diagram_graticule).
     static func read(_ data: Data) -> DiagramPage? {
-        guard let document = PDFDocument(data: data), let page = document.page(at: 0) else { return nil }
+        guard let document = PDFDocument(data: data) else { return nil }
+        // Its page drawn under the night's look (DiagramNightPage): the
+        // delegate, held weakly, is asked as the page is made.
+        let pages = DiagramPages()
+        document.delegate = pages
+        guard let page = withExtendedLifetime(pages, { document.page(at: 0) }) else { return nil }
         let box = page.bounds(for: .mediaBox)
         // A page turned by its /Rotate would need its labels turned too:
         // the d-TPP's are all upright (0), and another is drawn without

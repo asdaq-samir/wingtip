@@ -34,15 +34,17 @@ enum WingtipInk {
     /// The roles by the appearance, and in the Native look (Look's
     /// "native", read by its key so the widgets, which have no Look, build)
     /// iOS's own label, grounds and blue; the states stay the theme's there.
-    /// Increase Contrast by day lifts the grey words to sunlight's, as the
-    /// web's prefers-contrast does (tokens.css); the Native look's are iOS's
-    /// own, which lift themselves.
+    /// Increase Contrast lifts the grey words as the web's prefers-contrast
+    /// does (tokens.css): to sunlight's by day, and at night to sunlight's
+    /// night lift on the night's own grounds (color.theme.sunlight-night),
+    /// never sunlight's white, which would undo the pilot's dark adaptation
+    /// (AIM 8-1-6); the Native look's are iOS's own, which lift themselves.
     private static func dynamic(_ role: KeyPath<WingtipPalette, UIColor>) -> UIColor {
         UIColor { traits in
             let dark = traits.userInterfaceStyle == .dark
             let native = UserDefaults.standard.string(forKey: "look") == "native"
-            if traits.accessibilityContrast == .high, !dark, !native, role == \WingtipPalette.mutedForeground {
-                return WingtipPalette.sunlight.mutedForeground
+            if traits.accessibilityContrast == .high, !native, role == \WingtipPalette.mutedForeground {
+                return (dark ? WingtipPalette.sunlightNight : .sunlight).mutedForeground
             }
             let palette = native ? (dark ? WingtipPalette.nativeDark : .nativeLight) : (dark ? WingtipPalette.dark : .light)
             return palette[keyPath: role].resolvedColor(with: traits)

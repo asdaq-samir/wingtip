@@ -13,16 +13,22 @@ nonisolated enum PackFields {
     /// What finds the fields in a box (FlightFigures.Pins): the packs, or a test's.
     typealias Pins = FlightFigures.Pins
 
-    /// How far round the point the packs are read: about 30 nm each way,
-    /// past a light single's glide from 10,000 ft (about 16 nm at 10 to 1).
-    /// A box to read, not a rule; the engine ranks what is in it.
-    static let boxDeg = 0.5
-
-    /// The fields in the box round a point; nil where no region's pack is
-    /// kept there, [] where one is and holds none.
-    static func near(lat: Double, lon: Double, pins: Pins) -> [AirportPin]? {
-        let dLon = boxDeg / max(cos(lat * .pi / 180), 0.2)
-        return pins(lat - boxDeg, lon - dLon, lat + boxDeg, lon + dLon)
+    /// The fields round a point in the box the engine's fields_near gives,
+    /// the one rule both phones read their boxes by: asked first with no
+    /// box (about 30 nm each way), then again with the count found, the
+    /// box widened until it holds `want` or reaches the engine's widest.
+    /// Nil where no region's pack is kept in a box asked, [] where one is
+    /// and holds none.
+    static func near(lat: Double, lon: Double, want: Int, pins: Pins) throws -> [AirportPin]? {
+        var found: [AirportPin]?
+        var half: Double?
+        while let box = try Engine.fieldsNear(at: .init(lat: lat, lon: lon), want: Double(want), halfDeg: half,
+                                              found: found.map { Double($0.count) }).box {
+            guard let read = pins(box.south, box.west, box.north, box.east) else { return nil }
+            found = read
+            half = box.halfDeg
+        }
+        return found
     }
 
     /// The pins as the engine's candidates: no elevation, runway or METAR,
@@ -41,7 +47,7 @@ nonisolated enum PackFields {
     /// course. Nil where no pack is kept there.
     static func ranked(lat: Double, lon: Double, altitudeFt: Double? = nil, speedKt: Double? = nil, limit: Int,
                        pins: Pins) throws -> (pins: [AirportPin], ranked: EngineContract.BestFieldsAnswer)? {
-        guard let found = near(lat: lat, lon: lon, pins: pins) else { return nil }
+        guard let found = try near(lat: lat, lon: lon, want: limit, pins: pins) else { return nil }
         guard !found.isEmpty else { return ([], EngineContract.BestFieldsAnswer(mode: "glide", needsAirplane: true, glide: nil, fields: [])) }
         let ranked = try Engine.bestFields(mode: "glide", at: .init(lat: lat, lon: lon), altitudeFt: altitudeFt, speedKt: speedKt,
                                            fields: candidates(found), limit: Double(limit))

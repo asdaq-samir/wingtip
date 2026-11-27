@@ -9,14 +9,14 @@ import SwiftUI
 nonisolated enum ChartLook {
     /// The night's dim before anyone moves it: half the chart's light, the
     /// look the night had before the Dimmer (the web's NIGHT_DIM).
-    static let nightDim = 0.5
+    static let nightDim = WingtipChartLook.nightDim
     /// The deepest dim: the paper's white at 30%, about the least the
     /// chart's small print still reads at (the web's DIM_MAX).
-    static let dimMax = 0.7
+    static let dimMax = WingtipChartLook.dimMax
     /// The Contrast offset's ends, as the web's CONTRAST_MIN and _MAX.
-    static let contrastMin = -0.3, contrastMax = 0.4
+    static let contrastMin = WingtipChartLook.contrastMin, contrastMax = WingtipChartLook.contrastMax
     /// Each slider's step, as the web's LOOK_STEP.
-    static let step = 0.05
+    static let step = WingtipChartLook.step
 
     nonisolated enum Keys {
         static let dimLight = "chartDimLight"

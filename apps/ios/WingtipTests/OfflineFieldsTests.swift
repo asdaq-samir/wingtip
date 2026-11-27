@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import Synchronization
 import Testing
 @testable import Wingtip
 
@@ -26,6 +27,25 @@ struct OfflineFieldsTests {
         #expect(fields.allSatisfy { $0.flightCategory == nil && $0.distanceNm > 0 })
         #expect(fields[0].kind == "large_airport" && fields[0].towered == true)
         #expect(try PackFields.nearest(lat: 46.80, lon: -92.22, limit: 10, pins: noPack) == nil)
+    }
+
+    /// The boxes are the engine's fields_near: half a degree each way
+    /// first, then wider while the packs hold fewer than wanted.
+    @Test func theBoxReadIsTheEnginesAndWidensForTooFewFields() throws {
+        let asked = Mutex<[Double]>([])
+        let pins = pins
+        let counted: PackFields.Pins = { south, west, north, east in
+            asked.withLock { $0.append(north - south) }
+            return pins(south, west, north, east)
+        }
+        let found = try #require(try PackFields.near(lat: 46.80, lon: -92.22, want: 10, pins: counted))
+        #expect(found.count == 2)
+        let heights = asked.withLock { $0 }
+        #expect(heights.first.map { abs($0 - 1.0) < 1e-9 } == true)
+        #expect(heights.count > 1 && heights == heights.sorted())
+        asked.withLock { $0 = [] }
+        _ = try PackFields.near(lat: 46.80, lon: -92.22, want: 2, pins: counted)
+        #expect(asked.withLock { $0.count } == 1)
     }
 
     @Test func theEmergencyFieldsComeFromThePacksWithTheEnginesDistances() throws {

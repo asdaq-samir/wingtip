@@ -4,7 +4,7 @@ import SwiftUI
 /// Settings' Airport Weather as the map reads it: the one menu's pick,
 /// none while the Map card's Weather layer is off.
 struct AirportWeatherSetting: DynamicProperty {
-    @AppStorage(AirportWeather.key) private var show = AirportWeather.kept().rawValue
+    @AppStorage(AirportWeather.key) private var show = AirportWeather.standard.rawValue
     @AppStorage(MapExtrasInput.Keys.weather) private var weatherOn = true
 
     var choice: AirportWeatherChoice { (weatherOn ? AirportWeather(rawValue: show) ?? .standard : .off).choice }

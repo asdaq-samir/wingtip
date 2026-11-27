@@ -90,16 +90,16 @@ def theme_group(tree, *path):
 
 
 def schemes(tree):
-    """Each scheme's colours as the web's cascade resolves them: the theme
-    under its look, the night over the day, every var() followed. The
-    phones take these whole."""
+    """Each scheme's colours as the web's cascade resolves them: the theme under its look, the night over the day, every var()
+    followed; sunlightNight is Increase Contrast at night, sunlight's lift on the night's grounds. The phones take these whole."""
     light = theme_group(tree, "color", "theme", "light")
     dark = theme_group(tree, "color", "theme", "dark")
-    sun = theme_group(tree, "color", "theme", "sunlight")
+    night = [light, dark, theme_group(tree, "color", "material", "wingtip", "dark")]
     layers = {
         "light": [light, theme_group(tree, "color", "material", "wingtip", "light")],
-        "dark": [light, dark, theme_group(tree, "color", "material", "wingtip", "dark")],
-        "sunlight": [light, sun],
+        "dark": night,
+        "sunlight": [light, theme_group(tree, "color", "theme", "sunlight")],
+        "sunlightNight": [*night, theme_group(tree, "color", "theme", "sunlight-night")],
         "cockpitLight": [light, theme_group(tree, "color", "look", "cockpit", "light")],
         "cockpitDark": [light, dark, theme_group(tree, "color", "look", "cockpit", "dark")],
         "inkLight": [

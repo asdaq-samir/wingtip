@@ -38,3 +38,89 @@ extension ChartMap.Coordinator {
         for view in views where view.annotation.map(MarkDim.dims) ?? false { view.alpha = alpha }
     }
 }
+
+/// A renderer that takes the night's dim itself (OverlayDim), where its
+/// alpha or its colours are its own to set: the model weather's picture,
+/// the hazard's obstacle dots.
+nonisolated protocol NightDimmed: AnyObject {
+    func dim(brightness: CGFloat)
+}
+
+/// The night's dim on what is drawn over the chart, as the web's mapDim
+/// (the round-5 phones audit, 2026-11-27: at night the course, the
+/// airspace, the special-use areas, the weather and the obstacles stayed
+/// at full light over the dimmed chart). Lines and areas are dimmed by
+/// their colour, the colour times the chart's brightness with its alpha
+/// kept (the web's DIM_BY_COLOUR; the owner's "Dim by colour" for the
+/// warnings), so they keep their contrast with the chart where an opacity
+/// would wash them into it: the course's magenta about 2.7 to 1 over the
+/// paper at the night's default Dimmer, where see-through it was 1.04 to
+/// 1. The weather loop is dimmed by its opacity. Never dimmed: the chart's
+/// tiles (their own shade), the plate (its own look), the close imagery
+/// (its fade by zoom) and the terrain hazard's tint, a warning kept as
+/// conspicuous as own ship is.
+@MainActor
+final class OverlayDim {
+    private final class Base {
+        let stroke: UIColor?, fill: UIColor?
+        init(_ path: MKOverlayPathRenderer) { (stroke, fill) = (path.strokeColor, path.fillColor) }
+    }
+
+    /// Each line's own colours, kept while MapKit keeps its renderer.
+    private let kept = NSMapTable<MKOverlayPathRenderer, Base>.weakToStrongObjects()
+    /// The chart's brightness: one less the Dimmer's shade at night, 1 by day (MarkDim.alpha).
+    private(set) var brightness: CGFloat = 1
+
+    /// A colour times the brightness, its alpha kept; itself at 1.
+    nonisolated static func colour(_ colour: UIColor?, brightness: CGFloat) -> UIColor? {
+        guard let colour, brightness < 1 else { return colour }
+        // The brightness of hue, saturation and brightness times k is each
+        // of red, green and blue times k: the colour towards black.
+        var h: CGFloat = 0, s: CGFloat = 0, v: CGFloat = 0, a: CGFloat = 0
+        guard colour.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)).getHue(&h, saturation: &s, brightness: &v, alpha: &a) else { return colour }
+        return UIColor(hue: h, saturation: s, brightness: v * min(1, max(0, brightness)), alpha: a)
+    }
+
+    /// A renderer MapKit has just been given, at the dim now.
+    func take(_ renderer: MKOverlayRenderer) -> MKOverlayRenderer {
+        if let own = renderer as? NightDimmed {
+            own.dim(brightness: brightness)
+        } else if let path = renderer as? MKOverlayPathRenderer {
+            let base = Base(path)
+            kept.setObject(base, forKey: path)
+            paint(path, base)
+        }
+        return renderer
+    }
+
+    /// The Dimmer moved, or the night came or went: every line and area
+    /// on the map drawn again at the chart's brightness.
+    func set(_ next: CGFloat, on map: MKMapView) {
+        guard next != brightness else { return }
+        brightness = next
+        WeatherLoopLayer.brightness = next
+        for overlay in map.overlays {
+            guard let renderer = map.renderer(for: overlay) else { continue }
+            if let own = renderer as? NightDimmed {
+                own.dim(brightness: next)
+            } else if let loop = overlay as? LoopTileOverlay {
+                if renderer.alpha > 0 { renderer.alpha = WeatherLoopLayer.alpha(radar: loop.radar) }
+            } else if let path = renderer as? MKOverlayPathRenderer, let base = kept.object(forKey: path) {
+                paint(path, base)
+                path.setNeedsDisplay()
+            }
+        }
+    }
+
+    private func paint(_ path: MKOverlayPathRenderer, _ base: Base) {
+        path.strokeColor = Self.colour(base.stroke, brightness: brightness)
+        path.fillColor = Self.colour(base.fill, brightness: brightness)
+    }
+}
+
+extension ChartMap.Coordinator {
+    /// Every overlay's renderer (made), taken by the night's dim.
+    func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
+        overlayDim.take(made(mapView, for: overlay))
+    }
+}
