@@ -22,9 +22,14 @@ logged and tried again at the next turn; neither holds up the feeds. The
 three heavy ones take their first turns FIRST_TURNS_APART_S apart, the
 registry first: all three at start-up, a rebuild of the registry beside
 the NTSB's and the airmen's, held ingest's 384 MB at once (round 4's audit).
+A store on disk of an older shape than the planner reads goes first,
+whatever that order: the planner reads it as none until it is built
+again, and the NTSB's waited 300 s behind the registry (round 5's audit).
 """
 
 from __future__ import annotations
+
+import sqlite3
 
 from apscheduler.schedulers.base import BaseScheduler
 from wingtip import registry, schedule
@@ -53,10 +58,24 @@ def jobs(on: BaseScheduler) -> None:
     store each NTSB_EVERY_S, the airmen's each AIRMEN_EVERY_S and the
     registry's age looked at each REGISTRY_EVERY_S, the archive's first
     now and the registry's, the NTSB's and the airmen's FIRST_TURNS_APART_S
-    apart: each a job on `on`."""
+    apart, a store of an older shape first (`_stale`): each a job on `on`."""
     schedule.every(on, SNAPSHOT_EVERY_S, notam_archive.snapshot, name="notam-archive")
-    # Off on a stack that downloads nothing it need not (REGISTRY_REFRESH=0).
+    heavy = [("ntsb", NTSB_EVERY_S, ntsb.refresh, _stale(ntsb.older_shape))]
+    heavy.append(("airmen", AIRMEN_EVERY_S, airmen.refresh, False))
+    # Off on a stack that downloads nothing it need not (REGISTRY_REFRESH=0);
+    # an older registry file there reads as none in the planner.
     if get_settings().registry_refresh:
-        schedule.every(on, REGISTRY_EVERY_S, registry.refresh, name="aircraft-registry")
-    schedule.every(on, NTSB_EVERY_S, ntsb.refresh, name="ntsb", after=FIRST_TURNS_APART_S)
-    schedule.every(on, AIRMEN_EVERY_S, airmen.refresh, name="airmen", after=2 * FIRST_TURNS_APART_S)
+        older = _stale(lambda: registry.schema(registry.DEFAULT_DIR / registry.DB_NAME) not in (0, registry.SCHEMA))
+        heavy.insert(0, ("aircraft-registry", REGISTRY_EVERY_S, registry.refresh, older))
+    # sorted keeps the order among equals: the stale first, then as listed.
+    for turn, (name, every_s, job, _) in enumerate(sorted(heavy, key=lambda h: not h[3])):
+        schedule.every(on, every_s, job, name=name, after=turn * FIRST_TURNS_APART_S)
+
+
+def _stale(older) -> bool:
+    """`older()`: whether a store on disk is of an older shape than the
+    planner reads, a file SQLite cannot read among them."""
+    try:
+        return older()
+    except sqlite3.DatabaseError:
+        return True

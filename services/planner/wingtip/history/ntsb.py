@@ -259,14 +259,13 @@ def events(reg: str, day: str, path: Path | None = None) -> list[dict]:
     """The cases of the airplane `reg` dated within a day either side of
     `day` (YYYY-MM-DD; the NTSB's date is the local one where it happened,
     the replay's the UTC day), oldest first, each as app.schemas'
-    NtsbEvent. None where the store is not built yet."""
-    path = path or store_path()
-    if not path.exists():
+    NtsbEvent. None where the store is not built yet or is of an older shape."""
+    db = _shaped(path or store_path())
+    if db is None:
         return []
     wanted = registration(reg)
     names = {wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set())
     marks = ",".join("?" * len(names))
-    db = stores.read_only(path)
     try:
         rows = db.execute(
             f"""
@@ -318,18 +317,34 @@ def schema(path: Path | None = None) -> int:
         db.close()
 
 
+def _shaped(path: Path) -> sqlite3.Connection | None:
+    """A read-only connection to the store where it is there and of
+    SCHEMA's shape, else None: one of an older shape reads as none until
+    ingest makes it again (ingest.ntsb.due), where it was asked for columns
+    it lacks, a 500 on every airplane card (round 5's audit)."""
+    if not path.exists():
+        return None
+    db = stores.read_only(path)
+    try:
+        if db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA:
+            return db
+    except sqlite3.DatabaseError:
+        pass
+    db.close()
+    return None
+
+
 def cases(reg: str, path: Path | None = None) -> list[dict]:
     """Every accident and incident of the airplane `reg` the store has
     (cases since 2008, avall.mdb), newest first: its NTSB number, local
     date and place, kind, highest injury, the airplane's damage and phase,
     and the links to its CAROL report and docket. [] where the store is not
-    built."""
-    path = path or store_path()
-    if not path.exists():
+    built or is of an older shape."""
+    db = _shaped(path or store_path())
+    if db is None:
         return []
     wanted = registration(reg)
     names = sorted({wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set()))
-    db = stores.read_only(path)
     try:
         rows = db.execute(
             f"""

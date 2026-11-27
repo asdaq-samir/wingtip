@@ -126,3 +126,17 @@ def test_every_case_of_an_airplane_with_its_kind_and_damage_newest_first(store):
 
 def test_no_cases_where_the_store_is_not_built(tmp_path):
     assert ntsb.cases("N5393W", tmp_path / "ntsb.sqlite") == []
+
+
+def test_a_store_of_an_older_shape_is_no_cases_till_ingest_makes_it_again(store):
+    """Round 5's audit: an older store was asked for columns it lacks, a
+    500 on every airplane card, until ingest made it again."""
+    import sqlite3
+    from contextlib import closing
+
+    with closing(sqlite3.connect(store)) as db:
+        db.execute(f"PRAGMA user_version = {ntsb.SCHEMA - 1}")
+    assert ntsb.cases("N5393W", store) == []
+    assert ntsb.events("N473AS", "2026-10-12", store) == []
+    store.write_bytes(b"not a database")
+    assert ntsb.cases("N5393W", store) == []

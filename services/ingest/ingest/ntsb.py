@@ -121,6 +121,13 @@ def due(avall: dict, state: dict) -> bool:
     return ntsb.schema() != ntsb.SCHEMA or state.get("avall") != avall
 
 
+def older_shape() -> bool:
+    """Whether the store on disk is of an older shape than the planner
+    reads, which it reads as none until it is made again (ingest.history
+    gives it the first turn)."""
+    return ntsb.schema() not in (0, ntsb.SCHEMA)
+
+
 def deltas_due(files: dict[str, dict], state: dict) -> list[str]:
     """The deltas dated after the avall the store was built from and not
     applied yet, oldest first."""

@@ -29,7 +29,7 @@ import zipfile
 from pathlib import Path
 
 from . import outside, registry_history, stores
-from .registry_reader import _file, _reading
+from .registry_reader import SCHEMA, _file, _reading, ready
 from .registry_reader import addresses as _addresses
 from . import registry_codes as codes
 from .atomic import atomic_path
@@ -44,14 +44,6 @@ DB_NAME = "registry.sqlite"
 #: The copy on disk is read again once it is this old, s: the FAA's is
 #: written each night.
 MAX_AGE_S = 24 * 3600
-
-#: The file's shape: user_version, so a copy of an older shape is read
-#: again from the FAA's download rather than asked for columns it lacks
-#: (2: the reference files in full, every MASTER field and the
-#: deregistered, document and reserved files, 2026-11-14; 3: the
-#: deregistered rows indexed by address, where a lookup by it read all
-#: 383,846 of them, 65 ms, now 0.02 ms, 2026-11-27).
-SCHEMA = 3
 
 _LOCK = threading.Lock()
 _BUILDING = threading.Event()
@@ -243,9 +235,10 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
     airplane (one registered abroad among them). "status" is the FAA's
     status in words, "standing" whether it is valid, not in effect
     ("lapsed") or something between ("other": a form not returned, a
-    sale reported, a renewal notice)."""
+    sale reported, a renewal notice). None too where the file is of an
+    older shape, until ingest builds it again (registry_reader.ready)."""
     db_path = Path(directory) / DB_NAME
-    if not db_path.exists():
+    if not ready(db_path):
         return None
     n = (n_number or "").strip().upper().replace("-", "")
     with _reading(db_path) as db:
@@ -301,7 +294,7 @@ def _last_registration(db: sqlite3.Connection, hex_id: str | None, n: str) -> di
 
 
 def _one(db_path: Path, table: str, code: str | None) -> dict | None:
-    if not code or not db_path.exists():
+    if not code or not ready(db_path):
         return None
     with _reading(db_path) as db:
         row = db.execute(f"SELECT * FROM {table} WHERE code = ?", (code,)).fetchone()
