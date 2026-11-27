@@ -68,13 +68,15 @@ class FlightRecorder(
     private var writtenAtMs: Long? = null
 
     /** A fix into the track, at most one each EVERY_MS and MOST in all;
-     *  on the ground, only the last GROUND_KEPT_MS. */
-    fun took(fix: OwnShip.Fix) {
+     *  on the ground, only the last GROUND_KEPT_MS. `known` is the
+     *  engine's answer already asked for this fix (OwnShip), its failure
+     *  taken as not yet flying. */
+    fun took(fix: OwnShip.Fix, known: Result<Boolean>? = null) {
         val had = _recorded.value
         val last = had.points.lastOrNull()
         val t = fix.atMs.toDouble()
         if (last != null && t - last.t < EVERY_MS) return
-        val takeoff = !had.flown && underway(fix.groundspeedKt)
+        val takeoff = !had.flown && (known?.getOrDefault(false) ?: underway(fix.groundspeedKt))
         val flown = had.flown || takeoff
         // A file kept from before this rule may hold hours of ground: the
         // first fix on the ground lets it go, so MOST is never reached parked.
