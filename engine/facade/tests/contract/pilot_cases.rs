@@ -23,7 +23,7 @@ pub(super) fn cases(c: &mut Checker) {
         c.ask(
             "pilot_currency",
             json!({ "entries": case["entries"], "today": case["today"], "flight_review_on": at("flightReviewOn"),
-            "medical_expires_on": at("medicalExpiresOn"), "ipc_on": at("ipcOn") }),
+            "medical_expires_on": at("medicalExpiresOn"), "ipc_on": at("ipcOn"), "flying": at("flying") }),
         );
     }
     for case in currency["experience"].as_array().unwrap() {

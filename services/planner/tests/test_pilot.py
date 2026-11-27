@@ -22,7 +22,7 @@ def test_currency_answers_the_shared_fixture():
         ask = {
             "entries": case["entries"],
             "today": case["today"],
-            **{k: case[k] for k in ("flightReviewOn", "medicalExpiresOn", "ipcOn") if k in case},
+            **{k: case[k] for k in ("flightReviewOn", "medicalExpiresOn", "ipcOn", "flying") if k in case},
         }
         answer = client.post("/api/pilot/currency", json=ask)
         assert answer.status_code == 200, answer.text

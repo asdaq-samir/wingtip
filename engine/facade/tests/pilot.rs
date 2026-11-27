@@ -317,7 +317,7 @@ fn currency_and_experience_answer_the_shared_fixture() {
         let got = ask(
             "pilot_currency",
             json!({ "entries": case["entries"], "today": case["today"], "flight_review_on": at("flightReviewOn"),
-                "medical_expires_on": at("medicalExpiresOn"), "ipc_on": at("ipcOn") }),
+                "medical_expires_on": at("medicalExpiresOn"), "ipc_on": at("ipcOn"), "flying": at("flying") }),
         );
         for (key, want) in case["expected"].as_object().unwrap() {
             assert_eq!(&got[key], want, "{}: {key}", case["name"]);
