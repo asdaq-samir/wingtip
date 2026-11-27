@@ -1811,7 +1811,7 @@ in its surface airspace's chart code, its flight category the disc in the
 middle, sized by the engine's `field_mark_rank` step (O'Hare 1.5
 times an ordinary towered field), one GL picture per variant
 (`lib/map/gl/airportIcons`). Its ident beside it is capped by zoom
-(`glOverlays`' `AIRPORT_IDENT_FAR`): a towered field's wherever it is
+(`design/map-style.json`'s `airportIdentFar`): a towered field's wherever it is
 drawn, from 5, and the long hard runways' fields, whose marks come in at
 7, named from 8 with every field (rules.md, "What is drawn from which
 zoom"; the speed audit of 2026-11-21, finding 8). From

@@ -116,7 +116,8 @@ describe("the overlay tiles' layers", () => {
     expect(airports.paint!["text-color"]).toEqual(expect.arrayContaining(["case", selected, "transparent"]));
     expect(airports.paint!["text-halo-color"]).toEqual(expect.arrayContaining(["case", selected, "transparent"]));
     const dim = ["*", ["coalesce", ["global-state", "mapDim"], 1], 1];
-    expect(airports.paint!["text-opacity"]).toEqual(dim);
+    // The words dimmed by their ink at night (labelInk), their opacity left whole; the mark by the Dimmer's share.
+    expect(airports.paint!["text-opacity"]).toBeUndefined();
     expect(airports.paint!["icon-opacity"]).toEqual(dim);
     expect(JSON.stringify(airports.filter)).not.toContain("selected");
     // The fields on a source of their own, each by its ident; the rest on another, each ring by its field's.

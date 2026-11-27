@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import specialUseTab from "../../fixtures/specialUseTab.json";
-import { AIRSPACE_LABELS_FROM, SUA_INK, glZoom } from "./glStyle";
-import { SUA_TAB_PICTURES, specialUseLabelLayer, suaTab } from "./glSuaLabels";
+import type { SymbolLayerSpecification } from "maplibre-gl";
+import { OVERLAY_LINES } from "../../generated/overlayLayers";
+import { MAP_ZOOM } from "../../tokens";
+import { SUA_INK, glZoom } from "./glStyle";
+import { SUA_TAB_PICTURES, suaTab } from "./glSuaLabels";
+
+/** The tabs' one layer (design/map-style.json's sua-labels). */
+const specialUseLabelLayer = () => OVERLAY_LINES.find((l) => l.id === "sua-labels") as SymbolLayerSpecification;
 
 /** As much of MapLibre's expressions as the tab's layout uses, evaluated
  *  for a feature's fields: the words the map would write. */
@@ -42,7 +48,7 @@ function evaluate(value: unknown, properties: Record<string, unknown>): unknown 
 }
 
 const text = (properties: Record<string, unknown>) => {
-  const value = evaluate(specialUseLabelLayer(["Inter Bold"]).layout!["text-field"], properties);
+  const value = evaluate(specialUseLabelLayer().layout!["text-field"], properties);
   return typeof value === "string" ? value : String(value);
 };
 
@@ -55,9 +61,9 @@ describe("a special-use area's tab", () => {
   });
 
   it("is turned along its side and set inside the area, from the class labels' zoom", () => {
-    const layer = specialUseLabelLayer(["Inter Bold"]);
+    const layer = specialUseLabelLayer();
     expect(layer["source-layer"]).toBe("special_use_labels");
-    expect(layer.minzoom).toBe(glZoom(AIRSPACE_LABELS_FROM));
+    expect(layer.minzoom).toBe(glZoom(MAP_ZOOM.airspaceLabels));
     expect(layer.layout).toMatchObject({ "text-rotate": ["get", "angle"], "text-rotation-alignment": "map", "icon-text-fit": "both" });
     const below = evaluate(layer.layout!["text-offset"], { side: 1 }) as number[];
     const above = evaluate(layer.layout!["text-offset"], { side: -1 }) as number[];
@@ -66,7 +72,7 @@ describe("a special-use area's tab", () => {
   });
 
   it("is bordered in the area's ink: a restricted area's or a MOA's", () => {
-    const layer = specialUseLabelLayer(["Inter Bold"]);
+    const layer = specialUseLabelLayer();
     expect(evaluate(layer.layout!["icon-image"], { type: "R" })?.toString()).toBe(suaTab("restricted"));
     expect(evaluate(layer.layout!["icon-image"], { type: "MOA" })?.toString()).toBe(suaTab("moa"));
     for (const [id, svg] of SUA_TAB_PICTURES) {

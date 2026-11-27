@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import type { ExpressionSpecification, MapSourceDataEvent, Map as MlMap } from "maplibre-gl";
+import type { MapSourceDataEvent, Map as MlMap } from "maplibre-gl";
+import { OVERLAY_FEATURE_STATE, OVERLAY_STATE } from "../../generated/overlayLayers";
 import { isParked } from "./glLayer";
 
 /** The map's global state that says a map keeps its rings to the fields it
@@ -7,32 +8,17 @@ import { isParked } from "./glLayer";
  *  map) draws every ring. The plan's map is made with it on (makeMap's
  *  `ringsByField`), so setting it at mount changes nothing and lays out no
  *  tile; each real change of it lays every overlay tile out again. */
-export const RINGS_BY_FIELD = "ringsByField";
+export const RINGS_BY_FIELD = OVERLAY_STATE.ringsByField;
 
 /** Each ring's feature state (the overlay source's `airspace` ids are their
- *  `ident`, glOverlays): whether its primary field is drawn now. */
-const PLACED = "placed";
-
-/** A Class C's or D's ring's opacity, drawn only where its primary field is
- *  drawn (the airspace's `ident`, NASR's IDENT, the field's ARPT_ID), so no
- *  ring stands bare where its field gave way to a bigger one (the owner's
- *  iPhone recording, 2026-11-23: dozens of unnamed magenta rings at zoom 5
- *  and 6). An opacity by feature state, not a filter by the map's global
- *  state: a filter's change laid every overlay tile out again at each rest
- *  of the map, the airspace, airports, fixes and runways with it (the map
- *  speed audit, 2026-11-27); a state's change repaints only. Not times the
- *  Dimmer: the rings are dimmed by their colour (glStyle), as an opacity by
- *  feature times its global state relaid the tiles at each of its steps. */
-export function ringOfPlacedField(opacity: number): ExpressionSpecification {
-  return [
-    "case",
-    ["!", ["boolean", ["global-state", RINGS_BY_FIELD], false]],
-    opacity,
-    ["boolean", ["feature-state", PLACED], false],
-    opacity,
-    0,
-  ];
-}
+ *  `ident`, glOverlays): whether its primary field is drawn now, which a
+ *  Class C's or D's ring's opacity reads (design/map-style.json's
+ *  placedRing), so no ring stands bare where its field gave way to a bigger
+ *  one (the owner's iPhone recording, 2026-11-23). An opacity by feature
+ *  state, not a filter by the map's global state: a filter's change laid
+ *  every overlay tile out again at each rest of the map (the map speed
+ *  audit, 2026-11-27); a state's change repaints only. */
+const PLACED = OVERLAY_FEATURE_STATE.placed;
 
 /** How long a map handed to the next tree (isParked) keeps its rings to
  *  its fields for that tree to take up, before they are every ring again. */
