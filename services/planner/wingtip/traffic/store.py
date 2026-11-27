@@ -22,7 +22,7 @@ The tables:
   pilot's id, never the id: recorded.share_of); dropped FOLLOW_KEEP_S
   after that (recorded.py).
 - points: each recorded airplane's track, a point a row, kept as long as
-  RECORD_KEEP_S (wingtip.traffic.recorded).
+  RECORD_KEEP_S (wingtip.traffic.recorded), pruned by `t`, which is indexed.
 Nothing in any table names a pilot or an account; `following` counts
 each pilot's share by a hash it cannot be read back from. The planner prunes all
 three on a schedule (wingtip.traffic.radar.prune, from app.main), not
@@ -59,6 +59,7 @@ _SCHEMA = """
     CREATE TABLE IF NOT EXISTS following (who TEXT, hex TEXT, since REAL, PRIMARY KEY (who, hex));
     CREATE INDEX IF NOT EXISTS following_hex ON following (hex);
     CREATE TABLE IF NOT EXISTS points (hex TEXT, t REAL, point TEXT, PRIMARY KEY (hex, t)) WITHOUT ROWID;
+    CREATE INDEX IF NOT EXISTS points_t ON points (t);
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
     DROP TABLE IF EXISTS opensky_days;
     DROP TABLE IF EXISTS opensky_paths;
