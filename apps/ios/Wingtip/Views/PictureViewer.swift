@@ -297,6 +297,7 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             page.backgroundColor = look.paper
             page.subviews.first?.alpha = look.shade
         }
+        markup.brightness = 1 - look.shade
     }
 
     var mark: PageMark? {
