@@ -3,6 +3,7 @@ import {
   useDeferredValue,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentType,
@@ -65,6 +66,7 @@ export default function PanelTabs({
   marks,
   onLegs,
   overview: Overview,
+  routeKey,
 }: {
   /** What shows before any page, its rows each opening one (`open`), at
    *  a section of it where a row names one: the Brief's glance
@@ -84,6 +86,9 @@ export default function PanelTabs({
   /** The legs asked for (LEGS): FPL's nav log, under which the fuel is
    *  checked, in place of the Brief. */
   onLegs?: () => void;
+  /** The route the pages are of (usePlanRoute's routeKey): while the pages
+   *  drawn are another route's, they are dimmed as stale. */
+  routeKey?: string;
 }) {
   // The tabs' contents drawn just after the frame that shows a new route,
   // not in it: the route's box, its figures and the map first, the nav
@@ -92,17 +97,18 @@ export default function PanelTabs({
   // sight anyway. In the same frame they held Fly Here's route back 2.5
   // to 3.6 s at a phone's speed (measured 2026-10-08). Nothing at first
   // (useDeferredValue's first value); after that the last contents drawn
-  // stay while the next are drawn, where every new route took them all
-  // down for a frame and drew them again from nothing, the pages blank and
-  // their places lost (the feel audit, 2026-11-27). On paper at once.
-  const deferred = useDeferredValue<Record<PanelTab, ReactNode> | null>(contents, null);
-  const shown = printing ? contents : deferred;
-  // The last route's pages while the next route's are drawn: dimmed and
-  // marked busy, never read as the new route's weather and NOTAMs (the
-  // round-2 speed audit: 2.5 to 3.6 s of the last route's Brief under the
-  // new route's name on a phone). The dim waits a moment (index.css's
-  // tab-stale), so a draw that lands within a frame or two never flickers.
-  const stale = !printing && deferred !== null && deferred !== contents;
+  // stay while the next are drawn, so the pages keep their places. On
+  // paper at once.
+  const keyed = useMemo(() => ({ contents, routeKey }), [contents, routeKey]);
+  const deferred = useDeferredValue<typeof keyed | null>(keyed, null);
+  const shown = printing ? contents : (deferred?.contents ?? null);
+  // Another route's pages while this route's are drawn: dimmed, marked busy
+  // and inert, never read or tapped as this route's weather and NOTAMs (2.5
+  // to 3.6 s of them on a phone in the round-2 speed audit). Only when the
+  // route itself changed: a new figure or report on the same route redraws
+  // its pages without a dim. The dim waits a moment (index.css's tab-stale),
+  // so a draw that lands within a frame or two never shows it.
+  const stale = !printing && deferred !== null && deferred.routeKey !== routeKey;
   // Preflight up to begin with -- whether to go is what is read first --
   // or the overview where there is one (null).
   const [tab, setTab] = useState<PanelTab | null>(Overview ? null : "preflight");
@@ -314,6 +320,8 @@ export default function PanelTabs({
                       data-tab={t}
                       data-stale={stale || undefined}
                       aria-busy={stale || undefined}
+                      // Only while stale: a page not up is Base UI's to make inert.
+                      {...(stale ? { inert: true } : {})}
                       className={cn("mt-0", !printing && "tab-page tab-stale")}
                     >
                       {shown[t]}

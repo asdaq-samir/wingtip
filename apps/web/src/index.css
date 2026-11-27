@@ -585,16 +585,13 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   content-visibility: hidden;
 }
 /* A tab's page still the last route's while the new route's is drawn
-   (PanelTabs' stale): dimmed, after a moment so a draw within a frame or two
-   never flickers, and back at once when the new page is in. Opacity only,
-   so it is the compositor's; under Reduce Motion the dim still comes, on
-   the same wait, without its fade. */
-.tab-stale {
-  transition: opacity var(--motion-fade) var(--motion-sheet-ease);
-}
+   (PanelTabs' stale): dimmed after a moment, so a draw within a frame or
+   two never shows it, and back at once, with no fade, the moment the new
+   page is in. Opacity only, so it is the compositor's; under Reduce Motion
+   the dim still comes, on the same wait, without its fade. */
 .tab-stale[data-stale] {
   opacity: 0.5;
-  transition-delay: 150ms;
+  transition: opacity var(--motion-fade) var(--motion-sheet-ease) 150ms;
 }
 
 @supports not (content-visibility: hidden) {

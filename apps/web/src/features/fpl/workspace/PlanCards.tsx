@@ -85,6 +85,7 @@ export default function PlanCards({
           marks={marks}
           onClose={closeBrief}
           onLegs={showLegs}
+          routeKey={vm.route.routeKey}
         />
       )}
       {navLogDrawn && routed && (

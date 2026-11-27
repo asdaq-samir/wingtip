@@ -29,6 +29,7 @@ export default function BriefCard({
   marks,
   onClose,
   onLegs,
+  routeKey,
 }: {
   name: ReactNode;
   /** Under the name in its pinned head, at every size: the altitude, when,
@@ -43,6 +44,8 @@ export default function BriefCard({
   onClose: () => void;
   /** The legs asked for from a page: FPL's nav log in place of the card. */
   onLegs: () => void;
+  /** The route its pages are of, for their stale dim (PanelTabs). */
+  routeKey: string;
 }) {
   // Its live reports kept fresh by themselves (on their timers and as the
   // card comes back into sight); asked again now from its ••• (ShareMenu).
@@ -60,6 +63,7 @@ export default function BriefCard({
           notice={notice}
           contents={contents}
           onLegs={onLegs}
+          routeKey={routeKey}
           overview={BriefOverview}
           before={
             // Its room over the name the grabber's, which the pinned head's frost reaches up over (PinnedHead).
