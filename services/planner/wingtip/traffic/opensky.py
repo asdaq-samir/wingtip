@@ -22,8 +22,10 @@ from cachetools import TTLCache
 
 from .. import airports
 from ..config import get_settings
+from ..geo import distance_nm
 from ..units import M_TO_FT
-from .common import HEADERS, _LOCK, _clock, _number
+from .legs import FIELD_APPROACH_NM, _field_at
+from .common import HEADERS, _LOCK, _clock, _number, _wall
 
 log = logging.getLogger(__name__)
 
@@ -43,8 +45,17 @@ FLIGHTS_COST, TRACK_COST = 30, 4
 #: How long one of its answers may take, s: a track took longer than the
 #: 5 s the live feeds are given (N570GJ's, 2026-11-27).
 TIMEOUT_S = 20.0
-#: A past day's flights and a past flight's path no longer change, s.
-KEEP_S = 12 * 3600
+#: A past day's flights and a past flight's path no longer change, s: a
+#: day and a bit, so the night's prefetch lasts until the next.
+KEEP_S = 26 * 3600
+#: The followed airplanes' yesterday asked for once a UTC day from this
+#: hour, after OpenSky's batch at night has built it, and their paths with
+#: it (prefetch): their flights then open at once. At most this share of
+#: the day's credits, the rest left to the pilots' own asks.
+PREFETCH_FROM_HOUR_UTC = 6
+PREFETCH_SHARE = 0.5
+PREFETCH_EVERY_S = 3600.0
+_PREFETCHED: dict[str, dt.date | None] = {"day": None}
 
 _TOKEN = {"value": None, "until": 0.0}
 _SPENT: dict[str, list] = {"flights": [None, 0], "tracks": [None, 0]}
@@ -116,7 +127,48 @@ def _field(icao: str | None) -> dict | None:
     place = airports.find_place(icao)
     if place is None:
         return {"ident": icao, "name": None, "city": None, "region": None}
-    return {"ident": place["ident"], "name": place.get("name"), "city": place.get("municipality"), "region": place.get("region")}
+    return {
+        "ident": place["ident"],
+        "name": place.get("name"),
+        "city": place.get("municipality"),
+        "region": place.get("region"),
+        "_at": (place["lat"], place["lon"]) if place.get("lat") is not None and place.get("lon") is not None else None,
+    }
+
+
+def _public(field: dict | None) -> dict | None:
+    return field and {k: v for k, v in field.items() if not k.startswith("_")}
+
+
+def _checked(guess: dict | None, point: dict, landing: bool) -> dict | None:
+    """A flight's end from its path where the path shows it at a field
+    (legs' _field_at, as an archived flight's ends are named); else
+    OpenSky's estimate only where the path's end is within
+    FIELD_APPROACH_NM of it, a guess the path does not reach dropped: it
+    named Y89 for N570GJ coming into O'Hare (2026-11-27)."""
+    seen = _field_at(point, landing=landing)
+    if seen is not None:
+        return seen
+    if guess is None or guess.get("_at") is None:
+        return None
+    return guess if distance_nm(point["lat"], point["lon"], *guess["_at"]) <= FIELD_APPROACH_NM else None
+
+
+def _with_path(flight: dict, path: list[dict] | None) -> dict:
+    """A flight as `history` lists it, its highest altitude and its ends
+    from its path where that has been read (`track`), else as estimated."""
+    if not path:
+        return {**flight, "origin": _public(flight["origin"]), "destination": _public(flight["destination"])}
+    heights = [p["alt_ft"] for p in path if p["alt_ft"] is not None]
+    origin = _public(_checked(flight["origin"], path[0], landing=False))
+    destination = _public(_checked(flight["destination"], path[-1], landing=True))
+    return {
+        **flight,
+        "origin": origin,
+        "destination": destination,
+        "landed": destination is not None,
+        "max_alt_ft": max(heights) if heights else None,
+    }
 
 
 def _flight(entry: dict) -> dict | None:
@@ -159,7 +211,7 @@ def flights(hex_id: str, days: list[dt.date], today: dt.date) -> tuple[list[dict
                 unread += len(pair)
                 continue
             _FLIGHTS[key] = [f for f in (_flight(e) for e in answer or [] if isinstance(e, dict)) if f is not None]
-        found += _FLIGHTS[key]
+        found += [_with_path(f, _TRACKS.get((hex_id, f["id"]))) for f in _FLIGHTS[key]]
     return sorted(found, key=lambda f: f["id"]), unread
 
 
@@ -192,3 +244,34 @@ def track(hex_id: str, flight_id: int, now: float) -> list[dict] | None:
             if isinstance(p, list) and len(p) >= 6 and _number(p[1]) is not None and _number(p[2]) is not None
         ]
     return _TRACKS[key] or None
+
+
+def prefetch() -> int:
+    """The followed airplanes' flights of yesterday and their paths asked
+    for once a UTC day, from PREFETCH_FROM_HOUR_UTC, within PREFETCH_SHARE
+    of the day's credits, so their cards' flights open at once: the planner's
+    job every PREFETCH_EVERY_S (app.main). How many paths were read."""
+    from .recorded import followed
+
+    now = dt.datetime.now(dt.timezone.utc)
+    today = now.date()
+    if not on() or now.hour < PREFETCH_FROM_HOUR_UTC or _PREFETCHED["day"] == today:
+        return 0
+    _PREFETCHED["day"] = today
+    yesterday = today - dt.timedelta(days=1)
+    read = 0
+    for hex_id in followed():
+        if _spent_share("flights") >= PREFETCH_SHARE or _spent_share("tracks") >= PREFETCH_SHARE:
+            break
+        found, _ = flights(hex_id, [yesterday], today)
+        for flight in found:
+            read += track(hex_id, flight["id"], _wall()) is not None
+    log.info("OpenSky prefetch: %d paths of %d followed airplanes", read, len(followed()))
+    return read
+
+
+def _spent_share(family: str) -> float:
+    today = dt.datetime.now(dt.timezone.utc).date()
+    with _LOCK:
+        day, spent = _SPENT[family]
+    return (spent if day == today else 0) / DAILY_CREDITS

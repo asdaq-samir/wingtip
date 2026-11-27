@@ -107,7 +107,8 @@ export default function PastFlights({
           ...flights.map((flight) => (
             <PastFlightRow key={flight.id} flight={flight} type={type} play={play} onPick={() => onOpen(flight.id)} />
           )),
-          // A gap that is adsb.lol's, not the airplane's, said as one.
+          // A gap that is the sources', not the airplane's (adsb.lol's
+          // archive and the OpenSky Network both), said as one.
           !!unread && (
             <ListRow
               key="unread"
@@ -118,8 +119,8 @@ export default function PastFlights({
                     moment's refusal: said so, and that the flights listed
                     are those watched here (wingtip.traffic's recorded tracks). */}
                   {unread >= 7
-                    ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
-                    : `${unread === 1 ? "One day" : `${unread} days`} could not be read from adsb.lol just now, so their flights are missing; asking again.`}
+                    ? "Flight history can't be read now, so only flights followed in this app are listed."
+                    : `${unread === 1 ? "One day" : `${unread} days`} could not be read just now, so their flights are missing; asking again.`}
                 </span>
               }
             />
@@ -139,6 +140,13 @@ export default function PastFlights({
           )
         }
       />
+      {/* The OpenSky Network credited where any flight listed is its (the
+          owner, 2026-11-27; credits only, no footnotes). */}
+      {flights.some((f) => f.source) && (
+        <p className={cn("px-4 text-muted-foreground", TEXT.caption)} data-testid="past-flights-credit">
+          Some flights from the OpenSky Network
+        </p>
+      )}
       <PastFlightsDay from={from} onPick={setFrom} />
       {isFetching && data && !isFetchingNextPage && (
         <span className="sr-only" role="status">
