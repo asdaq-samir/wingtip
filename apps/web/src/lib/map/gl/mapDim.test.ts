@@ -46,7 +46,7 @@ describe("the Dimmer over what is drawn on the chart", () => {
 
   it("dims a layer marked so by its colours, its opacities left alone", () => {
     const line = { type: "line", metadata: DIM_BY_COLOUR };
-    expect(dimmedPaint(line, "line-color", "#e600e6")).toEqual(["interpolate", ["linear"], DIM, 0, "#000000", 1, "#e600e6"]);
+    expect(dimmedPaint(line, "line-color", "#e600e6")).toEqual(["interpolate", ["linear"], DIM, 0, "black", 1, "#e600e6"]);
     expect(dimmedPaint(line, "line-opacity", 0.35)).toBe(0.35);
     expect(dimmedPaint({ type: "line" }, "line-color", "#e600e6")).toBe("#e600e6");
     const spec = { id: "l", type: "line", source: "s", metadata: DIM_BY_COLOUR, paint: { "line-color": "#fff", "line-opacity": 0.35 } };

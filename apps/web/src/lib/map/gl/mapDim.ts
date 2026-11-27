@@ -74,7 +74,7 @@ const propsOf = (layer: Dimmable) =>
 
 /** One colour times the dim: black at none, itself at 1. */
 export function dimmedColour(colour: unknown): unknown {
-  return ["interpolate", ["linear"], DIM, 0, "#000000", 1, colour];
+  return ["interpolate", ["linear"], DIM, 0, "black", 1, colour];
 }
 
 /** Whether a layer's paint property is one the dim reaches. */
