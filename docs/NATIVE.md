@@ -507,8 +507,9 @@ code:
   with the part of the nearest level above it that is in memory. By day
   the web's lift of the chart (`ChartLift`: MapLibre's raster-contrast
   and -saturation 0.1); at night, dimmed, as printed. What is drawn
-  over it takes the same dim (`Views/MarkDim`): the marks by their alpha,
-  own ship never; the lines and areas (the course and its dark edge, the
+  over it takes the same dim (`Views/MarkDim`, the web's `map-dim` tokens
+  and fixture): the marks by their alpha, own ship never, their words by
+  colour at the web's words' light on their opaque halo; the lines and areas (the course and its dark edge, the
   airspace, the special-use areas, NEXRAD, the forecast areas) by their
   colour, the web's DIM_BY_COLOUR (`OverlayDim`), so they keep their
   contrast with the chart; the weather loop and the model weather by

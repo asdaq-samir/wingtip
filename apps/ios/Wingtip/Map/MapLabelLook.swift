@@ -6,7 +6,8 @@ import UIKit
 /// - After dark, each light-haloed word takes a lighter ink of its own
 ///   colour on the night's dark halo (NightPalette.halo), Apple Maps' dark
 ///   map, at least 4.5:1 and with no glare: design/tokens.json's
-///   map.label.night-ink, by its day ink (WingtipMapLabel.nightInk).
+///   map.label.night-ink, by its day ink, each brought to one light
+///   (WingtipDimmer.nightWord).
 /// - Larger Map Labels, a switch in the Map card, lets them follow the
 ///   pilot's text size up to WingtipMapLabel.scaleMax (1.2 times); off,
 ///   they keep the chart's own sizes, as a printed chart does.
@@ -16,10 +17,12 @@ enum MapLabelLook {
 
     static var larger: Bool { UserDefaults.standard.bool(forKey: largerKey) }
 
-    /// The word's ink: its day ink by day, its night ink after dark where
-    /// the tokens give one, else the day ink as it was.
+    /// The word's ink: its day ink by day; after dark, where the tokens
+    /// give one, its night ink brought to the towered blue's light
+    /// (map-dim's nightWord, the web's NIGHT_INK), so at the words' light
+    /// (MarkDim.word) none is brighter than the paper; else the day ink.
     static func ink(_ day: UIColor) -> UIColor {
-        guard let night = WingtipMapLabel.nightInk[hex(day)].flatMap(rgb) else { return day }
+        guard let night = WingtipDimmer.nightWord[hex(day)].flatMap(rgb) else { return day }
         return UIColor(light: day, dark: night)
     }
 

@@ -1471,6 +1471,23 @@ object WingtipChartLook {
     const val PLATE_LEAST_OPACITY = 0.1f
 }
 
+/** The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group). */
+object WingtipDimmer {
+    const val STATE = "mapDim"
+    const val WORD_STATE = "labelNight"
+    const val WARNING_STATE = "warningDim"
+    const val METADATA = "wingtip:dim"
+    val OPACITY: Map<String, List<String>> = mapOf("line" to listOf("line-opacity"), "circle" to listOf("circle-opacity", "circle-stroke-opacity"), "symbol" to listOf("icon-opacity", "text-opacity"))
+    val COLOUR: Map<String, List<String>> = mapOf("line" to listOf("line-color"), "circle" to listOf("circle-color", "circle-stroke-color"), "symbol" to listOf("text-color", "icon-color"))
+    const val WARNING_UNDER_PAPER = 0.85f
+    const val WORD_GAMMA = 2.2f
+    const val WORD_LEAST = 0.01f
+    const val WORD_FLOOR = 0.75f
+    const val WORD_FLOOR_CONTRAST = 0.13f
+    const val WORD_LIGHT = 0.4460834275041789
+    val NIGHT_WORD: Map<String, String> = mapOf("#2465b8" to "#82b4ff", "#c0309f" to "#f28ddc", "#117a35" to "#5cc685", "#1c1a17" to "#afb1b4", "#dc2626" to "#ff8a8a", "#d70015" to "#ff8a8a", "#c2410c" to "#fb9466", "#2563eb" to "#8db2fc", "#b45309" to "#dfaa20", "#7c3aed" to "#bba1ff", "#78716c" to "#b6b1ad", "#be185d" to "#f58cc4", "#0f766e" to "#4ac4b9", "#57534e" to "#b6b1ad", "#9333ea" to "#c99cff")
+}
+
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */
 object WingtipFlow {
     class Stop(val at: Double, val colour: Color, val alpha: Int)

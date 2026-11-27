@@ -310,7 +310,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (destroyed || !styled) return // before the first style is in: its own callback paints, once
         view.getMapAsync { map ->
             map.getStyle { style ->
-                val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax) } // the marks at the chart's light (MapDim)
+                val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax, it.contrast) } // the marks and words at the chart's light (MapDim)
                 if (relabel) relabel(style)
                 RouteLegLayer.paint(style, night).also { tfrs.paint(style, night) }
                 // A downloaded region's chart (offline-N) is the chart too: dimmed with it, never left at day's light.

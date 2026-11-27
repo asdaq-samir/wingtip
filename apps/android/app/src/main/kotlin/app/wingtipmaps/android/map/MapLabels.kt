@@ -2,6 +2,7 @@ package app.wingtipmaps.android.map
 
 import android.content.Context
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipDimmer
 import app.wingtipmaps.android.design.generated.WingtipMapLabel
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -34,10 +35,10 @@ import kotlin.math.roundToInt
  * - **After dark** (rules.md 13.6): a light-haloed word turns to its night
  *   ink (map.label.night-ink: the field's blue and magenta, the VFR green,
  *   the fixes' dark, each lighter) on the tag's dark halo at
- *   map.label.halo-night, as Apple Maps letters its dark map; the white
- *   halo left the coloured idents at about 2.5:1 over the dimmed chart, the
- *   night inks on the dark halo 6.5:1 or more. A colour not in the table
- *   keeps its own.
+ *   map.label.halo-night, as Apple Maps letters its dark map, brought to
+ *   the paper's light by its colour (MapDim.wordLight) with the halo whole,
+ *   about 5:1 on it at the night's default Dimmer. A colour not in the
+ *   table keeps its own.
  */
 object MapLabels {
     /** How far the map's words grow: the font scale with the switch on,
@@ -82,8 +83,7 @@ object MapLabels {
             out = JsonObject(out + ("layout" to JsonObject(layout + ("text-size" to scaled(size, scale)))))
         }
         val paint = layer["paint"]?.jsonObject
-        val halo = paint?.get("text-halo-color")?.let { (it as? JsonPrimitive)?.content?.lowercase(Locale.US) }
-        if (night && paint != null && halo == WingtipColors.Chart.CASING_HEX) {
+        if (night && paint != null && lightHaloed(layer)) {
             val inked = paint + ("text-halo-color" to JsonPrimitive(NIGHT_HALO)) + (paint["text-color"]?.let { "text-color" to nightInk(it) } ?: return out)
             out = JsonObject(out + ("paint" to JsonObject(inked)))
         }
@@ -148,12 +148,25 @@ object MapLabels {
         )
     }
 
-    /** A day ink's night one: a colour from the table, or a match on what
-     *  an expression gives, a colour not in it keeping its own. */
+    /** A day ink's night word at the words' light (the web's labelInk
+     *  after dark): its night ink brought to the towered blue's light
+     *  (MapDim.nightWord), from the table or as a match on what an
+     *  expression gives, a colour not in it keeping its own, then scaled
+     *  by the words' share of light (MapDim.wordLight) on the halo kept
+     *  whole, so the words, not their halo, take the Dimmer. */
     fun nightInk(day: JsonElement): JsonElement {
-        (day as? JsonPrimitive)?.let { p -> return WingtipMapLabel.NIGHT_INK[p.content.lowercase(Locale.US)]?.let(::JsonPrimitive) ?: day }
-        val pairs = WingtipMapLabel.NIGHT_INK.flatMap { (d, n) -> listOf(JsonPrimitive(d), JsonPrimitive(n)) }
-        return JsonArray(listOf(JsonPrimitive("match"), day) + pairs + day)
+        (day as? JsonPrimitive)?.let { p -> return MapDim.atWordLight(JsonPrimitive(MapDim.nightWord(p.content))) }
+        val pairs = WingtipDimmer.NIGHT_WORD.flatMap { (d, n) -> listOf(JsonPrimitive(d), JsonPrimitive(n)) }
+        return MapDim.atWordLight(JsonArray(listOf(JsonPrimitive("match"), day) + pairs + day))
+    }
+
+    /** Whether a symbol layer's words have the chart's light halo, by day
+     *  or as inked here at night: those words are dimmed by their colour,
+     *  never with their halo by opacity (MapDim.layer). */
+    fun lightHaloed(layer: JsonObject): Boolean {
+        if (layer["type"]?.jsonPrimitive?.content != "symbol") return false
+        val halo = layer["paint"]?.jsonObject?.get("text-halo-color")?.let { (it as? JsonPrimitive)?.content?.lowercase(Locale.US) }
+        return halo == WingtipColors.Chart.CASING_HEX || halo == NIGHT_HALO.lowercase(Locale.US)
     }
 
     /** The tag's dark at map.label.halo-night, from the token's colour. */

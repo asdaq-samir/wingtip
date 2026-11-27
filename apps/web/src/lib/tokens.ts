@@ -298,7 +298,7 @@ export const MAP = {
   routeTagOffEndsNm: 2,
 } as const;
 
-export { CHART_LOOK, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
+export { CHART_LOOK, DIMMER, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
 type FlowStop = [number, [number, number, number, number]];

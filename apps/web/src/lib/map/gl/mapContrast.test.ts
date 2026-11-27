@@ -74,4 +74,25 @@ describe("the map's words at night", () => {
       expect(word, day).toBeLessThanOrEqual(paper * 1.05);
     }
   });
+
+  it("read 4.5:1 or more on their halo across the whole Contrast range at the default Dimmer", () => {
+    // Under the night's own contrast the paper darkens; the words' share
+    // keeps to map-dim.word-floor there (the TFR's number 4.57:1 at -30%).
+    for (const o of offsets()) {
+      const { words } = at(o);
+      for (const day of Object.keys(MAP_LABEL.nightInk)) {
+        const ink = ((labelInk(day) as unknown[])[2] as unknown[])[6] as string;
+        expect(ratio(luminanceOf(scaledHex(ink, words)), luminanceOf(CHART.tag)), `${day} at ${o}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it("still dim with the Dimmer under the floor, none brighter than the paper at the night's contrast", () => {
+    const { paper, words } = at(0, DIM_MAX);
+    expect(words).toBeLessThan(0.75);
+    for (const day of Object.keys(MAP_LABEL.nightInk)) {
+      const ink = ((labelInk(day) as unknown[])[2] as unknown[])[6] as string;
+      expect(luminanceOf(scaledHex(ink, words)), day).toBeLessThanOrEqual(paper * 1.05);
+    }
+  });
 });

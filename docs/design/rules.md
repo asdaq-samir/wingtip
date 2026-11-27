@@ -1751,8 +1751,12 @@ word and figure drawn on the map, on all three apps, follows these rules:
    at the share of light that brings it to the paper's under the Dimmer
    and the Contrast (`mapDim`'s `wordLight`), so no word is brighter than
    the chart and each reads about 5:1 on its halo at the night's default
-   Dimmer, where faded with its halo it was about 2:1 (the themes audit,
-   round 6; the phones to follow, and `halo-night` to 1 with them).
+   Dimmer, where faded with its halo it was about 2:1. Under the night's
+   own contrast the words' share keeps to `map-dim.word-floor` (0.75, or
+   the paper's own light where the Dimmer takes it lower), so a flatter
+   chart leaves them 4.5:1 and more. Android and iOS letter their words
+   the same way, from the same tokens (`map-dim`), held to the web by
+   one fixture (`lib/fixtures/mapDim.json`).
 7. **A field's ident looks the same whoever draws it.** Its colour is
    blue where it is towered and magenta where it is not, as the chart
    sets it. Its size follows the zoom. This holds on the tiles, a Class B

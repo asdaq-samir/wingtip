@@ -1,6 +1,5 @@
 import type { CircleLayerSpecification, ExpressionSpecification } from "maplibre-gl";
-import { luminanceOf, scaledHex } from "../../../rgb";
-import { CHART, MAP_LABEL, type MapLabelKind } from "../../../tokens";
+import { CHART, DIMMER, MAP_LABEL, type MapLabelKind } from "../../../tokens";
 /** The map's words, in the page's Inter (GlMapShell's font-faces), in
  *  every look: the map's colours are the chart's own, not the look's. */
 export const GL_FONT = ["Inter"];
@@ -41,7 +40,7 @@ function labelByZoom(stops: readonly (readonly [glZoom: number, px: number])[]):
  *  so a theme's change, or a Dimmer's commit at night, is one change of
  *  the state, which the words' colours by feature (a field's tower, a
  *  hazard's own ink) have MapLibre lay their sources out again for. */
-export const LABEL_NIGHT = "labelNight";
+export const LABEL_NIGHT = DIMMER.wordState;
 const LIGHT: ExpressionSpecification = ["number", ["global-state", LABEL_NIGHT], 0];
 const NIGHT: ExpressionSpecification = [">", LIGHT, 0];
 /** The light halo's colour: the chart's white by day; after dark the
@@ -59,22 +58,13 @@ const HALO_COLOUR: ExpressionSpecification = ["case", NIGHT, CHART.tag, CHART.ca
  *  on the chart's own ink, dark after dark. */
 export const LABEL_HALO = { "text-halo-color": HALO_COLOUR, "text-halo-width": MAP_LABEL.halo } as const;
 
-/** The sRGB power a luminance's share is taken back to an ink's factor by. */
-export const ENCODE = 2.2;
-/** The night inks' light the words are matched to: the towered field's
- *  blue (map.label.night-ink). */
-export const WORD_LIGHT = luminanceOf(MAP_LABEL.nightInk[CHART.towered]!);
-
-/** Each day ink's night ink, a lighter one brought down to WORD_LIGHT
+/** Each day ink's night ink, a lighter one brought down to the towered
+ *  blue's light (map-dim's wordLight)
  *  (the fixes' near white, the VFR green, the mountains' grey), so that at
  *  the words' light (LIGHT) every word is as light as the paper under the
- *  Dimmer and none brighter (AIM 8-1-6); one darker kept as it is. */
-const NIGHT_INK: Record<string, string> = Object.fromEntries(
-  Object.entries(MAP_LABEL.nightInk).map(([day, night]) => [
-    day,
-    scaledHex(night, Math.min(1, (WORD_LIGHT / luminanceOf(night)) ** (1 / ENCODE))),
-  ]),
-);
+ *  Dimmer and none brighter (AIM 8-1-6); one darker kept as it is. Worked
+ *  out with the tokens (map-dim's nightWord), the phones' the same. */
+const NIGHT_INK: Record<string, string> = DIMMER.nightWord;
 
 /** A colour at the words' light after dark (LIGHT): black at none, itself
  *  at 1, as mapDim's dimmedColour takes the chart's brightness. */
