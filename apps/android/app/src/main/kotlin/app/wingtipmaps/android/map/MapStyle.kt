@@ -423,7 +423,7 @@ object MapStyle {
                     put("text-max-angle", 30)
                 }
             }
-            putJsonObject("paint") { put("text-color", "#ffffff") }
+            putJsonObject("paint") { put("text-color", WingtipColors.Chart.CASING_HEX) }
         }
         return lines + labels
     }
@@ -441,7 +441,7 @@ object MapStyle {
             put("filter", e("==", e("get", "part"), "surface"))
             putJsonObject("paint") {
                 put("fill-color", e("case", e("==", e("get", "hard"), true), WingtipColors.Chart.RUNWAY_HARD_HEX, WingtipColors.Chart.RUNWAY_SOFT_HEX))
-                put("fill-outline-color", "#ffffff")
+                put("fill-outline-color", WingtipColors.Chart.CASING_HEX)
                 put("fill-opacity", 0.95)
             }
         },
@@ -452,7 +452,7 @@ object MapStyle {
             put("minzoom", RUNWAYS_FROM + 1)
             put("filter", e("==", e("get", "part"), "centreline"))
             putJsonObject("paint") {
-                put("line-color", "#ffffff")
+                put("line-color", WingtipColors.Chart.CASING_HEX)
                 put("line-width", e("interpolate", e("linear"), e("zoom"), 13, 0.75, 16, 2))
                 put("line-dasharray", e(4, 3))
             }
@@ -475,7 +475,7 @@ object MapStyle {
                 put("text-allow-overlap", true)
             }
             putJsonObject("paint") {
-                put("text-color", "#ffffff")
+                put("text-color", WingtipColors.Chart.CASING_HEX)
                 put("text-halo-color", FIX_INK)
                 put("text-halo-width", 1.75)
             }
@@ -522,9 +522,9 @@ object MapStyle {
                 }
             }
             putJsonObject("paint") {
-                put("text-color", when (kind) { "vor" -> "#ffffff"; "vfr" -> VFR_GREEN; else -> FIX_INK })
+                put("text-color", when (kind) { "vor" -> WingtipColors.Chart.CASING_HEX; "vfr" -> WingtipColors.Chart.VFR_GREEN_TEXT_HEX; else -> FIX_INK })
                 if (kind != "vor") {
-                    put("text-halo-color", "#ffffff")
+                    put("text-halo-color", WingtipColors.Chart.CASING_HEX)
                     put("text-halo-width", 2)
                 }
             }
@@ -601,7 +601,7 @@ object MapStyle {
         }
         putJsonObject("paint") {
             put("text-color", e("case", TOWERED, BLUE, MAGENTA))
-            put("text-halo-color", "#ffffff")
+            put("text-halo-color", WingtipColors.Chart.CASING_HEX)
             put("text-halo-width", 2)
         }
     }
@@ -726,7 +726,7 @@ object MapStyle {
                     put("icon-ignore-placement", true)
                 }
                 putJsonObject("paint") {
-                    put("text-color", e("case", near, TRAFFIC_NEAR_TEXT, "#ffffff"))
+                    put("text-color", e("case", near, TRAFFIC_NEAR_TEXT, WingtipColors.Chart.CASING_HEX))
                 }
             },
         )
