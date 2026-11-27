@@ -108,20 +108,20 @@ class IcingLayer(BaseModel):
 
 class IcingForecastLeg(BaseModel):
     """One leg's forecast icing (wingtip.icing_forecast): the worst
-    severity at the altitude flown, null where the AWC had no forecast for
+    severity at the altitude flown, null where the grids had no forecast for
     it; the share of the leg in icing there; the layer icing is in over
     the leg at any level; and the time it was read for, the leg's middle."""
 
     index: int
     altitude_ft: float
-    severity: Literal["none", "trace", "light", "moderate", "heavy"] | None
+    severity: Literal["none", "trace", "light", "moderate", "severe"] | None
     share: float | None
     layer: IcingLayer | None
     valid_s: float | None
 
 
 class IcingForecastWorst(BaseModel):
-    severity: Literal["trace", "light", "moderate", "heavy"]
+    severity: Literal["trace", "light", "moderate", "severe"]
     altitudes_ft: list[float]
     legs: list[int]
 

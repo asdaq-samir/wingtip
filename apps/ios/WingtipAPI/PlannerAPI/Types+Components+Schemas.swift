@@ -10949,7 +10949,7 @@ extension Components {
             }
         }
         /// One leg's forecast icing (wingtip.icing_forecast): the worst
-        /// severity at the altitude flown, null where the AWC had no forecast for
+        /// severity at the altitude flown, null where the grids had no forecast for
         /// it; the share of the leg in icing there; the layer icing is in over
         /// the leg at any level; and the time it was read for, the leg's middle.
         ///

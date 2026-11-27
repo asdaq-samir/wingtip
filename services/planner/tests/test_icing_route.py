@@ -65,3 +65,23 @@ def test_no_forecast_stored_is_a_502(monkeypatch):
 def test_legs_and_fixes_that_do_not_agree_are_a_422(monkeypatch):
     resp = client.get("/api/icing/route", params={**PARAMS, "alt_ft": "8000"})
     assert resp.status_code == 422
+
+
+def test_severe_icing_is_answered_not_a_500(monkeypatch):
+    # The NWS grids' top category is "severe" (GRIB2 code table 4.228); the
+    # response model kept the AWC's "heavy" and answered 500 for Boston to
+    # New York at 14,000 ft (the planner's re-audit, 2026-11-27).
+    def along(fixes, altitudes, minutes, ground, start):
+        leg = {"index": 0, "altitude_ft": 14000, "severity": "severe", "share": 0.2, "layer": None, "valid_s": 1794195000}
+        return {
+            "legs": [leg, {**leg, "index": 1, "altitude_ft": 9000, "severity": "moderate"}],
+            "worst": {"severity": "severe", "altitudes_ft": [14000], "legs": [0]},
+            "unchecked": [],
+            "line": "Forecast icing, severe, at 14,000 ft on leg 1",
+            "issued": "2026-11-27T18:00:00Z",
+        }
+
+    monkeypatch.setattr(icing_forecast, "along", along)
+    resp = client.get("/api/icing/route", params=PARAMS)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["worst"]["severity"] == "severe"
