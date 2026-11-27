@@ -32,13 +32,12 @@ import { pickOnMap } from "../../../lib/map/mapPick";
  *  answer puts it; heights from zoom 9 and
  *  call signs from 10, in the app's levels.
  *
- *  A frame is the whole collection sent to the map's worker and indexed
- *  again there, so it comes once a second at the chart's scales, where an
+ *  A frame sends the map's worker only the airplanes that changed
+ *  (trafficSend), and comes once a second at the chart's scales, where an
  *  airplane at 120 kt moves a pixel or two in it, and up to four a second
- *  only zoomed in close (the speed audit of 2026-11-27: ten a second from
- *  zoom 10, each a JSON.stringify and a setData; now only the airplanes
- *  that changed, trafficSend; trafficFrameMs). An airplane followed
- *  keeps ten a second: the camera's follow eases linearly between frames,
+ *  only zoomed in close (trafficFrameMs; the speed audit of 2026-11-27
+ *  measured ten a second from zoom 10 as work for nothing). An airplane
+ *  followed keeps ten a second: the camera's follow eases linearly between frames,
  *  so a mark stepped once a second would slide back on the screen and jump. */
 const EVERY_MS = 5000;
 const BLEND_MS = 1000;

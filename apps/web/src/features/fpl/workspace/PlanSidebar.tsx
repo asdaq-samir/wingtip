@@ -57,8 +57,8 @@ const NearestCard = lazy(() => loadNearestCard());
  * (OneSearchResults), and its lists in full -- Favorites, Recents, Saved,
  * the routes planned, Nearest. A card -- an airport's, the airspace's, an
  * airplane's -- over the place it was opened from, its close back to it.
- * The traffic's page that was here, with its own search field, went for
- * the one search (the owner, 2026-11-14).
+ * Traffic is found through the one search, with no page or field of its
+ * own (the owner, 2026-11-14).
  */
 export default function PlanSidebar({
   vm,

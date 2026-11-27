@@ -28,8 +28,8 @@ export const pilotQuery = queryOptions({ queryKey: ["pilot"], queryFn: signedInP
 /** The planner's snapshot of the stack, which the Developer console
  *  and the training drawer's Retrain button poll together. Fresh for
  *  one poll's interval: opening the console within it shows the
- *  snapshot already here, where it used to ask again on every open and
- *  draw the console twice. */
+ *  snapshot already here, rather than asking again on every open and
+ *  drawing the console twice. */
 export const statusQuery = queryOptions({ queryKey: ["status"], queryFn: () => api.status(), staleTime: 30_000, refetchInterval: 30_000 });
 
 /** How this deployment is reached (SIGN_IN, OPEN or CLOSED) and which

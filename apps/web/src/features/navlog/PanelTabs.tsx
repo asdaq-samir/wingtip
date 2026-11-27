@@ -25,8 +25,8 @@ import { useFocusKept } from "./useFocusKept";
  *  of the redesign ("I like C concept"): Preflight -- the go / no-go and
  *  what is done at home -- then Depart, En route (the nav log, its profile
  *  and the weather on the way) and Arrive, each only what that part of the
- *  flight needs, where they were the Nav Log, the Brief, the Weather and
- *  Performance, a pilot hunting across four for a field's runway. */
+ *  flight needs, so a pilot finds a field's runway, its weather and its
+ *  figures together, not across four tabs by kind. */
 const TABS: { value: PanelTab; label: string }[] = [
   { value: "preflight", label: "Preflight" },
   { value: "depart", label: "Depart" },

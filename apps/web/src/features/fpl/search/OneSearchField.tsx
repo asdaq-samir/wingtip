@@ -25,10 +25,9 @@ import { WORDING } from "../../../lib/wording/generated/wording";
  * the field is not in use, as Apple Maps' avatar is (the owner,
  * 2026-11-20: "move the fpl button on the left side of search and avatar
  * to the right side"; PageToggle, AccountButton): the field the same size as FPL's strip in its place
- * (SHEET_BAR), so a turn changes only what is in the bar. The title row
- * that was over the field went for the map's room (the owner,
- * 2026-11-10); the app's name stays the page's heading, for a screen
- * reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
+ * (SHEET_BAR), so a turn changes only what is in the bar. No title row
+ * over the field, for the map's room (the owner, 2026-11-10); the app's
+ * name is the page's heading, for a screen reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
 /** What a picker's ask is called over its field: its own title (Change

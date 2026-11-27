@@ -11,9 +11,9 @@ type Sent = Map<string, { place: string; look: string }>;
 /**
  * A frame of the traffic sent to the map's worker: only the airplanes that
  * moved, came or went (GeoJSON's updateData, the source keyed by hex with
- * promoteId), where every frame sent the whole collection and the worker
- * indexed it again from nothing -- ten a second while an airplane is
- * followed (the round-2 speed audit). A frame with nothing changed (none
+ * promoteId), so the worker does not index the whole collection again
+ * from nothing each frame -- ten a second while an airplane is followed
+ * (the round-2 speed audit). A frame with nothing changed (none
  * in sight, or every one on the ground and still) sends nothing. The first
  * frame to a source is sent whole. The properties named in `moving` change
  * with the place (3D's height, alt_m) and are sent with it, as a property

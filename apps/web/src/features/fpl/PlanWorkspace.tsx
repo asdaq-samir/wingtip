@@ -277,8 +277,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           bar: (
             <>
               <FplBar
-                // Search at the head's start, where Share was (the owner,
-                // 2026-11-20: "replace the share button with search button");
+                // Search at the head's start (the owner, 2026-11-20:
+                // "replace the share button with search button");
                 // the sharing is More's (FplTabBar). It turns to Search's resting page,
                 // the route kept, as the ✕ did (the owner, 2026-11-21): typing starts at the field.
                 share={
