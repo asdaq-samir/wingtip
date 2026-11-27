@@ -4,45 +4,31 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.generated.ProcedureList
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.routeProcedures
-import app.wingtipmaps.android.engine.generated.routeRead
+import app.wingtipmaps.android.engine.generated.routeTyped
 import app.wingtipmaps.android.plan.PlanProcedures
 
 /**
- * What is typed in the route box, read as the web's route field and the
- * iPhone's TypedRoute read it: word by word by the engine's `route_read`
- * (item 15 of FAA Form 7233-4, AIM Appendix 4: DCT taken out, a speed and
- * level group the cruise's, the rest the points), a position's
- * "@42.1,-88.2" kept whole where the reader splits on its comma, and the
- * SIDs and STARs the engine's `route_procedures` names taken out of the
- * points, each with the points typed either side of it, to be picked as
- * the route's procedures. Which word is which is the engine's, never the app's.
+ * What is typed in the route box, read once by the engine's `route_typed`,
+ * as the web's route field (routeEdit's readTyped) and the iPhone's
+ * TypedRoute read it: word by word (item 15 of FAA Form 7233-4, AIM
+ * Appendix 4: DCT taken out, a speed and level group the cruise's, a
+ * position kept whole, the rest the points), and the SIDs and STARs among
+ * the words taken out of the points, each with the points typed either
+ * side of it, to be picked as the route's procedures. Which word is which
+ * is the engine's, never the app's.
  */
 object TypedRoute {
     data class Read(
         val points: List<String>,
         /** The cruise a level group asked for, feet MSL; null for none or VFR's. */
         val cruiseFt: Double?,
-        val procedures: List<EngineContract.RouteProceduresAnswerItem>,
+        val procedures: List<EngineContract.RouteTypedAnswerProceduresItem>,
     )
 
     /** What the words say; null where the engine cannot read them. */
-    fun read(text: String): Read? = runCatching {
-        val points = mutableListOf<String>()
-        var cruiseFt: Double? = null
-        for (word in text.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }) {
-            if (word.contains(",")) {
-                points += word.uppercase()
-                continue
-            }
-            val read = Engine.routeRead(word).getOrThrow()
-            cruiseFt = cruiseFt ?: read.cruiseFt
-            points += read.points
-        }
-        val procedures = Engine.routeProcedures(points).getOrThrow()
-        val named = procedures.map { it.name }.toSet()
-        Read(points.filterNot { it in named }, cruiseFt, procedures)
-    }.getOrNull()
+    fun read(text: String): Read? =
+        Engine.routeTyped(text.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }).getOrNull()
+            ?.let { Read(it.points, it.cruiseFt, it.procedures) }
 
     /**
      * The route with the typed points gone on at its end, as the web's box
