@@ -98,20 +98,14 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
     db.executescript(_SCHEMA)
     names = set(archive.namelist())
     counts = {}
+    # Each file's rows go in as they are read (executemany over a generator),
+    # never held whole: RESERVED's 126,157 were one list (round 4's audit).
     if "DEREG.txt" in names:
         insert = f"INSERT INTO deregistered VALUES ({','.join('?' * 20)})"
-        batch, count = [], 0
-        for r in rows(archive, "DEREG.txt"):
-            batch.append(_deregistered(r))
-            if len(batch) >= 5000:
-                db.executemany(insert, batch)
-                count += len(batch)
-                batch = []
-        db.executemany(insert, batch)
-        counts["deregistered"] = count + len(batch)
+        counts["deregistered"] = db.executemany(insert, (_deregistered(r) for r in rows(archive, "DEREG.txt"))).rowcount
     if "DOCINDEX.txt" in names:
         # Type Collateral 1 alone: an aircraft, by its N-number.
-        docs = [
+        docs = (
             (
                 _n(r.get("COLLATERAL", "")),
                 r.get("DOC-ID") or None,
@@ -123,11 +117,10 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
             )
             for r in rows(archive, "DOCINDEX.txt")
             if r.get("TYPE-COLLATERAL") == "1" and r.get("COLLATERAL")
-        ]
-        db.executemany("INSERT INTO documents VALUES (?,?,?,?,?,?,?)", docs)
-        counts["documents"] = len(docs)
+        )
+        counts["documents"] = db.executemany("INSERT INTO documents VALUES (?,?,?,?,?,?,?)", docs).rowcount
     if "RESERVED.txt" in names:
-        held = [
+        held = (
             (
                 _n(r.get("N-NUMBER", "")),
                 codes.name_or_none(r.get("REGISTRANT")),
@@ -141,9 +134,8 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
             )
             for r in rows(archive, "RESERVED.txt")
             if r.get("N-NUMBER")
-        ]
-        db.executemany("INSERT OR REPLACE INTO reserved VALUES (?,?,?,?,?,?,?,?,?)", held)
-        counts["reserved"] = len(held)
+        )
+        counts["reserved"] = db.executemany("INSERT OR REPLACE INTO reserved VALUES (?,?,?,?,?,?,?,?,?)", held).rowcount
     return counts
 
 

@@ -78,15 +78,17 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
     """ACFTREF and ENGINE in full into their tables (ardata.pdf, "Aircraft
     Reference File" and "Engine Reference File"), and what each airplane's
     row takes of them, as tuples: ACFTREF's ninety thousand models as
-    dicts were a hundred megabytes of the planner's."""
+    dicts were a hundred megabytes of the planner's. Each table's rows go
+    in as they are read (executemany over a generator), never held whole
+    beside the look-up (round 4's audit: the 94,241 models were held twice)."""
     db.execute(_MODELS)
     db.execute(_ENGINES)
     models, engines = {}, {}
-    rows = []
-    for r in zip_csv(archive, "ACFTREF.txt"):
-        models[r["CODE"]] = (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"])
-        rows.append(
-            (
+
+    def model_rows():
+        for r in zip_csv(archive, "ACFTREF.txt"):
+            models[r["CODE"]] = (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"])
+            yield (
                 r["CODE"],
                 _maker(r["MFR"]),
                 r["MODEL"] or None,
@@ -102,13 +104,11 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
                 r.get("TC-DATA-SHEET") or None,
                 _maker(r.get("TC-DATA-HOLDER", "")),
             )
-        )
-    db.executemany(f"INSERT OR REPLACE INTO models VALUES ({','.join('?' * 13)})", rows)
-    rows = []
-    for r in zip_csv(archive, "ENGINE.txt"):
-        engines[r["CODE"]] = (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"])
-        rows.append(
-            (
+
+    def engine_rows():
+        for r in zip_csv(archive, "ENGINE.txt"):
+            engines[r["CODE"]] = (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"])
+            yield (
                 r["CODE"],
                 _maker(r["MFR"]),
                 r["MODEL"] if r["MODEL"] and r["MODEL"] != "NONE" else None,
@@ -116,8 +116,9 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
                 codes.number(r["HORSEPOWER"]) or None,
                 codes.number(r["THRUST"]) or None,
             )
-        )
-    db.executemany(f"INSERT OR REPLACE INTO engines VALUES ({','.join('?' * 6)})", rows)
+
+    db.executemany(f"INSERT OR REPLACE INTO models VALUES ({','.join('?' * 13)})", model_rows())
+    db.executemany(f"INSERT OR REPLACE INTO engines VALUES ({','.join('?' * 6)})", engine_rows())
     return models, engines
 
 
@@ -177,17 +178,8 @@ def build(zip_path: Path, db_path: Path) -> int:
         try:
             models, engines = _reference(archive, db)
             db.execute(_AIRCRAFT)
-            count = 0
-            batch = []
-            for r in zip_csv(archive, "MASTER.txt"):
-                if r.get("N-NUMBER"):
-                    batch.append(_airplane(r, models, engines))
-                if len(batch) >= 5000:
-                    db.executemany(insert, batch)
-                    count += len(batch)
-                    batch = []
-            db.executemany(insert, batch)
-            count += len(batch)
+            airplanes = (_airplane(r, models, engines) for r in zip_csv(archive, "MASTER.txt") if r.get("N-NUMBER"))
+            count = db.executemany(insert, airplanes).rowcount
             db.execute("CREATE INDEX aircraft_mode_s ON aircraft (mode_s_hex)")
             # DEREG, DOCINDEX and RESERVED, where the archive has them.
             registry_history.build(archive, db, zip_csv)
