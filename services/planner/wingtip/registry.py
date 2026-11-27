@@ -33,19 +33,12 @@ from .registry_reader import _file, _reading
 from .registry_reader import addresses as _addresses
 from . import registry_codes as codes
 from .atomic import atomic_path
+from .config import REGISTRY_HEADERS
 from .faa_data import zip_csv
 
 log = logging.getLogger(__name__)
 
 URL = "https://registry.faa.gov/database/ReleasableAircraft.zip"
-#: The registry's host (Akamai) turns a plain client away (403) and a
-#: browser's agent alone too (503), and answers one with a browser's
-#: Accept and Accept-Language as well (measured 2026-10-11).
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-    "Accept": "*/*",
-    "Accept-Language": "en-US,en;q=0.9",
-}
 DEFAULT_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "faa_registry"
 DB_NAME = "registry.sqlite"
 #: The copy on disk is read again once it is this old, s: the FAA's is
@@ -229,7 +222,7 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
     try:
         directory.mkdir(parents=True, exist_ok=True)
         zip_path = directory / "ReleasableAircraft.zip"
-        resp = outside.get(URL, headers=HEADERS, timeout=300, stream=True)
+        resp = outside.get(URL, headers=REGISTRY_HEADERS, timeout=300, stream=True)
         resp.raise_for_status()
         with open(zip_path, "wb") as out:
             for chunk in resp.iter_content(1 << 20):
