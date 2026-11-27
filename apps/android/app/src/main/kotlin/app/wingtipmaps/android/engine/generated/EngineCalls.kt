@@ -1285,7 +1285,7 @@ fun Engine.holdsRead(text: String): Result<List<EngineContract.HoldsReadAnswerIt
     rule("holds_read", EngineContract.HoldsReadInput(text = text))
 
 /**
- * Which stored icing hours each leg of an IFR route is read off (#216; the owner, 2026-11-27, "Grids, worst of nearby hours"), by index into `hours`: the hour nearest the leg's middle first -- the CIP's analysis where it and an IFI hour are as near, the earliest for a time before them all -- then every other within an hour of the middle, in the order given; none for a middle more than half an hour past the last hour, the stored hours being an hour apart and each standing for the half hour either side of it. The planner samples those hours along the leg and sends them to icing_forecast_route as the leg's `hours`.
+ * Which stored icing hours each leg of an IFR route is read off (#216; the owner, 2026-11-27, "Grids, worst of nearby hours"), by index into `hours`: the hour nearest the leg's middle first -- the CIP's analysis where it and an IFI hour are as near, the earliest for a time up to half an hour before them all -- then every other within an hour of the middle, in the order given; none for a middle more than half an hour past the last hour or before the first, the stored hours being an hour apart and each standing for the half hour either side of it. The planner samples those hours along the leg and sends them to icing_forecast_route as the leg's `hours`.
  */
 fun Engine.icingForecastHours(hours: List<EngineContract.IcingForecastHoursInputHoursItem>, middlesS: List<Double>): Result<EngineContract.IcingForecastHoursAnswer> =
     rule("icing_forecast_hours", EngineContract.IcingForecastHoursInput(hours = hours, middlesS = middlesS))

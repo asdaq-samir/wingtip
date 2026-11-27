@@ -134,9 +134,9 @@ fn severity_value(s: Option<u8>) -> Value {
     s.map_or(Value::Null, |s| Value::String(SEVERITY[s as usize].to_owned()))
 }
 
-/// The worst category at the altitude over the leg, and the share of the
-/// leg in icing there (to a hundredth; None where no column is known).
-fn at_altitude(s: &Section, altitude_ft: f64, levels_ft: &[f64]) -> (Option<u8>, Option<f64>) {
+/// The worst category at the altitude over the leg, and the columns iced
+/// there and known (`(iced, known)`; known 0 where no column is).
+fn at_altitude(s: &Section, altitude_ft: f64, levels_ft: &[f64]) -> (Option<u8>, (usize, usize)) {
     let read = levels_for(altitude_ft, levels_ft);
     let (mut known, mut iced, mut worst): (usize, usize, Option<u8>) = (0, 0, None);
     for column in 0..s.width {
@@ -149,7 +149,13 @@ fn at_altitude(s: &Section, altitude_ft: f64, levels_ft: &[f64]) -> (Option<u8>,
             worst = Some(worst.map_or(c, |w| w.max(c)));
         }
     }
-    (worst, (known > 0).then(|| (iced as f64 / known as f64 * 100.0).round() / 100.0))
+    (worst, (iced, known))
+}
+
+/// The share of the leg in icing, to a hundredth; None where no column is
+/// known.
+fn share_of((iced, known): (usize, usize)) -> Option<f64> {
+    (known > 0).then(|| (iced as f64 / known as f64 * 100.0).round() / 100.0)
 }
 
 /// One leg: the worst at its altitude, the share of the leg in icing there,
@@ -173,13 +179,17 @@ fn leg(index: usize, altitude_ft: f64, s: Option<&Section>, own: Option<&Section
             None,
         );
     };
-    let (worst, mut share) = at_altitude(s, altitude_ft, levels_ft);
+    let (worst, merged) = at_altitude(s, altitude_ft, levels_ft);
+    let mut share = share_of(merged);
+    // Whether the nearest hour has icing at all is its count of iced
+    // columns, not its share rounded: one column in two hundred rounds to
+    // none yet is icing of its own, and its share stands.
     if let Some(own) = own
         && worst.is_some_and(|c| c > 0)
-        && let (_, Some(own_share)) = at_altitude(own, altitude_ft, levels_ft)
-        && own_share != 0.0
+        && let (_, counted @ (iced, _)) = at_altitude(own, altitude_ft, levels_ft)
+        && iced > 0
     {
-        share = Some(own_share);
+        share = share_of(counted);
     }
     let (mut bottom, mut top): (Option<f64>, Option<f64>) = (None, None);
     for column in 0..s.width {
@@ -274,7 +284,8 @@ fn route(name: &str, v: &Value) -> R<Value> {
     Ok(obj(vec![("legs", Value::Array(out)), ("worst", worst_value), ("unchecked", Value::Array(unchecked)), ("line", line)]))
 }
 
-/// How far past the stored cycle's last hour a leg is still read from it:
+/// How far past the stored cycle's last hour, or before its first, a leg is
+/// still read from it:
 /// the stored hours are an hour apart, and each stands for the half hour
 /// either side of it.
 const HALF_HOUR_S: f64 = 1800.0;
@@ -286,12 +297,14 @@ const NEAR_S: f64 = 3600.0;
 
 /// The stored hours a leg whose middle is at `middle_s` is read off, the
 /// nearest first -- the CIP's analysis where it and an IFI hour are as
-/// near, the earliest for a time before them all -- then every other within
+/// near, the earliest for a time just before them all -- then every other within
 /// NEAR_S of it in the order stored; none for a time more than half an
-/// hour past the last.
+/// hour past the last or before the first, as each hour stands for the
+/// half hour either side of it and no further.
 fn hours_for(times: &[(f64, bool)], middle_s: f64) -> Vec<usize> {
     let last = times.iter().map(|t| t.0).fold(f64::NEG_INFINITY, f64::max);
-    if times.is_empty() || middle_s > last + HALF_HOUR_S {
+    let first = times.iter().map(|t| t.0).fold(f64::INFINITY, f64::min);
+    if times.is_empty() || middle_s > last + HALF_HOUR_S || middle_s < first - HALF_HOUR_S {
         return Vec::new();
     }
     let mut nearest = 0;
@@ -367,8 +380,11 @@ mod tests {
         // Half an hour past the last is still read; a second more is not.
         assert_eq!(hours_for(&stored, t(15.5)), vec![3]);
         assert!(hours_for(&stored, t(15.5) + 1.0).is_empty());
-        // Before them all, the earliest.
-        assert_eq!(hours_for(&stored, t(10.0)), vec![0]);
+        // Half an hour before the first is read off it; a second more, or
+        // hours before them all, is not.
+        assert_eq!(hours_for(&stored, t(12.5)), vec![0]);
+        assert!(hours_for(&stored, t(12.5) - 1.0).is_empty());
+        assert!(hours_for(&stored, t(10.0)).is_empty());
         assert!(hours_for(&[], t(10.0)).is_empty());
     }
 
