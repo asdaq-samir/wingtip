@@ -8,7 +8,7 @@ import math
 
 from .. import tracing
 from ..geo import distance_nm
-from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _wall
+from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _wall
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced, _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .recorded import _last_recorded, _record, _recorded, followed
@@ -38,6 +38,13 @@ _WATCHED: dict[str, float] = {}
 _WATCH_ASKED: dict[str, float] = {}
 #: Whose a watched airplane's last report was, for the map's credit.
 _WATCH_SOURCE: dict[str, str] = {}
+#: Where adsb.lol's API last heard each watched airplane on the ground,
+#: {"lat", "lon", "t"}: the map draws no airplane on the ground (`_aircraft`)
+#: and none is recorded, so with the globe's traces refused (since
+#: 2026-10-23) an airplane that had landed had no state at all and its card
+#: said adsb.lol did not answer (the owner's N570GJ taxiing at O'Hare,
+#: 2026-11-27).
+_ON_GROUND: dict[str, dict] = {}
 
 #: How often each followed airplane is asked for in the background, s:
 #: its flights recorded as FlightAware records them, card open or not
@@ -82,7 +89,23 @@ def _lol_by_hex(hex_id: str) -> list[dict]:
     them. Raises TrafficUnavailable where it turns the planner away."""
     answer = _paced(FIND_URL.format(by="hex", value=hex_id))
     entries = answer.get("ac") if isinstance(answer, dict) else None
-    return [a for a in (_aircraft(e) for e in entries if isinstance(e, dict)) if a is not None] if isinstance(entries, list) else []
+    if not isinstance(entries, list):
+        return []
+    for e in entries:
+        if not isinstance(e, dict) or e.get("alt_baro") != "ground" or str(e.get("hex", "")).lower().lstrip("~") != hex_id.lstrip("~"):
+            continue
+        lat, lon = _number(e.get("lat")), _number(e.get("lon"))
+        if lat is not None and lon is not None:
+            seen = _number(e.get("seen_pos")) or _number(e.get("seen")) or 0.0
+            with _LOCK:
+                _ON_GROUND[hex_id] = {"lat": lat, "lon": lon, "t": round(_wall() - seen, 1)}
+    return [a for a in (_aircraft(e) for e in entries if isinstance(e, dict)) if a is not None]
+
+
+def _on_ground(hex_id: str) -> dict | None:
+    """Where adsb.lol's API last heard this airplane on the ground (_ON_GROUND)."""
+    with _LOCK:
+        return _ON_GROUND.get(hex_id)
 
 
 def follow_round() -> int:

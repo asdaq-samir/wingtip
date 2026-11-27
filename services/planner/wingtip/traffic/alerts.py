@@ -6,7 +6,7 @@ from .. import airports
 from .common import STALE_S, TrafficUnavailable, _number, _wall
 from .adsb_lol import UNREAD, _last_heard, _recent_trace, _trace
 from .recorded import _recorded
-from .watched import _watch
+from .watched import _on_ground, _watch
 from .flights import DEPARTED_WITHIN_NM, _points
 from .legs import LEG_GAP_S, _field_at, _left_from
 
@@ -36,6 +36,21 @@ def _recorded_status(hex_id: str, recorded: list[dict]) -> dict:
     return state
 
 
+def _ground_status(hex_id: str, ground: dict) -> dict:
+    """`status` from adsb.lol's API's report of it on the ground (`_on_ground`):
+    not airborne, heard when that report was, and landed at the field it is
+    on, where it is on one (`_field_at`, its report on the ground)."""
+    field = _field_at({"lat": ground["lat"], "lon": ground["lon"], "alt_ft": None, "track_deg": None, "vrate_fpm": 0.0}, landing=True)
+    return {
+        "hex": hex_id,
+        "heard_s": round(max(0.0, _wall() - ground["t"]), 1),
+        "airborne": False,
+        "aircraft": None,
+        "departed": None,
+        "arrived": {**field, "at": ground["t"]} if field is not None else None,
+    }
+
+
 def status(hex_id: str) -> dict:
     """An airplane's state now, for the alerts a pilot sets on it (the
     card's Alert): {"hex", "heard_s" (s since its last report, None with
@@ -59,6 +74,11 @@ def status(hex_id: str) -> dict:
         if not _recorded(hex_id):
             _watch(hex_id)
         recorded = _recorded(hex_id)
+        # Heard on the ground since its last recorded report: on the ground
+        # where it is, landed at the field it is on.
+        ground = _on_ground(hex_id)
+        if ground is not None and (not recorded or ground["t"] > recorded[-1]["t"]):
+            return _ground_status(hex_id, ground)
         if not recorded:
             raise TrafficUnavailable("adsb.lol's recent trace could not be read")
         return _recorded_status(hex_id, recorded)

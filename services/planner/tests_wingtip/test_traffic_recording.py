@@ -108,6 +108,20 @@ def test_a_recorded_airplane_unheard_for_two_minutes_low_over_a_field_has_landed
     assert not state["airborne"] and state["arrived"]["ident"] == "C81"
 
 
+def test_an_airplane_adsb_lol_hears_on_the_ground_has_landed_where_it_is_not_unavailable(clock, monkeypatch):
+    # The globe's trace refused and nothing recorded: the API's report of it
+    # taxiing is its state (the owner's N570GJ at O'Hare, 2026-11-27).
+    stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    taxiing = {**CESSNA, "alt_baro": "ground", "gs": 10.2, "seen_pos": 24.0}
+    stand_in(monkeypatch, "_paced", lambda url: {"ac": [taxiing]})
+    kord = {"ident": "KORD", "name": "Chicago O'Hare Intl", "city": None, "region": None}
+    stand_in(monkeypatch, "_field_at", lambda point, landing: kord if landing else None)
+    state = traffic.status("a128b9")
+    assert not state["airborne"] and state["heard_s"] == 24.0
+    assert state["arrived"] == {**kord, "at": 1791800000.0 - 24.0}
+
+
 def test_a_recorded_track_begun_in_the_air_says_no_departure(clock, monkeypatch):
     """N3429J's card opened over Burlington at 2,000 ft: not "left KBUU"."""
     monkeypatch.setattr(
