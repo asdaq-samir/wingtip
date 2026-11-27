@@ -12,6 +12,7 @@ import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanViewModel } from "./usePlanView";
 import { coursePoints } from "../../../lib/course";
 import { useRoutesShown } from "./useRoutesShown";
+import { useKept } from "./useKept";
 
 /**
  * FPL's route as a list and a line (usePlanWorkspace): its timeline, its
@@ -149,13 +150,24 @@ export function usePlanRouteList(
   const boxOpen = edit.routeOpen || addingStop || !!s.unknownPlace;
   const routeFolded = wholeRoute && !boxOpen;
   const { setRouteOpen } = edit;
+  // Whether the box's toggle turned the grouped box into the route's field
+  // (TypeRouteButton, typeInPlace), rather than a field opened some other
+  // way (a stop being typed, under the card): routeEditing's routeTyped.
+  // Let go once the field is folded.
+  const [typedInPlace, setTypedInPlace] = useState(false);
+  if (typedInPlace && !edit.routeOpen) setTypedInPlace(false);
+  const typeInPlace = useCallback(() => {
+    setTypedInPlace(true);
+    setRouteOpen(true);
+  }, [setRouteOpen]);
   // Done: the field folded away, the timeline alone.
   const foldRoute = useCallback(() => {
     setRouteOpen(false);
     setAddingStop(false);
     setAddAt(null);
   }, [setRouteOpen, setAddAt]);
-  return {
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     ...edit,
     ...line,
     ...shown,
@@ -168,5 +180,7 @@ export function usePlanRouteList(
     routeFolded,
     foldRoute,
     setEditorFocused,
-  };
+    typedInPlace,
+    typeInPlace,
+  });
 }

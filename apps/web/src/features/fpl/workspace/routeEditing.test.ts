@@ -4,7 +4,7 @@
 import { describe, expect, test } from "vitest";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
 import type { PlanSlices } from "../vm/planSlices";
-import { routeBoxOpen, routesOffered, routesOut, turnedByToggle, waysOnMap } from "./routeEditing";
+import { routeBoxOpen, routesOffered, routesOut, waysOnMap } from "./routeEditing";
 
 const typed: RouteWay = {
   key: "own",
@@ -34,7 +34,16 @@ function vm({
   dryRunning = false,
   offered = true,
   boxOpen = false,
-}: { shown?: boolean; folded?: boolean; flying?: boolean; dryRunning?: boolean; offered?: boolean; boxOpen?: boolean } = {}) {
+  typed: typedInPlace = false,
+}: {
+  shown?: boolean;
+  folded?: boolean;
+  flying?: boolean;
+  dryRunning?: boolean;
+  offered?: boolean;
+  boxOpen?: boolean;
+  typed?: boolean;
+} = {}) {
   return {
     flight: { flying, dryRunning },
     route: { wholeRoute: true },
@@ -43,6 +52,7 @@ function vm({
       routesShown: shown,
       routeFolded: folded,
       boxOpen,
+      typedInPlace,
       routeLine: offered ? { chips: [], picked: "none", onPick: () => {}, stale: false } : null,
       wayLines: [typed, weather],
     },
@@ -70,13 +80,8 @@ describe("waysOnMap", () => {
   });
 
   test("offered under the route box its toggle turned, the figures under it as under the folded route", () => {
-    turnedByToggle(true);
-    try {
-      expect(routesOffered(vm({ folded: false }))).toBe(true);
-      expect(waysOnMap(vm({ shown: true, folded: false }))).toEqual([typed, weather]);
-    } finally {
-      turnedByToggle(false);
-    }
+    expect(routesOffered(vm({ folded: false, typed: true }))).toBe(true);
+    expect(waysOnMap(vm({ shown: true, folded: false, typed: true }))).toEqual([typed, weather]);
   });
 
   test("none where there are no ways to suggest", () => {

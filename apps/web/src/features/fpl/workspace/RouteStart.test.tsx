@@ -16,7 +16,7 @@ afterEach(cleanup);
 beforeEach(() => usePlanUndo.setState({ undoName: null, undo: () => {} }));
 
 function slices({ hasPoints = false, routed = false, boxOpen = false } = {}) {
-  const routeList = { boxOpen, clearRoute: vi.fn(), setRouteOpen: vi.fn(), pickEnd: vi.fn() };
+  const routeList = { boxOpen, clearRoute: vi.fn(), typeInPlace: vi.fn(), pickEnd: vi.fn() };
   const vm = { route: { hasPoints, routed }, routeList } as unknown as PlanSlices<"route" | "routeList">;
   return { vm, routeList };
 }
@@ -59,7 +59,7 @@ describe("the box's toggle", () => {
     const dest = screen.getByTestId("timeline-pick-dest").parentElement!;
     expect(dest.contains(toggle)).toBe(true);
     fireEvent.click(toggle);
-    expect(routeList.setRouteOpen).toHaveBeenCalledWith(true);
+    expect(routeList.typeInPlace).toHaveBeenCalledOnce();
   });
 
   test("opens the route's field and puts the focus in it", () => {
@@ -69,7 +69,7 @@ describe("the box's toggle", () => {
     document.body.append(field);
     render(<BoxToggle vm={vm} />);
     fireEvent.click(screen.getByTestId("route-type-open"));
-    expect(routeList.setRouteOpen).toHaveBeenCalledWith(true);
+    expect(routeList.typeInPlace).toHaveBeenCalledOnce();
     expect(document.activeElement).toBe(field);
     field.remove();
   });

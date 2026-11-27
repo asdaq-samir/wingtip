@@ -1285,7 +1285,8 @@ Edit and Done.
    own bottom right in its last row: the empty route's Destination, half
    a route's last row, a whole route's Add a Stop (`RouteStart`'s
    `BoxToggle`). A tap turns the box into the field in the same place and
-   height (`routeTyped`, `RouteEditor` inPlace), its words left-aligned at the box's own
+   height (`routeTyped`, `RouteEditor` inPlace; which way the field was opened is
+   the view model's, usePlanRouteList's `typedInPlace` set by its `typeInPlace`), its words left-aligned at the box's own
    padding (16) with no ghost "Destination" after the last point, with no figures under it before the route is
    whole (the toggle changes nothing outside the box), focused in the tap so a
    phone's keyboard comes up, the toggle pressed where it was; a tap on
@@ -1385,6 +1386,17 @@ Edit and Done.
 6. The empty route field says what it takes ("From, to, or a whole
    route"); a route typed whole is read by the engine's `route_read`
    (DCT out, item 15's speed and level group the cruise).
+
+**What is drawn again.** FPL's view model (usePlanWorkspace) is made of
+slices, one hook each, left out of the React Compiler for the first
+load's size; each slice is the same object while nothing in it changes
+(`useKept`, a shallow compare of its values; useDryRun's handlers made
+steady with `useSteady`), and PlanWorkspace hands each part only the
+slices it reads (`PlanSlices`), not the whole model. A search's
+keystroke, one query's answer or the minute's clock draws again only the
+parts that read what changed, where each drew the map, the sheet's pages
+and FPL's cards again (the speed work, 2026-11-27; `useKept.test.tsx`
+counts the commits with React's Profiler).
 
 **Stock parts.** The rows: React Aria GridList with `useDragAndDrop` and
 `onReorder`, a `<Button slot="drag">` handle per typed point, keyboard

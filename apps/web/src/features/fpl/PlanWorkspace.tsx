@@ -55,9 +55,21 @@ import { useOneSearch } from "./search/useOneSearch";
  */
 export default function PlanWorkspace({ panel, setPanel, children }: WorkspaceProps) {
   const vm = usePlanWorkspace({ panel, setPanel });
+  // Each part and hook handed only the slices it reads (PlanSlices), each
+  // slice the same object while nothing in it changes (useKept): a part is
+  // drawn again only when one of its own does, where the whole model handed
+  // to each drew the map, the pages and the cards again at every keystroke,
+  // query answer and minute (the speed work, 2026-11-27).
+  const { brief, cards, fpl, leg, map, picks, plan, route, routeList, stops } = vm;
+  const flightVm = vm.flight,
+    viewVm = vm.view,
+    searchVm = vm.search;
+  const routeVm = { brief, cards, flight: flightVm, leg, picks, plan, route, routeList, stops, view: viewVm };
+  const mapVm = { cards, flight: flightVm, fpl, leg, map, picks, plan, route, routeList, stops, view: viewVm };
+  const pageVm = { ...mapVm, brief };
   // The one search over the sheet (the owner's one-search design,
   // 2026-11-09): its field the sheet's first row, its results the body's.
-  const search = useOneSearch(vm);
+  const search = useOneSearch({ cards, map, plan, route, search: searchVm, view: viewVm });
   const { view, pickPage } = vm.view;
   const { altitudeFt, altitudeNearest, depart, flightRules, flyAltitude, planned, routed, setLoad } = vm.route;
   const { aircraft, aircraftChoices, aircraftValue, changeAircraft, changeDepart, course, pickTail, s, selected } = vm.plan;
@@ -130,9 +142,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   );
   const kneeboardLater = useDeferredValue(kneeboard, null);
 
-  const routeList = useProceduresRoute(vm);
+  const routeSteps = useProceduresRoute(routeVm);
 
-  const { navLog, navLogCard } = useNavLogs(vm, { tabContent, routeList, kneeboard: kneeboardLater });
+  const navLogVm = { brief, flight: flightVm, fpl, leg, plan, route, view: viewVm };
+  const { navLog, navLogCard } = useNavLogs(navLogVm, { tabContent, routeList: routeSteps, kneeboard: kneeboardLater });
 
   // The Brief's pages (BriefCard): En route's without the legs, which are
   // FPL's own; and its warnings over them.
@@ -248,13 +261,13 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       {children({
         // The map stays mounted beside the briefing (the arrow walk still
         // pans it) but stays off the paper: the drawer is the printed page.
-        map: <PlanMap vm={vm} />,
+        map: <PlanMap vm={mapVm} />,
         // The tab's body (TabBar): FPL's nav log, kept mounted under whatever
         // is open over it and on paper; Airport's search, its Favorites and
         // Recents and what answers, or Nearest's list; Aircraft's list. A card --
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
-        sidebar: <PlanSidebar vm={vm} model={search} />,
+        sidebar: <PlanSidebar vm={{ cards, fpl, map, plan, route, routeList, search: searchVm, stops, view: viewVm }} model={search} />,
         // The pages, turned by the toggle at the first row's end (PageToggle): Search over `sidebar`; FPL its bar (FplBar), `route` and the plan.
         pages: {
           at: view === "plan" ? 1 : 0,
@@ -277,12 +290,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
                     <Search className="size-5" aria-hidden="true" />
                   </IconButton>
                 }
-                strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
-                clear={<ClearRouteButton hasRoute={vm.route.hasPoints} onClear={vm.routeList.clearRoute} />}
+                strip={<RouteControls vm={{ plan, route }} flightInputs={flightInputs} />}
+                clear={<ClearRouteButton hasRoute={route.hasPoints} onClear={routeList.clearRoute} />}
               />
             </>
           ),
-          second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
+          second: <PlanPage vm={pageVm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
         // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
         around: (panel) => (
@@ -302,11 +315,11 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           !place && !heldPoint && !flight && !briefShown && !profileShown
             ? routed && (
                 <FlightFoot
-                  vm={vm}
+                  vm={{ brief, flight: flightVm, fpl, plan, route, routeList, stops }}
                   fileable={fileable}
                   onFile={fileFlightPlan}
                   // The suggested routes, the tab bar's Routes, greyed while there are none.
-                  routes={{ offered: routesOffered(vm), shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown }}
+                  routes={{ offered: routesOffered(routeVm), shown: routeList.routesShown, onShown: routeList.setRoutesShown }}
                   more={shareMenu("end", undefined, undefined, "bar")}
                 />
               )
@@ -315,11 +328,16 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // heads), in its one layout (the owner, 2026-11-17, decision 0047):
         // folded to its line, the figures and the Routes' chips under it, or
         // open to edit, its head over the cards in the page (FplRoute).
-        route: <FplRoute vm={vm} />,
+        route: <FplRoute vm={routeVm} />,
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}
-      <PlanCards vm={vm} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />
+      <PlanCards
+        vm={{ brief, cards, flight: flightVm, fpl, plan, route, routeList, stops, view: viewVm }}
+        navLogCard={navLogCard}
+        briefContents={briefContents}
+        briefNotice={briefNotice}
+      />
     </RouteShareMenu.Provider>
   );
 }

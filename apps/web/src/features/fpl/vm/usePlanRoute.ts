@@ -34,6 +34,7 @@ import { procedureQuery } from "../../../lib/queryClient";
 import { drawnOnly } from "../../procedures";
 import { patternsOf } from "../../../lib/trafficPattern";
 import { useRouteEdits } from "../../route";
+import { useKept } from "./useKept";
 
 /**
  * The route as the address has it (usePlanWorkspace): its points, the
@@ -207,7 +208,9 @@ export function usePlanRoute() {
   const hasPoints = !!planned.dep || !!planned.dest || planned.stops.length > 0;
   const wholeRoute = !!planned.dep && !!planned.dest;
   // The plan as it is asked for, but the airplane (usePlanAnswer's).
-  const planInputs: Omit<PlanParams, "aircraft"> = {
+  // The same object while its values are (useKept): the plan's own memos
+  // are keyed on it.
+  const planInputs = useKept<Omit<PlanParams, "aircraft">>({
     dep: planned.dep,
     dest: planned.dest,
     stops: planned.stops,
@@ -233,10 +236,11 @@ export function usePlanRoute() {
     // Checkpoints as the map shows them: the settings' Waypoints off, the
     // nav log runs from point to point, at the pilot's ask.
     checkpoints: showWaypoints,
-  };
+  });
   // The route's edits, each a change of the address (useRouteEdits).
   const edits = useRouteEdits({ planned, routePoints, setAddress });
-  return {
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     address,
     setAddress,
     engine,
@@ -266,7 +270,7 @@ export function usePlanRoute() {
     directParam: address.direct,
     planInputs,
     ...edits,
-  };
+  });
 }
 
 /** The route as the address has it, as the workspace's hooks read it. */
