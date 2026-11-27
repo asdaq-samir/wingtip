@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
-import { searchIndex, useAirportIndex } from "./airportIndex";
+import { searchIndex, useAirportIndex, type AirportSearchRow } from "./airportIndex";
 import { useOwnShipNear } from "./map/position/ownShip";
 import { useDebounced } from "./useDebounced";
 
@@ -27,7 +27,9 @@ const SEARCH_FRESH_MS = 10 * 60_000;
  * waypoints are still the planner's, a debounce and a request behind the
  * typing, the airports shown meanwhile; so are the airports until the
  * copy is in. `answered` says whether the rows are the answer to what is
- * in the box now, which is when Enter may take the first of them.
+ * in the box now, which is when Enter may take the first of them;
+ * `airportsAnswered` whether the airports are, for the list to show them
+ * at once while the waypoints are still asked.
  */
 export function useAirportSearch(text: string, enabled = true, fixes = false) {
   const typed = text.trim();
@@ -66,11 +68,37 @@ export function useAirportSearch(text: string, enabled = true, fixes = false) {
     placeholderData: keepPreviousData,
   });
   const asked = q === typed && !isPlaceholderData && !!data;
-  if (local && !fixes) return { typed, rows: local, answered: true };
-  // A stop's: the planner's answer, the waypoints with the airports, once
-  // it answers what is typed; the airports from the copy until then, and
-  // after it, when the request has failed or the phone is offline: the
-  // query has settled, so Enter may take the first airport shown.
-  if (local && !asked) return { typed, rows: local, answered: q === typed && !isFetching };
-  return { typed, rows: typed && q ? (data ?? []) : [], answered: q === typed && !isPlaceholderData };
+  // The planner's waypoints for what is typed, else the last answer's that
+  // still match it: the group narrows as letters come, not emptied and
+  // filled again at each.
+  const fixRows = useMemo(() => {
+    if (!fixes || !local || !data) return NONE;
+    const upper = typed.toUpperCase();
+    const all = data.filter((r) => r.kind === "fix");
+    return asked ? all : all.filter((r) => r.ident.toUpperCase().startsWith(upper));
+  }, [fixes, local, data, asked, typed]);
+  const rows = useMemo(() => (local ? merged(local, fixRows, typed) : NONE), [local, fixRows, typed]);
+  if (local && !fixes) return { typed, rows: local, answered: true, airportsAnswered: true };
+  // A stop's: the copy's airports at each letter, ranked where the pilot
+  // reads them and never replaced by the planner's own order -- the top
+  // row swapped some 200 ms after a letter, under an Enter or a tap, for
+  // another field -- and the planner's waypoints merged in as it answers.
+  // `answered` waits on the planner, which an Enter of what is typed reads
+  // (a waypoint the airports do not have); once it has failed or the
+  // phone is offline the query has settled, and Enter may take the first.
+  if (local) return { typed, rows, answered: asked || (q === typed && !isFetching), airportsAnswered: true };
+  const answered = q === typed && !isPlaceholderData;
+  return { typed, rows: typed && q ? (data ?? NONE) : NONE, answered, airportsAnswered: answered };
+}
+
+const NONE: AirportSearchRow[] = [];
+
+/** The copy's airports with the planner's waypoints: one whose ident is
+ *  what is typed first (a navaid typed whole, ORD), the rest after the
+ *  airports. */
+function merged(airports: AirportSearchRow[], fixRows: AirportSearchRow[], typed: string): AirportSearchRow[] {
+  if (fixRows.length === 0) return airports;
+  const upper = typed.toUpperCase();
+  const whole = fixRows.filter((r) => r.ident.toUpperCase() === upper);
+  return [...whole, ...airports, ...fixRows.filter((r) => r.ident.toUpperCase() !== upper)];
 }

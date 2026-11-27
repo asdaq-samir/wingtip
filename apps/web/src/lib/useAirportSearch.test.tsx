@@ -47,16 +47,18 @@ beforeEach(() => {
 });
 
 describe("the phone's own copy", () => {
-  test("is downloaded once the page is idle, and read only once the pilot goes to type", async () => {
+  test("is downloaded once the page is idle, read ahead at the next idle, and the focus finds it read", async () => {
     vi.stubGlobal("requestIdleCallback", (go: () => void) => setTimeout(go, 0));
     try {
       const { result } = renderHook(() => useAirportSearch("", true), { wrapper: wrapper() });
       await waitFor(() => expect(api.warmAirportIndex).toHaveBeenCalledTimes(1));
-      expect(api.airportIndex).not.toHaveBeenCalled();
-      // A field focused: the keyboard on its way up.
+      // Read once the download is in and the page is idle again, before
+      // any field is focused: not while the keyboard comes up.
+      await waitFor(() => expect(api.airportIndex).toHaveBeenCalledTimes(1));
       const field = document.body.appendChild(document.createElement("input"));
       field.focus();
-      await waitFor(() => expect(api.airportIndex).toHaveBeenCalledTimes(1));
+      await new Promise((go) => setTimeout(go, 20));
+      expect(api.airportIndex).toHaveBeenCalledTimes(1);
       expect(result.current.rows).toEqual([]);
       field.remove();
     } finally {
@@ -108,6 +110,19 @@ describe("useAirportSearch with fixes and the copy in", () => {
     const { result } = renderHook(() => useAirportSearch("osh", true, true), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.rows.length).toBe(1));
     expect(result.current.answered).toBe(false);
+  });
+
+  test("keeps the copy's airports where they are when the planner answers, its waypoints merged in", async () => {
+    vi.mocked(api.airportSearch).mockResolvedValue([
+      { ident: "OSHKO", name: "Oshko", municipality: null, region: null, kind: "fix" },
+      { ident: "KOSH", name: "Wittman Regional", municipality: "Oshkosh", region: "US-WI", kind: "airport" },
+    ] as never);
+    const { result } = renderHook(() => useAirportSearch("osh", true, true), { wrapper: wrapper() });
+    // The copy's airport first, as it was shown before the planner's
+    // answer put the waypoint first.
+    await waitFor(() => expect(result.current.rows.map((r) => r.ident)).toEqual(["KOSH", "OSHKO"]));
+    expect(result.current.answered).toBe(true);
+    expect(result.current.airportsAnswered).toBe(true);
   });
 
   test("asks the planner once for letters typed again", async () => {

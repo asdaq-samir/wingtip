@@ -237,6 +237,7 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     // The field's words, shown short and said whole.
     ...searchWords(direct, pick, picking),
     answered: search.answered,
+    airportsAnswered: search.airportsAnswered,
     airports,
     waypoints,
     airplanes,

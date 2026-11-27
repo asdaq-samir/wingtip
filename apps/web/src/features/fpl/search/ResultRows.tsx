@@ -39,9 +39,9 @@ export function AirportIcon({ ident, name, kept = false }: { ident: string; name
 
 /** The group a set of rows is in: its name for a screen reader only, as
  *  Apple's results carry no headings; the row's icon says its kind. */
-export function ResultGroup({ heading, children }: { heading: string; children: ReactNode }) {
+export function ResultGroup({ heading, children, className }: { heading: string; children: ReactNode; className?: string }) {
   return (
-    <CommandGroup heading={heading} className="p-0" headingClassName="sr-only">
+    <CommandGroup heading={heading} className={cn("p-0", className)} headingClassName="sr-only">
       {children}
     </CommandGroup>
   );
