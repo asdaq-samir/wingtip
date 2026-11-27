@@ -98,7 +98,7 @@ struct FindNearbyView: View {
         }
         .navigationTitle(kind.title)
         .onAppear { ownShip.askLocation() }
-        .task(id: ownShip.coarseCoordinate.map { "\(($0.latitude * 60).rounded()),\(($0.longitude * 60).rounded())" }) { await load() }
+        .task(id: ownShip.byTheMile) { await load() }
     }
 
     private func load() async {

@@ -128,6 +128,13 @@ struct RepeatedWorkTests {
         #expect(OwnShip.coarse(CLLocationCoordinate2D(latitude: 42.1247, longitude: -88.457)).latitude != a.latitude)
     }
 
+    @Test func theNearestFieldsAreAskedAgainByTheMile() {
+        let here = OwnShip.byTheMile(CLLocationCoordinate2D(latitude: 42.1230, longitude: -88.4570))
+        // A tenth of a mile north is the same mile; a mile and a half is not.
+        #expect(OwnShip.byTheMile(CLLocationCoordinate2D(latitude: 42.1247, longitude: -88.4570)) == here)
+        #expect(OwnShip.byTheMile(CLLocationCoordinate2D(latitude: 42.1480, longitude: -88.4570)) != here)
+    }
+
     // MARK: The GPS on the ground (item 10)
 
     @Test func theGpsIsAtItsBestOnlyFlyingFollowedOrOnADiagram() {
