@@ -36,6 +36,7 @@ never waits on Planespotters.net.
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
 import time
@@ -44,7 +45,8 @@ from enum import Enum
 
 import requests
 
-from . import kept_answers, outside
+from . import kept_answers, outside, ratelimit, single_flight
+from .figure import number
 from .config import get_settings, user_agent
 
 log = logging.getLogger(__name__)
@@ -59,6 +61,14 @@ SOURCE = "Planespotters.net"
 #: 2 x TIMEOUT_S where the address had none (round 4's audit), and both at
 #: once doubled every card's requests to Planespotters.net (round 5's).
 HEDGE_S = 1.0
+#: After a refusal, a 5xx or no answer in time, Planespotters.net is not
+#: asked for this long, s (its Retry-After where longer, held to an hour):
+#: while it failed every card's open asked it again, both ways, and the
+#: shared session asked each up to three times more on a 429 or 5xx,
+#: honouring Retry-After up to 30 s inside the card's request (round 6's
+#: audit, N5). Its terms limit the requests a server may send.
+HOLD_S = 60.0
+_SOURCE = ratelimit.Gate(hold_most_s=3600.0)
 _ASKING = ThreadPoolExecutor(max_workers=4, thread_name_prefix="planespotters")
 _HEX = re.compile(r"^[0-9a-f]{6}$")
 
@@ -110,13 +120,20 @@ def photo(hex_id: str | None, registration: str | None) -> dict | None:
     kept, found = kept_answers.kept("photo", key, time.time())
     if kept:
         return found
-    headers = {"User-Agent": user_agent(f"+{contact}")}
-    answers = _hedged([lambda by=by, value=value: _ask(by, value, headers) for by, value in tries])
-    found = next((a for state, a in answers if state is Asked.PHOTO), None)
-    if found is None and any(state is Asked.FAILED for state, _ in answers):
-        return None  # not kept: asked again next time
-    kept_answers.keep("photo", key, found, time.time() + KEEP_S)
-    return found
+    # Two phones opening one airplane at once: one asks, the other waits for its answer.
+    with single_flight.one_at_a_time(("planespotters", key)):
+        kept, found = kept_answers.kept("photo", key, time.time())
+        if kept:
+            return found
+        if _SOURCE.held(time.monotonic()):
+            return None
+        headers = {"User-Agent": user_agent(f"+{contact}")}
+        answers = _hedged([lambda by=by, value=value: _ask(by, value, headers) for by, value in tries])
+        found = next((a for state, a in answers if state is Asked.PHOTO), None)
+        if found is None and any(state is Asked.FAILED for state, _ in answers):
+            return None  # not kept: asked again next time
+        kept_answers.keep("photo", key, found, time.time() + KEEP_S)
+        return found
 
 
 def _hedged(asks: list) -> list[tuple[Asked, dict | None]]:
@@ -126,7 +143,8 @@ def _hedged(asks: list) -> list[tuple[Asked, dict | None]]:
     wherever its answer is in hand."""
     first = _ASKING.submit(asks[0])
     done, _ = wait([first], timeout=HEDGE_S)
-    if len(asks) == 1 or (done and first.result()[0] is Asked.PHOTO):
+    # A first way refused is not followed by the second: the source is held.
+    if len(asks) == 1 or (done and first.result()[0] is not Asked.NONE):
         return [first.result()]
     if done:
         return [first.result(), asks[1]()]
@@ -142,11 +160,28 @@ def _hedged(asks: list) -> list[tuple[Asked, dict | None]]:
 
 def _ask(by: str, value: str, headers: dict) -> tuple[Asked, dict | None]:
     """One way's answer: (PHOTO, the photo as `read` gives it), (NONE, None) or (FAILED, None)."""
+    if _SOURCE.held(time.monotonic()):
+        return Asked.FAILED, None
     try:
-        resp = outside.get(API.format(by=by, key=value), headers=headers, timeout=TIMEOUT_S)
+        resp = _get(API.format(by=by, key=value), headers=headers, timeout=TIMEOUT_S)
+        if resp.status_code == 429 or resp.status_code >= 500:
+            _SOURCE.hold(max(HOLD_S, number(resp.headers.get("Retry-After")) or 0.0), time.monotonic())
         resp.raise_for_status()
         found = read(resp.json())
-    except (requests.RequestException, ValueError):
+    except (requests.RequestException, ValueError) as err:
+        if not isinstance(err, requests.HTTPError):
+            _SOURCE.hold(HOLD_S, time.monotonic())
         log.info("Planespotters.net photo of %s not had now", value, exc_info=True)
         return Asked.FAILED, None
     return (Asked.PHOTO, found) if found else (Asked.NONE, None)
+
+
+@functools.cache
+def _session():
+    # One try: the card's TIMEOUT_S is the most a way waits, and a refusal
+    # holds the source (_SOURCE) where the shared session asked again.
+    return outside.session(retries=False, pool=4)
+
+
+def _get(url: str, **kwargs):
+    return _session().get(url, **kwargs)

@@ -10,7 +10,7 @@ import time
 import pytest
 import requests
 
-from wingtip import aircraft_photo, kept_answers
+from wingtip import aircraft_photo, kept_answers, ratelimit
 from wingtip.config import get_settings
 
 ANSWER = {
@@ -33,8 +33,8 @@ ANSWER = {
 
 
 class Resp:
-    def __init__(self, body, status=200):
-        self.body, self.status_code = body, status
+    def __init__(self, body, status=200, headers=None):
+        self.body, self.status_code, self.headers = body, status, headers or {}
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -54,7 +54,8 @@ def asked(monkeypatch):
         calls.append((url, headers["User-Agent"]))
         return Resp(ANSWER if url.endswith("/reg/N654FL") else {"photos": []})
 
-    monkeypatch.setattr(aircraft_photo.outside, "get", get)
+    monkeypatch.setattr(aircraft_photo, "_get", get)
+    monkeypatch.setattr(aircraft_photo, "_SOURCE", ratelimit.Gate())
     yield calls
     get_settings.cache_clear()
 
@@ -86,7 +87,7 @@ def test_the_registration_is_asked_only_once_the_address_is_slow_and_its_photo_w
             slow.wait(2)  # the address hanging: not waited for
         return Resp(ANSWER if url.endswith("/reg/N654FL") else {"photos": []})
 
-    monkeypatch.setattr(aircraft_photo.outside, "get", get)
+    monkeypatch.setattr(aircraft_photo, "_get", get)
     started = time.monotonic()
     assert aircraft_photo.photo("a89c1e", "N654FL")["photographer"] == "A Spotter"
     assert time.monotonic() - started < 1.5
@@ -99,7 +100,7 @@ def test_an_address_answering_in_time_is_the_one_ask(asked, monkeypatch):
         asked.append((url, headers["User-Agent"]))
         return Resp(ANSWER)
 
-    monkeypatch.setattr(aircraft_photo.outside, "get", get)
+    monkeypatch.setattr(aircraft_photo, "_get", get)
     assert aircraft_photo.photo("a89c1e", "N654FL")["photographer"] == "A Spotter"
     assert [u for u, _ in asked] == ["https://api.planespotters.net/pub/photos/hex/a89c1e"]
 
@@ -117,7 +118,7 @@ def test_the_address_asked_both_ways_still_gives_its_photo_once_in_hand(asked, m
         time.sleep(0.2)
         return Resp(by_reg)
 
-    monkeypatch.setattr(aircraft_photo.outside, "get", get)
+    monkeypatch.setattr(aircraft_photo, "_get", get)
     assert aircraft_photo.photo("a89c1e", "N654FL")["photographer"] == "A Spotter"
 
 
@@ -130,7 +131,7 @@ def test_none_without_a_contact_or_a_photo(asked, monkeypatch):
 
 
 def test_a_failed_ask_is_not_kept(asked, monkeypatch):
-    monkeypatch.setattr(aircraft_photo.outside, "get", lambda url, headers, timeout: Resp({}, 503))
+    monkeypatch.setattr(aircraft_photo, "_get", lambda url, headers, timeout: Resp({}, 503))
     assert aircraft_photo.photo("a89c1e", "N654FL") is None
     assert kept_answers.kept("photo", "hex:a89c1e/reg:N654FL", time.time()) == (False, None)
 
@@ -141,3 +142,35 @@ def test_an_answer_past_its_day_is_asked_again_and_pruned(asked):
     assert kept_answers.kept("photo", "hex:a89c1e/reg:N654FL", a_day_on) == (False, None)
     assert kept_answers.forget(a_day_on) == 1
     assert aircraft_photo.photo("a89c1e", "N654FL") == found and len(asked) == 4
+
+
+def test_a_refusal_holds_planespotters_without_the_second_way_or_a_retry(asked, monkeypatch):
+    """Round 6's audit, N5: a 429 asked again three times inside the card's
+    request, then the registration at once, and again on every open."""
+    calls = []
+    monkeypatch.setattr(aircraft_photo, "_get", lambda url, headers, timeout: calls.append(url) or Resp({}, 429, {"Retry-After": "120"}))
+    assert aircraft_photo.photo("a89c1e", "N654FL") is None and len(calls) == 1
+    assert aircraft_photo.photo("a89c1e", "N654FL") is None and len(calls) == 1
+    assert aircraft_photo._SOURCE.held(time.monotonic() + 119) and not aircraft_photo._SOURCE.held(time.monotonic() + 121)
+    assert not aircraft_photo._session().get_adapter("https://api.planespotters.net").max_retries.total
+
+
+def test_two_cards_opening_one_airplane_at_once_ask_once(asked, monkeypatch):
+    calls, go = [], threading.Event()
+
+    def slow(url, headers, timeout):
+        calls.append(url)
+        go.wait(2)
+        return Resp(ANSWER)
+
+    monkeypatch.setattr(aircraft_photo, "_get", slow)
+    monkeypatch.setattr(aircraft_photo, "HEDGE_S", 5.0)
+    found = []
+    both = [threading.Thread(target=lambda: found.append(aircraft_photo.photo("a89c1e", None))) for _ in range(2)]
+    for t in both:
+        t.start()
+    time.sleep(0.2)
+    go.set()
+    for t in both:
+        t.join(5)
+    assert len(calls) == 1 and found[0] == found[1] and found[0]["link"]
