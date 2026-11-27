@@ -127,21 +127,44 @@ def test_every_bucket_refuses_a_request_in_the_clear():
         assert re.search(r"Effect: Deny.*?aws:SecureTransport: \"false\"", policy[1], re.S), bucket
 
 
+EDGE = (ROOT / "infra/cloudformation/edge.yaml").read_text()
+
+
 def test_the_edge_limits_each_address_on_the_tile_paths_the_server_answers():
     # The deep security review of 2026-11-21, N5: a ?c= of its own made
     # each tile a cache miss read on the server, with no limit anywhere.
-    acl = re.search(r"^  TileRateLimit:\n    Type: AWS::WAFv2::WebACL\n(.*?)(?=\n  \w)", TEMPLATE, re.S | re.M)
+    # The web ACL is edge.yaml's, in us-east-1 (decision 0064).
+    acl = re.search(r"^  TileRateLimit:\n    Type: AWS::WAFv2::WebACL\n(.*?)(?=\n  \w|\n\S)", EDGE, re.S | re.M)
     assert acl, "the tiles' web ACL"
     body = acl[1]
     assert "Scope: CLOUDFRONT" in body and "DefaultAction: { Allow: {} }" in body
     assert re.search(r"RateBasedStatement:\s+Limit: \d+\s+EvaluationWindowSec: \d+\s+AggregateKeyType: IP", body)
     assert "ResponseCode: 429" in body
     # Every behaviour that sends a tile to the server is scoped by the rule.
-    for behaviour in re.findall(r"PathPattern: (api/planner/\w+-tile)/\*\n\s+TargetOriginId: server", TEMPLATE):
+    behaviours = re.findall(r"PathPattern: (api/planner/\w+-tile)/\*\n\s+TargetOriginId: server", TEMPLATE)
+    assert behaviours
+    for behaviour in behaviours:
         assert f"SearchString: /{behaviour}/" in body, behaviour
     # Made and attached only with EdgeRateLimit=on, off at launch (the
     # owner, 2026-11-27, decision 0063): N5 stays open until it is on.
     assert "    Condition: EdgeRateLimitOn\n" in body
-    assert "WebACLId: !If [EdgeRateLimitOn, !GetAtt TileRateLimit.Arn, !Ref AWS::NoValue]" in TEMPLATE
-    switch = re.search(r"^  EdgeRateLimit:\n(.*?)(?=\n  \w)", TEMPLATE, re.S | re.M)
+    switch = re.search(r"^  EdgeRateLimit:\n(.*?)(?=\n  \w)", EDGE, re.S | re.M)
     assert switch and 'Default: "off"' in switch[1] and 'AllowedValues: ["on", "off"]' in switch[1]
+    assert "WebACLId: !If [HasWebAcl, !Ref WebAclArn, !Ref AWS::NoValue]" in TEMPLATE
+    web_acl = re.search(r"^  WebAclArn:\n(.*?)(?=\n  \w)", TEMPLATE, re.S | re.M)
+    assert web_acl and 'Default: ""' in web_acl[1]
+
+
+def test_the_main_stack_deploys_in_any_region():
+    # Decision 0064: an AWS project account keeps its regional resources
+    # in one Region (us-east-2), so what CloudFront takes only from
+    # us-east-1 is edge.yaml's, and template.yaml asserts no Region.
+    assert not re.search(r"^Rules:", TEMPLATE, re.M)
+    for kind in ("AWS::CertificateManager::Certificate", "AWS::WAFv2::WebACL"):
+        assert f"Type: {kind}\n" not in TEMPLATE, kind
+        assert f"Type: {kind}\n" in EDGE, kind
+    assert "AcmCertificateArn: !Ref CertificateArn" in TEMPLATE
+    assert re.search(r"^  UsEast1:\n    Assertions:\n      - Assert: !Equals \[!Ref AWS::Region, us-east-1\]", EDGE, re.M)
+    # Route 53's health figures and ACM's events are us-east-1's alone.
+    for name in ("HealthCheck", "HealthAlarm", "CertificateExpiryRule"):
+        assert re.search(rf"^  {name}:\n    Type: \S+\n    Condition: UsEast1Alerts\n", TEMPLATE, re.M), name
