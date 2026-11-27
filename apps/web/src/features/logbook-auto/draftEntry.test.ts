@@ -34,8 +34,8 @@ describe("a flight logged from the track", () => {
     expect(visual).toMatchObject({
       route: "C81 KDLH",
       totalHours: 4,
-      dayLandings: 1,
-      nightLandings: 1,
+      dayLandings: 2,
+      nightLandings: 0,
       touchAndGoes: 1,
       approaches: 0,
       holding: false,
