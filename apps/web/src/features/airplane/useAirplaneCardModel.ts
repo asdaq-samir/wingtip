@@ -63,7 +63,7 @@ export function useAirplaneCardModel({
   const flyable = !!tail && ((!!card.record && profileOfRegistered(card.record) !== null) || vm.owned || vm.flying);
   // Each tab opening at its own top (useTabScroll).
   const [picked, pick] = useState<AirplaneTab | null>(null);
-  const { tabs, tab } = airplaneTabs({ hex, tail, flyable, figures, airborne, picked });
+  const { tabs, tab } = airplaneTabs({ hex, tail, flyable, figures, picked });
   const [, setTop] = useTabScroll(tab);
   const kept = card.kept ?? live.kept;
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));

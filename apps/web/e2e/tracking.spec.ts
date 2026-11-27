@@ -28,13 +28,13 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   await (await findAirplane(page, "UAL2088")).click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, its call sign and what it is
-  // under it, opened on its Flights tab while it flies.
+  // under it, opened on its Info tab in the air too, as the airport's card opens.
   const card = page.getByTestId("airplane-profile");
   // At the pill's size, as every card opens; its pages all the way up.
   await grabberTo(page, "full");
   await expect(card).toContainText("N14511");
   await expect(card).toContainText("UAL2088 · Airbus A-321neo");
-  await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
+  await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
   // The flight it is on, the first slide of the row under the actions, as
   // FlightAware's: where it left and where it is bound, and how it is flying.
   await expect(card.getByTestId("flight-departed")).toContainText("TJSJ");
@@ -42,6 +42,7 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   await expect(card.getByTestId("flight-altitude")).toContainText("7,000 ft");
   // In its Flights tab's Now group who flies it and its flight number's
   // route, at the pilot's ask; its make and model are its Info tab's.
+  await card.getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("flight-route")).toContainText("TJSJ → KORD");
   await expect(card.getByTestId("flight-route")).toContainText("San Juan to Chicago");
   await expect(card.getByTestId("flight-operator")).toHaveText("United Airlines Inc");

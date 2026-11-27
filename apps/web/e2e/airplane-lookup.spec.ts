@@ -256,12 +256,12 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   await row.getByTestId("search-airplane-track").click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, in the air Track first, no Fly
-  // This, on its Flights tab with the flight's slide in sight.
+  // This, on its Info tab as the airport's card opens, the flight's slide in sight above the tabs.
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-track")).toBeVisible();
   await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
+  await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("airplane-pictures").getByTestId("flight-now")).toBeVisible();
   await expect(page.getByTestId("airplane-profile")).toHaveCount(1);
 });

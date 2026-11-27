@@ -479,9 +479,9 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   card titled with its call sign, Flights its one tab, its registration,
   type, owner, model, ICAO address and call sign in that tab's first
   group, its registration row saying it is not in the FAA's registry,
-  its photo by its address in the row. It opens on Flights while it
-  flies, on Figures from the plan's N-number's ⓘ or a figure asked for,
-  else on Info. Info is the airplane's
+  its photo by its address in the row. It opens on Figures from the
+  plan's N-number's ⓘ or a figure asked for, else on Info, in the air
+  too, as the airport's card does, its flight now in the row above. Info is the airplane's
   public record in groups, in this order -- Registration (owner, owner
   type, town, co-owners, issued and expires, last action, FAA region,
   fractional), Airplane (type, category, builder certification, seats,
