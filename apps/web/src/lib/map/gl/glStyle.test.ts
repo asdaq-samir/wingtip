@@ -14,7 +14,9 @@ import {
   glZoom,
   specialUseLayers,
 } from "./glStyle";
-import { legPiece, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
+import { legPiece, routeCasingPaint, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
+import { dimLayer, dimmedColour } from "./mapDim";
+import { CHART } from "../../tokens";
 import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryFrom } from "./closeZoom";
 
 const chart = {
@@ -173,6 +175,15 @@ describe("the course's casing", () => {
     expect(by["route-outer"]!.filter).toEqual(selectedLegFilter(null));
     expect(selectedLegFilter("b")).toEqual(["all", ["==", ["get", "part"], "leg"], ["==", ["get", "leg"], "b"]]);
     expect(layers.map((l) => l.id)).toEqual(["route-outer", "route-edge", "route-casing", "route-core"]);
+  });
+
+  it("is dimmed at night once, with the chart, by its colours (the round-4 themes audit)", () => {
+    const core = dimLayer(routeLayers().find((l) => l.id === "route-core")!) as LineLayerSpecification;
+    // Its colour times the chart's brightness; its opacity left solid.
+    expect(core.paint?.["line-color"]).toEqual(dimmedColour(CHART.course));
+    expect(core.paint?.["line-opacity"]).toBeUndefined();
+    // The casing no see-through of its own at night, which the dim took down again.
+    expect(routeCasingPaint(true)["line-opacity"]).toBe(1);
   });
 
   it("gives each leg its own piece of the course to be cased", () => {

@@ -11,7 +11,7 @@ import type {
   MapMouseEvent,
   SourceSpecification,
 } from "maplibre-gl";
-import { dimLayer, dimmedOpacity, isDimmed } from "./mapDim";
+import { dimLayer, dimmedPaint } from "./mapDim";
 
 /**
  * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is
@@ -269,7 +269,7 @@ export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
       state.current = "done";
       each((id, prop, to) => {
         set(id, `${prop}-transition`, { duration: prefersReducedMotion() ? 0 : FADE_IN_MS, delay: 0 });
-        set(id, prop, isDimmed(map.getLayer(id)?.type, prop) ? dimmedOpacity(to) : to);
+        set(id, prop, dimmedPaint(map.getLayer(id), prop, to));
       });
     };
     if (state.current === "new") {
@@ -356,11 +356,11 @@ export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
     const apply = () => {
       for (const id of ids.split(",")) {
         if (!map.getLayer(id)) continue;
-        const type = map.getLayer(id)?.type;
+        const layer = map.getLayer(id);
         for (const [k, set] of values) {
           const name = k as Parameters<MlMap["setPaintProperty"]>[1];
-          // An opacity keeps the Dimmer's share at night (mapDim).
-          const v = isDimmed(type, k) ? dimmedOpacity(set) : set;
+          // An opacity, or a colour dimmed by colour, keeps the Dimmer's share at night (mapDim).
+          const v = dimmedPaint(layer, k, set);
           // Only where it differs: setting it changes the style, which
           // would ask for this again.
           if (JSON.stringify(map.getPaintProperty(id, name)) !== JSON.stringify(v)) map.setPaintProperty(id, name, v as never);

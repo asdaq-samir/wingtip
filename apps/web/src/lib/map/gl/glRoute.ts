@@ -1,6 +1,7 @@
 import type { ExpressionSpecification, LayerSpecification, LineLayerSpecification } from "maplibre-gl";
 import { lonNear, lonScale, unwrapLine } from "../../geo";
 import { CHART } from "../../tokens";
+import { DIM_BY_COLOUR } from "./mapDim";
 
 /** The route and its checkpoints as GL data and layers (the chart's style is glStyle). */
 
@@ -159,10 +160,12 @@ export function selectedLegFilter(leg: string | null): ExpressionSpecification {
 const WHOLE_ROUTE = ["==", ["get", "part"], "route"] as ExpressionSpecification;
 
 /** The green casing in each look (CHART.routeGreen, as ForeFlight cases its
- *  course): full by day and in sunlight, a shade deeper at night so it
- *  does not glare off the dimmed chart. */
+ *  course), a shade deeper at night so it does not glare off the dimmed
+ *  chart. Never see-through of its own: at night the Dimmer takes it
+ *  down with the chart (mapDim, by colour), where its 0.9 at night was
+ *  dimmed a second time (the round-4 themes audit). */
 export function routeCasingPaint(night: boolean): Record<string, unknown> {
-  return { "line-color": night ? CHART.routeGreenNight : CHART.routeGreen, "line-opacity": night ? 0.9 : 1, "line-width": CASING_WIDTH };
+  return { "line-color": night ? CHART.routeGreenNight : CHART.routeGreen, "line-opacity": 1, "line-width": CASING_WIDTH };
 }
 
 /** The dark edge round the green of a selected leg so it keeps its
@@ -184,12 +187,18 @@ export function routeEdgePaint(night: boolean, sunlight: boolean): Record<string
 }
 
 /** The course line: the magenta core with a thin edge, and under them the
- *  selected leg's outer edge and green casing (selectedLegFilter). */
+ *  selected leg's outer edge and green casing (selectedLegFilter). At night
+ *  each is dimmed with the chart by its colour, not its opacity
+ *  (DIM_BY_COLOUR): the course stays solid, the most visible line on the
+ *  dimmed chart, and no brighter than the chart's own inks. The edges'
+ *  opacities are their weight in each look, not a dim. */
 export function routeLayers(courseColour = CHART.course): LayerSpecification[] {
   const round = { "line-join": "round", "line-cap": "round" } as const;
+  const metadata = DIM_BY_COLOUR;
   const outer: LineLayerSpecification = {
     id: "route-outer",
     type: "line",
+    metadata,
     source: ROUTE_SOURCE,
     layout: round,
     filter: selectedLegFilter(null),
@@ -198,6 +207,7 @@ export function routeLayers(courseColour = CHART.course): LayerSpecification[] {
   const edge: LineLayerSpecification = {
     id: "route-edge",
     type: "line",
+    metadata,
     source: ROUTE_SOURCE,
     layout: round,
     filter: WHOLE_ROUTE,
@@ -206,6 +216,7 @@ export function routeLayers(courseColour = CHART.course): LayerSpecification[] {
   const casing: LineLayerSpecification = {
     id: "route-casing",
     type: "line",
+    metadata,
     source: ROUTE_SOURCE,
     layout: round,
     filter: selectedLegFilter(null),
@@ -214,6 +225,7 @@ export function routeLayers(courseColour = CHART.course): LayerSpecification[] {
   const core: LineLayerSpecification = {
     id: "route-core",
     type: "line",
+    metadata,
     source: ROUTE_SOURCE,
     layout: round,
     filter: WHOLE_ROUTE,
