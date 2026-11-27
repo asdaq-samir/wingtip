@@ -63,7 +63,7 @@ object HazardLayer {
                     combine(prefs.picks, flight.state, AirspaceVolumes3d.planAltitudes) { picks, now, legs ->
                         if (picks.setting == Hazard.Setting.OFF) null
                         else Hazard.input(picks.setting, now.fix, legs?.maxOrNull(), picks.clearanceFt)
-                    }.distinctUntilChanged().collect { input ->
+                    }.distinctUntilChanged { a, b -> a?.let(Hazard::repaintKey) == b?.let(Hazard::repaintKey) }.collect { input ->
                         view = input?.let { Hazard.view(it) }
                         reRing()
                         redraw(mapView)

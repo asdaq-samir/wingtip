@@ -461,8 +461,9 @@ start fetch the cycle the planner then serves and delete the old cycle's
 charts when it is done.
 
 With no signal in the air (the offline audit of 2026-11-10): Emergency
-and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
-"From this phone, without weather"); a re-plan that fails puts the last
+and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`:
+the box the engine's `fields_near` gives, ranked by its `best_fields`, as
+the iPhone's PackFields; "From this phone, without weather"); a re-plan that fails puts the last
 whole plan back, saying "Not changed: no connection."
 (`plan/PlanShown`); Keep for the Air also keeps each field's own NOTAMs,
 the route's side view and the radar loop's newest frame over the route
