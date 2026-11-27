@@ -22,8 +22,6 @@ nonisolated enum ChartLook {
         static let dimLight = "chartDimLight"
         static let dimDark = "chartDimDark"
         static let contrast = "chartContrast"
-        /// The old Chart at Night ("normal" was Dark + Bright), read once.
-        static let chartNight = "chartAtNight"
     }
 
     /// How much of the night's ground is laid over the chart: the Dimmer
@@ -39,16 +37,6 @@ nonisolated enum ChartLook {
     /// 0.15000000000000002 after three steps, which named a tile store of
     /// its own (ChartTileRenderer's prefix).
     static func steps(_ value: Double) -> Int { Int((value / step).rounded()) }
-
-    /// Appearance's Dark + Bright, gone as on the web (its preferences
-    /// version 12, 2026-11-18): a kept "normal" Chart at Night under the
-    /// dark scheme becomes Dark with a dark Dimmer of 0, the chart as
-    /// printed as before; the old key is then forgotten.
-    static func migrate(_ defaults: UserDefaults = .standard) {
-        guard let night = defaults.string(forKey: Keys.chartNight) else { return }
-        if night == "normal" { defaults.set(0.0, forKey: Keys.dimDark) }
-        defaults.removeObject(forKey: Keys.chartNight)
-    }
 }
 
 /// The Dimmer and Contrast as kept on the device, for the map that draws
