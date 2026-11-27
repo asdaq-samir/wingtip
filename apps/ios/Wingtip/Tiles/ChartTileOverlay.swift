@@ -218,7 +218,7 @@ final nonisolated class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendabl
         self.chart = chart
         self.session = session
         let t = chart.template
-        prefix = TileCache.prefix(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : "") + (chart.contrast != 0 ? "+c\(chart.contrast)" : ""),
+        prefix = TileCache.prefix(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : "") + (ChartLook.steps(chart.contrast) != 0 ? "+c\(ChartLook.steps(chart.contrast))" : ""),
                                   scale: t.scale)
         super.init(overlay: chart)
     }

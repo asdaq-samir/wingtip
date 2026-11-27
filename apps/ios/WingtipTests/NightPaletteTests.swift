@@ -55,6 +55,12 @@ struct NightPaletteTests {
         #expect(ChartLook.offset(0.9) == ChartLook.contrastMax && ChartLook.offset(-0.9) == ChartLook.contrastMin)
     }
 
+    @Test func aSettingIsKeyedByItsWholeSteps() {
+        // Three steps of 0.05 add up to 0.15000000000000002: the same key as 0.15.
+        #expect(ChartLook.steps(0.05 + 0.05 + 0.05) == ChartLook.steps(0.15))
+        #expect(ChartLook.steps(0.15) == 3 && ChartLook.steps(-0.3) == -6 && ChartLook.steps(0) == 0)
+    }
+
     @Test func contrastIsWCAGsRatio() throws {
         #expect(abs(NightPalette.contrast(.black, .white) - 21) < 0.001)
         #expect(abs(NightPalette.contrast(UIColor(hex: 0x767676), .white) - 4.54) < 0.01)

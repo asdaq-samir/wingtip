@@ -35,6 +35,11 @@ nonisolated enum ChartLook {
     /// The Contrast offset within its ends; 0 the look as it is.
     static func offset(_ contrast: Double) -> Double { min(contrastMax, max(contrastMin, contrast)) }
 
+    /// A setting in whole steps, for a key: the slider's 0.15 is kept as
+    /// 0.15000000000000002 after three steps, which named a tile store of
+    /// its own (ChartTileRenderer's prefix).
+    static func steps(_ value: Double) -> Int { Int((value / step).rounded()) }
+
     /// Appearance's Dark + Bright, gone as on the web (its preferences
     /// version 12, 2026-11-18): a kept "normal" Chart at Night under the
     /// dark scheme becomes Dark with a dark Dimmer of 0, the chart as
@@ -64,6 +69,10 @@ struct ChartLookRows: View {
     @AppStorage(ChartLook.Keys.dimLight) private var dimLight = 0.0
     @AppStorage(ChartLook.Keys.dimDark) private var dimDark = ChartLook.nightDim
     @AppStorage(ChartLook.Keys.contrast) private var contrast = 0.0
+    /// Contrast while its slider is held: each change draws the whole chart
+    /// again from its tiles (ChartTileOverlay), so the map takes it as the
+    /// finger lifts; a step by VoiceOver or the keyboard at once.
+    @State private var held: Double?
 
     var body: some View {
         let dim = scheme == .dark ? $dimDark : $dimLight
@@ -76,14 +85,22 @@ struct ChartLookRows: View {
         }
         .accessibilityValue(Text("\(Int((dim.wrappedValue * 100).rounded())) percent dimmed"))
         .accessibilityIdentifier("chart-dimmer")
-        Slider(value: $contrast, in: ChartLook.contrastMin...ChartLook.contrastMax, step: ChartLook.step) {
+        let shown = Binding(get: { held ?? contrast }, set: { if held != nil { held = $0 } else { contrast = $0 } })
+        Slider(value: shown, in: ChartLook.contrastMin...ChartLook.contrastMax, step: ChartLook.step) {
             Text("Contrast")
         } minimumValueLabel: {
             Image(systemName: "circle").accessibilityLabel("Flatter")
         } maximumValueLabel: {
             Image(systemName: "circle.lefthalf.filled").accessibilityLabel("Harder")
+        } onEditingChanged: { editing in
+            if editing {
+                held = contrast
+            } else if let kept = held {
+                held = nil
+                contrast = kept
+            }
         }
-        .accessibilityValue(Text("\(Int((contrast * 100).rounded())) percent"))
+        .accessibilityValue(Text("\(Int((shown.wrappedValue * 100).rounded())) percent"))
         .accessibilityIdentifier("chart-contrast")
     }
 }
