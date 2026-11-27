@@ -2122,6 +2122,13 @@ export interface EngineContract {
     answer: FieldAlong[];
   };
   /**
+   * Which box of the phone's cycle packs to read for the fields round the airplane with no planner (Nearest, the emergency assistant, the on-device Ask), for best_fields to rank: asked first with no box, the first box, half a degree of latitude each way (about 30 nm, past a light single's still-air glide from 10,000 ft above the ground); asked again with the fields found in it, a box twice as tall where they are fewer than `want`, to two degrees at most (about 120 nm); null where they are enough or the box read was the widest, when the fields read go to best_fields. Longitude is widened by the latitude's cosine (held to 0.2 at most near the pole). A box to read, not an aviation figure: which fields are landing sites, and their order, are best_fields'.
+   */
+  fields_near: {
+    input: FieldsNearInput;
+    answer: FieldsNearAnswer;
+  };
+  /**
    * Item 18's date of flight, DOF/YYMMDD, where the flight is not on the UTC day it is filed (AIM Appendix 4, TBL 4-1); null on the same day.
    */
   filed_dof: {
@@ -7660,6 +7667,42 @@ export interface FieldAlong {
   flight: number;
   departure: string;
   fuel_types: string[];
+}
+export interface FieldsNearInput {
+  /**
+   * The airplane, degrees.
+   */
+  at: {
+    lat: number;
+    lon: number;
+  };
+  /**
+   * How many fields are wanted: the box widens until it holds as many.
+   */
+  want: number;
+  /**
+   * The box last read, its `half_deg` as this rule gave it; null on the first ask.
+   */
+  half_deg?: number | null;
+  /**
+   * How many fields the packs held in that box; null on the first ask.
+   */
+  found?: number | null;
+}
+export interface FieldsNearAnswer {
+  /**
+   * The box to read next, degrees; null: rank the fields read with best_fields.
+   */
+  box: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+    /**
+     * Its half height, degrees of latitude: sent back as `half_deg`.
+     */
+    half_deg: number;
+  } | null;
 }
 export interface FiledDofInput {
   /**

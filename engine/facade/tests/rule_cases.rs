@@ -22,8 +22,9 @@
 //! rules' here (its three to one is altitude_change's). Left out
 //! for want of any source figure, being the app's own: diversion_reasonable
 //! (the drill's allowances; the ACS gives none), gonogo_risk (the
-//! assessment's own points), field_mark_rank (the map's drawing order) and
-//! underway (40 kt, a design choice). bare_field and same_field wait on
+//! assessment's own points), field_mark_rank (the map's drawing order),
+//! fields_near (the box of packs a phone reads) and underway (40 kt, a
+//! design choice). bare_field and same_field wait on
 //! the ident rule's move into the engine (claude/r2-ident).
 
 mod common;

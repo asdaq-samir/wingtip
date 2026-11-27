@@ -4049,6 +4049,53 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct FieldsNearAnswer: Codable, Equatable, Sendable {
+        /// The box to read next, degrees; null: rank the fields read with best_fields.
+        var box: EngineContract.FieldsNearAnswerBox?
+    }
+
+    /// The box to read next, degrees; null: rank the fields read with best_fields.
+    nonisolated struct FieldsNearAnswerBox: Codable, Equatable, Sendable {
+        var south: Double
+        var west: Double
+        var north: Double
+        var east: Double
+        /// Its half height, degrees of latitude: sent back as `half_deg`.
+        var halfDeg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case south
+            case west
+            case north
+            case east
+            case halfDeg = "half_deg"
+        }
+    }
+
+    nonisolated struct FieldsNearInput: Codable, Equatable, Sendable {
+        /// The airplane, degrees.
+        var at: EngineContract.FieldsNearInputAt
+        /// How many fields are wanted: the box widens until it holds as many.
+        var want: Double
+        /// The box last read, its `half_deg` as this rule gave it; null on the first ask.
+        var halfDeg: Double?
+        /// How many fields the packs held in that box; null on the first ask.
+        var found: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case at
+            case want
+            case halfDeg = "half_deg"
+            case found
+        }
+    }
+
+    /// The airplane, degrees.
+    nonisolated struct FieldsNearInputAt: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+    }
+
     nonisolated struct FieldStatusAnswer: Codable, Equatable, Sendable {
         /// Whether the field may be shown or offered as an open one.
         var `open`: Bool

@@ -655,6 +655,11 @@ nonisolated extension Engine {
         try Self.rule("fields_along", EngineContract.FieldsAlongInput(flights: flights, skip: skip, fields: fields))
     }
 
+    /// Which box of the phone's cycle packs to read for the fields round the airplane with no planner (Nearest, the emergency assistant, the on-device Ask), for best_fields to rank: asked first with no box, the first box, half a degree of latitude each way (about 30 nm, past a light single's still-air glide from 10,000 ft above the ground); asked again with the fields found in it, a box twice as tall where they are fewer than `want`, to two degrees at most (about 120 nm); null where they are enough or the box read was the widest, when the fields read go to best_fields. Longitude is widened by the latitude's cosine (held to 0.2 at most near the pole). A box to read, not an aviation figure: which fields are landing sites, and their order, are best_fields'.
+    static func fieldsNear(at: EngineContract.FieldsNearInputAt, want: Double, halfDeg: Double? = nil, found: Double? = nil) throws -> EngineContract.FieldsNearAnswer {
+        try Self.rule("fields_near", EngineContract.FieldsNearInput(at: at, want: want, halfDeg: halfDeg, found: found))
+    }
+
     /// Item 18's date of flight, DOF/YYMMDD, where the flight is not on the UTC day it is filed (AIM Appendix 4, TBL 4-1); null on the same day.
     static func filedDof(depart: String, today: String) throws -> String? {
         try Self.rule("filed_dof", EngineContract.FiledDofInput(depart: depart, today: today))

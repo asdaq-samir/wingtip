@@ -4113,6 +4113,60 @@ object EngineContract {
     )
 
     @Serializable
+    data class FieldsNearAnswer(
+        /**
+         * The box to read next, degrees; null: rank the fields read with best_fields.
+         */
+        val box: EngineContract.FieldsNearAnswerBox? = null,
+    )
+
+    /**
+     * The box to read next, degrees; null: rank the fields read with best_fields.
+     */
+    @Serializable
+    data class FieldsNearAnswerBox(
+        val south: Double,
+        val west: Double,
+        val north: Double,
+        val east: Double,
+        /**
+         * Its half height, degrees of latitude: sent back as `half_deg`.
+         */
+        @SerialName("half_deg")
+        val halfDeg: Double,
+    )
+
+    @Serializable
+    data class FieldsNearInput(
+        /**
+         * The airplane, degrees.
+         */
+        val at: EngineContract.FieldsNearInputAt,
+        /**
+         * How many fields are wanted: the box widens until it holds as many.
+         */
+        val want: Double,
+        /**
+         * The box last read, its `half_deg` as this rule gave it; null on the first ask.
+         */
+        @SerialName("half_deg")
+        val halfDeg: Double? = null,
+        /**
+         * How many fields the packs held in that box; null on the first ask.
+         */
+        val found: Double? = null,
+    )
+
+    /**
+     * The airplane, degrees.
+     */
+    @Serializable
+    data class FieldsNearInputAt(
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
     data class FieldStatusAnswer(
         /**
          * Whether the field may be shown or offered as an open one.
