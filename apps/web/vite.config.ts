@@ -22,6 +22,7 @@ import { STAGING, publish, publishDir } from "./vite-plugins/publishBuild.ts";
 import { licences } from "./vite-plugins/licences.ts";
 import { compressed } from "./vite-plugins/compression.ts";
 import { claudeView } from "./vite-plugins/claudeView.ts";
+import { firstFrame } from "./vite-plugins/firstFrame.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
@@ -58,6 +59,8 @@ export default defineConfig({
     tesseractFiles,
     // The connector's live view, one self-contained page (claude-view.html).
     claudeView,
+    // The first frame's theme, look and sunlight before the body paints (first-frame.js).
+    firstFrame(),
     preloadEngine,
     themeColor,
     react(),

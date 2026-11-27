@@ -1,16 +1,15 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { THEME_KEY } from "./prefs/theme";
+import { LOOKS, firstFrameScript } from "./prefs/firstFrame";
 import { usePreferences } from "./preferences";
 import { BRANDS } from "./brand";
 
-/** public/first-frame.js, index.html's blocking head script: the night
- *  class, the look and the sunlight scheme on <html> before the body
- *  paints, so a load at night never opens white (AIM 8-1-6). */
-const SCRIPT = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../public/first-frame.js"), "utf8");
+/** first-frame.js as the build writes it (vite-plugins/firstFrame), the
+ *  head's blocking script: the night class, the look and the sunlight
+ *  scheme on <html> before the body paints, so a load at night never
+ *  opens white (AIM 8-1-6). */
+const SCRIPT = firstFrameScript();
 const PREFS_KEY = usePreferences.persist.getOptions().name ?? "";
 
 function load(deviceDark: boolean) {
@@ -65,8 +64,8 @@ describe("first-frame.js", () => {
     expect(root.dataset.chartLight).toBe("normal");
   });
 
-  it("knows the four looks, and puts the default on for a name none has", () => {
-    for (const { value } of BRANDS) expect(SCRIPT).toContain(JSON.stringify(value));
+  it("knows Setup's looks, and puts the default on for a name none has", () => {
+    expect(BRANDS.map((b) => b.value)).toEqual([...LOOKS]);
     localStorage.setItem(PREFS_KEY, JSON.stringify({ state: { brand: "dark-bright" }, version: 12 }));
     expect(load(true).dataset.brand).toBe("wingtip");
   });

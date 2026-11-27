@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { PREFERENCES_KEY } from "./prefs/firstFrame";
 import { persist } from "zustand/middleware";
 import { NO_MINIMUMS } from "./minimums";
 import { AIRPLANE_KEPT, airplaneChosen, airplaneSlice, NO_AIRPLANE } from "./prefs/airplaneSlice";
@@ -32,7 +33,7 @@ export function keptPreferences(s: Preferences): Kept {
 
 export const usePreferences = create<Preferences>()(
   persist((...a) => ({ ...mapSlice(...a), ...lookSlice(...a), ...airplaneSlice(...a), ...keptSlice(...a), ...alertsSlice(...a) }), {
-    name: "wingtip.preferences",
+    name: PREFERENCES_KEY,
     // Nothing is launched yet, so a browser's preferences from an older
     // version are read as they are (the owner: break freely until launch,
     // no shims; see keptAsIs): Appearance's Dark + Bright (chartNight) of

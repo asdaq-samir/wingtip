@@ -75,7 +75,7 @@ test("the Dimmer and Contrast sliders set the chart's paint as they move, and su
 test.describe("at night", () => {
   test.use({ colorScheme: "dark" });
 
-  /** The first frame dark: public/first-frame.js puts the night class on
+  /** The first frame dark: first-frame.js (lib/prefs/firstFrame) puts the night class on
    *  <html> before the body paints, where next-themes' effect came after
    *  React's first render and the page was white till then (AIM 8-1-6; the
    *  round-4 themes audit). Read as soon as the body is there, before the
