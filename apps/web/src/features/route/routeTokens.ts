@@ -115,11 +115,6 @@ export function removedPoint(points: string[], list: string[]): number | null {
   return points.every((p, j) => j === at || p === list[j < at ? j : j - 1]) ? at : null;
 }
 
-/** Whether two lists of points are the same, in the same order. */
-export function samePoints(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((p, i) => p === b[i]);
-}
-
 /** The place before point `at` (null: after the last), as a caret. */
 export function caretBefore(value: RouteValue, at: number | null): Position {
   return { index: placeOf(value.segments, at), offset: 0 };

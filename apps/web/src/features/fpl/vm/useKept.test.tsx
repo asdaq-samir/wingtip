@@ -28,6 +28,9 @@ describe("sameFields", () => {
     expect(sameFields({ a: 1 }, { a: 1, b: 2 })).toBe(false);
     expect(sameFields({ a: {} }, { a: {} })).toBe(false);
     expect(sameFields([], {})).toBe(false);
+    // Lists of points: the same only in the same order, and the same length.
+    expect(sameFields(["KDLH", "KMDW"], ["KMDW", "KDLH"])).toBe(false);
+    expect(sameFields(["KDLH"], ["KDLH", "KMDW"])).toBe(false);
   });
 });
 

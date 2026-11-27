@@ -9,6 +9,7 @@ import { flightWatch } from "../../lib/api/flightWatch";
 import { useBriefPlan, type FlightToSave } from "../../lib/briefPlan";
 import { clockTime } from "../../lib/format";
 import { pilotQuery } from "../../lib/queryClient";
+import { sameFields } from "../../lib/steady";
 import { TEXT } from "../../lib/text";
 import SourceChips from "../../components/SourceChips";
 import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
@@ -70,10 +71,11 @@ export default function FlightWatch() {
     staleTime: 60_000,
     meta: { silent: true },
   });
-  const sameStops = (a: string[], b: (string | null)[] | null | undefined) => {
-    const stops = (b ?? []).filter((s): s is string => s !== null);
-    return a.length === stops.length && a.every((s, i) => s === stops[i]);
-  };
+  const sameStops = (a: string[], b: (string | null)[] | null | undefined) =>
+    sameFields(
+      a,
+      (b ?? []).filter((s) => s !== null),
+    );
   const flightId: number | null =
     (planKey ? filed.find((f) => f.plan === planKey)?.id : undefined) ??
     (request
