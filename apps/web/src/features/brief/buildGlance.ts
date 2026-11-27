@@ -1,5 +1,5 @@
 import type { Briefing, Course, Leg } from "../../lib/api/types";
-import { fieldPhases, navLogRows, routeAdiz, routeJurisdiction, windLine, runwayNumber, type useLoad } from "../plan";
+import { fieldPhases, windLine, runwayNumber, type useLoad } from "../plan";
 import { callEngine } from "../../lib/engine/engine";
 import { fieldCategory } from "../../lib/fieldWeather";
 import { worstOf } from "../../lib/findings";
@@ -106,10 +106,11 @@ export function buildGlance({
     // Landed at the destination after the time in the air and the turnarounds
     // at the stops, not the time in the air alone (the HIG audit, H1).
     arrive: course ? fieldAt(dest, "arrival", arriveMin != null ? new Date(leaving.getTime() + arriveMin * 60_000) : null) : null,
-    // The route's points and its legs between, every 2 nm (the engine's).
-    outside: course ? (routeJurisdiction(navLogRows(course, [], legs))?.brief ?? null) : null,
-    // And the ADIZs it meets on the way (14 CFR part 99).
-    adiz: course ? (routeAdiz(navLogRows(course, [], legs))?.brief ?? null) : null,
+    // The route's points and its legs between, every 2 nm, and the ADIZs
+    // it meets (14 CFR part 99): the engine's, asked by the planner with
+    // the course (app.route_borders).
+    outside: course?.outside ?? null,
+    adiz: course?.adiz ?? null,
     adverse: adverseRows(briefing),
     unchecked: (briefing?.weather_unavailable ?? []).map((source) => WEATHER_SOURCE_LABEL[source]),
     // The reports as sent, for a finding's sources under its line.

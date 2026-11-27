@@ -11,9 +11,9 @@
  */
 import { create } from "zustand";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
+import type { Course } from "../../lib/api/types";
 import type { Finding } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
-import type { RouteAdiz, RouteJurisdiction } from "../plan";
 import type { Adverse } from "./adverse";
 
 /** A field's: the departure's, or the destination's. */
@@ -67,13 +67,14 @@ export interface BriefGlance {
   };
   arrive: FieldGlance | null;
   /** The route's one line where any of it lies outside the United States
-   *  (the engine's route_jurisdiction, decision 0053): its figures are by
-   *  US rules. Null where it is all in the United States. */
-  outside: RouteJurisdiction["brief"];
+   *  (the engine's route_jurisdiction, decision 0053), the course's
+   *  (app.route_borders): its figures are by US rules. Null where it is all
+   *  in the United States. */
+  outside: Course["outside"];
   /** The route's one line where it meets an Air Defense Identification
-   *  Zone (the engine's route_adiz, 14 CFR part 99): what part 99 asks of
-   *  the flight there. Null where it meets none. */
-  adiz: RouteAdiz["brief"];
+   *  Zone (the engine's route_adiz, 14 CFR part 99), the course's: what
+   *  part 99 asks of the flight there. Null where it meets none. */
+  adiz: Course["adiz"];
   /** The adverse conditions on the route, at most three (the engine's
    *  gonogo_adverse_rows, AIM 7-1-5(b)(1)), drawn under the findings. */
   adverse: Adverse;

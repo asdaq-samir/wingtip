@@ -121,7 +121,6 @@ gonogo_glance_lines
 gonogo_icing
 gonogo_icing_line
 gonogo_icing_unchecked
-gonogo_input
 gonogo_pass_minutes
 gonogo_picked_end
 gonogo_risk
@@ -174,6 +173,7 @@ notam_read
 notam_subject
 our_call
 own_ship_hex
+oxygen_words
 passenger_briefing
 pattern_entry
 pattern_exit
@@ -201,9 +201,7 @@ read_track
 readback_check
 ready_to_fly
 registered_profile
-route_adiz
 route_headwind
-route_jurisdiction
 route_position
 route_procedures
 route_typed
@@ -252,6 +250,5 @@ wind_components
 wind_marks
 wind_pick
 wind_steady_or_gust
-wind_triangle
 words_flight_level
 workings_right

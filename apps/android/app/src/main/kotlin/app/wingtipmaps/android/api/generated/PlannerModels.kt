@@ -2020,8 +2020,15 @@ data class AirportEnd (
     val ident: String,
     val kind: String? = null,
     val lat: Double,
+
+    @SerialName("leg_caution")
+    val legCaution: String? = null,
+
     val lon: Double,
     val name: String,
+
+    @SerialName("outside_caution")
+    val outsideCaution: String? = null,
 
     @SerialName("pattern_altitude_ft")
     val patternAltitudeFt: Double? = null
@@ -2453,6 +2460,8 @@ data class CopilotItws (
  */
 @Serializable
 data class Course (
+    val adiz: BorderLine? = null,
+
     @SerialName("bearing_deg")
     val bearingDeg: Double,
 
@@ -2486,7 +2495,21 @@ data class Course (
     @SerialName("min_zoom")
     val minZoom: Int,
 
+    val outside: BorderLine? = null,
     val stops: List<AirportEnd>? = null
+)
+
+/**
+ * The Brief's one line for the route's borders (app.route_borders):
+ * the finding alone (`lead`), with what to do (`line`), and its parts.
+ */
+@Serializable
+data class BorderLine (
+    val action: String,
+    val cite: String,
+    val lead: String,
+    val line: String,
+    val why: String
 )
 
 /**

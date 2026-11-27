@@ -1,5 +1,5 @@
 {
-  "_note": "Whose rules a point and a route are under (14 CFR 1.1, 91.1(a) and (b), 91.703(a); decision 0053): the engine's jurisdiction_of and route_jurisdiction, from Natural Earth's 1:50m outlines. The fields' places are their airport reference points. Held by engine/facade/tests/jurisdiction.rs and the web's lib/jurisdiction.test.ts.",
+  "_note": "Whose rules a point and a route are under (14 CFR 1.1, 91.1(a) and (b), 91.703(a); decision 0053): the engine's jurisdiction_of and route_jurisdiction, from Natural Earth's 1:50m outlines. The fields' places are their airport reference points. Held by engine/facade/tests/jurisdiction.rs; the planner asks the rule with the course (app.route_borders).",
   "points": [
     {
       "why": "Toronto Pearson, CYYZ",

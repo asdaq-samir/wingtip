@@ -20,7 +20,7 @@ import { useRouteFields } from "./useRouteFields";
 import { flowQuery, itwsQuery } from "../../lib/liveReports";
 import { icingFindings } from "./icing";
 import { useIcingForecast } from "./useIcingForecast";
-import { assess, useRisk } from "../../lib/frat";
+import { assess, riskLine, useRisk } from "../../lib/frat";
 import { callEngine } from "../../lib/engine/engine";
 import { briefingPendingMessage, windStretches } from "./briefingFigures";
 import { verdictInput } from "./verdictInput";
@@ -84,11 +84,7 @@ export function useFlightBriefing({
   // in one place; this page states them.
   const briefing = briefingState.state === "ready" ? briefingState.data : null;
   const failed = briefingState.state === "failed" ? briefingState.detail : null;
-  // Under IFR "VFR flight not recommended" is no reason not to go: its
-  // weather check is the destination's and the alternate's (14 CFR
-  // 91.169), not VFR's minimums.
   const ifr = usePreferences((p) => p.flightRules) === "ifr";
-  const vnrReasons = ifr ? [] : (briefing?.vfr_not_recommended ?? []);
   const unchecked = (source: Briefing["weather_unavailable"][number]) => briefing?.weather_unavailable.includes(source) ?? false;
 
   // Where the weather is under the pilot's own minimums (lib/minimums).
@@ -96,7 +92,7 @@ export function useFlightBriefing({
   const underMine = briefing ? underMinimums(minimums, briefing, landings, dest) : [];
   // The time the page was opened, for "Now" where no departure is picked.
   const [opened] = useState(() => new Date().toISOString());
-  const { passAt, tfrInForce, tfrsCrossed, specialUse } = useRouteAirspace({ briefing, nav, legs, depart: depart || opened });
+  const { passAt, specialUse } = useRouteAirspace({ nav, legs, depart: depart || opened });
   // What SWIM says now at the route's airports: the ITWS alerts and,
   // under IFR, the Command Center's ground stops and delay programs, for
   // the Go / No-Go's weather finding (the engine's verdict).
@@ -114,12 +110,29 @@ export function useFlightBriefing({
   const { currency, flownOwn } = own;
   const ticked = useRisk((s) => s.ticked);
   const setAssessment = useRisk((s) => s.setAssessment);
-  // The engine's fuel and TFR figures, the planner's verdict's too (AV-12).
+  const hazardNames = briefing
+    ? [...briefing.hazards.map((h) => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)]
+    : [];
+  // The route's own figures, the engine's, the planner's verdict's too
+  // (gonogo_route_figures; AV-12): the fuel's; the TFRs crossed while in
+  // force as the flight gets there, half an hour either way, by the
+  // planner's word where it placed them on the legs (14 CFR 91.137-91.145);
+  // VFR not recommended's reasons, none under IFR, whose weather check is
+  // 91.169's; and the hazards the risk counts, none where both sources failed.
   const routeFigures = callEngine("gonogo_route_figures", {
     totals: totals ?? null,
-    tfr_count: briefing?.tfrs.length ?? null,
-    crossed: tfrsCrossed.map((t) => t.notam_id),
+    tfrs: briefing?.tfrs ?? [],
+    legs: legs.map((l) => ({ distance_nm: l.distance_nm, ete_min: l.ete_min ?? null })),
+    depart_us: new Date(depart || opened).getTime() * 1000,
+    ifr,
+    vfr_not_recommended: briefing?.vfr_not_recommended ?? [],
+    hazards: hazardNames,
+    weather_unavailable: briefing?.weather_unavailable ?? [],
   });
+  const vnrReasons = routeFigures.vfr_not_recommended;
+  const inForce = new Set(routeFigures.tfrs_in_force);
+  const tfrInForce = (t: Briefing["tfrs"][number]) => inForce.has(t.notam_id);
+  const tfrsCrossed = briefing?.tfrs.filter(tfrInForce) ?? [];
   const leastMarginGal = routeFigures.least_margin_gal;
   // Under IFR, the AWC's forecast icing (CIP and FIP) on each leg at the
   // altitude flown (useIcingForecast); a forecast not had is said unchecked.
@@ -133,15 +146,12 @@ export function useFlightBriefing({
     fields: landings,
     forecastLine: icingForecast.data?.line,
   });
-  const hazardNames = briefing
-    ? [...briefing.hazards.map((h) => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)]
-    : [];
   const assessment = briefing
     ? assess({
         vfrNotRecommended: vnrReasons.length > 0,
         underMinimums: underMine,
         tfrOnRoute: tfrsCrossed.length > 0,
-        hazards: unchecked("hazards") && unchecked("gairmets") ? 0 : hazardNames.length,
+        hazards: routeFigures.hazard_count,
         night: totals?.night === true,
         nightPassengers: totals?.night_passengers,
         lights: totals?.lights,
@@ -178,11 +188,12 @@ export function useFlightBriefing({
     alternate: alternateCheck.data,
     fields: fields.uses,
     airplane,
-    input: verdictInput({
+    risk: assessment ? { level: assessment.level, line: riskLine(assessment) } : null,
+    facts: verdictInput({
       briefing,
       failed,
       ifr,
-      vnrReasons,
+      landings,
       underMine,
       icingLines,
       icingError: icingForecast.isError,
@@ -198,7 +209,6 @@ export function useFlightBriefing({
       loading,
       loaded,
       totals,
-      assessment,
     }),
   });
   const { items } = verdict;

@@ -147,12 +147,14 @@ describe("a SID or a STAR typed in the route", () => {
     expect(beside.picks[0]?.transition).toBeNull();
   });
 
-  it("is nothing where neither end publishes it, or an end's list could not be had", async () => {
+  it("is missed where neither end publishes it, unchecked where an end's list could not be had", async () => {
     expect((await typedProcedures([{ name: "NOPE1", before: null, after: null }], route, list)).missed).toEqual(["NOPE1"]);
     const reversed = await typedProcedures([{ name: "OSHH2", before: null, after: null }], { dep: "KATW", dest: "C81" }, list);
     expect(reversed.picks).toEqual([]);
     const unlisted = await typedProcedures([{ name: "BAEE1", before: null, after: null }], { dep: "C82", dest: "C81" }, list);
-    expect(unlisted.missed).toEqual(["BAEE1"]);
+    // C82's list did not come: not looked at there, so never "not published".
+    expect(unlisted.missed).toEqual([]);
+    expect(unlisted.unchecked).toEqual(["BAEE1"]);
   });
 });
 

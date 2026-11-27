@@ -1423,6 +1423,17 @@
             "title": "Lat",
             "type": "number"
           },
+          "leg_caution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leg Caution"
+          },
           "lon": {
             "title": "Lon",
             "type": "number"
@@ -1430,6 +1441,17 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "outside_caution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outside Caution"
           },
           "pattern_altitude_ft": {
             "anyOf": [
@@ -3788,6 +3810,40 @@
         "title": "ApproachRunway",
         "type": "object"
       },
+      "BorderLine": {
+        "description": "The Brief's one line for the route's borders (app.route_borders):\nthe finding alone (`lead`), with what to do (`line`), and its parts.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "cite": {
+            "title": "Cite",
+            "type": "string"
+          },
+          "lead": {
+            "title": "Lead",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lead",
+          "line",
+          "action",
+          "why",
+          "cite"
+        ],
+        "title": "BorderLine",
+        "type": "object"
+      },
       "Briefing": {
         "description": "`weather_unavailable` names which of hazards/forecast/metars/tfrs\ncome from a call that failed rather than one that found nothing: an\nempty `hazards` must not read the same as \"no hazards reported\".",
         "properties": {
@@ -6131,6 +6187,16 @@
       "Course": {
         "description": "The course: the departure, the stops it lands at on the way (in\norder; none for a route flown straight), the destination, the whole\ndistance stop by stop, the bearing out of the departure, and the line\nthrough every stop.",
         "properties": {
+          "adiz": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BorderLine"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "bearing_deg": {
             "title": "Bearing Deg",
             "type": "number"
@@ -6201,6 +6267,16 @@
           "min_zoom": {
             "title": "Min Zoom",
             "type": "integer"
+          },
+          "outside": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BorderLine"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "stops": {
             "default": [],

@@ -22,12 +22,31 @@ function basicMinimums(): string {
  *  it starts a code ("NOTAM"). */
 const midSentence = (words: string) => (/^[A-Z][a-z]/.test(words) ? words.charAt(0).toLowerCase() + words.slice(1) : words);
 
+/** What 14 CFR 91.211 asks of each plan that climbs past 12,500 ft, in the
+ *  engine's words for its highest step in this airplane (oxygen_words):
+ *  over 14,000 ft the crew's oxygen the whole time there, not only past 30
+ *  minutes, and a pressurised cabin's FL250 and FL350. None where the
+ *  airplane's oxygen answers it. */
+function oxygenWords(nav: NavLogAltitude): string[] {
+  const aircraft = nav.aircraft;
+  return nav.options.flatMap((o) => {
+    if (!o.needs_oxygen) return [];
+    const highFt = Math.max(...o.steps.map((step) => step.altitude_ft));
+    const words = callEngine("oxygen_words", {
+      highest_ft: highFt,
+      supplemental_oxygen: aircraft?.supplemental_oxygen ?? null,
+      pressurized: aircraft?.pressurized ?? null,
+    });
+    return words ? [`The ${PLAN_NAME[o.kind].toLowerCase()} plan climbs to ${altFt(highFt)} ft: ${midSentence(words)}.`] : [];
+  });
+}
+
 /** The plans, how the four were made: the plan flown first in the Brief,
  *  with its time and fuel; after the rule where they are the buttons
  *  over the steps (`plansAbove`). */
 export function plansStep(nav: NavLogAltitude, plansAbove: boolean, winds: Totals["winds"] | undefined): Step {
   const chosen = nav.options.find((o) => o.kind === nav.flown);
-  const needOxygen = nav.options.filter((o) => o.needs_oxygen).map((o) => PLAN_NAME[o.kind].toLowerCase());
+  const needOxygen = oxygenWords(nav);
   return nav.options.length > 0
     ? {
         key: "plans",
@@ -70,8 +89,7 @@ export function plansStep(nav: NavLogAltitude, plansAbove: boolean, winds: Total
                   ".",
               )
               .join(" ")}
-            {needOxygen.length > 0 &&
-              ` The ${andList(needOxygen)} ${needOxygen.length === 1 ? "plan climbs" : "plans climb"} above the altitude where more than 30 minutes needs supplemental oxygen (14 CFR 91.211).`}
+            {needOxygen.length > 0 && ` ${needOxygen.join(" ")}`}
           </>
         ),
       }

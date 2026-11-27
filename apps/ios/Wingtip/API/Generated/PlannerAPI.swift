@@ -44,6 +44,7 @@ typealias APIAltitudeStep = PlannerAPI.Components.Schemas.AltitudeStep
 typealias APIApproachCoded = PlannerAPI.Components.Schemas.ApproachCoded
 typealias APIApproachFacts = PlannerAPI.Components.Schemas.ApproachFacts
 typealias APIApproachRunway = PlannerAPI.Components.Schemas.ApproachRunway
+typealias APIBorderLine = PlannerAPI.Components.Schemas.BorderLine
 typealias APIBriefing = PlannerAPI.Components.Schemas.Briefing
 typealias APICandidate = PlannerAPI.Components.Schemas.Candidate
 typealias APICfrGroup = PlannerAPI.Components.Schemas.CfrGroup

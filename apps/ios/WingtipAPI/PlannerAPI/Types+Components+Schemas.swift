@@ -1215,10 +1215,14 @@ extension Components {
             public var kind: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportEnd/lat`.
             public var lat: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/AirportEnd/leg_caution`.
+            public var legCaution: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportEnd/lon`.
             public var lon: Swift.Double
             /// - Remark: Generated from `#/components/schemas/AirportEnd/name`.
             public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AirportEnd/outside_caution`.
+            public var outsideCaution: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportEnd/pattern_altitude_ft`.
             public var patternAltitudeFt: Swift.Double?
             /// Creates a new `AirportEnd`.
@@ -1229,8 +1233,10 @@ extension Components {
             ///   - ident:
             ///   - kind:
             ///   - lat:
+            ///   - legCaution:
             ///   - lon:
             ///   - name:
+            ///   - outsideCaution:
             ///   - patternAltitudeFt:
             public init(
                 airspaceClass: Swift.String? = nil,
@@ -1238,8 +1244,10 @@ extension Components {
                 ident: Swift.String,
                 kind: Swift.String? = nil,
                 lat: Swift.Double,
+                legCaution: Swift.String? = nil,
                 lon: Swift.Double,
                 name: Swift.String,
+                outsideCaution: Swift.String? = nil,
                 patternAltitudeFt: Swift.Double? = nil
             ) {
                 self.airspaceClass = airspaceClass
@@ -1247,8 +1255,10 @@ extension Components {
                 self.ident = ident
                 self.kind = kind
                 self.lat = lat
+                self.legCaution = legCaution
                 self.lon = lon
                 self.name = name
+                self.outsideCaution = outsideCaution
                 self.patternAltitudeFt = patternAltitudeFt
             }
             public enum CodingKeys: String, CodingKey {
@@ -1257,8 +1267,10 @@ extension Components {
                 case ident
                 case kind
                 case lat
+                case legCaution = "leg_caution"
                 case lon
                 case name
+                case outsideCaution = "outside_caution"
                 case patternAltitudeFt = "pattern_altitude_ft"
             }
         }
@@ -3115,6 +3127,50 @@ extension Components {
                 case tchFt = "tch_ft"
                 case tdzeFt = "tdze_ft"
                 case thresholdFt = "threshold_ft"
+            }
+        }
+        /// The Brief's one line for the route's borders (app.route_borders):
+        /// the finding alone (`lead`), with what to do (`line`), and its parts.
+        ///
+        /// - Remark: Generated from `#/components/schemas/BorderLine`.
+        public struct BorderLine: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BorderLine/action`.
+            public var action: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/cite`.
+            public var cite: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/lead`.
+            public var lead: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/line`.
+            public var line: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/why`.
+            public var why: Swift.String
+            /// Creates a new `BorderLine`.
+            ///
+            /// - Parameters:
+            ///   - action:
+            ///   - cite:
+            ///   - lead:
+            ///   - line:
+            ///   - why:
+            public init(
+                action: Swift.String,
+                cite: Swift.String,
+                lead: Swift.String,
+                line: Swift.String,
+                why: Swift.String
+            ) {
+                self.action = action
+                self.cite = cite
+                self.lead = lead
+                self.line = line
+                self.why = why
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action
+                case cite
+                case lead
+                case line
+                case why
             }
         }
         /// `weather_unavailable` names which of hazards/forecast/metars/tfrs
@@ -5420,6 +5476,8 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/Course`.
         public struct Course: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Course/adiz`.
+            public var adiz: Components.Schemas.BorderLine?
             /// - Remark: Generated from `#/components/schemas/Course/bearing_deg`.
             public var bearingDeg: Swift.Double
             /// - Remark: Generated from `#/components/schemas/Course/chart_cycle`.
@@ -5444,11 +5502,14 @@ extension Components {
             public var maxZoom: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Course/min_zoom`.
             public var minZoom: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Course/outside`.
+            public var outside: Components.Schemas.BorderLine?
             /// - Remark: Generated from `#/components/schemas/Course/stops`.
             public var stops: [Components.Schemas.AirportEnd]?
             /// Creates a new `Course`.
             ///
             /// - Parameters:
+            ///   - adiz:
             ///   - bearingDeg:
             ///   - chartCycle:
             ///   - chartLayers:
@@ -5461,8 +5522,10 @@ extension Components {
             ///   - distanceNm:
             ///   - maxZoom:
             ///   - minZoom:
+            ///   - outside:
             ///   - stops:
             public init(
+                adiz: Components.Schemas.BorderLine? = nil,
                 bearingDeg: Swift.Double,
                 chartCycle: Swift.String,
                 chartLayers: [Components.Schemas.ChartLayer],
@@ -5475,8 +5538,10 @@ extension Components {
                 distanceNm: Swift.Double,
                 maxZoom: Swift.Int,
                 minZoom: Swift.Int,
+                outside: Components.Schemas.BorderLine? = nil,
                 stops: [Components.Schemas.AirportEnd]? = nil
             ) {
+                self.adiz = adiz
                 self.bearingDeg = bearingDeg
                 self.chartCycle = chartCycle
                 self.chartLayers = chartLayers
@@ -5489,9 +5554,11 @@ extension Components {
                 self.distanceNm = distanceNm
                 self.maxZoom = maxZoom
                 self.minZoom = minZoom
+                self.outside = outside
                 self.stops = stops
             }
             public enum CodingKeys: String, CodingKey {
+                case adiz
                 case bearingDeg = "bearing_deg"
                 case chartCycle = "chart_cycle"
                 case chartLayers = "chart_layers"
@@ -5504,6 +5571,7 @@ extension Components {
                 case distanceNm = "distance_nm"
                 case maxZoom = "max_zoom"
                 case minZoom = "min_zoom"
+                case outside
                 case stops
             }
         }

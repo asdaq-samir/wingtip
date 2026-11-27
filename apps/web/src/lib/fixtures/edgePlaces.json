@@ -1,5 +1,5 @@
 {
-  "_note": "Unusual places and routes (the edge-places audit, 2026-11-21): the ADIZs of 14 CFR 99.43-99.49 (the engine's route_adiz), night along a leg across the antimeridian (night_on_the_way, 14 CFR 1.1 and 91.151(a)), water runways as no landing for an airplane on wheels (best_fields), and the kinds of field an airplane lands at (field_site_type's airplane, NASR APT_BASE SITE_TYPE_CODE). The fields' places are their reference points; Lake Hood's runways and the seaplane base's are illustrative shapes, not NASR's figures. Held by engine/facade/tests/edge_places.rs and the web's features/plan/adiz.test.ts.",
+  "_note": "Unusual places and routes (the edge-places audit, 2026-11-21): the ADIZs of 14 CFR 99.43-99.49 (the engine's route_adiz), night along a leg across the antimeridian (night_on_the_way, 14 CFR 1.1 and 91.151(a)), water runways as no landing for an airplane on wheels (best_fields), and the kinds of field an airplane lands at (field_site_type's airplane, NASR APT_BASE SITE_TYPE_CODE). The fields' places are their reference points; Lake Hood's runways and the seaplane base's are illustrative shapes, not NASR's figures. Held by engine/facade/tests/edge_places.rs.",
   "adiz": {
     "routes": [
       {
