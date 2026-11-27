@@ -1235,6 +1235,9 @@ nonisolated enum WingtipChartLook {
     static let step: Double = 0.05
     static let plateOpacity: Double = 0.85
     static let plateLeastOpacity: Double = 0.1
+    static let routeEdgeNight: Double = 0.9
+    static let routeEdgeDay: Double = 0.55
+    static let routeEdgeSunlight: Double = 0.9
 }
 
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.

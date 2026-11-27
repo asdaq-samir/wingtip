@@ -1469,6 +1469,9 @@ object WingtipChartLook {
     const val STEP = 0.05f
     const val PLATE_OPACITY = 0.85f
     const val PLATE_LEAST_OPACITY = 0.1f
+    const val ROUTE_EDGE_NIGHT = 0.9f
+    const val ROUTE_EDGE_DAY = 0.55f
+    const val ROUTE_EDGE_SUNLIGHT = 0.9f
 }
 
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */

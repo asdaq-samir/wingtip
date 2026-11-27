@@ -111,4 +111,7 @@ export const CHART_LOOK = {
   step: 0.05,
   plateOpacity: 0.85,
   plateLeastOpacity: 0.1,
+  routeEdgeNight: 0.9,
+  routeEdgeDay: 0.55,
+  routeEdgeSunlight: 0.9,
 } as const;
