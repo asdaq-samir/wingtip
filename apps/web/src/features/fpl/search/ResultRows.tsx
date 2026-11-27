@@ -139,11 +139,22 @@ export function ResultRow({
   // areas (index.css's, 6 over a small button) start where it ends. The
   // whole row greyed with the option highlighted. Side by side, each half
   // the row, never on two lines: at 19.65 px Fly Here and Depart From
-  // wrapped.
+  // wrapped. A tap on the strip's free room round the buttons (its 6 over
+  // them, 10 under, the gap and the indent) is the row's, as it was when
+  // they were inside the option: a miss at the foot of the most tapped row
+  // did nothing (round 7's W3). Pointer alone: the keyboard is the field's,
+  // and Enter takes the highlighted option; the buttons' taps stop at them.
   return (
     <div className={cn("has-data-highlighted:bg-muted", ICON_WIDTH[iconWidth])} data-result-row="">
       {item}
-      <span className="flex gap-2 pt-1.5 pr-3 pb-2.5 pl-[calc(var(--row-icon)+1.5rem)]">{actions}</span>
+      {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events -- a pointer's miss round the buttons taken as the row's, not a control of its own: the option beside it is reached and taken by the keyboard (Enter), and each button is its own. */}
+      <span
+        className="flex gap-2 pt-1.5 pr-3 pb-2.5 pl-[calc(var(--row-icon)+1.5rem)]"
+        onClick={disabled ? undefined : onSelect}
+        data-testid={`${testId}-actions`}
+      >
+        {actions}
+      </span>
     </div>
   );
 }
