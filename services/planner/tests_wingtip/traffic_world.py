@@ -86,6 +86,7 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_WATCH_SOURCE", {})
     stand_in(monkeypatch, "_ON_GROUND", {})
     stand_in(monkeypatch, "_ANSWERED", {})
+    stand_in(monkeypatch, "_LOL_MISSED", {})
     stand_in(monkeypatch, "_GLOBE", ratelimit.Gate())
     # The FAA's radar shown with no LADD list kept, as the owner's own stack
     # has it; the list's own tests hold it (test_traffic_ladd.py).

@@ -88,25 +88,16 @@ def _ask(region: tuple[float, float, int]) -> list[dict]:
     return [a for a in (_aircraft(e) for e in entries if isinstance(e, dict)) if a is not None]
 
 
-def _region_turn(now: float) -> float:
-    """The next region's turn to ask adsb.lol, taken: the first free one,
-    a gap clear of a search's. Called with the lock held."""
-    slot = max(now, _STATE["next_ask"])
-    if abs(_STATE["search_at"] - slot) < MIN_GAP_S:
-        slot = _STATE["search_at"] + MIN_GAP_S
-    _STATE["next_ask"] = slot + MIN_GAP_S
-    return slot
-
-
 def _region_answer(region: tuple[float, float, int]) -> tuple[float, list[dict]]:
     """(when it came, airplanes) for a region: its last answer while fresh,
     or while adsb.lol may not be asked yet; else adsb.lol's -- for a
     region with none, after waiting out the gap between requests -- else,
     turned away, its last answer while not too old. One asker at a time
     per region: the rest wait for its answer and are given it. The lock
-    is held only to decide and to store, never across the wait or the
+    is held only to decide and to store, never across the wait, the gate's
+    turn (a write to the store ingest shares, which may wait on it) or the
     request, so a phone whose region has an answer is never kept behind
-    another's request."""
+    another's request or ingest's disk."""
     while True:
         with _LOCK:
             held = _REGIONS.get(region)
@@ -122,49 +113,40 @@ def _region_answer(region: tuple[float, float, int]) -> tuple[float, list[dict]]
                 # Past two gaps is a back-off, not a queue of regions.
                 if wait > 2 * MIN_GAP_S:
                     raise TrafficUnavailable("adsb.lol has not answered for a while")
-                # Take the next free place between requests now, so the
-                # next asker's place is a gap after this one's.
-                slot = _region_turn(now)
+                earliest = max(now, _STATE["next_ask"])
                 flight = _FLIGHTS[region] = threading.Event()
                 break
         # Another phone is asking for this region: wait for it, then look again.
         flight.wait(TIMEOUT_S + 2 * MIN_GAP_S + 1)
     try:
-        while True:
-            if slot > now:
-                _sleep(slot - now)
-            with _LOCK:
-                now = _clock()
-                # A search took a turn within a gap of this one since it
-                # was taken: it goes first, and the region is given its
-                # last answer, or waits for a turn after the search's.
-                go = abs(_STATE["search_at"] - slot) >= MIN_GAP_S
-                # Its turn taken in the gate ingest's follow round keeps
-                # to too: a gap after its last ask, two gaps at most.
-                taken = _LOL.take(now, now, MIN_GAP_S, 2 * MIN_GAP_S) if go else None
-                if taken is not None or kept or go:
-                    break
-                slot = _region_turn(now)
+        # One turn, taken once in the gate the searches and ingest's follow
+        # round keep to as well (a gap after the last ask of any of them,
+        # two gaps at most), and slept for once; the next region's place is
+        # a gap after this one's.
+        taken = _LOL.take(now, earliest, MIN_GAP_S, 2 * MIN_GAP_S)
         if taken is None:
             if kept:
                 return held
             raise TrafficUnavailable("adsb.lol's next turn is too far off")
+        with _LOCK:
+            _STATE["next_ask"] = max(_STATE["next_ask"], taken + MIN_GAP_S)
         if taken > now:
             _sleep(taken - now)
-        asked = taken
         try:
-            answer = (asked, _ask(region))
+            answer = (taken, _ask(region))
         except TrafficUnavailable:
             answer = None
+        if answer is None:
+            _LOL.hold(BACKOFF_S, taken)
+            until = _LOL.until
         with _LOCK:
             if answer is None:
-                _LOL.hold(BACKOFF_S, asked)
-                _STATE["next_ask"] = _LOL.until
+                _STATE["next_ask"] = max(_STATE["next_ask"], until)
             else:
                 _REGIONS[region] = answer
                 _FROM_ADSBX.discard(region)
                 if len(_REGIONS) > 256:
-                    for gone in [r for r, (at, _) in _REGIONS.items() if asked - at > KEEP_S]:
+                    for gone in [r for r, (at, _) in _REGIONS.items() if taken - at > KEEP_S]:
                         del _REGIONS[gone]
     finally:
         with _LOCK:
@@ -210,13 +192,15 @@ def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOU
         now = _clock()
         if now < _STATE["searches_held_until"]:
             raise TrafficUnavailable("adsb.lol has not answered the last searches in their time")
-        # The turn taken in the gate both processes keep to: a gap after
-        # the last request and the last search's, a same-turn second way at once.
         earliest = now if same_turn else max(now, _STATE["search_at"] + MIN_GAP_S)
-        slot = None if _LOL.held(now) else _LOL.take(now, earliest, 0.0 if same_turn else MIN_GAP_S, wait_most_s)
-        if slot is None:
-            raise TrafficUnavailable("adsb.lol's next turn is too far off")
-        _STATE["search_at"] = slot
+    # The turn taken in the gate both processes keep to (it respects a hold
+    # itself), outside the lock: a gap after the last request and the last
+    # search's, a same-turn second way at once.
+    slot = _LOL.take(now, earliest, 0.0 if same_turn else MIN_GAP_S, wait_most_s)
+    if slot is None:
+        raise TrafficUnavailable("adsb.lol's next turn is too far off")
+    with _LOCK:
+        _STATE["search_at"] = max(_STATE["search_at"], slot)
     if slot > now:
         _sleep(slot - now)
     try:
@@ -224,15 +208,17 @@ def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOU
         resp.raise_for_status()
         answer = resp.json()
     except (requests.RequestException, ValueError) as err:
-        with _LOCK:
-            if isinstance(err, requests.Timeout):
+        if isinstance(err, requests.Timeout):
+            with _LOCK:
                 _STATE["timeouts"] += 1
                 if _STATE["timeouts"] >= SEARCH_TIMEOUTS_HELD:
                     _STATE["searches_held_until"], _STATE["timeouts"] = _clock() + SEARCH_HOLD_S, 0
-            else:
-                refusal = getattr(err, "response", None)
-                _LOL.hold(max(BACKOFF_S, refused_for_s(refusal) if refusal is not None else 0.0), _clock())
-                _STATE["next_ask"] = _LOL.until
+        else:
+            refusal = getattr(err, "response", None)
+            _LOL.hold(max(BACKOFF_S, refused_for_s(refusal) if refusal is not None else 0.0), _clock())
+            until = _LOL.until
+            with _LOCK:
+                _STATE["next_ask"] = max(_STATE["next_ask"], until)
                 _STATE["timeouts"] = 0
         raise TrafficUnavailable(f"adsb.lol did not answer: {err}") from err
     with _LOCK:

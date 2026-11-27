@@ -23,7 +23,7 @@ def test_an_airplane_whose_card_is_open_and_adsb_lol_does_not_hear_is_recorded_f
     wall = {"now": 1791800000.0}
     stand_in(monkeypatch, "_wall", lambda: wall["now"])
     stand_in(monkeypatch, "_TRACES", {})
-    stand_in(monkeypatch, "_paced", lambda url: {"ac": []})
+    stand_in(monkeypatch, "_paced", lambda url, **kw: {"ac": []})
     asked = []
 
     def adsbx(path, search=False):
@@ -61,7 +61,7 @@ def test_the_maps_poll_asks_nothing_and_the_watch_round_asks_each_open_card_then
     round asks, the poll reads the track, and a closed card is let go."""
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
     asked = []
-    stand_in(monkeypatch, "_paced", lambda url: asked.append(url) or {"ac": [CESSNA]})
+    stand_in(monkeypatch, "_paced", lambda url, **kw: asked.append(url) or {"ac": [CESSNA]})
     stand_in(monkeypatch, "_region_answer", lambda region: (clock.now, []))
     watched._WATCHED["a128b9"] = clock.now
     assert traffic.near(42.35, -88.15, 30)["aircraft"] == [] and asked == []
@@ -86,7 +86,7 @@ def test_a_followed_airplane_is_asked_of_adsb_lol_in_the_background_and_stays_fo
     assert traffic.followed() == ["a128b9"]
     stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     asked = []
-    stand_in(monkeypatch, "_paced", lambda url: asked.append(url) or {"ac": [CESSNA]})
+    stand_in(monkeypatch, "_paced", lambda url, **kw: asked.append(url) or {"ac": [CESSNA]})
     assert traffic.follow_round() == 1
     assert asked == ["https://api.adsb.lol/v2/hex/a128b9"]
     assert recorded._recorded("a128b9")[-1]["lat"] == pytest.approx(42.30128, abs=1e-4)
@@ -104,7 +104,7 @@ def test_a_follow_round_ends_where_adsb_lol_turns_the_planner_away(clock, monkey
     stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     asked = []
 
-    def refused(url):
+    def refused(url, **kw):
         asked.append(url)
         raise common.TrafficUnavailable("adsb.lol did not answer")
 
@@ -131,7 +131,7 @@ def test_an_airplane_adsb_lol_hears_on_the_ground_has_landed_where_it_is_not_una
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
     stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     taxiing = {**CESSNA, "alt_baro": "ground", "gs": 10.2, "seen_pos": 24.0}
-    stand_in(monkeypatch, "_paced", lambda url: {"ac": [taxiing]})
+    stand_in(monkeypatch, "_paced", lambda url, **kw: {"ac": [taxiing]})
     kord = {"ident": "KORD", "name": "Chicago O'Hare Intl", "city": None, "region": None}
     stand_in(monkeypatch, "_field_at", lambda point, landing: kord if landing else None)
     state = traffic.status("a128b9")
@@ -141,7 +141,7 @@ def test_an_airplane_adsb_lol_hears_on_the_ground_has_landed_where_it_is_not_una
 
 def test_an_airplane_nothing_hears_is_not_heard_and_one_none_can_be_asked_of_is_unavailable(clock, monkeypatch):
     stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
-    stand_in(monkeypatch, "_paced", lambda url: {"ac": []})
+    stand_in(monkeypatch, "_paced", lambda url, **kw: {"ac": []})
     stand_in(monkeypatch, "_adsbx", lambda path, search=False: [])
     state = traffic.status("a128b9")
     assert state["heard_s"] is None and not state["airborne"]
@@ -203,7 +203,7 @@ def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_reco
     assert recorded._recorded("a3c858") == []
     # Its card open (watched): its radar report recorded there, nothing
     # asked of adsb.lol, once a quarter minute however often it is asked.
-    stand_in(monkeypatch, "_paced", lambda url: pytest.fail("asked adsb.lol"))
+    stand_in(monkeypatch, "_paced", lambda url, **kw: pytest.fail("asked adsb.lol"))
     watched._watch("a3c858")
     watched._watch("a3c858")
     assert len(recorded._recorded("a3c858")) == 1
@@ -214,7 +214,7 @@ def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_reco
     # A report every five seconds, recorded every fifteen, after the card's.
     assert len(recorded._recorded("a3c858")) == 3
     # Heard by the radar now: nothing asked of adsb.lol or ADS-B Exchange.
-    stand_in(monkeypatch, "_paced", lambda url: pytest.fail("asked adsb.lol"))
+    stand_in(monkeypatch, "_paced", lambda url, **kw: pytest.fail("asked adsb.lol"))
     stand_in(monkeypatch, "_adsbx", lambda path, search=False: pytest.fail("asked ADS-B Exchange"))
     watched._watch("a3c858")
     # Gone quiet past STALE_S: off the map.

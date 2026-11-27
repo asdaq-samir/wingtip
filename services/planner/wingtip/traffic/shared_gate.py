@@ -23,6 +23,13 @@ import time
 from . import store
 
 
+#: No turn is booked further ahead than this, s (the longest wait a caller takes is two gaps, 10 s):
+#: a stored `last` beyond it is the wall clock having stepped back, and is read as now plus this.
+MAX_AHEAD_S = 15.0
+#: The longest hold stored, s: a 429's Retry-After is held to an hour (common.QUOTA_WAIT_S), no more.
+MAX_HOLD_S = 3600.0
+
+
 def _gate(name: str) -> tuple[float, float]:
     """(last, until) of a source's row, Unix seconds, -inf where never set."""
     rows = store._query("SELECT last, until FROM gates WHERE name = ?", (name,))
@@ -39,6 +46,10 @@ def _take(name: str, earliest: float, gap_s: float, latest: float) -> float | No
         db.execute("BEGIN IMMEDIATE")
         try:
             last, until = db.execute("SELECT last, until FROM gates WHERE name = ?", (name,)).fetchone() or (None, None)
+            wall = time.time()
+            # A clock that stepped back leaves `last` and `until` in the future: clamped, adsb.lol is not silent for the step.
+            last = None if last is None else min(last, wall + MAX_AHEAD_S)
+            until = None if until is None else min(until, wall + MAX_HOLD_S)
             slot = max(earliest, -math.inf if last is None else last + gap_s, -math.inf if until is None else until)
             if slot > latest:
                 db.execute("ROLLBACK")
@@ -80,7 +91,8 @@ class SharedGate:
     def hold(self, seconds: float, now: float) -> None:
         """Not asked for `seconds` from now; a longer hold already set is kept."""
         store._write(
-            f"INSERT INTO gates (name, until) VALUES (?, ?) {_LATER.format('until')}", (self.name, now + seconds + self._wall_less_clock())
+            f"INSERT INTO gates (name, until) VALUES (?, ?) {_LATER.format('until')}",
+            (self.name, now + min(seconds, MAX_HOLD_S) + self._wall_less_clock()),
         )
 
     def asked(self, now: float) -> None:

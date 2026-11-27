@@ -166,25 +166,17 @@ def test_a_search_adsb_lol_cannot_take_now_is_answered_from_the_faas_radar(clock
             traffic.find("abcdef")
 
 
-def test_a_region_whose_turn_a_search_took_gives_way(clock, monkeypatch):
+def test_a_region_whose_turn_a_search_took_waits_for_the_next(clock):
+    """The gate gives a turn once: the search's, a gap after the first region's, and the next region's a gap after that."""
     with patch("requests.get", return_value=_answer([CESSNA])):
         traffic.near(42.3, -88.1, 25)
     asked_at = []
-    sleeps = []
-
-    def sleep(seconds):
-        # While the region waits for its turn, a search takes one a second after it.
-        if not sleeps:
-            adsb_lol._STATE["search_at"] = clock.now + seconds + 1
-        sleeps.append(seconds)
-        clock.sleep(seconds)
-
-    stand_in(monkeypatch, "_sleep", sleep)
     with patch("requests.get", side_effect=lambda *a, **kw: (asked_at.append(clock.now), _answer([]))[1]):
-        clock.now += 1
-        # Another region, with no answer to give: it waits for a turn after the search's.
+        clock.now += 4
+        traffic.find("FOO123")
         traffic.near(45.0, -93.0, 25)
-    assert asked_at == [1011.0]
+    # The search's two ways in its one turn, then the region's a gap after.
+    assert asked_at[0] == 1005.0 and asked_at[-1] == 1010.0 and set(asked_at) == {1005.0, 1010.0}
 
 
 def test_a_search_answer_is_given_again_for_a_few_seconds(clock):
