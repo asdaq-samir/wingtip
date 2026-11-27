@@ -135,6 +135,13 @@ pub fn metars(text: &str) -> Result<String, String> {
             // "VRB" is no number: a direction the arithmetic cannot use.
             json::opt_number(&mut r, num(el.text_at(&[tag])));
         }
+        // The variable direction, "250V310", read from the text: the
+        // cache file has no member for it (metar::variable_direction).
+        r.push_str(",\"wind_variable_deg\":");
+        match el.text_at(&["raw_text"]).and_then(metar::variable_direction) {
+            Some((from, to)) => r.push_str(&format!("[{},{}]", from, to)),
+            None => r.push_str("null"),
+        }
         r.push('}');
         if !latest.contains_key(ident) {
             order.push(ident.to_owned());

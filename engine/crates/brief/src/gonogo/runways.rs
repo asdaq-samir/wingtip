@@ -20,7 +20,8 @@ pub use crate::runway::performance::{
 pub use crate::runway::pick::{
     available_ft, bare_ident, picked_end, runway_flown, runway_in_use, runway_number, End, Flown, Picks, Runway,
 };
-use crate::runway::wind::{headwind_kt, js_round};
+use crate::runway::wind::js_round;
+use crate::runway::wind_variable::worst_headwind_kt;
 use wingtip_core::sort::StableSort;
 
 /// A field's current report, as much as the check reads of it.
@@ -31,6 +32,8 @@ pub struct Report {
     pub wind_dir_true_deg: Option<f64>,
     pub wind_speed_kt: Option<f64>,
     pub wind_gust_kt: Option<f64>,
+    /// A variable direction's bounds, "230V310" (runway::wind_variable).
+    pub wind_variable_deg: Option<(f64, f64)>,
 }
 
 /// An airport the flight takes off from or lands at, in the route's
@@ -201,10 +204,15 @@ pub fn runway_checks(
                 None => 0.0,
             };
             // The gusts along the end flown, from the report's wind and the
-            // end's true heading (both true): None for a VRB or no gust.
+            // end's true heading (both true): None for a VRB or no gust. A
+            // variable direction, "230V310", takes the arc's worst, gusting
+            // or steady (runway::wind_variable).
             let heading = runway.zip(end.as_ref()).and_then(|(r, e)| runways[r].ends.iter().find(|x| x.ident == *e)?.heading_true_deg);
             let gust_along = match (metar, heading) {
-                (Some(m), Some(h)) => m.wind_dir_true_deg.zip(m.wind_gust_kt).map(|(d, g)| headwind_kt(d, g, h)),
+                (Some(m), Some(h)) => m.wind_dir_true_deg.and_then(|d| {
+                    let kt = m.wind_gust_kt.or(m.wind_variable_deg.and(m.wind_speed_kt))?;
+                    Some(worst_headwind_kt(d, m.wind_variable_deg, kt, h))
+                }),
                 _ => None,
             };
             let shown_headwind = if w.is_some() { along_shown_kt(headwind, gust_along) } else { headwind };

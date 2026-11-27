@@ -126,6 +126,7 @@ pub(super) fn runway_checks_rule(i: In, v: &Value) -> R<String> {
                     wind_dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
                     wind_speed_kt: i.opt_num(m, "wind_speed_kt")?,
                     wind_gust_kt: i.opt_num(m, "wind_gust_kt")?,
+                    wind_variable_deg: crate::runway::calls::variable(i, m)?,
                 }),
             };
             Ok(Field { runways: field_runways(i, v, &ident)?, elevation_ft: i.opt_num(f, "elevation_ft")?, metar: report, ident })

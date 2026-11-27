@@ -45,3 +45,4 @@ pub mod performance;
 pub mod pick;
 pub mod proximity;
 pub mod wind;
+pub mod wind_variable;

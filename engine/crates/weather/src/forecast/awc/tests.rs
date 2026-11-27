@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn a_metar_with_no_height_for_its_overcast_is_not_vfr() {
     let xml = r#"<response><data>
-      <METAR><raw_text>KXYZ 021353Z AUTO 27010KT 10SM OVC/// 10/05 A3001</raw_text><station_id>KXYZ</station_id>
+      <METAR><raw_text>KXYZ 021353Z AUTO 27010KT 230V310 10SM OVC/// 10/05 A3001</raw_text><station_id>KXYZ</station_id>
         <observation_time>2026-11-02T13:53:00Z</observation_time><latitude>45.0</latitude><longitude>-93.0</longitude>
         <wind_dir_degrees>270</wind_dir_degrees><wind_speed_kt>10</wind_speed_kt><visibility_statute_mi>10+</visibility_statute_mi>
         <sky_condition sky_cover="OVC"/><flight_category>VFR</flight_category></METAR>
@@ -17,10 +17,24 @@ fn a_metar_with_no_height_for_its_overcast_is_not_vfr() {
     assert_eq!(x.get("flight_category"), Some(&Value::Null));
     assert_eq!(x.get("visibility_sm").and_then(Value::as_f64), Some(10.0));
     assert_eq!(x.get("visibility_plus"), Some(&Value::Bool(true)));
+    // "230V310": the variable direction's bounds, read from the text.
+    let bounds = x.get("wind_variable_deg").and_then(Value::as_array).unwrap();
+    assert_eq!(bounds.iter().map(|b| b.as_f64().unwrap()).collect::<Vec<_>>(), vec![230.0, 310.0]);
     let a = v.get("KABC").unwrap();
     assert_eq!(a.get("ceiling_ft").and_then(Value::as_f64), Some(800.0));
     assert_eq!(a.get("visibility_plus"), Some(&Value::Bool(false)));
     assert_eq!(a.get("wind_dir_true_deg"), Some(&Value::Null));
+    assert_eq!(a.get("wind_variable_deg"), Some(&Value::Null));
+}
+
+#[test]
+fn a_variable_group_is_three_digits_v_three_digits_before_the_remarks() {
+    assert_eq!(metar::variable_group("250V310"), Some((250.0, 310.0)));
+    assert_eq!(metar::variable_group("350V030"), Some((350.0, 30.0)));
+    assert_eq!(metar::variable_group("25V0310"), None);
+    assert_eq!(metar::variable_group("370V010"), None);
+    assert_eq!(metar::variable_direction("KXYZ 021353Z 27015G25KT 230V310 10SM CLR"), Some((230.0, 310.0)));
+    assert_eq!(metar::variable_direction("KXYZ 021353Z 27015KT 10SM CLR RMK 230V310"), None);
 }
 
 #[test]

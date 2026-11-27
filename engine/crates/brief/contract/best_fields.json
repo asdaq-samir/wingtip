@@ -189,6 +189,18 @@
                       "null"
                     ]
                   },
+                  "variable_deg": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
+                  },
                   "altimeter_in_hg": {
                     "type": [
                       "number",

@@ -77,7 +77,14 @@ fn field(i: In, f: &Value) -> R<Field> {
         elevation_ft: i.opt_num(f, "elevation_ft")?,
         runways: runway_list(i, f, "runways")?,
         wind: metar
-            .map(|_| -> R<FitWind> { Ok(FitWind { dir_true_deg: m("dir_true_deg")?, speed_kt: m("speed_kt")?, gust_kt: m("gust_kt")? }) })
+            .map(|_| -> R<FitWind> {
+                Ok(FitWind {
+                    dir_true_deg: m("dir_true_deg")?,
+                    speed_kt: m("speed_kt")?,
+                    gust_kt: m("gust_kt")?,
+                    variable_deg: metar.map_or(Ok(None), |w| crate::runway::calls::variable_at(i, w, "variable_deg"))?,
+                })
+            })
             .transpose()?,
         report: FieldReport { elevation_ft: i.opt_num(f, "elevation_ft")?, altimeter_in_hg: m("altimeter_in_hg")?, temp_c: m("temp_c")? },
         flight_category: metar.map_or(Ok(None), |m| i.opt_str(m, "flight_category"))?,

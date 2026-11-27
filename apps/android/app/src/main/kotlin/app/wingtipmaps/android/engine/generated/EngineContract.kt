@@ -1760,6 +1760,11 @@ object EngineContract {
         val windSpeedKt: Double? = null,
         @SerialName("wind_gust_kt")
         val windGustKt: Double? = null,
+        /**
+         * A variable wind direction, "250V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.
+         */
+        @SerialName("wind_variable_deg")
+        val windVariableDeg: List<Double>? = null,
         @SerialName("altimeter_in_hg")
         val altimeterInHg: Double? = null,
         @SerialName("temp_c")
@@ -2031,6 +2036,11 @@ object EngineContract {
         val speedKt: Double? = null,
         @SerialName("gust_kt")
         val gustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("variable_deg")
+        val variableDeg: List<Double>? = null,
         @SerialName("altimeter_in_hg")
         val altimeterInHg: Double? = null,
         @SerialName("temp_c")
@@ -5986,6 +5996,11 @@ object EngineContract {
         val windSpeedKt: Double? = null,
         @SerialName("wind_gust_kt")
         val windGustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("wind_variable_deg")
+        val windVariableDeg: List<Double>? = null,
     )
 
     @Serializable
@@ -8736,6 +8751,11 @@ object EngineContract {
         val windSpeedKt: Double? = null,
         @SerialName("wind_gust_kt")
         val windGustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("wind_variable_deg")
+        val windVariableDeg: List<Double>? = null,
     )
 
     @Serializable
@@ -13319,6 +13339,11 @@ object EngineContract {
         val speedKt: Double? = null,
         @SerialName("gust_kt")
         val gustKt: Double? = null,
+        /**
+         * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+         */
+        @SerialName("variable_deg")
+        val variableDeg: List<Double>? = null,
     )
 
     @Serializable

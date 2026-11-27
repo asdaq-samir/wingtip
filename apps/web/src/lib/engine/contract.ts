@@ -718,6 +718,13 @@ export type MetarWindIn = {
   wind_dir_true_deg?: number | null;
   wind_speed_kt?: number | null;
   wind_gust_kt?: number | null;
+  /**
+   * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  wind_variable_deg?: [number, number] | null;
 } | null;
 export type LeastCrosswindAnswer = {
   /**
@@ -5595,6 +5602,13 @@ export interface AwcMetar {
   wind_dir_true_deg: number | null;
   wind_speed_kt: number | null;
   wind_gust_kt: number | null;
+  /**
+   * A variable wind direction, "250V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  wind_variable_deg: [number, number] | null;
   altimeter_in_hg: number | null;
   temp_c: number | null;
   dewpoint_c: number | null;
@@ -5673,6 +5687,13 @@ export interface BestFieldsInput {
       dir_true_deg?: number | null;
       speed_kt?: number | null;
       gust_kt?: number | null;
+      /**
+       * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+       *
+       * @minItems 2
+       * @maxItems 2
+       */
+      variable_deg?: [number, number] | null;
       altimeter_in_hg?: number | null;
       temp_c?: number | null;
       flight_category?: string | null;
@@ -9162,6 +9183,13 @@ export interface GonogoMetar {
   wind_dir_true_deg?: number | null;
   wind_speed_kt?: number | null;
   wind_gust_kt?: number | null;
+  /**
+   * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  wind_variable_deg?: [number, number] | null;
 }
 export interface GonogoRunwayFindingsInput {
   /**
@@ -14165,6 +14193,13 @@ export interface RunwayEndFitInput {
     dir_true_deg?: number | null;
     speed_kt?: number | null;
     gust_kt?: number | null;
+    /**
+     * A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+     *
+     * @minItems 2
+     * @maxItems 2
+     */
+    variable_deg?: [number, number] | null;
   } | null;
   /**
    * Null where the field's elevation is not known: no distance is worked out (needed_ft null, unknown true).

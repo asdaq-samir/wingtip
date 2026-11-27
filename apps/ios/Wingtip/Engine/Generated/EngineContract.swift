@@ -1726,6 +1726,8 @@ nonisolated enum EngineContract {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
+        /// A variable wind direction, "250V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.
+        var windVariableDeg: [Double]?
         var altimeterInHg: Double?
         var tempC: Double?
         var dewpointC: Double?
@@ -1745,6 +1747,7 @@ nonisolated enum EngineContract {
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
+            case windVariableDeg = "wind_variable_deg"
             case altimeterInHg = "altimeter_in_hg"
             case tempC = "temp_c"
             case dewpointC = "dewpoint_c"
@@ -2011,6 +2014,8 @@ nonisolated enum EngineContract {
         var dirTrueDeg: Double?
         var speedKt: Double?
         var gustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var variableDeg: [Double]?
         var altimeterInHg: Double?
         var tempC: Double?
         var flightCategory: String?
@@ -2019,6 +2024,7 @@ nonisolated enum EngineContract {
             case dirTrueDeg = "dir_true_deg"
             case speedKt = "speed_kt"
             case gustKt = "gust_kt"
+            case variableDeg = "variable_deg"
             case altimeterInHg = "altimeter_in_hg"
             case tempC = "temp_c"
             case flightCategory = "flight_category"
@@ -5802,6 +5808,8 @@ nonisolated enum EngineContract {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var windVariableDeg: [Double]?
 
         enum CodingKeys: String, CodingKey {
             case ceilingFt = "ceiling_ft"
@@ -5811,6 +5819,7 @@ nonisolated enum EngineContract {
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
+            case windVariableDeg = "wind_variable_deg"
         }
     }
 
@@ -8441,11 +8450,14 @@ nonisolated enum EngineContract {
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var windVariableDeg: [Double]?
 
         enum CodingKeys: String, CodingKey {
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
+            case windVariableDeg = "wind_variable_deg"
         }
     }
 
@@ -12756,11 +12768,14 @@ nonisolated enum EngineContract {
         var dirTrueDeg: Double?
         var speedKt: Double?
         var gustKt: Double?
+        /// A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none.
+        var variableDeg: [Double]?
 
         enum CodingKeys: String, CodingKey {
             case dirTrueDeg = "dir_true_deg"
             case speedKt = "speed_kt"
             case gustKt = "gust_kt"
+            case variableDeg = "variable_deg"
         }
     }
 

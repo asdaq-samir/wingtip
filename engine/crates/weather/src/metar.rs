@@ -37,6 +37,9 @@ pub struct Metar {
     pub hour: u32,
     pub minute: u32,
     pub wind: Option<Wind>,
+    /// A variable direction, "250V310": its two bounds, true, clockwise
+    /// from the first (variable_direction).
+    pub wind_variable_deg: Option<(f64, f64)>,
     pub visibility_sm: Option<f64>,
     /// Visibility at or past the most the report says ("P6SM", CAVOK, 9999).
     pub visibility_plus: bool,

@@ -23,6 +23,7 @@ fn field(gust_kt: Option<f64>) -> Vec<Field> {
         wind_dir_true_deg: Some(80.0),
         wind_speed_kt: Some(10.0),
         wind_gust_kt: gust_kt,
+        wind_variable_deg: None,
     };
     let runway = Runway {
         surface: Some("ASPH".into()),

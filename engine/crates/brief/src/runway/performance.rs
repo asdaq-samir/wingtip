@@ -7,7 +7,8 @@
 //! (crate::gonogo::runways) and FPL's runway chips go by the same sums.
 
 use super::pick::{available_ft, End, Runway};
-use super::wind::{crosswind_kt, headwind_kt, js_round, steady_or_gust_kt};
+use super::wind::{js_round, steady_or_gust_kt};
+use super::wind_variable::{worst_crosswind_kt, worst_headwind_kt};
 use crate::flight;
 
 /// The field's pressure altitude from its elevation and the altimeter
@@ -232,12 +233,13 @@ pub fn end_distance(
 pub const DISTANCE_MARGIN: f64 = 1.15;
 
 /// A wind as a METAR reports it: true, in knots, each None where it is not
-/// reported.
+/// reported; `variable_deg` a variable direction's bounds (wind_variable).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FitWind {
     pub dir_true_deg: Option<f64>,
     pub speed_kt: Option<f64>,
     pub gust_kt: Option<f64>,
+    pub variable_deg: Option<(f64, f64)>,
 }
 
 /// How one runway end suits the airplane (lib/runwayFit endFit).
@@ -298,14 +300,16 @@ pub fn end_fit(
     // straight across, so all of it, gusts included, is crosswind, as the minimums'
     // best crosswind takes it: a VRB15G25 showed 0 kt across and never passed the
     // demonstrated crosswind (the aviation check, 2026-10-27). It gives no headwind.
+    // A variable direction, "230V310", is judged at its worst (wind_variable).
     let dir = heading_true_deg.and(wind.and_then(|w| w.dir_true_deg));
+    let arc = wind.and_then(|w| w.variable_deg);
     let across = |kt: Option<f64>| match (said(kt), heading_true_deg, dir) {
-        (Some(kt), Some(h), Some(d)) => crosswind_kt(d, kt, h),
+        (Some(kt), Some(h), Some(d)) => worst_crosswind_kt(d, arc, kt, h),
         (Some(kt), Some(_), None) => kt.abs(),
         _ => 0.0,
     };
     let along = |kt: Option<f64>| match (dir, said(kt), heading_true_deg) {
-        (Some(d), Some(kt), Some(h)) => headwind_kt(d, kt, h),
+        (Some(d), Some(kt), Some(h)) => worst_headwind_kt(d, arc, kt, h),
         _ => 0.0,
     };
     let headwind = along(wind.and_then(|w| w.speed_kt));

@@ -4090,6 +4090,18 @@
                   "null"
                 ]
               },
+              "wind_variable_deg": {
+                "description": "A variable wind direction, \"250V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.",
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
               "altimeter_in_hg": {
                 "type": [
                   "number",
@@ -4134,6 +4146,7 @@
               "wind_dir_true_deg",
               "wind_speed_kt",
               "wind_gust_kt",
+              "wind_variable_deg",
               "altimeter_in_hg",
               "temp_c",
               "dewpoint_c",
@@ -4497,6 +4510,18 @@
                           "number",
                           "null"
                         ]
+                      },
+                      "variable_deg": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
                       },
                       "altimeter_in_hg": {
                         "type": [
@@ -30105,6 +30130,18 @@
                     "number",
                     "null"
                   ]
+                },
+                "variable_deg": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
                 }
               }
             },
@@ -40343,6 +40380,18 @@
             "number",
             "null"
           ]
+        },
+        "wind_variable_deg": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
         }
       },
       "description": "A field's METAR, as much as the rules read of it."
@@ -41325,6 +41374,18 @@
             "number",
             "null"
           ]
+        },
+        "wind_variable_deg": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
         }
       },
       "description": "A METAR's wind; null, missing or empty for none."

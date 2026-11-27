@@ -183,7 +183,16 @@
       "input": {
         "runways": [
           {
-            "end_headings": [["9", 88.0], ["27", 268.0]]
+            "end_headings": [
+              [
+                "9",
+                88.0
+              ],
+              [
+                "27",
+                268.0
+              ]
+            ]
           }
         ],
         "metar": {
@@ -222,7 +231,16 @@
       "input": {
         "runways": [
           {
-            "end_headings": [["9", 88.0], ["27", 268.0]]
+            "end_headings": [
+              [
+                "9",
+                88.0
+              ],
+              [
+                "27",
+                268.0
+              ]
+            ]
           }
         ],
         "metar": {
@@ -257,7 +275,16 @@
       "input": {
         "runways": [
           {
-            "end_headings": [["9", 88.0], ["27", 268.0]]
+            "end_headings": [
+              [
+                "9",
+                88.0
+              ],
+              [
+                "27",
+                268.0
+              ]
+            ]
           }
         ],
         "metar": null,
@@ -666,9 +693,20 @@
       "name": "Each end left traffic but where the FAA flags it right",
       "rule": "runway_ends_traffic",
       "input": {
-        "end_headings": [["05", 50.0], ["23", null]],
+        "end_headings": [
+          [
+            "05",
+            50.0
+          ],
+          [
+            "23",
+            null
+          ]
+        ],
         "variation_deg": -3.0,
-        "right": ["23"]
+        "right": [
+          "23"
+        ]
       },
       "expect": [
         {
@@ -733,6 +771,104 @@
         }
       ],
       "source": "14 CFR 91.126(b)(1): \"Each pilot of a powered fixed-wing aircraft must make all turns to the left unless the airport displays approved light signals or visual markings indicating that turns should be made to the right\"; AIM 4-3-3: right patterns are charted \"RP\"."
+    },
+    {
+      "name": "27015G25KT on runway 27 (270 true), no variable group: none across",
+      "rule": "runway_with_winds",
+      "input": {
+        "runways": [
+          {
+            "end_headings": [
+              [
+                "9",
+                90.0
+              ],
+              [
+                "27",
+                270.0
+              ]
+            ]
+          }
+        ],
+        "metar": {
+          "wind_dir_true_deg": 270.0,
+          "wind_speed_kt": 15.0,
+          "wind_gust_kt": 25.0,
+          "wind_variable_deg": null
+        },
+        "variation_deg": 0.0
+      },
+      "expect": [
+        {
+          "path": "0.end",
+          "equals": "27"
+        },
+        {
+          "path": "0.crosswind_kt",
+          "value": 0,
+          "tolerance": 0
+        },
+        {
+          "path": "0.gust_crosswind_kt",
+          "value": 0,
+          "tolerance": 0
+        }
+      ],
+      "source": "FMH-1 (Federal Meteorological Handbook No. 1) chapter 12, the wind group, and AIM 7-1-28's METAR key: \"dddVddd\" reports a direction varying between two bounds, clockwise, where it varies by 60 degrees or more at over 6 knots; the wind may blow from anywhere in between. FAA-H-8083-25C ch. 11, the crosswind component: speed times the sine of the angle off the runway.",
+      "method": "The wind straight down the runway: sin 0 = 0, steady and gusting."
+    },
+    {
+      "name": "27015G25KT 230V310 on runway 27: judged at 230, the first bound, 16 kt from the left in the gusts",
+      "rule": "runway_with_winds",
+      "input": {
+        "runways": [
+          {
+            "end_headings": [
+              [
+                "9",
+                90.0
+              ],
+              [
+                "27",
+                270.0
+              ]
+            ]
+          }
+        ],
+        "metar": {
+          "wind_dir_true_deg": 270.0,
+          "wind_speed_kt": 15.0,
+          "wind_gust_kt": 25.0,
+          "wind_variable_deg": [
+            230.0,
+            310.0
+          ]
+        },
+        "variation_deg": 0.0
+      },
+      "expect": [
+        {
+          "path": "0.end",
+          "equals": "27"
+        },
+        {
+          "path": "0.crosswind_kt",
+          "value": -10,
+          "tolerance": 0
+        },
+        {
+          "path": "0.gust_crosswind_kt",
+          "value": -16,
+          "tolerance": 0
+        },
+        {
+          "path": "0.crosswind_exact_kt",
+          "value": 16.06969024216348,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FMH-1 (Federal Meteorological Handbook No. 1) chapter 12, the wind group, and AIM 7-1-28's METAR key: \"dddVddd\" reports a direction varying between two bounds, clockwise, where it varies by 60 degrees or more at over 6 knots; the wind may blow from anywhere in between. FAA-H-8083-25C ch. 11, the crosswind component: speed times the sine of the angle off the runway.",
+      "method": "At either bound 40 degrees off: 15 sin 40 = 9.64, 25 sin 40 = 16.07; the end still the mean's, 27; 230 is from the left (negative), the first bound of the two equal worst; the exact crosswind is unsigned."
     }
   ]
 }

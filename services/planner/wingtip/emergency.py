@@ -52,6 +52,8 @@ def _metar(report: dict | None) -> dict | None:
         "dir_true_deg": report.get("wind_dir_true_deg"),
         "speed_kt": report.get("wind_speed_kt"),
         "gust_kt": report.get("wind_gust_kt"),
+        # A variable direction's bounds, judged at their worst (FMH-1 ch. 12).
+        "variable_deg": report.get("wind_variable_deg"),
         "altimeter_in_hg": report.get("altimeter_in_hg"),
         "temp_c": report.get("temp_c"),
         # The prevailing visibility in statute miles as the engine read it
