@@ -49,30 +49,36 @@ def sun_and_contrast(decls):
 
 
 def swatch_ts(tree, theme_group, lookup, alias, native_web, ts_obj):
-    """tokens.ts's LOOK_SWATCH: each look's swatch in the Theme menu (lib/brand)."""
+    """tokens.ts's LOOK_SWATCH: each look's swatch in the Theme menu (lib/brand),
+    by day and at night."""
     return (
-        "/** Each look's tint on its sheet by day, for its swatch in the Theme menu. */\nexport const LOOK_SWATCH = %s as const;"
-        % ts_obj(swatches(tree, theme_group, lookup, alias, native_web))
+        "/** Each look's tint on its sheet by day and at night, for its swatch in the Theme menu. */\n"
+        "export const LOOK_SWATCH = %s as const;" % ts_obj(swatches(tree, theme_group, lookup, alias, native_web))
     )
 
 
 def swatches(tree, theme_group, lookup, alias, native_web):
-    """Each look's day tint and sheet as the web's cascade gives them: the
-    look's own token, else the day theme's, an alias followed. Native's
-    are its stock primary and background."""
-    light = theme_group(tree, "color", "theme", "light")
-    own = {
-        "wingtip": {},
-        "cockpit": theme_group(tree, "color", "look", "cockpit", "light"),
-        "ink": theme_group(tree, "color", "look", "ink", "light"),
-        "native": theme_group(tree, *native_web, "light"),
-    }
+    """Each look's tint and sheet as the web's cascade gives them, by day
+    (light) and at night (dark): the look's own token, else the theme's,
+    an alias followed. Native's are its stock primary and background."""
 
-    def value(look, key):
-        v = (own[look].get(key) or light[key])["$value"]
-        while alias.match(v):
-            v = lookup(tree, alias.match(v).group(1))["$value"]
-        return json.dumps(v)
+    def scheme(mode):
+        theme = theme_group(tree, "color", "theme", mode)
+        own = {
+            "wingtip": {},
+            "cockpit": theme_group(tree, "color", "look", "cockpit", mode),
+            "ink": theme_group(tree, "color", "look", "ink", mode),
+            "native": theme_group(tree, *native_web, mode),
+        }
 
-    keys = {look: ("primary", "background") if look == "native" else ("tint", "sheet") for look in own}
-    return {look: "{ tint: %s, ground: %s }" % (value(look, keys[look][0]), value(look, keys[look][1])) for look in own}
+        def value(look, key):
+            v = (own[look].get(key) or theme[key])["$value"]
+            while alias.match(v):
+                v = lookup(tree, alias.match(v).group(1))["$value"]
+            return json.dumps(v)
+
+        keys = {look: ("primary", "background") if look == "native" else ("tint", "sheet") for look in own}
+        return {look: "{ tint: %s, ground: %s }" % (value(look, keys[look][0]), value(look, keys[look][1])) for look in own}
+
+    day, night = scheme("light"), scheme("dark")
+    return {look: "{ day: %s, night: %s }" % (day[look], night[look]) for look in day}

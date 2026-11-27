@@ -88,12 +88,12 @@ export const BRAND = {
   chartLand: "#d7e8c6",
 };
 
-/** Each look's tint on its sheet by day, for its swatch in the Theme menu. */
+/** Each look's tint on its sheet by day and at night, for its swatch in the Theme menu. */
 export const LOOK_SWATCH = {
-  wingtip: { tint: "oklch(0.522 0.177 255.8)", ground: "#f2f2f7" },
-  cockpit: { tint: "#00707e", ground: "#f2f2f7" },
-  ink: { tint: "oklch(0.522 0.177 255.8)", ground: "#f7f2e7" },
-  native: { tint: "oklch(0.205 0 0)", ground: "oklch(1 0 0)" },
+  wingtip: { day: { tint: "oklch(0.522 0.177 255.8)", ground: "#f2f2f7" }, night: { tint: "#57a8ff", ground: "#0b1422" } },
+  cockpit: { day: { tint: "#00707e", ground: "#f2f2f7" }, night: { tint: "#46d3e6", ground: "#0b1422" } },
+  ink: { day: { tint: "oklch(0.522 0.177 255.8)", ground: "#f7f2e7" }, night: { tint: "#5ac8fa", ground: "#14161c" } },
+  native: { day: { tint: "oklch(0.205 0 0)", ground: "oklch(1 0 0)" }, night: { tint: "oklch(0.922 0 0)", ground: "oklch(0.145 0 0)" } },
 } as const;
 
 export const BADGE = {
