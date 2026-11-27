@@ -6,6 +6,11 @@ import { flatDeg2 } from "./geo";
 /** One answer: an airport, or with `fixes` a waypoint (`kind` "fix"). */
 export type AirportSearchRow = Awaited<ReturnType<typeof api.airportSearch>>[number];
 
+/** A row of the phone's own copy: `whole` where an open field's ident is
+ *  what is typed whole (KOSH, or OSH its FAA ID), which a navaid of the
+ *  same ident is put after (useAirportSearch's merge). */
+export type LocalSearchRow = AirportSearchRow & { whole?: true };
+
 /** One airport of the planner's index (wingtip.airports.search_index): the
  *  ident pilots use, its name, town and state, its size rank (0 large to
  *  3 other), where it is, and the idents it is also found by. An index
@@ -105,7 +110,7 @@ export function searchIndex(
   typed: string,
   limit = 8,
   near: readonly { lat: number; lon: number }[] = [],
-): AirportSearchRow[] {
+): LocalSearchRow[] {
   const query = typed.trim().toUpperCase();
   if (!query) return [];
   const word = ` ${query}`;
@@ -141,9 +146,11 @@ export function searchIndex(
   if (pool) for (const row of pool) visit(row);
   else for (let row = 0; row < index.rows.length; row++) visit(row);
   lastScan.set(index, { query, rows: matched });
-  return ranked.slice(0, limit).map(([, , , , , , row]) => {
+  return ranked.slice(0, limit).map(([rank, , , , , , row]) => {
     const [ident, name, town, state] = index.rows[row]!;
+    const whole = rank === 0 && !index.closed[row];
     return {
+      ...(whole ? { whole } : {}),
       ident,
       name,
       municipality: town || null,
