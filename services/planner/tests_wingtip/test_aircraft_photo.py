@@ -1,13 +1,17 @@
 """An airplane's photo from Planespotters.net (wingtip.aircraft_photo), its
 API stubbed with an answer in its documented shape
 (planespotters.net/photo/api): the URLs passed on unchanged with the
-photographer and the link, asked only with a contact set, kept a day."""
+photographer and the link, asked only with a contact set, both ways at
+once, kept a day in the live store."""
+
+import threading
+import time
 
 import pytest
 import requests
-from cachetools import TTLCache
 
 from wingtip import aircraft_photo
+from wingtip.traffic import store
 from wingtip.config import get_settings
 
 ANSWER = {
@@ -45,7 +49,6 @@ class Resp:
 def asked(monkeypatch):
     monkeypatch.setenv("PLANESPOTTERS_CONTACT", "https://example.org/contact")
     get_settings.cache_clear()
-    monkeypatch.setattr(aircraft_photo, "_KEPT", TTLCache(maxsize=16, ttl=60))
     calls = []
 
     def get(url, headers, timeout):
@@ -61,12 +64,31 @@ def test_the_photo_with_its_photographer_and_link_its_urls_unchanged(asked):
     found = aircraft_photo.photo("a89c1e", "N654FL")
     assert found["thumbnail_large"] == ANSWER["photos"][0]["thumbnail_large"]["src"]
     assert (found["photographer"], found["link"], found["width"]) == ("A Spotter", ANSWER["photos"][0]["link"], 420)
-    # By its address first, then its registration, naming us with a contact.
-    assert [u.rsplit("/", 2)[-2] for u, _ in asked] == ["hex", "reg"]
+    # By its address and its registration, naming us with a contact.
+    assert sorted(u.rsplit("/", 2)[-2] for u, _ in asked) == ["hex", "reg"]
     assert asked[0][1] == "wingtip-maps/0.1 (+https://example.org/contact)"
-    # Kept: asked once a day.
+    # Kept a day in the live store: asked once, a restart too.
     aircraft_photo.photo("a89c1e", "N654FL")
+    store.reset()
+    assert aircraft_photo.photo("a89c1e", "N654FL") == found
     assert len(asked) == 2
+
+
+def test_both_ways_are_asked_at_once_and_the_first_photo_wins(asked, monkeypatch):
+    """Round 4's audit: a cold card waited for the address's 5 s before its
+    registration was asked."""
+    both_in = threading.Barrier(2, timeout=2)
+
+    def get(url, headers, timeout):
+        both_in.wait()  # each ask waits for the other to have started
+        if url.endswith("/hex/a89c1e"):
+            time.sleep(1)  # the slower way, whose answer is not waited for
+        return Resp(ANSWER if url.endswith("/reg/N654FL") else {"photos": []})
+
+    monkeypatch.setattr(aircraft_photo.outside, "get", get)
+    started = time.monotonic()
+    assert aircraft_photo.photo("a89c1e", "N654FL")["photographer"] == "A Spotter"
+    assert time.monotonic() - started < 0.9
 
 
 def test_none_without_a_contact_or_a_photo(asked, monkeypatch):
@@ -80,4 +102,12 @@ def test_none_without_a_contact_or_a_photo(asked, monkeypatch):
 def test_a_failed_ask_is_not_kept(asked, monkeypatch):
     monkeypatch.setattr(aircraft_photo.outside, "get", lambda url, headers, timeout: Resp({}, 503))
     assert aircraft_photo.photo("a89c1e", "N654FL") is None
-    assert len(aircraft_photo._KEPT) == 0
+    assert store.kept_answer("photo", "hex:a89c1e/reg:N654FL", time.time()) == (False, None)
+
+
+def test_an_answer_past_its_day_is_asked_again_and_pruned(asked):
+    found = aircraft_photo.photo("a89c1e", "N654FL")
+    a_day_on = time.time() + aircraft_photo.KEEP_S + 1
+    assert store.kept_answer("photo", "hex:a89c1e/reg:N654FL", a_day_on) == (False, None)
+    assert store.forget_answers(a_day_on) == 1
+    assert aircraft_photo.photo("a89c1e", "N654FL") == found and len(asked) == 4

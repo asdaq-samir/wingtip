@@ -14,7 +14,8 @@ here or by the app that shows it:
 - A server "must send a unique, descriptive User-Agent header that
   identifies the application ... and includes a contact URL or email":
   the planner's setting PLANESPOTTERS_CONTACT; unset, no photo is asked.
-- "API JSON responses may be cached for up to 24 hours": KEEP_S.
+- "API JSON responses may be cached for up to 24 hours": KEEP_S, in the
+  live store (wingtip.traffic.store's answers), pruned past it each minute.
 - "Image binaries must be fetched straight from the thumbnail /
   thumbnail_large URLs we return, by the same browser or device that
   displays them", and "All URLs returned by the API ... must be used
@@ -37,12 +38,14 @@ from __future__ import annotations
 
 import logging
 import re
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
-from cachetools import TTLCache
 
 from . import outside
 from .config import get_settings, user_agent
+from .traffic import store
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +54,9 @@ API = "https://api.planespotters.net/pub/photos/{by}/{key}"
 KEEP_S = 24 * 3600
 TIMEOUT_S = 5.0
 SOURCE = "Planespotters.net"
-_KEPT: TTLCache = TTLCache(maxsize=2048, ttl=KEEP_S)
+#: Both ways of asking, side by side: one after the other a cold card waited
+#: up to 2 x TIMEOUT_S where the address had none (round 4's audit).
+_ASKING = ThreadPoolExecutor(max_workers=4, thread_name_prefix="planespotters")
 _HEX = re.compile(r"^[0-9a-f]{6}$")
 
 
@@ -77,9 +82,10 @@ def read(answer: dict) -> dict | None:
 
 
 def photo(hex_id: str | None, registration: str | None) -> dict | None:
-    """This airplane's photo by its address, else its registration; None
-    where there is none, the API cannot be asked now, or no contact is set
-    to ask it with. Kept a day, a photo or its absence."""
+    """This airplane's photo by its address or its registration, both asked
+    at once, the first with a photo given; None where there is none, the
+    API cannot be asked now, or no contact is set to ask it with. Kept a
+    day, a photo or its absence; an answer missing for a failed ask is not."""
     contact = get_settings().planespotters_contact
     hex_id = (hex_id or "").lower()
     reg = re.sub(r"\s+", "", registration or "").upper()
@@ -87,19 +93,35 @@ def photo(hex_id: str | None, registration: str | None) -> dict | None:
     tries += [("reg", reg)] if reg else []
     if not contact or not tries:
         return None
-    key = tuple(tries)
-    if key in _KEPT:
-        return _KEPT[key]
-    found = None
-    for by, value in tries:
-        try:
-            resp = outside.get(API.format(by=by, key=value), headers={"User-Agent": user_agent(f"+{contact}")}, timeout=TIMEOUT_S)
-            resp.raise_for_status()
-            found = read(resp.json())
-        except (requests.RequestException, ValueError):
-            log.info("Planespotters.net photo of %s not had now", value, exc_info=True)
-            return None  # not kept: asked again next time
-        if found:
+    key = "/".join(f"{by}:{value}" for by, value in tries)
+    kept, found = store.kept_answer("photo", key, time.time())
+    if kept:
+        return found
+    headers = {"User-Agent": user_agent(f"+{contact}")}
+    failed = False
+    for done in as_completed([_ASKING.submit(_ask, by, value, headers) for by, value in tries]):
+        answer = done.result()
+        if answer is _FAILED:
+            failed = True
+        elif answer:
+            found = answer
             break
-    _KEPT[key] = found
+    else:
+        if failed:
+            return None  # not kept: asked again next time
+    store.keep_answer("photo", key, found, time.time() + KEEP_S)
     return found
+
+
+_FAILED = object()
+
+
+def _ask(by: str, value: str, headers: dict):
+    """One way's photo (`read`), None where it has none, _FAILED where it could not be asked now."""
+    try:
+        resp = outside.get(API.format(by=by, key=value), headers=headers, timeout=TIMEOUT_S)
+        resp.raise_for_status()
+        return read(resp.json())
+    except (requests.RequestException, ValueError):
+        log.info("Planespotters.net photo of %s not had now", value, exc_info=True)
+        return _FAILED

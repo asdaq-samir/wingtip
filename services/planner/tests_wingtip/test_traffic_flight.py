@@ -4,9 +4,9 @@ track since, with its number's route and its FAA record."""
 from unittest.mock import Mock, patch
 
 import requests
-from cachetools import TTLCache
 
 from wingtip import airports, registry, traffic
+from wingtip.traffic import store
 
 from .traffic_world import CESSNA, _answer, stand_in
 from .traffic_world import adsbx_fixture, clock_fixture  # noqa: F401 -- the fixtures, by the names the runner gives them
@@ -151,7 +151,6 @@ UAL2088_ROUTE = {
 
 
 def test_a_flight_numbers_route_and_whether_the_airplane_is_on_it(clock, monkeypatch):
-    stand_in(monkeypatch, "_ROUTES", TTLCache(maxsize=16, ttl=60, timer=clock))
     asked = []
 
     def get(url, *args, **kwargs):
@@ -172,6 +171,9 @@ def test_a_flight_numbers_route_and_whether_the_airplane_is_on_it(clock, monkeyp
         assert traffic.route("N174HA", 42.3, -88.1) is None
         assert traffic.route("DAL1") is None
         assert traffic.route("DAL1") is None
+        # Kept in the live store, a restart asks again for none.
+        store.reset()
+        assert traffic.route("DAL1") is None and traffic.route("UAL2088")["plausible"] is None
     # Each asked once: the route kept, and a 404 too.
     assert asked == ["UA/UAL2088.json", "DA/DAL1.json"]
 

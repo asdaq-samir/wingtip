@@ -5,10 +5,10 @@ from __future__ import annotations
 import re
 
 import requests
-from cachetools import TTLCache
 
 from .. import geo, outside
-from .common import HEADERS, TIMEOUT_S, _LOCK, _number
+from . import store
+from .common import HEADERS, TIMEOUT_S, _number, _wall
 
 #: Virtual Radar Server's route database (its standing data, CC0), as
 #: adsb.lol serves it: the airports a scheduled flight number flies
@@ -21,17 +21,18 @@ ROUTE_TTL_S = 6 * 3600
 #: route, nm, or this far beyond a leg's ends, is not flying that route
 #: today (a callsign reused, a diversion, the database out of date).
 OFF_ROUTE_NM = 100.0
-_ROUTES: TTLCache = TTLCache(maxsize=1024, ttl=ROUTE_TTL_S)
 _CALLSIGN = re.compile(r"^[A-Z]{3}[0-9][0-9A-Z]{0,4}$")
 
 
 def _route_airports(callsign: str) -> list[dict] | None:
     """The airports a flight number's route joins, in order; None where the
     database has none (a private airplane's callsign, an unknown flight).
-    Only an answer or a 404 is kept: a refusal is asked again next time."""
-    with _LOCK:
-        if callsign in _ROUTES:
-            return _ROUTES[callsign]
+    Only an answer or a 404 is kept, ROUTE_TTL_S in the live store, so a
+    restart or the other process asks again for none: a refusal is asked
+    again next time."""
+    kept, found = store.kept_answer("route", callsign, _wall())
+    if kept:
+        return found
     try:
         resp = outside.live_get(ROUTE_URL.format(prefix=callsign[:2], callsign=callsign), headers=HEADERS, timeout=TIMEOUT_S)
         if resp.status_code == 404:
@@ -52,8 +53,7 @@ def _route_airports(callsign: str) -> list[dict] | None:
             found = [a for a in found if a["ident"] and a["lat"] is not None and a["lon"] is not None] or None
     except (requests.RequestException, ValueError):
         return None
-    with _LOCK:
-        _ROUTES[callsign] = found
+    store.keep_answer("route", callsign, found, _wall() + ROUTE_TTL_S)
     return found
 
 
