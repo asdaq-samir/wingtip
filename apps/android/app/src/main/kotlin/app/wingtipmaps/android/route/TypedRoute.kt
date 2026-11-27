@@ -59,7 +59,17 @@ object TypedRoute {
      * useProcedurePicks). Where the engine cannot answer, every typed name
      * is unchecked, never missed and never a pick guessed.
      */
-    suspend fun picks(read: Read, dep: String, dest: String, list: suspend (String) -> ProcedureList?): Picked {
+    suspend fun picks(
+        read: Read,
+        dep: String,
+        dest: String,
+        list: suspend (String) -> ProcedureList?,
+        ask: (
+            List<EngineContract.RouteTypedPicksInputProceduresItem>,
+            EngineContract.RouteTypedPicksInputDeparture?,
+            EngineContract.RouteTypedPicksInputArrival?,
+        ) -> Result<EngineContract.RouteTypedPicksAnswer> = { typed, departure, arrival -> Engine.routeTypedPicks(typed, departure, arrival) },
+    ): Picked {
         if (read.procedures.isEmpty()) return Picked(emptyList(), emptyList(), emptyList())
         val lists = mutableMapOf<String, ProcedureList?>()
         suspend fun listed(field: String) = field.takeIf { it.isNotEmpty() }?.let { lists.getOrPut(it) { list(it) } }
@@ -76,7 +86,7 @@ object TypedRoute {
             )
         }
         val typed = read.procedures.map { EngineContract.RouteTypedPicksInputProceduresItem(it.name, it.before, it.after) }
-        val answer = Engine.routeTypedPicks(typed, departure, arrival).getOrNull() ?: return Picked(emptyList(), emptyList(), read.procedures.map { it.name })
+        val answer = ask(typed, departure, arrival).getOrNull() ?: return Picked(emptyList(), emptyList(), read.procedures.map { it.name })
         // The engine's pick names its procedure by id; its name is the field's own list's.
         val names = lists.values.filterNotNull().flatMap { l -> l.procedures.map { (it.kind to it.id) to it.name } }.toMap()
         return Picked(answer.picks.map { PlanProcedures.Pick(it.ident, it.id, it.kind, names[it.kind to it.id] ?: it.id, it.transition) }, answer.missed, answer.unchecked)
@@ -90,11 +100,20 @@ object TypedRoute {
         data object Done : Outcome
         data object Unread : Outcome
 
-        /** Typed procedures neither end publishes, by name, and the ends. */
-        data class Missed(val names: List<String>, val dep: String, val dest: String) : Outcome
+        /** Typed procedures neither end publishes, by name, and the ends; with any in the same typing that
+         *  could not be checked, which stay in the box to be read again rather than being dropped. */
+        data class Missed(val names: List<String>, val dep: String, val dest: String, val unchecked: List<String> = emptyList()) : Outcome
 
         /** Typed procedures not found where an end's list did not load: not looked at, so not said unpublished. */
         data class Unchecked(val names: List<String>, val dep: String, val dest: String) : Outcome
+        /** What stays in the box to be read again: words unread, and the procedures not yet checked, with or
+         *  without others missed in the same typing; nothing once all is read. */
+        fun again(text: String): String? = when (this) {
+            is Unchecked -> names.joinToString(" ")
+            is Missed -> unchecked.joinToString(" ").takeIf { it.isNotEmpty() }
+            Unread -> text.trim()
+            Done -> null
+        }
     }
 }
 
@@ -115,7 +134,7 @@ suspend fun Plan.typeRoute(text: String, list: suspend (String) -> ProcedureList
     read.cruiseFt?.let { setAltitude(it) }
     if (next != null) replaceRoute(next.dep, next.dest, next.stops) else if (picks.isNotEmpty()) plan()
     return when {
-        missed.isNotEmpty() -> TypedRoute.Outcome.Missed(missed, dep, dest)
+        missed.isNotEmpty() -> TypedRoute.Outcome.Missed(missed, dep, dest, unchecked)
         unchecked.isNotEmpty() -> TypedRoute.Outcome.Unchecked(unchecked, dep, dest)
         else -> TypedRoute.Outcome.Done
     }
