@@ -219,14 +219,14 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(info.getByTestId("airplane-documents")).toContainText("Bill of sale");
   // Its photo in the row under the actions, after its status, as the airport card's pictures (C1;
   // the owner, 2026-11-26), the photographer named on it and the picture its page's link, and no
-  // longer in Info; its type in the facts strip, its owner in its Registration section alone
+  // longer in Info; its make in the facts strip, its owner in its Registration section alone
   // (the owner, 2026-11-27).
   const pictures = card.getByTestId("airplane-pictures");
   await expect(pictures.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
   await expect(pictures.getByTestId("airplane-photo-open")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
   await expect(info.getByTestId("airplane-photo")).toHaveCount(0);
   await expect(card.getByTestId("airplane-facts-owner")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-facts-type")).toHaveText("Make/ModelPiperPA-28");
+  await expect(card.getByTestId("airplane-facts-make")).toHaveText("MakePiper");
   // Figures: the planning figures, a card of their own from the fourth button, its close back to this one.
   await card.getByTestId("airplane-figures-open").click();
   const figures = page.getByTestId("airplane-figures");

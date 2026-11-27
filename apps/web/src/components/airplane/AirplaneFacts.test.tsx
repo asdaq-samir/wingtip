@@ -24,7 +24,7 @@ const fact = (id: string) => screen.queryByTestId(`facts-${id}`)?.textContent ??
 describe("an airplane card's facts strip", () => {
   it("says the registry's type, year, seats, and engines, each under its name, its registration and owner left to its Registration section", () => {
     render(<AirplaneFacts record={record} testId="facts" />);
-    expect(fact("type")).toBe("Make/ModelPiperPA-28"); // its maker over its model, two lines
+    expect(fact("make")).toBe("MakePiper"); // its maker alone, its model the title's line
     expect(fact("year")).toBe("Year1971");
     expect(fact("seats")).toBe("Seats4");
     expect(fact("engines")).toBe("Engines1");
@@ -50,7 +50,7 @@ describe("an airplane card's facts strip", () => {
         testId="facts"
       />,
     );
-    expect(fact("type")).toBe("Make/ModelAirbusA-350-1000");
+    expect(fact("make")).toBe("MakeAirbus");
     expect(fact("operator")).toBe("OperatorQatar Airways");
     expect(fact("engines")).toBeNull();
     expect(fact("address")).toBe("ICAO Address06a1e7");
@@ -64,9 +64,9 @@ describe("an airplane card's facts strip", () => {
     expect(shortWeight(null)).toBeNull();
   });
 
-  it("falls back to the traffic's type and year with no record, and draws nothing with nothing to say", () => {
+  it("takes no make from a bare type code, and draws nothing with nothing to say", () => {
     render(<AirplaneFacts record={null} type="A321" year="2019" testId="facts" />);
-    expect(fact("type")).toBe("Make/ModelA321");
+    expect(fact("make")).toBeNull();
     expect(fact("year")).toBe("Year2019");
     expect(fact("owner")).toBeNull();
     cleanup();

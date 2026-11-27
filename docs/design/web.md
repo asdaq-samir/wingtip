@@ -903,10 +903,9 @@ Flights FirstFew's `after` once the section is open; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`, `fit` as the airport card's, no sideways
-scroll, a fact with no room on a second row: Make/Model, Year, Seats,
+scroll, a fact with no room on a second row: Make (`shortMaker`), Year, Seats,
 Engines, Weight (the registry's class short, "≤12,499 lb", 2026-11-27), then Operator,
-five at the most, Engines giving way to Operator, Make/Model its maker over its
-model on two lines so the strip stays one row from `traffic`'s `liveFacts` (the squawk on
+five at the most, Engines giving way to Operator, so the strip stays one row; Operator from `traffic`'s `liveFacts` (the squawk on
 the in-the-air slide's state line), and for traffic with no N-number its
 ICAO address, its mark and call sign under its title; the Now section gone, and
 its registration's status and owner left to AirplaneInfo's Registration
