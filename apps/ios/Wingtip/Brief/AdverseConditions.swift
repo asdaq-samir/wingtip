@@ -70,7 +70,7 @@ enum AdverseConditions {
             }
         }
         let said = [legs, at].compactMap { $0 }.joined(separator: " · ")
-        return said.isEmpty ? "During the flight" : said.prefix(1).uppercased() + said.dropFirst()
+        return said.isEmpty ? "During the flight" : Format.capital(said)
     }
 }
 

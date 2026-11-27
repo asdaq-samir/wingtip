@@ -106,7 +106,7 @@ extension Atis {
         let found = try? Engine.ceilingVisibility(layers: sky.map { .init(cover: metarCover[$0.cover] ?? $0.cover, baseFt: $0.baseFt.map(Double.init)) })
         let ceiling = found?.ceilingFt.flatMap { ft in sky.lastIndex { $0.baseFt.map(Double.init) == ft } }
         let layers = sky.enumerated().map { k, l in
-            let cover = l.cover.prefix(1).uppercased() + l.cover.dropFirst()
+            let cover = Format.capital(l.cover)
             let base = l.baseFt.map { " \(Format.altitude(Double($0)))" } ?? ""
             return cover + base + (k == ceiling ? " (ceiling)" : "")
         }

@@ -36,28 +36,6 @@ enum AirportWeather: String, CaseIterable, Identifiable, Sendable {
         case .station: AirportWeatherChoice(style: .station, stationClose: true, windBarbs: true, worse: true)
         }
     }
-
-    /// The choice kept, else what a device kept before the menu brought to
-    /// one of its choices, as the web migrates it: Off kept, the station
-    /// model kept, the ring with its barbs With Wind, the rest -- the ring
-    /// alone, the dot -- the flight category.
-    static func kept(_ defaults: UserDefaults = .standard) -> AirportWeather {
-        if let kept = defaults.string(forKey: key).flatMap(AirportWeather.init(rawValue:)) { return kept }
-        guard let old = defaults.string(forKey: Legacy.style) else { return standard }
-        switch old {
-        case "off": return .off
-        case "station": return .station
-        case "halo": return defaults.object(forKey: Legacy.windArrows) as? Bool == false ? .category : .wind
-        default: return .category
-        }
-    }
-
-    /// The keys the look and its three switches were kept under, read
-    /// once to bring a device's choice over.
-    enum Legacy {
-        static let style = "map.airportWeather"
-        static let windArrows = "map.airportWeather.windArrows"
-    }
 }
 
 /// How a field's weather looks on its mark: none, the ring in its flight
@@ -88,7 +66,7 @@ struct AirportWeatherChoice: Equatable, Sendable {
 /// Settings' Map row for it: a menu, as a discrete setting is (CLAUDE.md;
 /// the web's pull-down), its pick at the row's end.
 struct AirportWeatherRow: View {
-    @AppStorage(AirportWeather.key) private var show = AirportWeather.kept().rawValue
+    @AppStorage(AirportWeather.key) private var show = AirportWeather.standard.rawValue
 
     var body: some View {
         Picker(Wording.airportWeather, selection: $show) {

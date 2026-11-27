@@ -60,7 +60,7 @@ struct StripSheetView: View {
             case .flights: return Screen.flights.title
             case .procedures: return "Procedures"
             case .leg(let leg): return "To \(leg.to)"
-            case .list(let shows): return shows.rawValue.prefix(1).uppercased() + shows.rawValue.dropFirst()
+            case .list(let shows): return Format.capital(shows.rawValue)
             }
         }
     }

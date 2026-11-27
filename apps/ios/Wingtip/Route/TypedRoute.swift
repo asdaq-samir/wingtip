@@ -39,36 +39,28 @@ enum TypedRoute {
         return Read(dep: dep, stops: Array(points.dropFirst().dropLast()), dest: dest, cruiseFt: read.cruiseFt, procedures: read.procedures)
     }
 
-    /// The typed SIDs and STARs as picks, each found among its field's
-    /// procedures as the web's typedProcedure finds it: a departure from
-    /// `dep`, its transition the point typed after it where the procedure
-    /// has that transition, else an arrival into `dest` by the point
-    /// before it. `missed` names those neither field publishes; `list` is
-    /// a field's procedures (Planner.procedures), nil where it could not
-    /// be had.
+    /// The typed SIDs and STARs as picks, found by the engine's
+    /// route_typed_picks among the route's fields' procedures, the one copy
+    /// the web's route box and both phones ask (AIM 5-2-9, a SID out of the
+    /// departure; AIM 5-4-1, a STAR into the destination). `missed` names
+    /// those neither field publishes; `list` is a field's procedures
+    /// (Planner.procedures), nil where it could not be had. Where the
+    /// engine cannot answer, every typed name is said missed, never guessed.
     @MainActor
     static func picks(_ read: Read, list: @MainActor (String) async -> ProcedureList?) async -> (picks: [ProcedurePick], missed: [String]) {
-        var picks: [ProcedurePick] = []
-        var missed: [String] = []
-        var lists: [String: ProcedureList?] = [:]
-        for typed in read.procedures {
-            var found: ProcedurePick?
-            for (field, kind, join) in [(read.dep, "departure", typed.after), (read.dest, "arrival", typed.before)] {
-                if lists[field] == nil { lists[field] = .some(await list(field)) }
-                guard let listed = lists[field] ?? nil,
-                      let procedure = listed.procedures.first(where: { $0.kind == kind && $0.id == typed.name }) else { continue }
-                let transition = join.flatMap { procedure.transitions.contains($0) ? $0 : nil }
-                found = ProcedurePick(ident: field, id: procedure.id, kind: kind, name: procedure.name, transition: transition)
-                break
-            }
-            if let found {
-                picks.removeAll { $0.ident == found.ident && $0.kind == found.kind }
-                picks.append(found)
-            } else {
-                missed.append(typed.name)
-            }
+        let typed = read.procedures.map { EngineContract.RouteTypedPicksInputProceduresItem(name: $0.name, before: $0.before, after: $0.after) }
+        let depList = await list(read.dep)
+        let destList = read.dest == read.dep ? depList : await list(read.dest)
+        let departure = depList.map { EngineContract.RouteTypedPicksInputDeparture(ident: read.dep, procedures: $0.procedures.map {
+            .init(kind: $0.kind, id: $0.id, name: $0.name, transitions: $0.transitions)
+        }) }
+        let arrival = destList.map { EngineContract.RouteTypedPicksInputArrival(ident: read.dest, procedures: $0.procedures.map {
+            .init(kind: $0.kind, id: $0.id, name: $0.name, transitions: $0.transitions)
+        }) }
+        guard let answer = try? Engine.routeTypedPicks(procedures: typed, departure: departure, arrival: arrival) else {
+            return ([], read.procedures.map(\.name))
         }
-        return (picks, missed)
+        return (answer.picks.map { ProcedurePick(ident: $0.ident, id: $0.id, kind: $0.kind, name: $0.name, transition: $0.transition) }, answer.missed)
     }
 
     /// What is said where typed procedures were not found, the web's words:

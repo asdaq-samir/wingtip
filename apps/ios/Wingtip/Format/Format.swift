@@ -17,6 +17,11 @@ nonisolated enum Format {
     /// What is written for a figure not known, which is not zero.
     static let none = "—"
 
+    /// Words with their first letter a capital, the rest as they are, to
+    /// start a line with ("maintain" to "Maintain"), as Android's
+    /// Format.capital: the one copy of it.
+    static func capital(_ words: some StringProtocol) -> String { words.prefix(1).uppercased() + words.dropFirst() }
+
     // MARK: The shared table (formats.json)
 
     /// A cruising altitude on the cruise controls, the profile and the
