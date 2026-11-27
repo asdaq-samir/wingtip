@@ -11,6 +11,11 @@ month.
 - Each day, the FAA's monthly airmen file asked for (ingest.airmen): the
   flight instructors' store made again from a month's file once, for
   the endorsements' instructor check (wingtip.airmen).
+- Every six hours, the FAA's aircraft registry read again where the copy
+  on disk is a day old (wingtip.registry), for an airplane's card and the
+  radar's LADD check: 73 MB from the FAA and some 40 s of CPU, which ran
+  in the planner's one process beside the pilots' requests until
+  2026-11-27, and here runs beside the feeds' threads instead.
 
 Each is a job on ingest's scheduler (wingtip.schedule): a failure is
 logged and tried again at the next turn; neither holds up the feeds.
@@ -19,7 +24,8 @@ logged and tried again at the next turn; neither holds up the feeds.
 from __future__ import annotations
 
 from apscheduler.schedulers.base import BaseScheduler
-from wingtip import schedule
+from wingtip import registry, schedule
+from wingtip.config import get_settings
 from wingtip.history import notam_archive
 
 from . import airmen, ntsb
@@ -30,12 +36,19 @@ SNAPSHOT_EVERY_S = 3600.0
 NTSB_EVERY_S = 86400.0
 #: How often the FAA's airmen file is asked for, s: it comes monthly.
 AIRMEN_EVERY_S = 86400.0
+#: How often the registry's age is looked at, s: it is read again once it
+#: is a day old (registry.MAX_AGE_S), so within six hours of that.
+REGISTRY_EVERY_S = 6 * 3600.0
 
 
 def jobs(on: BaseScheduler) -> None:
     """The archive brought up to date each SNAPSHOT_EVERY_S, the NTSB's
-    store each NTSB_EVERY_S and the airmen's each AIRMEN_EVERY_S, all
-    first now: each a job on `on`."""
+    store each NTSB_EVERY_S, the airmen's each AIRMEN_EVERY_S and the
+    registry's age looked at each REGISTRY_EVERY_S, all first now: each a
+    job on `on`."""
     schedule.every(on, SNAPSHOT_EVERY_S, notam_archive.snapshot, name="notam-archive")
     schedule.every(on, NTSB_EVERY_S, ntsb.refresh, name="ntsb")
     schedule.every(on, AIRMEN_EVERY_S, airmen.refresh, name="airmen")
+    # Off on a stack that downloads nothing it need not (REGISTRY_REFRESH=0).
+    if get_settings().registry_refresh:
+        schedule.every(on, REGISTRY_EVERY_S, registry.refresh, name="aircraft-registry")

@@ -42,7 +42,7 @@ The long-running ones restart with Docker (`restart: unless-stopped`).
 |---|---|---|
 | `gateway` | Spring Boot: accounts, sign-in, records, the public API, mail; serves the web app and proxies `/api/planner/*` to the planner | 8080, 8443 (HTTPS) |
 | `planner` | FastAPI: the course, checkpoints, nav log, briefing, chart and overlay tiles, traffic, the live SWIM answers and feed health; the engine inside it | 8084 |
-| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.lol rounds, written into the live store | none |
+| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.lol rounds, written into the live store; the history stores (NTSB, airmen) and the FAA's aircraft registry | none |
 | `weather` | Fetches the weather on a schedule (METAR, TAF, PIREP, SIGMET, G-AIRMET, GFS winds aloft, GLMP, TFRs, the radar's time) into the weather store | none |
 | `db` | PostgreSQL 18 (`postgres:18-trixie`): the gateway's records | not published |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) | 8025 |
@@ -131,6 +131,7 @@ Each service fetches its own; the engine never fetches.
 | FAA aeronav | Chart sheets (sectional, TAC, IFR low and high), each 56-day cycle | the charts job |
 | FAA NASR, CIFP, DOF, d-TPP | Airports, runways, navaids, fixes, airspace (NASR: the National Airspace System Resources data); published procedures (CIFP: the Coded Instrument Flight Procedures); obstacles; plates | planner |
 | FAA SWIM | Live feeds over the FAA's System Wide Information Management service: STDDS (terminal radar, RVR, D-ATIS, departures), FNS (NOTAMs), TFMS (flight plans, ground stops and delay programs), ITWS (wind shear and microburst alerts), SFDPS (special activity airspace status) | ingest |
+| FAA aircraft registry | The Releasable Aircraft Database, each night's: an airplane's registration for its card and the radar's LADD check, read into a SQLite file on the data folder once it is a day old | ingest |
 | FAA NMS-API | The NOTAM Management Service API: every NOTAM in force (its initial load), then its changes, where the FAA's credentials are set (decision 0059) | ingest |
 | aviationweather.gov | METAR, TAF, PIREP, SIGMET, G-AIRMET | weather |
 | NOAA NOMADS | GFS winds and temperatures aloft, GLMP | weather |

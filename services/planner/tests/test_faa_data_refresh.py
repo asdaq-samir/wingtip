@@ -27,14 +27,14 @@ def test_the_editions_are_checked_with_the_charts_off_and_the_switch_on(monkeypa
 def test_the_checks_are_jobs_on_the_planners_scheduler(monkeypatch):
     """Each check a job every EDITIONS_CHECK_EVERY_S (the chart cycle every
     CHECK_EVERY_S)."""
-    monkeypatch.setattr(main, "REGISTRY_REFRESH", True)
     on = main.schedule.scheduler()
     main._schedule_checks(on)
     jobs = {job.id: job for job in on.get_jobs()}
     # The next cycle's NASR and CIFP put in place at 0902Z (faa-changeover, faa-procedures: data-cycles),
     # and the documents library once a day (faa-library: documents).
     faa = {"faa-data-cycles", "faa-editions", "faa-procedures", "faa-changeover", "faa-library"}
-    assert set(jobs) == faa | {"aircraft-registry", "chart-cycle"}
+    # The aircraft registry is ingest's (ingest.history), off the planner's process.
+    assert set(jobs) == faa | {"chart-cycle"}
     assert jobs["faa-editions"].trigger.interval.total_seconds() == main.EDITIONS_CHECK_EVERY_S
     assert jobs["chart-cycle"].trigger.interval.total_seconds() == chart_refresh.CHECK_EVERY_S
 
