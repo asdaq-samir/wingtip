@@ -107,6 +107,39 @@ a restart of the planner drops no feed (issue #535):
   phone), its tiles lossless WebP, written by the charts job and served
   by the planner.
 
+### One planner process
+
+The planner runs as one uvicorn process (no `--workers`), its requests on
+threads. A second process is not safe yet: what keeps the planner within
+its outside sources' limits, and some of its own housekeeping, lives in
+each process's memory, so two processes would each think they were alone
+(round 4's audit, 2026-11-27). What would have to move into the live
+store first, each a module-level object today:
+
+- **adsb.lol's turns** (`traffic/adsb_lol.py`): the gap between requests
+  and the search's and the regions' places in it (`_LOL`, `_STATE`), the
+  regions' last answers (`_REGIONS`) and who is asking for one now
+  (`_FLIGHTS`), the globe's refusal hold (`_GLOBE`); two processes would
+  ask twice as often and be turned away for the day.
+- **ADS-B Exchange** (`traffic/adsbx.py`): its gap (`_ADSBX`); its month's
+  count is a file, read and written again without a lock between processes.
+- **The OpenSky Network** (`traffic/opensky_api.py`): its token (`_TOKEN`)
+  and the day's credits it says are left (`_BUDGET`); the paths asked
+  ahead (`traffic/opensky.py`'s `_ASKING` and its pool).
+- **Short-lived answers**: a search's (`traffic/lookup.py`'s `_FOUND`),
+  the traces (`_TRACES`, `_RECENT`), the one-asker-at-a-time gates
+  (`wingtip.single_flight`), the weather store's `asked` mark.
+- **The MCP connector's rate limit** (`app/mcp/calls.py`, a moving window
+  in memory): two processes would each allow the whole limit.
+- **The scheduled jobs** (`app.main`): the feed watch would alert twice and
+  each process would prune the live store; `app.usage_days` adds each
+  process's counts, which holds, and `/metrics` would show one process's.
+
+The live store already holds what both the planner and ingest write (the
+followed airplanes, tracks, OpenSky's days and paths, the sources'
+`answers`), so these are moved there, a table each, when a second
+process is wanted, not before.
+
 ### Feed health
 
 A stopped feed must not read as a quiet sky. The planner holds each feed
