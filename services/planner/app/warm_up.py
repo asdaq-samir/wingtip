@@ -19,6 +19,7 @@ from wingtip import (
     faa_editions,
     fixes,
     geocode,
+    icing_forecast,
     nearby,
     pattern,
     places,
@@ -257,6 +258,12 @@ def warm_reference_data(on: BaseScheduler) -> None:
         nearby.warm()
     except Exception:  # noqa: BLE001 -- a stop is chosen on time and fuel alone until it is in
         log.exception("nearby places warm-up failed")
+    # And the forecast icing and the ground under it (wingtip.icing_forecast.warm):
+    # the first IFR Go / No-Go or Brief after a deploy paid 0.6 s for them.
+    try:
+        icing_forecast.warm()
+    except Exception:  # noqa: BLE001 -- the first IFR Go / No-Go reads them itself
+        log.exception("forecast icing warm-up failed")
 
     # After warm, not before it: the first start downloads the USGS's
     # place names (wingtip.places), and nothing waits on them -- a waypoint

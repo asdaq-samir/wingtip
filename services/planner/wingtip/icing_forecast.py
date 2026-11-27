@@ -104,6 +104,33 @@ def section(grid: np.ndarray, at: dict, stored_levels: list[float], a: tuple, b:
     return _section(_values(grid, at, stored_levels, lats, lons), _ground_m(lats, lons))
 
 
+#: The lower 48's corners (north-west, south-east), whose terrain tiles
+#: `warm` decodes.
+WARM_BOX = ((49.5, -125.0), (24.5, -66.5))
+
+
+def warm() -> int:
+    """The stored forecast read and the ground under the lower 48 decoded
+    from the terrain tiles on disk (none fetched), so the first IFR
+    Go / No-Go after a restart does not: a cold `along` took 597 ms, 218 of
+    them decoding the z6 tiles and about 180 the store's first read, where
+    a warm one takes 21 (round 6's audit, N8). How many tiles were decoded."""
+    weather_store.read(STORE_NAME)
+    from . import elevation
+    from .terrain_detour import ZOOM
+
+    (north, west), (south, east) = WARM_BOX
+    x0, y0 = (int(v) for v in geo.tile_xy(north, west, ZOOM))
+    x1, y1 = (int(v) for v in geo.tile_xy(south, east, ZOOM))
+    decoded = 0
+    for x in range(x0, x1 + 1):
+        for y in range(y0, y1 + 1):
+            if (elevation.TERRAIN_TILE_DIR / str(ZOOM) / str(x) / f"{y}.png").exists():
+                elevation._terrain_tile(ZOOM, x, y)
+                decoded += 1
+    return decoded
+
+
 #: Each leg's points and the ground under them, by its ends: the same for
 #: every hour of a departure window, which read them again for each
 #: (round 6's audit, N7). A ground the terrain tiles could not give is not

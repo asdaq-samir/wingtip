@@ -180,3 +180,16 @@ def test_a_windows_hours_read_each_legs_ground_and_each_hours_grid_once(monkeypa
         icing_forecast.along(legs, [8000, 9000], [60, 60], [30, 0], NOW + hour * 1800, now=NOW)
     assert len(grounds) == 2 and len(opened) == len(set(opened))
     assert icing_forecast.along(legs, [8000, 9000], [60, 60], [30, 0], NOW, now=NOW) == first
+
+
+def test_the_warm_up_decodes_the_lower_48s_tiles_on_disk_and_fetches_none(tmp_path, monkeypatch):
+    """Round 6's audit, N8: the first IFR Go / No-Go after a restart decoded them."""
+    from wingtip import elevation
+
+    for x, y in ((15, 23), (16, 24), (40, 40)):
+        (tmp_path / "6" / str(x)).mkdir(parents=True, exist_ok=True)
+        (tmp_path / "6" / str(x) / f"{y}.png").write_bytes(b"png")
+    monkeypatch.setattr(elevation, "TERRAIN_TILE_DIR", tmp_path)
+    decoded = []
+    monkeypatch.setattr(elevation, "_terrain_tile", lambda z, x, y: decoded.append((z, x, y)))
+    assert icing_forecast.warm() == 2 and decoded == [(6, 15, 23), (6, 16, 24)]
