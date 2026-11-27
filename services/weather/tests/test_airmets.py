@@ -38,7 +38,7 @@ def _serve(answer: Mock) -> list:
         asked.append(url)
         return answer
 
-    with patch("app.fetch.requests.get", side_effect=get), patch("app.aviationweather.time.time", return_value=NOW):
+    with patch("app.fetch.outside.get", side_effect=get), patch("app.aviationweather.time.time", return_value=NOW):
         aviationweather.fetch_source("airmets")
     return asked
 

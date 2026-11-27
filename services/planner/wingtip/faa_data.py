@@ -19,9 +19,8 @@ from collections.abc import Iterable, Iterator
 from datetime import date
 from pathlib import Path
 
-import requests
 
-from . import apra, dof
+from . import apra, dof, outside
 
 # The obstacle file's reader is wingtip.dof; its callers read the table
 # through this module, which downloads it with the NASR tables.
@@ -29,7 +28,7 @@ from .dof import _DOF_COLUMNS, _OBSTACLES_CACHE, load_obstacles  # noqa: F401
 
 # FAA's site 403s a bare python-requests User-Agent.
 from .config import FAA_HEADERS
-from .retry import with_retries
+from .retry import BODY_CUT_OFF, with_retries
 
 # The table readers, the field sets, the contacts, the frequencies and the
 # route's candidates are each their own module; this one downloads the
@@ -63,13 +62,15 @@ def download_and_extract(url: str, dest_dir: Path, retries: int = 3, only: Itera
     wanted = set(only) if only is not None else None
 
     def attempt() -> None:
-        resp = requests.get(url, headers=FAA_HEADERS, timeout=180)
+        resp = outside.get(url, headers=FAA_HEADERS, timeout=180)
         resp.raise_for_status()
         with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
             members = zf.namelist() if wanted is None else [m for m in zf.namelist() if Path(m).name in wanted]
             zf.extractall(dest_dir, members=members)
 
-    with_retries(attempt, describe=f"Download of {url}", retries=retries, transient=(requests.RequestException, zipfile.BadZipFile))
+    # outside's session asks again on a refused or dropped connection and
+    # a 429 or 5xx; this loop only on what it does not: a body cut off.
+    with_retries(attempt, describe=f"Download of {url}", retries=retries, transient=BODY_CUT_OFF)
 
 
 def zip_csv(archive: zipfile.ZipFile, name: str) -> Iterator[dict[str, str]]:
