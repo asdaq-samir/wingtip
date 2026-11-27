@@ -45,15 +45,25 @@ def test_a_ceiling_of_unknown_height_is_not_checked_and_said_so():
     """OVC/// at a field landed at, or forecast along the route: the
     ceiling is not known (14 CFR 1.1), so no minimum is met or missed
     there, and the verdict lists it as not checked."""
-    from app.gonogo.minimums import ceiling_unknown_at
+    from app.gonogo import ask
 
     briefing = {
         **BRIEFING,
         "metars": {"C81": {"ceiling_ft": None, "ceiling_unknown": True, "visibility_sm": 10}, "KDLH": None},
         "forecast": {**BRIEFING["forecast"], "ceiling_unknown_at": ["KMSP", "C81"]},
     }
-    assert ceiling_unknown_at(briefing, ["C81", "KDLH"]) == ["C81", "KMSP"]
-    assert ceiling_unknown_at(BRIEFING, ["C81", "KDLH"]) == []
+
+    def unchecked(b: dict) -> list[str]:
+        # The engine finds them from the METARs and the forecast (gonogo_input).
+        figures = {"least_margin_gal": None, "required_gal": None, "reserve_min": None, "tfrs_in_force": [], "tfrs_near": 0}
+        made = ask(
+            "gonogo_input", briefed=True, failed=None, ifr=False, route_figures=figures,
+            landings=["C81", "KDLH"], metars=b["metars"], forecast=b["forecast"],
+        )  # fmt: skip
+        return made["weather"]["unchecked"]
+
+    assert unchecked(briefing) == ["the ceiling at C81, KMSP"]
+    assert unchecked(BRIEFING) == []
     # Under the minimums only for what is known.
     assert under_minimums({**NO_MINIMUMS, "ceiling_ft": 3000}, briefing, ["C81"], "KDLH") == [
         "Along the route, forecast ceiling 1,800 ft, under your 3,000 ft"

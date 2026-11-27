@@ -80,7 +80,7 @@ export function useProcedurePicks({
   const typeProcedures = useCallback(
     async (typed: TypedProcedure[], route: { dep: string; dest: string }) => {
       const list = (ident: string) => queryClient.fetchQuery(proceduresQuery(ident));
-      const { picks: hits, missed, lists } = await typedProcedures(typed, route, list);
+      const { picks: hits, missed, unchecked, lists } = await typedProcedures(typed, route, list);
       // Onto the picks as the address has them once the lists are in, each
       // in place of its field's pick of the kind.
       const last = hits.at(-1) ?? null;
@@ -96,6 +96,12 @@ export function useProcedurePicks({
         showError(
           `${missed.join(" and ")} ${missed.length > 1 ? "are" : "is"} not a departure from ${route.dep || "the departure"} or an arrival into ${route.dest || "the destination"}`,
           "A SID is typed after the departure and a STAR before the destination, as in a filed route.",
+        );
+      } else if (unchecked.length) {
+        // A field's list did not come: not looked at, so not said unpublished.
+        showError(
+          `${unchecked.join(" and ")} could not be checked: the procedures of ${route.dep || "the departure"} or ${route.dest || "the destination"} did not load`,
+          "Try again shortly, or pick it in Procedures.",
         );
       }
     },

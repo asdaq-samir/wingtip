@@ -13,6 +13,10 @@ rain and drizzle in a field's METAR or TAF ice an airplane clear of cloud
 the weather crate's freezing_precip), asked by name through
 wingtip_native.call."""
 
+from datetime import datetime
+
+from wingtip import icing_forecast
+
 from . import ask
 
 
@@ -47,6 +51,29 @@ def icing_unchecked(selection: dict, flown_ft: list[float]) -> str | None:
         selection={k: selection.get(k) for k in ("freezing_level_ft", "icing_possible", "freezing_level_at_or_below")},
         flown_ft=list(flown_ft),
     )
+
+
+def forecast_icing(fixes: list[tuple[float, float]] | None, legs: list[dict], depart: datetime) -> tuple[str | None, bool]:
+    """Under IFR, the forecast icing on each leg at the altitude it is
+    flown, each leg read for the hour of its middle (wingtip.icing_forecast,
+    the NWS's CIP and IFI; AIM 7-1-4), as the web's Brief asks
+    /api/icing/route: its line (the engine's icing_forecast_route), and
+    whether the forecast could not be had, which the Go / No-Go says
+    unchecked (14 CFR 91.103) rather than nothing. Not asked, as the web
+    does not ask it, until every leg is in with its time and its fixes."""
+    if not legs or not fixes or len(fixes) != len(legs) + 1 or any(leg.get("ete_min") is None for leg in legs):
+        return None, False
+    try:
+        found = icing_forecast.along(
+            fixes,
+            [leg["altitude_ft"] for leg in legs],
+            [leg["ete_min"] for leg in legs],
+            [leg.get("ground_min") or 0.0 for leg in legs],
+            depart.timestamp(),
+        )
+    except icing_forecast.IcingForecastUnavailable:
+        return None, True
+    return found.get("line"), False
 
 
 def freezing_precip(briefing: dict) -> str | None:

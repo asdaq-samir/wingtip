@@ -140,6 +140,12 @@ pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
             json::opt_string(&mut out, read.reason);
             out.push('}');
         }
+        // 14 CFR 91.211 at the highest altitude flown, in the airplane
+        // (limits::oxygen_asked): the words, null where none is asked.
+        "oxygen_words" => json::opt_string(
+            &mut out,
+            limits::oxygen_asked(ask.num("highest_ft")?, ask.opt_bool("supplemental_oxygen")?, ask.opt_bool("pressurized")?),
+        ),
         "vfr_altitudes" => {
             out.push('[');
             for (i, ft) in limits::vfr_altitudes(ask.opt_num("from_ft")?.unwrap_or(1000.0)).iter().enumerate() {

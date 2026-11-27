@@ -41,8 +41,7 @@ export {
   windOnRunway,
   windText,
 } from "./format";
-export { type RouteAdiz, routeAdiz } from "./adiz";
-export { type RouteJurisdiction, routeJurisdiction, rowCautions } from "./jurisdiction";
+export { rowCautions } from "./jurisdiction";
 export {
   type NavLogRow,
   type RouteEnds,

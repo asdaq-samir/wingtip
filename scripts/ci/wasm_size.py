@@ -65,8 +65,15 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # is the headroom really left and the next rule that grows the module is
 # looked at, never let through on room freed before (the ratchet only
 # goes down).
-RAW_BUDGET = 1_225_000
-GZIP_BUDGET = 565_000
+# 2026-11-27 (round 5's engine audit): lowered again to just over the
+# module, 1,172,181 bytes and 527,329 gzipped from 1,220,487 and 562,498:
+# route_jurisdiction and route_adiz asked by the planner with the course
+# (app.route_borders), so Natural Earth's outlines (borders.bin) and their
+# reader left the module; the wind triangle and gonogo_input no longer
+# asked by the web by name (gonogo_brief builds the facts itself), and
+# oxygen_words in.
+RAW_BUDGET = 1_175_000
+GZIP_BUDGET = 530_000
 # A warning, not a failure, from here: the budget is not raised, so the next
 # rule that grows the module should be looked at before it is the one that fails.
 WARN_AT = 0.95

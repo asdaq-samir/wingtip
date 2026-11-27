@@ -267,6 +267,19 @@ mod tests {
     }
 
     #[test]
+    fn the_gps_height_steps_down_to_the_50_ft_below_never_up() {
+        // GPS_STEP_FT: down, the warning's side; 4,349 is not yet 4,350.
+        let at = |ft: f64| view(Setting::On, Some(110.0), Some(ft), None, None).altitude_ft;
+        assert_eq!(at(4349.0), Some(4300.0));
+        assert_eq!(at(4350.0), Some(4350.0));
+        assert_eq!(at(4399.9), Some(4350.0));
+        // Under sea level (Death Valley, or a GPS height over the ellipsoid
+        // read low): still down, -30 to -50, never up to 0.
+        assert_eq!(at(-30.0), Some(-50.0));
+        assert_eq!(at(-50.0), Some(-50.0));
+    }
+
+    #[test]
     fn in_flight_turns_it_on_by_itself_off_never() {
         assert!(!view(Setting::InFlight, Some(5.0), None, Some(5500.0), None).shown);
         assert!(view(Setting::InFlight, Some(110.0), Some(4300.0), Some(5500.0), None).shown);

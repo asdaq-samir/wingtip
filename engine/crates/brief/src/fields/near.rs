@@ -47,7 +47,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         return Err(format!("the engine has no rule called {name:?}"));
     }
     let i = In { name };
-    let at = v.get("at").ok_or_else(|| format!("{NAME}: \"at\" is missing"))?;
+    let at = v.get("at").map_or_else(|| i.err("at", "is missing"), Ok)?;
     let (lat, lon) = (i.num(at, "lat")?, i.num(at, "lon")?);
     let want = i.num(v, "want")?;
     let half = next_half(i.opt_num(v, "half_deg")?, i.opt_num(v, "found")?, want);

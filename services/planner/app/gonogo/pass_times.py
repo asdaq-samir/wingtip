@@ -11,17 +11,15 @@ built for the phones as well, does not carry."""
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from wingtip import utc
-
 from . import ask
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 _MICROSECOND = timedelta(microseconds=1)
 
 
-def _us(t: datetime) -> int:
-    """Whole microseconds since 1970, exactly."""
-    return (t - _EPOCH) // _MICROSECOND
+def us_of(t: datetime) -> int:
+    """Whole microseconds since 1970, exactly (UTC where naive)."""
+    return ((t if t.tzinfo else t.replace(tzinfo=timezone.utc)) - _EPOCH) // _MICROSECOND
 
 
 def pass_time(legs: list[dict], depart: datetime, along_nm: float) -> datetime | None:
@@ -33,17 +31,6 @@ def pass_time(legs: list[dict], depart: datetime, along_nm: float) -> datetime |
         "gonogo_pass_minutes", legs=[{"distance_nm": leg["distance_nm"], "ete_min": leg.get("ete_min")} for leg in legs], along_nm=along_nm
     )
     return None if minutes is None else depart + timedelta(minutes=minutes)
-
-
-def tfr_when(t: dict, at: datetime) -> str:
-    """A TFR's window against the pass time, widened by the engine's PASS_MARGIN_MIN (30 minutes):
-    "before", "after" or "in-force"; one with no start or no end is open
-    that way."""
-
-    def at_us(key):
-        return _us(utc.parse(t[key])) if t.get(key) else None
-
-    return ask("gonogo_tfr_when", at_us=_us(at), effective_us=at_us("effective"), expires_us=at_us("expires"))
 
 
 def _clock(local: datetime) -> tuple[int, int]:

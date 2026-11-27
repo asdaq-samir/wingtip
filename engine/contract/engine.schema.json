@@ -13227,7 +13227,7 @@
       "additionalProperties": false
     },
     "gonogo_brief": {
-      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).",
+      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the flight is planned over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a)), or a pressurised one over FL250 (its 10-minute supply, 91.211(b)(1)(i)) and FL350 (a pilot's mask, (b)(1)(ii)) (a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).",
       "type": "object",
       "properties": {
         "input": {
@@ -13236,6 +13236,33 @@
           "properties": {
             "verdict": {
               "$ref": "#/definitions/VerdictInput"
+            },
+            "facts": {
+              "$ref": "#/definitions/GonogoFacts"
+            },
+            "risk": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "description": "\"low\", \"caution\" or \"high\"."
+                    },
+                    "line": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "line"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With `facts`: the risk assessment's level and line (gonogo_risk, gonogo_risk_line); null before the briefing."
             },
             "alternate": {
               "anyOf": [
@@ -13264,9 +13291,9 @@
             }
           },
           "required": [
-            "verdict",
             "airplane"
-          ]
+          ],
+          "description": "`verdict`, the sections built (gonogo_input's answer and the risk), or `facts`, gonogo_input's input, which is then built here with `risk` beside it."
         },
         "answer": {
           "title": "GonogoBriefAnswer",
@@ -13947,312 +13974,12 @@
       "additionalProperties": false
     },
     "gonogo_input": {
-      "description": "The Go / No-Go's input (gonogo_brief's `verdict`, all but the risk) put together from the briefing, the nav log and the loading, one copy for the web and the planner: the weather (VFR flight not recommended dropped under IFR, as its check is 14 CFR 91.169's; the sources not answered by name, under IFR the forecast icing not had and a ceiling with no height said unchecked, 14 CFR 91.103; the worst forecast in words, the visibility to the hundredth down), the airspace (gonogo_route_figures' TFRs, unchecked where the briefing failed or tfr.faa.gov did not answer), the altitude (the nav log's cautions, the altitude flown as the FL chip says it, the highest leg and the airplane's oxygen for 14 CFR 91.211(a)), the fuel (gonogo_route_figures'), the runways (gonogo_runway_findings) and the balance (worked only with the pilot's own load, 14 CFR 91.9(a); \"2,407 lb at 41.2 in\"). Each section pending while what it waits on is awaited.",
+      "description": "The Go / No-Go's input (gonogo_brief's `verdict`, all but the risk) put together from the briefing, the nav log and the loading, one copy for the web and the planner: the weather (VFR flight not recommended dropped under IFR, as its check is 14 CFR 91.169's; the sources not answered by name, under IFR the forecast icing not had and a ceiling with no height at a field landed at or a TAF station said unchecked, built here from the METARs and the forecast, 14 CFR 91.103; the worst forecast in words, the visibility to the hundredth down), the airspace (gonogo_route_figures' TFRs, unchecked where the briefing failed or tfr.faa.gov did not answer), the altitude (the nav log's cautions, the altitude flown as the FL chip says it, the highest leg -- with no legs, the plan picked's highest step -- and the airplane's oxygen and cabin for 14 CFR 91.211(a) and (b)), the fuel (gonogo_route_figures'), the runways (gonogo_runway_findings) and the balance (worked only with the pilot's own load, 14 CFR 91.9(a); \"2,407 lb at 41.2 in\"). Each section pending while what it waits on is awaited.",
       "type": "object",
       "properties": {
         "input": {
           "title": "GonogoInputInput",
-          "type": "object",
-          "properties": {
-            "briefed": {
-              "type": "boolean",
-              "description": "The briefing is in."
-            },
-            "failed": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "Why the briefing could not be had, in a line; null where it did not fail."
-            },
-            "ifr": {
-              "type": "boolean",
-              "description": "The flight is planned IFR."
-            },
-            "weather_unavailable": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing."
-            },
-            "forecast": {
-              "type": [
-                "object",
-                "null"
-              ],
-              "description": "The briefing's worst forecast along the route; null with no briefing.",
-              "properties": {
-                "min_ceiling_ft": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "min_visibility_sm": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "vfr_not_recommended": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The briefing's reasons for AIM 7-1-5's \"VFR flight not recommended\"; dropped under IFR."
-            },
-            "under_minimums": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Where the weather is under the pilot's own minimums (minimums)."
-            },
-            "icing": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The icing finding's lines, in order: one line of them, joined."
-            },
-            "icing_unchecked": {
-              "type": "boolean",
-              "description": "Under IFR, the forecast icing could not be had."
-            },
-            "ceilings_unknown": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The fields whose ceiling is reported or forecast with no height."
-            },
-            "hazards": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The SIGMETs and G-AIRMETs along the route, by name."
-            },
-            "terminal_alerts": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The ITWS alerts in force now at the route's airports, in words."
-            },
-            "flow_programs": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The Command Center's programs at the route's airports, in words."
-            },
-            "route_figures": {
-              "type": "object",
-              "description": "gonogo_route_figures' answer: the fuel's and the TFRs'.",
-              "properties": {
-                "least_margin_gal": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "required_gal": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "reserve_min": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "tfrs_in_force": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "tfrs_near": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "tfrs_in_force",
-                "tfrs_near"
-              ]
-            },
-            "special_use": {
-              "type": "array",
-              "description": "The special-use areas the legs cross, each with when it is in use at the pass.",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "when": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "name",
-                  "when"
-                ]
-              }
-            },
-            "nav": {
-              "type": [
-                "object",
-                "null"
-              ],
-              "description": "The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.",
-              "properties": {
-                "flown": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "altitude_ft": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "options": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string"
-                      },
-                      "steps": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "altitude_ft": {
-                              "type": "number"
-                            }
-                          },
-                          "required": [
-                            "altitude_ft"
-                          ]
-                        }
-                      }
-                    },
-                    "required": [
-                      "kind",
-                      "steps"
-                    ]
-                  }
-                },
-                "cautions": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "reasons": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": [
-                      "reasons"
-                    ]
-                  }
-                }
-              }
-            },
-            "problem": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "No VFR altitude fits, in a line."
-            },
-            "legs_ft": {
-              "type": "array",
-              "items": {
-                "type": "number"
-              },
-              "description": "Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211(a))."
-            },
-            "totals": {
-              "type": "boolean",
-              "description": "The nav log's totals are in."
-            },
-            "aircraft": {
-              "type": [
-                "object",
-                "null"
-              ],
-              "description": "The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding."
-            },
-            "runway_checks": {
-              "type": "array",
-              "description": "The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).",
-              "items": {
-                "type": "object"
-              }
-            },
-            "loading": {
-              "type": "boolean",
-              "description": "The airplane has a POH loading."
-            },
-            "loaded": {
-              "type": [
-                "object",
-                "null"
-              ],
-              "description": "gonogo_balance's answer with the pilot's own load; null with no load.",
-              "properties": {
-                "takeoff": {
-                  "type": "object",
-                  "properties": {
-                    "weight_lb": {
-                      "type": "number"
-                    },
-                    "arm_in": {
-                      "type": [
-                        "number",
-                        "null"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "weight_lb"
-                  ]
-                },
-                "problems": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "required": [
-                "takeoff",
-                "problems"
-              ]
-            }
-          },
-          "required": [
-            "briefed",
-            "failed",
-            "ifr",
-            "route_figures"
-          ],
-          "additionalProperties": false
+          "$ref": "#/definitions/GonogoFacts"
         },
         "answer": {
           "$ref": "#/definitions/VerdictInput"
@@ -14448,7 +14175,7 @@
       "additionalProperties": false
     },
     "gonogo_route_figures": {
-      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).",
+      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those). With `tfrs`, which crossed TFRs are in force is decided here; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.",
       "type": "object",
       "properties": {
         "input": {
@@ -14517,23 +14244,147 @@
               }
             },
             "tfr_count": {
-              "description": "How many TFRs the briefing lists along the route.",
+              "description": "How many TFRs the briefing lists along the route, with `crossed`.",
               "type": [
                 "number",
                 "null"
               ]
             },
             "crossed": {
-              "description": "The NOTAM ids of the TFRs the route crosses while they are in force.",
+              "description": "The NOTAM ids of the TFRs the route crosses while they are in force, where the caller decides it (the phones, until their port); with `tfrs` the engine does.",
               "type": "array",
               "items": {
                 "type": "string"
               }
+            },
+            "tfrs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` (\"during\") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "notam_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "crosses": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "along_track_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "on_route": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "when": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "effective": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "ISO 8601 UTC; none, open that way."
+                  },
+                  "expires": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "legs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The nav log's legs, for when the flight passes each TFR.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "distance_nm": {
+                    "type": "number"
+                  },
+                  "ete_min": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "distance_nm"
+                ]
+              }
+            },
+            "depart_us": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The departure, microseconds since 1970."
+            },
+            "ifr": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Planned IFR: VFR not recommended's reasons are dropped (14 CFR 91.169)."
+            },
+            "vfr_not_recommended": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The briefing's reasons for AIM 7-1-5's \"VFR flight not recommended\"."
+            },
+            "hazards": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The SIGMETs and G-AIRMETs along the route, by name."
+            },
+            "weather_unavailable": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The briefing's sources that did not answer."
             }
           },
           "required": [
-            "totals",
-            "crossed"
+            "totals"
           ]
         },
         "answer": {
@@ -14566,6 +14417,17 @@
             },
             "tfrs_near": {
               "type": "number"
+            },
+            "vfr_not_recommended": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The reasons that count: none under IFR."
+            },
+            "hazard_count": {
+              "type": "number",
+              "description": "The hazards the risk assessment counts: none where both SIGMETs and G-AIRMETs failed."
             }
           },
           "required": [
@@ -14573,7 +14435,9 @@
             "required_gal",
             "reserve_min",
             "tfrs_in_force",
-            "tfrs_near"
+            "tfrs_near",
+            "vfr_not_recommended",
+            "hazard_count"
           ],
           "additionalProperties": false
         }
@@ -23689,7 +23553,7 @@
       "additionalProperties": false
     },
     "own_altitude_caution": {
-      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
+      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights, or a pressurised airplane past (b)'s FL250 and FL350; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
       "type": "object",
       "properties": {
         "input": {
@@ -23728,7 +23592,7 @@
                 "object",
                 "null"
               ],
-              "description": "The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away."
+              "description": "The airplane: `supplemental_oxygen` true takes 91.211(a)'s cautions away, and its (b)(1)(i) supply; `pressurized` true puts (b)'s FL250 and FL350 in (a)'s place."
             }
           },
           "required": [
@@ -23805,6 +23669,51 @@
         },
         "answer": {
           "title": "OwnShipHexAnswer",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "oxygen_words": {
+      "description": "What 14 CFR 91.211 asks of a flight up to `highest_ft` MSL, in a pilot's words: in an airplane with no pressurised cabin, its cabin at the altitude flown, (a)(1) over 12,500 ft the crew's oxygen for any of it past 30 minutes, (a)(2) over 14,000 ft the crew's for all of it, (a)(3) over 15,000 ft every occupant provided with it, none where it carries supplemental oxygen; with a pressurised cabin, (b)(1)(i) above FL250 a 10-minute supply for every occupant (none where it carries oxygen) and (b)(1)(ii) above FL350 one pilot at the controls wearing a mask. Each height is the rule's \"above\". Null where none is asked.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "OxygenWordsInput",
+          "type": "object",
+          "properties": {
+            "highest_ft": {
+              "type": "number",
+              "description": "The highest altitude flown, feet MSL."
+            },
+            "supplemental_oxygen": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The airplane carries supplemental oxygen; false, the safer side, where not known."
+            },
+            "pressurized": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Its cabin is pressurised."
+            }
+          },
+          "required": [
+            "highest_ft"
+          ]
+        },
+        "answer": {
+          "title": "OxygenWordsAnswer",
           "type": [
             "string",
             "null"
@@ -29610,7 +29519,7 @@
       "additionalProperties": false
     },
     "route_typed_picks": {
-      "description": "The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.",
+      "description": "The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`, or `unchecked` where a field's list could not be had. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.",
       "type": "object",
       "properties": {
         "input": {
@@ -29693,7 +29602,7 @@
                 "ident",
                 "procedures"
               ],
-              "description": "The route's departure and its procedures as the planner lists them; null where it has none or they could not be had."
+              "description": "The route's departure and its procedures as the planner lists them; null where it has none or they could not be had. Null where its list could not be had."
             },
             "arrival": {
               "type": [
@@ -29742,7 +29651,7 @@
                 "ident",
                 "procedures"
               ],
-              "description": "The route's destination and its procedures, the same; null likewise."
+              "description": "The route's destination and its procedures, the same; null likewise. Null where its list could not be had."
             }
           },
           "required": [
@@ -29775,10 +29684,6 @@
                       "arrival"
                     ]
                   },
-                  "name": {
-                    "type": "string",
-                    "description": "The procedure's name as listed, its id where none."
-                  },
                   "transition": {
                     "type": [
                       "string",
@@ -29790,7 +29695,6 @@
                   "ident",
                   "id",
                   "kind",
-                  "name",
                   "transition"
                 ],
                 "additionalProperties": false
@@ -29801,12 +29705,20 @@
               "items": {
                 "type": "string"
               },
-              "description": "The names neither field publishes as that kind, in the order typed."
+              "description": "The names neither field publishes as that kind, in the order typed: both fields' lists were had."
+            },
+            "unchecked": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The names not found where a field's list could not be had (null): not looked at there, so not said unpublished (14 CFR 91.103)."
             }
           },
           "required": [
             "picks",
-            "missed"
+            "missed",
+            "unchecked"
           ],
           "additionalProperties": false
         }
@@ -36489,6 +36401,7 @@
     "our_call",
     "own_altitude_caution",
     "own_ship_hex",
+    "oxygen_words",
     "passenger_briefing",
     "passenger_night_on_the_way",
     "pattern_altitude",
@@ -39662,6 +39575,341 @@
         "finding"
       ],
       "description": "One risk factor."
+    },
+    "GonogoFacts": {
+      "title": "GonogoFacts",
+      "type": "object",
+      "description": "The flight's facts the Go / No-Go is put together from (gonogo_input; gonogo_brief's `facts`): the briefing's, the nav log's, the loading's and the route's own figures (gonogo_route_figures).",
+      "properties": {
+        "briefed": {
+          "type": "boolean",
+          "description": "The briefing is in."
+        },
+        "failed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Why the briefing could not be had, in a line; null where it did not fail."
+        },
+        "ifr": {
+          "type": "boolean",
+          "description": "The flight is planned IFR."
+        },
+        "weather_unavailable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing."
+        },
+        "forecast": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The briefing's worst forecast along the route, and the stations whose forecast ceiling has no height; null with no briefing.",
+          "properties": {
+            "min_ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "min_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_unknown_at": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The TAF stations along the route whose forecast has a broken or overcast layer with no height as its lowest."
+            }
+          }
+        },
+        "vfr_not_recommended": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The briefing's reasons for AIM 7-1-5's \"VFR flight not recommended\"; dropped under IFR."
+        },
+        "under_minimums": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Where the weather is under the pilot's own minimums (minimums)."
+        },
+        "icing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The icing finding's lines, in order: one line of them, joined."
+        },
+        "icing_unchecked": {
+          "type": "boolean",
+          "description": "Under IFR, the forecast icing could not be had."
+        },
+        "landings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Every field the flight lands at, each once: whose current report's ceiling with no height is said unchecked (14 CFR 91.103)."
+        },
+        "metars": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The briefing's METARs by ident (each null where none came); a report's `ceiling_unknown` (a broken or overcast layer with no height as its lowest, \"OVC///\") is read.",
+          "additionalProperties": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "ceiling_unknown": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "hazards": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The SIGMETs and G-AIRMETs along the route, by name."
+        },
+        "terminal_alerts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The ITWS alerts in force now at the route's airports, in words."
+        },
+        "flow_programs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The Command Center's programs at the route's airports, in words."
+        },
+        "route_figures": {
+          "type": "object",
+          "description": "gonogo_route_figures' answer: the fuel's and the TFRs'.",
+          "properties": {
+            "least_margin_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "required_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "reserve_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tfrs_in_force": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tfrs_near": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "tfrs_in_force",
+            "tfrs_near"
+          ]
+        },
+        "special_use": {
+          "type": "array",
+          "description": "The special-use areas the legs cross, each with when it is in use at the pass.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "when": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "when"
+            ]
+          }
+        },
+        "nav": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.",
+          "properties": {
+            "flown": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "altitude_ft": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "altitude_ft"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "kind",
+                  "steps"
+                ]
+              }
+            },
+            "cautions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "reasons"
+                ]
+              }
+            }
+          }
+        },
+        "problem": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "No VFR altitude fits, in a line."
+        },
+        "legs_ft": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211); with none, the plan picked's highest step (`nav`)."
+        },
+        "totals": {
+          "type": "boolean",
+          "description": "The nav log's totals are in."
+        },
+        "aircraft": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding (14 CFR 91.211(a), (b))."
+        },
+        "runway_checks": {
+          "type": "array",
+          "description": "The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).",
+          "items": {
+            "type": "object"
+          }
+        },
+        "loading": {
+          "type": "boolean",
+          "description": "The airplane has a POH loading."
+        },
+        "loaded": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "gonogo_balance's answer with the pilot's own load; null with no load.",
+          "properties": {
+            "takeoff": {
+              "type": "object",
+              "properties": {
+                "weight_lb": {
+                  "type": "number"
+                },
+                "arm_in": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "weight_lb"
+              ]
+            },
+            "problems": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "takeoff",
+            "problems"
+          ]
+        }
+      },
+      "required": [
+        "briefed",
+        "failed",
+        "ifr",
+        "route_figures"
+      ]
     },
     "GonogoFieldUse": {
       "title": "GonogoFieldUse",
@@ -44676,14 +44924,21 @@
                 "number",
                 "null"
               ],
-              "description": "The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log."
+              "description": "The highest altitude planned, feet MSL, for 14 CFR 91.211's oxygen (gonogo_brief's oxygen finding); null before the nav log."
             },
             "oxygen": {
               "type": [
                 "boolean",
                 "null"
               ],
-              "description": "Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+              "description": "Whether the airplane picked carries supplemental oxygen (its profile's supplemental_oxygen). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+            },
+            "pressurized": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether its cabin is pressurised (its profile's pressurized): 14 CFR 91.211(b)'s FL250 and FL350 then, not (a)'s heights. False with no airplane picked."
             }
           }
         },

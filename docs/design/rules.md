@@ -1825,7 +1825,9 @@ its figures are (decision
 1. **The words are the engine's** (`route_jurisdiction`): "Canada: rules
    not checked — figures use US rules", Mexico's, the Bahamas' or
    "Outside the US" by the same pattern, for a point or a leg (checked
-   every 2 nm) outside the United States.
+   every 2 nm) outside the United States. The planner asks it with the
+   course (`/api/course`, `app.route_borders`), each point carrying its
+   own warning and its leg's, so the web's module carries no outlines.
 2. **Not in FPL's timeline**: the plan's space is limited, so the warning
    lives in the Brief, not the plan (the owner, 2026-11-23).
 3. **On the nav log's rail**, once before the first row of each stretch
@@ -1894,7 +1896,8 @@ Most routes are flown over the Midwest; the edge-places audit of
    Mexico (99.43's line), says so once among the Brief's findings, a
    caution with what part 99 asks there (a flight plan, a listening
    watch, the transponder, a report before crossing) and 99.1(b)'s
-   exceptions for under 180 kt. Warn, never limit.
+   exceptions for under 180 kt. Warn, never limit. The course carries it
+   (`/api/course`'s `adiz`), as it does the jurisdiction's line.
 2. **An airplane lands on ground**: a field NASR files as a heliport, a
    balloonport or a seaplane base is in no list of fields to land at (the
    nearest, the Stops, a glide's), wherever OurAirports calls it an

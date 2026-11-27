@@ -26,7 +26,7 @@ from wingtip.engine import ask as engine
 from wingtip.planning import route_line
 from wingtip.profile import route_profile as side_view
 
-from .. import chart_model, cycle_in_address, foreflight, fuel_replan, prefetch
+from .. import chart_model, cycle_in_address, foreflight, fuel_replan, prefetch, route_borders
 from ..route_way import load_way
 from ..router_basics import load_route
 from ..schemas.plan import Checkpoints, Course, Plan, RouteProfile, RouteWeather, Totals
@@ -98,10 +98,15 @@ def course(dep: str, dest: str, stops: str = "") -> Course:
             "pattern_altitude_ft": fp.field_pattern_ft(end["ident"], end),
         }
 
+    # Whose rules each point and leg is under, and the ADIZs met.
+    points = [classed(r.departure), *map(classed, r.stops), classed(r.destination)]
+    (departure, *stops, destination), outside, adiz = route_borders.borders(points)
     return Course(
-        departure=classed(r.departure),
-        destination=classed(r.destination),
-        stops=[classed(s) for s in r.stops],
+        departure=departure,
+        destination=destination,
+        stops=stops,
+        outside=outside,
+        adiz=adiz,
         distance_nm=round(r.distance_nm, 1),
         bearing_deg=round(geo.bearing_deg(*first.start, *first.end)),
         course_line=route_line(r),

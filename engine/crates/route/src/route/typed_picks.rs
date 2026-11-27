@@ -9,11 +9,15 @@
 //! first a departure from the route's departure, its transition the point
 //! typed after it where the procedure publishes that transition; else an
 //! arrival into the destination, by the point typed before it; else
-//! missed, which the app says. A transition not published is no
-//! transition (the common route), never a guess. A later name of the same
-//! field and kind replaces the earlier, as a field flies one of each.
+//! missed, which the app says -- unless a field's list could not be had
+//! (null), when the name is unchecked: it may be that field's, and is
+//! never said not to be published where nobody looked (14 CFR 91.103). A
+//! transition not published is no transition (the common route), never a
+//! guess. A later name of the same field and kind replaces the earlier,
+//! as a field flies one of each.
 
 use crate::json::{self, Value};
+use wingtip_core::ask::{list_in, Ask};
 
 type R<T> = Result<T, String>;
 
@@ -27,20 +31,13 @@ struct Pick<'a> {
     ident: &'a str,
     id: &'a str,
     kind: &'static str,
-    name: &'a str,
     transition: Option<&'a str>,
 }
 
-fn listed<'a>(name: &str, v: &'a Value, key: &str) -> R<Option<Listed<'a>>> {
+fn listed<'a>(name: &'a str, v: &'a Value, key: &str) -> R<Option<Listed<'a>>> {
     match v.get(key) {
         None | Some(Value::Null) => Ok(None),
-        Some(f) => Ok(Some(Listed {
-            ident: f.get("ident").and_then(Value::as_str).ok_or_else(|| format!("{name}: {key}'s \"ident\" is missing"))?,
-            procedures: f
-                .get("procedures")
-                .and_then(Value::as_array)
-                .ok_or_else(|| format!("{name}: {key}'s \"procedures\" are missing"))?,
-        })),
+        Some(f) => Ok(Some(Listed { ident: Ask::new(name, f).str("ident")?, procedures: list_in(name, f, "procedures")? })),
     }
 }
 
@@ -54,16 +51,17 @@ fn found<'a>(field: Option<&Listed<'a>>, kind: &'static str, typed: &'a str, joi
     let p = field.procedures.iter().find(|p| text(p, "kind") == Some(kind) && text(p, "id") == Some(typed))?;
     let transitions = p.get("transitions").and_then(Value::as_array).unwrap_or_default();
     let transition = transitions.iter().filter_map(Value::as_str).find(|t| join == Some(*t));
-    Some(Pick { ident: field.ident, id: text(p, "id")?, kind, name: text(p, "name").unwrap_or(typed), transition })
+    Some(Pick { ident: field.ident, id: text(p, "id")?, kind, transition })
 }
 
 pub fn answer(name: &str, v: &Value) -> R<String> {
-    let typed = v.get("procedures").and_then(Value::as_array).ok_or_else(|| format!("{name}: \"procedures\" are missing"))?;
+    let typed = Ask::new(name, v).list("procedures")?;
     let (departure, arrival) = (listed(name, v, "departure")?, listed(name, v, "arrival")?);
+    let looked_everywhere = departure.is_some() && arrival.is_some();
     let mut picks: Vec<Pick> = Vec::new();
-    let mut missed: Vec<&str> = Vec::new();
+    let (mut missed, mut unchecked): (Vec<&str>, Vec<&str>) = (Vec::new(), Vec::new());
     for t in typed {
-        let n = text(t, "name").ok_or_else(|| format!("{name}: a procedure's \"name\" is missing"))?;
+        let n = Ask::new(name, t).str("name")?;
         let hit = found(departure.as_ref(), "departure", n, text(t, "after"))
             .or_else(|| found(arrival.as_ref(), "arrival", n, text(t, "before")));
         match hit {
@@ -71,7 +69,8 @@ pub fn answer(name: &str, v: &Value) -> R<String> {
                 picks.retain(|q| !(q.ident == p.ident && q.kind == p.kind));
                 picks.push(p);
             }
-            None => missed.push(n),
+            None if looked_everywhere => missed.push(n),
+            None => unchecked.push(n),
         }
     }
     let mut out = String::from("{\"picks\":[");
@@ -80,18 +79,22 @@ pub fn answer(name: &str, v: &Value) -> R<String> {
         json::string(&mut out, p.ident);
         out.push_str(",\"id\":");
         json::string(&mut out, p.id);
-        out.push_str(&format!(",\"kind\":\"{}\",\"name\":", p.kind));
-        json::string(&mut out, p.name);
+        out.push_str(",\"kind\":");
+        json::string(&mut out, p.kind);
         out.push_str(",\"transition\":");
         json::opt_string(&mut out, p.transition);
         out.push('}');
     }
-    out.push_str("],\"missed\":[");
-    for (i, m) in missed.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
+    for (key, names) in [("missed", &missed), ("unchecked", &unchecked)] {
+        out.push_str("],\"");
+        out.push_str(key);
+        out.push_str("\":[");
+        for (i, m) in names.iter().enumerate() {
+            if i > 0 {
+                out.push(',');
+            }
+            json::string(&mut out, m);
         }
-        json::string(&mut out, m);
     }
     out.push_str("]}");
     Ok(out)

@@ -1,8 +1,8 @@
 """app.gonogo.pass_times, with apps/web/src/lib/passTimes.test.ts's cases."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 
-from app.gonogo.pass_times import pass_time, sua_when, tfr_when
+from app.gonogo.pass_times import pass_time, sua_when
 
 LEGS = [{"distance_nm": 50, "ete_min": 30}, {"distance_nm": 100, "ete_min": 50}]
 
@@ -19,14 +19,6 @@ def test_the_departure_plus_the_legs_times_the_leg_it_is_in_pro_rata():
     assert pass_time(LEGS, depart, 400) == utc("2026-10-06T15:20:00Z")
     assert pass_time([], depart, 10) is None
     assert pass_time([{"distance_nm": 50, "ete_min": None}], depart, 10) is None
-
-
-def test_a_tfrs_window_against_the_pass_half_an_hour_either_side():
-    tfr = {"effective": "2026-10-06T16:00:00Z", "expires": "2026-10-06T18:00:00Z"}
-    assert tfr_when(tfr, utc("2026-10-06T15:00:00Z")) == "before"
-    assert tfr_when(tfr, utc("2026-10-06T15:45:00Z")) == "in-force"
-    assert tfr_when(tfr, utc("2026-10-06T19:00:00Z")) == "after"
-    assert tfr_when({"effective": None, "expires": None}, datetime.now(timezone.utc)) == "in-force"
 
 
 def test_a_special_use_areas_published_times_of_use():

@@ -292,6 +292,52 @@ def test_under_ifr_icing_with_no_freezing_level_is_said_not_checked(stubbed, mon
     assert items["weather"]["detail"] == "Icing not checked: freezing level not known"
 
 
+def test_under_ifr_the_forecast_icing_is_said_and_one_not_had_is_unchecked(stubbed, monkeypatch):
+    """The web's Brief asks /api/icing/route and says its line, or the
+    forecast icing unchecked where it failed; the planner's Go / No-Go (the
+    MCP connector's, the departure window's) says the same, where it said
+    nothing and so Go (round 5's engine audit)."""
+    from app.gonogo import icing
+    from wingtip import icing_forecast
+
+    monkeypatch.setattr(flight, "alternate_for", lambda dest, eta, tas, filed: {"destination": {"required": False}, "alternate": None})
+    stubbed["planned"] = flight.Planned(nav=nav(), legs=legs(), totals=totals(), fixes=[(42.1, -87.9), (46.8, -92.2)])
+    asked = {}
+
+    def along(fixes, altitudes, minutes, ground, start):
+        asked.update(fixes=fixes, altitudes=altitudes, minutes=minutes, start=start)
+        return {"line": "Moderate icing forecast at 5,500 ft on the leg to KDLH", "legs": []}
+
+    monkeypatch.setattr(icing.icing_forecast, "along", along)
+    items = by_key(client.post("/api/go-no-go", json=ask(rules="ifr")).json())
+    said = "Moderate icing forecast at 5,500 ft on the leg to KDLH"
+    assert (items["weather"]["finding"], items["weather"]["detail"]) == ("caution", said)
+    assert asked == {"fixes": [(42.1, -87.9), (46.8, -92.2)], "altitudes": [5500.0], "minutes": [150.0], "start": DEPART.timestamp()}
+
+    def none(*_):
+        raise icing_forecast.IcingForecastUnavailable("no forecast")
+
+    monkeypatch.setattr(icing.icing_forecast, "along", none)
+    items = by_key(client.post("/api/go-no-go", json=ask(rules="ifr")).json())
+    assert (items["weather"]["finding"], items["weather"]["detail"]) == ("caution", "Not checked: the forecast icing")
+    # Under VFR the flight stays clear of cloud (14 CFR 91.155): not asked.
+    items = by_key(client.post("/api/go-no-go", json=ask()).json())
+    assert items["weather"]["finding"] == "ok"
+
+
+def test_with_the_winds_aloft_failed_the_oxygen_is_read_from_the_plans_steps(stubbed):
+    """No legs when the winds failed (wingtip.flight_plan's NoWinds): the
+    plans still climb past 12,500 ft, so 14 CFR 91.211(a) is said, where
+    it said nothing (round 5's engine audit)."""
+    high = [
+        {"kind": "lowest", "steps": [{"altitude_ft": 13500.0, "to": "KDLH"}]},
+        {"kind": "highest", "steps": [{"altitude_ft": 15500.0, "to": "KDLH"}]},
+    ]
+    stubbed["planned"] = flight.Planned(nav=nav(flown=None, altitude_ft=None, options=high), legs=[], totals=None)
+    items = by_key(client.post("/api/go-no-go", json=ask(aircraft="c172")).json())
+    assert items["oxygen"]["detail"] == "Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"
+
+
 def test_what_swim_says_now_at_the_routes_airports_is_said_as_on_the_web(stubbed, tmp_path, monkeypatch):
     """An ITWS alert at KDLH is a caution with its source; a ground stop
     there is one under IFR only; an area SFDPS says is active now is said

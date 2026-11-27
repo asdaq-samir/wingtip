@@ -198,14 +198,21 @@
             "number",
             "null"
           ],
-          "description": "The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log."
+          "description": "The highest altitude planned, feet MSL, for 14 CFR 91.211's oxygen (gonogo_brief's oxygen finding); null before the nav log."
         },
         "oxygen": {
           "type": [
             "boolean",
             "null"
           ],
-          "description": "Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+          "description": "Whether the airplane picked carries supplemental oxygen (its profile's supplemental_oxygen). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+        },
+        "pressurized": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether its cabin is pressurised (its profile's pressurized): 14 CFR 91.211(b)'s FL250 and FL350 then, not (a)'s heights. False with no airplane picked."
         }
       }
     },

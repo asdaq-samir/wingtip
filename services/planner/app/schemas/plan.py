@@ -35,6 +35,24 @@ class AirportEnd(BaseModel):
     #: hundred feet (the TPA the FAA publishes, else 1,000 ft over the
     #: field): what the route's box offers as the altitude there.
     pattern_altitude_ft: float | None = None
+    #: The engine's warning where the point is outside the United States,
+    #: "CYQT is in Canada (Ontario): Canadian rules not checked — figures
+    #: use US rules", and the leg's on from it where it crosses a country
+    #: neither end is in (app.route_borders); None in the United States,
+    #: and on a checkpoint's list (/api/checkpoints).
+    outside_caution: str | None = None
+    leg_caution: str | None = None
+
+
+class BorderLine(BaseModel):
+    """The Brief's one line for the route's borders (app.route_borders):
+    the finding alone (`lead`), with what to do (`line`), and its parts."""
+
+    lead: str
+    line: str
+    action: str
+    why: str
+    cite: str
 
 
 class Course(ChartInfo):
@@ -54,6 +72,11 @@ class Course(ChartInfo):
     #: web app asks for the route as entered beside them only where they
     #: are not.
     checkpoints_ready: bool = False
+    #: Part of the route outside the United States (14 CFR 1.1, 91.703(a);
+    #: decision 0053), and the ADIZs it meets (14 CFR 99.41-99.49): the
+    #: Brief's lines, None where none (app.route_borders).
+    outside: BorderLine | None = None
+    adiz: BorderLine | None = None
 
 
 class Candidate(BaseModel):
