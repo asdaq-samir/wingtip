@@ -99,9 +99,16 @@ export default function FlightNowRows({
         {/* Every row from the first frame, its value a line to come while
             the record is asked for and a dash where it has none: the rows
             came in as it answered and the card under them jumped (the
-            flicker audit's FL-10). */}
-        {registry && <ListRow title="Registered To" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />}
-        {registry && <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />}
+            flicker audit's FL-10), until the answer has none: an airplane
+            the FAA's registry does not hold has no registered owner and
+            often no model, two rows of dashes (the owner's screenshot,
+            2026-11-26, A7-BFM). */}
+        {registry && (detailLoading || detail?.faa) && (
+          <ListRow title="Registered To" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
+        )}
+        {registry && (detailLoading || detail?.description) && (
+          <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
+        )}
         {/* Who flies it, this flight's, where it is known. */}
         {operator && <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />}
         {route && (

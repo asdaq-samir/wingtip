@@ -232,8 +232,10 @@ function FlightSummary({
           {reportedAltitude(plane.altitude_ft)} {climb}
           {" · "}
           {plane.speed_kt == null ? "—" : knots(plane.speed_kt)}
-          {/* ADS-B's track is over the ground and true, not magnetic. */}
-          {plane.track_deg != null && ` · ${bearing(plane.track_deg)} true`}
+          {/* ADS-B's track is over the ground and true, not magnetic; "true"
+              kept on the track's line by a no-break space, where it wrapped
+              alone (the owner's screenshot, 2026-11-26). */}
+          {plane.track_deg != null && ` · ${bearing(plane.track_deg)}\u00a0true`}
         </span>
       ) : null}
       {plane && arrives !== null && to ? (
