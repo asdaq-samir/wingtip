@@ -1448,6 +1448,8 @@ data class AlternateCheck (
     @SerialName("ceiling_ft")
     val ceilingFt: Double? = null,
 
+    val closed: Boolean? = null,
+
     @SerialName("distance_nm")
     val distanceNm: Double? = null,
 

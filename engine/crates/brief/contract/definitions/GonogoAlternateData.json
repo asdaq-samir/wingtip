@@ -40,6 +40,13 @@
               "items": {
                 "type": "string"
               }
+            },
+            "closed": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043)."
             }
           }
         },

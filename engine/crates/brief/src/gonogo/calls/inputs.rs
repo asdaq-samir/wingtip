@@ -105,6 +105,7 @@ pub(crate) fn alternates(i: In, data: Option<&Value>) -> R<Option<Alternates>> {
             },
             good_given: matches!(a.get("good"), Some(Value::Null | Value::Bool(_))),
             first_reason: i.strings(a, "reasons")?.into_iter().next(),
+            closed: truth(a, "closed"),
         }),
     };
     Ok(Some(Alternates { required, alternate, ..Alternates::default() }))

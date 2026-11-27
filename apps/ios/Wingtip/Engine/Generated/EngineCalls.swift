@@ -1096,13 +1096,13 @@ nonisolated extension Engine {
     }
 
     /// Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility). A private or military-only field (private, military) is the pilot's to check too, with "KMXF is military: prior permission required (PPR)." or the owner's permission said.
-    static func ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil) throws -> EngineContract.IfrAlternateCheck {
-        try Self.rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military))
+    static func ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil, status: String? = nil) throws -> EngineContract.IfrAlternateCheck {
+        try Self.rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military, status: status))
     }
 
     /// Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
-    static func ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil) throws -> EngineContract.IfrAlternateDestinationAnswer {
-        try Self.rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military))
+    static func ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil, `private`: Bool? = nil, military: String? = nil, status: String? = nil) throws -> EngineContract.IfrAlternateDestinationAnswer {
+        try Self.rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military, status: status))
     }
 
     /// Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the "1-2-3").

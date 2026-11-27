@@ -2836,6 +2836,11 @@
             ],
             "title": "Ceiling Ft"
           },
+          "closed": {
+            "default": false,
+            "title": "Closed",
+            "type": "boolean"
+          },
           "distance_nm": {
             "anyOf": [
               {

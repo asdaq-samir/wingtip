@@ -83,6 +83,8 @@ class AlternateCheck(BaseModel):
     visibility_sm: float | None = None
     taf: str | None = None
     good: bool | None = None
+    #: NASR lists it closed (CI or CP): never an alternate (decision 0043).
+    closed: bool = False
     #: Its forecast meets the standard minimums; where `good` is None for
     #: minimums of its own, the pilot checks those.
     meets_standard: bool = False

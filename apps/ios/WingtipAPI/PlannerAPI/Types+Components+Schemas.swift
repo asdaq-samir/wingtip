@@ -2313,6 +2313,8 @@ extension Components {
             public var approach: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/AlternateCheck/ceiling_ft`.
             public var ceilingFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/AlternateCheck/closed`.
+            public var closed: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AlternateCheck/distance_nm`.
             public var distanceNm: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AlternateCheck/good`.
@@ -2337,6 +2339,7 @@ extension Components {
             ///   - alternateMinimumsUrl:
             ///   - approach:
             ///   - ceilingFt:
+            ///   - closed:
             ///   - distanceNm:
             ///   - good:
             ///   - ident:
@@ -2350,6 +2353,7 @@ extension Components {
                 alternateMinimumsUrl: Swift.String? = nil,
                 approach: Swift.Bool,
                 ceilingFt: Swift.Double? = nil,
+                closed: Swift.Bool? = nil,
                 distanceNm: Swift.Double? = nil,
                 good: Swift.Bool? = nil,
                 ident: Swift.String,
@@ -2363,6 +2367,7 @@ extension Components {
                 self.alternateMinimumsUrl = alternateMinimumsUrl
                 self.approach = approach
                 self.ceilingFt = ceilingFt
+                self.closed = closed
                 self.distanceNm = distanceNm
                 self.good = good
                 self.ident = ident
@@ -2377,6 +2382,7 @@ extension Components {
                 case alternateMinimumsUrl = "alternate_minimums_url"
                 case approach
                 case ceilingFt = "ceiling_ft"
+                case closed
                 case distanceNm = "distance_nm"
                 case good
                 case ident

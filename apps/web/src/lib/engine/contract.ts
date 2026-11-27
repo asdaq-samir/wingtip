@@ -7024,6 +7024,10 @@ export interface GonogoAlternateData {
      */
     good?: boolean | null;
     reasons?: string[] | null;
+    /**
+     * NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043).
+     */
+    closed?: boolean | null;
   } | null;
   /**
    * True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b)).
@@ -9892,6 +9896,10 @@ export interface IfrAlternateCheckInput {
    * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
    */
   military?: "military" | "joint" | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+   */
+  status?: string | null;
 }
 export interface IfrAlternateCheckAnswer {
   ident: string;
@@ -9906,6 +9914,10 @@ export interface IfrAlternateCheckAnswer {
   visibility_sm: number | null;
   taf: string | null;
   good: boolean | null;
+  /**
+   * NASR lists it closed: `good` false, never offered (decision 0043).
+   */
+  closed: boolean;
   meets_standard: boolean;
   reasons: string[];
 }
@@ -9942,6 +9954,10 @@ export interface IfrAlternateDestinationInput {
    * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
    */
   military?: "military" | "joint" | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+   */
+  status?: string | null;
 }
 export interface IfrAlternateDestinationAnswer {
   ident: string;
@@ -15863,6 +15879,10 @@ export interface IfrAlternateCheck {
   visibility_sm: number | null;
   taf: string | null;
   good: boolean | null;
+  /**
+   * NASR lists it closed: `good` false, never offered (decision 0043).
+   */
+  closed: boolean;
   meets_standard: boolean;
   reasons: string[];
 }
@@ -15903,4 +15923,8 @@ export interface IfrAlternateIn {
    * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
    */
   military?: "military" | "joint" | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+   */
+  status?: string | null;
 }

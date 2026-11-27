@@ -923,6 +923,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": true,
+        "closed": false,
         "meets_standard": true,
         "reasons": []
       }
@@ -955,6 +956,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": false,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF has a 700 ft ceiling at the ETA: under 800 ft."
@@ -989,6 +991,7 @@
         "visibility_sm": 1.5,
         "taf": "TAF KALT",
         "good": false,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF has 1.5 sm at the ETA: under 2 sm."
@@ -1023,6 +1026,7 @@
         "visibility_sm": 6,
         "taf": "TAF KALT",
         "good": null,
+        "closed": false,
         "meets_standard": true,
         "reasons": [
           "KALT publishes its own alternate minimums, higher than standard or not authorized for some approaches: check its alternate minimums page."
@@ -1052,6 +1056,7 @@
         "visibility_sm": 6,
         "taf": "TAF KALT",
         "good": null,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "KALT has no instrument approach: the forecast must allow a descent from the MEA and a landing under basic VFR (14 CFR 91.169(c)(2))."
@@ -1080,6 +1085,7 @@
         "visibility_sm": null,
         "taf": null,
         "good": null,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "No TAF for KALT covers the ETA there."
@@ -1114,6 +1120,7 @@
         "visibility_sm": 6,
         "taf": "TAF KALT",
         "good": null,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF has a ceiling of unknown height at the ETA."
@@ -1149,6 +1156,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": true,
+        "closed": false,
         "meets_standard": true,
         "reasons": []
       }
@@ -1182,6 +1190,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": false,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF has a 599 ft ceiling at the ETA: under 600 ft."
@@ -1217,6 +1226,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": true,
+        "closed": false,
         "meets_standard": true,
         "reasons": []
       }
@@ -1250,6 +1260,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": false,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF has a 799 ft ceiling at the ETA: under 800 ft."
@@ -1285,6 +1296,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": true,
+        "closed": false,
         "meets_standard": true,
         "reasons": []
       }
@@ -1318,6 +1330,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": false,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF has a 700 ft ceiling at the ETA: under 800 ft."
@@ -1353,6 +1366,7 @@
         "visibility_sm": 6,
         "taf": "TAF KALT",
         "good": null,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF for KALT does not cover the ETA there."
@@ -1388,6 +1402,7 @@
         "visibility_sm": null,
         "taf": "TAF KALT",
         "good": null,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF gives no visibility at the ETA."
@@ -1422,6 +1437,7 @@
         "visibility_sm": 1.9,
         "taf": "TAF KALT",
         "good": false,
+        "closed": false,
         "meets_standard": false,
         "reasons": [
           "The TAF has 1.9 sm at the ETA: under 2 sm."
@@ -1456,6 +1472,7 @@
         "visibility_sm": 2,
         "taf": "TAF KALT",
         "good": true,
+        "closed": false,
         "meets_standard": true,
         "reasons": []
       }

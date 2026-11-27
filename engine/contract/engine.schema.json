@@ -39558,6 +39558,13 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "closed": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043)."
                 }
               }
             },
@@ -40999,6 +41006,10 @@
             "null"
           ]
         },
+        "closed": {
+          "type": "boolean",
+          "description": "NASR lists it closed: `good` false, never offered (decision 0043)."
+        },
         "meets_standard": {
           "type": "boolean"
         },
@@ -41019,6 +41030,7 @@
         "visibility_sm",
         "taf",
         "good",
+        "closed",
         "meets_standard",
         "reasons"
       ]
@@ -41109,6 +41121,13 @@
             null
           ],
           "description": "ifr_alternate_check's: \"military\" or \"joint\" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it."
         }
       },
       "required": [

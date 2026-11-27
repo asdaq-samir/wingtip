@@ -60,6 +60,8 @@ pub struct FiledAlternate {
     pub good: Option<bool>,
     pub good_given: bool,
     pub first_reason: Option<String>,
+    /// NASR lists it closed (ifr_alternate_check's `closed`).
+    pub closed: bool,
 }
 
 /// What an IFR flight's alternate comes to where no check was made: 14
@@ -91,6 +93,10 @@ pub fn alternate_finding(data: Option<&Alternates>) -> Option<(&'static str, Str
     let Some(alt) = &data.alternate else {
         return Some(("stop", "An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather".into()));
     };
+    // A closed field is never an alternate (decision 0043).
+    if alt.closed {
+        return Some(("stop", format!("{} is closed: file another alternate", alt.ident)));
+    }
     match (alt.good, alt.good_given) {
         (Some(false), _) => Some(("stop", format!("{} is under its alternate minimums at the ETA there", alt.ident))),
         // `good === null`: one left out says nothing.

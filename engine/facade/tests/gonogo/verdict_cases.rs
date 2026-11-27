@@ -159,12 +159,16 @@ fn the_alternate_speaks_for_the_weather_where_the_weather_says_nothing_worse() {
     assert_eq!(verdict::alternate_finding(Some(&awaited)).map(|f| f.0), Some("pending"));
     let filed = |good, good_given| Alternates {
         required: true,
-        alternate: Some(FiledAlternate { ident: s("KMSN"), good, good_given, first_reason: None }),
+        alternate: Some(FiledAlternate { ident: s("KMSN"), good, good_given, first_reason: None, closed: false }),
         ..Alternates::default()
     };
     let under = verdict::alternate_finding(Some(&filed(Some(false), true)));
     assert_eq!(under, Some(("stop", s("KMSN is under its alternate minimums at the ETA there"))));
     assert_eq!(verdict::alternate_finding(Some(&filed(None, true))), Some(("caution", s("KMSN: check it"))));
+    // A closed field is never an alternate (decision 0043).
+    let mut closed = filed(Some(false), true);
+    closed.alternate.as_mut().unwrap().closed = true;
+    assert_eq!(verdict::alternate_finding(Some(&closed)), Some(("stop", s("KMSN is closed: file another alternate"))));
     // `good === null` only: an answer with no `good` says nothing.
     assert_eq!(verdict::alternate_finding(Some(&filed(None, false))), None);
     let (f, d) = under.unwrap();

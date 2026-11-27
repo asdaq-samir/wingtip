@@ -5149,6 +5149,8 @@ nonisolated enum EngineContract {
         /// False: under its alternate minimums; null: the pilot's to check; left out: says nothing.
         var good: Bool?
         var reasons: [String]?
+        /// NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043).
+        var closed: Bool?
     }
 
     nonisolated struct GonogoAlternateDataDestination: Codable, Equatable, Sendable {
@@ -7156,6 +7158,8 @@ nonisolated enum EngineContract {
         var visibilitySm: Double?
         var taf: String?
         var good: Bool?
+        /// NASR lists it closed: `good` false, never offered (decision 0043).
+        var closed: Bool
         var meetsStandard: Bool
         var reasons: [String]
 
@@ -7169,6 +7173,7 @@ nonisolated enum EngineContract {
             case visibilitySm = "visibility_sm"
             case taf
             case good
+            case closed
             case meetsStandard = "meets_standard"
             case reasons
         }
@@ -7214,6 +7219,8 @@ nonisolated enum EngineContract {
         var `private`: Bool?
         /// ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
         var military: String?
+        /// NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+        var status: String?
     }
 
     /// The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.

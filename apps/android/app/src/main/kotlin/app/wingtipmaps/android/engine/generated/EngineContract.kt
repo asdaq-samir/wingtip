@@ -5219,6 +5219,10 @@ object EngineContract {
          */
         val good: Boolean? = null,
         val reasons: List<String>? = null,
+        /**
+         * NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043).
+         */
+        val closed: Boolean? = null,
     )
 
     @Serializable
@@ -7408,6 +7412,10 @@ object EngineContract {
         val visibilitySm: Double? = null,
         val taf: String? = null,
         val good: Boolean? = null,
+        /**
+         * NASR lists it closed: `good` false, never offered (decision 0043).
+         */
+        val closed: Boolean,
         @SerialName("meets_standard")
         val meetsStandard: Boolean,
         val reasons: List<String>,
@@ -7453,6 +7461,10 @@ object EngineContract {
          * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
          */
         val military: String? = null,
+        /**
+         * NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it.
+         */
+        val status: String? = null,
     )
 
     /**
