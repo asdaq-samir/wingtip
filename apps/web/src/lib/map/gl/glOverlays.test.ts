@@ -104,8 +104,13 @@ describe("the overlay tiles' layers", () => {
     setSelectedAirport(map, null);
     expect(set.state.get("selectedAirport")).toBeNull();
     const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
-    // Hidden by its paint, so the tiles are not laid out again at a tap.
-    expect(airports.paint!["text-opacity"]).toEqual(["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1]);
+    // Hidden by its paint, so the tiles are not laid out again at a tap;
+    // at the Dimmer's share at night as every word on the chart (mapDim).
+    expect(airports.paint!["text-opacity"]).toEqual([
+      "*",
+      ["coalesce", ["global-state", "mapDim"], 1],
+      ["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1],
+    ]);
   });
 
   it("name the towered fields wherever they are drawn, from 5, and every other field from 8, each mark a little apart", () => {

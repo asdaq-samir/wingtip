@@ -10,6 +10,7 @@ import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
 import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
+import { MAP_DIM, mapDimOf } from "../mapDim";
 import { useCloseImagery } from "../useCloseImagery";
 import { useChartMissed } from "../useChartMissed";
 
@@ -94,6 +95,12 @@ export function ChartGl({ course }: { course: Course | null }) {
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");
   const brightness = chartBrightness(dim, sunlight, night);
+  // What is drawn on the chart at its brightness at night (mapDim): one
+  // global state every symbol's, line's and circle's opacity reads.
+  const mapDim = mapDimOf(night, brightness);
+  useEffect(() => {
+    if (map.style) map.setGlobalStateProperty(MAP_DIM, mapDim);
+  }, [map, mapDim]);
   const look = sunlight ? "bright" : brightness < 1 ? "dimmed" : "normal";
   useEffect(() => {
     const el = map.getContainer();

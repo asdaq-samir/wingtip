@@ -11,6 +11,7 @@ import { GL_FONT_BOLD, LABEL_HALO, labelHalo, labelInk, labelText } from "./laye
 import { specialUseLabelLayer } from "./glSuaLabels";
 import { OVERLAY_PICTURES } from "./glOverlayPictures";
 import { CHART, MAP_ZOOM } from "../../tokens";
+import { dimLayer } from "./mapDim";
 
 export { OVERLAY_SOURCE };
 
@@ -312,7 +313,8 @@ export function overlayStyle(
     }),
     ...airportMarksLayers(from("airports")),
   ];
-  return { source: overlaySource(tiles, origin), layers: { lines, marks } };
+  // At the Dimmer's brightness at night, as everything drawn on the chart (mapDim).
+  return { source: overlaySource(tiles, origin), layers: { lines: lines.map(dimLayer), marks: marks.map(dimLayer) } };
 }
 
 /** The overlays added to a map made without them (their name came after
