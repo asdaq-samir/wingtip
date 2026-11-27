@@ -111,6 +111,10 @@
         html, body { height: auto; overflow: visible; }
       }
     </style>
+    <!-- The pilot's theme, look and sunlight scheme on <html> before the
+         body is painted: a load at night never opens white (AIM 8-1-6).
+         A blocking script of the page's own origin, as the CSP allows. -->
+    <script src="/first-frame.js"></script>
   </head>
   <body>
     <div id="root"></div>

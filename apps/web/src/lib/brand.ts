@@ -13,7 +13,7 @@ const INK: Brand = "ink";
  *  out of the box, shadcn's own theme, corners, type and states (2026-11-10:
  *  "Native means how they come out of the box, look and behavior wise").
  *  Their colours are tokens on <html data-brand> (design/tokens.json's
- *  color.look); their typefaces load here. */
+ *  color.look); their typefaces load here (followKeptBrand). */
 export const BRANDS: { value: Brand; label: string }[] = [
   { value: "wingtip", label: "Wingtip" },
   { value: "cockpit", label: "Glass Cockpit" },
@@ -42,33 +42,33 @@ export function useInkLook(): boolean {
   return usePreferences((s) => s.brand) === INK;
 }
 
-/** The pilot's kept look put on <html> before React draws anything, so
- *  the first frame is in it rather than in Wingtip's until BrandLook's
- *  effect runs (the themes audit, 2026-11-27: Chart ink and Glass Cockpit
- *  flashed Wingtip's blue on every load). The preferences are read from
- *  localStorage as the store is made, so they are here already; where
- *  storage is refused the default look stays. */
-export function applyKeptBrand(): void {
-  try {
-    document.documentElement.dataset.brand = usePreferences.getState().brand;
-  } catch {
-    document.documentElement.dataset.brand = "wingtip";
-  }
+/** The one writer of the pilot's look on <html> (data-brand) and of its
+ *  typeface, started by main.tsx before React draws and following every
+ *  change of the look from then on. The first frame is already in the kept
+ *  look, put there by public/first-frame.js before the body paints (the
+ *  themes audits, 2026-11-27: Chart ink and Glass Cockpit flashed Wingtip's
+ *  blue on every load); this starts Chart ink's Barlow Condensed at once,
+ *  not after the first render's effects. Returns the unsubscribe. */
+export function followKeptBrand(): () => void {
+  const apply = (brand: Brand) => {
+    document.documentElement.dataset.brand = brand;
+    void FONTS[brand]?.()?.catch(() => {
+      /* the system's face meanwhile */
+    });
+  };
+  apply(usePreferences.getState().brand);
+  return usePreferences.subscribe((s, before) => {
+    if (s.brand !== before.brand) apply(s.brand);
+  });
 }
 
-/** Puts the pilot's look on <html> (data-brand), and its typeface in,
- *  and the browser's bar in the page's own ground (followThemeColor). */
+/** The browser's bar in the page's own ground (followThemeColor), as the
+ *  look, the theme or sunlight change it. */
 export function BrandLook() {
   const brand = usePreferences((s) => s.brand);
   const theme = useTheme().resolvedTheme;
   // Sunlight changes the page's ground by day (white), so the bar follows it too.
   const sunlight = useSunlightOn();
-  useEffect(() => {
-    document.documentElement.dataset.brand = brand;
-    void FONTS[brand]?.()?.catch(() => {
-      /* the system's face meanwhile */
-    });
-  }, [brand]);
   useEffect(() => followThemeColor(), [brand, theme, sunlight]);
   return null;
 }

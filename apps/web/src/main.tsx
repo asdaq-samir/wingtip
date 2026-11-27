@@ -10,7 +10,7 @@ import { api } from "./lib/api/client";
 import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
-import { BrandLook, applyKeptBrand } from "./lib/brand";
+import { BrandLook, followKeptBrand } from "./lib/brand";
 import SafariEdges from "./components/SafariEdges";
 import ErrorAlert from "./components/ErrorAlert";
 import { PageErrorBoundary } from "./components/PageError";
@@ -63,7 +63,7 @@ const engineLoaded = loadEngine();
 // The reader's text size from the iPhone's Settings, before the first
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
-applyKeptBrand();
+followKeptBrand();
 
 // The map's chunk (routeMapChunk) and the search's (routeBoxChunk),
 // fetched while the page draws.
@@ -280,7 +280,9 @@ const render = () =>
       {/* Light, dark, or the OS's own choice -- the settings' Theme
         sets it, next-themes keeps it and puts the `dark` class on
         <html>, which is what every colour token in index.css keys off
-        (and what the Toaster below already reads). */}
+        (and what the Toaster below already reads). The first frame's
+        class is public/first-frame.js's, put on before the body paints:
+        next-themes' own inline script never runs in a client root. */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey={THEME_KEY} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
           {/* Base UI's tooltip provider: the first label waits its 600 ms,

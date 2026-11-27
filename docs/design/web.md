@@ -2289,9 +2289,14 @@ day and the night navy by the device's scheme (`vite-plugins/manifest`
 `themeColor`, from the tokens), then the page's ground once the look and
 the Map card's Theme are on (`lib/brand` `BrandLook`), so the browser's bar is
 dark at night (2026-11-11), read again as Sunlight comes and goes. The
-look itself (`data-brand`) is put on `<html>` from the kept preference
-before React draws (`applyKeptBrand`, main.tsx), so no load flashes
-Wingtip's blue first (the themes audit, 2026-11-27). **Proposed,
+night class, the look (`data-brand`) and Sunlight (`data-chart-light`)
+are put on `<html>` from what is kept before the body paints, by
+`public/first-frame.js`, a blocking script of the page's own origin in
+the head (the CSP refuses an inline one), so no load at night opens on a
+white page and none flashes Wingtip's blue first (the themes audits,
+2026-11-27; AIM 8-1-6). From then on one writer keeps `data-brand` and
+starts the look's typeface (`lib/brand` `followKeptBrand`, from
+main.tsx), next-themes the class. **Proposed,
 generated rather than hand-written:**
 1. `id` set to the app's path, so a later `start_url` change does not
    make a second app.
