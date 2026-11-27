@@ -111,7 +111,7 @@ fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageI
             // White on black for the night where asked, and no brighter than the chart (PlateLook).
             val filter = remember(inverted, brightness) { pageFilter(inverted, brightness) }
             Image(image, contentDescription = description, modifier = Modifier.fillMaxSize(), colorFilter = filter)
-            if (ink != null) MarkLayer(ink.marks, 1, page.width * k, page.height * k, ink.marking, ink.onMarked)
+            if (ink != null) MarkLayer(ink.marks, 1, page.width * k, page.height * k, ink.marking, ink.onMarked, brightness)
             if (rings.isNotEmpty()) HotSpotRings(rings)
             if (mark != null) {
                 Canvas(Modifier.fillMaxSize().semantics { contentDescription = you }) {
