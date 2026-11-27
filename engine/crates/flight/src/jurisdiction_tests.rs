@@ -192,7 +192,12 @@ fn the_outlines_name_only_known_places() {
 fn an_unknown_code_fails_the_read_never_panics() {
     // The round 7 audit, E-L4: in WebAssembly a panic takes the whole
     // engine down, not the one call.
-    let err = crate::jurisdiction::read("C ZZ\n0 0 1000 0 0 1000\n").err().unwrap();
+    let err = crate::jurisdiction::read(b"CZZR\x03\x00\x00\xd0\x0f\x00\xcf\x0f\xd0\x0f").err().unwrap();
+    assert!(err.contains("ZZ"), "{err}");
+    // Bytes cut short inside a ring, or a ring before any place, fail too.
+    assert!(crate::jurisdiction::read(b"CUSR\x03\x00").is_err());
+    assert!(crate::jurisdiction::read(b"R\x01\x00\x00").is_err());
+    let err = crate::jurisdiction::read(b"CZZ").err().unwrap();
     assert!(err.contains("ZZ"), "{err}");
     assert!(crate::jurisdiction::outlines_read().is_ok());
 }
