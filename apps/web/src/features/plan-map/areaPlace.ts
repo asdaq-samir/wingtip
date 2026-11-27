@@ -56,13 +56,13 @@ export function lineEnters(rings: Rings, line: readonly (readonly [number, numbe
 export function areaFrom(geo: Geo, rings: Rings, at: LatLon): string | null {
   if (!rings.length) return null;
   if (insideAny(rings, at)) return "You are inside it";
-  let best: { nm: number; to: LatLon } | null = null;
-  for (const ring of rings) {
-    for (const [lon, lat] of ring) {
-      const to = { lat: lat!, lon: lon! };
-      const nm = geo.distanceNm(at, to);
-      if (!best || nm < best.nm) best = { nm, to };
-    }
-  }
-  return best ? `${nmAway(best.nm)} ${compassPoint(geo.bearingDeg(at, best.to))} of you` : null;
+  // Every corner measured in one call (fromTo), where a call a corner was
+  // a TFR's hundreds of crossings into the .wasm at each GPS fix.
+  const corners = rings.flat().map(([lon, lat]) => ({ lat: lat!, lon: lon! }));
+  const { distanceNm, bearingDeg } = geo.fromTo(at, corners);
+  let best = -1;
+  distanceNm.forEach((nm, i) => {
+    if (best < 0 || nm < distanceNm[best]!) best = i;
+  });
+  return best >= 0 ? `${nmAway(distanceNm[best]!)} ${compassPoint(bearingDeg[best]!)} of you` : null;
 }

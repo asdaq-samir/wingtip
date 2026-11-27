@@ -19,6 +19,7 @@ import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { useMapCredit } from "../../../lib/map/gl/creditStore";
 import { appZoomOf, glZoom } from "../../../lib/map/gl/glStyle";
 import { cameraOf } from "../../../lib/map/gl/camera";
+import { CAMERA_MS } from "../../../lib/map/gl/cameraRules";
 import { useTerrainView } from "../terrain/useTerrainView";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
@@ -27,10 +28,22 @@ import { pickOnMap } from "../../../lib/map/mapPick";
 /** Asked every five seconds, each airplane carried on
  *  between answers a frame at a time (more often closer in), blended over
  *  a second onto where the next answer puts it; heights from zoom 9 and
- *  call signs from 10, in the app's levels. */
+ *  call signs from 10, in the app's levels.
+ *
+ *  A frame is the whole collection sent to the map's worker and indexed
+ *  again there, so it comes once a second at the chart's scales, where an
+ *  airplane at 120 kt moves a pixel or two in it, and up to four a second
+ *  only zoomed in close (the speed audit of 2026-11-27: ten a second from
+ *  zoom 10, each a JSON.stringify and a setData). An airplane followed
+ *  keeps ten a second: the camera's follow eases linearly between frames,
+ *  so a mark stepped once a second would slide back on the screen and jump. */
 const EVERY_MS = 5000;
-const FRAME_MS = 100;
-const frameMs = (zoom: number) => Math.min(1000, FRAME_MS * 2 ** Math.max(0, 10 - Math.round(zoom)));
+const FOLLOW_FRAME_MS = 100;
+const FRAME_MS = 250;
+const frameMs = (zoom: number, following: boolean) =>
+  following
+    ? Math.min(1000, FOLLOW_FRAME_MS * 2 ** Math.max(0, 10 - Math.round(zoom)))
+    : Math.min(1000, FRAME_MS * 2 ** Math.max(0, 12 - Math.round(zoom)));
 const BLEND_MS = 1000;
 const HEIGHT_ZOOM = 9;
 const CALLSIGN_ZOOM = 10;
@@ -236,7 +249,7 @@ function Traffic({ geo }: { geo: Geo }) {
     cameraOf(map).pick([latest.plane.lon, latest.plane.lat], {
       onlyIfHidden: true,
       zoom: Math.max(map.getZoom(), glZoom(9)),
-      duration: 800,
+      duration: CAMERA_MS,
       keeps: "track",
     });
   }, [map, hex, follow, heard]);
@@ -247,7 +260,8 @@ function Traffic({ geo }: { geo: Geo }) {
   useEffect(() => {
     let timer = 0;
     const step = () => {
-      timer = document.hidden ? 0 : window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
+      const { hex: tracked, follow: following } = useTracking.getState();
+      timer = document.hidden ? 0 : window.setTimeout(step, frameMs(appZoomOf(map.getZoom()), !!tracked && following));
       if (!map.isZooming()) drawTargets(geo, map, targets.current);
     };
     const back = () => {

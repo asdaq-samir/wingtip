@@ -20,12 +20,12 @@ describe("the camera owner's rules", () => {
   it("eases each follow step over the time since the last, so the steps join at one pace", () => {
     // FL-13: the dry run's fixes a quarter second apart.
     expect(followMs(250)).toBe(250);
-    expect(followMs(null)).toBe(500);
+    expect(followMs(null)).toBe(250);
     // Not shorter than a frame-rate stream needs, nor a slow creep.
     expect(followMs(16)).toBe(100);
     expect(followMs(2000)).toBe(1500);
     // A stream begun again after a pause starts afresh.
-    expect(followMs(10_000)).toBe(500);
+    expect(followMs(10_000)).toBe(250);
   });
 
   it("eases a pick within a few screens, and flies one far off or far in", () => {

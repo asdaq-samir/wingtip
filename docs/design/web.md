@@ -2343,6 +2343,41 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   (`lib/problems` `noConnection`), as Status's sources do, never
   "Fetching…" for the flight (the offline audit of 2026-11-21).
 
+**What the worker keeps ahead, and the load's order (the speed audit,
+2026-11-27).** The precache is the app a pilot opens, not every part it
+has: the 3D layers (`deckLayers`), the wind flow (`FlowGl`) and the ACS
+table (`acs`) are left out (`globIgnores`), 11.5 MB in 340 files down to
+10.4 MB, and kept by the worker's `app-chunks` cache (cache first, the
+names hashed) the first time they open, so a part opened once on the
+ground opens in the air. pdf.js stays in, for a document kept for the
+air. The engine's `.wasm` is preloaded at low priority
+(`vite-plugins/preloadEngine`): the first paint does not wait for it, and
+at high it shared the connection with the entry the page does wait for.
+The gateway already sends it, and every script, as the Brotli made at
+build (`vite-plugins/compression`, `WebMvcConfig`'s
+`EncodedResourceResolver`). The trip's figures strip (`TripFigures`) is a
+chunk of its own asked for at the start, drawn once the engine is in as
+it was. A page kept open looks for a new build every 20 minutes and as it
+comes back to the front (`features/shell/newBuild`), where it was each
+minute.
+
+**The map's moving parts, for less work a frame (2026-11-27).** The
+traffic's marks are carried on once a second at the chart's scales, up to
+four a second zoomed in close, and ten a second only while an airplane is
+followed (`TrafficGl`'s `frameMs`): each step is the whole collection sent
+to the map's worker. The 3D traffic steps the map and deck.gl itself
+(`TrafficAloftGl`'s `drawAloft`), not by drawing the component again. The
+checkpoints' names are filtered by the keys in view, set only when they
+change (`RouteGl`'s `useNamesInView`), not by a `within` polygon at every
+rest. What asks the engine over a list asks it once (`lib/geo`'s `fromTo`,
+`legs`, `destinations`): the route through a weather area, the nearest
+fields, a TFR's nearest corner, the route's straight miles; the airport
+weather marks' wind rules, which have no list form, are remembered by
+what was asked; the next checkpoint in flight (`in_flight`) is asked once
+a fix. A pick's or a fit's camera move is 400 ms (`CAMERA_MS`), where it
+was 600 to 800, a follow's first ease a quarter second, and a replay
+scrubbed while paused keeps the airplane in sight with a jump.
+
 **Sources.** [webdev-install], [webdev-richer-install], [safari-26],
 [webkit-push], [mdn-id], [mdn-wco], [mdn-launch-handler],
 [mdn-share-target], [mdn-file-handlers], [mdn-env], [webdev-viewport],

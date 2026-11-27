@@ -17,7 +17,7 @@ import {
 } from "./geo";
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
-const { bearingDeg, bestStopIndex, destination, distanceNm, legsNm } = await geoLoaded;
+const { bearingDeg, bestStopIndex, destination, destinations, distanceNm, fromTo, legs, legsNm } = await geoLoaded;
 
 describe("geo", () => {
   it("turns degrees to radians and back", () => {
@@ -128,6 +128,24 @@ describe("a line across the antimeridian", () => {
       [52.7123, 174.1136],
     ]);
     expect(line.map(([, lon]) => lon)).toEqual([-176.646, expect.closeTo(-180.5, 9), expect.closeTo(-185.8864, 9)]);
+  });
+
+  it("asks a list at once with the answers it gives one at a time", () => {
+    const at = { lat: 42.3246, lon: -88.0741 };
+    const to = [{ lat: 46.8421, lon: -92.1936 }, { lat: 41.9786, lon: -87.9048 }, at];
+    const many = fromTo(at, to);
+    to.forEach((p, i) => {
+      expect(many.distanceNm[i]).toBeCloseTo(distanceNm(at, p), 9);
+      expect(many.bearingDeg[i]).toBeCloseTo(bearingDeg(at, p), 9);
+    });
+    const each = legs([at, ...to]);
+    expect(each.distanceNm).toEqual(legsNm([at, ...to]).map((nm) => expect.closeTo(nm, 9)));
+    expect(each.bearingDeg[0]).toBeCloseTo(bearingDeg(at, to[0]!), 9);
+    const out = destinations([{ ...at, bearing: 330, nm: 12 }]);
+    expect(out[0]!.lat).toBeCloseTo(destination(at, 330, 12).lat, 9);
+    expect(out[0]!.lon).toBeCloseTo(destination(at, 330, 12).lon, 9);
+    expect(fromTo(at, [])).toEqual({ distanceNm: [], bearingDeg: [] });
+    expect(destinations([])).toEqual([]);
   });
 
   it("boxes the route, not the world", () => {

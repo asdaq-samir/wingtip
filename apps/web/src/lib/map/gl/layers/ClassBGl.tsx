@@ -8,6 +8,7 @@ import { fieldMarkPicture } from "../../marks/markPictures";
 import { chartPair } from "../../sources/tiles";
 import { useGlMap } from "../glLayer";
 import { cameraOf } from "../camera";
+import { CAMERA_MS } from "../cameraRules";
 import { glZoom } from "../glStyle";
 import { labelledLayer } from "../markLayers";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
@@ -91,7 +92,7 @@ export function ClassBGl({
                 },
                 onTap: () => {
                   if (onSelectPlace) onSelectPlace(a.ident);
-                  else cameraOf(map).pick([a.lon, a.lat], { zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: 600 });
+                  else cameraOf(map).pick([a.lon, a.lat], { zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: CAMERA_MS });
                 },
               };
             })
