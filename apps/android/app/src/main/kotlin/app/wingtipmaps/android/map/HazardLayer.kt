@@ -42,6 +42,8 @@ import org.maplibre.android.style.sources.GeoJsonSource
 object HazardLayer {
     private const val TINT = "terrain-hazard"
     private const val OBSTACLES = "obstacles-hazard"
+    /** The obstacle ring's width, dp (the themes audit's option A). */
+    private const val OBSTACLE_RING = 1.5f
 
     /** Each level ringed and its ink. */
     private val LEVELS = mapOf(Hazard.WARNING to WingtipColors.Chart.WARNING_HEX, Hazard.CAUTION to WingtipColors.Chart.CAUTION_HEX)
@@ -168,12 +170,15 @@ object HazardLayer {
         val from = (Hazard.OBSTACLE_APP_ZOOM - 1).toFloat()
         // A layer a level, so each ring's ink is one colour, dimmed with the chart by it at night (MapDim.colour,
         // the owner's "Dim by colour", 2026-11-27): darker with the chart, its contrast with it kept, never faded.
+        // Ringed in the course's dark edge (route-edge), by colour too, day and night: a white ring is the paper's
+        // own white by day and dims to the paper at night (1.00:1), where the dark ring holds 5.07:1 to the paper
+        // and the amber 3.17:1 within it at the default Dimmer, 10.55:1 by day (the round-6 themes audit's option A).
         for ((level, ink) in LEVELS) {
             val layer = CircleLayer("$OBSTACLES-$level", OBSTACLES).withProperties(
                 PropertyFactory.circleColor(MapDim.colour(ink.toColorInt())),
                 PropertyFactory.circleRadius(Expression.interpolate(Expression.linear(), Expression.zoom(), Expression.stop(from, 3f), Expression.stop(from + 4, 6f))),
-                PropertyFactory.circleStrokeColor(MapDim.colour(WingtipColors.Chart.CASING_HEX.toColorInt())),
-                PropertyFactory.circleStrokeWidth(1f),
+                PropertyFactory.circleStrokeColor(MapDim.colour(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt())),
+                PropertyFactory.circleStrokeWidth(OBSTACLE_RING),
             ).withFilter(Expression.eq(Expression.get("level"), level)).apply { minZoom = from }
             if (style.getLayer(MapStyle.ROUTE_SLOT) != null) style.addLayerBelow(layer, MapStyle.ROUTE_SLOT) else style.addLayer(layer)
         }
