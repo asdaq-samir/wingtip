@@ -148,9 +148,25 @@ fn call(py: Python<'_>, name: &str, input: &str) -> PyResult<String> {
     py.detach(|| wingtip_engine::call::call(name, input)).map_err(PyValueError::new_err)
 }
 
+/// `call` with one member's numbers handed over as a buffer of f64s
+/// (numpy's array, read in place) rather than written into the JSON: the
+/// terrain grids of route options and the way round high ground, 100,000
+/// to 200,000 heights, which as text cost the planner's json.dumps and the
+/// engine's parse tens of milliseconds a call (wingtip_engine::call::
+/// call_with_numbers). The rule and its contract are the same; only the
+/// way the numbers come is.
+#[pyfunction]
+fn call_numbers(py: Python<'_>, name: &str, input: &str, key: &str, numbers: PyBuffer<f64>) -> PyResult<String> {
+    // Copied out under the GIL (a memcpy, well under a millisecond), so no
+    // other thread can change the array while the rule runs without it.
+    let numbers = floats_of(&numbers)?.to_vec();
+    py.detach(|| wingtip_engine::call::call_with_numbers(name, input, key, &numbers)).map_err(PyValueError::new_err)
+}
+
 #[pymodule]
 fn wingtip_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(call, m)?)?;
+    m.add_function(wrap_pyfunction!(call_numbers, m)?)?;
     m.add_function(wrap_pyfunction!(geo_many, m)?)?;
     m.add_function(wrap_pyfunction!(geo_one, m)?)?;
     m.add_function(wrap_pyfunction!(shape_holds, m)?)?;
