@@ -14,8 +14,11 @@ import { airportQuery } from "../../lib/queryClient";
 export function useRouteFields(dep: string, stops: readonly string[], dest: string, alternate: string | null) {
   const idents = [...new Set([dep, ...stops, dest, ...(alternate ? [alternate] : [])].filter(Boolean))];
   const places = new Map<string, AirportPlace>();
-  const answers = useQueries({ queries: idents.map((ident) => airportQuery(ident)) });
-  answers.forEach((a, i) => a.data && places.set(idents[i]!, a.data));
+  // The answers alone, the same array until one changes (combine, stable
+  // at module level): the bare results were a new array at every render,
+  // and what is worked out from them (the Go / No-Go) was worked again.
+  const answers = useQueries({ queries: idents.map((ident) => airportQuery(ident)), combine: dataOf });
+  answers.forEach((data, i) => data && places.set(idents[i]!, data));
   const facts = (ident: string, role: "departure" | "stop" | "destination") => {
     const place = places.get(ident);
     return {
@@ -35,6 +38,8 @@ export function useRouteFields(dep: string, stops: readonly string[], dest: stri
   const icaoIds: Record<string, string | null> = Object.fromEntries([...places].map(([ident, p]) => [ident, p.icao_id ?? null]));
   return { uses, icaoIds };
 }
+
+const dataOf = (results: { data?: AirportPlace }[]) => results.map((r) => r.data);
 
 /** NASR's ARPT_STATUS as a field's card carries it, CI or CP, for the
  *  engine's field_status to word ("closed indefinitely (NASR)", not a
