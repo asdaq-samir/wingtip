@@ -129,7 +129,8 @@ nonisolated enum WingtipColor {
         static let lifr = rgb(0xA371F7)
         /// LIFR as a chip's fill under white words: #a371f7 is 3.35:1 under white, this 6.4:1 (WCAG 1.4.3; the UI audit, 2026-11-09).
         static let lifrChip = rgb(0x7E3FB8)
-        static let unknown = rgb(0x8FA3B0)
+        /// A dot or mark with no report, 3:1 and more on every surface by day and at night (WCAG 1.4.11): 4.2:1 on white, 3.7:1 on the sheet, 3.0:1 on the night's muted, where #8fa3b0 was 2.6:1 on white and 2.3:1 on the sheet (the themes audit, 2026-11-27). Its words are the scheme's category-unknown-ink.
+        static let unknown = rgb(0x6B7F8C)
     }
     nonisolated enum Brand {
         /// Airspace Magenta, the ring round the mark.
@@ -372,6 +373,11 @@ nonisolated struct WingtipPalette: Sendable {
     let accentForeground: UIColor
     let destructive: UIColor
     let destructiveInk: UIColor
+    let categoryVfrInk: UIColor
+    let categoryMvfrInk: UIColor
+    let categoryIfrInk: UIColor
+    let categoryLifrInk: UIColor
+    let categoryUnknownInk: UIColor
     let border: UIColor
     let input: UIColor
     let ring: UIColor
@@ -428,8 +434,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x171717),
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0xE5E5E5),
-        input: rgb(0x8F8F8F),
+        input: rgb(0x808080),
         ring: rgb(0x0066CC),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -484,8 +495,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0xEEF3F9),
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: rgb(0xFFFFFF, 0.1),
-        input: rgb(0xFFFFFF, 0.15),
+        input: rgb(0x808080),
         ring: rgb(0x57A8FF),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -540,6 +556,11 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x000000),
         destructive: rgb(0xB3261E),
         destructiveInk: rgb(0x9C1C15),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0x000000),
         input: rgb(0x333333),
         ring: rgb(0x0047A0),
@@ -596,8 +617,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x171717),
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0xE5E5E5),
-        input: rgb(0x8F8F8F),
+        input: rgb(0x808080),
         ring: rgb(0x00707E),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -652,8 +678,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0xEEF3F9),
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: rgb(0xFFFFFF, 0.1),
-        input: rgb(0xFFFFFF, 0.15),
+        input: rgb(0x808080),
         ring: rgb(0x46D3E6),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -708,8 +739,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x1F1A14),
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0xE2D8C4),
-        input: rgb(0x8F8F8F),
+        input: rgb(0x808080),
         ring: rgb(0x0066CC),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -764,8 +800,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0xEEF1F5),
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: rgb(0xFFFFFF, 0.1),
-        input: rgb(0xFFFFFF, 0.15),
+        input: rgb(0x808080),
         ring: rgb(0x5AC8FA),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -820,6 +861,11 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: UIColor.label,
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: UIColor.separator,
         input: UIColor.systemGray,
         ring: UIColor.systemBlue,
@@ -876,6 +922,11 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: UIColor.label,
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: UIColor.separator,
         input: UIColor.systemGray,
         ring: UIColor.systemBlue,

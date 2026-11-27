@@ -1,7 +1,7 @@
 import { Cloud, CloudLightning, CloudRain, CloudSnow, CloudSun, Sun } from "lucide-react";
 import { cn } from "cn";
 import { Carousel, CarouselContent, CarouselItem } from "../../components/ui/carousel";
-import { colourOf } from "../../lib/map/marks/flightCategory";
+import { NIGHT_DOT_RING, colourOf } from "../../lib/map/marks/flightCategory";
 import { clockTime, zoneName } from "../../lib/format";
 import { altFt } from "../../lib/format";
 import { TEXT } from "../../lib/text";
@@ -118,7 +118,7 @@ export function HourlyForecast({
                 a PROB's) a thinner, lighter one under it. One height for
                 every column, so the figures under them line up. */}
               <span aria-hidden className="flex h-3 w-8 flex-col gap-0.5">
-                <span className="h-1.5 rounded-full" style={{ backgroundColor: colourOf(hour.category) }} />
+                <span className={cn("h-1.5 rounded-full", NIGHT_DOT_RING)} style={{ backgroundColor: colourOf(hour.category) }} />
                 {hour.atTimes && <span className="h-1 rounded-full opacity-50" style={{ backgroundColor: colourOf(hour.atTimes) }} />}
               </span>
               {/* The category's word under its bar, so it is not told by

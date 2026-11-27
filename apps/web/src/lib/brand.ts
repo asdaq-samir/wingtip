@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { usePreferences, type Brand } from "./preferences";
+import { useSunlightOn } from "./sunlight";
 
 const INK: Brand = "ink";
 
@@ -41,18 +42,34 @@ export function useInkLook(): boolean {
   return usePreferences((s) => s.brand) === INK;
 }
 
+/** The pilot's kept look put on <html> before React draws anything, so
+ *  the first frame is in it rather than in Wingtip's until BrandLook's
+ *  effect runs (the themes audit, 2026-11-27: Chart ink and Glass Cockpit
+ *  flashed Wingtip's blue on every load). The preferences are read from
+ *  localStorage as the store is made, so they are here already; where
+ *  storage is refused the default look stays. */
+export function applyKeptBrand(): void {
+  try {
+    document.documentElement.dataset.brand = usePreferences.getState().brand;
+  } catch {
+    document.documentElement.dataset.brand = "wingtip";
+  }
+}
+
 /** Puts the pilot's look on <html> (data-brand), and its typeface in,
  *  and the browser's bar in the page's own ground (followThemeColor). */
 export function BrandLook() {
   const brand = usePreferences((s) => s.brand);
   const theme = useTheme().resolvedTheme;
+  // Sunlight changes the page's ground by day (white), so the bar follows it too.
+  const sunlight = useSunlightOn();
   useEffect(() => {
     document.documentElement.dataset.brand = brand;
     void FONTS[brand]?.()?.catch(() => {
       /* the system's face meanwhile */
     });
   }, [brand]);
-  useEffect(() => followThemeColor(), [brand, theme]);
+  useEffect(() => followThemeColor(), [brand, theme, sunlight]);
   return null;
 }
 

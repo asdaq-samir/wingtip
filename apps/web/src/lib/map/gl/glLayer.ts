@@ -11,6 +11,7 @@ import type {
   MapMouseEvent,
   SourceSpecification,
 } from "maplibre-gl";
+import { dimLayer, dimmedOpacity, isDimmed } from "./mapDim";
 
 /**
  * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is
@@ -211,7 +212,8 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
       const key = `l:${layer.id}`,
         as = JSON.stringify(layer);
       if (map.getLayer(layer.id) && kept.get(key) !== as) map.removeLayer(layer.id);
-      if (!map.getLayer(layer.id)) map.addLayer(layer, under && map.getLayer(under) ? under : slotId(slot));
+      // At the Dimmer's brightness at night, as everything drawn on the chart (mapDim).
+      if (!map.getLayer(layer.id)) map.addLayer(dimLayer(layer), under && map.getLayer(under) ? under : slotId(slot));
       kept.set(key, as);
       left?.delete(key);
     }
@@ -267,7 +269,7 @@ export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
       state.current = "done";
       each((id, prop, to) => {
         set(id, `${prop}-transition`, { duration: prefersReducedMotion() ? 0 : FADE_IN_MS, delay: 0 });
-        set(id, prop, to);
+        set(id, prop, isDimmed(map.getLayer(id)?.type, prop) ? dimmedOpacity(to) : to);
       });
     };
     if (state.current === "new") {
@@ -354,8 +356,11 @@ export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
     const apply = () => {
       for (const id of ids.split(",")) {
         if (!map.getLayer(id)) continue;
-        for (const [k, v] of values) {
+        const type = map.getLayer(id)?.type;
+        for (const [k, set] of values) {
           const name = k as Parameters<MlMap["setPaintProperty"]>[1];
+          // An opacity keeps the Dimmer's share at night (mapDim).
+          const v = isDimmed(type, k) ? dimmedOpacity(set) : set;
           // Only where it differs: setting it changes the style, which
           // would ask for this again.
           if (JSON.stringify(map.getPaintProperty(id, name)) !== JSON.stringify(v)) map.setPaintProperty(id, name, v as never);

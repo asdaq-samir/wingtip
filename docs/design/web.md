@@ -550,7 +550,12 @@ is picked on the map at a time, in one yellow (rules.md, 14;
 - `prefers-contrast` and `forced-colors` are Baseline widely available
   ([MDN prefers-contrast][mdn-prefers-contrast],
   [MDN forced-colors][mdn-forced-colors]): the glass falls back to a solid
-  fill under either. `prefers-reduced-transparency` is experimental
+  fill under either. Under `prefers-contrast: more` the tokens take
+  sunlight's grey words and edges by day and its night lift at night
+  (`design/tokens.json` `color.theme.sunlight-night`; the tokens' `@media`
+  block, tokens.css), never sunlight's white ground; `looksContrast.test.ts`
+  holds every look with it too. Sunlight itself is white by day only: at
+  night it keeps the look's dark grounds (AIM 8-1-6, dark adaptation). `prefers-reduced-transparency` is experimental
   ([MDN][mdn-reduced-transparency]); honour it where it exists.
 
 ### Overlays and positioning
@@ -2283,7 +2288,10 @@ icons. The page's own `theme-color` is two metas, the launch ground by
 day and the night navy by the device's scheme (`vite-plugins/manifest`
 `themeColor`, from the tokens), then the page's ground once the look and
 the Map card's Theme are on (`lib/brand` `BrandLook`), so the browser's bar is
-dark at night (2026-11-11). **Proposed,
+dark at night (2026-11-11), read again as Sunlight comes and goes. The
+look itself (`data-brand`) is put on `<html>` from the kept preference
+before React draws (`applyKeptBrand`, main.tsx), so no load flashes
+Wingtip's blue first (the themes audit, 2026-11-27). **Proposed,
 generated rather than hand-written:**
 1. `id` set to the app's path, so a later `start_url` change does not
    make a second app.

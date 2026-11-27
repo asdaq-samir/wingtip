@@ -46,12 +46,12 @@ export function PlaceTabBar({
           hint: category,
           badge: category && (
             // The FAA's colour (AIM 7-1-7's categories, design/tokens.json
-            // color.category), ringed in the ground so it reads
-            // on the tint too.
+            // color.category), ringed in the ground so it reads on the
+            // tint too; at night in the chart's casing, as the map's marks.
             <span
               aria-hidden
               data-testid="place-tab-category"
-              className="pointer-events-none absolute -top-0.5 -right-1 size-2.5 rounded-full ring-2 ring-background"
+              className="pointer-events-none absolute -top-0.5 -right-1 size-2.5 rounded-full ring-2 ring-background dark:ring-(--chart-casing)"
               style={{ backgroundColor: colourOf(category) }}
             />
           ),

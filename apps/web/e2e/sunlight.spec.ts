@@ -5,7 +5,8 @@ import { openMapSettings, pickControl, settle, slow } from "./helpers";
  * The chart in sunlight (lib/sunlight, index.css): Sunlight On (the Map
  * card's Look row, the owner, 2026-11-14) puts `data-chart-light="bright"` on <html>, under which
  * the chart's tiles are at more contrast, the course wider and black-cased
- * and the sheets solid white with black figures. Off takes it away. Auto
+ * and the sheets solid white with black figures by day (at night the dark
+ * sheets stay, their grey words and edges lifted). Off takes it away. Auto
  * reads the phone's light sensor, which the test's browser has none of.
  */
 
@@ -51,4 +52,20 @@ test("Sunlight On: the page is marked bright, the figure strip is solid white wi
   await page.reload();
   await settle(page);
   await expect(html).toHaveAttribute("data-chart-light", "normal");
+});
+
+test("Sunlight at night keeps the dark sheets: no white page in a dark cockpit (AIM 8-1-6)", async ({ page }) => {
+  test.setTimeout(slow(60_000));
+  // The device dark, the app's Appearance System: the night theme.
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  const html = page.locator("html");
+  await expect(html).toHaveAttribute("data-chart-light", "bright");
+  await expect(html).toHaveClass(/\bdark\b/);
+  const strip = page.locator('[data-slot="section-summary"]').first();
+  await expect(strip).toBeVisible();
+  // The night's own ground, never sunlight's white; its words light.
+  expect(await strip.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgb(255, 255, 255)");
+  expect(await strip.evaluate((el) => getComputedStyle(el).color)).not.toBe("rgb(0, 0, 0)");
 });
