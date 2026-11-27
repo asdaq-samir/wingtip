@@ -92,8 +92,11 @@ export const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(
 
 /** The room under a card's content (SheetCard), 16 points or the home
  *  indicator's inset: its last row clear of the screen's foot. A card's
- *  floating tab bar (CardTabBar) takes it back, so the bar rests in the
- *  same place scrolled to the end as it does pinned. */
+ *  floating tab bar in the card (CardTabBar, beside the side panel and on
+ *  a top sheet) takes it back, so the bar rests in the same place scrolled
+ *  to the end as it does pinned; on a phone's bottom sheet, where the bar
+ *  stands in the card's foot slot (sheet/CardFoot), the slot's height is
+ *  the room in its place (SheetCard). */
 export const CARD_FOOT_ROOM = "max(1rem, env(safe-area-inset-bottom))";
 
 /** What slides with a sheet, the popup and what is held against its slide:

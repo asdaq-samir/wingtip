@@ -2,13 +2,16 @@
 /**
  * A card's tab bar on a phone's bottom sheet stands in the card's foot
  * slot, outside the sliding cards (sheet/CardFoot), so nothing in it is
- * moved against the card's slide; elsewhere it stays in the card.
+ * moved against the card's slide; elsewhere it stays in the card. The
+ * slot's height is the card's room under it.
  */
 import { act, cleanup, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, expect, test } from "vitest";
 import { CardId } from "../../lib/sheetCards";
 import { CardFootSlot, InCardFoot } from "./CardFoot";
-import { cardFeetHost, inCardFoot, useCardFeet } from "./cardFeet";
+import { cardFeetHost, inCardFoot, putCardFoot, useCardFeet, useCardFootHeight } from "./cardFeet";
+import { useCardScrollRoom } from "./cardScrollRoom";
 
 afterEach(() => {
   cleanup();
@@ -51,4 +54,29 @@ test("on a phone's bottom sheet the bar is in the slot beside the sheet, not in 
   act(() => rerender(<Card shown={false} />));
   expect(screen.queryByTestId("bar")).toBeNull();
   expect(screen.getByTestId("viewport").querySelector("[data-card-foot]")?.hasAttribute("hidden")).toBe(true);
+});
+
+test("the slot's height is the card's end room and scroll padding under the bar", () => {
+  function Scroller({ footPx }: { footPx: number }) {
+    const [node, setNode] = useState<HTMLElement | null>(null);
+    useCardScrollRoom(node, footPx);
+    return <div ref={setNode} data-testid="scroller" />;
+  }
+  function Room() {
+    return <span data-testid="room">{useCardFootHeight("kosh")}</span>;
+  }
+  const both = (footPx: number) => (
+    <>
+      <Scroller footPx={footPx} />
+      <Room />
+    </>
+  );
+  const { rerender } = render(both(0));
+  expect(screen.getByTestId("room").textContent).toBe("0");
+  act(() => putCardFoot("kosh", { el: document.createElement("div"), shown: true, height: 76 }));
+  expect(screen.getByTestId("room").textContent).toBe("76");
+  rerender(both(76));
+  expect(screen.getByTestId("scroller").style.getPropertyValue("scroll-padding-bottom")).toBe("76px");
+  rerender(both(0));
+  expect(screen.getByTestId("scroller").style.getPropertyValue("scroll-padding-bottom")).toBe("");
 });

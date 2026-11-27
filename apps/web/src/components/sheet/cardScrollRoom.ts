@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /** What sticks over a card's scroller: its pinned head (PinnedHead's
- *  data-sheet-head) at the top, a bar of tabs (CardTabBar) at the foot. */
+ *  data-sheet-head) at the top, a bar of tabs (CardTabBar) at the foot
+ *  where the bar is in the card (the side panel, a top sheet). */
 const HEAD = "[data-sheet-head]";
 const FOOT = ".sticky.bottom-0";
 
@@ -12,15 +13,24 @@ const FOOT = ".sticky.bottom-0";
  * Measured, as a head with a line or a verdict under its name is taller
  * than any fixed room (the HIG audit of 2026-11-26, M2); with nothing
  * measured the scroller's own class keeps its room. Each is found as the
- * card's content is put in and changes, and measured as it resizes.
+ * card's content is put in and changes, and measured as it resizes. On a
+ * phone's bottom sheet the bar stands in the card's foot slot beside it
+ * (sheet/CardFoot), not in the scroller: its height is `footPx`.
  */
-export function useCardScrollRoom(scroller: HTMLElement | null) {
+export function useCardScrollRoom(scroller: HTMLElement | null, footPx = 0) {
+  const slotted = useRef(footPx);
+  useEffect(() => {
+    slotted.current = footPx;
+    if (!scroller) return;
+    if (footPx) scroller.style.setProperty("scroll-padding-bottom", `${footPx}px`);
+    else if (!scroller.querySelector(FOOT)) scroller.style.removeProperty("scroll-padding-bottom");
+  }, [scroller, footPx]);
   useEffect(() => {
     if (!scroller || typeof ResizeObserver === "undefined" || typeof MutationObserver === "undefined") return;
     let head: HTMLElement | null = null;
     let foot: HTMLElement | null = null;
     const room = (side: "top" | "bottom", el: HTMLElement | null) => {
-      const px = el?.offsetHeight;
+      const px = side === "bottom" && !el ? slotted.current : el?.offsetHeight;
       if (px) scroller.style.setProperty(`scroll-padding-${side}`, `${px}px`);
       else scroller.style.removeProperty(`scroll-padding-${side}`);
     };

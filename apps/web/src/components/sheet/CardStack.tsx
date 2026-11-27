@@ -14,7 +14,7 @@ import { PointerTapDiv } from "./PointerTapDiv";
 import { tapOpens } from "./sheetLayout";
 import { useCardScrollRoom } from "./cardScrollRoom";
 import { CardFootSlot } from "./CardFoot";
-import { inCardFoot } from "./cardFeet";
+import { inCardFoot, useCardFootHeight } from "./cardFeet";
 
 export interface StackProps {
   /** A phone's sheet: the cards are drawers with its sizes and its swipe.
@@ -198,6 +198,7 @@ function CardDrawer({
   // Its tab bar's slot at the screen's foot, in sight while it is the top
   // card, open and above the pill (sheet/CardFoot).
   const footShown = top && entry.state === "open" && entry.at !== undefined && at !== "peek";
+  const footPx = useCardFootHeight(id);
   return (
     <Drawer.Root
       // Mounted closed, opened once its size is set (the layout effect
@@ -301,7 +302,7 @@ function CardDrawer({
               )}
               {onPhone && fromBottom && top && p.grabber(at, ask)}
               <div className="flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">
-                <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} />
+                <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} footPx={footPx} />
               </div>
               {!(onPhone && fromBottom) && top && p.grabber(at, ask)}
             </Drawer.Popup>
@@ -325,7 +326,8 @@ function CardScroller({
   pill,
   raise,
   below,
-}: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void }) {
+  footPx,
+}: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void; footPx: number }) {
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
   const placed = useCallback(
     (node: HTMLElement | null) => {
@@ -334,7 +336,7 @@ function CardScroller({
     },
     [slot],
   );
-  useCardScrollRoom(scroller);
+  useCardScrollRoom(scroller, footPx);
   return (
     <PointerTapDiv
       onClick={pill ? (event) => tapOpens(event, raise) : undefined}

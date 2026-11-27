@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { create } from "zustand";
 import { CardId } from "../../lib/sheetCards";
 
@@ -42,4 +42,11 @@ export function useCardFootSlot(): HTMLElement | null | undefined {
     const foot = id ? s.feet[id] : undefined;
     return foot && (foot.shown ? foot.el : null);
   });
+}
+
+/** Card `id`'s foot slot's height, px, while it is in sight; 0 else: the
+ *  card's end room and scroll padding under its tab bar (SheetCard,
+ *  sheet/cardScrollRoom), as useFootBarHeight is FPL's page's. */
+export function useCardFootHeight(id: string | null | undefined): number {
+  return useCardFeet(useCallback((s) => (id ? (s.feet[id]?.height ?? 0) : 0), [id]));
 }
