@@ -19,7 +19,7 @@ struct MapLookTests {
     @Test func theDayLiftIsTheWebMapsContrastAndSaturation() throws {
         // MapLibre's raster-contrast and raster-saturation of 0.1, each a
         // factor of 1 / (1 - 0.1).
-        #expect(abs(ChartLift.contrast - 1.1111) < 0.001)
+        #expect(abs(ChartLift.factor(ChartLift.base) - 1.1111) < 0.001)
         #expect(abs(ChartLift.saturation - 1.1111) < 0.001)
     }
 

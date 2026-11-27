@@ -20,7 +20,7 @@ struct MarkDimTests {
     }
 
     @Test func thePlatesTakeTheMapsShade() {
-        #expect(MapExtrasInput().shaded(0.3).plateLook.shade == 0.3)
+        #expect(MapExtrasInput().shaded(0.3).plateLook.page.shade == 0.3)
     }
 
     /// Dimmed by colour, the web's DIM_BY_COLOUR: the colour times the
@@ -66,7 +66,10 @@ struct MarkDimTests {
         let later = MKPolylineRenderer(polyline: MKPolyline())
         later.strokeColor = .white
         _ = dim.take(later)
-        var w: CGFloat = 0, a: CGFloat = 0
-        #expect(try #require(later.strokeColor).getWhite(&w, alpha: &a) && abs(w - 0.5) < 1e-6)
+        // getRed, not getWhite: the dimmed colour is made in HSB, which
+        // getWhite may decline to convert.
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        #expect(try #require(later.strokeColor).getRed(&r, green: &g, blue: &b, alpha: &a))
+        #expect(abs(r - 0.5) < 1e-6 && abs(g - 0.5) < 1e-6 && abs(b - 0.5) < 1e-6)
     }
 }
