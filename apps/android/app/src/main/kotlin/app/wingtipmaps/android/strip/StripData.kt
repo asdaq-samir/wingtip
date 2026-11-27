@@ -22,7 +22,20 @@ import java.time.ZoneId
  */
 
 /** A finding, as the engine's go / no-go names them (lib/findings). */
-enum class Finding { OK, CAUTION, STOP, UNKNOWN, PENDING }
+enum class Finding {
+    OK, CAUTION, STOP, UNKNOWN, PENDING;
+
+    companion object {
+        /** The engine's or the planner's finding by its name (lib/findings). */
+        fun named(name: String?): Finding = when (name) {
+            "ok" -> OK
+            "caution" -> CAUTION
+            "stop" -> STOP
+            "pending" -> PENDING
+            else -> UNKNOWN
+        }
+    }
+}
 
 /** The verdict over the flight, in the Brief's words (the engine's
  *  gonogo_verdict_line, once the brief is on this phone). */
