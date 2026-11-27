@@ -159,6 +159,9 @@ export function parkLayers(map: MlMap) {
   parked.add(map);
 }
 
+/** Whether the map is being handed to the next tree (parkLayers), what it draws to be kept for that tree. */
+export const isParked = (map: MlMap) => parked.has(map);
+
 /** The map taken up again: every layer of the last tree is unclaimed until the new tree adds the same. */
 export function adoptLayers(map: MlMap) {
   parked.delete(map);
@@ -328,12 +331,62 @@ export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
 }
 
 /** A tap on this layer's features while mounted; the handler is read at
- *  the tap, so a new one each render costs nothing. */
-export function useGlTap(layers: string[], reach: number, rank: number, onTap: GlTap["onTap"]) {
-  const { addTap } = useGlMap();
+ *  the tap, so a new one each render costs nothing. With `onLift`, the
+ *  feature the tap will find is also handed over as the finger or the
+ *  mouse lifts (onTapLift), before MapLibre's click: what a card asks the
+ *  planner for, asked sooner. */
+export function useGlTap(
+  layers: string[],
+  reach: number,
+  rank: number,
+  onTap: GlTap["onTap"],
+  onLift?: (feature: MapGeoJSONFeature) => void,
+) {
+  const { map, addTap } = useGlMap();
   const handler = useEffectEvent(onTap);
+  const lift = useEffectEvent((f: MapGeoJSONFeature) => onLift?.(f));
+  const lifts = !!onLift;
   const ids = layers.join();
   useEffect(() => addTap({ layers: ids.split(","), reach, rank, onTap: (f, e) => handler(f, e) }), [addTap, ids, reach, rank]);
+  useEffect(() => {
+    if (!lifts) return;
+    const tap: GlTap = { layers: ids.split(","), reach, rank, onTap: () => {} };
+    return onTapLift(map, (point) => {
+      const hit = map.style ? tapHit(map, tap, point) : null;
+      if (hit) lift(hit);
+    });
+  }, [map, lifts, ids, reach, rank]);
+}
+
+/** How far a finger may move between press and lift and still be a tap, px (MapLibre's click tolerance is 3). */
+const TAP_SLOP_PX = 6;
+
+/** `lifted` at each lift within TAP_SLOP_PX of its press, with no second
+ *  finger down in between, at the point in the map's own pixels. At the
+ *  lift, not the press: at the press every pan and pinch paid a
+ *  queryRenderedFeatures on its first frame (the round-2 speed audit). */
+function onTapLift(map: MlMap, lifted: (point: { x: number; y: number }) => void): () => void {
+  const target = map.getCanvasContainer();
+  let press: { id: number; x: number; y: number } | null = null;
+  const pressed = (e: PointerEvent) => {
+    press = e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY } : null;
+  };
+  const up = (e: PointerEvent) => {
+    const was = press;
+    press = null;
+    if (!was || was.id !== e.pointerId || Math.hypot(e.clientX - was.x, e.clientY - was.y) > TAP_SLOP_PX) return;
+    const box = target.getBoundingClientRect();
+    lifted({ x: e.clientX - box.left, y: e.clientY - box.top });
+  };
+  const cancelled = () => void (press = null);
+  target.addEventListener("pointerdown", pressed);
+  target.addEventListener("pointerup", up);
+  target.addEventListener("pointercancel", cancelled);
+  return () => {
+    target.removeEventListener("pointerdown", pressed);
+    target.removeEventListener("pointerup", up);
+    target.removeEventListener("pointercancel", cancelled);
+  };
 }
 
 /** A tap on the chart that found nothing, while mounted. */

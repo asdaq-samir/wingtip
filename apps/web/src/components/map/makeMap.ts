@@ -46,6 +46,7 @@ import { overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
 import { chartLayersAs, chartRole, chartStyle, glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { fewerPixelsOnSoftware } from "../../lib/map/gl/softwareGl";
+import { RINGS_BY_FIELD } from "../../lib/map/gl/placedRings";
 
 /** The map GlMapShell makes (makeMap) and what every map of the page
  *  shares: the overlays' pictures, drawn once, the overlay tiles each map
@@ -121,6 +122,10 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     version: 8,
     sources: { ...chart?.sources, ...overlays?.sources },
     layers,
+    // Every ring drawn until the plan's airports keep them to their fields
+    // (placedRings), a reset going back to it: off, as the training map,
+    // which draws no airports, never sets it.
+    state: { [RINGS_BY_FIELD]: { default: false } },
     // The same variable font under a second name: MapLibre draws a name
     // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
     "font-faces": {
@@ -259,9 +264,12 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     m.once("render", ready);
   };
   const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
-  // At its first rest at the latest, once the chart has come.
+  // At its first rest at the latest, once the chart has come; at once
+  // with nothing to wait for (the chart None and no overlay archive known
+  // yet), where the map stood blank till REVEAL_LATEST_MS, 2.5 s.
+  const nothingWatched = noChart && !overlayIds.length;
   const rested = () => {
-    if (asked) ready();
+    if (asked || nothingWatched) ready();
   };
   m.on("sourcedata", tileIn);
   m.on("idle", rested);

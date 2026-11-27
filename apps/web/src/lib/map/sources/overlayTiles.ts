@@ -43,47 +43,73 @@ interface ProtocolHost {
 const protocol = new Protocol({ metadata: false });
 const registered = new WeakSet<ProtocolHost>();
 
+/** A tile being read or read lately: its bytes, how many of the map's
+ *  requests wait on it, whether a fetch ahead (prefetchRing) wants it kept
+ *  whatever they do, and its fetch's stop. */
+type Read = { data: Promise<Uint8Array>; waiting: number; ahead: boolean; done: boolean; stop: AbortController };
+
 /** The tiles fetched lately or ahead of the map asking (prefetchRing), by
  *  their pmtiles:// address, for every source that reads the archive (the
  *  airports' own and the rest, glOverlays) to have from one fetch; at most
  *  RECENT_KEPT, the oldest dropped first. */
-const recent = new Map<string, Promise<Uint8Array>>();
+const recent = new Map<string, Read>();
 const RECENT_KEPT = 200;
 /** Every tile fetched ahead already, so a rest after a rest asks only for
  *  the new ones; a few views' worth, then forgotten. */
 const asked = new Set<string>();
 const ASKED_KEPT = 4000;
-
 const TILE_URL = /^pmtiles:\/\/(.+\/([^/]+)\.pmtiles)\/(\d+)\/(\d+)\/(\d+)$/;
 
 /** A tile's bytes: fetched lately, else kept from an earlier visit
- *  (tileStore), else read from the archive and kept. A tile the archive
- *  lacks is empty, as pmtiles' own protocol answers for vector tiles. */
-function fetchTile(url: string): Promise<Uint8Array> | null {
-  const got = recent.get(url);
-  if (got) return got;
-  const m = TILE_URL.exec(url);
-  if (!m) return null;
-  const [, archiveUrl, name, z, x, y] = m as unknown as [string, string, string, string, string, string];
-  const at = [+z, +x, +y] as const;
-  const read = (async () => {
-    const kept = await keptTile(name, ...at);
-    if (kept) return kept;
-    const r = await archiveAt(archiveUrl).getZxy(...at);
-    const data = r ? new Uint8Array(r.data) : new Uint8Array();
-    if (data.length) void keepTile(name, ...at, data);
-    return data;
-  })();
-  recent.set(url, read);
-  read.catch(() => recent.delete(url));
-  while (recent.size > RECENT_KEPT) recent.delete(recent.keys().next().value!);
-  return read;
+ *  (tileStore), else read from the archive and kept, an empty one too (a
+ *  tile the archive lacks is empty, as pmtiles' own protocol answers for
+ *  vector tiles). With the `signal` of the map's request: the archive's
+ *  fetch stopped once every request waiting on it is (a pan past it), unless
+ *  a fetch ahead wants it, where getZxy read on whatever was aborted. */
+function fetchTile(url: string, signal?: AbortSignal): Promise<Uint8Array> | null {
+  let read = recent.get(url);
+  if (!read) {
+    const m = TILE_URL.exec(url);
+    if (!m) return null;
+    const [, archiveUrl, name, z, x, y] = m as unknown as [string, string, string, string, string, string];
+    const at = [+z, +x, +y] as const;
+    const stop = new AbortController();
+    const data = (async () => {
+      const kept = await keptTile(name, ...at);
+      if (kept) return kept;
+      const r = await archiveAt(archiveUrl).getZxy(...at, stop.signal);
+      const bytes = r ? new Uint8Array(r.data) : new Uint8Array();
+      void keepTile(name, ...at, bytes);
+      return bytes;
+    })();
+    const made: Read = { data, waiting: 0, ahead: false, done: false, stop };
+    read = made;
+    data.then(
+      () => void (made.done = true),
+      () => recent.get(url) === made && recent.delete(url),
+    );
+    recent.set(url, read);
+    while (recent.size > RECENT_KEPT) recent.delete(recent.keys().next().value!);
+  }
+  const held = read;
+  if (!signal) held.ahead = true;
+  else {
+    held.waiting++;
+    signal.addEventListener(
+      "abort",
+      () => {
+        if (--held.waiting === 0 && !held.ahead && !held.done) held.stop.abort();
+      },
+      { once: true },
+    );
+  }
+  return held.data;
 }
 
 /** The protocol's tile, through fetchTile; each answer a copy, as MapLibre
  *  hands the bytes to its worker. */
 const tile: Protocol["tilev4"] = async (params, abort) => {
-  const read = params.type === "json" ? null : fetchTile(params.url);
+  const read = params.type === "json" ? null : fetchTile(params.url, abort.signal);
   if (!read) return protocol.tilev4(params, abort);
   const data = await read;
   abort.signal.throwIfAborted();

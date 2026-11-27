@@ -6,8 +6,9 @@
 // `dark` class came only from next-themes' effect after React's first
 // render, so every load at night opened on a #ffffff page in a dark
 // cockpit (AIM 8-1-6, dark adaptation; the round-4 themes audit). The
-// keys are the app's own: THEME_KEY (lib/prefs/migrate) and the
-// preferences' persist name (lib/preferences), pinned by firstFrame.test.
+// keys are the app's own: THEME_KEY (lib/prefs/theme) and the
+// preferences' persist name (lib/preferences), and the looks lib/brand's
+// BRANDS, all pinned by firstFrame.test.
 (function () {
   var root = document.documentElement;
   var theme = null;
@@ -21,7 +22,10 @@
   var dark = theme === "dark" || (theme !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   root.classList.toggle("dark", dark);
   root.style.colorScheme = dark ? "dark" : "light";
-  root.dataset.brand = typeof kept.brand === "string" ? kept.brand : "wingtip";
+  // One of the four looks, or the default: a kept name no look has (an
+  // old one, a hand-edited store) left the page without a look's tokens.
+  var looks = ["wingtip", "cockpit", "ink", "native"];
+  root.dataset.brand = looks.indexOf(kept.brand) >= 0 ? kept.brand : "wingtip";
   // Sunlight "on" is bright at once; Auto waits for the light sensor (lib/sunlight).
   root.dataset.chartLight = kept.chartLight === "on" ? "bright" : "normal";
 })();

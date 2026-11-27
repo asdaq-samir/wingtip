@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { THEME_KEY } from "./prefs/theme";
 import { usePreferences } from "./preferences";
+import { BRANDS } from "./brand";
 
 /** public/first-frame.js, index.html's blocking head script: the night
  *  class, the look and the sunlight scheme on <html> before the body
@@ -62,5 +63,11 @@ describe("first-frame.js", () => {
     load(true);
     expect(root.dataset.brand).toBe("wingtip");
     expect(root.dataset.chartLight).toBe("normal");
+  });
+
+  it("knows the four looks, and puts the default on for a name none has", () => {
+    for (const { value } of BRANDS) expect(SCRIPT).toContain(JSON.stringify(value));
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ state: { brand: "dark-bright" }, version: 12 }));
+    expect(load(true).dataset.brand).toBe("wingtip");
   });
 });
