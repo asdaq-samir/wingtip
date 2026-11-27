@@ -33,8 +33,6 @@ object ClearanceWords {
         if (c.read.squawk != null) add("squawk")
     }
 
-    private fun capital(s: String) = s.replaceFirstChar { it.uppercase() }
-
     /** The lines for a read back of `c` by the engine's readback_check:
      *  the parts read back in one tick ("Limit, route and squawk read
      *  back"), then one line for each part missed ("Squawk 4512 not read
@@ -47,10 +45,10 @@ object ClearanceWords {
         val lines = mutableListOf<Line>()
         if (read.isNotEmpty()) {
             val list = if (read.size == 1) read[0] else read.dropLast(1).joinToString(", ") + " and " + read.last()
-            lines += Line(true, capital(list) + " read back")
+            lines += Line(true, Format.capital(list) + " read back")
         }
         for (item in check.items) {
-            val named = capital(PARTS.firstOrNull { it.first == item.item }?.second ?: item.item)
+            val named = Format.capital(PARTS.firstOrNull { it.first == item.item }?.second ?: item.item)
             lines += if (item.said != null) Line(false, "$named: ${item.said} said, ${item.cleared} cleared") else Line(false, "$named ${item.cleared} not read back")
         }
         return lines
@@ -116,11 +114,12 @@ object ClearanceWords {
             r.maintainFt?.let { "Maintain " + (if (r.vfr) "VFR " else "") + (r.maintainLimit?.let { l -> "$l " } ?: "") + said(it) },
             r.expectFt?.let { "expect " + said(it) + (r.expectMin?.let { m -> " $m min after departure" } ?: "") },
         )
-        return if (parts.isEmpty()) null else capital(parts.joinToString(", "))
+        return if (parts.isEmpty()) null else Format.capital(parts.joinToString(", "))
     }
 
     /** "Chicago Departure 125.0", the facility in words where said. */
     fun frequency(c: Clearance): String? = c.read.frequency?.let { "${capitalWords(c.read.facility.orEmpty())} $it".trim() }
 
-    private fun capitalWords(s: String) = s.split(" ").joinToString(" ") { capital(it) }
+    /** Each word begun with a capital: a facility's or a place's name as read. */
+    fun capitalWords(s: String) = s.split(" ").joinToString(" ") { Format.capital(it) }
 }

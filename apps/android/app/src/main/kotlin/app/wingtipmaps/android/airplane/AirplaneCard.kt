@@ -103,7 +103,9 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
     val history = rememberHistoryOffered(tail) || airplane.record != null
     LaunchedEffect(tail, history) { if (tail != null) lookup.open(tail, flights = history) }
     val record = looked.record.takeIf { tail != null }
-    val line = record?.let { r -> listOfNotNull(listOfNotNull(r.manufacturer, r.model).joinToString(" ").ifEmpty { null }, r.year?.toString()).joinToString(", ").ifEmpty { null } }
+    // "Piper PA-28, 1971": its maker and model in a few words, the planner's
+    // make_short and model_short (the engine's airplane_short_type), as the web's card.
+    val line = record?.let { r -> listOfNotNull(listOfNotNull(r.makeShort, r.modelShort).joinToString(" ").ifEmpty { null }, r.year?.toString()).joinToString(", ").ifEmpty { null } }
     val fly: () -> Unit = {
         val choice = FlyThis.choice(airplane.tail, at.type ?: airplane.aircraft.ifEmpty { null }, airplane.record, books.keys)
         FlightChoices.of(context).setTail(choice.tail)

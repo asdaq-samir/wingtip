@@ -104,6 +104,10 @@ object Format {
      *  ft": as ATC gives traffic's altitude in hundreds of feet (FAA Order
      *  JO 7110.65, 2-1-21), one form wherever a target is shown (the web's
      *  reportedAltitude). */
+    /** Words begun with a capital, the rest as given ("arrival" as
+     *  "Arrival"): a line's or a name's first word. The app's one copy. */
+    fun capital(words: String): String = words.replaceFirstChar { it.uppercaseChar() }
+
     fun reportedAltitude(ft: Double): String = String.format(Locale.US, "%,d ft", (ft / 100).roundToLong() * 100)
 
     /** A distance in whole nautical miles, "38 nm": a field's distance on

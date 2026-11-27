@@ -16,7 +16,6 @@ enum class ItemAction { DIRECT, FREQUENCY, SQUAWK }
  * three figures (AIM 4-2-10), times in UTC with a Z (AIM 4-2-12).
  */
 object AtcWords {
-    private fun capital(words: String) = words.replaceFirstChar { it.uppercase() }
     // Three figures, north as 360, never 000 (FAA Order JO 7110.65, 2-4-17).
     private fun three(deg: Int) = Format.headingFigures(deg.toDouble())
 
@@ -33,29 +32,29 @@ object AtcWords {
     fun itemWords(item: AtcItem, altitude: (Double) -> String): String {
         val alt = { ft: Int? -> ft?.let { altitude(it.toDouble()) }.orEmpty() }
         return when (item.kind) {
-            "altitude" -> "${capital(item.verb ?: "maintain")}${item.limit?.let { " $it" }.orEmpty()} ${alt(item.ft)}"
+            "altitude" -> "${Format.capital(item.verb ?: "maintain")}${item.limit?.let { " $it" }.orEmpty()} ${alt(item.ft)}"
             "expect" -> "Expect ${alt(item.ft)}" + (item.min?.let { " $it min after departure" }.orEmpty())
             "heading" -> when {
                 item.byDeg != null -> listOfNotNull("Turn", item.turn, "${item.byDeg}°").joinToString(" ")
                 item.deg == null -> "Runway heading"
-                else -> "${item.turn?.let { "${capital(it)} heading" } ?: "Heading"} ${three(item.deg)}"
+                else -> "${item.turn?.let { "${Format.capital(it)} heading" } ?: "Heading"} ${three(item.deg)}"
             }
             "direct" -> "Direct ${item.said.orEmpty().uppercase()}"
             "route" -> {
                 val via = item.places.orEmpty().joinToString(", ") { it.uppercase() }
-                (item.limit?.let { "Cleared to ${capital(it)}" } ?: "Cleared") + (if (via.isEmpty()) "" else " via $via") +
+                (item.limit?.let { "Cleared to ${Format.capital(it)}" } ?: "Cleared") + (if (via.isEmpty()) "" else " via $via") +
                     (if (item.asFiled == true) ", then as filed" else "")
             }
             "class_b" -> "Cleared into Class B"
             "hold" -> hold(item)
-            "frequency" -> "${item.facility?.let { "${capital(it)} " } ?: "Contact "}${item.mhz.orEmpty()}"
+            "frequency" -> "${item.facility?.let { "${Format.capital(it)} " } ?: "Contact "}${item.mhz.orEmpty()}"
             "squawk" -> "Squawk ${item.code.orEmpty()}"
             "altimeter" -> "Altimeter ${item.inhg.orEmpty()}"
             "approach" -> "${if (item.cleared == true) "Cleared" else "Expect"} ${item.name.orEmpty()}${item.runway?.let { " $it" }.orEmpty()} approach"
             "runway" ->
                 if (item.what == "hold short") "Hold short runway ${item.runway.orEmpty()}"
                 else "Runway ${item.runway.orEmpty()}" + (item.what?.let { RUNWAY[it] }?.let { ", $it" }.orEmpty())
-            else -> capital(item.kind.replace('_', ' '))
+            else -> Format.capital(item.kind.replace('_', ' '))
         }
     }
 
@@ -83,7 +82,7 @@ object AtcWords {
     fun readbackLines(check: EngineContract.ReadbackCheckAnswer): List<String> {
         if (check.items.isEmpty()) return listOf("Readback complete")
         return check.items.sortedByDescending { it.required }.map { i ->
-            i.said?.let { "${capital(i.item)}: $it said, ${i.cleared} given" } ?: "${capital(i.item)} ${i.cleared} not read back"
+            i.said?.let { "${Format.capital(i.item)}: $it said, ${i.cleared} given" } ?: "${Format.capital(i.item)} ${i.cleared} not read back"
         }
     }
 
