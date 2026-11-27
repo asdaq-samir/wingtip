@@ -123,10 +123,13 @@ pub fn flight_level(ft: Option<f64>) -> String {
 }
 
 /// Ceiling and visibility the way a briefer says them, "3,500 ft · 6 sm",
-/// "no ceiling · —" (features/plan/format ceilingAndVisibility).
+/// "no ceiling · —" (features/plan/format ceilingAndVisibility). The
+/// visibility to the hundredth, down, as the web's miles writes it: one
+/// read from metres (4000 m is 2.4854... sm) printed every figure of its
+/// float, and rounding it up would show more than was seen.
 pub fn ceiling_and_visibility(ceiling_ft: Option<f64>, visibility_sm: Option<f64>) -> String {
     let ceiling = ceiling_ft.map_or_else(|| "no ceiling".to_owned(), |ft| format!("{} ft", alt_ft(Some(ft))));
-    let visibility = visibility_sm.map_or_else(|| "—".to_owned(), |sm| format!("{} sm", js_num(sm)));
+    let visibility = visibility_sm.map_or_else(|| "—".to_owned(), |sm| format!("{} sm", js_num((sm * 100.0 + 1e-9).floor() / 100.0)));
     format!("{ceiling} · {visibility}")
 }
 

@@ -191,7 +191,6 @@ export function useFlightBriefing({
       flowPrograms: flowNow?.programs,
       routeFigures,
       specialUse: specialUse.map(({ area, when }) => ({ name: area.name, when })),
-      tfrsUnchecked: unchecked("tfrs"),
       nav,
       problem,
       legs,

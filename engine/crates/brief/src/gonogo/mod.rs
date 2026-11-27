@@ -50,6 +50,7 @@ pub mod frat;
 pub mod glance;
 pub mod glance_calls;
 pub mod icing;
+pub mod input;
 pub mod minimums;
 pub mod pass_times;
 pub mod permission;

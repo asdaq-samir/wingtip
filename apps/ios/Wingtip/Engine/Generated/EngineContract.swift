@@ -5493,6 +5493,162 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct GonogoInputInput: Codable, Equatable, Sendable {
+        /// The briefing is in.
+        var briefed: Bool
+        /// Why the briefing could not be had, in a line; null where it did not fail.
+        var failed: String?
+        /// The flight is planned IFR.
+        var ifr: Bool
+        /// The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing.
+        var weatherUnavailable: [String]?
+        /// The briefing's worst forecast along the route; null with no briefing.
+        var forecast: EngineContract.GonogoInputInputForecast?
+        /// The briefing's reasons for AIM 7-1-5's "VFR flight not recommended"; dropped under IFR.
+        var vfrNotRecommended: [String]?
+        /// Where the weather is under the pilot's own minimums (minimums).
+        var underMinimums: [String]?
+        /// The icing finding's lines, in order: one line of them, joined.
+        var icing: [String]?
+        /// Under IFR, the forecast icing could not be had.
+        var icingUnchecked: Bool?
+        /// The fields whose ceiling is reported or forecast with no height.
+        var ceilingsUnknown: [String]?
+        /// The SIGMETs and G-AIRMETs along the route, by name.
+        var hazards: [String]?
+        /// The ITWS alerts in force now at the route's airports, in words.
+        var terminalAlerts: [String]?
+        /// The Command Center's programs at the route's airports, in words.
+        var flowPrograms: [String]?
+        /// gonogo_route_figures' answer: the fuel's and the TFRs'.
+        var routeFigures: EngineContract.GonogoInputInputRouteFigures
+        /// The special-use areas the legs cross, each with when it is in use at the pass.
+        var specialUse: [EngineContract.GonogoInputInputSpecialUseItem]?
+        /// The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.
+        var nav: EngineContract.GonogoInputInputNav?
+        /// No VFR altitude fits, in a line.
+        var problem: String?
+        /// Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211(a)).
+        var legsFt: [Double]?
+        /// The nav log's totals are in.
+        var totals: Bool?
+        /// The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding.
+        var aircraft: [String: OpenAPIValueContainer]?
+        /// The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).
+        var runwayChecks: [[String: OpenAPIValueContainer]]?
+        /// The airplane has a POH loading.
+        var loading: Bool?
+        /// gonogo_balance's answer with the pilot's own load; null with no load.
+        var loaded: EngineContract.GonogoInputInputLoaded?
+
+        enum CodingKeys: String, CodingKey {
+            case briefed
+            case failed
+            case ifr
+            case weatherUnavailable = "weather_unavailable"
+            case forecast
+            case vfrNotRecommended = "vfr_not_recommended"
+            case underMinimums = "under_minimums"
+            case icing
+            case icingUnchecked = "icing_unchecked"
+            case ceilingsUnknown = "ceilings_unknown"
+            case hazards
+            case terminalAlerts = "terminal_alerts"
+            case flowPrograms = "flow_programs"
+            case routeFigures = "route_figures"
+            case specialUse = "special_use"
+            case nav
+            case problem
+            case legsFt = "legs_ft"
+            case totals
+            case aircraft
+            case runwayChecks = "runway_checks"
+            case loading
+            case loaded
+        }
+    }
+
+    /// The briefing's worst forecast along the route; null with no briefing.
+    nonisolated struct GonogoInputInputForecast: Codable, Equatable, Sendable {
+        var minCeilingFt: Double?
+        var minVisibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case minCeilingFt = "min_ceiling_ft"
+            case minVisibilitySm = "min_visibility_sm"
+        }
+    }
+
+    /// gonogo_balance's answer with the pilot's own load; null with no load.
+    nonisolated struct GonogoInputInputLoaded: Codable, Equatable, Sendable {
+        var takeoff: EngineContract.GonogoInputInputLoadedTakeoff
+        var problems: [String]
+    }
+
+    nonisolated struct GonogoInputInputLoadedTakeoff: Codable, Equatable, Sendable {
+        var weightLb: Double
+        var armIn: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case weightLb = "weight_lb"
+            case armIn = "arm_in"
+        }
+    }
+
+    /// The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.
+    nonisolated struct GonogoInputInputNav: Codable, Equatable, Sendable {
+        var flown: String?
+        var altitudeFt: Double?
+        var options: [EngineContract.GonogoInputInputNavOptionsItem]?
+        var cautions: [EngineContract.GonogoInputInputNavCautionsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case flown
+            case altitudeFt = "altitude_ft"
+            case options
+            case cautions
+        }
+    }
+
+    nonisolated struct GonogoInputInputNavCautionsItem: Codable, Equatable, Sendable {
+        var reasons: [String]
+    }
+
+    nonisolated struct GonogoInputInputNavOptionsItem: Codable, Equatable, Sendable {
+        var kind: String
+        var steps: [EngineContract.GonogoInputInputNavOptionsItemStepsItem]
+    }
+
+    nonisolated struct GonogoInputInputNavOptionsItemStepsItem: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+        }
+    }
+
+    /// gonogo_route_figures' answer: the fuel's and the TFRs'.
+    nonisolated struct GonogoInputInputRouteFigures: Codable, Equatable, Sendable {
+        var leastMarginGal: Double?
+        var requiredGal: Double?
+        var reserveMin: Double?
+        var tfrsInForce: [String]
+        var tfrsNear: Double
+
+        enum CodingKeys: String, CodingKey {
+            case leastMarginGal = "least_margin_gal"
+            case requiredGal = "required_gal"
+            case reserveMin = "reserve_min"
+            case tfrsInForce = "tfrs_in_force"
+            case tfrsNear = "tfrs_near"
+        }
+    }
+
+    nonisolated struct GonogoInputInputSpecialUseItem: Codable, Equatable, Sendable {
+        var name: String
+        var when: String
+    }
+
     nonisolated struct GonogoInspections: Codable, Equatable, Sendable {
         /// yyyy-mm-dd, 14 CFR 91.409(a).
         var annualGoodThrough: String?

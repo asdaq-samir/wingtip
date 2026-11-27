@@ -27,21 +27,6 @@ def ceiling_and_visibility(ceiling_ft: float | None, visibility_sm: float | None
     return ask("words_ceiling_and_visibility", ceiling_ft=ceiling_ft, visibility_sm=visibility_sm)
 
 
-#: An altitude plan's name (features/plan/format PLAN_NAME): the planner's
-#: four (wingtip.navlog.altitude_profiles).
-PLAN_NAME = {"lowest": "Lowest", "highest": "Highest", "fastest": "Fastest", "economical": "Economical"}
-
-#: What each weather source is called when a pilot is told it could not
-#: be checked (FlightBriefingView's WEATHER_SOURCE_LABEL).
-WEATHER_SOURCE_LABEL = {
-    "hazards": "SIGMETs",
-    "forecast": "the TAF forecast",
-    "metars": "current METARs",
-    "tfrs": "TFRs",
-    "pireps": "pilot reports",
-    "gairmets": "G-AIRMETs",
-}
-
 # The FAA's own words in the app's -- its capitals in sentence case, the
 # advisories' intensities and hazards -- are the shared engine's
 # (wingtip_engine::wording, through wingtip_native.call), the web's and the

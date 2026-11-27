@@ -5595,6 +5595,193 @@ object EngineContract {
     )
 
     @Serializable
+    data class GonogoInputInput(
+        /**
+         * The briefing is in.
+         */
+        val briefed: Boolean,
+        /**
+         * Why the briefing could not be had, in a line; null where it did not fail.
+         */
+        val failed: String? = null,
+        /**
+         * The flight is planned IFR.
+         */
+        val ifr: Boolean,
+        /**
+         * The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing.
+         */
+        @SerialName("weather_unavailable")
+        val weatherUnavailable: List<String>? = null,
+        /**
+         * The briefing's worst forecast along the route; null with no briefing.
+         */
+        val forecast: EngineContract.GonogoInputInputForecast? = null,
+        /**
+         * The briefing's reasons for AIM 7-1-5's "VFR flight not recommended"; dropped under IFR.
+         */
+        @SerialName("vfr_not_recommended")
+        val vfrNotRecommended: List<String>? = null,
+        /**
+         * Where the weather is under the pilot's own minimums (minimums).
+         */
+        @SerialName("under_minimums")
+        val underMinimums: List<String>? = null,
+        /**
+         * The icing finding's lines, in order: one line of them, joined.
+         */
+        val icing: List<String>? = null,
+        /**
+         * Under IFR, the forecast icing could not be had.
+         */
+        @SerialName("icing_unchecked")
+        val icingUnchecked: Boolean? = null,
+        /**
+         * The fields whose ceiling is reported or forecast with no height.
+         */
+        @SerialName("ceilings_unknown")
+        val ceilingsUnknown: List<String>? = null,
+        /**
+         * The SIGMETs and G-AIRMETs along the route, by name.
+         */
+        val hazards: List<String>? = null,
+        /**
+         * The ITWS alerts in force now at the route's airports, in words.
+         */
+        @SerialName("terminal_alerts")
+        val terminalAlerts: List<String>? = null,
+        /**
+         * The Command Center's programs at the route's airports, in words.
+         */
+        @SerialName("flow_programs")
+        val flowPrograms: List<String>? = null,
+        /**
+         * gonogo_route_figures' answer: the fuel's and the TFRs'.
+         */
+        @SerialName("route_figures")
+        val routeFigures: EngineContract.GonogoInputInputRouteFigures,
+        /**
+         * The special-use areas the legs cross, each with when it is in use at the pass.
+         */
+        @SerialName("special_use")
+        val specialUse: List<EngineContract.GonogoInputInputSpecialUseItem>? = null,
+        /**
+         * The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.
+         */
+        val nav: EngineContract.GonogoInputInputNav? = null,
+        /**
+         * No VFR altitude fits, in a line.
+         */
+        val problem: String? = null,
+        /**
+         * Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211(a)).
+         */
+        @SerialName("legs_ft")
+        val legsFt: List<Double>? = null,
+        /**
+         * The nav log's totals are in.
+         */
+        val totals: Boolean? = null,
+        /**
+         * The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding.
+         */
+        val aircraft: Map<String, JsonElement>? = null,
+        /**
+         * The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).
+         */
+        @SerialName("runway_checks")
+        val runwayChecks: List<Map<String, JsonElement>>? = null,
+        /**
+         * The airplane has a POH loading.
+         */
+        val loading: Boolean? = null,
+        /**
+         * gonogo_balance's answer with the pilot's own load; null with no load.
+         */
+        val loaded: EngineContract.GonogoInputInputLoaded? = null,
+    )
+
+    /**
+     * The briefing's worst forecast along the route; null with no briefing.
+     */
+    @Serializable
+    data class GonogoInputInputForecast(
+        @SerialName("min_ceiling_ft")
+        val minCeilingFt: Double? = null,
+        @SerialName("min_visibility_sm")
+        val minVisibilitySm: Double? = null,
+    )
+
+    /**
+     * gonogo_balance's answer with the pilot's own load; null with no load.
+     */
+    @Serializable
+    data class GonogoInputInputLoaded(
+        val takeoff: EngineContract.GonogoInputInputLoadedTakeoff,
+        val problems: List<String>,
+    )
+
+    @Serializable
+    data class GonogoInputInputLoadedTakeoff(
+        @SerialName("weight_lb")
+        val weightLb: Double,
+        @SerialName("arm_in")
+        val armIn: Double? = null,
+    )
+
+    /**
+     * The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.
+     */
+    @Serializable
+    data class GonogoInputInputNav(
+        val flown: String? = null,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        val options: List<EngineContract.GonogoInputInputNavOptionsItem>? = null,
+        val cautions: List<EngineContract.GonogoInputInputNavCautionsItem>? = null,
+    )
+
+    @Serializable
+    data class GonogoInputInputNavCautionsItem(
+        val reasons: List<String>,
+    )
+
+    @Serializable
+    data class GonogoInputInputNavOptionsItem(
+        val kind: String,
+        val steps: List<EngineContract.GonogoInputInputNavOptionsItemStepsItem>,
+    )
+
+    @Serializable
+    data class GonogoInputInputNavOptionsItemStepsItem(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+    )
+
+    /**
+     * gonogo_route_figures' answer: the fuel's and the TFRs'.
+     */
+    @Serializable
+    data class GonogoInputInputRouteFigures(
+        @SerialName("least_margin_gal")
+        val leastMarginGal: Double? = null,
+        @SerialName("required_gal")
+        val requiredGal: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double? = null,
+        @SerialName("tfrs_in_force")
+        val tfrsInForce: List<String>,
+        @SerialName("tfrs_near")
+        val tfrsNear: Double,
+    )
+
+    @Serializable
+    data class GonogoInputInputSpecialUseItem(
+        val name: String,
+        val `when`: String,
+    )
+
+    @Serializable
     data class GonogoInspections(
         /**
          * yyyy-mm-dd, 14 CFR 91.409(a).

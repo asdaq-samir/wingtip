@@ -121,13 +121,13 @@ gonogo_glance_lines
 gonogo_icing
 gonogo_icing_line
 gonogo_icing_unchecked
+gonogo_input
 gonogo_pass_minutes
 gonogo_picked_end
 gonogo_risk
 gonogo_risk_line
 gonogo_route_figures
 gonogo_runway_checks
-gonogo_runway_findings
 gonogo_runway_flown
 gonogo_runway_in_use
 gonogo_runway_number

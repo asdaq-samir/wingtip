@@ -1,15 +1,12 @@
 import type { Briefing, Leg, NavLogAltitude, Totals } from "../../lib/api/types";
-import { ceilingAndVisibility, PLAN_NAME, type useLoad } from "../plan";
-import { flightLevel, grouped } from "../../lib/format";
-import { armText } from "../../lib/weightBalance";
+import type { useLoad } from "../plan";
 import { itwsLines, programLines } from "../../lib/liveReports";
 import { riskLine, type assess } from "../../lib/frat";
 import type { briefVerdict } from "../../lib/verdict";
-import { altitudeRange, WEATHER_SOURCE_LABEL } from "./briefingFigures";
 import type { runwayChecks } from "./runwayCheck";
 import { callEngine } from "../../lib/engine/engine";
 
-type VerdictInput = Parameters<typeof briefVerdict>[0]["input"];
+type VerdictInput = NonNullable<Parameters<typeof briefVerdict>[0]["input"]>;
 
 interface VerdictInputs {
   briefing: Briefing | null;
@@ -23,8 +20,7 @@ interface VerdictInputs {
   itwsAlerts: Parameters<typeof itwsLines>[0] | undefined;
   flowPrograms: Parameters<typeof programLines>[0] | undefined;
   routeFigures: ReturnType<typeof callEngine<"gonogo_route_figures">>;
-  specialUse: NonNullable<VerdictInput>["airspace"]["specialUse"];
-  tfrsUnchecked: boolean;
+  specialUse: VerdictInput["airspace"]["specialUse"];
   nav: NavLogAltitude | null;
   problem: string | null;
   legs: Leg[];
@@ -36,7 +32,10 @@ interface VerdictInputs {
 }
 
 /** What the engine's Go / No-Go is asked (gonogo_brief): each part of the
- *  flight's facts as the tabs read them. */
+ *  flight's facts put together by the engine (gonogo_input, the planner's
+ *  very copy), the risk the page's own. Only the shapes are made here.
+ *  The briefing's own reasons for VFR not recommended go in, which the
+ *  engine drops under IFR as `vnrReasons` does. */
 export function verdictInput({
   briefing,
   failed,
@@ -50,7 +49,6 @@ export function verdictInput({
   flowPrograms,
   routeFigures,
   specialUse,
-  tfrsUnchecked,
   nav,
   problem,
   legs,
@@ -60,78 +58,79 @@ export function verdictInput({
   totals,
   assessment,
 }: VerdictInputs): VerdictInput {
-  const leastMarginGal = routeFigures.least_margin_gal;
-  const chosen = nav?.options.find((o) => o.kind === nav.flown);
+  const s = callEngine("gonogo_input", {
+    briefed: !!briefing,
+    failed,
+    ifr,
+    weather_unavailable: briefing?.weather_unavailable ?? [],
+    forecast: briefing?.forecast ?? null,
+    vfr_not_recommended: vnrReasons,
+    under_minimums: underMine,
+    icing: icingLines,
+    icing_unchecked: icingError,
+    hazards: hazardNames,
+    terminal_alerts: itwsLines(itwsAlerts ?? []),
+    flow_programs: programLines(flowPrograms ?? []),
+    route_figures: routeFigures,
+    special_use: specialUse,
+    nav,
+    problem,
+    legs_ft: legs.map((leg) => leg.altitude_ft),
+    totals: !!totals,
+    aircraft: nav?.aircraft ?? null,
+    runway_checks: checks.map((c) => ({
+      ident: c.field.ident,
+      headwind_kt: c.headwindKt,
+      crosswind_over: c.crosswindOver,
+      unchecked: c.unchecked,
+      distances: c.distances,
+    })),
+    loading: !!loading,
+    loaded: loaded ? { takeoff: { weight_lb: loaded.takeoff.weightLb, arm_in: loaded.takeoff.armIn }, problems: loaded.problems } : null,
+  });
+  // The engine's sections in the page's names (lib/verdict's VerdictInput).
+  const { weather: w, airspace: a, altitude: h, fuel: f, runways: r, balance: b } = s;
   return {
     weather: {
-      pending: !briefing && !failed,
-      failed,
-      vfrNotRecommended: vnrReasons,
-      underMinimums: underMine,
-      icing: icingLines.length ? icingLines.join("; ") : null,
-      hazards: hazardNames,
-      unchecked: [
-        ...(briefing?.weather_unavailable ?? []).filter((w) => w !== "tfrs").map((w) => WEATHER_SOURCE_LABEL[w]),
-        ...(ifr && icingError ? ["the forecast icing"] : []),
-      ],
-      worst:
-        briefing && (briefing.forecast.min_ceiling_ft != null || briefing.forecast.min_visibility_sm != null)
-          ? ceilingAndVisibility(briefing.forecast.min_ceiling_ft, briefing.forecast.min_visibility_sm)
-          : null,
-      terminalAlerts: itwsLines(itwsAlerts ?? []),
-      flowPrograms: programLines(flowPrograms ?? []),
-      ifr,
+      pending: !!w.pending,
+      failed: w.failed ?? null,
+      vfrNotRecommended: w.vfr_not_recommended ?? [],
+      underMinimums: w.under_minimums ?? [],
+      icing: w.icing ?? null,
+      hazards: w.hazards ?? [],
+      unchecked: w.unchecked ?? [],
+      worst: w.worst ?? null,
+      terminalAlerts: w.terminal_alerts ?? [],
+      flowPrograms: w.flow_programs ?? [],
+      ifr: !!w.ifr,
     },
-    airspace: {
-      pending: !briefing && !failed,
-      unchecked: !!failed || tfrsUnchecked,
-      inForce: routeFigures.tfrs_in_force,
-      near: routeFigures.tfrs_near,
-      specialUse: specialUse,
-    },
+    airspace: { pending: !!a.pending, unchecked: !!a.unchecked, inForce: a.in_force ?? [], near: a.near ?? 0, specialUse },
     altitude: {
-      pending: !nav,
-      problem,
-      cautions: nav?.cautions.flatMap((c) => c.reasons) ?? [],
-      flown: !nav
-        ? null
-        : nav.flown === "custom"
-          ? `${flightLevel(nav.altitude_ft)}, your own`
-          : `${altitudeRange(nav)}${chosen ? ` · ${PLAN_NAME[chosen.kind]} plan` : ""}`,
-      // The engine's oxygen finding (14 CFR 91.211(a)): the highest leg, and the airplane's oxygen.
-      highestFt: legs.length ? Math.max(...legs.map((leg) => leg.altitude_ft)) : null,
-      oxygen: !!(nav?.aircraft?.supplemental_oxygen || nav?.aircraft?.pressurized),
+      pending: !!h.pending,
+      problem: h.problem ?? null,
+      cautions: h.cautions ?? [],
+      flown: h.flown ?? null,
+      highestFt: h.highest_ft ?? null,
+      oxygen: !!h.oxygen,
     },
     fuel: {
-      pending: !totals,
-      marginGal: leastMarginGal,
-      requiredGal: routeFigures.required_gal,
-      reserveMin: routeFigures.reserve_min,
-      ifr,
+      pending: !!f.pending,
+      marginGal: f.margin_gal ?? null,
+      requiredGal: f.required_gal ?? null,
+      reserveMin: f.reserve_min ?? null,
+      ifr: !!f.ifr,
     },
-    // The fields each runway finding names, the engine's one copy the
-    // planner's Go / No-Go asks too.
-    runways: callEngine("gonogo_runway_findings", {
-      planned: !!nav,
-      briefed: !!briefing,
-      aircraft: nav?.aircraft ?? null,
-      checks: checks.map((c) => ({
-        ident: c.field.ident,
-        headwind_kt: c.headwindKt,
-        crosswind_over: c.crosswindOver,
-        unchecked: c.unchecked,
-        distances: c.distances,
-      })),
-    }),
-    balance: {
-      pending: !nav,
-      worked: !!loading && !!loaded,
-      // A POH loading with no load the pilot set: "give your load", never
-      // the POH's sample airplane as the flight's (14 CFR 91.9(a), 91.103).
-      noLoad: !!loading && !loaded,
-      problems: loaded?.problems ?? [],
-      takeoff: loaded ? `${grouped(loaded.takeoff.weightLb)} lb at ${armText(loaded.takeoff)}` : null,
+    runways: {
+      pending: !!r.pending,
+      worked: !!r.worked,
+      short: r.short ?? [],
+      crosswind: r.crosswind ?? [],
+      beyond: r.beyond ?? [],
+      tailwind: r.tailwind ?? [],
+      close: r.close ?? [],
+      unchecked: r.unchecked ?? [],
     },
+    balance: { pending: !!b.pending, worked: !!b.worked, noLoad: !!b.no_load, problems: b.problems ?? [], takeoff: b.takeoff ?? null },
     risk: assessment ? { level: assessment.level, line: riskLine(assessment) } : null,
   };
 }

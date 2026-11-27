@@ -2493,6 +2493,13 @@ export interface EngineContract {
     answer: GonogoIcingUncheckedAnswer;
   };
   /**
+   * The Go / No-Go's input (gonogo_brief's `verdict`, all but the risk) put together from the briefing, the nav log and the loading, one copy for the web and the planner: the weather (VFR flight not recommended dropped under IFR, as its check is 14 CFR 91.169's; the sources not answered by name, under IFR the forecast icing not had and a ceiling with no height said unchecked, 14 CFR 91.103; the worst forecast in words, the visibility to the hundredth down), the airspace (gonogo_route_figures' TFRs, unchecked where the briefing failed or tfr.faa.gov did not answer), the altitude (the nav log's cautions, the altitude flown as the FL chip says it, the highest leg and the airplane's oxygen for 14 CFR 91.211(a)), the fuel (gonogo_route_figures'), the runways (gonogo_runway_findings) and the balance (worked only with the pilot's own load, 14 CFR 91.9(a); "2,407 lb at 41.2 in"). Each section pending while what it waits on is awaited.
+   */
+  gonogo_input: {
+    input: GonogoInputInput;
+    answer: VerdictInput;
+  };
+  /**
    * Minutes after departure the flight passes a point along the route, or null.
    */
   gonogo_pass_minutes: {
@@ -8642,6 +8649,130 @@ export interface GonogoIcingUncheckedInput {
    * The altitudes flown.
    */
   flown_ft?: number[] | null;
+}
+export interface GonogoInputInput {
+  /**
+   * The briefing is in.
+   */
+  briefed: boolean;
+  /**
+   * Why the briefing could not be had, in a line; null where it did not fail.
+   */
+  failed: string | null;
+  /**
+   * The flight is planned IFR.
+   */
+  ifr: boolean;
+  /**
+   * The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing.
+   */
+  weather_unavailable?: string[];
+  /**
+   * The briefing's worst forecast along the route; null with no briefing.
+   */
+  forecast?: {
+    min_ceiling_ft?: number | null;
+    min_visibility_sm?: number | null;
+  } | null;
+  /**
+   * The briefing's reasons for AIM 7-1-5's "VFR flight not recommended"; dropped under IFR.
+   */
+  vfr_not_recommended?: string[];
+  /**
+   * Where the weather is under the pilot's own minimums (minimums).
+   */
+  under_minimums?: string[];
+  /**
+   * The icing finding's lines, in order: one line of them, joined.
+   */
+  icing?: string[];
+  /**
+   * Under IFR, the forecast icing could not be had.
+   */
+  icing_unchecked?: boolean;
+  /**
+   * The fields whose ceiling is reported or forecast with no height.
+   */
+  ceilings_unknown?: string[];
+  /**
+   * The SIGMETs and G-AIRMETs along the route, by name.
+   */
+  hazards?: string[];
+  /**
+   * The ITWS alerts in force now at the route's airports, in words.
+   */
+  terminal_alerts?: string[];
+  /**
+   * The Command Center's programs at the route's airports, in words.
+   */
+  flow_programs?: string[];
+  /**
+   * gonogo_route_figures' answer: the fuel's and the TFRs'.
+   */
+  route_figures: {
+    least_margin_gal?: number | null;
+    required_gal?: number | null;
+    reserve_min?: number | null;
+    tfrs_in_force: string[];
+    tfrs_near: number;
+  };
+  /**
+   * The special-use areas the legs cross, each with when it is in use at the pass.
+   */
+  special_use?: {
+    name: string;
+    when: string;
+  }[];
+  /**
+   * The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.
+   */
+  nav?: {
+    flown?: string | null;
+    altitude_ft?: number | null;
+    options?: {
+      kind: string;
+      steps: {
+        altitude_ft: number;
+      }[];
+    }[];
+    cautions?: {
+      reasons: string[];
+    }[];
+  } | null;
+  /**
+   * No VFR altitude fits, in a line.
+   */
+  problem?: string | null;
+  /**
+   * Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211(a)).
+   */
+  legs_ft?: number[];
+  /**
+   * The nav log's totals are in.
+   */
+  totals?: boolean;
+  /**
+   * The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding.
+   */
+  aircraft?: {} | null;
+  /**
+   * The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).
+   */
+  runway_checks?: {}[];
+  /**
+   * The airplane has a POH loading.
+   */
+  loading?: boolean;
+  /**
+   * gonogo_balance's answer with the pilot's own load; null with no load.
+   */
+  loaded?: {
+    takeoff: {
+      weight_lb: number;
+      arm_in?: number | null;
+    };
+    problems: string[];
+  } | null;
 }
 export interface GonogoPassMinutesInput {
   legs?:

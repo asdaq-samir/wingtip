@@ -30,7 +30,7 @@ const inputs = (over: Partial<Inputs>): Inputs =>
       altitude_ft: 5500,
       options: [],
       cautions: [],
-      aircraft: { takeoff: {}, landing: {} },
+      aircraft: { takeoff: { rows: [] }, landing: { rows: [] } },
     } as unknown as NavLogAltitude,
     problem: null,
     legs: [],

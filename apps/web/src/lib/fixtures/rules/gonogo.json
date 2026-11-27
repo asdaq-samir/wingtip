@@ -1000,6 +1000,401 @@
         }
       ],
       "source": "14 CFR 91.103(b)(1): the distances are the airplane flight manual's; without its landing table they cannot be worked out."
+    },
+    {
+      "name": "Go / No-Go input under IFR: VFR not recommended dropped, the sources, the forecast icing and a ceiling with no height unchecked, the worst forecast's visibility to the hundredth down",
+      "rule": "gonogo_input",
+      "input": {
+        "briefed": true,
+        "failed": null,
+        "ifr": true,
+        "weather_unavailable": [
+          "pireps",
+          "tfrs"
+        ],
+        "forecast": {
+          "min_ceiling_ft": 1200,
+          "min_visibility_sm": 2.485485
+        },
+        "vfr_not_recommended": [
+          "IFR at KDLH"
+        ],
+        "under_minimums": [],
+        "icing": [],
+        "icing_unchecked": true,
+        "ceilings_unknown": [
+          "KDLH"
+        ],
+        "hazards": [],
+        "terminal_alerts": [],
+        "flow_programs": [],
+        "route_figures": {
+          "least_margin_gal": 4,
+          "required_gal": 21.5,
+          "reserve_min": 45,
+          "tfrs_in_force": [],
+          "tfrs_near": 0
+        },
+        "special_use": [],
+        "nav": {
+          "flown": "fastest",
+          "altitude_ft": 5500,
+          "options": [
+            {
+              "kind": "fastest",
+              "steps": [
+                {
+                  "altitude_ft": 3500
+                },
+                {
+                  "altitude_ft": 5500
+                }
+              ]
+            }
+          ],
+          "cautions": [
+            {
+              "reasons": [
+                "Below the VFR cruising altitude"
+              ]
+            }
+          ]
+        },
+        "problem": null,
+        "legs_ft": [
+          3500,
+          5500
+        ],
+        "totals": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "runway_checks": [],
+        "loading": true,
+        "loaded": null
+      },
+      "expect": [
+        {
+          "path": "weather.vfr_not_recommended",
+          "length": 0
+        },
+        {
+          "path": "weather.unchecked",
+          "equals": [
+            "pilot reports",
+            "the forecast icing",
+            "the ceiling at KDLH"
+          ]
+        },
+        {
+          "path": "weather.worst",
+          "equals": "1,200 ft · 2.48 sm"
+        },
+        {
+          "path": "airspace.unchecked",
+          "equals": true
+        },
+        {
+          "path": "fuel.reserve_min",
+          "equals": 45
+        }
+      ],
+      "source": "14 CFR 91.169: under IFR the weather checked is the destination's and the alternate's, not VFR's minimums (AIM 7-1-5's VFR flight not recommended); 14 CFR 91.103: all the available information, so a source not had or a ceiling with no height is not checked, never met; a visibility is never shown more than was seen (FMH-1's reportable values, down)."
+    },
+    {
+      "name": "Go / No-Go input: a plan's altitudes and name, the highest leg for oxygen, and a POH loading with no load is \"give your load\"",
+      "rule": "gonogo_input",
+      "input": {
+        "briefed": true,
+        "failed": null,
+        "ifr": false,
+        "weather_unavailable": [
+          "pireps",
+          "tfrs"
+        ],
+        "forecast": {
+          "min_ceiling_ft": 1200,
+          "min_visibility_sm": 2.485485
+        },
+        "vfr_not_recommended": [
+          "IFR at KDLH"
+        ],
+        "under_minimums": [],
+        "icing": [],
+        "icing_unchecked": true,
+        "ceilings_unknown": [
+          "KDLH"
+        ],
+        "hazards": [],
+        "terminal_alerts": [],
+        "flow_programs": [],
+        "route_figures": {
+          "least_margin_gal": 4,
+          "required_gal": 21.5,
+          "reserve_min": 45,
+          "tfrs_in_force": [],
+          "tfrs_near": 0
+        },
+        "special_use": [],
+        "nav": {
+          "flown": "fastest",
+          "altitude_ft": 5500,
+          "options": [
+            {
+              "kind": "fastest",
+              "steps": [
+                {
+                  "altitude_ft": 3500
+                },
+                {
+                  "altitude_ft": 5500
+                }
+              ]
+            }
+          ],
+          "cautions": [
+            {
+              "reasons": [
+                "Below the VFR cruising altitude"
+              ]
+            }
+          ]
+        },
+        "problem": null,
+        "legs_ft": [
+          3500,
+          5500
+        ],
+        "totals": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "runway_checks": [],
+        "loading": true,
+        "loaded": null
+      },
+      "expect": [
+        {
+          "path": "weather.vfr_not_recommended",
+          "equals": [
+            "IFR at KDLH"
+          ]
+        },
+        {
+          "path": "weather.unchecked",
+          "equals": [
+            "pilot reports",
+            "the ceiling at KDLH"
+          ]
+        },
+        {
+          "path": "altitude.flown",
+          "equals": "3,500–5,500 ft · Fastest plan"
+        },
+        {
+          "path": "altitude.cautions",
+          "equals": [
+            "Below the VFR cruising altitude"
+          ]
+        },
+        {
+          "path": "altitude.highest_ft",
+          "equals": 5500
+        },
+        {
+          "path": "altitude.oxygen",
+          "equals": false
+        },
+        {
+          "path": "balance.no_load",
+          "equals": true
+        },
+        {
+          "path": "balance.worked",
+          "equals": false
+        }
+      ],
+      "source": "14 CFR 91.211(a): oxygen is asked of the highest altitude flown; 14 CFR 91.9(a) and the POH's section 6: the weight and balance is this flight's load against the limits, so with no load given it is not worked."
+    },
+    {
+      "name": "Go / No-Go input: the pilot's own load balanced, \"2,407 lb at 41.3 in\"",
+      "rule": "gonogo_input",
+      "input": {
+        "briefed": true,
+        "failed": null,
+        "ifr": true,
+        "weather_unavailable": [
+          "pireps",
+          "tfrs"
+        ],
+        "forecast": {
+          "min_ceiling_ft": 1200,
+          "min_visibility_sm": 2.485485
+        },
+        "vfr_not_recommended": [
+          "IFR at KDLH"
+        ],
+        "under_minimums": [],
+        "icing": [],
+        "icing_unchecked": true,
+        "ceilings_unknown": [
+          "KDLH"
+        ],
+        "hazards": [],
+        "terminal_alerts": [],
+        "flow_programs": [],
+        "route_figures": {
+          "least_margin_gal": 4,
+          "required_gal": 21.5,
+          "reserve_min": 45,
+          "tfrs_in_force": [],
+          "tfrs_near": 0
+        },
+        "special_use": [],
+        "nav": {
+          "flown": "fastest",
+          "altitude_ft": 5500,
+          "options": [
+            {
+              "kind": "fastest",
+              "steps": [
+                {
+                  "altitude_ft": 3500
+                },
+                {
+                  "altitude_ft": 5500
+                }
+              ]
+            }
+          ],
+          "cautions": [
+            {
+              "reasons": [
+                "Below the VFR cruising altitude"
+              ]
+            }
+          ]
+        },
+        "problem": null,
+        "legs_ft": [
+          3500,
+          5500
+        ],
+        "totals": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "runway_checks": [],
+        "loading": true,
+        "loaded": {
+          "takeoff": {
+            "weight_lb": 2407,
+            "arm_in": 41.25
+          },
+          "problems": []
+        }
+      },
+      "expect": [
+        {
+          "path": "balance.worked",
+          "equals": true
+        },
+        {
+          "path": "balance.takeoff",
+          "equals": "2,407 lb at 41.3 in"
+        }
+      ],
+      "source": "14 CFR 91.9(a): the airplane flown within its POH's weight and balance limits; the takeoff's weight and centre of gravity as the row says them, the arm to a tenth (41.25 is 41.3, as JavaScript's toFixed)."
+    },
+    {
+      "name": "Go / No-Go input: with no nav log the altitude, the runways and the balance are pending",
+      "rule": "gonogo_input",
+      "input": {
+        "briefed": true,
+        "failed": null,
+        "ifr": true,
+        "weather_unavailable": [
+          "pireps",
+          "tfrs"
+        ],
+        "forecast": {
+          "min_ceiling_ft": 1200,
+          "min_visibility_sm": 2.485485
+        },
+        "vfr_not_recommended": [
+          "IFR at KDLH"
+        ],
+        "under_minimums": [],
+        "icing": [],
+        "icing_unchecked": true,
+        "ceilings_unknown": [
+          "KDLH"
+        ],
+        "hazards": [],
+        "terminal_alerts": [],
+        "flow_programs": [],
+        "route_figures": {
+          "least_margin_gal": 4,
+          "required_gal": 21.5,
+          "reserve_min": 45,
+          "tfrs_in_force": [],
+          "tfrs_near": 0
+        },
+        "special_use": [],
+        "nav": null,
+        "problem": null,
+        "legs_ft": [],
+        "totals": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "runway_checks": [],
+        "loading": true,
+        "loaded": null
+      },
+      "expect": [
+        {
+          "path": "altitude.pending",
+          "equals": true
+        },
+        {
+          "path": "altitude.flown",
+          "equals": null
+        },
+        {
+          "path": "runways.pending",
+          "equals": true
+        },
+        {
+          "path": "balance.pending",
+          "equals": true
+        },
+        {
+          "path": "altitude.highest_ft",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.103: each finding waits on what it is worked from, never reads clear before it is in."
     }
   ]
 }
