@@ -85,6 +85,8 @@ final class FlightMapLayer: NSObject {
     private var forecastAreas: ForecastRunMapLayer?
     /// The model weather's field, its G-AIRMETs and the value tapped (ModelWeatherLayer).
     private var modelWeather: ModelWeatherLayer?
+    /// The TFRs, always on the map (TfrLayer).
+    private let tfrs = TfrLayer()
 
     func attach(_ map: MKMapView) {
         self.map = map
@@ -95,6 +97,7 @@ final class FlightMapLayer: NSObject {
         weatherLoop.attach(map)
         forecastAreas.attach(map)
         modelWeather.attach(map)
+        tfrs.attach(map)
         (self.nexrad, self.weatherLoop, self.forecastAreas, self.modelWeather) = (nexrad, weatherLoop, forecastAreas, modelWeather)
     }
 
@@ -176,6 +179,7 @@ final class FlightMapLayer: NSObject {
         if let forecastAreas, let renderer = forecastAreas.renderer(for: overlay) { return renderer }
         if let modelWeather, let renderer = modelWeather.renderer(for: overlay) { return renderer }
         if let renderer = ApproachLines.renderer(for: overlay) { return renderer }
+        if let renderer = tfrs.renderer(for: overlay) { return renderer }
         if let ring = overlay as? GlidePolyline {
             // Dashed in the tint, as the web app's ring: what the airplane
             // reaches in still air, not a boundary to fly by.
@@ -214,6 +218,7 @@ final class FlightMapLayer: NSObject {
 
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
         if let modelWeather, let view = modelWeather.view(for: annotation, on: map) { return view }
+        if let view = tfrs.view(for: annotation, on: map) { return view }
         guard annotation is TrackedRing else { return nil }
         return map.dequeueReusableAnnotationView(withIdentifier: TrackedRingView.reuse, for: annotation)
     }
