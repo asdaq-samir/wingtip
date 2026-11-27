@@ -238,7 +238,7 @@ private fun Craft(c: Clearance, state: ClearanceModel.State) {
         c.read.classB -> CraftRow(stringResource(R.string.clearance_cleared_to), "Class Bravo airspace")
         c.read.limit != null -> CraftRow(
             stringResource(R.string.clearance_cleared_to),
-            state.found?.limit?.let(ClearanceWords::place) ?: c.read.limit.split(" ").joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } },
+            state.found?.limit?.let(ClearanceWords::place) ?: ClearanceWords.capitalWords(c.read.limit),
         )
     }
     if (c.route.isNotEmpty() || c.read.asFiled) CraftRow(stringResource(R.string.clearance_route), ClearanceWords.route(c, state.found))

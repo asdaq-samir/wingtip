@@ -32,6 +32,7 @@ import app.wingtipmaps.android.tiles.TileTemplate
 import app.wingtipmaps.android.ui.A11y
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -153,7 +154,8 @@ fun ChartMap(
         }
     }
 
-    LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context), night, layers.largerLabels) { holder.style(template, minZoom, maxZoom, overlays, line) }
+    // Night and Larger Map Labels change the style in place (paint, layers), never by a new style.
+    LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, night) { holder.paint(night) }
     // Edge to edge: the credits clear a cutout or a navigation bar at the
     // left in landscape as well as the sheet below.
@@ -168,7 +170,9 @@ fun ChartMap(
     LaunchedEffect(holder, layers) { holder.layers(layers) }
     LaunchedEffect(holder, terminal, layers.tac) { holder.terminal(if (layers.tac) terminal else null) }
     LaunchedEffect(holder, weather) { holder.weather(weather) }
-    LaunchedEffect(holder, traffic(), tracked) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { holder.traffic(traffic(), tracked) } }
+    // Read in the effect, as own ship is: an answer restarts the carrying, not the composition.
+    val heard by rememberUpdatedState(traffic)
+    LaunchedEffect(holder, tracked) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { snapshotFlow { heard() }.collectLatest { holder.traffic(it, tracked) } } }
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField?.ident).also { MapTerrain.selected(selectedField?.ident) } }
@@ -219,7 +223,10 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var chartTileMax = 12
     /** The traffic's and the trail's GeoJSON last made, set again as
      *  they are when the style is set anew. */
-    private var trafficJson: Pair<String, String>? = null
+    private val trafficOnMap = TrafficOnMap()
+    /** The style as MapStyle wrote it, its layers read once a relabel asks. */
+    private var writtenJson: String? = null
+    private var writtenLayers: List<kotlinx.serialization.json.JsonObject>? = null
     private var trailJson = lineJson(emptyList())
     private var lastGlide: List<List<Double>> = emptyList()
     private var lastPoints: List<RoutePoint> = emptyList()
@@ -261,7 +268,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
             // Past the chart's own detail the imagery (CloseMap), to its zoom.
             chartTileMax = maxZoom
             map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
-            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac)
+            val written = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather).also { writtenJson = it; writtenLayers = null }
+            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is
@@ -283,7 +291,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 // After what goes under it, so its layers are over them.
                 puck?.activate(style)
                 puck?.show(lastMark, lastFollow, app.wingtipmaps.android.ui.A11y.reducedMotion(view.context))
-                drawTraffic(style)
+                trafficOnMap.restyled()
+                trafficOnMap.draw(style)
             }
         }
     }
@@ -294,6 +303,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             map.getStyle { style ->
                 val paint = MapStyle.chartPaint(night)
+                relabel(style)
                 RouteLegLayer.paint(style, night)
                 style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
                     PropertyFactory.lineColor(edgeColour(night)),
@@ -314,10 +324,12 @@ private class MapHolder(val view: MapView, private val density: Float) {
      *  applyOverlayFilters): the airspace and the navaids shown or hidden,
      *  the military and private fields filtered. */
     fun layers(layers: MapLayers) {
+        val larger = layers.largerLabels != lastLayers.largerLabels
         lastLayers = layers
         if (destroyed) return
         view.getMapAsync { map ->
             map.getStyle { style ->
+                if (larger) relabel(style)
                 for (id in MapStyle.AIRSPACE_LAYERS + MapStyle.NAVAID_LAYERS) {
                     style.getLayer(id)?.setProperties(
                         PropertyFactory.visibility(if (MapStyle.visible(id, layers)) Property.VISIBLE else Property.NONE),
@@ -374,25 +386,14 @@ private class MapHolder(val view: MapView, private val density: Float) {
         CloseMap.draw(style, chartTileMax)
     }
 
-    /** The airplanes heard, drawn now and carried on a step a second
-     *  until the next answer cancels this (ChartMap's effect). Where each
-     *  is carried to is worked out off the main thread (TrafficDrawing
-     *  asks the engine for every airplane), and only set on the map here. */
-    suspend fun traffic(targets: List<TrafficDrawing.Target>, tracked: String?) {
-        while (!destroyed) {
-            trafficJson = withContext(Dispatchers.Default) {
-                TrafficDrawing.features(targets, tracked, app.wingtipmaps.android.AppClock.nowMs()).let { (p, t) -> p.toString() to t.toString() }
-            }
-            if (!destroyed) view.getMapAsync { map -> map.getStyle(::drawTraffic) }
-            if (targets.isEmpty()) return
-            delay(CARRY_MS)
-        }
-    }
+    /** The airplanes heard, drawn and carried on (TrafficOnMap). */
+    suspend fun traffic(targets: List<TrafficDrawing.Target>, tracked: String?) =
+        trafficOnMap.carry(targets, tracked, { !destroyed }) { view.getMapAsync { map -> map.getStyle(trafficOnMap::draw) } }
 
-    private fun drawTraffic(style: Style) {
-        val (points, trends) = trafficJson ?: return
-        style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC)?.setGeoJson(points)
-        style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC_TREND)?.setGeoJson(trends)
+    /** The style's words at the switch's scale and the theme's inks (MapLabels.relabel). */
+    private fun relabel(style: Style) {
+        val written = writtenLayers ?: writtenJson?.let { MapLabels.layersOf(it) }?.also { writtenLayers = it } ?: return
+        MapLabels.relabel(style, written, MapLabels.scale(lastLayers.largerLabels, view.context), night)
     }
 
     /** The sheet's room as the map's padding: the airplane, a fit and the
@@ -648,8 +649,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
          *  TAP.mark and TAP.line). */
         const val TAP_MARK = 22f
         const val TAP_LINE = 10f
-        /** How often each airplane is carried on between answers, while the map is started. */
-        const val CARRY_MS = 1_000L
         const val GLIDE = "glide-ring"
         /** The sheet's own settle, so the map's middle moves with it. */
         const val INSET_MS = 300

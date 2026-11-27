@@ -178,7 +178,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit, onLink: (
             home = {
                 if (!stripLayout) {
                     val hidden = sheetLayout && sheet.atPeek
-                    Home(plan, ownShip.ownShip, answer, picks::pick, Modifier.semantics { if (hidden) hideFromAccessibility() })
+                    Home(plan, answer, picks::pick, Modifier.semantics { if (hidden) hideFromAccessibility() })
                 }
             },
             // The FPL page, with a route or none: with none its ✕ goes back

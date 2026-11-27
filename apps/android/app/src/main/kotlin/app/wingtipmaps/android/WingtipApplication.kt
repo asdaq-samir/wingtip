@@ -13,6 +13,12 @@ import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import okhttp3.Call
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.maplibre.android.MapLibre
 import org.maplibre.android.module.http.HttpRequestUtil
 
@@ -51,11 +57,20 @@ class WingtipApplication : Application(), SingletonImageLoader.Factory {
         // application kept, nothing asked of AICore until Ask is used, and
         // not then while Extras has it parked.
         OnPhoneAsk.attach(this)
-        // The IFR alternate filed last: one preference read, for the plan.
+        // The IFR alternate filed last: one preference, read off the main
+        // thread, for the plan.
         PlanAlternate.attach(this)
         MapLibre.getInstance(this)
-        HttpRequestUtil.setOkHttpClient(Gateway.client)
+        // MapLibre's calls through the one client, made as its first tile
+        // is asked on MapLibre's own thread, not here: building the client
+        // reads the cookies (DataStore, the Keystore, the decryption).
+        HttpRequestUtil.setOkHttpClient(Call.Factory { Gateway.client.newCall(it) })
+        // Warmed off the main thread meanwhile, so the first screen's call
+        // finds the client and the cookies read.
+        startScope.launch { Gateway.client.cookieJar.loadForRequest(Config.gateway.toHttpUrl()) }
     }
+
+    private val startScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** Coil's one loader, its network the app's OkHttp client: the
      *  gateway's pictures with the session's cookie, kept in its cache. */

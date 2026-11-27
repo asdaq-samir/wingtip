@@ -69,7 +69,7 @@ object BriefFields {
                 runway = check?.end?.let { Engine.gonogoRunwayNumber(it).getOrNull() },
                 runwayFt = runway?.lengthFt,
                 overFiftyFt = distance?.totalFt?.roundToInt(),
-                finding = finding(check, distance),
+                finding = finding(check),
             )
         }
         val arriveMs = if (departMs != null && eteMin != null) departMs + (eteMin * 60_000).toLong() else null
@@ -77,17 +77,13 @@ object BriefFields {
     }
 
     /**
-     * A field's finding as the web reads the engine's check: not known
-     * where it was not checked (no elevation, no runway length, no table),
-     * never fine; stop where the distance is past the runway; caution past
-     * the demonstrated crosswind or beyond the POH's table.
+     * A field's finding is the engine's own (gonogo_runway_checks'
+     * `finding`: stop past the runway, caution for the crosswind, a
+     * tailwind, a thin margin or a reading past the POH's table, unknown
+     * where it was not checked); a field with no check is not known,
+     * never fine.
      */
-    fun finding(check: EngineContract.GonogoRunwayChecksAnswerItem?, distance: EngineContract.GonogoRunwayChecksAnswerItemDistancesItem?): Finding = when {
-        check == null || check.unchecked != null || distance == null || distance.unknown -> Finding.UNKNOWN
-        distance.over -> Finding.STOP
-        check.crosswindOver || distance.beyond -> Finding.CAUTION
-        else -> Finding.OK
-    }
+    fun finding(check: EngineContract.GonogoRunwayChecksAnswerItem?): Finding = Finding.named(check?.finding)
 
     private fun checks(
         briefing: Briefing?,

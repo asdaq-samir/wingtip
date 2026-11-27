@@ -61,7 +61,10 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.WingtipIcons
 import app.wingtipmaps.android.ui.isWide
+import app.wingtipmaps.android.ui.rememberGlideReach
 import app.wingtipmaps.android.voice.VoiceInput
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -110,7 +113,10 @@ fun OneSearch(
     val context = LocalContext.current
     val state by model.state.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
-    val fix by ownShip.fix.collectAsStateWithLifecycle()
+    // Whether there is a fix, told only as that changes: the bar is not
+    // drawn again with each fix (the fix itself is read where asked).
+    val hasFix by remember(ownShip) { ownShip.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(ownShip.fix.value != null)
+    val reach = rememberGlideReach(state.nearest)
     val memory = remember(context) { SearchMemory.of(context) }
     val favorites by memory.favorites.collectAsStateWithLifecycle()
     val recents by memory.recents.collectAsStateWithLifecycle()
@@ -128,9 +134,9 @@ fun OneSearch(
         snapshotFlow { searchBarState.currentValue }.collect { if (it == SearchBarValue.Collapsed) control.done() }
     }
     LaunchedEffect(textFieldState, own) {
-        snapshotFlow { textFieldState.text.toString() }.collect { model.type(it, own.values, fix?.let { f -> f.lat to f.lon }) }
+        snapshotFlow { textFieldState.text.toString() }.collect { model.type(it, own.values, ownShip.fix.value?.let { f -> f.lat to f.lon }) }
     }
-    LaunchedEffect(fix != null) { fix?.let { model.loadNearest(it.lat, it.lon) } }
+    LaunchedEffect(hasFix) { ownShip.fix.value?.let { model.loadNearest(it.lat, it.lon) } }
 
     fun close() {
         textFieldState.clearText()
@@ -266,8 +272,8 @@ fun OneSearch(
     val results: @Composable ColumnScope.() -> Unit = {
         val typed = textFieldState.text.isNotBlank()
         val asked = rememberAiOffered()
-        val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null, asked) {
-            SearchGroups.actions(state.query, planState.routed, fix != null, FieldMarks.firstOffered(state.airports, state.waypoints), asked)
+        val actions = remember(state.query, state.airports, state.waypoints, planState.routed, hasFix, asked) {
+            SearchGroups.actions(state.query, planState.routed, hasFix, FieldMarks.firstOffered(state.airports, state.waypoints), asked)
         }
         // While a stop or an end is asked for, the fields it cannot take
         // greyed with why (PickRefusal): closed, or already on the route.
@@ -284,14 +290,14 @@ fun OneSearch(
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             if (typed) {
                 kindFilters(chosen) { kind -> chosen = if (kind in chosen) chosen - kind else chosen + kind }
-                searchResults(state, actions, routed = planState.routed, hasFix = fix != null, chosen = chosen, onPick = pick, refusal = refusal)
+                searchResults(state, actions, routed = planState.routed, hasFix = hasFix, chosen = chosen, onPick = pick, refusal = refusal)
             } else {
                 if (!control.addingStop) {
                     item(key = "flight") {
                         FlightCard(planState, tail = tail, onOpen = { pick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
                     }
                 }
-                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, fix, onPick = pick, refusal = refusal)
+                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, reach, onPick = pick, refusal = refusal)
             }
         }
     }

@@ -191,12 +191,6 @@ class BriefModel @Inject constructor() : ViewModel() {
         }
 
         /** The planner's finding by name (lib/findings). */
-        fun finding(name: String): Finding = when (name) {
-            "ok" -> Finding.OK
-            "caution" -> Finding.CAUTION
-            "stop" -> Finding.STOP
-            "pending" -> Finding.PENDING
-            else -> Finding.UNKNOWN
-        }
+        fun finding(name: String): Finding = Finding.named(name)
     }
 }
