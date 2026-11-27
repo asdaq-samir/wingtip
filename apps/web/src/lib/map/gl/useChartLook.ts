@@ -9,8 +9,8 @@ import { useDarkTheme } from "./useDarkTheme";
  *  the Dimmer for the appearance drawn and the Contrast offset, each a
  *  slider's value while it moves (chartLookPreview), else the one kept
  *  (lib/prefs chartDim, one for light and one for dark; chartContrast);
- *  and `keptDim`, the Dimmer as last committed, which what is drawn over
- *  the chart follows (useMapDim). What glStyle's chartPaint takes, and
+ *  and `keptDim` and `keptContrast`, as last committed, which what is
+ *  drawn over the chart follows (useMapDim, ChartGl's words). What glStyle's chartPaint takes, and
  *  the Map card's sliders show. */
 export function useChartLook() {
   const night = useDarkTheme();
@@ -18,7 +18,7 @@ export function useChartLook() {
   const keptDim = usePreferences((s) => s.chartDim[night ? "dark" : "light"]);
   const keptContrast = usePreferences((s) => s.chartContrast);
   const preview = useChartLookPreview();
-  return { night, sunlight, dim: preview.dim ?? keptDim, contrast: preview.contrast ?? keptContrast, keptDim };
+  return { night, sunlight, dim: preview.dim ?? keptDim, contrast: preview.contrast ?? keptContrast, keptDim, keptContrast };
 }
 
 /** The chart's raster-brightness-max now (chartBrightness), for the

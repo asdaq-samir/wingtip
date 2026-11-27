@@ -10,7 +10,7 @@ import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
 import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
-import { MAP_DIM } from "../mapDim";
+import { MAP_DIM, WARNING_DIM, warningLight, wordLight } from "../mapDim";
 import { testDriven } from "../useGlProbe";
 import { useCloseImagery } from "../useCloseImagery";
 import { useChartMissed } from "../useChartMissed";
@@ -40,7 +40,7 @@ export function ChartGl({ course }: { course: Course | null }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
   const base = usePreferences((s) => s.base);
-  const { night, sunlight, dim, contrast } = useChartLook();
+  const { night, sunlight, dim, contrast, keptDim, keptContrast } = useChartLook();
   // None picked: no chart, its terminal sheet or the imagery it fades
   // into; the overlay and the plain ground (BaseGl) are the map's base.
   const none = base === "none";
@@ -72,11 +72,25 @@ export function ChartGl({ course }: { course: Course | null }) {
   useEffect(() => {
     if (none) map.setMaxZoom(CLOSE_MAX_ZOOM);
   }, [map, none]);
-  // The labels' halos dimmed after dark with the page's theme (common's
-  // HALO_COLOUR reads it), not glaring white over the night's chart.
+  // The labels' halos dark after dark with the page's theme (common's
+  // HALO_COLOUR reads it), not glaring white over the night's chart, and
+  // their words at the paper's light under the Dimmer as committed
+  // (mapDim's wordLight), so they are no brighter than the chart; one
+  // figure, 0 by day.
+  const committed = chartPaint(night, sunlight, keptDim, keptContrast);
+  const keptBrightness = Number(committed?.["raster-brightness-max"] ?? 1),
+    keptRasterContrast = Number(committed?.["raster-contrast"] ?? 0);
+  const words = wordLight(night, keptBrightness, keptRasterContrast);
   useEffect(() => {
-    if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, night);
-  }, [map, night]);
+    if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, words);
+  }, [map, words]);
+  // And the night's warnings under the paper's light, Contrast and all
+  // (mapDim's warningLight), a constant colour each, so no tile is laid out
+  // again.
+  const warnings = warningLight(night, keptBrightness, keptRasterContrast);
+  useEffect(() => {
+    if (map.style) map.setGlobalStateProperty(WARNING_DIM, warnings);
+  }, [map, warnings]);
   // The map's words grown with the pilot's text size, at most 1.2x, while
   // the Map card's Larger Map Labels is on (common's labelScale): read
   // from the page's root size, again as the window changes (iOS sets a

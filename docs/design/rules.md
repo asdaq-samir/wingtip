@@ -1367,10 +1367,13 @@ way: three homes, and every control in one of them.
    opacity (round 4); the terrain's hazard tint is a warning and is never
    dimmed, as own ship is not; the route is dimmed by
    its colours, solid, so it stays the most visible line, and once, its
-   edges the day's dark (round 5); a TFR's edge and number and an
-   obstacle's ring are dimmed by their colours too, not made see-through
-   (the owner, 2026-11-27: "Dim by colour"; about 3:1 over the paper at
-   the default Dimmer). The Dimmer keeps its whole range: past about 65%
+   edges the day's dark (round 5); a TFR's edge and an obstacle are
+   dimmed by their colours too, not made see-through (the owner,
+   2026-11-27: "Dim by colour"), the reds under the paper's own light, so
+   they hold 3:1 over it at the default Dimmer across the whole Contrast
+   range, and each obstacle on a dark ring in the course's edge colour,
+   day and night, the amber 3:1 on it and the ring 4:1 or more on the
+   paper (round 6; a white ring vanished on the sectional's white). The Dimmer keeps its whole range: past about 65%
    the paper is too dark for any warning to reach 3:1 against it, even
    black, and that is the pilot's choice (the owner, 2026-11-27: "Allow
    it, say so"; warn, never limit).
@@ -1742,7 +1745,14 @@ word and figure drawn on the map, on all three apps, follows these rules:
    half each ink is 6.5:1 or more, and 4.9:1 or more over an undimmed
    white, so no word glares white and none falls under 4.5:1. Under the
    white halo at 0.6 the coloured idents fell to about 2.5:1. The day
-   inks are the chart's own and stay as they are.
+   inks are the chart's own and stay as they are. On the web the halo is
+   the tag's dark whole, not faded with the Dimmer, and the words alone
+   are dimmed, by colour: each night ink no lighter than the towered blue,
+   at the share of light that brings it to the paper's under the Dimmer
+   and the Contrast (`mapDim`'s `wordLight`), so no word is brighter than
+   the chart and each reads about 5:1 on its halo at the night's default
+   Dimmer, where faded with its halo it was about 2:1 (the themes audit,
+   round 6; the phones to follow, and `halo-night` to 1 with them).
 7. **A field's ident looks the same whoever draws it.** Its colour is
    blue where it is towered and magenta where it is not, as the chart
    sets it. Its size follows the zoom. This holds on the tiles, a Class B
