@@ -59,8 +59,14 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # (build-engine-wasm.sh). Both budgets lowered to just over what keeps the
 # module under WARN_AT, so the room freed (about 28 KB gzipped) is for the
 # next rules and the warning says when it is nearly gone.
-RAW_BUDGET = 1_270_000
-GZIP_BUDGET = 571_000
+# 2026-11-27 (round 4's engine audit): lowered to just over the module as
+# it is, 1,220,487 bytes and 562,498 gzipped with gonogo_input and
+# route_typed_picks in (1,205,797 and 556,659 before them), so the budget
+# is the headroom really left and the next rule that grows the module is
+# looked at, never let through on room freed before (the ratchet only
+# goes down).
+RAW_BUDGET = 1_225_000
+GZIP_BUDGET = 565_000
 # A warning, not a failure, from here: the budget is not raised, so the next
 # rule that grows the module should be looked at before it is the one that fails.
 WARN_AT = 0.95
