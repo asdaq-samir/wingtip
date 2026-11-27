@@ -44,7 +44,7 @@ from pathlib import Path
 from apscheduler.schedulers.base import BaseScheduler
 from wingtip import log_lines, schedule, tracing, weather_store
 
-from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, radar, replay, satellite, spc, tfr
+from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, icing, radar, replay, satellite, spc, tfr
 from .settings import get_settings
 
 log = logging.getLogger("weather")
@@ -77,6 +77,7 @@ PRODUCTS = (
     *(Product(f"winds-{hr}", _winds(hr), "winds") for hr in gfs.PERIODS),
     Product("glmp", glmp.fetch_latest, "glmp"),
     Product("glmp-forecast", glmp_forecast.fetch_latest, "glmp"),
+    Product(icing.STORE_NAME, icing.fetch_latest, "icing"),
     Product("spc-outlook", spc.fetch_outlook, "outlook"),
     Product("tfrs", tfr.fetch, "tfrs"),
     Product("radar", radar.fetch, "radar"),
@@ -99,6 +100,7 @@ FAILURES = (
     gfs.ModelWindsUnavailable,
     flow.FlowUnavailable,
     glmp.GlmpUnavailable,
+    icing.IcingUnavailable,
     tfr.TfrUnavailable,
     radar.RadarUnavailable,
     satellite.SatelliteUnavailable,

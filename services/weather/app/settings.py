@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     #: Gridded LAMP (NOMADS): asked for a new issue this often.
     glmp_every_s: float = 600.0
     glmp_idle_every_s: float = 3600.0
+    #: The forecast icing (the IFI from NOMADS, app.icing): a cycle comes
+    #: hourly and is fetched once whole (about 90 MB), so looked for four
+    #: times an hour while planning, every three hours otherwise.
+    icing_every_s: float = 900.0
+    icing_idle_every_s: float = 10800.0
     #: The SPC's Day 1 convective outlook (issued five times a day).
     outlook_every_s: float = 1800.0
     outlook_idle_every_s: float = 3600.0

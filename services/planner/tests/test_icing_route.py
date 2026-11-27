@@ -1,7 +1,7 @@
 """GET /api/icing/route through its response model, wingtip.icing_forecast
 stubbed: the nav log's fixes, altitudes and times handed on as numbers, the
-engine's answer returned as it is, and the AWC down a 502 the page says
-in its own section, never "no icing"."""
+engine's answer returned as it is, and no icing forecast in the weather
+store a 502 the page says in its own section, never "no icing"."""
 
 from fastapi.testclient import TestClient
 from wingtip import icing_forecast
@@ -52,14 +52,14 @@ def test_the_legs_are_handed_on_and_the_answer_returned(monkeypatch):
     assert body["legs"][1]["severity"] is None
 
 
-def test_the_awc_down_is_a_502(monkeypatch):
+def test_no_forecast_stored_is_a_502(monkeypatch):
     def along(*args):
         raise icing_forecast.IcingForecastUnavailable("down")
 
     monkeypatch.setattr(icing_forecast, "along", along)
     resp = client.get("/api/icing/route", params=PARAMS)
     assert resp.status_code == 502
-    assert "forecast icing could not be checked" in resp.json()["detail"]
+    assert "icing on the route could not be checked" in resp.json()["detail"]
 
 
 def test_legs_and_fixes_that_do_not_agree_are_a_422(monkeypatch):
