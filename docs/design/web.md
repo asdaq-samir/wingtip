@@ -903,11 +903,11 @@ Flights FirstFew's `after` once the section is open; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`: Type, Year, Seats,
-Engines, Registration, its status in the destructive ink where lapsed,
-Owner, public as the FAA publishes it, then Operator and Squawk from
-`traffic`'s `liveFacts`, and for traffic with no N-number its own
-registration mark, ICAO address and call sign; the Now section gone,
-the owner, 2026-11-27) sits under the card's actions
+Engines, then Operator from `traffic`'s `liveFacts` (the squawk on
+the in-the-air slide's state line), and for traffic with no N-number its own
+registration mark, ICAO address and call sign; the Now section gone, and
+its registration's status and owner left to AirplaneInfo's Registration
+section, the owner, 2026-11-27) sits under the card's actions
 and over its pictures (the owner, 2026-11-26). `AirplaneInfo`'s
 Airplane section holds its ICAO address and call sign.
 Figures (`FiguresCard`, a `SheetCard` over the airplane's from its

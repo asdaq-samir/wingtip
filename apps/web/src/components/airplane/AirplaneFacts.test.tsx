@@ -21,26 +21,20 @@ const record = {
 const fact = (id: string) => screen.queryByTestId(`facts-${id}`)?.textContent ?? null;
 
 describe("an airplane card's facts strip", () => {
-  it("says the registry's type, year, seats, engines, registration and owner, each under its name", () => {
+  it("says the registry's type, year, seats, and engines, each under its name, its registration and owner left to its Registration section", () => {
     render(<AirplaneFacts record={record} testId="facts" />);
     expect(fact("type")).toBe("TypePiper PA-28-140");
     expect(fact("year")).toBe("Year1971");
     expect(fact("seats")).toBe("Seats4");
     expect(fact("engines")).toBe("Engines1");
-    expect(fact("status")).toBe("RegistrationValid");
-    expect(fact("owner")).toBe("OwnerJane Q Pilot");
+    expect(fact("status")).toBeNull();
+    expect(fact("owner")).toBeNull();
   });
 
   it("takes the FAA's reference model's seats and engines over the record's", () => {
     render(<AirplaneFacts record={record} model={{ seats: 6, engines: 2 } as never} testId="facts" />);
     expect(fact("seats")).toBe("Seats6");
     expect(fact("engines")).toBe("Engines2");
-  });
-
-  it("says an owner withheld from the record is not in it, and a lapsed registration in the destructive ink", () => {
-    render(<AirplaneFacts record={{ ...record, owner: null, standing: "lapsed", status: "Expired" }} testId="facts" />);
-    expect(fact("owner")).toBe("OwnerNot in the record");
-    expect(screen.getByTestId("facts-status").querySelector("dd")?.className).toContain("text-destructive-ink");
   });
 
   it("falls back to the traffic's type and year with no record, and draws nothing with nothing to say", () => {
