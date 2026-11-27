@@ -268,6 +268,13 @@
             "null"
           ],
           "description": "At most this many; 10 where not given."
+        },
+        "drill": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The diversion drill's (ACS PA.VI.C), with mode \"diversion\": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency."
         }
       },
       "required": [

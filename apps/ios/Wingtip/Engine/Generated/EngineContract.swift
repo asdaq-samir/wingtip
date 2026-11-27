@@ -1928,6 +1928,8 @@ nonisolated enum EngineContract {
         var fields: [EngineContract.BestFieldsInputFieldsItem]
         /// At most this many; 10 where not given.
         var limit: Double?
+        /// The diversion drill's (ACS PA.VI.C), with mode "diversion": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency.
+        var drill: Bool?
 
         enum CodingKeys: String, CodingKey {
             case mode
@@ -1939,6 +1941,7 @@ nonisolated enum EngineContract {
             case airplane
             case fields
             case limit
+            case drill
         }
     }
 

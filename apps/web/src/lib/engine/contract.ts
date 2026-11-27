@@ -5732,6 +5732,10 @@ export interface BestFieldsInput {
    * At most this many; 10 where not given.
    */
   limit?: number | null;
+  /**
+   * The diversion drill's (ACS PA.VI.C), with mode "diversion": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency.
+   */
+  drill?: boolean | null;
 }
 /**
  * A POH's short-field takeoff or landing table: at least two altitudes and two temperatures, a grid of them for every weight.

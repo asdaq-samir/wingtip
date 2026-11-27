@@ -12,6 +12,14 @@ type R<T> = Result<T, String>;
 
 /// The most fields answered where `limit` is not given.
 const LIMIT: usize = 10;
+/// The diversion drill's (`drill`, ACS PA.VI.C): a field nearer the point
+/// than DRILL_NEAREST_NM is where the airplane is, not a diversion to fly
+/// a heading, time and fuel to, and DRILL_LIMIT are offered to pick from.
+/// The drill's own design figures, no regulation's: the ACS gives none.
+/// Never applied to an emergency, where the field under the airplane may
+/// be the best one.
+const DRILL_NEAREST_NM: f64 = 2.0;
+const DRILL_LIMIT: usize = 6;
 
 pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
@@ -30,8 +38,12 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         variation_deg: i.opt_num(v, "variation_deg")?,
     };
     let airplane = i.obj(v, "airplane")?.map(|a| airplane(i, a)).transpose()?;
-    let fields = i.list(v, "fields")?.iter().map(|f| field(i, f)).collect::<R<Vec<_>>>()?;
-    let limit = i.opt_num(v, "limit")?.map_or(LIMIT, |l| l.max(0.0) as usize);
+    let mut fields = i.list(v, "fields")?.iter().map(|f| field(i, f)).collect::<R<Vec<_>>>()?;
+    let drill = truth(v, "drill") && mode == Mode::Diversion;
+    if drill {
+        fields.retain(|f| crate::geo::distance_nm(own.lat, own.lon, f.lat, f.lon) >= DRILL_NEAREST_NM);
+    }
+    let limit = i.opt_num(v, "limit")?.map_or(if drill { DRILL_LIMIT } else { LIMIT }, |l| l.max(0.0) as usize);
     Ok(answer_json(&best_fields(mode, &own, airplane.as_ref(), fields, limit)))
 }
 

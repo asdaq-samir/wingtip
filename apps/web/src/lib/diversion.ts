@@ -79,6 +79,8 @@ export function reasonable(key: EstimateKey, typed: number, exact: number): bool
 export function diversionFields(data: EmergencyFields, at: { lat: number; lon: number }, leg: Leg) {
   return callEngine("best_fields", {
     mode: "diversion",
+    // The drill's: a field under the point left out, six offered (the engine's).
+    drill: true,
     at,
     altitude_ft: leg.altitude_ft,
     speed_kt: leg.tas_kt,
