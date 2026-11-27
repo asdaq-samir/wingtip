@@ -109,3 +109,17 @@ fn a_visibility_is_the_reportable_value_at_or_below_never_above() {
     assert_eq!(statute_miles_down(23.0), 20.0);
     assert_eq!(statute_miles_down(44.0), 40.0);
 }
+
+#[test]
+fn the_flight_categories_hold_on_both_sides_of_each_bound() {
+    // AIM 7-1-7: LIFR under 500 ft or under 1 sm; IFR 500 to under 1,000 or
+    // 1 to under 3; MVFR 1,000 to 3,000 inclusive or 3 to 5 inclusive.
+    let at = |c: f64, v: f64| category_bounds(Some(c), v);
+    assert_eq!((at(499.0, 10.0), at(500.0, 10.0)), ("LIFR", "IFR"));
+    assert_eq!((at(999.0, 10.0), at(1000.0, 10.0)), ("IFR", "MVFR"));
+    assert_eq!((at(3000.0, 10.0), at(3001.0, 10.0)), ("MVFR", "VFR"));
+    assert_eq!((at(5000.0, 0.99), at(5000.0, 1.0)), ("LIFR", "IFR"));
+    assert_eq!((at(5000.0, 2.99), at(5000.0, 3.0)), ("IFR", "MVFR"));
+    assert_eq!((at(5000.0, 5.0), at(5000.0, 5.01)), ("MVFR", "VFR"));
+    assert_eq!(category_bounds(None, 6.0), "VFR");
+}

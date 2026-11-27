@@ -350,6 +350,19 @@ mod tests {
     }
 
     #[test]
+    fn a_vor_check_holds_to_its_limits_and_its_thirty_days() {
+        // 14 CFR 91.171(a): "within the preceding 30 days"; (b)(1) a VOT
+        // within 4 degrees, (c) an airborne check within 6.
+        let vor = |kind: &str, error: f64| {
+            ask("inspections_due", &format!(r#"{{"vor_check":{{"on":"2026-11-01","kind":"{kind}","error_deg":{error}}}}}"#))
+        };
+        assert!(vor("VOT", 4.0).contains(r#""within":true"#) && vor("VOT", -4.1).contains(r#""within":false"#));
+        assert!(vor("AIRBORNE", -6.0).contains(r#""within":true"#) && vor("AIRBORNE", 6.5).contains(r#""within":false"#));
+        // Done 1 Nov, good through 1 Dec (day 30), not 2 Dec (day 31).
+        assert!(vor("VOT", 0.0).contains(r#""until":"2026-12-01""#));
+    }
+
+    #[test]
     fn a_hundred_hour_is_listed_unless_the_owner_says_not_for_hire() {
         // 14 CFR 91.409(b): owed for hire. Not said is weighed as for hire,
         // and says so; only the owner's "not for hire" leaves it off.
@@ -363,11 +376,11 @@ mod tests {
     fn a_solo_endorsement_is_good_for_90_days() {
         let r = ask(
             "endorsement_records",
-            r#"{"held":[{"code":"solo-first","on":"2026-01-01"},{"code":"solo-xc-training","on":"2026-02-01","make_model":"C172"}],"flight_on":"2026-04-02"}"#,
+            r#"{"held":[{"code":"solo-first","on":"2026-01-01","make_model":"C172"},{"code":"solo-xc-training","on":"2026-02-01","make_model":"C172"}],"flight_on":"2026-04-02","make_model":"C172"}"#,
         );
         assert!(r.contains(r#""until":["2026-04-01",null]"#), "{r}");
         assert!(r.contains(r#""solo_until":"2026-04-01""#), "{r}");
-        assert!(r.contains(r#""met":false,"detail":"Given 1 Jan 2026, not within the 90 days before 2 Apr 2026""#), "{r}");
+        assert!(r.contains(r#""met":false,"detail":"Given 1 Jan 2026 for a C172, not within the 90 days before 2 Apr 2026""#), "{r}");
         assert!(r.contains(r#""met":true,"detail":"Given 1 Feb 2026 for a C172""#), "{r}");
     }
 }
