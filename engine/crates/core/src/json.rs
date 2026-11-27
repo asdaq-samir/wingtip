@@ -107,6 +107,7 @@ impl Table {
 }
 
 struct Reader<'a> {
+    s: &'a str,
     b: &'a [u8],
     at: usize,
 }
@@ -148,25 +149,25 @@ impl Reader<'_> {
 
     fn string(&mut self) -> Option<String> {
         self.eat(b'"')?;
-        let mut out = Vec::new();
+        let mut out = String::new();
         loop {
-            // The run up to the next quote or backslash, copied whole.
+            // The run up to the next quote or backslash (a character's edge), copied whole.
             let run = self.b.get(self.at..)?.iter().position(|&c| c == b'"' || c == b'\\')?;
-            out.extend_from_slice(&self.b[self.at..self.at + run]);
+            out.push_str(self.s.get(self.at..self.at + run)?);
             self.at += run;
             let c = *self.b.get(self.at)?;
             self.at += 1;
             match c {
-                b'"' => return String::from_utf8(out).ok(),
+                b'"' => return Some(out),
                 b'\\' => {
                     let e = *self.b.get(self.at)?;
                     self.at += 1;
                     match e {
-                        b'n' => out.push(b'\n'),
-                        b't' => out.push(b'\t'),
-                        b'r' => out.push(b'\r'),
-                        b'b' => out.push(8),
-                        b'f' => out.push(12),
+                        b'n' => out.push('\n'),
+                        b't' => out.push('\t'),
+                        b'r' => out.push('\r'),
+                        b'b' => out.push('\u{8}'),
+                        b'f' => out.push('\u{c}'),
                         b'u' => {
                             let hex = std::str::from_utf8(self.b.get(self.at..self.at + 4)?).ok()?;
                             self.at += 4;
@@ -177,13 +178,17 @@ impl Reader<'_> {
                                 self.at += 6;
                                 code = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00);
                             }
-                            let mut buf = [0u8; 4];
-                            out.extend_from_slice(char::from_u32(code)?.encode_utf8(&mut buf).as_bytes());
+                            out.push(char::from_u32(code)?);
                         }
-                        other => out.push(other),
+                        // Any other character escaped stands for itself, whole.
+                        _ => {
+                            let c = self.s.get(self.at - 1..)?.chars().next()?;
+                            out.push(c);
+                            self.at += c.len_utf8() - 1;
+                        }
                     }
                 }
-                c => out.push(c),
+                _ => return None,
             }
         }
     }
@@ -347,7 +352,7 @@ impl Reader<'_> {
 /// Any JSON text read into its value; Err with what was wrong and where.
 /// Nothing but space may follow the value.
 pub fn parse(text: &str) -> Result<Value, String> {
-    let mut r = Reader { b: text.as_bytes(), at: 0 };
+    let mut r = Reader { s: text, b: text.as_bytes(), at: 0 };
     let v = r.value(0)?;
     r.space();
     if r.at < r.b.len() {
@@ -359,7 +364,7 @@ pub fn parse(text: &str) -> Result<Value, String> {
 /// A pack's table, `{"columns": [...], "rows": [[...], ...]}`; None where
 /// the text is not one.
 pub fn table(text: &str) -> Option<Table> {
-    let mut r = Reader { b: text.as_bytes(), at: 0 };
+    let mut r = Reader { s: text, b: text.as_bytes(), at: 0 };
     r.eat(b'{')?;
     let (mut columns, mut rows) = (None, None);
     loop {
