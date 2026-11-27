@@ -22,8 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.math.floor
 import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 
 /**
  * The emergency assistant's one view model (the web's useEmergency): the
@@ -110,12 +110,15 @@ class EmergencyModel(
     }
 
     /** Each fix: the fields asked again once the airplane has moved on
-     *  about half a mile or come down 500 ft, and ranked again from it. */
+     *  about half a mile or come down 500 ft, and ranked again from it.
+     *  The height is asked rounded down to its 500 ft step, never to the
+     *  nearest, so the glide reach asked with is never more than the
+     *  airplane has. */
     fun took(fix: OwnShip.Fix?, trackMagDeg: Double?) {
         this.trackMagDeg = trackMagDeg
         _state.update { it.copy(fix = fix) }
         if (fix == null) return
-        val at = Triple(step(fix.lat), step(fix.lon), fix.altitudeFt?.let { (it / 500).roundToLong() * 500.0 })
+        val at = Triple(step(fix.lat), step(fix.lon), fix.altitudeFt?.let { floor(it / 500) * 500.0 })
         if (at != asked) {
             asked = at
             asking?.cancel()

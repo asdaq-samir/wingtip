@@ -19,10 +19,13 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlin.math.roundToLong
 
 /**
  * Own ship: where the phone is, which way it is going and how fast, from
@@ -70,6 +73,12 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
 
     private val _fix = MutableStateFlow<Fix?>(null)
     val fix: StateFlow<Fix?> = _fix.asStateFlow()
+
+    /** The fix again each time the airplane has moved on a mile or so (a
+     *  minute of arc, as the iPhone's nearest list asks), the first fix
+     *  and its loss too: what a list of the nearest fields reloads by, so
+     *  a glide reach is never worked from a place miles behind. */
+    val byTheMile: Flow<Fix?> = fix.distinctUntilChanged { a, b -> mile(a) == mile(b) }
 
     private val _denied = MutableStateFlow(false)
     val denied: StateFlow<Boolean> = _denied.asStateFlow()
@@ -180,9 +189,14 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
      * The provider asked in the accuracy `precise` says, as the iOS app
      * picks Core Location's airborne or default configuration: one fix a
      * second at the best accuracy in the air, following, or on a diagram
-     * (what the alerts ahead, the path and the runway advisor need); on
-     * the ground otherwise the balanced accuracy, and nothing new until
-     * the phone has moved 10 m, which leaves the GPS off while parked.
+     * (what the alerts ahead, the path and the runway advisor need). On
+     * the ground otherwise still the GPS, but a fix every GROUND_EVERY_MS
+     * and nothing new until the phone has moved 10 m: the balanced
+     * accuracy it had answered from Wi-Fi and the cell towers, fixes with
+     * no speed, so the takeoff roll was never seen at flying speed and the
+     * switch to the airborne reading (and with it the path, Start Flight,
+     * the alerts ahead and the recorder) might never come. The battery is
+     * saved by the interval and the distance, not the accuracy.
      * Asking again with the same callback replaces the last request.
      */
     private fun request(): Boolean {
@@ -191,8 +205,8 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
                 .setMinUpdateIntervalMillis(EVERY_MS)
                 .build()
         } else {
-            com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, EVERY_MS)
-                .setMinUpdateIntervalMillis(EVERY_MS)
+            com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, GROUND_EVERY_MS)
+                .setMinUpdateIntervalMillis(GROUND_EVERY_MS)
                 .setMinUpdateDistanceMeters(GROUND_MOVE_M)
                 .build()
         }
@@ -317,10 +331,17 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         @Volatile
         var routeLine: List<List<Double>>? = null
 
+        /** A fix's minute of arc, about a mile (byTheMile); null with none. */
+        private fun mile(fix: Fix?): Pair<Long, Long>? = fix?.let { (it.lat * 60).roundToLong() to (it.lon * 60).roundToLong() }
+
         /** One fix a second. */
         const val EVERY_MS = 1000L
         /** On the ground, no new fix until the phone has moved this far, m. */
         const val GROUND_MOVE_M = 10f
+        /** On the ground, a fix at most every two seconds: a takeoff roll
+         *  reaches flying speed within one or two of them, and the reading
+         *  is at its best each second from the first fix underway. */
+        const val GROUND_EVERY_MS = 2_000L
         /** How often what is ahead is asked while moving; the planner looks
          *  five minutes along the track, so twice this with the app put
          *  away still leaves minutes. */

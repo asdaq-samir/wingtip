@@ -44,9 +44,13 @@ class HazardTest {
     }
 
     @Test
-    fun theGpsHeightMovesInFiftyFootSteps() {
+    fun theGpsHeightMovesInFiftyFootStepsRoundedDown() {
+        // Down, never to the nearest: the height asked with is never above
+        // the GPS's, so the red band never starts late.
         assertEquals(8500.0, Hazard.stepped(8524.0)!!, 0.0)
-        assertEquals(8550.0, Hazard.stepped(8526.0)!!, 0.0)
+        assertEquals(8500.0, Hazard.stepped(8549.0)!!, 0.0)
+        assertEquals(8550.0, Hazard.stepped(8550.0)!!, 0.0)
+        assertEquals(-50.0, Hazard.stepped(-10.0)!!, 0.0)
         assertEquals(null, Hazard.stepped(null))
         val fix = OwnShip.Fix(0.0, 0.0, 5512.0, null, 110.0, 5.0, 0)
         assertEquals(5500.0, Hazard.input(Hazard.Setting.FLIGHT, fix, null, null).gpsAltitudeFt!!, 0.0)

@@ -65,9 +65,14 @@ class InFlight {
     var terrainFt: Double? = null
 
     /** The airplane's own glide ratio (AirplaneNow: the pilot's over its book's), the ring's;
-     *  none, no ring. */
-    @Volatile
-    var glideRatio: Double? = null
+     *  none, no ring. Kept as a flow too, so the Nearest rows' glide
+     *  (FlightModel.reaches) is worked again when it changes, not only
+     *  at the next fix. */
+    private val _glideRatio = MutableStateFlow<Double?>(null)
+    val glideRatios: StateFlow<Double?> = _glideRatio.asStateFlow()
+    var glideRatio: Double?
+        get() = _glideRatio.value
+        set(value) { _glideRatio.value = value }
 
     /** Whether the map shows the glide ring (GlideRing.shown): the engine
      *  is asked for it only then, not at every fix for nothing. */

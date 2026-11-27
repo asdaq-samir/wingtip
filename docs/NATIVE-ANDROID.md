@@ -370,8 +370,9 @@ and `glOverlays.ts`):
   the layers (Off, On, In Flight; off by default) and, while it is not
   off, Red Within (the engine's `clearances_ft`), stock segmented
   buttons, kept in the settings file. The engine's `hazard_view` takes
-  the setting, own ship's speed and GPS height (to 50 ft, so a fix a
-  second repaints nothing while level) and the plan's highest leg, and
+  the setting, own ship's speed and GPS height (down to its 50 ft step,
+  so a fix a second repaints nothing while level and the red band never
+  starts late) and the plan's highest leg, and
   answers whether to draw and the red and amber lines; a
   `ColorReliefLayer` on the relief's own terrain source (`TerrainDem`,
   shared with the hillshade and removed only once neither draws from it)
@@ -737,6 +738,14 @@ local time and Z, about how long in the air, the landing time, the
 destination's weather in words from the planner's airport card -- and
 Share, Android's share sheet (ACTION_SEND). The live shareable track
 waits for the AWS launch.
+Own ship's GPS (`flight/OwnShip.kt`) reads at high accuracy always: on
+the ground a fix at most every 2 s and only after 10 m moved, at flying
+speed, following or on a diagram one a second. The balanced accuracy the
+ground had used answered from Wi-Fi and the cell towers with no speed, so
+a takeoff roll might never read as flying speed (2026-11-27). The screens
+that show something of the fix read it in a small composable of their own
+(the plate's own ship, a VOR card's radial), or only as needed (Ask reads
+it as a question is sent, the clearance page to a mile).
 In flight (#218, the owner's option A of 2026-11-08), as the iPhone:
 `flight/InFlight.kt` asks the engine once a fix for `in_flight`,
 `vertical_speed` and `glide_ring`; with own ship on and at flying speed
@@ -747,7 +756,9 @@ instruments bar -- groundspeed, track, GPS altitude (mean sea level: `getMslAlti
 the route the next field's distance, time to go and desired track, the
 distance off course and the destination's arrival with the fuel the
 plan leaves; Nearest one tap away (a sheet of the nearest fields, which
-are within a still-air glide by `glide_reaches`); and "A Planning Aid, Not for
+are within a still-air glide by `glide_reaches`, asked again each mile the
+airplane moves, `OwnShip.byTheMile`, as the one search's nearest are, and
+the glide worked again when the glide ratio changes); and "A Planning Aid, Not for
 Navigation" (`R.string.wording_planning_aid_notice_title`). The glide ring is a dashed line under the route
 (`ChartMap`'s `glide`), over the higher of the packs' ground (ahead's
 `ground_ft`) and the nearest field. FiguresStrip counts down from the

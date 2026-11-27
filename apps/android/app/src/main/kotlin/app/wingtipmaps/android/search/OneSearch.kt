@@ -136,7 +136,10 @@ fun OneSearch(
     LaunchedEffect(textFieldState, own) {
         snapshotFlow { textFieldState.text.toString() }.collect { model.type(it, own.values, ownShip.fix.value?.let { f -> f.lat to f.lon }) }
     }
-    LaunchedEffect(hasFix) { ownShip.fix.value?.let { model.loadNearest(it.lat, it.lon) } }
+    // The nearest fields from where the airplane is, asked again each mile
+    // it moves (as the iPhone's), so "within glide" is never read from a
+    // place left behind.
+    LaunchedEffect(ownShip) { ownShip.byTheMile.collect { fix -> fix?.let { model.loadNearest(it.lat, it.lon) } } }
 
     fun close() {
         textFieldState.clearText()

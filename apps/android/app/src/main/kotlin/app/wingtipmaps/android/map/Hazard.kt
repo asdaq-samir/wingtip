@@ -16,7 +16,6 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.roundToLong
 
 /**
  * The map's hazard colouring, ForeFlight's Hazard Advisor on the chart
@@ -43,7 +42,11 @@ object Hazard {
 
     typealias View = EngineContract.HazardViewAnswer
 
-    fun stepped(ft: Double?): Double? = ft?.let { (it / STEP_FT).roundToLong() * STEP_FT }
+    /** Rounded down to the step, never to the nearest: a height read up to
+     *  49 ft low colours the ground red a little early, where rounding to
+     *  the nearest read it up to 25 ft high and started the red band late.
+     *  Errs on the side of the warning. */
+    fun stepped(ft: Double?): Double? = ft?.let { floor(it / STEP_FT) * STEP_FT }
 
     /** The engine's question: the setting, own ship's speed and height (to
      *  STEP_FT), the plan's cruise, the pilot's clearance (null, the

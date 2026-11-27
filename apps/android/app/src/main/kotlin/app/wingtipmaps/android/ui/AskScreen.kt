@@ -78,18 +78,17 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenM
     val conversation by client.conversation.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
-    val fix by ownShip.fix.collectAsStateWithLifecycle()
     val question = rememberTextFieldState()
     var source by remember { mutableStateOf<AssistantSource?>(null) }
     val list = rememberLazyListState()
 
-    // The context as the app has it (StripModel.contextOf).
-    val context = StripModel.contextOf(planState, fix, pilot)
-
+    // The context as the app has it (StripModel.contextOf), worked out as
+    // a question is sent: own ship's fix read then, not collected, so the
+    // conversation is not drawn again each second.
     fun send(words: String) {
         if (words.isBlank()) return
         question.clearText()
-        client.ask(words, context)
+        client.ask(words, StripModel.contextOf(planState, ownShip.fix.value, pilot))
     }
 
     // The answer kept in sight as it grows.

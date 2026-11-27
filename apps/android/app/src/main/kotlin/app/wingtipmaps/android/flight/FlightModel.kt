@@ -16,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -116,11 +117,14 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
      * at the picked airplane's own glide ratio (false with none); worked out off the
      * main thread, and again only as the height crosses a 100 ft step, the
      * speed a 10 kt one or the glide ratio changes, not with every fix:
-     * the Nearest rows then draw once a step, not each second.
+     * the Nearest rows then draw once a step, not each second. The glide
+     * ratio is its flow, so a ratio given (AskFigures) is read at once,
+     * not only once a fix comes.
      */
     fun reaches(fields: List<NearestAirport>): Flow<Map<String, Result<Boolean>>> =
-        session.ownShip.fix
-            .map { fix -> fix?.let { it to GlideAsk(it.altitudeFt?.let { ft -> floor(ft / REACH_STEP_FT) * REACH_STEP_FT }, it.groundspeedKt?.let { kt -> (kt / 10).toInt() }, session.inFlight.glideRatio) } }
+        combine(session.ownShip.fix, session.inFlight.glideRatios) { fix, ratio ->
+            fix?.let { it to GlideAsk(it.altitudeFt?.let { ft -> floor(ft / REACH_STEP_FT) * REACH_STEP_FT }, it.groundspeedKt?.let { kt -> (kt / 10).toInt() }, ratio) }
+        }
             .distinctUntilChanged { a, b -> a?.second == b?.second }
             .map { asked ->
                 val (fix, ask) = asked ?: return@map emptyMap()
