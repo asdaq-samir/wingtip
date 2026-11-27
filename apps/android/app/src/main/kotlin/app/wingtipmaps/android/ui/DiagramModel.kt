@@ -30,7 +30,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DiagramModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    session: FlightSession,
+    private val session: FlightSession,
 ) : ViewModel() {
     data class State(val page: DiagramPage? = null, val problem: String? = null)
 
@@ -46,6 +46,8 @@ class DiagramModel @Inject constructor(
     /** The diagram at `url` read for `ident`; the last one's page let go of
      *  first, as a fresh dialog had none. */
     fun open(ident: String, url: String) {
+        // Own ship on a diagram wants every fix at its best (OwnShip.tune).
+        session.ownShip.diagramShown = true
         reading?.cancel()
         _state.value = State()
         reading = viewModelScope.launch {
@@ -62,6 +64,7 @@ class DiagramModel @Inject constructor(
 
     /** The dialog closed: the page, a large picture, not kept. */
     fun close() {
+        session.ownShip.diagramShown = false
         reading?.cancel()
         _state.value = State()
         _advice.value = null

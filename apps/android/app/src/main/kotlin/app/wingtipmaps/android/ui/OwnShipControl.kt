@@ -98,6 +98,8 @@ fun rememberOwnShipControl(flight: FlightModel = hiltViewModel()): OwnShipContro
     // the permission changed: read again, so the note goes once precise is
     // allowed, and the reading stops if it was taken away.
     LaunchedEffect(on.value) { if (on.value) ownShip.start() }
+    // Following asks the provider for its best each second (OwnShip.tune).
+    LaunchedEffect(following.value) { ownShip.mapFollows = following.value }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { if (on.value) ownShip.start() }
     // Put away on the ground the reading stops, as OwnShip says it does:
     // the request stayed registered, and the traffic and the recorder went
