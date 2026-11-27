@@ -51,6 +51,9 @@ WORKERS = 7
 #: first open of one waited on OpenSky's /tracks/all, 7 s (2026-11-27).
 WARM_FLIGHTS = 3
 WARM_WORKERS = 3
+#: The most paths asked ahead or waiting their turn at once, three cards'
+#: worth: past it a card asks none ahead, as each queued 3 behind the rest.
+WARM_MOST = 9
 #: Paths being asked for in the background, by (address, flight).
 _ASKING: dict[tuple[str, int], Future] = {}
 _ASKING_LOCK = threading.Lock()
@@ -226,12 +229,14 @@ def track(hex_id: str, flight_id: int, now: float) -> list[dict] | None:
     "lon", "alt_ft" (None on the ground), "gs_kt", "track_deg",
     "vrate_fpm"}), where it is TRACK_DAYS old at the most; None where it
     cannot be had within TRACK_TIMEOUT_S. One being asked ahead (`warm`) is
-    waited for, not asked twice."""
+    waited for, not asked twice; one still queued behind other cards' is
+    taken out of the queue and asked now, as the pilot's tap waited up to
+    TRACK_TIMEOUT_S on a request that had not started (round 4's audit)."""
     if now - flight_id > TRACK_DAYS * 86400 or not on():
         return None
     with _ASKING_LOCK:
         asking = _ASKING.get((hex_id, flight_id))
-    if asking is not None:
+    if asking is not None and not asking.cancel():
         try:
             return asking.result(timeout=TRACK_TIMEOUT_S) or None
         except FutureTimeout:
@@ -251,6 +256,8 @@ def warm(hex_id: str, flights: list[dict], now: float) -> None:
         with _ASKING_LOCK:
             if key in _ASKING:
                 continue
+            if len(_ASKING) >= WARM_MOST:
+                return
             _ASKING[key] = asking = _WARM_POOL.submit(_path, hex_id, flight["id"], TIMEOUT_S)
         # Outside the lock: a callback on a future already done runs at once.
         asking.add_done_callback(lambda _done, key=key: _forget(key))
