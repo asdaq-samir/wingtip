@@ -25,6 +25,16 @@ fn a_metar_with_no_height_for_its_overcast_is_not_vfr() {
     assert_eq!(a.get("visibility_plus"), Some(&Value::Bool(false)));
     assert_eq!(a.get("wind_dir_true_deg"), Some(&Value::Null));
     assert_eq!(a.get("wind_variable_deg"), Some(&Value::Null));
+    assert_eq!(x.get("visibility_minus"), Some(&Value::Bool(false)));
+}
+
+#[test]
+fn less_than_a_quarter_mile_is_said_less_than() {
+    // "M1/4SM": less than 1/4 sm (FMH-1 chapter 12), never 1/4 itself.
+    let m = metar::parse("METAR KXYZ 021353Z AUTO 00000KT M1/4SM FG VV001 10/10 A3001").unwrap();
+    assert!(m.visibility_minus && !m.visibility_plus);
+    assert_eq!(m.visibility_sm, Some(0.25));
+    assert!(!metar::parse("METAR KXYZ 021353Z AUTO 00000KT 1/4SM FG VV001 10/10 A3001").unwrap().visibility_minus);
 }
 
 #[test]

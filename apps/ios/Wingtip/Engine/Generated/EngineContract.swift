@@ -1723,6 +1723,8 @@ nonisolated enum EngineContract {
         var visibilitySm: Double?
         /// The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
         var visibilityPlus: Bool
+        /// Less than the figure, "M1/4SM" (FMH-1 chapter 12): said "less than 1/4 sm", never 1/4.
+        var visibilityMinus: Bool
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
@@ -1744,6 +1746,7 @@ nonisolated enum EngineContract {
             case ceilingCover = "ceiling_cover"
             case visibilitySm = "visibility_sm"
             case visibilityPlus = "visibility_plus"
+            case visibilityMinus = "visibility_minus"
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"

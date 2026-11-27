@@ -1754,6 +1754,11 @@ object EngineContract {
          */
         @SerialName("visibility_plus")
         val visibilityPlus: Boolean,
+        /**
+         * Less than the figure, "M1/4SM" (FMH-1 chapter 12): said "less than 1/4 sm", never 1/4.
+         */
+        @SerialName("visibility_minus")
+        val visibilityMinus: Boolean,
         @SerialName("wind_dir_true_deg")
         val windDirTrueDeg: Double? = null,
         @SerialName("wind_speed_kt")

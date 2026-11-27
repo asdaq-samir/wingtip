@@ -43,6 +43,9 @@ pub struct Metar {
     pub visibility_sm: Option<f64>,
     /// Visibility at or past the most the report says ("P6SM", CAVOK, 9999).
     pub visibility_plus: bool,
+    /// Visibility less than the figure ("M1/4SM": less than 1/4 sm, the
+    /// least an automated station reports; FMH-1 chapter 12).
+    pub visibility_minus: bool,
     pub layers: Vec<Layer>,
     pub weather: Vec<String>,
     pub temp_c: Option<f64>,

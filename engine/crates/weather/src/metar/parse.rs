@@ -120,6 +120,8 @@ pub fn parse(raw: &str) -> Option<Metar> {
                 if let Some((v, plus)) = statute_miles(w, None) {
                     m.visibility_sm = Some(v);
                     m.visibility_plus = plus;
+                    // "M1/4SM" is less than 1/4 sm, never 1/4 itself.
+                    m.visibility_minus = w.starts_with('M');
                 }
             }
             // Metres (WMO No. 306): 9999 is 10 km or more.

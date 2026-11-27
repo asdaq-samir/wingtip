@@ -121,6 +121,10 @@ pub fn metars(text: &str) -> Result<String, String> {
         r.push_str(",\"visibility_sm\":");
         json::opt_number(&mut r, vis);
         r.push_str(&format!(",\"visibility_plus\":{}", vis_plus.unwrap_or(false)));
+        // "M1/4SM", read from the text (the cache file's figure drops the M):
+        // less than the figure, said "less than 1/4 sm".
+        let minus = el.text_at(&["raw_text"]).and_then(metar::parse).is_some_and(|m| m.visibility_minus);
+        r.push_str(&format!(",\"visibility_minus\":{minus}"));
         for (key, tag) in [
             ("wind_dir_true_deg", "wind_dir_degrees"),
             ("wind_speed_kt", "wind_speed_kt"),

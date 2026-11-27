@@ -5603,6 +5603,10 @@ export interface AwcMetar {
    * The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
    */
   visibility_plus: boolean;
+  /**
+   * Less than the figure, "M1/4SM" (FMH-1 chapter 12): said "less than 1/4 sm", never 1/4.
+   */
+  visibility_minus: boolean;
   wind_dir_true_deg: number | null;
   wind_speed_kt: number | null;
   wind_gust_kt: number | null;
