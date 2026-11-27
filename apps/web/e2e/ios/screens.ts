@@ -231,7 +231,7 @@ export const SCREENS: Screen[] = [
       }
       if (part === "card all the way up") {
         await grabberTo(page, "full");
-        await expect(sideDrawer(page).getByTestId("flight-details")).toBeVisible();
+        await expect(sideDrawer(page).getByTestId("airplane-info")).toBeVisible();
       }
     },
   })),

@@ -1,28 +1,27 @@
-import { Bell, Crosshair, Gauge, History, Info, Plane, Share } from "lucide-react";
+import { Bell, Crosshair, Gauge, History, Info, Share } from "lucide-react";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { SheetCard } from "../../components/SheetCard";
 import { CardAction } from "../../components/CardAction";
 import IconButton from "../../components/IconButton";
 import { ACTION } from "../../lib/cardActions";
-import { ListGroup, ListRow } from "../../components/GroupedList";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
-import PastFlights from "../../components/airplane/PastFlights";
 import { FavoriteTile } from "../../components/FavoriteTile";
 import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
 import { CardTabBar, type CardTab } from "../../components/CardTabBar";
 import { StatusLine } from "../../components/StatusBadge";
 import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
-import { FlightLiveBox, FlightTab } from "../traffic/lazy";
+import { FlightPictures } from "../traffic/lazy";
 import { useAirplaneCardModel, type AirplaneCardModel } from "./useAirplaneCardModel";
 import type { AirplaneTab } from "./airplaneTabs";
 import FiguresTab from "./FiguresTab";
+import FlightsTab from "./FlightsTab";
 import InfoTab from "./InfoTab";
+import { airplanePhotoSlide } from "./photoSlide";
 
 /** Each tab's word and glyph, in the bar's order. */
 const TAB: Record<AirplaneTab, Omit<CardTab<AirplaneTab>, "value" | "hint">> = {
-  flight: { label: "Flight", icon: Plane },
   flights: { label: "Flights", icon: History },
   info: { label: "Info", icon: Info },
   figures: { label: "Figures", icon: Gauge },
@@ -102,13 +101,15 @@ function Actions({ m }: { m: AirplaneCardModel }) {
  * Unregistered): a card over the map's sheet by the one card rule, laid out
  * as the airport card is. Its head: Share, its N-number (else its call
  * sign) with its call sign and what it is under it, and ✕. Its actions by
- * its state (Actions). Always in sight under them, its flight while it
- * flies (FlightLiveBox), else one line of where it last landed. Then the
- * page of the tab picked in the glass bar at its foot (CardTabBar): Flight,
- * this flight; Flights, its past ones, each its replay and debrief; Info,
- * its photo and FAA record; Figures, its planning figures, for an
- * airplane the planner can fly. Traffic the FAA's registry does not hold
- * has Flight and Flights alone. Its view model is useAirplaneCardModel.
+ * its state (Actions). Under them one sideways row of slides
+ * (FlightPictures): its flight while it flies, else one line of where it
+ * last landed; its photos; the sketch of where it has flown. Then the
+ * page of the tab picked in the glass bar at its foot (CardTabBar):
+ * Flights, its flight now and its earlier ones, each its replay and
+ * debrief (FlightsTab); Info, its FAA record and identifiers; Figures,
+ * its planning figures, for an airplane the planner can fly. Traffic the
+ * FAA's registry does not hold has Flights alone. Its view model is
+ * useAirplaneCardModel.
  */
 export default function AirplaneCard({
   tail,
@@ -150,17 +151,24 @@ export default function AirplaneCard({
           {live.waiting}
         </p>
       )}
-      {live.plane ? (
-        <FlightLiveBox live={live} onOpenAirport={m.openAirport} />
-      ) : (
-        <p
-          role="status"
-          className={cn("px-1 pt-3", m.tail && card.status.problem ? "text-destructive-ink" : "text-muted-foreground", TEXT.detail)}
-          data-testid="airplane-status"
-        >
-          {m.tail ? <StatusLine words={card.status} /> : (live.chip ?? "Not heard today")}
-        </p>
-      )}
+      <div className="pt-3">
+        <FlightPictures
+          live={live}
+          title={m.title}
+          onOpenAirport={m.openAirport}
+          photo={airplanePhotoSlide(m.tail, card.photo)}
+          trafficPhoto={m.tail ? null : m.hex}
+          ground={
+            <p
+              role="status"
+              className={cn(m.tail && card.status.problem ? "text-destructive-ink" : "text-muted-foreground", TEXT.detail)}
+              data-testid="airplane-status"
+            >
+              {m.tail ? <StatusLine words={card.status} /> : (live.chip ?? "Not heard today")}
+            </p>
+          }
+        />
+      </div>
       <CardTabPages
         tab={m.tab}
         onPick={m.pick}
@@ -178,26 +186,14 @@ export default function AirplaneCard({
           />
         }
       >
-        {m.hex && (
-          <CardTabPanel value="flight" className="pt-0">
-            <FlightTab hex={m.hex} live={live} photo={!m.tail} />
-          </CardTabPanel>
-        )}
         {m.tabs.includes("flights") && (
           <CardTabPanel value="flights">
-            {/* Its flights, each ▶ its replay and debrief over this card (PastFlightCard). */}
-            {m.hex ? (
-              <PastFlights hex={m.hex} onOpen={m.openPast} untitled play type={live.detail?.type ?? live.plane?.type ?? null} />
-            ) : (
-              <ListGroup>
-                <ListRow muted title="No flights to show: the FAA's registry gives no address for this N-number." />
-              </ListGroup>
-            )}
+            <FlightsTab m={m} />
           </CardTabPanel>
         )}
         {m.tail && (
           <CardTabPanel value="info" className="pt-0">
-            <InfoTab tail={m.tail} card={card} faa={live.detail?.faa} />
+            <InfoTab card={card} faa={live.detail?.faa} hex={m.hex} callsign={live.plane?.callsign?.trim() || null} />
           </CardTabPanel>
         )}
         {m.flyable && (

@@ -885,20 +885,29 @@ owner's P1 of 2026-11-14 (canvas
 head (`SheetCard`: Share at its start, `?airplane=` or `?flight=`, the
 N-number or call sign, ✕); the `CardAction` row by its state, Track (a
 Base UI Toggle on `useTracking`'s follow) or Fly This, then Alerts
-(`AircraftAlertMenu`) and Favorite (`FavoriteTile`); the flight in the
-air (`traffic/FlightParts`' `FlightLiveBox` over `FlightSummary`) or the
-one status line (`airplaneStatus`); then the tabs Flight · Flights ·
-Info · Figures in the floating glass bar (`CardTabBar`, icons Plane,
-History, Info and Gauge, Flights with its count over its icon). Flight
-is `traffic/FlightParts`' `FlightTab` (the sketch of where it has flown,
-its photo too where there is no Info, then `FlightInfoTab`), its data
+(`AircraftAlertMenu`) and Favorite (`FavoriteTile`); then one row of
+slides, the airport card's picture tiles (`traffic/FlightParts`'
+`FlightPictures` on `CardPictures`, 2026-11-26): the flight in the air
+(`FlightLiveBox` over `FlightSummary`, a `content` slide, a labelled
+group and not a picture, its ends each a tap; its per-second clock
+`FlightNow`'s own, so only it redraws) or the one status line
+(`airplaneStatus`), one key for both so it stays first; the N-number's
+Planespotters.net photo (`photoSlide`, the tile the link to its page,
+the photographer named on it), or traffic's by its address; and the
+sketch of where it has flown (`LiveSketch`) where there are two reports
+at the least. Then the tabs Flights · Info · Figures in the floating
+glass bar (`CardTabBar`, icons History, Info and Gauge, Flights with its
+count over its icon). Flights (`FlightsTab`) is, while it flies,
+`traffic/FlightNowRows`' Now group (squawk, operator, scheduled route,
+tower; traffic with no N-number its registration, type, owner, model,
+ICAO address and call sign there too, in the air or not), then
+`PastFlights` titled Earlier; on the ground `PastFlights` alone; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). Info (`InfoTab`) starts with the facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`: Type, Year, Seats,
 Engines, Registration, its status in the destructive ink where lapsed,
-and Owner, public as the FAA publishes it) and its Planespotters.net
-photo as the airport card's picture tiles (`CardPictures`, the tile the
-link to its page, the photographer named on it), then `AirplaneInfo`.
+and Owner, public as the FAA publishes it), then `AirplaneInfo`, its
+Airplane group holding its ICAO address and call sign.
 Figures (`FiguresTab`) is `useAirplaneProfile`'s. It reads its N-number
 two ways at once (`lib/airplane/lookup`, `useTailLookup`, in
 `useAirplaneCard`): the FAA's record from the planner's
@@ -909,7 +918,7 @@ record from `/api/airplanes/{n_number}` and its `/photo`
 (`lib/airplane/details`; the history groups in `AirplaneHistory`); and
 `/api/traffic/find`, the live sources, seconds when adsb.lol's API is
 busy, for whether it is in the air, which tracks it (`?flight=`) without
-the map moving. Flights is `PastFlights` by that address with a ▶ on
+the map moving. Flights' list is `PastFlights` by that address with a ▶ on
 each row (`play`), each opening `PastFlightCard` (`?flight=&past=`), its
 replay and debrief, over the card, in a chunk of its own fetched at that
 tap (`flying/LazyPastFlightCard`), not with the route panel's. The one search's N-number row
@@ -947,7 +956,7 @@ Done sits at the pill's start, over the airplane's pill in the same bar.
 
 **Structure, a tracked flight** is the airplane card's (above) since
 2026-11-26: its summary (`FlightSummary`: its ends, the bar of the way
-flown, height, speed and track) always in sight under the actions while
+flown, height, speed and track) the first slide under the actions while
 it flies; the ends' row always there, held while they are asked for and
 "—" for an end not known, each end its ident's line and its town's (kept
 empty), so nothing under it moves as they come in or come back empty

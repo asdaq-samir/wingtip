@@ -6,8 +6,8 @@ import { FAA } from "./faaRecord";
  * An airplane's card opened when it is not heard now, as the owner's
  * iPhone showed N654FL on 2026-11-13: its registration and type from the
  * FAA's record, a long owner's name that never covers its label, its one
- * picture the card's width, saying so where its flights could not be
- * fetched, and its last row reachable. The planner is stubbed: adsb.lol's
+ * slide the card's width (its status, no photo or way flown to sketch),
+ * and a row far down its record reachable. The planner is stubbed: adsb.lol's
  * sky and the registry are not the suite's.
  */
 
@@ -59,7 +59,7 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("an airplane not heard now has its registration and type from the FAA's record, its owner beside its label, its picture as wide as the card and its last row reachable", async ({
+test("an airplane not heard now has its registration and type from the FAA's record, its owner beside its label, its status slide as wide as the card and its record's rows reachable", async ({
   page,
 }) => {
   // Every airplane's flights are offered, public (the owner, 2026-11-26).
@@ -85,18 +85,18 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   }
   await page.evaluate(() => (document.documentElement.style.fontSize = ""));
 
-  // Its one picture spans the card, as its details do, and says its flights were not had.
-  const sketch = card.getByTestId("flight-trail");
-  await sketch.scrollIntoViewIfNeeded();
-  const [pic, list] = [await sketch.boundingBox(), await card.getByTestId("flight-details").boundingBox()];
+  // Its one slide, its status (no photo, nothing flown to sketch), spans the card, as its record does.
+  const pictures = card.getByTestId("airplane-pictures");
+  await expect(pictures.getByTestId("airplane-status")).toBeVisible();
+  await expect(pictures.getByTestId("flight-trail")).toHaveCount(0);
+  const [pic, list] = [await pictures.boundingBox(), await card.getByTestId("airplane-info").boundingBox()];
   expect(Math.abs(pic!.width - list!.width)).toBeLessThan(4);
-  await expect(card.getByTestId("flight-trail-empty")).toHaveText("Its flights could not be fetched.", { timeout: slow(30_000) });
 
-  // Scrolled to its end, its last row is in sight: the card pulled up
+  // Scrolled down to a row far down its record, it is in sight: the card pulled up
   // first, as a pilot does, since at half a card's body does not scroll
   // (it opens at half, rules.md's "Detents" and "Grow, then scroll").
-  // Its FAA registration in full is Info's now; the Flight tab ends with its callsign.
-  const last = card.getByTestId("flight-details").getByText("Callsign", { exact: true });
+  // Its identifiers are Info's with its record (the owner, 2026-11-26): its ICAO address the Airplane group's.
+  const last = card.getByTestId("airplane-info").getByText("ICAO Address", { exact: true });
   await inSheet(page, last);
   await expect(last).toBeInViewport();
 });

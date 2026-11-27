@@ -25,16 +25,16 @@ import { WORDING } from "../../lib/wording/generated/wording";
 export default function PastFlights({
   hex,
   onOpen,
-  untitled = false,
+  title,
   type = null,
   play = false,
 }: {
   hex: string;
   /** Opens a flight's own card (PastFlightCard), over this one. */
   onOpen: (id: number) => void;
-  /** Under a section's own title (the airplane card's Earlier flights):
-   *  its list untitled but for a day picked. */
-  untitled?: boolean;
+  /** Its list's title ("Earlier", under the airplane card's flight now);
+   *  none, untitled but for a day picked. */
+  title?: string;
   /** Its type, on each row as FlightAware's list has it. */
   type?: string | null;
   /** Each row ends in a ▶ where the chevron was: the airplane profile's Flights, each a replay
@@ -73,7 +73,7 @@ export default function PastFlights({
       <ListGroup
         // No footnote under it, at the owner's ask ("Avoid putting so many
         // footnotes for pilots experience"): the rows say it.
-        title={from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : untitled ? undefined : "Last Flights"}
+        title={from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : title}
       >
         {(!data || looking) && !isError && (
           <ListRow
