@@ -15,6 +15,9 @@ describe("the Dimmer over what is drawn on the chart", () => {
     expect(dimmedOpacity(0.8)).toEqual(["*", DIM, 0.8]);
     expect(dimmedOpacity(undefined)).toEqual(["*", DIM, 1]);
     expect(dimmedOpacity(["get", "o"])).toEqual(["*", DIM, ["get", "o"]]);
+    // A fade's target: the dim now as a figure, which MapLibre eases to (glFadeIn).
+    expect(dimmedOpacity(0.8, 0.5)).toEqual(["*", 0.5, 0.8]);
+    expect(dimmedPaint({ type: "line" }, "line-opacity", 0.8, 0.5)).toEqual(["*", 0.5, 0.8]);
   });
 
   it("puts the dim into each output of a zoom curve, where MapLibre allows the zoom", () => {

@@ -33,11 +33,12 @@ export function mapDimOf(night: boolean, chartBrightness: number): number {
   return night ? Math.min(1, Math.max(0, chartBrightness)) : 1;
 }
 
-/** One opacity times the dim. MapLibre takes the zoom only as the input
+/** One opacity times the dim (or `by`, the dim now as a figure, which a
+ *  fade eases to: glFadeIn). MapLibre takes the zoom only as the input
  *  of a top-level interpolate or step, so there the dim goes into each
  *  stop's output; anything else is multiplied whole. */
-export function dimmedOpacity(value: unknown): unknown {
-  const times = (v: unknown) => ["*", DIM, v];
+export function dimmedOpacity(value: unknown, by: unknown = DIM): unknown {
+  const times = (v: unknown) => ["*", by, v];
   if (Array.isArray(value) && (value[0] === "interpolate" || value[0] === "interpolate-hcl" || value[0] === "interpolate-lab")) {
     const [op, how, input, ...stops] = value as unknown[];
     return [op, how, input, ...stops.map((s, i) => (i % 2 === 1 ? times(s) : s))];
@@ -83,9 +84,9 @@ export function isDimmed(layer: Dimmable, prop: string): boolean {
 
 /** A paint value as it is set on a layer: times the dim where the dim
  *  reaches it (an opacity, or a colour of a layer dimmed by colour). */
-export function dimmedPaint(layer: Dimmable, prop: string, value: unknown): unknown {
+export function dimmedPaint(layer: Dimmable, prop: string, value: unknown, by?: number): unknown {
   if (!isDimmed(layer, prop)) return value;
-  return byColour(layer) ? dimmedColour(value) : dimmedOpacity(value);
+  return byColour(layer) ? dimmedColour(value) : dimmedOpacity(value, by);
 }
 
 /** A layer as it is added to the map: its opacities, its own or 1, times
