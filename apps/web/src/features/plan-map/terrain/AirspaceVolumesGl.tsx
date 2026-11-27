@@ -18,7 +18,7 @@ import { inForce } from "../tfrMarks";
 import { DEM } from "./dem";
 import type { GroundPoint } from "./airspaceHeights";
 import { KINDS, VolumeDrawing, boxOf, classesAt, kindOf, labelsOf, suaOfVolume, volumesQuery, type VolumePiece } from "./airspaceVolumes";
-import { shadeOf, shelfLabelLayer, shelfLabelsOf } from "./airspaceShelves";
+import { shadeOf, shelfFadedId, shelfLabelLayers, shelfLabelsOf } from "./airspaceShelves";
 import { SuaVolumeCard } from "./SuaVolumeCard";
 import { pickOnMap } from "../../../lib/map/mapPick";
 
@@ -248,8 +248,8 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   // mark is placed first and never hidden by one. The areas' names under
   // the shelves' tabs (MapLibre places the upper layer's first), so where
   // they meet at a low tilt each shelf keeps its own altitudes.
-  useGlLayer("lines", { [SHELVES]: { type: "geojson", data: EMPTY } }, [shelfLabelLayer(SHELVES, SHELVES)]);
-  useGlLayer("lines", { [LABELS]: { type: "geojson", data: EMPTY } }, [LABEL_LAYER], SHELVES);
+  useGlLayer("lines", { [SHELVES]: { type: "geojson", data: EMPTY } }, shelfLabelLayers(SHELVES, SHELVES));
+  useGlLayer("lines", { [LABELS]: { type: "geojson", data: EMPTY } }, [LABEL_LAYER], shelfFadedId(SHELVES));
   useGlData(
     LABELS,
     useMemo(() => labelsOf(pieces), [pieces]),

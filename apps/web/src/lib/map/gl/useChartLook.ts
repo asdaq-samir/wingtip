@@ -30,3 +30,14 @@ export function useMapDim(): number {
   const { dim, sunlight, night } = useChartLook();
   return mapDimOf(night, chartBrightness(dim, sunlight, night));
 }
+
+/** The same share read from what is kept, outside React, for a map whose
+ *  layers come before ChartGl has set it (useGlLayer): the dark class on
+ *  <html> (public/first-frame.js, then next-themes), Sunlight's mark there
+ *  (lib/sunlight) and the kept Dimmer. */
+export function keptMapDim(): number {
+  const root = document.documentElement;
+  const night = root.classList.contains("dark");
+  const dim = usePreferences.getState().chartDim[night ? "dark" : "light"];
+  return mapDimOf(night, chartBrightness(dim, root.dataset.chartLight === "bright", night));
+}

@@ -10,7 +10,8 @@ import type {
   MapMouseEvent,
   SourceSpecification,
 } from "maplibre-gl";
-import { dimLayer, dimmedPaint } from "./mapDim";
+import { MAP_DIM, dimLayer, dimmedPaint } from "./mapDim";
+import { keptMapDim } from "./useChartLook";
 
 /**
  * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is
@@ -207,6 +208,10 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
       kept.set(key, as);
       left?.delete(key);
     }
+    // The Dimmer's share on the map before its first layer is drawn, where
+    // ChartGl has not set it yet: read at 1, a load at night drew every
+    // word and line at full light for its first frames (AIM 8-1-6).
+    if (layers.length && map.getGlobalState()[MAP_DIM] === undefined) map.setGlobalStateProperty(MAP_DIM, keptMapDim());
     for (const layer of layers) {
       const key = `l:${layer.id}`,
         as = JSON.stringify(layer);

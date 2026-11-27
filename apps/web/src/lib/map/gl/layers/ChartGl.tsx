@@ -96,7 +96,13 @@ export function ChartGl({ course }: { course: Course | null }) {
     .join(" ");
   const brightness = chartBrightness(dim, sunlight, night);
   // What is drawn on the chart at its brightness at night (mapDim): one
-  // global state every symbol's, line's and circle's opacity reads.
+  // global state every symbol's, line's and circle's opacity reads, set in
+  // the same commit as the chart's own paint (ChartSources' useGlPaint), so
+  // the two are drawn in one frame and ease together on the style's
+  // transition (MapLibre eases a constant paint from the state before).
+  // No opacity by feature reads it where this app can help it (useGlLines'
+  // ink, the shelves' two layers): such a one has MapLibre lay its source
+  // out again at every step of the Dimmer.
   const mapDim = mapDimOf(night, brightness);
   useEffect(() => {
     if (map.style) map.setGlobalStateProperty(MAP_DIM, mapDim);

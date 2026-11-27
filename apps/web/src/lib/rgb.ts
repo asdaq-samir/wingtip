@@ -5,3 +5,13 @@
 export function rgbOf(hex: string): [number, number, number] {
   return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
 }
+
+/** A "#rrggbb" with an alpha, 0 to 1, as "#rrggbbaa", which MapLibre's
+ *  colours read: a line's see-through in its colour, by feature, where an
+ *  opacity by feature times the Dimmer had MapLibre lay its source out
+ *  again at each move of the slider (useGlLines). Any other colour as it is. */
+export function withAlpha(hex: string, alpha: number): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex) || alpha >= 1) return hex;
+  const byte = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
+  return `${hex}${byte.toString(16).padStart(2, "0")}`;
+}
