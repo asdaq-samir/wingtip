@@ -5,14 +5,16 @@ Description: >
   per 56-day cycle by a Fargate Spot task into S3, and the web app's
   fingerprinted files cached at the edge. About $41 a month with the
   server on Spot capacity, the default (docs/README-AWS.md has the
-  itemised cost and the runbook). Deploy in
-  us-east-1: CloudFront's certificate and its WAF web ACL must be there.
+  itemised cost and the runbook). Deploy in any Region (us-east-2 for an
+  AWS project account); CloudFront's certificate and its WAF web ACL are
+  made in us-east-1 first, by edge.yaml or the AWS CLI, and passed in as
+  CertificateArn and WebAclArn (decision 0064).
 
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label: { default: Domain }
-        Parameters: [PublicHost, HostedZoneId, MailDomain]
+        Parameters: [PublicHost, HostedZoneId, CertificateArn, WebAclArn, MailDomain]
       - Label: { default: Server }
         Parameters: [ServerPricing, ServerImageId, InstanceType, SpareInstanceType, DataVolumeGb, ImageTag, CloudFrontPrefixListId]
       - Label: { default: Deploys from GitHub }
@@ -26,7 +28,25 @@ Parameters:
     Description: The app's domain, e.g. app.example.com. Its Route 53 zone must be HostedZoneId.
   HostedZoneId:
     Type: AWS::Route53::HostedZone::Id
-    Description: The Route 53 zone the domain lives in (for the certificate, the DNS records and SES's DKIM).
+    Description: The Route 53 zone the domain lives in (for the DNS records and SES's DKIM).
+  CertificateArn:
+    Type: String
+    AllowedPattern: "^arn:aws:acm:us-east-1:[0-9]{12}:certificate/.+$"
+    ConstraintDescription: an ACM certificate in us-east-1, the one Region CloudFront takes one from.
+    Description: >
+      The ACM certificate for PublicHost, in us-east-1: edge.yaml's
+      CertificateArn output, or on an AWS project account the one the
+      AWS CLI requests (docs/README-AWS.md, "The first deploy").
+  WebAclArn:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^arn:aws:wafv2:us-east-1:[0-9]{12}:global/webacl/.+$"
+    ConstraintDescription: empty, or a CLOUDFRONT-scope web ACL (us-east-1).
+    Description: >
+      Empty, the default: no web ACL on the distribution, the edge's rate
+      limit off at launch (the owner, 2026-11-27, decision 0063). Turned
+      on by deploying edge.yaml with EdgeRateLimit=on and passing its
+      WebAclArn output here (about $7.20 a month).
   MailDomain:
     Type: String
     Default: ""
@@ -37,7 +57,7 @@ Parameters:
       The server's Amazon Linux 2023 image (x86_64), named here rather
       than looked up, so the server changes only when this does (a new
       one replaces the server; the data disk moves to the next). The
-      current one: aws ssm get-parameter --region us-east-1 --name
+      current one: aws ssm get-parameter --region <the stack's Region> --name
       /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
       --query Parameter.Value --output text
   ServerPricing:
@@ -48,7 +68,10 @@ Parameters:
       spot: AWS's spare capacity, about a third of the price; a few times a
       year AWS takes it back, and a new server starts on the same data disk
       within minutes. on-demand: never taken back. Changing it replaces the
-      server, keeping the data disk.
+      server, keeping the data disk. An AWS project account (the new AWS
+      experience) denies Spot (its managed policy's DenySpotMarketType and
+      DenyRequestSpotInstances) until its advanced features are activated
+      and those policies changed: deploy there with on-demand.
   InstanceType:
     Type: String
     Default: t3a.large
@@ -80,42 +103,45 @@ Parameters:
     Default: latest
   CloudFrontPrefixListId:
     Type: String
-    Default: pl-3b927c52
-    Description: CloudFront's origin-facing managed prefix list in us-east-1 (com.amazonaws.global.cloudfront.origin-facing).
+    Default: pl-b6a144df
+    Description: >
+      CloudFront's origin-facing managed prefix list in the stack's Region,
+      whose ID differs by Region: the default is us-east-2's (us-east-1's
+      is pl-3b927c52). Check it with: aws ec2 describe-managed-prefix-lists
+      --region <the stack's Region> --filters
+      Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing
+      --query 'PrefixLists[0].PrefixListId' --output text
   GitHubRepo:
     Type: String
     Default: asdaq-samir/wingtip
   CreateGitHubOidcProvider:
     Type: String
     Default: "true"
-    AllowedValues: ["true", "false"]
-    Description: "false if the account already has token.actions.githubusercontent.com as an OIDC provider."
+    AllowedValues: ["true", "false", "none"]
+    Description: >
+      false if the account already has token.actions.githubusercontent.com
+      as an OIDC provider. none makes neither the provider nor the deploy
+      role, for an AWS project account, whose managed policy denies making
+      a provider (DenyIAMRestrictedActions, iam:*Provider*) until its
+      advanced features are activated: deploys then go by hand.
   BudgetEmail:
     Type: String
     Default: ""
     Description: Where the monthly budget alarm ($50, at 80% spent) and a failed nightly backup go. Empty for no alarm.
-  EdgeRateLimit:
-    Type: String
-    Default: "off"
-    AllowedValues: ["on", "off"]
-    Description: >-
-      The AWS WAF web ACL on the distribution (TileRateLimit, about $7.20 a month):
-      "on" answers 429 to an address past 3,000 tile requests, or 3,000 other planner
-      requests, in five minutes. Off at launch (the owner, 2026-11-27, decision 0063);
-      turned on if the server's load or the tile requests show abuse.
-
-Rules:
-  UsEast1:
-    Assertions:
-      - Assert: !Equals [!Ref AWS::Region, us-east-1]
-        AssertDescription: Deploy in us-east-1, where CloudFront's certificate must live.
 
 Conditions:
   HasBudget: !Not [!Equals [!Ref BudgetEmail, ""]]
   CreateOidc: !Equals [!Ref CreateGitHubOidcProvider, "true"]
+  HasDeployRole: !Not [!Equals [!Ref CreateGitHubOidcProvider, "none"]]
   HasMailDomain: !Not [!Equals [!Ref MailDomain, ""]]
   SpotServer: !Equals [!Ref ServerPricing, spot]
-  EdgeRateLimitOn: !Equals [!Ref EdgeRateLimit, "on"]
+  HasWebAcl: !Not [!Equals [!Ref WebAclArn, ""]]
+  # Route 53's health check figures and ACM's events for CloudFront's
+  # certificate reach CloudWatch and EventBridge in us-east-1 alone, so
+  # their alarm and rule are made only in a stack there; an AWS project
+  # account may not make either in us-east-1 (decision 0064).
+  InUsEast1: !Equals [!Ref AWS::Region, us-east-1]
+  UsEast1Alerts: !And [!Condition HasBudget, !Condition InUsEast1]
 
 Resources:
   # ---------------------------------------------------------------------
@@ -606,19 +632,10 @@ Resources:
       Domain: vpc
 
   # ---------------------------------------------------------------------
-  # Domain: the certificate (CloudFront's, so in us-east-1), the public
-  # name on CloudFront, and origin.<domain> on the server for Caddy's own
-  # Let's Encrypt certificate.
+  # Domain: the public name on CloudFront (its certificate, CertificateArn,
+  # is made in us-east-1: edge.yaml), and origin.<domain> on the server
+  # for Caddy's own Let's Encrypt certificate.
   # ---------------------------------------------------------------------
-  Certificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Ref PublicHost
-      ValidationMethod: DNS
-      DomainValidationOptions:
-        - DomainName: !Ref PublicHost
-          HostedZoneId: !Ref HostedZoneId
-
   OriginRecord:
     Type: AWS::Route53::RecordSet
     Properties:
@@ -771,131 +788,16 @@ Resources:
             QueryStringBehavior: whitelist
             QueryStrings: [c, r]
 
-  # A rate rule on the tile paths that reach the server (the deep
-  # security review of 2026-11-21, N5). A tile's address with a ?c= or ?r=
-  # of its own is a cache miss, so a loop of them made every tile the
-  # planner's to read on the server's two cores. Past 3,000 tile requests
-  # in five minutes from one address (10 a second, held), that address is
-  # answered 429 at the edge until it slows. A pilot asks far fewer: a
-  # session is some 200 tiles, the web's service worker keeps 20,000 for
-  # the cycle and the phones their own cache, and a whole screen at 2x is
-  # about 40. Counted before the cache, so a hit counts too; an airport's
-  # shared Wi-Fi of ten pilots panning at once stays under it. CLOUDFRONT
-  # scope, which AWS takes only in us-east-1, where this stack is deployed
-  # (its Description). Its cost, about $7 a month and $0.60 a million
-  # requests, is in docs/README-AWS.md. Made only with EdgeRateLimit=on:
-  # off at launch, the owner's choice of 2026-11-27 (decision 0063), which
-  # leaves N5 and M4 open until it is turned on.
-  TileRateLimit:
-    Type: AWS::WAFv2::WebACL
-    Condition: EdgeRateLimitOn
-    Properties:
-      Name: !Sub "${AWS::StackName}-tiles"
-      Description: Rate limits on the tile paths of the planner and its other paths, everything else let through.
-      Scope: CLOUDFRONT
-      DefaultAction: { Allow: {} }
-      VisibilityConfig:
-        CloudWatchMetricsEnabled: true
-        MetricName: !Sub "${AWS::StackName}-waf"
-        SampledRequestsEnabled: true
-      CustomResponseBodies:
-        slow-down:
-          ContentType: TEXT_PLAIN
-          Content: Too many tile requests from this address. Try again in a few minutes.
-        slow-down-planner:
-          ContentType: TEXT_PLAIN
-          Content: Too many requests to the planner from this address. Try again in a few minutes.
-      Rules:
-        - Name: tiles-per-address
-          Priority: 0
-          Action:
-            Block:
-              CustomResponse:
-                ResponseCode: 429
-                CustomResponseBodyKey: slow-down
-                ResponseHeaders: [{ Name: Retry-After, Value: "60" }]
-          VisibilityConfig:
-            CloudWatchMetricsEnabled: true
-            MetricName: !Sub "${AWS::StackName}-tiles-per-address"
-            SampledRequestsEnabled: true
-          Statement:
-            RateBasedStatement:
-              Limit: 3000
-              EvaluationWindowSec: 300
-              AggregateKeyType: IP
-              ScopeDownStatement:
-                OrStatement:
-                  Statements:
-                    - ByteMatchStatement:
-                        FieldToMatch: { UriPath: {} }
-                        PositionalConstraint: STARTS_WITH
-                        SearchString: /api/planner/chart-tile/
-                        TextTransformations: [{ Priority: 0, Type: NONE }]
-                    - ByteMatchStatement:
-                        FieldToMatch: { UriPath: {} }
-                        PositionalConstraint: STARTS_WITH
-                        SearchString: /api/planner/terrain-tile/
-                        TextTransformations: [{ Priority: 0, Type: NONE }]
-        # Every other planner path, anonymous ones among them: a plan,
-        # nav log or ForeFlight pack starts a corridor read per new pair of
-        # airports, the FAA PDFs and diagrams miss the cache with a query
-        # string of the caller's own, and the overlay tiles reach the
-        # planner through Caddy. The tile rule above held only the two tile
-        # paths (round 4's security review, M4; the owner took the
-        # recommendation, a second rule at about $1 a month). The same
-        # 3,000 in five minutes from one address, the tiles left to their
-        # own count: a pilot planning asks some tens a route, the overlay
-        # tiles of a whole screen some 40.
-        - Name: planner-per-address
-          Priority: 1
-          Action:
-            Block:
-              CustomResponse:
-                ResponseCode: 429
-                CustomResponseBodyKey: slow-down-planner
-                ResponseHeaders: [{ Name: Retry-After, Value: "60" }]
-          VisibilityConfig:
-            CloudWatchMetricsEnabled: true
-            MetricName: !Sub "${AWS::StackName}-planner-per-address"
-            SampledRequestsEnabled: true
-          Statement:
-            RateBasedStatement:
-              Limit: 3000
-              EvaluationWindowSec: 300
-              AggregateKeyType: IP
-              ScopeDownStatement:
-                AndStatement:
-                  Statements:
-                    - ByteMatchStatement:
-                        FieldToMatch: { UriPath: {} }
-                        PositionalConstraint: STARTS_WITH
-                        SearchString: /api/planner/
-                        TextTransformations: [{ Priority: 0, Type: NONE }]
-                    - NotStatement:
-                        Statement:
-                          ByteMatchStatement:
-                            FieldToMatch: { UriPath: {} }
-                            PositionalConstraint: STARTS_WITH
-                            SearchString: /api/planner/chart-tile/
-                            TextTransformations: [{ Priority: 0, Type: NONE }]
-                    - NotStatement:
-                        Statement:
-                          ByteMatchStatement:
-                            FieldToMatch: { UriPath: {} }
-                            PositionalConstraint: STARTS_WITH
-                            SearchString: /api/planner/terrain-tile/
-                            TextTransformations: [{ Priority: 0, Type: NONE }]
-
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
         Enabled: true
-        WebACLId: !If [EdgeRateLimitOn, !GetAtt TileRateLimit.Arn, !Ref AWS::NoValue]
+        WebACLId: !If [HasWebAcl, !Ref WebAclArn, !Ref AWS::NoValue]
         Comment: !Sub "Wingtip Maps (${AWS::StackName})"
         Aliases: [!Ref PublicHost]
         ViewerCertificate:
-          AcmCertificateArn: !Ref Certificate
+          AcmCertificateArn: !Ref CertificateArn
           SslSupportMethod: sni-only
           MinimumProtocolVersion: TLSv1.2_2021
         HttpVersion: http2and3
@@ -1243,6 +1145,7 @@ Resources:
 
   DeployRole:
     Type: AWS::IAM::Role
+    Condition: HasDeployRole
     Properties:
       Description: GitHub Actions in the production environment (promote.yml) pushes the images and runs deploy.sh on the server.
       AssumeRolePolicyDocument:
@@ -1337,10 +1240,13 @@ Resources:
 
   # Is the app up, as a pilot reaches it: through CloudFront to the
   # gateway's health, which counts its database, every 30 seconds from
-  # Route 53's checkers round the world. About $1.50 a month.
+  # Route 53's checkers round the world. About $1.50 a month. Only in a
+  # stack in us-east-1, where Route 53 sends its figures (UsEast1Alerts);
+  # elsewhere ChecksMissingAlarm and ServicesAlarm see the server, not
+  # the path through CloudFront.
   HealthCheck:
     Type: AWS::Route53::HealthCheck
-    Condition: HasBudget
+    Condition: UsEast1Alerts
     Properties:
       HealthCheckConfig:
         Type: HTTPS
@@ -1358,7 +1264,7 @@ Resources:
   # it is back. A Spot interruption's few minutes may send one pair.
   HealthAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: HasBudget
+    Condition: UsEast1Alerts
     Properties:
       AlarmDescription: Wingtip Maps is not answering its health check (Route 53, through CloudFront).
       Namespace: AWS/Route53
@@ -1547,16 +1453,18 @@ Resources:
             InputTemplate: '"Wingtip Maps: the chart refresh task <task> stopped without finishing (<reason>). The old cycle is served until the next run; docs/RUNBOOKS.md, A bad or late FAA cycle."'
 
   # CloudFront's certificate is ACM's, renewed by itself while its DNS
-  # record stands; ACM says so 45 days out when it cannot.
+  # record stands; ACM says so 45 days out when it cannot, on us-east-1's
+  # event bus alone (UsEast1Alerts). Elsewhere AWS Health's own mail to
+  # the account says so.
   CertificateExpiryRule:
     Type: AWS::Events::Rule
-    Condition: HasBudget
+    Condition: UsEast1Alerts
     Properties:
       Description: The app's ACM certificate is near its expiry and has not renewed.
       EventPattern:
         source: [aws.acm]
         detail-type: [ACM Certificate Approaching Expiration]
-        resources: [!Ref Certificate]
+        resources: [!Ref CertificateArn]
       Targets:
         - Id: alert
           Arn: !Ref BackupAlertTopic
@@ -1588,7 +1496,8 @@ Outputs:
   ServerAddress:
     Value: !Ref ServerAddress
   DeployRoleArn:
-    Description: The repo variable AWS_ROLE_ARN (with AWS_REGION us-east-1).
+    Condition: HasDeployRole
+    Description: The repo variable AWS_ROLE_ARN (with AWS_REGION the stack's Region).
     Value: !GetAtt DeployRole.Arn
   AppSecretArn:
     Description: Fill in the owner's values here (infra/server/env.example), then run deploy.sh.

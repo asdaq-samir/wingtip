@@ -69,3 +69,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0061 | [Wingtip inside Claude: a live view beside the chat, and the flight edited by tools](0061-wingtip-inside-claude.md) | 2026-11-22 | Accepted |
 | 0062 | [Validation checks each branch early, reruns only what failed, and ends with one full run](0062-smart-validation.md) | 2026-11-22 | Accepted |
 | 0063 | [The edge's rate limit is off at launch, turned on if abuse shows](0063-edge-rate-limit-off-at-launch.md) | 2026-11-27 | Accepted |
+| 0064 | [Two stacks: CloudFront's us-east-1 pieces apart, the rest in any Region](0064-two-stacks-any-region.md) | 2026-11-27 | Accepted |

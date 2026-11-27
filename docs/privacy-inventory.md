@@ -257,7 +257,7 @@ longer than it takes to answer the request.
 | USGS (basemap.nationalmap.gov) | On the web, with its imagery overlay on; on Android, by itself once the map is zoomed close in past the chart's own detail (`map/CloseMap.kt`, since b5b72427e): the map's tiles in view, asked by the device | None: the tiles' coordinates, as any web map's |
 | Google (tile.googleapis.com) | On the web only, with a Google overlay on: a session and the map's tiles in view, asked by the browser with the planner's key. The Android app asks Google for no map tile (its close-in imagery is the USGS's since b5b72427e, and the store-review audit of 2026-11-21 took its unused Maps key out of the manifest) | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
 | US Census Bureau (geocoding.geo.census.gov) | A street address typed in Nearest's field, to place it; its gazetteer of towns is downloaded once | The address typed, from the server, not the device; kept in the planner's memory for an hour so the same address is not asked twice (`geocode.py`), never written to disk or a log (a failure logs the error's kind only), and a place picked is in the page address (`nearName`, `nearAt`) |
-| Amazon Web Services | Hosting all of the above (us-east-1) | As above |
+| Amazon Web Services | Hosting all of the above (the stack's Region, us-east-2 on the owner's account; CloudFront's certificate in us-east-1, decision 0064) | As above |
 
 ## Not done
 

@@ -47,7 +47,7 @@ asked of a planner that is down.
 
 The gateway cannot see itself stop. Docker restarts it
 (`restart: unless-stopped`); Route 53's health check through CloudFront
-(`HealthAlarm`, three minutes) pages for a gateway or host that is down,
+(`HealthAlarm`, three minutes; made only by a stack in us-east-1) pages for a gateway or host that is down,
 and the server's own checks (below) for a container that hangs.
 
 ## The server
@@ -67,7 +67,7 @@ Every five minutes `infra/server/health.sh` (cron, written by
 
 And by EventBridge: the chart refresh task stopping without finishing
 (`ChartRefreshFailedRule`), and ACM's warning that CloudFront's
-certificate is near its expiry (`CertificateExpiryRule`).
+certificate is near its expiry (`CertificateExpiryRule`, likewise only in us-east-1, where ACM sends its events).
 
 The cron jobs' own logs (`/var/log/wingtip-*.log`) are rotated weekly,
 four kept; the containers' go to CloudWatch, a month.
