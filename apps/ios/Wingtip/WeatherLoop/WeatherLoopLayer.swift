@@ -126,7 +126,7 @@ final class WeatherLoopLayer {
             map.insertOverlay(overlay, at: min(1, map.overlays(in: .aboveLabels).count), level: .aboveLabels)
         }
         for (key, renderer) in renderers {
-            renderer.alpha = wanted[key]?.frame == shown ? Self.alpha(radar: overlays[key]?.radar ?? true) : 0
+            renderer.alpha = wanted[key]?.frame == shown ? Self.alpha(radar: overlays[key]?.radar ?? true, brightness: brightness) : 0
         }
         if !ready, !frames.isEmpty { watchLoading() }
     }
@@ -145,18 +145,19 @@ final class WeatherLoopLayer {
         }
     }
 
-    /// The chart's brightness at night (OverlayDim): each frame's alpha
-    /// times it, so the loop is no brighter than the chart under it.
-    static var brightness: CGFloat = 1
+    /// A frame's alpha at the chart's brightness at night (OverlayDim):
+    /// its own times it, so the loop is no brighter than the chart under it.
+    static func alpha(radar: Bool, brightness: CGFloat) -> CGFloat { (radar ? radarAlpha : satelliteAlpha) * brightness }
 
-    static func alpha(radar: Bool) -> CGFloat { (radar ? radarAlpha : satelliteAlpha) * brightness }
+    /// The chart's brightness now, as the map's dim last set it (MarkDim.apply).
+    private var brightness: CGFloat { (map as? RaisedMapView)?.markAlpha ?? 1 }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
         guard let tiles = overlay as? LoopTileOverlay else { return nil }
         let renderer = MKTileOverlayRenderer(tileOverlay: tiles)
         let loop = Self.loop
         let frame = loop.frames.firstIndex { tiles.key.hasSuffix($0.valid) }
-        renderer.alpha = frame == loop.shown ? Self.alpha(radar: tiles.radar) : 0
+        renderer.alpha = frame == loop.shown ? Self.alpha(radar: tiles.radar, brightness: brightness) : 0
         renderers[tiles.key] = renderer
         return renderer
     }

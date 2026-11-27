@@ -221,7 +221,8 @@ struct ChartMap: UIViewRepresentable {
                 map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
             }
         }
-        context.coordinator.legLayer.update(map, routeLegs, night: colorScheme == .dark, below: context.coordinator.courseEdge, marks: context.coordinator.routeMarks)
+        context.coordinator.legLayer.update(map, routeLegs, night: colorScheme == .dark, below: context.coordinator.courseEdge,
+                                            marks: context.coordinator.routeMarks, dim: context.coordinator.overlayDim)
         (map as? RaisedMapView)?.use(MapTerrain(rawValue: terrain) ?? .flat, field: course?.destination.ident)
     }
 
@@ -300,10 +301,14 @@ struct ChartMap: UIViewRepresentable {
 
         func dim(_ shade: CGFloat, night: Bool, on map: MKMapView) {
             guard shade != self.shade || night != self.night else { return }
+            let turned = night != self.night
             (self.shade, self.night) = (shade, night)
             tiles?.shade = shade
             let brightness = MarkDim.alpha(shade: shade, night: night)
             overlayDim.set(brightness, on: map)
+            if turned, let edge = courseEdge, let renderer = map.renderer(for: edge) as? MKOverlayPathRenderer {
+                overlayDim.recolour(renderer, stroke: NightPalette.routeEdge(night: night))
+            }
             MarkDim.apply(brightness, on: map)
         }
 
@@ -329,7 +334,7 @@ struct ChartMap: UIViewRepresentable {
             if let renderer = extras.renderer(for: overlay) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
-                renderer.strokeColor = NightPalette.routeEdge
+                renderer.strokeColor = NightPalette.routeEdge(night: night)
                 renderer.lineWidth = Self.edgeWidth
                 renderer.lineJoin = .round
                 renderer.lineCap = .round

@@ -4,9 +4,9 @@ import UIKit
 /// A G-AIRMET's label in its hazard's colour with the chart's halo, as
 /// aviationweather.gov labels its own ("SfcWind"). Gives way to the
 /// fields' and the route's marks.
-final class AirmetLabelView: MKAnnotationView {
+final class AirmetLabelView: MKAnnotationView, NightWords {
     static let reuse = "airmet-label"
-    private let label = UILabel()
+    private let label = NightWordLabel()
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
@@ -25,11 +25,13 @@ final class AirmetLabelView: MKAnnotationView {
 
     func show(_ mark: AirmetLabel) {
         label.text = mark.text
-        label.textColor = mark.colour
+        label.ink = mark.colour
         label.sizeToFit()
         frame = CGRect(origin: .zero, size: label.bounds.size)
         accessibilityLabel = "G-AIRMET, \(mark.text)"
     }
+
+    func dim(_ brightness: CGFloat) { label.brightness = brightness }
 }
 
 /// The value at the point tapped, a round badge as Apple Weather's maps

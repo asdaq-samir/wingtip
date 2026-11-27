@@ -59,13 +59,14 @@ final class RouteLegLayer: NSObject, UIGestureRecognizerDelegate {
         return RouteLegs.nearest(to: at, segments: segments)
     }
 
-    func update(_ map: MKMapView, _ next: RouteLegInput, night: Bool, below edge: (any MKOverlay)?, marks: RouteMarksLayer) {
+    /// The night's green goes through the map's dim (OverlayDim.recolour),
+    /// so the casing is never drawn at full light over the dimmed chart.
+    func update(_ map: MKMapView, _ next: RouteLegInput, night: Bool, below edge: (any MKOverlay)?, marks: RouteMarksLayer, dim: OverlayDim) {
         input = next
         marks.showLegPoints(next.points, on: map)
         if night != self.night {
             self.night = night
-            casingRenderer?.strokeColor = NightPalette.routeGreen(night: night)
-            casingRenderer?.setNeedsDisplay()
+            if let casingRenderer { dim.recolour(casingRenderer, stroke: NightPalette.routeGreen(night: night)) }
         }
         let leg = next.selected.flatMap { i in next.legs.indices.contains(i) ? next.legs[i] : nil }
         guard leg != drawn else { return }

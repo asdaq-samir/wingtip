@@ -35,6 +35,24 @@ struct MarkDimTests {
         #expect(OverlayDim.colour(nil, brightness: 0.5) == nil)
     }
 
+    /// A mark's words at night dimmed by colour so their luminance falls
+    /// with the paper's, their halo left opaque: the sRGB times the
+    /// brightness to the 1/2.2.
+    @Test func aWordIsDimmedToThePapersLight() throws {
+        let ink = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        #expect(MarkDim.word(ink, brightness: 0.5).getRed(&r, green: &g, blue: &b, alpha: &a))
+        #expect(abs(r - 0.9 * pow(0.5, 1 / 2.2)) < 1e-3 && a == 1)
+        #expect(MarkDim.word(ink, brightness: 1) === ink)
+    }
+
+    /// A mark with words keeps its alpha, the words dimmed in it.
+    @Test @MainActor func aFieldsIdentKeepsItsHalo() {
+        let view = FixMarkView(annotation: nil, reuseIdentifier: nil)
+        MarkDim.dim(view, 0.5)
+        #expect(view.alpha == 1)
+    }
+
     /// A line MapKit is given takes the dim now, and every one on the map
     /// the next; the terrain tint's tiles are no path, and keep their light.
     @Test @MainActor func theLinesTakeTheDimAsItMoves() throws {
@@ -44,12 +62,11 @@ struct MarkDimTests {
         _ = dim.take(line)
         #expect(line.strokeColor == .white)
         dim.set(0.5, on: MKMapView())
-        #expect(dim.brightness == 0.5 && WeatherLoopLayer.brightness == 0.5)
+        #expect(dim.brightness == 0.5)
         let later = MKPolylineRenderer(polyline: MKPolyline())
         later.strokeColor = .white
         _ = dim.take(later)
         var w: CGFloat = 0, a: CGFloat = 0
         #expect(try #require(later.strokeColor).getWhite(&w, alpha: &a) && abs(w - 0.5) < 1e-6)
-        WeatherLoopLayer.brightness = 1
     }
 }
