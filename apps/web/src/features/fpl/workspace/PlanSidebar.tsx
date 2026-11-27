@@ -8,6 +8,7 @@ import { arrivalMin } from "../../plan";
 import { useInspector } from "../../../hooks/use-inspector";
 import { AircraftRecentRows, usePrefetchAircraftTiles, loadAircraftFavoriteGroups } from "../../aircraft-pick";
 import { useOneSearchModel } from "../search/oneSearchModel";
+import { useOneSearchFrame } from "../search/oneSearchFrame";
 import { useSearchQuery } from "../search/searchQuery";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
@@ -65,8 +66,10 @@ export default function PlanSidebar({
 }: {
   vm: PlanSlices<"cards" | "fpl" | "map" | "plan" | "route" | "routeList" | "search" | "stops" | "view">;
 }) {
-  // The one search's view model (OneSearchRoot round the panel).
-  const model = useOneSearchModel();
+  // The one search's frame (OneSearchRoot round the panel): the panel is
+  // not drawn again at each keystroke, only the parts that show the words
+  // (AskBox, TypedResults), which read the model.
+  const model = useOneSearchFrame();
   const { stripsDrawn, view } = vm.view;
   const { addStop, depart, planned, routePoints, routed } = vm.route;
   const { course, s } = vm.plan;
@@ -134,7 +137,7 @@ export default function PlanSidebar({
   }, [asked]);
   // A picker's ask draws the one search's field in the body, under the
   // ask's title in the sheet's first row (OneSearchField, Apple Maps' Add Stop).
-  const askField = model.pick && !model.pick.waiting ? <SearchBox model={model} inputRef={vm.search.searchInput} using /> : null;
+  const askField = model.pick && !model.pick.waiting ? <AskBox inputRef={vm.search.searchInput} /> : null;
   // The airport's card, in the panel's body.
   const placeCard = place && (
     <Waits>
@@ -274,11 +277,11 @@ export default function PlanSidebar({
               <SavedFlights onBack={closeSaved} />
             </Waits>
           </TabPage>
-        ) : model.typed || model.direct || (model.pick && model.does.length > 0) ? (
+        ) : model.listed ? (
           // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule);
           // a picker's ask with a row before anything is typed too (the departure's My Location).
           <TabPage key={model.sent ? "results" : "suggestions"}>
-            <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
+            <Waits>{model.sent ? <SearchResultsPage /> : <TypedResults />}</Waits>
           </TabPage>
         ) : (
           stripsDrawn && (
@@ -288,4 +291,14 @@ export default function PlanSidebar({
       </TabKept>
     </>
   );
+}
+
+/** The picker's field in the body, with the words typed (the model). */
+function AskBox({ inputRef }: { inputRef: PlanSlices<"search">["search"]["searchInput"] }) {
+  return <SearchBox model={useOneSearchModel()} inputRef={inputRef} using />;
+}
+
+/** The suggestions for the words typed (the model). */
+function TypedResults() {
+  return <OneSearchResults model={useOneSearchModel()} />;
 }
