@@ -8,7 +8,7 @@ import { MapCard } from "../../../lib/map/cards/MapCard";
 import { useOwnFix } from "../../../lib/map/position/ownShip";
 import { askSearch } from "../../../lib/oneSearch";
 import { wantScreen } from "../../../lib/navigation/wanted";
-import { CardAction } from "../../CardAction";
+import { CardAction, CardActionRow } from "../../CardAction";
 
 /**
  * Own ship's card, a tap on the airplane on the map (OwnShipGl), as Apple
@@ -34,7 +34,7 @@ export function OwnShipCard() {
     : "Position not known";
   return (
     <MapCard title="My Location" subtitle={line}>
-      <div className="grid grid-cols-2 gap-2" data-testid="own-ship-actions">
+      <CardActionRow columns={2} testId="own-ship-actions">
         <CardAction
           icon={<ICON.nearest />}
           label="Nearest"
@@ -54,7 +54,7 @@ export function OwnShipCard() {
           }}
           testId="own-ship-direct-to"
         />
-      </div>
+      </CardActionRow>
     </MapCard>
   );
 }

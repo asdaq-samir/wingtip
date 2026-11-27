@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CardAction as Action } from "../../../components/CardAction";
+import { CardAction as Action, CardActionRow } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
@@ -27,9 +27,9 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
   // bar (FplTabBar).
   if (!routed || !flying) return null;
   return (
-    // 56 tall as the airport card's (PlaceActions), eight apart so their
-    // 44-point areas meet.
-    <div className="grid grid-cols-4 gap-2 pt-2 pb-1 *:min-h-14" data-testid="fpl-actions">
+    // The cards' own row (CardActionRow): 56 tall and 12 under what is over
+    // it, as the airport card's, eight apart so their 44-point areas meet.
+    <CardActionRow columns={4} testId="fpl-actions">
       <Action
         icon={<ICON.brief />}
         label="Brief"
@@ -54,7 +54,7 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
         testId="route-profile"
       />
       {more}
-    </div>
+    </CardActionRow>
   );
 }
 

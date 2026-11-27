@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ComponentType } from "react";
 import { EyeOff, Maximize2, Square, SquareDashed } from "lucide-react";
-import { CardAction } from "../../components/CardAction";
+import { CardAction, CardActionRow } from "../../components/CardAction";
 import { ListGroup } from "../../components/GroupedList";
 import SwitchRow from "../../components/SwitchRow";
 import { Slider } from "../../components/ui/slider";
@@ -38,7 +38,7 @@ export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id
             <PlateBeside title={vm.title} url={vm.chartUrl} airport={airport} mark={vm.mark} />
           </Suspense>
         )}
-        <div className="grid grid-cols-2 gap-2">
+        <CardActionRow columns={2} flush={!!(vm.beside && vm.chartUrl)}>
           <CardAction icon={<EyeOff />} label="Hide Plate" onClick={vm.hide} testId="plate-hide" />
           <CardAction
             icon={<Maximize2 />}
@@ -47,7 +47,7 @@ export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id
             disabled={!vm.chartUrl}
             testId="plate-full-screen"
           />
-        </div>
+        </CardActionRow>
         <ListGroup>
           <SwitchRow title="Show Annotations" on={vm.annotations} onChange={vm.setAnnotations} testId="plate-annotations" />
           <SwitchRow title="Invert Plate Colors" on={vm.inverted} onChange={vm.setInverted} />

@@ -164,10 +164,25 @@ export function CardAction({
  * and the airplane's without the 12 points sat higher than the airport's
  * (the owner, 2026-11-27: "Is that not common code?").
  */
-export function CardActionRow({ columns, testId, children }: { columns: 3 | 4; testId: string; children: ReactNode }) {
+export function CardActionRow({
+  columns,
+  testId,
+  flush = false,
+  children,
+}: {
+  /** As many as its tiles, so the row fills the card's width. */
+  columns: 1 | 2 | 3 | 4;
+  testId?: string;
+  /** Not under the head but after other content, whose gap spaces it: no 12 points of its own. */
+  flush?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className={cn("grid gap-2 pt-3 *:min-h-14", columns === 4 ? "grid-cols-4" : "grid-cols-3")} data-testid={testId}>
+    <div className={cn("grid gap-2 *:min-h-14", !flush && "pt-3", COLUMNS[columns])} data-testid={testId}>
       {children}
     </div>
   );
 }
+
+// Whole class names, for Tailwind to find.
+const COLUMNS = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" } as const;

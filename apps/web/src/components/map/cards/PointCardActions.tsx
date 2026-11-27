@@ -1,8 +1,7 @@
 import { useContext } from "react";
 import { ACTION } from "../../../lib/cardActions";
 import { CardCloseContext } from "../../../lib/map/cards/cardClose";
-import { cn } from "cn";
-import { CardAction } from "../../CardAction";
+import { CardAction, CardActionRow } from "../../CardAction";
 import { done as confirm } from "../../../lib/doneNote";
 import { copyText } from "../../../lib/share";
 import { usePointActions, type ChartPoint } from "../../../lib/map/cards/pointActions";
@@ -35,7 +34,7 @@ export function PointActions({
   };
   return (
     // As many columns as tiles, as the airport card's row fills its width.
-    <div className={cn("grid gap-2", copy ? "grid-cols-3" : "grid-cols-2")} data-testid="point-actions">
+    <CardActionRow columns={copy ? 3 : 2} testId="point-actions">
       {/* The navaid card's set in its order (lib/cardActions). */}
       <CardAction
         icon={<ACTION.directTo.icon />}
@@ -70,6 +69,6 @@ export function PointActions({
           testId="point-copy"
         />
       )}
-    </div>
+    </CardActionRow>
   );
 }

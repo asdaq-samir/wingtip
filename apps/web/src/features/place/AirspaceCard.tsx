@@ -15,7 +15,7 @@ import { TEXT } from "../../lib/text";
 import { CardHead } from "../../components/CardHead";
 import { SheetCard } from "../../components/SheetCard";
 import { useCardSize } from "../../lib/sheetCards";
-import { CardAction } from "../../components/CardAction";
+import { CardAction, CardActionRow } from "../../components/CardAction";
 import { RowBadge } from "../../components/RowBadge";
 import { BADGE } from "../../lib/rowBadges";
 import { FINDING_TONE } from "../../lib/findings";
@@ -204,7 +204,7 @@ export default function AirspaceCard({
       {/* The point into the route, as Maps' dropped pin's card offers its
           directions: the first the tint's, the others its wash. */}
       {naming && actions.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 pt-3" data-testid="point-actions">
+        <CardActionRow columns={3} testId="point-actions">
           {/* The cards' own tiles (CardAction), as a VOR's and an airport's. */}
           {actions.map((a, i) => (
             <CardAction
@@ -217,7 +217,7 @@ export default function AirspaceCard({
               testId={a.testId}
             />
           ))}
-        </div>
+        </CardActionRow>
       )}
 
       {/* The layers under the head at every size, from the ground up: at
