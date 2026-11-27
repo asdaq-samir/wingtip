@@ -33,7 +33,6 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
-import wingtip_native
 from cachetools import LRUCache
 from wingtip import outside, weather_store
 
@@ -88,7 +87,7 @@ def parse_detail(xml_bytes: bytes) -> dict:
     the engine (wingtip_engine::tfr); a file that is not XML raises
     ElementTree's ParseError."""
     try:
-        got = json.loads(wingtip_native.call("tfr_detail_read", json.dumps({"text": xml_bytes.decode("utf-8-sig")})))
+        got = engine("tfr_detail_read", text=xml_bytes.decode("utf-8-sig"))
     except (UnicodeDecodeError, ValueError) as e:
         raise ET.ParseError(str(e)) from e
     if got is None:

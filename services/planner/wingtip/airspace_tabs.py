@@ -17,9 +17,8 @@ a figure of its own.
 
 from __future__ import annotations
 
-import json
 
-import wingtip_native
+from wingtip.engine import ask as engine
 
 
 def shelf_tab(volume: dict) -> str | None:
@@ -34,7 +33,7 @@ def shelf_tab(volume: dict) -> str | None:
         "ceiling_ft": volume["ceiling_ft"],
         "ceiling_excluded": bool(volume.get("ceiling_excluded")),
     }
-    label = json.loads(wingtip_native.call("airspace_shelf_label", json.dumps(asked)))
+    label = engine("airspace_shelf_label", **asked)
     return label["text"] if label else None
 
 
@@ -50,4 +49,4 @@ def special_use_tab(area: dict) -> dict | None:
         "ceiling": {"ft": area["ceiling_ft"], "code": area["ceiling_ref"], "desc": area.get("ceiling_desc")},
         "excluded": bool(area.get("excluded")),
     }
-    return json.loads(wingtip_native.call("special_use_tab", json.dumps(asked)))
+    return engine("special_use_tab", **asked)

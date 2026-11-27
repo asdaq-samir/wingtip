@@ -8,7 +8,8 @@ import json
 import wingtip_native
 
 
-def ask(name: str, **given):
+def ask(name: str, /, **given):
     """The engine's rule `name` on the input given, its answer parsed; an
-    input not of the rule's shape is a ValueError with the engine's words."""
-    return json.loads(wingtip_native.call(name, json.dumps(given)))
+    input not of the rule's shape is a ValueError with the engine's words.
+    A date or a time is sent as its text (str), as the Go / No-Go's were."""
+    return json.loads(wingtip_native.call(name, json.dumps(given, default=str)))

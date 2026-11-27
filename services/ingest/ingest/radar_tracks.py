@@ -8,12 +8,11 @@ too (squawk_meaning); the rest is passed on as sent."""
 from __future__ import annotations
 
 import functools
-import json
 import math
 import xml.etree.ElementTree as ET
 
-import wingtip_native
 from wingtip import utc
+from wingtip.engine import ask as engine
 
 
 def _number(element, tag: str) -> float | None:
@@ -37,8 +36,8 @@ def _velocities(velocities: list[Velocity]) -> list[Velocity]:
     out: list[Velocity] = [(None, None)] * len(velocities)
     if not asked:
         return out
-    body = json.dumps({"velocities": [{"east": velocities[i][0], "north": velocities[i][1]} for i in asked]})
-    for i, got in zip(asked, json.loads(wingtip_native.call("velocity_track", body)), strict=True):
+    tracks = engine("velocity_track", velocities=[{"east": velocities[i][0], "north": velocities[i][1]} for i in asked])
+    for i, got in zip(asked, tracks, strict=True):
         out[i] = (None if got["track_deg"] is None else round(got["track_deg"], 1)), round(got["speed"], 1)
     return out
 
@@ -54,7 +53,7 @@ def _emergency(squawk: str) -> str | None:
     """What a transponder's code declares, by the engine's squawk_meaning
     (AIM 6-2-2, 6-3-4 and 6-4-2); None for any other code. Kept by the
     code, as a facility's messages repeat the same few hundred."""
-    meaning = json.loads(wingtip_native.call("squawk_meaning", json.dumps({"squawk": squawk})))
+    meaning = engine("squawk_meaning", squawk=squawk)
     return _EMERGENCY_WORDS.get(meaning) if meaning else None
 
 

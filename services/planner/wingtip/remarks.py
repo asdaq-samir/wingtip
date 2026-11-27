@@ -14,16 +14,15 @@ here "Weather advisory - CTAF 5 clicks or 815-444-1729."
 from __future__ import annotations
 
 import csv
-import json
 import re
 import threading
 from pathlib import Path
 
-import wingtip_native
 
 from . import faa_data
 from .config import DATA_DIR
 from .single_flight import once
+from wingtip.engine import ask as engine
 
 FAA_CACHE_DIR = DATA_DIR / "raw" / "faa_nasr"
 
@@ -62,7 +61,7 @@ def read(texts: list[str]) -> list[str]:
     contractions written out, codes, figures and telephone numbers kept."""
     if not texts:
         return []
-    return json.loads(wingtip_native.call("remarks_read", json.dumps({"remarks": texts})))["lines"]
+    return engine("remarks_read", remarks=texts)["lines"]
 
 
 def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
@@ -79,7 +78,7 @@ def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
     lighting = [text for column, text, _ in remarks if column == LIGHTS]
     beacon = [text for column, text, _ in remarks if column == BEACON]
     radio = [text for column, text, _ in remarks if column not in (LIGHTS, BEACON) and _CLICKS.search(text.upper())]
-    lit = json.loads(wingtip_native.call("lighting_read", json.dumps({"lighting": lighting, "beacon": beacon})))
+    lit = engine("lighting_read", lighting=lighting, beacon=beacon)
     return {
         "lighting": lighting + beacon,
         "lights": lit["systems"],

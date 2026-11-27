@@ -13,7 +13,6 @@ that is missing, and wingtip.faa_editions a newer edition of one there.
 
 import csv
 import io
-import json
 import logging
 import zipfile
 from collections.abc import Iterable, Iterator
@@ -21,7 +20,6 @@ from datetime import date
 from pathlib import Path
 
 import requests
-import wingtip_native
 
 from . import apra, dof
 
@@ -47,6 +45,7 @@ from .faa_route_airports import (  # noqa: F401
     load_route_airports,
     load_vor_navaids,
 )
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -324,7 +323,7 @@ def pattern_agl_ft(ident: str, cache_dir) -> float:
     (wingtip_engine::runway::pick::pattern_altitude, through
     wingtip_native.call), as wingtip.pattern and the phones ask it."""
     published = published_pattern_agl_ft(ident, cache_dir)
-    return json.loads(wingtip_native.call("pattern_altitude", json.dumps({"published_agl_ft": published})))["agl_ft"]
+    return engine("pattern_altitude", published_agl_ft=published)["agl_ft"]
 
 
 def preload_obstacles(cache_dir) -> None:
