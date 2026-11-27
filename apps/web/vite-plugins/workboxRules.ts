@@ -150,3 +150,18 @@ export const CHART_TILES: RuntimeCaching = {
     plugins: [dropOlderEditions],
   },
 };
+
+/** The app's own chunks that the precache leaves out (vite.config.ts's
+ *  globIgnores: the 3D layers, the wind flow, the ACS table), kept the
+ *  first time the page asks for one, so a part opened once on the ground
+ *  opens again in the air. Cache first: a chunk's name carries its hash,
+ *  so an address never changes what it holds; a new build names new ones. */
+export const APP_CHUNKS: RuntimeCaching = {
+  urlPattern: ({ url }) => url.pathname.startsWith("/app/assets/"),
+  handler: "CacheFirst",
+  options: {
+    cacheName: "app-chunks",
+    expiration: { maxEntries: 60, maxAgeSeconds: 60 * 24 * 3600, purgeOnQuotaError: true },
+    cacheableResponse: { statuses: [200] },
+  },
+};
