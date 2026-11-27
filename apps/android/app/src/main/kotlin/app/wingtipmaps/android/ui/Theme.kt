@@ -186,12 +186,14 @@ fun nativeScheme(context: Context, dark: Boolean): ColorScheme = when {
 /** What a look gives Material: its scheme, type scale and shapes. */
 class LookTheme(val colorScheme: ColorScheme, val typography: Typography, val shapes: Shapes, val native: Boolean)
 
-/** Under High contrast text, the grey words the Sunlight looks' (SunlightNight's at night, never sunlight's
- *  white, which would undo the pilot's dark adaptation, AIM 8-1-6), as the iPhone's Ink lifts them under
- *  Increase Contrast; Native's are Material You's, which lift themselves. */
+/** Under more contrast (moreContrast), the grey words and the edges the Sunlight looks' (SunlightNight's at
+ *  night, never sunlight's white, which would undo the pilot's dark adaptation, AIM 8-1-6), as the web's
+ *  prefers-contrast: more lifts --muted-foreground, --border and --input: a field's edge (Material's outline)
+ *  the input's, a divider (outlineVariant) the border's. Native's are Material You's, which lift themselves. */
 fun LookTheme.lifted(dark: Boolean): LookTheme {
-    val grey = (if (dark) WingtipPalettes.SunlightNight else WingtipPalettes.Sunlight).mutedForeground
-    return LookTheme(colorScheme.copy(secondary = grey, onSurfaceVariant = grey), typography, shapes, native)
+    val sun = if (dark) WingtipPalettes.SunlightNight else WingtipPalettes.Sunlight
+    val scheme = colorScheme.copy(secondary = sun.mutedForeground, onSurfaceVariant = sun.mutedForeground, outline = sun.input, outlineVariant = sun.border)
+    return LookTheme(scheme, typography, shapes, native)
 }
 
 /**
@@ -236,7 +238,7 @@ fun WingtipTheme(content: @Composable () -> Unit) {
     SystemBarsFollow(dark)
     val look = rememberLook().value ?: Look.WINGTIP
     val scheme = if (look == Look.NATIVE) nativeScheme(LocalContext.current, dark) else null
-    val theme = lookTheme(look, dark, scheme).let { if (highContrastText() && !it.native) it.lifted(dark) else it }
+    val theme = lookTheme(look, dark, scheme).let { if (moreContrast() && !it.native) it.lifted(dark) else it }
     val palette = scheme?.let { nativePalette(it, dark) } ?: look.palette(dark)
     CompositionLocalProvider(
         LocalWingtipPalette provides palette,

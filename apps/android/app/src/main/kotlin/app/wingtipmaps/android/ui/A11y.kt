@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import android.app.UiModeManager
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,14 +45,32 @@ object A11y {
 fun largeType(): Boolean = LocalDensity.current.fontScale >= A11y.LARGE_TYPE
 
 /**
- * Android's High contrast text (Settings, Accessibility), followed as it
- * turns: the web's prefers-contrast: more and the iPhone's Increase
- * Contrast, under which the grey words are lifted (WingtipTheme). Its own
- * switch is read from Android 16 (API 36), which made it public; false
- * before.
+ * Whether the phone asks for more contrast, followed as it turns: Android
+ * 14's colour contrast (Settings, Display: Medium or High, UiModeManager's
+ * contrast of 0.5 or more) or Android 16's High contrast text
+ * (AccessibilityManager, public from API 36). The web's prefers-contrast:
+ * more and the iPhone's Increase Contrast, under which the grey words and
+ * the edges are lifted (WingtipTheme). False before Android 14.
  */
 @Composable
-fun highContrastText(): Boolean {
+fun moreContrast(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return false
+    val context = LocalContext.current
+    val modes = remember(context) { context.getSystemService(UiModeManager::class.java) }
+    var level by remember(modes) { mutableFloatStateOf(modes?.contrast ?: 0f) }
+    DisposableEffect(modes) {
+        val listener = UiModeManager.ContrastChangeListener { level = it }
+        modes?.addContrastChangeListener(context.mainExecutor, listener)
+        onDispose { modes?.removeContrastChangeListener(listener) }
+    }
+    return level >= MORE_CONTRAST || highContrastText()
+}
+
+/** UiModeManager's contrast at Medium (0.5) and above: more contrast asked. */
+private const val MORE_CONTRAST = 0.5f
+
+@Composable
+private fun highContrastText(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return false
     val context = LocalContext.current
     val manager = remember(context) { context.getSystemService(AccessibilityManager::class.java) }
