@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, firstRow, grabberTo, settle, sideDrawer, slow, frontSheet } from "./helpers";
+import { closeCard, firstRow, grabberTo, settle, sideDrawer, slow, frontSheet, withFoot } from "./helpers";
 import { card, cardWeather, tafFromNow } from "./placeCard";
 import { pickAirplane } from "./startState";
 import { steady } from "./pacing";
@@ -44,15 +44,15 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-add-stop")).toHaveCount(0);
   const tabs = card(page).getByRole("tab");
   expect((await tabs.evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
-  await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
+  await expect(withFoot(card(page)).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   const [actions, bar] = await Promise.all(
-    [card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
+    [card(page).getByTestId("place-actions"), withFoot(card(page)).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
   );
   expect(bar.y).toBeGreaterThanOrEqual(actions.y + actions.height);
 
   // Weather: the panel all the way up, the weather's card at the tab's top, its category in the FAA's colour:
   // with no TAF, a sentence from the report and no hours; its first row ends in the card's Refresh (the owner, 2026-11-11).
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   // A tab only switches what is shown (the owner, 2026-11-11): pulled all
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
@@ -64,7 +64,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
 
   // Info: the field's elevation and airspace in its facts (the Details only its address, 2026-11-14), and
   // the distance from the route's departure while the pilot's own position is not known.
-  await card(page).getByTestId("place-tab-radio").click();
+  await withFoot(card(page)).getByTestId("place-tab-radio").click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByTestId("place-fact-elevation")).toContainText(/[\d,]+ ft$/);
   await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceClass D/);
@@ -127,7 +127,7 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   await expect(pages.nth(1).getByTestId("place-aerial")).toHaveCount(1);
 
   // The weather's card at the top of the Weather tab.
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   // A tab only switches what is shown (the owner, 2026-11-11): pulled all
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
@@ -173,7 +173,7 @@ test('a field with no report wears the nearest station\'s category as "≈" with
   await page.goto("/app/plan?place=C81");
   await settle(page);
   // On the Weather tab, the panel all the way up.
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   // A tab only switches what is shown (the owner, 2026-11-11): pulled all
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
@@ -199,7 +199,7 @@ test('a field with no report wears the nearest station\'s category as "≈" with
   await settle(page);
   await expect(card(page).getByTestId("place-name")).toBeVisible({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-runway-sketch")).toBeVisible();
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   await expect(card(page).getByTestId("place-weather-summary")).toContainText("Nearest report KUGN, 12.0 nm E");
   await expect(card(page).getByTestId("place-category")).toHaveCount(0);
 });
@@ -217,7 +217,7 @@ test("a field with no report wears the category modelled there, before a near st
   await cardWeather(page, "C81", { metar: null, nearby_metar: nearby, modelled_weather: modelled });
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   const chip = card(page).getByTestId("place-category");
   await expect(chip).toContainText("≈ IFR", { timeout: slow(15000) });
   await expect(chip.locator(".sr-only")).toHaveText("About IFR, modelled for this field by the National Weather Service, not a report");

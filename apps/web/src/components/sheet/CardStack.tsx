@@ -13,6 +13,8 @@ import { SheetViewport } from "./SheetViewport";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { tapOpens } from "./sheetLayout";
 import { useCardScrollRoom } from "./cardScrollRoom";
+import { CardFootSlot } from "./CardFoot";
+import { inCardFoot } from "./cardFeet";
 
 export interface StackProps {
   /** A phone's sheet: the cards are drawers with its sizes and its swipe.
@@ -193,6 +195,9 @@ function CardDrawer({
     else if (point === null) details.cancel();
   };
   const topSlot = onPhone && fromBottom && riding;
+  // Its tab bar's slot at the screen's foot, in sight while it is the top
+  // card, open and above the pill (sheet/CardFoot).
+  const footShown = top && entry.state === "open" && entry.at !== undefined && at !== "peek";
   return (
     <Drawer.Root
       // Mounted closed, opened once its size is set (the layout effect
@@ -216,7 +221,9 @@ function CardDrawer({
         // topmost of nested drawers; kept here for a tap or a swipe.
         // The focus going elsewhere -- the sheet, the map -- leaves it
         // open: it is no modal.
-        if (!top || details.reason === "focus-out") return details.cancel();
+        // A tap on its tab bar, in its foot slot beside it (sheet/CardFoot), is not outside it.
+        if (!top || details.reason === "focus-out" || (details.reason === "outside-press" && inCardFoot(details.event.target)))
+          return details.cancel();
         // The Drawer's own close carries a card swiped from half down;
         // all the way up, it comes down to half.
         if (details.reason === "swipe" && swipeCloses) return swipeClose();
@@ -301,6 +308,7 @@ function CardDrawer({
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>
+      {onPhone && fromBottom && <CardFootSlot id={id} shown={footShown} />}
     </Drawer.Root>
   );
 }

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, frontSheet, grabberTo, inSheet, settle, settled, showSearch, sideDrawer, slow } from "./helpers";
+import { closeCard, frontSheet, grabberTo, inSheet, settle, settled, showSearch, sideDrawer, slow, withFoot } from "./helpers";
 import { DETAIL, sky } from "./trackingSky";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 
@@ -144,7 +144,7 @@ test("an airplane's card in the air has Track, Alerts and Favorite in a row, Sha
   expect(share!.y + share!.height, "Share over the actions").toBeLessThanOrEqual(row[0]!.y);
   await expect(card.getByTestId("airplane-share")).toHaveAccessibleName("Share N14511");
   // Descending 1,200 ft a minute, at 7,000 ft and 250 kt: said in its flight's box, the Flights tab's head.
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("flight-state")).toHaveText("DES");
   await expect(card.getByTestId("flight-altitude")).toHaveText("7,000 ft ↓ 1,200 fpm · 250 kt · 090° true");
   // Its airport: the field it left, its card over the airplane's, and its
@@ -205,7 +205,7 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   await expect(card.getByTestId("flight-photo-open")).toHaveCount(0);
   await expect(card.getByTestId("airplane-photo-open")).toHaveCount(0);
   // On the ground the Flights tab's head one line, where it landed (the owner, 2026-11-27).
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /);
   // Debrief is in its flights, on the card's one page: each row its replay and debrief.
   await card.getByTestId("past-flight").first().click();

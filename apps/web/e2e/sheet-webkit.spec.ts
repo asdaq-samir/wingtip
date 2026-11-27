@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consolePage, grabberTo, openConsole, settled, sideDrawer, slow } from "./helpers";
+import { consolePage, grabberTo, openConsole, settled, sideDrawer, slow, withFoot } from "./helpers";
 import { go, pick } from "./cardEntries";
 import { extrasOn } from "./extras";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
@@ -106,7 +106,7 @@ test(
     await settled(panel(page));
     const cardScroller = page.locator("[data-sheet-card]").filter({ has: card }).locator("[data-sheet-scroll]");
     const head = card.getByTestId("card-head-pinned");
-    const bar = card.getByRole("tablist");
+    const bar = withFoot(card).getByRole("tablist");
     for (const end of [true, false]) {
       await cardScroller.evaluate((el, toEnd) => el.scrollTo({ top: toEnd ? el.scrollHeight : 0 }), end);
       await expect(async () => {

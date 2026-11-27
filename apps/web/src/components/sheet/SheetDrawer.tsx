@@ -4,6 +4,7 @@ import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
 import { SETTLE_MS, SHEET_SLIDE } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
+import { cardFeetHost } from "./cardFeet";
 import { useSwipeRelay } from "./sheetFollow";
 import { watchSheetMotion } from "./sheetMotion";
 import { SheetViewport } from "./SheetViewport";
@@ -219,6 +220,8 @@ export function SheetDrawer({
                 foot, over the home indicator and on the keyboard as the
                 sheet is (sheet/FootBar). */}
             {foot}
+            {/* And the cards' tab bars, each in its card's slot (sheet/CardFoot). */}
+            {fromBottom && <div ref={cardFeetHost} className="contents" />}
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>

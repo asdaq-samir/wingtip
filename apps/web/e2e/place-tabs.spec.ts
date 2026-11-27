@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs, slow } from "./helpers";
+import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs, slow, withFoot } from "./helpers";
 import { card } from "./placeCard";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 import { showPage } from "./oneSearch";
@@ -61,9 +61,9 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  const bar = card(page).getByRole("tablist");
+  const bar = withFoot(card(page)).getByRole("tablist");
   await expect(bar).toBeInViewport({ ratio: 1, timeout: slow(15000) });
-  await expect(card(page).getByTestId("place-tab-radio")).toBeEnabled();
+  await expect(withFoot(card(page)).getByTestId("place-tab-radio")).toBeEnabled();
 
   // The facts, a grey name over a value each, in the card's words: always the five, in this order
   // (the owner, 2026-11-14), at the head of the Info tab, where the card opens.
@@ -96,25 +96,25 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   expect(factsBox.y).toBeGreaterThanOrEqual(actions.y + actions.height);
   expect(pictures.y).toBeGreaterThanOrEqual(factsBox.y + factsBox.height);
   // Info's alone: Weather starts under the actions with its own page, no facts, no pictures.
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   await expect(facts).toBeHidden();
   await expect(card(page).getByTestId("place-pictures")).toBeHidden();
-  await card(page).getByTestId("place-tab-radio").click();
+  await withFoot(card(page)).getByTestId("place-tab-radio").click();
 
   // The bar at the foot of the half card, over the pictures.
   await atTheFoot(page, bar);
   expect((await bar.boundingBox())!.y).toBeGreaterThan(actions.y + actions.height);
 
   // The hints, said in the names.
-  await expect(card(page).getByTestId("place-tab-weather")).toHaveAccessibleName("Weather, MVFR");
-  await expect(card(page).getByTestId("place-tab-diagrams")).toHaveAccessibleName("Charts, 3");
-  await expect(card(page).getByTestId("place-tab-runways")).toHaveAccessibleName("Runways");
-  await expect(card(page).getByTestId("place-tab-category")).toBeVisible();
+  await expect(withFoot(card(page)).getByTestId("place-tab-weather")).toHaveAccessibleName("Weather, MVFR");
+  await expect(withFoot(card(page)).getByTestId("place-tab-diagrams")).toHaveAccessibleName("Charts, 3");
+  await expect(withFoot(card(page)).getByTestId("place-tab-runways")).toHaveAccessibleName("Runways");
+  await expect(withFoot(card(page)).getByTestId("place-tab-category")).toBeVisible();
   // A plain count is said in the name, not drawn as a badge (one meaning
   // per badge colour: findings only).
-  await expect(card(page).getByTestId("place-tab-charts")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-tab-radio")).toHaveText("Info");
-  await expect(card(page).getByTestId("place-tab-runways")).toHaveText("Runways");
+  await expect(withFoot(card(page)).getByTestId("place-tab-charts")).toHaveCount(0);
+  await expect(withFoot(card(page)).getByTestId("place-tab-radio")).toHaveText("Info");
+  await expect(withFoot(card(page)).getByTestId("place-tab-runways")).toHaveText("Runways");
 
   // The picked tab's icon and word in the look's tint (Fly Here's fill),
   // on the soft lighter pill of iOS 26's tab bar; the others neither
@@ -123,7 +123,7 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   // hover's.
   await page.mouse.move(0, 0);
   const look = (testId: string) =>
-    card(page)
+    withFoot(card(page))
       .getByTestId(testId)
       .evaluate((el) => ({ ink: getComputedStyle(el).color, fill: getComputedStyle(el).backgroundColor }));
   const tint = (await look("fly-here")).fill;
@@ -133,18 +133,18 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   // The pill is the stock Tabs' indicator, one piece under the picked tab
   // that slides to the next (the design review of 2026-11-23, M6): filled,
   // and once its slide has run, under Info and, picked, under Runways.
-  const pill = card(page).locator("[data-slot=tabs-indicator]");
+  const pill = withFoot(card(page)).locator("[data-slot=tabs-indicator]");
   expect(await pill.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
   const under = (testId: string) =>
-    Promise.all([pill, card(page).getByTestId(testId)].map((l) => l.evaluate((el) => Math.round(el.getBoundingClientRect().left)))).then(
-      ([a, b]) => a === b,
-    );
+    Promise.all(
+      [pill, withFoot(card(page)).getByTestId(testId)].map((l) => l.evaluate((el) => Math.round(el.getBoundingClientRect().left))),
+    ).then(([a, b]) => a === b);
   await expect.poll(() => under("place-tab-radio")).toBe(true);
 
   // 48 tall, the bar's item, its own hit area over 44 points (CLAUDE.md):
   // what a tap finds at its top and foot is the trigger.
   for (const id of ["place-tab-radio", "place-tab-weather", "place-tab-runways", "place-tab-diagrams"]) {
-    const trigger = card(page).getByTestId(id);
+    const trigger = withFoot(card(page)).getByTestId(id);
     const hits = await trigger.evaluate((el) => {
       const r = el.getBoundingClientRect();
       const x = r.left + r.width / 2;
@@ -163,12 +163,12 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await grabberTo(page, "full");
   await expect(bar).toBeInViewport({ ratio: 1 });
   await atTheFoot(page, bar);
-  await card(page).getByTestId("place-tab-runways").click();
+  await withFoot(card(page)).getByTestId("place-tab-runways").click();
   await expect.poll(() => under("place-tab-runways")).toBe(true);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await atTheFoot(page, bar);
   // The last row of a page clear of the bar once scrolled to its end.
-  await card(page).getByTestId("place-tab-radio").click();
+  await withFoot(card(page)).getByTestId("place-tab-radio").click();
   const panel = card(page).locator("[role=tabpanel]:not([inert])");
   await panel.evaluate((el) => {
     const scroller = el.closest<HTMLElement>("[data-sheet-scroll]")!;
@@ -186,11 +186,11 @@ test("with no report of its own the Weather tab has no dot and the facts' Weathe
   await kdlh(page, { metar: null, procedures: [], airport_diagram_url: null });
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  await expect(card(page).getByTestId("place-tab-radio")).toBeEnabled({ timeout: slow(15000) });
-  await expect(card(page).getByTestId("place-tab-weather")).toHaveAccessibleName("Weather");
-  await expect(card(page).getByTestId("place-tab-diagrams")).toHaveAccessibleName("Charts");
-  await expect(card(page).getByTestId("place-tab-category")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-tab-charts")).toHaveCount(0);
+  await expect(withFoot(card(page)).getByTestId("place-tab-radio")).toBeEnabled({ timeout: slow(15000) });
+  await expect(withFoot(card(page)).getByTestId("place-tab-weather")).toHaveAccessibleName("Weather");
+  await expect(withFoot(card(page)).getByTestId("place-tab-diagrams")).toHaveAccessibleName("Charts");
+  await expect(withFoot(card(page)).getByTestId("place-tab-category")).toHaveCount(0);
+  await expect(withFoot(card(page)).getByTestId("place-tab-charts")).toHaveCount(0);
   await expect(card(page).getByTestId("place-fact-weather")).toHaveText("Weather—");
   await expect(card(page).getByTestId("place-fact-category")).toHaveCount(0);
   await expect(card(page).getByTestId("place-fact-elevation")).toBeVisible();
@@ -317,7 +317,7 @@ test("the airport's card opens once, its tabs turn in place, and its close close
   await expectDrawnOnce(page, () => row.click().then(() => expect(card(page)).toBeVisible()), { card: "place-card", maxMoves: 1 });
   await settled(frontSheet(page));
   for (const tab of ["weather", "runways", "diagrams", "radio"]) {
-    const trigger = card(page).getByTestId(`place-tab-${tab}`);
+    const trigger = withFoot(card(page)).getByTestId(`place-tab-${tab}`);
     await expectDrawnOnce(page, () => trigger.click().then(() => expect(trigger).toHaveAttribute("aria-selected", "true")), {
       card: "place-card",
       maxMoves: 0,

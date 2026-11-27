@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, settle, sideDrawer } from "./helpers";
+import { inSheet, settle, sideDrawer, withFoot } from "./helpers";
 
 /**
  * A frequency wherever it is shown is copied by a tap (components/
@@ -22,7 +22,7 @@ test("an airport's frequency is copied as pilots write it, and says so where it 
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
   const card = sideDrawer(page).getByTestId("place-card");
-  await card.getByTestId("place-tab-radio").click();
+  await withFoot(card).getByTestId("place-tab-radio").click();
   const tower = card.getByTestId("place-frequency").filter({ hasText: "Tower" }).first();
   const copy = tower.getByTestId("frequency-copy");
   // The card opens at half, where its body does not scroll (rules.md,

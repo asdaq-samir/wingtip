@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { frontSheet, grabberTo, settled, slow } from "./helpers";
+import { frontSheet, grabberTo, settled, slow, withFoot } from "./helpers";
 import { CARDS, type CardRow, type Check } from "./cardTable";
 import { contentTop, go, hittable, scrollOf } from "./cardEntries";
 
@@ -238,8 +238,8 @@ test("the airport card's tabs, the bar pinned, open each at its top and keep the
   await open(page, row);
   await grabberTo(page, "full");
   const card = page.getByTestId(row.card);
-  const bar = card.getByRole("tablist");
-  await card.getByTestId("place-tab-weather").click();
+  const bar = withFoot(card).getByRole("tablist");
+  await withFoot(card).getByTestId("place-tab-weather").click();
   const { max } = await scrollOf(page, row.card);
   test.skip(max < 200, "too short to pin the bar at this size");
   await scrollOf(page, row.card, max);
@@ -256,11 +256,11 @@ test("the airport card's tabs, the bar pinned, open each at its top and keep the
     const h = (await head.boundingBox())!;
     expect(Math.abs(panel.y - (h.y + h.height)), `${testId} opens at its top, under the head`).toBeLessThanOrEqual(16);
   };
-  await card.getByTestId("place-tab-radio").click();
+  await withFoot(card).getByTestId("place-tab-radio").click();
   await expect(async () => underBar("Info")).toPass({ timeout: slow(5_000) });
-  await card.getByTestId("place-tab-runways").click();
+  await withFoot(card).getByTestId("place-tab-runways").click();
   await expect(async () => underBar("Runways")).toPass({ timeout: slow(5_000) });
   // Weather, seen before and left scrolled to its end: at its top as well.
-  await card.getByTestId("place-tab-weather").click();
+  await withFoot(card).getByTestId("place-tab-weather").click();
   await expect(async () => underBar("Weather")).toPass({ timeout: slow(5_000) });
 });

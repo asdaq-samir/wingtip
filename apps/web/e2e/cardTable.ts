@@ -14,6 +14,7 @@ import {
   showTabs,
   sideDrawer,
   slow,
+  withFoot,
 } from "./helpers";
 import { tapMark } from "./marks";
 import { go, nearbyStops, pick, ROUTE, sky, tapLeg } from "./cardEntries";
@@ -129,10 +130,10 @@ export const CARDS: CardRow[] = [
     inside: {
       open: async (p) => {
         await grabberTo(p, "full");
-        await sideDrawer(p).getByTestId("place-tab-weather").click();
+        await withFoot(sideDrawer(p)).getByTestId("place-tab-weather").click();
       },
       back: async (p) => {
-        await sideDrawer(p).getByTestId("place-tab-radio").click();
+        await withFoot(sideDrawer(p)).getByTestId("place-tab-radio").click();
       },
       // A tab picked opens at its own top under the actions, Info's too when
       // it is picked again (the owner, 2026-11-14: "Switching tabs should

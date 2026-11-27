@@ -24,6 +24,7 @@ export {
   openSidebar,
   closeCard,
   cardClose,
+  withFoot,
 } from "./sheetHelpers";
 export {
   openRoute,

@@ -48,6 +48,11 @@ export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]'
  *  the sliding popup, not in it (sheet/FootBar, data-foot-bar), elsewhere
  *  the panel's own foot. */
 export const sheetFoot = (page: Page) => page.locator('[data-slot="map-panel"], [data-foot-bar]');
+/** A card with its floating tab bar (CardTabBar): on a phone's bottom
+ *  sheet the bar stands in the card's foot slot, fixed at the screen's
+ *  foot beside the sliding cards (sheet/CardFoot, data-card-foot), not in
+ *  the card; elsewhere in it. */
+export const withFoot = (card: Locator) => card.or(card.page().locator("[data-card-foot]:not([hidden])"));
 /** Where the cards open: over the side panel, or, on a touch screen as
  *  wide as an iPad on its side, in the inspector at the map's right
  *  (MapPanel, useInspector), the plan staying in the side panel. */
@@ -141,9 +146,15 @@ export async function inSheet(page: Page, locator: Locator) {
     const foot = (
       sheet.querySelector("[data-testid=panel-foot]") ?? document.querySelector("[data-testid=foot-bar]:not(.invisible)")
     )?.getBoundingClientRect();
-    // A card's floating tab bar (CardTabBar) holds at that edge too, and
+    // A card's floating tab bar (CardTabBar) at that edge too, on a phone's
+    // bottom sheet in the card's foot slot beside it (sheet/CardFoot), and
     // FPL's own floating bar of actions.
-    const tabs = [...sheet.querySelectorAll("[data-testid$=tab-bar] > *")].find((b) => !b.contains(el))?.getBoundingClientRect();
+    const tabs = [
+      ...sheet.querySelectorAll("[data-testid$=tab-bar] > *"),
+      ...document.querySelectorAll("[data-card-foot]:not([hidden]) > * > *"),
+    ]
+      .find((b) => !b.contains(el))
+      ?.getBoundingClientRect();
     const bar = sheet.querySelector("[data-testid=fpl-actions] [role=toolbar]")?.getBoundingClientRect();
     const edge = Math.min(
       box.top < 0 ? box.bottom : window.innerHeight,
