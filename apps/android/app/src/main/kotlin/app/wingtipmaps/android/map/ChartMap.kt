@@ -184,6 +184,7 @@ fun ChartMap(
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField?.ident) } }
     LaunchedEffect(holder, selectedField) { selectedField?.let { holder.showField(it.lat, it.lon) } }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
+    LaunchedEffect(holder) { holder.keepTfrs() }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
@@ -206,9 +207,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
     /** The dark theme, for the chart's paint in a style set anew. */
     var night = false
     var look = ChartLook()
-    /** What the sheet covers, read as the map opens and set as it settles,
-     *  so the map never opens with a padding the sheet has since left
-     *  (the web's #543). */
+    /** What the sheet covers, read as the map opens and set as it settles, so the map never opens with a padding the
+     *  sheet has since left (the web's #543). */
     private var bottomInset = 0
     private var leftInset = 0
     private var styled = false
@@ -229,8 +229,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastTemplate: TileTemplate? = null
     /** The chart's tiles' last {z}, where the imagery takes over (CloseMap). */
     private var chartTileMax = 12
-    /** The traffic's and the trail's GeoJSON last made, set again as
-     *  they are when the style is set anew. */
+    /** The traffic's and the trail's GeoJSON last made, set again as they are when the style is set anew. */
     private val trafficOnMap = TrafficOnMap()
     /** The style as MapStyle wrote it, its layers read once a relabel asks. */
     private var writtenLayers: List<kotlinx.serialization.json.JsonObject>? = null
@@ -240,6 +239,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private val camera = MapCamera()
     private var lastLeg: Int? = null
     val plates = PlateLayer(density)
+    private val tfrs = TfrLayer()
 
     fun on(event: Lifecycle.Event) {
         if (destroyed) return
@@ -294,6 +294,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
                 SelectedAirportLayer.draw(style, lastSelected)
                 plates.draw(style)
+                tfrs.draw(style)
                 EmergencyLayer.draw(style, lastEmergency, below = OwnShipPuck.under(style))
                 // After what goes under it, so its layers are over them.
                 puck?.activate(style)
@@ -311,7 +312,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             map.getStyle { style ->
                 val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax) } // the marks at the chart's light (MapDim)
                 if (relabel) relabel(style)
-                RouteLegLayer.paint(style, night)
+                RouteLegLayer.paint(style, night).also { tfrs.paint(style, night) }
                 // A downloaded region's chart (offline-N) is the chart too: dimmed with it, never left at day's light.
                 val charts = MapStyle.CHART_LAYERS + style.layers.map { it.id }.filter { it.startsWith(app.wingtipmaps.android.offline.OfflineLayers.PREFIX) }
                 for (id in charts) {
@@ -484,6 +485,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (!destroyed && new != null) view.getMapAsync { it.animateCamera(PlateLayer.fit(new, density), OwnShipPuck.FOLLOW_MS) }
         redraw(plates::draw)
     }
+
+    suspend fun keepTfrs() = tfrs.keep(::redraw)
 
     private fun redraw(draw: (Style) -> Unit) {
         if (!destroyed) view.getMapAsync { map -> map.getStyle(draw) }

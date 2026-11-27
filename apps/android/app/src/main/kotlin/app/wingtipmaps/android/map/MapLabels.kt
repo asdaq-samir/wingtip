@@ -157,7 +157,7 @@ object MapLabels {
     }
 
     /** The tag's dark at map.label.halo-night, from the token's colour. */
-    private val NIGHT_HALO: String = WingtipColors.Chart.Tag.let { tag ->
+    internal val NIGHT_HALO: String = WingtipColors.Chart.Tag.let { tag ->
         String.format(Locale.US, "rgba(%d, %d, %d, %.2f)", (tag.red * 255).roundToInt(), (tag.green * 255).roundToInt(), (tag.blue * 255).roundToInt(), WingtipMapLabel.HALO_NIGHT)
     }
 }
