@@ -174,6 +174,10 @@ describe("the overlay tiles' layers", () => {
       expect(JSON.stringify((marks.find((l) => l.id === id) as SymbolLayerSpecification).filter)).toContain(
         JSON.stringify(["global-state", "routeWaypoints"]),
       );
+    // Each on a source of its own, so a route's edit lays out those tiles alone, not the airspace's and the fixes'.
+    const byRoute = marks.filter((l) => /routeAirports|routeWaypoints/.test(JSON.stringify((l as SymbolLayerSpecification).filter)));
+    expect(byRoute.map((l) => l.id)).toEqual(["vfr-waypoints", "vfr-waypoints-idents", "airports", "airports-c", "airports-kept"]);
+    expect(byRoute.some((l) => (l as SymbolLayerSpecification).source === OVERLAY_SOURCE)).toBe(false);
   });
 
   it("show the private and military fields while the emergency assistant is open, the switches theirs again once it closes", () => {

@@ -19,6 +19,9 @@ export { OVERLAY_SOURCE };
  *  weather, the settings, the route's fields) lays out again every tile of their source, and on their own that is the
  *  airports alone, not the airspace, fixes and runways too (the map speed audit, 2026-11-27). */
 export const AIRPORTS_SOURCE = "faa-airports";
+/** The VFR waypoints' own source on the archive, for the same reason: the route's waypoints left off them (a filter by
+ *  the map's state) lay out again their tiles alone at a route's edit, where every overlay tile was. */
+const WAYPOINTS_SOURCE = "faa-vfr-waypoints";
 
 /** The chart's own ink for a fix's ident. */
 const FIX_INK = CHART.fixInk;
@@ -253,7 +256,7 @@ export function overlayStyle(
       filter: ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
       minzoom: glZoom(FIX_ZOOM),
     }),
-    ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", {
+    ...navaidMarks("vfr-waypoints", { source: WAYPOINTS_SOURCE, "source-layer": "fixes" }, "vfr", {
       filter: ["all", ["==", ["get", "vfr"], true], notOwn(ROUTE_WAYPOINTS)],
       minzoom: glZoom(FIX_ZOOM),
     }),
@@ -268,6 +271,8 @@ export function overlayStyle(
   const sources = {
     [OVERLAY_SOURCE]: { ...overlaySource(tiles, origin), promoteId: { airspace: "ident" } },
     [AIRPORTS_SOURCE]: { ...overlaySource(tiles, origin), promoteId: { airports: "ident" } },
+    // Its tiles asked for only from the zoom its layers are drawn at (FIX_ZOOM), each from the same fetch (overlayTiles).
+    [WAYPOINTS_SOURCE]: overlaySource(tiles, origin),
   };
   // At the Dimmer's brightness at night, as everything drawn on the chart (mapDim).
   return { sources, layers: { lines: lines.map(dimLayer), marks: marks.map(dimLayer) } };
