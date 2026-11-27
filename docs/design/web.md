@@ -506,7 +506,10 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   picture (`SkeletonCardInfo`), the airplane card's history and flights
   three rows each (`skeletonRows`, an array so the group draws its lines
   between them), the Brief's sections two bars (`Pending`'s `coming`,
-  the briefing on its way), each with its words for a screen reader. A
+  the briefing on its way), each with its words for a screen reader; the
+  airport card's facts in the real `CardFacts fit`, ch-wide so they wrap
+  at a larger text as the facts do. Every skeleton waits 120 ms before
+  it fades in (index.css), so a prefetched answer never flashes one. A
   list's row answers a finger at once (`pointer-coarse:active:duration-0`,
   as ListPicks' and the stock Button's dim) and the Toggle eases its dim.
   A card is put away on a page's time (`motion.page`, cardMotion's

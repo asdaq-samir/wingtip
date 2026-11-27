@@ -703,6 +703,33 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
   pointer-events: none;
 }
 
+/* The stock Skeleton (components/ui/skeleton): out of sight for its first
+   120 ms, then in on a short fade, so a prefetched answer drawn a frame or
+   two after its card never flashes a skeleton (the round-2 speed audit);
+   then breathing once a motion.skeleton-pulse, held still with Reduce
+   Motion (its wait kept: the global rule below shortens durations, not
+   delays). */
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes skeleton-breath {
+  50% {
+    opacity: 0.5;
+  }
+}
+[data-slot="skeleton"] {
+  animation: skeleton-in var(--motion-fade) var(--motion-sheet-ease) 120ms backwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="skeleton"] {
+    animation:
+      skeleton-in var(--motion-fade) var(--motion-sheet-ease) 120ms backwards,
+      skeleton-breath var(--motion-skeleton-pulse) cubic-bezier(0.4, 0, 0.6, 1) 120ms infinite;
+  }
+}
+
 /* Reduce Motion, honoured: sheets and popovers arrive, sections open,
    the map zooms and the spinners hold still, all without the motion.
    The durations are near zero rather than none, so the events the
