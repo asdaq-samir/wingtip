@@ -91,6 +91,34 @@
         "boolean",
         "null"
       ]
+    },
+    "category": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "14 CFR 61.5 category, \"Airplane\": with `class`, the passenger currency's (61.57(a)(1)) group."
+    },
+    "class": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "14 CFR 61.5 class, \"Single-engine land\"."
+    },
+    "tailwheel": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii))."
+    },
+    "fullStopLandings": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Landings to a full stop, day and night, where logged."
     }
   },
   "required": [

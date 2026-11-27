@@ -7957,6 +7957,14 @@ nonisolated enum EngineContract {
         var approaches: Double?
         var holding: Bool?
         var tracking: Bool?
+        /// 14 CFR 61.5 category, "Airplane": with `class`, the passenger currency's (61.57(a)(1)) group.
+        var category: String?
+        /// 14 CFR 61.5 class, "Single-engine land".
+        var `class`: String?
+        /// A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii)).
+        var tailwheel: Bool?
+        /// Landings to a full stop, day and night, where logged.
+        var fullStopLandings: Double?
     }
 
     nonisolated struct LogbookFromTrackAnswer: Codable, Equatable, Sendable {
@@ -10012,6 +10020,10 @@ nonisolated enum EngineContract {
         var dayPassengersUntil: String?
         /// 90 days after the third most recent night full-stop landing (61.57(b)).
         var nightPassengersUntil: String?
+        /// The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+        var passengerClass: String?
+        /// The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+        var passengerClassUnknown: Bool
         /// YYYY-MM-DD; null where none can be had.
         var flightReviewOn: String?
         /// The end of the 24th calendar month after the flight review's (61.56(c)).

@@ -12002,6 +12002,22 @@ export interface LogbookEntry {
   approaches?: number | null;
   holding?: boolean | null;
   tracking?: boolean | null;
+  /**
+   * 14 CFR 61.5 category, "Airplane": with `class`, the passenger currency's (61.57(a)(1)) group.
+   */
+  category?: string | null;
+  /**
+   * 14 CFR 61.5 class, "Single-engine land".
+   */
+  class?: string | null;
+  /**
+   * A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii)).
+   */
+  tailwheel?: boolean | null;
+  /**
+   * Landings to a full stop, day and night, where logged.
+   */
+  fullStopLandings?: number | null;
 }
 export interface PilotCurrencyAnswer {
   /**
@@ -12012,6 +12028,14 @@ export interface PilotCurrencyAnswer {
    * 90 days after the third most recent night full-stop landing (61.57(b)).
    */
   nightPassengersUntil: string | null;
+  /**
+   * The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+   */
+  passengerClass: string | null;
+  /**
+   * The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+   */
+  passengerClassUnknown: boolean;
   /**
    * YYYY-MM-DD; null where none can be had.
    */

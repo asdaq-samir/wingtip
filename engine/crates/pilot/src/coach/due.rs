@@ -117,8 +117,13 @@ pub fn due(
         }
         });
     }
+    // 61.57(a)(1) counts landings in the same category and class: where
+    // the logbook does not say them, every landing was counted, and the
+    // words say so rather than claim the class was checked.
+    let unsaid = matches!(currency.get("passengerClassUnknown"), Some(Value::Bool(true)));
+    let class_note = if unsaid { "; your logbook doesn't say each flight's category and class, so every landing is counted" } else { "" };
     push("day_passengers", "Passengers by Day", "14 CFR 61.57(a)", at("dayPassengersUntil")?, None, &|s| match s {
-        Status::Current | Status::DueSoon => "90 days from the third most recent landing (61.57(a))".to_owned(),
+        Status::Current | Status::DueSoon => format!("90 days from the third most recent landing (61.57(a)){class_note}"),
         _ => "Three takeoffs and three landings, as sole manipulator of the controls, before carrying passengers (61.57(a))".to_owned(),
     });
     push("night_passengers", "Passengers at Night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, &|s| {

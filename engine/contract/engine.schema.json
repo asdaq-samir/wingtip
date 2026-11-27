@@ -24122,6 +24122,17 @@
               ],
               "description": "90 days after the third most recent night full-stop landing (61.57(b))."
             },
+            "passengerClass": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The category and class the passenger currency was judged in, \"airplane/single-engine land\": the newest flight's (61.57(a)(1)); null where it does not say."
+            },
+            "passengerClassUnknown": {
+              "type": "boolean",
+              "description": "The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1))."
+            },
             "flightReviewOn": {
               "type": [
                 "string",
@@ -24212,6 +24223,8 @@
           "required": [
             "dayPassengersUntil",
             "nightPassengersUntil",
+            "passengerClass",
+            "passengerClassUnknown",
             "flightReviewOn",
             "flightReviewUntil",
             "medicalExpiresOn",
@@ -41229,6 +41242,34 @@
             "boolean",
             "null"
           ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "14 CFR 61.5 category, \"Airplane\": with `class`, the passenger currency's (61.57(a)(1)) group."
+        },
+        "class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "14 CFR 61.5 class, \"Single-engine land\"."
+        },
+        "tailwheel": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii))."
+        },
+        "fullStopLandings": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Landings to a full stop, day and night, where logged."
         }
       },
       "required": [

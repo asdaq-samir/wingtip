@@ -8243,6 +8243,22 @@ object EngineContract {
         val approaches: Double? = null,
         val holding: Boolean? = null,
         val tracking: Boolean? = null,
+        /**
+         * 14 CFR 61.5 category, "Airplane": with `class`, the passenger currency's (61.57(a)(1)) group.
+         */
+        val category: String? = null,
+        /**
+         * 14 CFR 61.5 class, "Single-engine land".
+         */
+        val `class`: String? = null,
+        /**
+         * A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii)).
+         */
+        val tailwheel: Boolean? = null,
+        /**
+         * Landings to a full stop, day and night, where logged.
+         */
+        val fullStopLandings: Double? = null,
     )
 
     @Serializable
@@ -10368,6 +10384,14 @@ object EngineContract {
          * 90 days after the third most recent night full-stop landing (61.57(b)).
          */
         val nightPassengersUntil: String? = null,
+        /**
+         * The category and class the passenger currency was judged in, "airplane/single-engine land": the newest flight's (61.57(a)(1)); null where it does not say.
+         */
+        val passengerClass: String? = null,
+        /**
+         * The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1)).
+         */
+        val passengerClassUnknown: Boolean,
         /**
          * YYYY-MM-DD; null where none can be had.
          */

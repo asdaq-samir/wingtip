@@ -472,6 +472,111 @@
     "instrumentCurrentUntil": "2027-02-28",
     "instrumentCurrentFrom": null
    }
+  },
+  {
+   "name": "Only landings in the newest flight's category and class count for passengers (61.57(a)(1): \"in an aircraft of the same category, class, and type\")",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land"
+    },
+    {
+     "flownOn": "2026-09-20",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Multiengine land"
+    },
+    {
+     "flownOn": "2026-08-15",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land"
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-11-13",
+    "passengerClass": "airplane/single-engine land",
+    "passengerClassUnknown": false
+   }
+  },
+  {
+   "name": "In a tailwheel airplane only full-stop landings count (61.57(a)(1)(ii))",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 1
+    },
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "fullStopLandings": 3
+    },
+    {
+     "flownOn": "2026-08-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 2
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-10-30",
+    "passengerClassUnknown": false
+   }
+  },
+  {
+   "name": "A logbook that doesn't say the category and class counts every landing and says it couldn't tell",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-12-30",
+    "passengerClass": null,
+    "passengerClassUnknown": true
+   }
   }
  ],
  "experience": [
