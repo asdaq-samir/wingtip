@@ -146,6 +146,26 @@ test("the card's runways are a page of its pictures under its title and actions,
   await expect(page.getByTestId("airport-diagram-viewer").getByRole("heading", { name: "KDLH airport diagram" })).toBeVisible();
 });
 
+test("where the photos cannot be had, their place is kept saying why, and the runways keep their width", async ({ page }) => {
+  // The planner's photos failing (not its 404, a field with none): the
+  // aerial's tile stays, still, and the runways do not grow to the card's
+  // width as its skeleton goes (round 7's W5).
+  await withDiagram(page, "drawn");
+  await page.route(
+    (url) => /\/api\/planner\/airport\/[^/]+\/photos$/.test(url.pathname),
+    (route) => route.fulfill({ status: 503, json: { detail: "Unavailable" } }),
+  );
+  await page.goto("/app/plan?place=KDLH");
+  await settle(page);
+  const pages = card(page).getByTestId("place-pictures").locator('[data-slot="carousel-item"]');
+  await expect(pages.nth(0).getByTestId("place-aerial-unhad")).toHaveText("Photos could not be fetched", { timeout: slow(30000) });
+  await expect(pages).toHaveCount(2);
+  const [strip, runways] = await Promise.all(
+    [card(page).getByTestId("place-pictures"), pages.nth(1)].map(async (l) => (await l.boundingBox())!),
+  );
+  expect(runways.width).toBeLessThan(strip.width * 0.8);
+});
+
 test("where the diagram's picture cannot be had, the card links the FAA's PDF", async ({ page }) => {
   await withDiagram(page, "missing");
   await page.goto("/app/plan?place=KDLH");

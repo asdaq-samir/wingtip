@@ -4,6 +4,8 @@ import { CardPictures, type CardSlide } from "../../components/CardPictures";
 import { PhotoCredit, PhotoSlide } from "../../components/PictureSlides";
 import type { AirportPhotos, AirportPlace } from "../../lib/api/types";
 import { TEXT } from "../../lib/text";
+import { NO_CONNECTION } from "../../lib/problems";
+import { useOnline } from "../../lib/kept/useOnline";
 import { Skeleton } from "../../components/ui/skeleton";
 import { FaaChart } from "../../components/AirportDiagram";
 import { RunwaySketch } from "./RunwaySketch";
@@ -28,6 +30,7 @@ export function PlacePictures({
   place,
   photos,
   photosPending = false,
+  photosUnhad = false,
   sketchedRunways,
   leftOut,
   noRunwaysPicture,
@@ -37,6 +40,9 @@ export function PlacePictures({
   photos: AirportPhotos | undefined;
   /** The photos still asked: the aerial's place held first meanwhile. */
   photosPending?: boolean;
+  /** The photos asked and not had (offline, the planner failing), where
+   *  the field may well have them: their place kept, saying why. */
+  photosUnhad?: boolean;
   /** The runways sketched, "09/27" each; none where none can be drawn. */
   sketchedRunways: string[];
   /** How many more are not drawn, their ends unsurveyed. */
@@ -51,6 +57,7 @@ export function PlacePictures({
   // control is told to tap (WCAG 2.5.3, Label in Name; axe's
   // label-content-name-mismatch on the iOS audit's reference iPhone).
   const [written, setWritten] = useState("");
+  const online = useOnline();
   const ident = place.ident;
   const sketched = sketchedRunways.length > 0;
   // Its runways closed where the Runways tab says Closed, NOTAMs in force
@@ -114,9 +121,26 @@ export function PlacePictures({
   const slides: (CardSlide | null | undefined)[] = [
     // The aerial's tile held first while the photos are asked: the
     // diagram alone took the card's whole width, then shrank to 70% when
-    // they came, and the aerial, coming later, went after it.
-    !photos && photosPending
-      ? { key: "aerial", label: `${ident} from the air, coming`, picture: <Skeleton className="size-full rounded-none" /> }
+    // they came, and the aerial, coming later, went after it. Held too,
+    // still and saying why, where they could not be had (offline on the
+    // ramp, the planner's photos failing): the diagram grew from 70% to the
+    // card's width as the skeleton went (round 7's W5), and they fill the
+    // tile in place when the query asks again and has them.
+    !photos && (photosPending || photosUnhad)
+      ? {
+          key: "aerial",
+          label: `${ident} from the air, ${photosPending ? "coming" : "not to be had"}`,
+          picture: photosPending ? (
+            <Skeleton className="size-full rounded-none" />
+          ) : (
+            <div
+              className={cn("flex size-full items-center justify-center text-muted-foreground", TEXT.note)}
+              data-testid="place-aerial-unhad"
+            >
+              {online ? "Photos could not be fetched" : NO_CONNECTION}
+            </div>
+          ),
+        }
       : null,
     photos && {
       key: "aerial",
