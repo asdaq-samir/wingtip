@@ -1399,6 +1399,17 @@ object WingtipMapLabel {
     val FLOW_PIN = Kind(listOf(0.0 to 13.0), true, Halo.NONE)
 }
 
+/** The chart's Dimmer and Contrast and the plates' see-through on the map (design/tokens.json's chart-look group). */
+object WingtipChartLook {
+    const val NIGHT_DIM = 0.5f
+    const val DIM_MAX = 0.7f
+    const val CONTRAST_MIN = -0.3f
+    const val CONTRAST_MAX = 0.4f
+    const val STEP = 0.05f
+    const val PLATE_OPACITY = 0.85f
+    const val PLATE_LEAST_OPACITY = 0.1f
+}
+
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */
 object WingtipFlow {
     class Stop(val at: Double, val colour: Color, val alpha: Int)

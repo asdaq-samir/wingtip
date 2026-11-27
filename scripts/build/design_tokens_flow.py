@@ -11,6 +11,7 @@ generator's camelCase, and returns the text one generated file appends.
 
 import re
 
+import design_tokens_chartlook as chartlook
 import design_tokens_label as label
 import design_tokens_zoom as zoom
 from design_tokens_colour import rgba
@@ -58,6 +59,8 @@ def ts(tree):
         "",
         zoom.TS_REEXPORT,
         "",
+        chartlook.ts(tree),
+        "",
         "/** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */",
         "type FlowStop = [number, [number, number, number, number]];",
         "/** Model Weather's colour scales: ramps, the opacities of the banded fields, and how strongly each covers the chart. */",
@@ -104,6 +107,8 @@ def swift(tree):
         "",
         label.swift(tree),
         "",
+        chartlook.swift(tree),
+        "",
         "/// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.",
         "nonisolated enum WingtipFlow {",
         "    typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)",
@@ -136,6 +141,8 @@ def kotlin(tree):
         zoom.kotlin(tree),
         "",
         label.kotlin(tree),
+        "",
+        chartlook.kotlin(tree),
         "",
         "/** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */",
         "object WingtipFlow {",
