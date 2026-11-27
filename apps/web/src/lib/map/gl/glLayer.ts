@@ -159,6 +159,9 @@ export function parkLayers(map: MlMap) {
   parked.add(map);
 }
 
+/** Whether the map is being handed to the next tree (parkLayers), what it draws to be kept for that tree. */
+export const isParked = (map: MlMap) => parked.has(map);
+
 /** The map taken up again: every layer of the last tree is unclaimed until the new tree adds the same. */
 export function adoptLayers(map: MlMap) {
   parked.delete(map);
