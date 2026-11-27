@@ -4,6 +4,7 @@ import { ArrowRight, Play, RotateCw } from "lucide-react";
 import { cn } from "cn";
 import { ListRow } from "../GroupedList";
 import { FirstFew } from "../FirstFew";
+import { skeletonRows } from "../skeletonRows";
 import type { PastFlightSummary } from "../../lib/api/types";
 import { TEXT } from "../../lib/text";
 import { dayOf, lasted, legOf, placeOf, when, whenSaid } from "./pastFlightFormat";
@@ -80,16 +81,12 @@ export default function PastFlights({
         testId="past-flights-section"
         title={from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : (title ?? "Flights")}
         rows={[
-          (!data || looking) && !isError && (
-            <ListRow
-              key="fetching"
-              title={
-                <span role="status" className="text-muted-foreground">
-                  {data ? "Fetching earlier flights…" : "Fetching its flights…"}
-                </span>
-              }
-            />
-          ),
+          // Coming: three rows in a flight's shape, the first few the
+          // section shows, where a grey line stood and then the rows
+          // jumped in (the feel audit, 2026-11-27).
+          ...((!data || looking) && !isError
+            ? skeletonRows({ rows: 3, lines: 2, fetching: data ? "Fetching earlier flights…" : "Fetching its flights…" })
+            : []),
           isError && !data && (
             <ListRow key="error" title={<span className={cn("text-destructive", TEXT.detail)}>{WORDING.pastFlightsNotFetched}</span>} />
           ),

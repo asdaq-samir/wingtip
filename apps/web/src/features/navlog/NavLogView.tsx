@@ -248,7 +248,6 @@ export default function NavLogView({
         <PanelTabs
           printing
           marks={marks}
-          route={title}
           notice={notice}
           before={<NavLogPaperHead title={title} aircraftLabel={aircraftLabel} depart={depart} totals={totals} />}
           contents={{

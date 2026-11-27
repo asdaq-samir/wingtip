@@ -220,7 +220,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         // What a wrapper hands a row (a sheet's Close, its click) goes on
         // the link; a button's own attributes do not.
         render={
@@ -269,7 +269,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 hover:bg-muted/50 pointer-coarse:active:bg-muted"
+        className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 hover:bg-muted/50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         render={<label className={buttonProps.className}>{body}</label>}
       />
     );
@@ -278,7 +278,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+        className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         render={
           <RadioPrimitive.Root value={radio} nativeButton disabled={buttonProps.disabled} render={<BaseButton {...buttonProps} />}>
             {body}
@@ -291,7 +291,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         render={<BaseButton {...buttonProps}>{body}</BaseButton>}
       />
     );

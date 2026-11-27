@@ -31,7 +31,7 @@ interface Props {
  *  adverse conditions first (AIM 7-1-5), then stretch by stretch, then
  *  the winds. */
 export default function EnroutePart({ vm, course, legs, depart, winds }: Props) {
-  const { briefing, briefingPendingMessage, unchecked, opened } = vm;
+  const { briefing, briefingPendingMessage, briefingComing, unchecked, opened } = vm;
   return (
     <>
       <AdverseConditions vm={vm} legs={legs} />
@@ -47,7 +47,7 @@ export default function EnroutePart({ vm, course, legs, depart, winds }: Props) 
         />
       ) : (
         <AccordionSection title={WORDING.alongTheRoute}>
-          <Pending>{briefingPendingMessage}</Pending>
+          <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
         </AccordionSection>
       )}
 
@@ -57,7 +57,7 @@ export default function EnroutePart({ vm, course, legs, depart, winds }: Props) 
 }
 
 function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
-  const { vnrReasons, underMine, icing, hazardNames, briefing, briefingPendingMessage, unchecked } = vm;
+  const { vnrReasons, underMine, icing, hazardNames, briefing, briefingPendingMessage, briefingComing, unchecked } = vm;
   // Under IFR, icing the AWC forecasts at an altitude flown (ForecastIcingRows).
   const icingForecast = vm.ifr && !!vm.icingForecast.data?.worst;
   return (
@@ -107,7 +107,7 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
         </Alert>
       )}
       {!briefing ? (
-        <Pending>{briefingPendingMessage}</Pending>
+        <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
       ) : unchecked("hazards") && unchecked("gairmets") ? (
         <p className="text-caution-ink">
           SIGMET and G-AIRMET data could not be checked: aviationweather.gov did not answer. Verify them separately before flight.

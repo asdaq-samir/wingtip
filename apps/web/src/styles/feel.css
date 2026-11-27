@@ -128,12 +128,14 @@
 }
 
 /* A figure that changes in place -- the route's distance, time and fuel
-   as a plan comes in or a dry run flies -- brings its new digits into
-   focus, rising into place where it is a button's (an inline figure
+   as a plan comes in or a dry run flies -- fades its new digits in,
+   rising into place where it is a button's (an inline figure
    cannot move, and stays inline so a long one still ends in an
    ellipsis), rather than blinking: the element is keyed on its value, so
    each new value is a new one, as iOS's numeric content transition
-   rolls its digits. Still with Reduce Motion, in the Native look, and in
+   rolls its digits. No blur: a filter is painted again each frame, and
+   on a phone every figure at once (the feel audit, 2026-11-27). Still
+   with Reduce Motion, in the Native look, and in
    flight (FigureStrip's `still`: the GPS figures change every second). */
 @utility figure-roll {
   @media (prefers-reduced-motion: no-preference) {
@@ -153,6 +155,5 @@
   from {
     opacity: 0;
     translate: 0 0.35em;
-    filter: blur(2px);
   }
 }

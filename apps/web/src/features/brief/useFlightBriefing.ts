@@ -270,6 +270,8 @@ export function useFlightBriefing({
     ifr,
     vnrReasons,
     briefingPendingMessage: briefingPendingMessage(briefingState),
+    /** The briefing is on its way: its parts show its shape, not a line. */
+    briefingComing: briefingState.state === "loading",
     unchecked,
     underMine,
     opened,

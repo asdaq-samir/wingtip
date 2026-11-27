@@ -29,7 +29,6 @@ export default function BriefCard({
   marks,
   onClose,
   onLegs,
-  route,
 }: {
   name: ReactNode;
   /** Under the name in its pinned head, at every size: the altitude, when,
@@ -44,7 +43,6 @@ export default function BriefCard({
   onClose: () => void;
   /** The legs asked for from a page: FPL's nav log in place of the card. */
   onLegs: () => void;
-  route: string;
 }) {
   // Its live reports kept fresh by themselves (on their timers and as the
   // card comes back into sight); asked again now from its ••• (ShareMenu).
@@ -59,7 +57,6 @@ export default function BriefCard({
         <PanelTabs
           printing={false}
           marks={marks}
-          route={route}
           notice={notice}
           contents={contents}
           onLegs={onLegs}

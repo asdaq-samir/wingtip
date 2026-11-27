@@ -729,6 +729,12 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
 :root {
   view-transition-name: none;
 }
+/* The slide's snapshots take no taps: a second tap while it runs goes
+   through to the page it is bringing in, not into the picture over it
+   (the feel audit, 2026-11-27). */
+::view-transition {
+  pointer-events: none;
+}
 html:not([data-brand="native"])::view-transition-group(.page-step),
 html:not([data-brand="native"])::view-transition-group(.page-back) {
   animation-duration: var(--motion-page);
