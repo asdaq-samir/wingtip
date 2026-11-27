@@ -346,3 +346,14 @@ final class MapExtrasState: NSObject {
         map.addAnnotations(classBMarks)
     }
 }
+
+extension MapExtrasInput {
+    /// The plates shaded by the Dimmer as the chart is, put on by the map,
+    /// which reads the Dimmer itself (ChartMap), so the screen that builds
+    /// this input (RootMap) is not drawn again at each step of the slider.
+    func shaded(_ shade: CGFloat) -> MapExtrasInput {
+        var shaded = self
+        shaded.plateLook.shade = shade
+        return shaded
+    }
+}
