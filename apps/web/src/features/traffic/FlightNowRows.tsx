@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Route } from "lucide-react";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../../components/GroupedList";
+import { ListRow } from "../../components/GroupedList";
+import { FirstFew } from "../../components/FirstFew";
 import { RowBadge } from "../../components/RowBadge";
 import { SkeletonLine } from "../../components/QueryState";
 import type { FlightDetail, FlightRoute, TrafficAircraft } from "../../lib/api/types";
@@ -61,90 +62,105 @@ export default function FlightNowRows({
   return (
     <div data-testid="flight-details">
       {/* Its flight now while it flies; on the ground, unregistered traffic's identifiers alone. */}
-      <ListGroup title={plane ? "Now" : "Details"}>
-        {/* Traffic the FAA's registry does not hold says so (the design's "Unregistered"). */}
-        {registry && (
-          <ListRow
-            title="Registration"
-            value={
-              <span className="font-semibold text-foreground">
-                {[registration, detail && !detail.faa ? "Not in the FAA's registry" : null].filter(Boolean).join(" · ") || "—"}
-              </span>
-            }
-            data-testid="flight-registration"
-          />
-        )}
-        {registry && (
-          <ListRow
-            title="Type"
-            value={
-              <span className="font-semibold text-foreground" data-testid="flight-type">
-                {[detail?.type ?? plane?.type ?? registered, detail?.year].filter(Boolean).join(" · ") || "—"}
-              </span>
-            }
-          />
-        )}
-        {squawk && (
-          <ListRow
-            title="Squawk"
-            data-testid="flight-squawk"
-            value={
-              <span className={cn("font-semibold tabular-nums", meaning ? "text-destructive-ink" : "text-foreground")}>
-                {squawk}
-                {meaning ? ` · ${meaning}` : ""}
-              </span>
-            }
-          />
-        )}
-        {/* Every row from the first frame, its value a line to come while
+      <FirstFew
+        title={plane ? "Now" : "Details"}
+        testId="flight-now-section"
+        rows={[
+          /* Traffic the FAA's registry does not hold says so (the design's "Unregistered"). */
+          registry && (
+            <ListRow
+              key="registration"
+              title="Registration"
+              value={
+                <span className="font-semibold text-foreground">
+                  {[registration, detail && !detail.faa ? "Not in the FAA's registry" : null].filter(Boolean).join(" · ") || "—"}
+                </span>
+              }
+              data-testid="flight-registration"
+            />
+          ),
+          registry && (
+            <ListRow
+              key="type"
+              title="Type"
+              value={
+                <span className="font-semibold text-foreground" data-testid="flight-type">
+                  {[detail?.type ?? plane?.type ?? registered, detail?.year].filter(Boolean).join(" · ") || "—"}
+                </span>
+              }
+            />
+          ),
+          squawk && (
+            <ListRow
+              key="squawk"
+              title="Squawk"
+              data-testid="flight-squawk"
+              value={
+                <span className={cn("font-semibold tabular-nums", meaning ? "text-destructive-ink" : "text-foreground")}>
+                  {squawk}
+                  {meaning ? ` · ${meaning}` : ""}
+                </span>
+              }
+            />
+          ),
+          /* Every row from the first frame, its value a line to come while
             the record is asked for and a dash where it has none: the rows
             came in as it answered and the card under them jumped (the
             flicker audit's FL-10), until the answer has none: an airplane
             the FAA's registry does not hold has no registered owner and
             often no model, two rows of dashes (the owner's screenshot,
-            2026-11-26, A7-BFM). */}
-        {registry && (detailLoading || detail?.faa) && (
-          <ListRow title="Registered To" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
-        )}
-        {registry && (detailLoading || detail?.description) && (
-          <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
-        )}
-        {/* Who flies it, this flight's, where it is known. */}
-        {operator && <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />}
-        {route && (
-          // Its flight number's scheduled route (Virtual Radar Server's
-          // route database), not the flight plan filed, which the FAA does
-          // not publish openly: said in the row, not in a footnote.
-          <ListRow
-            media={
-              <RowBadge colour={BADGE.approach}>
-                <Route />
-              </RowBadge>
-            }
-            data-testid="flight-route"
-            title={<span className="font-semibold">{route.airports.map((a) => a.ident).join(" → ")}</span>}
-            description={[
-              "Scheduled route",
-              route.airports
-                .map((a) => a.location ?? a.name)
+            2026-11-26, A7-BFM). */
+          registry && (detailLoading || detail?.faa) && (
+            <ListRow key="owner" title="Registered To" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
+          ),
+          registry && (detailLoading || detail?.description) && (
+            <ListRow key="model" title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
+          ),
+          /* Who flies it, this flight's, where it is known. */
+          operator && <ListRow key="operator" title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />,
+          route && (
+            // Its flight number's scheduled route (Virtual Radar Server's
+            // route database), not the flight plan filed, which the FAA does
+            // not publish openly: said in the row, not in a footnote.
+            <ListRow
+              key="route"
+              media={
+                <RowBadge colour={BADGE.approach}>
+                  <Route />
+                </RowBadge>
+              }
+              data-testid="flight-route"
+              title={<span className="font-semibold">{route.airports.map((a) => a.ident).join(" → ")}</span>}
+              description={[
+                "Scheduled route",
+                route.airports
+                  .map((a) => a.location ?? a.name)
+                  .filter(Boolean)
+                  .join(" to "),
+                route.plausible === false ? "not where it is flying now" : null,
+              ]
                 .filter(Boolean)
-                .join(" to "),
-              route.plausible === false ? "not where it is flying now" : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          />
-        )}
-        {/* The tower's departure event, where TDES sent one (features/traffic/departureWords). */}
-        {towerLine && <ListRow title="Tower" description={towerLine} />}
-        {registry && (
-          <ListRow
-            title="ICAO Address"
-            value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>}
-          />
-        )}
-        {registry && <ListRow title="Callsign" value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>} />}
-      </ListGroup>
+                .join(" · ")}
+            />
+          ),
+          /* The tower's departure event, where TDES sent one (features/traffic/departureWords). */
+          towerLine && <ListRow key="tower" title="Tower" description={towerLine} />,
+          registry && (
+            <ListRow
+              key="icao"
+              title="ICAO Address"
+              value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>}
+            />
+          ),
+          registry && (
+            <ListRow
+              key="callsign"
+              title="Callsign"
+              value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>}
+            />
+          ),
+        ].filter(Boolean)}
+      />
     </div>
   );
 }

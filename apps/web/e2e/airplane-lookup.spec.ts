@@ -119,15 +119,13 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   await expect(card.getByTestId("airplane-track")).toHaveCount(0);
   await expect(page.getByTestId("airplane-share")).toBeVisible();
   await expect(card.getByTestId("airplane-actions").getByTestId("airplane-share")).toHaveCount(0);
-  for (const tab of ["flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
-  await expect(card.getByTestId("airplane-tab-flight")).toHaveCount(0); // Flight and Flights one tab (the owner, 2026-11-26)
-  await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
+  // No tab bar: one page, its Figures the fourth button's card (the owner, 2026-11-26).
+  await expect(card.getByTestId("airplane-actions").getByTestId("airplane-figures-open")).toBeVisible();
+  await expect(card.getByTestId("airplane-tab-bar")).toHaveCount(0);
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
+  // Under the buttons and over the pictures (the owner, 2026-11-26).
   await expect(card.getByTestId("airplane-facts")).toBeVisible();
-  await card.getByTestId("airplane-tab-flights").click();
-  // Under the buttons and over the pictures, whichever tab is open (the owner, 2026-11-26).
-  await expect(card.getByTestId("airplane-facts")).toBeVisible();
-  // Flights: its past flights, each ▶ its replay over this card.
+  // Its flights on the same page, after its record, each ▶ its replay over this card.
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });
   await expect(flight.getByTestId("past-flight-play")).toBeVisible();
@@ -204,10 +202,10 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await page.goto("/app/plan?airplane=N654FL");
   await settle(page);
   const card = page.getByTestId("airplane-profile");
-  // Its tabs in the bar at the card's foot, in sight at its half size (C1).
-  await card.getByTestId("airplane-tab-info").click();
   const info = card.getByTestId("airplane-info");
   await expect(info.getByTestId("airplane-info-model")).toContainText("Piper PA-28-140", { timeout: slow(15_000) });
+  // Each section its first three rows, its title the rest (FirstFew): the address the Airplane section's 12th.
+  await info.getByTestId("airplane-info-airplane-more").click();
   await expect(info).toContainText("A89C1E");
   // The FAA aircraft registry is public: an individual's name shown, with the town, never a street.
   await expect(info.getByTestId("airplane-info-owner")).toContainText("Jane Q Pilot");
@@ -228,9 +226,13 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(info.getByTestId("airplane-photo")).toHaveCount(0);
   await expect(card.getByTestId("airplane-facts-owner")).toContainText("Jane Q Pilot");
   await expect(card.getByTestId("airplane-facts-type")).toContainText("Piper PA-28-140");
-  // Figures: the planning figures, as the card had them.
-  await card.getByTestId("airplane-tab-figures").click();
-  await expect(card.locator("[data-figure]").first()).toBeVisible();
+  // Figures: the planning figures, a card of their own from the fourth button, its close back to this one.
+  await card.getByTestId("airplane-figures-open").click();
+  const figures = page.getByTestId("airplane-figures");
+  await expect(figures.locator("[data-figure]").first()).toBeVisible();
+  await figures.getByTestId("sheet-card-close").click();
+  await expect(figures).toHaveCount(0);
+  await expect(card).toBeVisible();
 });
 
 test("an N-number in the air says so, with its height and speed, and Track opens its one card on its flight", async ({ page }) => {
@@ -257,12 +259,12 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   await row.getByTestId("search-airplane-track").click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, in the air Track first, no Fly
-  // This, on its Info tab as the airport's card opens, the flight's slide in sight above the tabs.
+  // This, one page with no tab bar, the flight's slide in sight under the facts.
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-track")).toBeVisible();
   await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
+  await expect(card.getByTestId("airplane-tab-bar")).toHaveCount(0);
   await expect(card.getByTestId("airplane-pictures").getByTestId("flight-now")).toBeVisible();
   await expect(page.getByTestId("airplane-profile")).toHaveCount(1);
 });

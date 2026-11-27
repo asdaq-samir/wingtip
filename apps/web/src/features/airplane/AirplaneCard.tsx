@@ -1,4 +1,4 @@
-import { Bell, Crosshair, Gauge, History, Info, Share } from "lucide-react";
+import { Bell, Crosshair, Gauge, Share } from "lucide-react";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { SheetCard } from "../../components/SheetCard";
@@ -7,8 +7,6 @@ import IconButton from "../../components/IconButton";
 import { ACTION } from "../../lib/cardActions";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import { FavoriteTile } from "../../components/FavoriteTile";
-import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
-import { CardTabBar, type CardTab } from "../../components/CardTabBar";
 import { StatusLine } from "../../components/StatusBadge";
 import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
@@ -16,26 +14,19 @@ import { PohRow } from "../documents/lazy";
 import { FlightPictures } from "../traffic/lazy";
 import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
 import { useAirplaneCardModel, type AirplaneCardModel } from "./useAirplaneCardModel";
-import type { AirplaneTab } from "./airplaneTabs";
-import FiguresTab from "./FiguresTab";
-import FlightsTab from "./FlightsTab";
-import InfoTab from "./InfoTab";
+import AirplanePage from "./AirplanePage";
+import FiguresCard from "./FiguresCard";
 import { airplanePhotoSlide } from "./photoSlide";
 
-/** Each tab's word and glyph, in the bar's order. */
-const TAB: Record<AirplaneTab, Omit<CardTab<AirplaneTab>, "value" | "hint">> = {
-  flights: { label: "Flights", icon: History },
-  info: { label: "Info", icon: Info },
-  figures: { label: "Figures", icon: Gauge },
-};
-
 /** The row's columns by its tiles, spelled out for Tailwind. */
-const COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"] as const;
+const COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"] as const;
 
 /** Its actions, the first filled, by its state (the owner's design of
  *  2026-11-26): in the air Track (the map keeps it in the middle), on the
  *  ground Fly This for an airplane the planner can fly; then Alerts (takes
- *  off, lands, comes near) and Favorite. */
+ *  off, lands, comes near), Favorite, and for an airplane the planner can
+ *  fly Figures, its planning figures' card (the owner, 2026-11-26: "It
+ *  should be the fourth button above"). */
 function Actions({ m }: { m: AirplaneCardModel }) {
   const { vm, live, hex } = m;
   const first = m.airborne ? (
@@ -88,6 +79,7 @@ function Actions({ m }: { m: AirplaneCardModel }) {
     first,
     alerts,
     <FavoriteTile key="favorite" on={m.starred} disabled={!m.kept} onToggle={m.toggleFavorite} testId="airplane-favorite" />,
+    m.flyable && <CardAction key="figures" icon={<Gauge />} label="Figures" onClick={m.openFigures} testId="airplane-figures-open" />,
   ].filter(Boolean);
   // Every tile 56 tall, as the airport card's are (PlaceActions).
   return (
@@ -105,14 +97,11 @@ function Actions({ m }: { m: AirplaneCardModel }) {
  * sign) with its call sign and what it is under it, and ✕. Its actions by
  * its state (Actions). Under them one sideways row of slides
  * (FlightPictures): its flight while it flies, else one line of where it
- * last landed; its photos; the sketch of where it has flown. Then the
- * page of the tab picked in the glass bar at its foot (CardTabBar):
- * Flights, its flight now and its earlier ones, each its replay and
- * debrief (FlightsTab); Info, its FAA record and identifiers; Figures,
- * its planning figures, for an airplane the planner can fly. Its POH, the
- * pilot's own PDF (PohRow), on Figures, else on Info. Traffic the
- * FAA's registry does not hold has Flights alone. Its view model is
- * useAirplaneCardModel.
+ * last landed; its photos; the sketch of where it has flown. Then one
+ * page, no tab bar (AirplanePage): Now, its record, its flights. Its
+ * Figures a card of their own from its fourth button (FiguresCard). Its
+ * POH, the pilot's own PDF (PohRow), on Figures, else on the page. Its
+ * view model is useAirplaneCardModel.
  */
 export default function AirplaneCard({
   tail,
@@ -126,9 +115,10 @@ export default function AirplaneCard({
   focus: FigureKey | null;
   figures: boolean;
 }) {
-  const m = useAirplaneCardModel({ tail, hex, figures });
-  const { card, live, vm } = m;
-  // Its POH on Figures, else on Info: one row, where its tab is offered.
+  // Its Figures open from the start where one of them was asked for.
+  const m = useAirplaneCardModel({ tail, hex, figures: figures || !!focus });
+  const { card, live } = m;
+  // Its POH on Figures, else on the page: one row.
   const poh = m.tail ? <PohRow tail={m.tail} model={m.pohModel} /> : null;
   return (
     <SheetCard
@@ -143,12 +133,6 @@ export default function AirplaneCard({
       }
       closeButton
       testId="airplane-profile"
-      // On the figure it was opened for, where it was one.
-      initialFocus={() => {
-        const field = focus ? document.querySelector<HTMLInputElement>(`[data-figure="${focus}"] input`) : null;
-        field?.scrollIntoView({ block: "center" });
-        return field ?? true;
-      }}
     >
       <Actions m={m} />
       {live.waiting && (
@@ -157,8 +141,7 @@ export default function AirplaneCard({
         </p>
       )}
       {/* What it is in a sideways strip (type, year, seats, engines …)
-          under its buttons and over its pictures, in sight whichever tab
-          is open (the owner, 2026-11-26: "It should be buttons, info strip
+          under its buttons and over its pictures (the owner, 2026-11-26: "It should be buttons, info strip
           and then the pictures"). */}
       {m.tail && (card.record || live.detail?.faa) && (
         <AirplaneFacts
@@ -185,45 +168,8 @@ export default function AirplaneCard({
           }
         />
       </div>
-      <CardTabPages
-        tab={m.tab}
-        onPick={m.pick}
-        top={m.setTop}
-        bar={
-          <CardTabBar<AirplaneTab>
-            testId="airplane-tab-bar"
-            tabTestId="airplane-tab-"
-            onPick={m.pick}
-            tabs={m.tabs.map((value) => ({
-              value,
-              ...TAB[value],
-              hint: value === "flights" && card.flightCount ? String(card.flightCount) : null,
-            }))}
-          />
-        }
-      >
-        {m.tabs.includes("flights") && (
-          <CardTabPanel value="flights">
-            <FlightsTab m={m} />
-          </CardTabPanel>
-        )}
-        {m.tail && (
-          <CardTabPanel value="info" className="pt-0">
-            <InfoTab
-              card={card}
-              faa={live.detail?.faa}
-              hex={m.hex}
-              callsign={live.plane?.callsign?.trim() || null}
-              poh={m.flyable ? null : poh}
-            />
-          </CardTabPanel>
-        )}
-        {m.flyable && (
-          <CardTabPanel value="figures">
-            <FiguresTab vm={vm} poh={poh} />
-          </CardTabPanel>
-        )}
-      </CardTabPages>
+      <AirplanePage m={m} poh={m.flyable ? null : poh} />
+      {m.figuresOpen && <FiguresCard m={m} poh={poh} focus={focus} />}
     </SheetCard>
   );
 }

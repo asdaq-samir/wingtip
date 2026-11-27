@@ -67,10 +67,9 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   await page.goto("/app/plan?flight=a89c1e");
   await settle(page);
   // One card for it (the owner's design, 2026-11-26), its N-number's: not
-  // heard, on its Info tab, where its registry is said once.
+  // heard, on its one page, where its registry is said once.
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
-  await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("airplane-info-model")).toContainText("PA-28-140");
 
   // The owner's label and the long name never overlap, at the larger text the owner's iPhone uses too.

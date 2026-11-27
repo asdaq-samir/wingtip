@@ -28,31 +28,31 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   await (await findAirplane(page, "UAL2088")).click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, its call sign and what it is
-  // under it, opened on its Info tab in the air too, as the airport's card opens.
+  // under it, one page, no tab bar.
   const card = page.getByTestId("airplane-profile");
   // At the pill's size, as every card opens; its pages all the way up.
   await grabberTo(page, "full");
   await expect(card).toContainText("N14511");
   await expect(card).toContainText("UAL2088 · Airbus A-321neo");
-  await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
+  await expect(card.getByTestId("airplane-tab-bar")).toHaveCount(0); // one page, no tab bar (the owner, 2026-11-26)
   // The flight it is on, the first slide of the row under the actions, as
   // FlightAware's: where it left and where it is bound, and how it is flying.
   await expect(card.getByTestId("flight-departed")).toContainText("TJSJ");
   await expect(card.getByTestId("flight-bound")).toContainText("KORD");
   await expect(card.getByTestId("flight-altitude")).toContainText("7,000 ft");
-  // In its Flights tab's Now group who flies it and its flight number's
-  // route, at the pilot's ask; its make and model are its Info tab's.
-  await card.getByTestId("airplane-tab-flights").click();
+  // In its Now section who flies it and its flight number's route, at
+  // the pilot's ask; its make and model in its record's sections.
   await expect(card.getByTestId("flight-route")).toContainText("TJSJ → KORD");
   await expect(card.getByTestId("flight-route")).toContainText("San Juan to Chicago");
   await expect(card.getByTestId("flight-operator")).toHaveText("United Airlines Inc");
   // Tracked, the map on it, as it is opened from the search.
   await expect(card.getByTestId("airplane-track")).toHaveAttribute("aria-pressed", "true");
-  // Its FAA registration on Info, from the flight's detail before its N-number's own record.
-  await card.getByTestId("airplane-tab-info").click();
+  // Its FAA registration on the same page, from the flight's detail before its N-number's own record.
   const info = card.getByTestId("airplane-info");
   await expect(info.getByTestId("airplane-info-owner")).toContainText("United Airlines Inc");
   await expect(info).toContainText("Chicago, IL");
+  // Its status the Registration section's fifth row, under its title (FirstFew).
+  await info.getByTestId("airplane-info-registration-more").click();
   await expect(info).toContainText("Valid");
   await expect(info.getByTestId("airplane-info-model")).toContainText("Airbus S A S A321-271NX");
   await expect(info).toContainText("33,110 lb thrust");
@@ -139,7 +139,6 @@ test("an airplane not in the air opened by its link: its card says when it was l
   await expect(card.getByTestId("flight-now")).toHaveCount(0);
   await expect(card.getByTestId("airplane-status")).toBeVisible();
   await expect(card.getByTestId("airplane-track")).toHaveCount(0);
-  await card.getByTestId("airplane-tab-info").click();
   await expect(card.getByTestId("airplane-info-owner")).toContainText("Roca Roja LLC");
 });
 
@@ -234,8 +233,8 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await settle(page);
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("UAL2088", { timeout: slow(15_000) });
-  await expect(card.getByTestId("airplane-tab-info")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-tab-figures")).toHaveCount(0);
+  await expect(card.getByTestId("airplane-info")).toHaveCount(0);
+  await expect(card.getByTestId("airplane-figures-open")).toHaveCount(0);
   await expect(card.getByTestId("flight-registration")).toContainText("Not in the FAA's registry");
   const photo = card.getByTestId("flight-photo");
   await expect(photo).toBeVisible({ timeout: slow(15_000) });

@@ -203,8 +203,7 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   await expect(card.getByTestId("flight-photo-open")).toHaveCount(0);
   await expect(card.getByTestId("airplane-photo-open")).toHaveCount(0);
   await expect(card.getByTestId("airplane-pictures").getByTestId("trail-sketch")).toBeAttached();
-  // Debrief is in its Flights: each row its replay and debrief.
-  await card.getByTestId("airplane-tab-flights").click();
+  // Debrief is in its flights, on the card's one page: each row its replay and debrief.
   await card.getByTestId("past-flight").first().click();
   await expect(page).toHaveURL(new RegExp(`[?&]past=${Math.floor(off)}`));
   await expect(page.getByTestId("past-flight-card").getByTestId("past-flight-name")).toHaveText("LCI → LWM");

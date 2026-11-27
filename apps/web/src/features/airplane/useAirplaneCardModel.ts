@@ -6,10 +6,8 @@ import { profileOfRegistered } from "../../lib/aircraftChoice";
 import { track, useTracking } from "../../lib/map/position/tracking";
 import { usePreferences } from "../../lib/preferences";
 import { shareOrCopy } from "../../lib/share";
-import { useTabScroll } from "../../lib/tabScroll";
 import { useFlightLive } from "../traffic/lazy";
 import { useAirplaneProfile } from "./useAirplaneProfile";
-import { airplaneTabs, type AirplaneTab } from "./airplaneTabs";
 
 /**
  * The one airplane card's view model (MVVM; the owner's design of
@@ -61,10 +59,12 @@ export function useAirplaneCardModel({
   // holds, which offered an A321's Fly This and Figures (the owner's
   // screenshot, 2026-11-26, N606FR).
   const flyable = !!tail && ((!!card.record && profileOfRegistered(card.record) !== null) || vm.owned || vm.flying);
-  // Each tab opening at its own top (useTabScroll).
-  const [picked, pick] = useState<AirplaneTab | null>(null);
-  const { tabs, tab } = airplaneTabs({ hex, tail, flyable, figures, picked });
-  const [, setTop] = useTabScroll(tab);
+  // Its Figures, a card of their own over this one from the fourth button
+  // (the owner, 2026-11-26: "we don't need a tab bar"; "It should be the
+  // fourth button above"), open from the start where they were asked for:
+  // the plan's N-number's ⓘ, a figure asked for.
+  const [figuresAsked, setFiguresOpen] = useState(figures);
+  const figuresOpen = figuresAsked && flyable;
   const kept = card.kept ?? live.kept;
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));
   const title = tail ?? live.name;
@@ -98,10 +98,9 @@ export function useAirplaneCardModel({
     /** The model its POH may be linked for (features/documents' PohRow): the
      *  registry's make and model, else its profile's type. */
     pohModel: [card.record?.manufacturer, card.record?.model].filter(Boolean).join(" ") || vm.type,
-    tabs,
-    tab,
-    pick,
-    setTop,
+    figuresOpen,
+    openFigures: () => setFiguresOpen(true),
+    closeFigures: () => setFiguresOpen(false),
     kept,
     starred,
     toggleFavorite: () => {

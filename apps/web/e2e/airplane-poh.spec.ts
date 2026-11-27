@@ -40,8 +40,9 @@ test("an airplane's POH is added from the device, opens in the reader, and is un
   await stubbed(page);
   await page.goto("/app/plan?airplane=N654FL");
   await settle(page);
-  const card = page.getByTestId("airplane-profile");
-  await card.getByTestId("airplane-tab-figures").click();
+  // Its POH on its Figures, the fourth button's card (the owner, 2026-11-26).
+  await page.getByTestId("airplane-profile").getByTestId("airplane-figures-open").click();
+  const card = page.getByTestId("airplane-figures");
   await expect(card.getByTestId("airplane-poh-add")).toBeVisible({ timeout: slow(15_000) });
   // The model's choice offered by the registry's make and model, off.
   await expect(card.getByTestId("airplane-poh-all")).toHaveAttribute("aria-checked", "false");

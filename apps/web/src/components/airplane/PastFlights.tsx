@@ -2,7 +2,8 @@ import { memo, useEffect, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowRight, Play, RotateCw } from "lucide-react";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../GroupedList";
+import { ListRow } from "../GroupedList";
+import { FirstFew } from "../FirstFew";
 import type { PastFlightSummary } from "../../lib/api/types";
 import { TEXT } from "../../lib/text";
 import { dayOf, lasted, legOf, placeOf, when, whenSaid } from "./pastFlightFormat";
@@ -33,7 +34,7 @@ export default function PastFlights({
   /** Opens a flight's own card (PastFlightCard), over this one. */
   onOpen: (id: number) => void;
   /** Its list's title ("Earlier", under the airplane card's flight now);
-   *  none, untitled but for a day picked. */
+   *  Flights where none is given. */
   title?: string;
   /** Its type, on each row as FlightAware's list has it. */
   type?: string | null;
@@ -70,62 +71,74 @@ export default function PastFlights({
   }, [looking, isFetchingNextPage, isError, fetchNextPage]);
   return (
     <>
-      <ListGroup
-        // No footnote under it, at the owner's ask ("Avoid putting so many
-        // footnotes for pilots experience"): the rows say it.
-        title={from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : title}
-      >
-        {(!data || looking) && !isError && (
-          <ListRow
-            title={
-              <span role="status" className="text-muted-foreground">
-                {data ? "Fetching earlier flights…" : "Fetching its flights…"}
-              </span>
-            }
-          />
-        )}
-        {isError && !data && (
-          <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>{WORDING.pastFlightsNotFetched}</span>} />
-        )}
-        {data && !flights.length && !hasNextPage && !unread && (
-          // The owner's words, where it read "None heard in adsb.lol's archive".
-          <ListRow
-            title={
-              <span className="text-muted-foreground" data-testid="past-flights-none">
-                {from ? "None heard on or before that day" : "No flights heard in the last six weeks"}
-              </span>
-            }
-          />
-        )}
-        {flights.map((flight) => (
-          <PastFlightRow key={flight.id} flight={flight} type={type} play={play} onPick={() => onOpen(flight.id)} />
-        ))}
-        {/* A gap that is adsb.lol's, not the airplane's, said as one. */}
-        {!!unread && (
-          <ListRow
-            title={
-              <span className={cn("text-muted-foreground", TEXT.detail)}>
-                {/* A week or more unread is adsb.lol's history closed to the
-                  app (behind a browser check since 19 Oct 2026), not a
-                  moment's refusal: said so, and that the flights listed
-                  are those watched here (wingtip.traffic's recorded tracks). */}
-                {unread >= 7
-                  ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
-                  : `${unread === 1 ? "One day" : `${unread} days`} could not be read from adsb.lol just now, so their flights are missing; asking again.`}
-              </span>
-            }
-          />
-        )}
-        {/* Ten more, before the last listed, as far back as the archive goes. */}
-        {hasNextPage && !looking && (
-          <ListRow
-            title={isFetchingNextPage ? "Fetching earlier flights…" : "Show Earlier Flights"}
-            onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
-            data-testid="past-flights-more"
-          />
-        )}
-      </ListGroup>
+      {/* Its first three, its title the rest, as every section of the
+          airplane card (FirstFew; the owner, 2026-11-26); Show Earlier
+          Flights once they are all in sight. No footnote under it, at the
+          owner's ask ("Avoid putting so many footnotes for pilots
+          experience"): the rows say it. */}
+      <FirstFew
+        testId="past-flights-section"
+        title={from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : (title ?? "Flights")}
+        rows={[
+          (!data || looking) && !isError && (
+            <ListRow
+              key="fetching"
+              title={
+                <span role="status" className="text-muted-foreground">
+                  {data ? "Fetching earlier flights…" : "Fetching its flights…"}
+                </span>
+              }
+            />
+          ),
+          isError && !data && (
+            <ListRow key="error" title={<span className={cn("text-destructive", TEXT.detail)}>{WORDING.pastFlightsNotFetched}</span>} />
+          ),
+          data && !flights.length && !hasNextPage && !unread && (
+            // The owner's words, where it read "None heard in adsb.lol's archive".
+            <ListRow
+              key="none"
+              title={
+                <span className="text-muted-foreground" data-testid="past-flights-none">
+                  {from ? "None heard on or before that day" : "No flights heard in the last six weeks"}
+                </span>
+              }
+            />
+          ),
+          ...flights.map((flight) => (
+            <PastFlightRow key={flight.id} flight={flight} type={type} play={play} onPick={() => onOpen(flight.id)} />
+          )),
+          // A gap that is adsb.lol's, not the airplane's, said as one.
+          !!unread && (
+            <ListRow
+              key="unread"
+              title={
+                <span className={cn("text-muted-foreground", TEXT.detail)}>
+                  {/* A week or more unread is adsb.lol's history closed to the
+                    app (behind a browser check since 19 Oct 2026), not a
+                    moment's refusal: said so, and that the flights listed
+                    are those watched here (wingtip.traffic's recorded tracks). */}
+                  {unread >= 7
+                    ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
+                    : `${unread === 1 ? "One day" : `${unread} days`} could not be read from adsb.lol just now, so their flights are missing; asking again.`}
+                </span>
+              }
+            />
+          ),
+        ].filter(Boolean)}
+        // Ten more, before the last listed, as far back as the archive goes.
+        after={(open) =>
+          open &&
+          hasNextPage &&
+          !looking && (
+            <ListRow
+              title={isFetchingNextPage ? "Fetching earlier flights…" : "Show Earlier Flights"}
+              onClick={() => void fetchNextPage()}
+              disabled={isFetchingNextPage}
+              data-testid="past-flights-more"
+            />
+          )
+        }
+      />
       <PastFlightsDay from={from} onPick={setFrom} />
       {isFetching && data && !isFetchingNextPage && (
         <span className="sr-only" role="status">

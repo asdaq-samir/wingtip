@@ -29,8 +29,9 @@ export function FirstFew({
   title: string;
   rows: ReactNode[];
   /** Rows always shown after them: a field's radio remarks under its
-   *  frequencies. */
-  after?: ReactNode;
+   *  frequencies; or by whether the rest is open: an airplane's Show
+   *  Earlier Flights, there only once its list is open. */
+  after?: ReactNode | ((open: boolean) => ReactNode);
   /** All of them from the start: the approaches, where the route's
    *  Approaches opened the card. */
   open?: boolean;
@@ -68,7 +69,7 @@ export function FirstFew({
     >
       <ListGroup>
         {shown}
-        {after}
+        {typeof after === "function" ? after(all || !long) : after}
       </ListGroup>
     </PillSection>
   );

@@ -519,7 +519,7 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   unfolding, the flying head), over `--motion-page`, both in
   styles/feel.css. Settings' pages push and pop through the page step
   (`lib/viewTransition`), the Brief's own, so back slides out the way the
-  page came in. The airport and airplane cards' tab bar slides its pill
+  page came in. The airport card's tab bar slides its pill
   to the picked tab (the stock `Tabs.Indicator`, `FLOATING_BAR_PICKED`),
   and a timeline line's details open with the stock Collapsible's height.
 - `prefers-contrast` and `forced-colors` are Baseline widely available
@@ -895,24 +895,27 @@ group and not a picture, its ends each a tap; its per-second clock
 Planespotters.net photo (`photoSlide`, the tile the link to its page,
 the photographer named on it), or traffic's by its address; and the
 sketch of where it has flown (`LiveSketch`) where there are two reports
-at the least. Then the tabs Flights · Info · Figures in the floating
-glass bar (`CardTabBar`, icons History, Info and Gauge, Flights with its
-count over its icon). Flights (`FlightsTab`) is, while it flies,
-`traffic/FlightNowRows`' Now group (squawk, operator, scheduled route,
-tower; traffic with no N-number its registration, type, owner, model,
-ICAO address and call sign there too, in the air or not), then
-`PastFlights` titled Earlier; on the ground `PastFlights` alone; its data
+at the least. Then one page, no tab bar (`AirplanePage`; the owner,
+2026-11-26), each section the shared `components/FirstFew` (its first
+three rows, its title the rest): while it flies `traffic/FlightNowRows`'
+Now (squawk, operator, scheduled route, tower; traffic with no N-number
+its registration, type, owner, model, ICAO address and call sign there
+too, in the air or not), then `AirplaneInfo` for an N-number, then
+`PastFlights` titled Earlier (Flights on the ground), Show Earlier
+Flights FirstFew's `after` once the section is open; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`: Type, Year, Seats,
 Engines, Registration, its status in the destructive ink where lapsed,
 and Owner, public as the FAA publishes it) sits under the card's actions
-and over its pictures, whichever tab is open (the owner, 2026-11-26).
-Info (`InfoTab`) is `AirplaneInfo`, its Airplane group holding its ICAO
-address and call sign.
-Figures (`FiguresTab`) is `useAirplaneProfile`'s, with the POH's row
+and over its pictures (the owner, 2026-11-26). `AirplaneInfo`'s
+Airplane section holds its ICAO address and call sign.
+Figures (`FiguresCard`, a `SheetCard` over the airplane's from its
+fourth action button, `figuresOpen` in `useAirplaneCardModel`, open at
+once where a figure or Figures was asked for; `FiguresTab` its list) is
+`useAirplaneProfile`'s, with the POH's row
 under the figures (`documents/PohRow`, from the documents' `lazy.ts`, its
-view model `usePoh`; at Info's foot where there are no Figures): the
+view model `usePoh`; after the record where there are no Figures): the
 link from an N-number, or from every airplane of its model, to one of
 the pilot's own PDFs is `documents/pohLinks`, kept with the documents in
 the device's IndexedDB (`deviceFiles`), an N-number's own over its
@@ -1074,8 +1077,8 @@ are drawn in (`FloatingBar`, the same height and width), each button a
 `Toolbar.Button` rendering a `FloatingBarButton` and opening its card,
 the ••• the route's
 `ShareMenu` in its `look="bar"`, its menu's trigger rendering a
-`Toolbar.Button` (`"tile"` in flight's `FplActions`); the airport and
-airplane cards' bar stays the stock Tabs (`CardTabBar`), being tabs, not
+`Toolbar.Button` (`"tile"` in flight's `FplActions`); the airport
+card's bar stays the stock Tabs (`CardTabBar`), being tabs, not
 buttons. The strip and the bar are one fixed bar over the screen's foot,
 outside the sliding sheet (`components/sheet/FootBar`, drawn by
 `SheetDrawer` beside the Drawer's popup in its viewport, as iOS 26 puts a

@@ -314,12 +314,15 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"; one card an airplane since the owner's design of
    2026-11-26): its facts in the strip (Type, Year, Seats, Engines,
-   Registration, Owner) under its actions and over its pictures, whichever
-   tab is open (the owner, 2026-11-26: "It should be buttons, info strip
-   and then the pictures"), the same picture tiles under it (its flight now first, then its
-   photos and the sketch of where it has flown, 2026-11-26), and its tabs
-   (Flights, Info, Figures, icons too: History, Info, Gauge) in the same
-   floating glass bar. On
+   Registration, Owner) under its actions and over its pictures (the
+   owner, 2026-11-26: "It should be buttons, info strip and then the
+   pictures"), the same picture tiles under it (its flight now first, then its
+   photos and the sketch of where it has flown, 2026-11-26), then one
+   page with no tab bar, each section its first three rows and its title
+   the rest, as the airport card's sections (the owner, 2026-11-26:
+   "Merge the info and flights tab, we don't need a tab bar"; "make the
+   sections of 3 entries like airport card"), its Figures a fourth button
+   opening their own card. On
    Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision
@@ -457,33 +460,33 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   ago", "Not heard in the last 6 weeks", "Checking whether it's in the
   air…" while the live find is out); then its photo, credited and linked
   to its page; then, where it has flown two reports at the least, the
-  sketch of where it has flown. Each is shown once, in no tab. Opened by
+  sketch of where it has flown. Each is shown once. Opened by
   its N-number while it flies, it is tracked without the map moving.
-  The tabs in the airport card's floating glass bar at its foot:
-  **Flights · Info · Figures** (Flight and Flights made one, the owner,
-  2026-11-26). Flights, its count as the hint, is while it flies a short
-  Now group (its squawk, operator, scheduled route and the tower's
-  departure event), then Earlier, its past flights newest first (the
-  last ten, more on asking, a day picked); on the ground the list alone;
-  each ▶ opening its replay and debrief over the card (the owner,
-  2026-11-14: "How do I see the flights of airplane and play them?");
-  Info its public record, its identifiers with it (ICAO
-  address, Mode S octal, call sign); Figures every planning figure,
-  edited in place, a missing one asked for there, for an airplane the
-  planner can fly, then its **POH** (the owner, 2026-11-26): the app ships
+  Then one page, no tab bar (the owner, 2026-11-26), each section its
+  first three rows, its title opening the rest and "3 of 12" at its
+  right (FirstFew): while it flies a short Now section (its squawk,
+  operator, scheduled route and the tower's departure event); its
+  public record, its identifiers with it (ICAO address, Mode S octal,
+  call sign); then its flights, Earlier while it flies, newest first
+  (the last ten, Show Earlier Flights once the section is open, a day
+  picked), each ▶ opening its replay and debrief over the card (the
+  owner, 2026-11-14: "How do I see the flights of airplane and play
+  them?"). **Figures**, the fourth action button for an airplane the
+  planner can fly (the owner, 2026-11-26: "It should be the fourth
+  button above"), opens a card of its own over this one, open at once
+  from the plan's N-number's ⓘ or a figure asked for: every planning
+  figure, edited in place, a missing one asked for there, then its **POH** (the owner, 2026-11-26): the app ships
   none, the manufacturers' being copyrighted, so the row is Add Your POH,
   a PDF from the device kept in the pilot's own documents and linked to
   the N-number, with "Use for All <model>" under it (the registry's make
   and model, else the profile's type); linked, it opens in the reader, and
   its menu changes or unlinks it, the document kept. An airplane with no
-  Figures has the row at the foot of Info. Traffic the FAA's registry does not hold is the same
-  card titled with its call sign, Flights its one tab, its registration,
-  type, owner, model, ICAO address and call sign in that tab's first
-  group, its registration row saying it is not in the FAA's registry,
-  its photo by its address in the row. It opens on Figures from the
-  plan's N-number's ⓘ or a figure asked for, else on Info, in the air
-  too, as the airport's card does, its flight now in the row above. Info is the airplane's
-  public record in groups, in this order -- Registration (owner, owner
+  Figures has the row after its record. Traffic the FAA's registry does not hold is the same
+  card titled with its call sign, its registration, type, model, ICAO
+  address and call sign in its first section, its registration row
+  saying it is not in the FAA's registry, then its flights, its photo by
+  its address in the row. Its record is the airplane's
+  public record in sections, in this order -- Registration (owner, owner
   type, town, co-owners, issued and expires, last action, FAA region,
   fractional), Airplane (type, category, builder certification, seats,
   engines, weight class, the FAA's reference cruise said as a reference
