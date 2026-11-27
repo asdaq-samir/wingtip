@@ -148,6 +148,11 @@ export function chartStyle(
   return { sources, layers, maxZoom: glZoom(baseLayer.max_zoom + OVERZOOM) };
 }
 
+/** A chart style's layers as ChartGl adds them, shown or hidden, and as a new map's first style holds the chart
+ *  (makeMap): one spec, so the map's first tree claims those layers as they are. */
+export const chartLayersAs = (spec: ChartStyle, visibility: "visible" | "none"): RasterLayerSpecification[] =>
+  spec.layers.map((l) => ({ ...l, layout: { visibility } }));
+
 /** Class E has an ink for when the map draws it: the tiles carry it
  *  (wingtip.vector_tiles), the map draws B, C and D only. */
 type AirspaceClass = AirspaceVolume["airspace_class"] | "E";

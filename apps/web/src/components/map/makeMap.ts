@@ -37,13 +37,13 @@ import type { MapInsets } from "../../lib/mapChrome";
 import { watchMapErrors } from "./mapErrors";
 import type { OverlayTiles } from "../../lib/api/types";
 import { usePreferences } from "../../lib/preferences";
-import { overlayTilesQuery, queryClient } from "../../lib/queryClient";
+import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
 import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../../lib/map/position/ownShip";
-import { SLOTS, slotId, type Slot } from "../../lib/map/gl/glLayer";
+import { SLOTS, firstStyleLayers, slotId, type Slot } from "../../lib/map/gl/glLayer";
 import type { DrawnImage } from "../../lib/map/gl/drawSvg";
 import { overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
-import { chartRole, glZoom } from "../../lib/map/gl/glStyle";
+import { chartLayersAs, chartRole, chartStyle, glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { fewerPixelsOnSoftware } from "../../lib/map/gl/softwareGl";
 
@@ -87,25 +87,39 @@ export function padOf({ top, bottom, left, right = 0 }: MapInsets): Required<Pad
   return { top, bottom, left, right };
 }
 
+/** The chart as ChartGl draws it first (the pilot's base, from the chart's
+ *  answer kept before the map is made), for the map's first style: its
+ *  tiles asked with the style's, not after React has drawn the map's tree.
+ *  None with the chart None or no answer kept; ChartGl adds it then. */
+function firstChart() {
+  const chart = queryClient.getQueryData(chartQuery.queryKey);
+  const base = usePreferences.getState().base;
+  const spec = chart && base !== "none" ? chartStyle(chart, base, true, window.location.origin) : null;
+  return spec ? { sources: spec.sources, layers: chartLayersAs(spec, "visible") } : null;
+}
+
 /**
  * A map made in `holder`, at the pilot's last position or the country, in
  * the middle of what the panel leaves (padding), its first style the
- * slots' empty layers with the cycle's FAA overlays (glOverlays) among
- * them, so the airspace, the airports and the navaids load per tile with
- * the chart rather than each asking the planner for the view.
+ * slots' empty layers with the chart and the cycle's FAA overlays
+ * (glOverlays) among them, so the chart, the airspace, the airports and
+ * the navaids load per tile from the first frame rather than each asking
+ * once the page's tree has drawn.
  */
 export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.Map {
   const last = useOwnShip.getState().lastFix;
   const [lat, lon] = last ? [last.lat, last.lon] : COUNTRY;
   const tiles = queryClient.getQueryData(overlayTilesQuery.queryKey) ?? null;
   const overlays = tiles ? overlayStyle(tiles) : null;
+  const chart = firstChart();
   const layers: LayerSpecification[] = SLOTS.flatMap((s: Slot) => [
+    ...(s === "chart" ? (chart?.layers ?? []) : []),
     ...(overlays?.layers[s] ?? []),
     { id: slotId(s), type: "background" as const, layout: { visibility: "none" as const } },
   ]);
   const style: StyleSpecification = {
     version: 8,
-    sources: overlays?.sources ?? {},
+    sources: { ...chart?.sources, ...overlays?.sources },
     layers,
     // The same variable font under a second name: MapLibre draws a name
     // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
@@ -142,6 +156,8 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     // And its world copies (its default): the Western Aleutian sectional runs across 180°.
   });
   if (tiles) overlaysOf.set(m, tiles);
+  // The chart's layers ChartGl's own, as though it had added them (glLayer's firstStyleLayers).
+  if (chart) firstStyleLayers(m, chart.sources, chart.layers);
   // A tile's picture from those drawn ahead (overlayPictures), which MapLibre waits on before it lays the tile out.
   m.setMissingStyleImageResolver(async (id) => {
     await picturesDrawn;
@@ -187,6 +203,15 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     const b = m.getBounds();
     prefetchRing(tiles, { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, m.getZoom());
   });
+  // The frame the chart's first tile is drawn in, for the speed
+  // measurements (a canvas is no Largest Contentful Paint candidate, as an
+  // image is): `chart-drawn`, once a page, whenever the chart comes.
+  const chartDrawn = (e: MapSourceDataEvent) => {
+    if (chartRole(e.sourceId) !== "chart" || !e.tile) return;
+    m.off("sourcedata", chartDrawn);
+    if (!performance.getEntriesByName("chart-drawn").length) m.once("render", () => performance.mark("chart-drawn"));
+  };
+  if (!performance.getEntriesByName("chart-drawn").length) m.on("sourcedata", chartDrawn);
   // The map shown as one thing (the owner, 2026-11-07): the canvas clear
   // over the page's background until the chart's and the overlays' tiles
   // in view are all in and drawn, then faded in once; never longer than
