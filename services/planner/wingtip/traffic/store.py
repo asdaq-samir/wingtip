@@ -33,9 +33,8 @@ only when ingest or a request happens to write.
   them (wingtip.traffic.opensky), kept a day and a bit: ingest's nightly
   prefetch and a pilot's card both write them, and both read them before
   asking OpenSky again; pruned by `at`, which is indexed.
-- answers: an outside source's answer about one airplane or flight number
-  (an airplane's photo, a flight number's route), its absence too, kept
-  until `until` so a restart or the other process asks again for none.
+The outside sources' answers about one airplane or flight number (its
+photo, its route) are a table of the same file, wingtip.kept_answers'.
 The key the shares are hashed with is never kept here, beside them
 (FOLLOW_SHARE_KEY, recorded._share_key; the round 7 audit, P-M1).
 """
@@ -65,8 +64,6 @@ _SCHEMA = """
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
     CREATE TABLE IF NOT EXISTS opensky (hex TEXT, key TEXT, at REAL, body TEXT, PRIMARY KEY (hex, key)) WITHOUT ROWID;
     CREATE INDEX IF NOT EXISTS opensky_at ON opensky (at);
-    CREATE TABLE IF NOT EXISTS answers (source TEXT, key TEXT, until REAL, body TEXT, PRIMARY KEY (source, key)) WITHOUT ROWID;
-    CREATE INDEX IF NOT EXISTS answers_until ON answers (until);
 """
 
 
@@ -349,26 +346,3 @@ def opensky_path(hex_id: str, flight_id: int, since: float) -> list[dict] | None
 def forget_opensky(before: float) -> int:
     """OpenSky's days and paths kept before `before` dropped; how many."""
     return _write("DELETE FROM opensky WHERE at < ?", (before,))
-
-
-# Outside sources' answers, each kept to its own time.
-
-
-def keep_answer(source: str, key: str, body, until: float) -> None:
-    """A source's answer (JSON, None for "it has none") kept until `until`, wall seconds."""
-    _write(
-        "INSERT INTO answers (source, key, until, body) VALUES (?, ?, ?, ?) "
-        "ON CONFLICT (source, key) DO UPDATE SET until = excluded.until, body = excluded.body",
-        (source, key, until, json.dumps(body)),
-    )
-
-
-def kept_answer(source: str, key: str, now: float) -> tuple[bool, object]:
-    """(True, the answer) where one is kept and not past its time, else (False, None)."""
-    rows = _query("SELECT body FROM answers WHERE source = ? AND key = ? AND until > ?", (source, key, now))
-    return (True, json.loads(rows[0][0])) if rows else (False, None)
-
-
-def forget_answers(now: float) -> int:
-    """The answers past their time dropped; how many."""
-    return _write("DELETE FROM answers WHERE until <= ?", (now,))

@@ -15,7 +15,7 @@ here or by the app that shows it:
   identifies the application ... and includes a contact URL or email":
   the planner's setting PLANESPOTTERS_CONTACT; unset, no photo is asked.
 - "API JSON responses may be cached for up to 24 hours": KEEP_S, in the
-  live store (wingtip.traffic.store's answers), pruned past it each minute.
+  live store (wingtip.kept_answers), pruned past it each minute.
 - "Image binaries must be fetched straight from the thumbnail /
   thumbnail_large URLs we return, by the same browser or device that
   displays them", and "All URLs returned by the API ... must be used
@@ -39,13 +39,13 @@ from __future__ import annotations
 import logging
 import re
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from enum import Enum
 
 import requests
 
-from . import outside
+from . import kept_answers, outside
 from .config import get_settings, user_agent
-from .traffic import store
 
 log = logging.getLogger(__name__)
 
@@ -54,10 +54,21 @@ API = "https://api.planespotters.net/pub/photos/{by}/{key}"
 KEEP_S = 24 * 3600
 TIMEOUT_S = 5.0
 SOURCE = "Planespotters.net"
-#: Both ways of asking, side by side: one after the other a cold card waited
-#: up to 2 x TIMEOUT_S where the address had none (round 4's audit).
+#: The registration is asked too where the address has not answered in this
+#: long, s (a hedged ask): one after the other a cold card waited up to
+#: 2 x TIMEOUT_S where the address had none (round 4's audit), and both at
+#: once doubled every card's requests to Planespotters.net (round 5's).
+HEDGE_S = 1.0
 _ASKING = ThreadPoolExecutor(max_workers=4, thread_name_prefix="planespotters")
 _HEX = re.compile(r"^[0-9a-f]{6}$")
+
+
+class Asked(Enum):
+    """How one way's ask ended: a photo, none to be had, or not asked now (not kept)."""
+
+    PHOTO = "photo"
+    NONE = "none"
+    FAILED = "failed"
 
 
 def read(answer: dict) -> dict | None:
@@ -82,10 +93,12 @@ def read(answer: dict) -> dict | None:
 
 
 def photo(hex_id: str | None, registration: str | None) -> dict | None:
-    """This airplane's photo by its address or its registration, both asked
-    at once, the first with a photo given; None where there is none, the
-    API cannot be asked now, or no contact is set to ask it with. Kept a
-    day, a photo or its absence; an answer missing for a failed ask is not."""
+    """This airplane's photo by its address, else its registration; None
+    where there is none, the API cannot be asked now, or no contact is set
+    to ask it with. The registration is asked once the address has none,
+    or has not answered in HEDGE_S; the address's photo is the one given
+    where both have one in hand. Kept a day, a photo or its absence; an
+    answer missing for a failed ask is not."""
     contact = get_settings().planespotters_contact
     hex_id = (hex_id or "").lower()
     reg = re.sub(r"\s+", "", registration or "").upper()
@@ -94,34 +107,46 @@ def photo(hex_id: str | None, registration: str | None) -> dict | None:
     if not contact or not tries:
         return None
     key = "/".join(f"{by}:{value}" for by, value in tries)
-    kept, found = store.kept_answer("photo", key, time.time())
+    kept, found = kept_answers.kept("photo", key, time.time())
     if kept:
         return found
     headers = {"User-Agent": user_agent(f"+{contact}")}
-    failed = False
-    for done in as_completed([_ASKING.submit(_ask, by, value, headers) for by, value in tries]):
-        answer = done.result()
-        if answer is _FAILED:
-            failed = True
-        elif answer:
-            found = answer
-            break
-    else:
-        if failed:
-            return None  # not kept: asked again next time
-    store.keep_answer("photo", key, found, time.time() + KEEP_S)
+    answers = _hedged([lambda by=by, value=value: _ask(by, value, headers) for by, value in tries])
+    found = next((a for state, a in answers if state is Asked.PHOTO), None)
+    if found is None and any(state is Asked.FAILED for state, _ in answers):
+        return None  # not kept: asked again next time
+    kept_answers.keep("photo", key, found, time.time() + KEEP_S)
     return found
 
 
-_FAILED = object()
+def _hedged(asks: list) -> list[tuple[Asked, dict | None]]:
+    """Each way's answer that came, in the order asked, stopping at the
+    first photo: the first way asked in the pool, the next once it has
+    none or has not answered in HEDGE_S; a way's photo first in the list
+    wherever its answer is in hand."""
+    first = _ASKING.submit(asks[0])
+    done, _ = wait([first], timeout=HEDGE_S)
+    if len(asks) == 1 or (done and first.result()[0] is Asked.PHOTO):
+        return [first.result()]
+    if done:
+        return [first.result(), asks[1]()]
+    second = _ASKING.submit(asks[1])
+    pending = {first, second}
+    while pending:
+        _, pending = wait(pending, return_when=FIRST_COMPLETED)
+        answers = [f.result() for f in (first, second) if f.done()]
+        if any(state is Asked.PHOTO for state, _ in answers):
+            return answers
+    return answers
 
 
-def _ask(by: str, value: str, headers: dict):
-    """One way's photo (`read`), None where it has none, _FAILED where it could not be asked now."""
+def _ask(by: str, value: str, headers: dict) -> tuple[Asked, dict | None]:
+    """One way's answer: (PHOTO, the photo as `read` gives it), (NONE, None) or (FAILED, None)."""
     try:
         resp = outside.get(API.format(by=by, key=value), headers=headers, timeout=TIMEOUT_S)
         resp.raise_for_status()
-        return read(resp.json())
+        found = read(resp.json())
     except (requests.RequestException, ValueError):
         log.info("Planespotters.net photo of %s not had now", value, exc_info=True)
-        return _FAILED
+        return Asked.FAILED, None
+    return (Asked.PHOTO, found) if found else (Asked.NONE, None)

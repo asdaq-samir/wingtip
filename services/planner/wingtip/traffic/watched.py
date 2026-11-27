@@ -9,7 +9,8 @@ import math
 from .. import tracing
 from ..geo import distance_nm
 from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _wall
-from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced, _recent
+from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
+from .globe import _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .recorded import _last_recorded, _record, _recorded, followed
 from .radar import ELSEWHERE_RECORD_S, _heard_elsewhere_now

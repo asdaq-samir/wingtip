@@ -37,7 +37,7 @@ from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from . import registry_codes as codes
-from .registry_reader import _reading
+from .registry_reader import _reading, ready
 
 _SCHEMA = """
 CREATE TABLE deregistered (n_number TEXT, serial TEXT, model_code TEXT, engine_code TEXT, year INTEGER,
@@ -140,8 +140,8 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
 
 
 def _read(db_path: Path, sql: str, args: tuple) -> list[dict]:
-    """Rows of a query, [] where the file is not there."""
-    if not db_path.exists():
+    """Rows of a query, [] where the file is not there or is of an older shape (registry_reader.ready)."""
+    if not ready(db_path):
         return []
     with _reading(db_path) as db:
         return [dict(r) for r in db.execute(sql, args).fetchall()]

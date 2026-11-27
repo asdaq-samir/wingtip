@@ -25,7 +25,8 @@ The package is that module split by source, a module each:
 
 - common: the headers, time limit, clocks and lock every part shares, and
   an airplane read from a readsb answer (`_aircraft`).
-- adsb_lol: adsb.lol's API by region and by search, and its globe's traces.
+- adsb_lol: adsb.lol's API by region and by search.
+- globe: adsb.lol's globe, an airplane's traces today and its last minutes.
 - adsbx: ADS-B Exchange, the fallback, within its month's requests.
 - radar: the FAA's terminal radar's tracks through SWIM (ingest writes them).
 - store: the live store the planner and ingest share (SQLite).
@@ -51,23 +52,17 @@ from .adsb_lol import (
     BACKOFF_S,
     FIND_URL,
     FRESH_S,
-    GLOBE,
-    GLOBE_BACKOFF_S,
     KEEP_S,
     MAX_RADIUS_NM,
     MIN_GAP_S,
     NEAR_RADIUS_NM,
-    RECENT_TTL_S,
-    RECENT_URL,
     REGION_DEG,
     REGION_RADIUS_NM,
-    TRACE_TTL_S,
-    TRACE_URL,
-    UNREAD,
     URL,
     WIDE_REGION_DEG,
     WIDE_REGION_RADIUS_NM,
 )
+from .globe import GLOBE, GLOBE_BACKOFF_S, RECENT_TTL_S, RECENT_URL, TRACE_TTL_S, TRACE_URL, UNREAD
 from .adsbx import ADSBX_HOST, ADSBX_MIN_GAP_S, ADSBX_MONTHLY, ADSBX_SOURCE, ADSBX_URL, ADSBX_USAGE_FILE
 from .radar import (
     ELSEWHERE_RECORD_S,

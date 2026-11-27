@@ -21,7 +21,14 @@ def _stamp(store: Path, version: int) -> None:
         db.execute(f"PRAGMA user_version = {version}")
 
 
-def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now():
+def _shapes(monkeypatch, registry_shape: int, ntsb_shape: int) -> None:
+    """The registry's file and the NTSB's store on disk of these shapes (0: none)."""
+    monkeypatch.setattr(registry, "schema", lambda path: registry_shape)
+    monkeypatch.setattr(ntsb_store, "schema", lambda: ntsb_shape)
+
+
+def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now(monkeypatch):
+    _shapes(monkeypatch, registry.SCHEMA, ntsb_store.SCHEMA)
     on = schedule.scheduler()
     history.jobs(on)
     jobs = {job.id: job for job in on.get_jobs()}
@@ -35,6 +42,22 @@ def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now():
     # The heavy first turns apart, the registry's first (round 4: all three at start-up).
     apart = [(jobs[n].next_run_time - jobs["aircraft-registry"].next_run_time).total_seconds() for n in ("ntsb", "airmen")]
     assert [round(s) for s in apart] == [history.FIRST_TURNS_APART_S, 2 * history.FIRST_TURNS_APART_S]
+
+
+def test_a_store_of_an_older_shape_takes_the_first_turn(monkeypatch):
+    """Round 5's audit: an NTSB store of an older shape waited 300 s behind
+    the registry, every card's NTSB cases none meanwhile (the planner reads
+    it as none)."""
+    _shapes(monkeypatch, registry.SCHEMA, ntsb_store.SCHEMA - 1)
+    on = schedule.scheduler()
+    history.jobs(on)
+    order = sorted(("ntsb", "aircraft-registry", "airmen"), key=lambda n: on.get_job(n).next_run_time)
+    assert order == ["ntsb", "aircraft-registry", "airmen"]
+    # A store not there yet is no older shape: the registry first, as before.
+    _shapes(monkeypatch, 0, 0)
+    on = schedule.scheduler()
+    history.jobs(on)
+    assert sorted(("ntsb", "aircraft-registry", "airmen"), key=lambda n: on.get_job(n).next_run_time)[0] == "aircraft-registry"
 
 
 PAGE = (Path(__file__).parent / "fixtures" / "avdata_2026-11-12.html").read_text()

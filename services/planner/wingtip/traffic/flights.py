@@ -13,7 +13,7 @@ from cachetools import TTLCache
 from .. import airports, registry
 from .legs import LEG_GAP_S as LEG_GAP_S, _field_at as _field_at, _left_from as _left_from, _legs
 from .common import _LOCK, _clock, _number
-from .adsb_lol import GLOBE, UNREAD, _GlobeRefused, _Unread, _globe_get, _trace
+from .globe import GLOBE, UNREAD, _GlobeRefused, _Unread, _globe_get, _trace
 from .recorded import _recorded, follow
 from .watched import _WATCHED, _watch
 from . import opensky

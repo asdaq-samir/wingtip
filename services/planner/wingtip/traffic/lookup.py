@@ -9,7 +9,8 @@ from cachetools import TTLCache
 from .. import registry
 from ..single_flight import one_at_a_time
 from .common import TrafficUnavailable, _LOCK, _aircraft
-from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, SEARCH_WAIT_S, _heard, _paced, _recent
+from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, SEARCH_WAIT_S, _heard, _paced
+from .globe import _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .radar import _heard_elsewhere_now
 from .routes import _CALLSIGN
@@ -148,7 +149,7 @@ def _asked_or_radar(text: str, hex_id: str | None) -> tuple[list[dict], dict]:
     ingest heard it, at once; else TrafficUnavailable, the FAA's record
     then answered (`checked` false)."""
     try:
-        return _asked(text, adsbx_tried=True)
+        return _asked(text)
     except TrafficUnavailable:
         heard = _heard_elsewhere_now(hex_id) if hex_id else None
         if heard is None:
@@ -156,40 +157,32 @@ def _asked_or_radar(text: str, hex_id: str | None) -> tuple[list[dict], dict]:
         return [heard], RADAR_SOURCE
 
 
-def _asked(text: str, adsbx_tried: bool = False) -> tuple[list[dict], dict]:
+def _asked(text: str) -> tuple[list[dict], dict]:
     """adsb.lol's answer to a search, and its credit: by address, callsign
     or registration, as the text reads, the next way where one finds none
     -- in the same turn, as the next turn is a gap off, further than a
     search waits, so the second way was never asked (round 4's audit: a
     foreign registration typed without its dash, whose callsign search
-    finds nothing, was never found); where it turns us away, ADS-B
-    Exchange asked the same way, unless it was asked about this search
-    already (`adsbx_tried`)."""
+    finds nothing, was never found). TrafficUnavailable where a way cannot
+    be asked or is not answered: ADS-B Exchange was asked first
+    (`_looked_up`), and the next way is never sent in a turn the first did
+    not take (round 5's audit: ten pilots' refused first ways each sent a
+    second inside the gap)."""
     if _HEX.fullmatch(text.lower()):
         tries = [("hex", text.lower()), ("callsign", text)]
     elif _N_NUMBER.fullmatch(text) or "-" in text:
         tries = [("reg", text)]
     else:
         tries = [("callsign", text), ("reg", text)]
-    for n, (by, value) in enumerate(tries):
-        credit = ADSB_LOL_SOURCE
-        try:
-            found = [
-                a
-                for a in (
-                    _aircraft(e)
-                    for e in _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S, SEARCH_TIMEOUT_S, same_turn=n > 0).get("ac") or []
-                    if isinstance(e, dict)
-                )
-                if a is not None
-            ]
-        except TrafficUnavailable:
-            if adsbx_tried:
-                raise
-            # adsb.lol turning us away: ADS-B Exchange asked the same way.
-            found, credit = _adsbx(f"{ADSBX_BY[by]}/{value}", search=True), ADSBX_SOURCE
+    answered = False
+    for by, value in tries:
+        # Raises past the loop where the way is refused or not answered, so
+        # only a way that was answered lends the next its turn.
+        answer = _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S, SEARCH_TIMEOUT_S, same_turn=answered)
+        answered = True
+        found = [a for a in (_aircraft(e) for e in answer.get("ac") or [] if isinstance(e, dict)) if a is not None]
         if found:
-            return found, credit
+            return found, ADSB_LOL_SOURCE
     return [], ADSB_LOL_SOURCE
 
 

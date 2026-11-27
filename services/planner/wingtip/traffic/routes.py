@@ -6,8 +6,7 @@ import re
 
 import requests
 
-from .. import geo, outside
-from . import store
+from .. import geo, kept_answers, outside
 from .common import HEADERS, TIMEOUT_S, _number, _wall
 
 #: Virtual Radar Server's route database (its standing data, CC0), as
@@ -30,7 +29,7 @@ def _route_airports(callsign: str) -> list[dict] | None:
     Only an answer or a 404 is kept, ROUTE_TTL_S in the live store, so a
     restart or the other process asks again for none: a refusal is asked
     again next time."""
-    kept, found = store.kept_answer("route", callsign, _wall())
+    kept, found = kept_answers.kept("route", callsign, _wall())
     if kept:
         return found
     try:
@@ -53,7 +52,7 @@ def _route_airports(callsign: str) -> list[dict] | None:
             found = [a for a in found if a["ident"] and a["lat"] is not None and a["lon"] is not None] or None
     except (requests.RequestException, ValueError):
         return None
-    store.keep_answer("route", callsign, found, _wall() + ROUTE_TTL_S)
+    kept_answers.keep("route", callsign, found, _wall() + ROUTE_TTL_S)
     return found
 
 

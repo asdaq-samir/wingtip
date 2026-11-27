@@ -1,6 +1,7 @@
 """Reading the FAA's registry file (wingtip.registry builds it): read-only
-connections kept between lookups, and the Mode S addresses of a list of
-N-numbers in one read (the LADD list's, wingtip.traffic.ladd)."""
+connections kept between lookups, the file's shape checked once a file,
+and the Mode S addresses of a list of N-numbers in one read (the LADD
+list's, wingtip.traffic.ladd)."""
 
 from __future__ import annotations
 
@@ -12,6 +13,14 @@ from pathlib import Path
 
 from . import stores
 
+#: The file's shape: user_version, so a copy of an older shape is read
+#: again from the FAA's download rather than asked for columns it lacks
+#: (2: the reference files in full, every MASTER field and the
+#: deregistered, document and reserved files, 2026-11-14; 3: the
+#: deregistered rows indexed by address, where a lookup by it read all
+#: 383,846 of them, 65 ms, now 0.02 ms, 2026-11-27).
+SCHEMA = 3
+
 #: Read-only connections to the file, kept between lookups and handed one
 #: to a thread at a time: a lookup opened its own, about 1 ms of each of
 #: the radar's per-track LADD checks (88 tracks, 79 ms a poll, 2026-11-27).
@@ -21,6 +30,8 @@ _READERS: dict[str, object] = {"file": None, "idle": []}
 _READERS_LOCK = threading.Lock()
 #: Idle connections kept at most: a few threads read at once.
 READERS_KEPT = 8
+#: Whether the file on disk (its path, inode and mtime) is of SCHEMA's shape, asked once a file.
+_SHAPED: dict[str, object] = {"file": None, "ready": False}
 
 
 def _file(db_path: Path) -> tuple | None:
@@ -29,6 +40,28 @@ def _file(db_path: Path) -> tuple | None:
     except FileNotFoundError:
         return None
     return (str(db_path), stat.st_ino, stat.st_mtime_ns)
+
+
+def ready(db_path: Path) -> bool:
+    """Whether the registry file is there and of SCHEMA's shape, its
+    user_version read once a file. One of an older shape reads as none
+    until ingest builds it again (wingtip.registry.refresh), where it was
+    asked for columns it lacks, a 500 on every card and an error on each
+    radar track's LADD check (round 5's audit): how a deploy heals."""
+    file = _file(db_path)
+    if file is None:
+        return False
+    with _READERS_LOCK:
+        if _SHAPED["file"] == file:
+            return bool(_SHAPED["ready"])
+    try:
+        with contextlib.closing(stores.read_only(db_path)) as db:
+            shaped = db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA
+    except sqlite3.DatabaseError:
+        shaped = False
+    with _READERS_LOCK:
+        _SHAPED["file"], _SHAPED["ready"] = file, shaped
+    return shaped
 
 
 @contextlib.contextmanager
@@ -67,9 +100,9 @@ def addresses(n_numbers: frozenset[str], db_path: Path) -> frozenset[str]:
     """The Mode S addresses (lower case) of these N-numbers: their
     registrations in effect, and for an address with none in effect the
     canceled ones (DEREG.txt), as `lookup` by address finds them. Empty
-    where the registry is not read yet."""
+    where the registry is not read yet, or is of another shape (`ready`)."""
     listed = sorted(n for n in n_numbers if re.fullmatch(r"N[1-9][0-9A-Z]{0,4}", n))
-    if not db_path.exists() or not listed:
+    if not listed or not ready(db_path):
         return frozenset()
     found: set[str] = set()
     with _reading(db_path) as db:

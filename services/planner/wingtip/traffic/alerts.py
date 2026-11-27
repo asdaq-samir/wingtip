@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .. import airports
 from .common import STALE_S, TrafficUnavailable, _number, _wall
-from .adsb_lol import UNREAD, _last_heard, _recent_trace, _trace
+from .globe import UNREAD, _last_heard, _recent_trace, _trace
 from .recorded import _recorded
 from .watched import _answered, _on_ground, _watch
 from .flights import DEPARTED_WITHIN_NM, _points

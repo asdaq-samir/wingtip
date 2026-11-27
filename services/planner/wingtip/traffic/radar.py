@@ -10,6 +10,7 @@ import logging
 import math
 
 from ..geo import box_around, distance_nm
+from .. import kept_answers
 from ..geo_boxes import split_box
 from . import ladd, store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
@@ -108,7 +109,7 @@ def prune() -> dict[str, int]:
         "followed": store.unfollow_before(now - FOLLOW_KEEP_S) + store.unfollow_unheard(now - FOLLOW_UNHEARD_S),
         "points": store.forget_points(now - RECORD_KEEP_S),
         "opensky": store.forget_opensky(now - OPENSKY_KEEP_S),
-        "answers": store.forget_answers(now),
+        "answers": kept_answers.forget(now),
     }
 
 
