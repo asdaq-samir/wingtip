@@ -9,7 +9,7 @@ from cachetools import TTLCache
 
 from wingtip import airports
 from wingtip.config import get_settings
-from wingtip.traffic import opensky
+from wingtip.traffic import opensky, opensky_api
 
 TODAY = dt.date(2026, 11, 27)
 
@@ -17,7 +17,7 @@ TODAY = dt.date(2026, 11, 27)
 def _resp(code, body=None, headers=None):
     resp = Mock(status_code=code, headers=headers or {})
     resp.json = Mock(return_value=body)
-    resp.raise_for_status = Mock(side_effect=opensky.requests.HTTPError(str(code)) if code >= 400 and code != 404 else None)
+    resp.raise_for_status = Mock(side_effect=opensky_api.requests.HTTPError(str(code)) if code >= 400 and code != 404 else None)
     return resp
 
 
@@ -29,9 +29,9 @@ def sky(monkeypatch):
     get_settings.cache_clear()
     monkeypatch.setattr(opensky, "_FLIGHTS", TTLCache(maxsize=16, ttl=60))
     monkeypatch.setattr(opensky, "_TRACKS", TTLCache(maxsize=16, ttl=60))
-    monkeypatch.setattr(opensky, "_BUDGET", {"flights": {"left": None, "until": 0.0}, "tracks": {"left": None, "until": 0.0}})
-    monkeypatch.setattr(opensky, "_TOKEN", {"value": None, "until": 0.0})
-    monkeypatch.setattr(opensky.requests, "post", lambda *a, **k: _resp(200, {"access_token": "t", "expires_in": 1800}))
+    monkeypatch.setattr(opensky_api, "_BUDGET", {"flights": {"left": None, "until": 0.0}, "tracks": {"left": None, "until": 0.0}})
+    monkeypatch.setattr(opensky_api, "_TOKEN", {"value": None, "until": 0.0})
+    monkeypatch.setattr(opensky_api.requests, "post", lambda *a, **k: _resp(200, {"access_token": "t", "expires_in": 1800}))
     places = {
         "KORD": {
             "ident": "KORD",
@@ -57,7 +57,7 @@ def test_an_airplanes_flights_two_days_to_a_call_never_today_named_by_their_fiel
         "estDepartureAirport": "KDEN",
         "estArrivalAirport": "KORD",
     }
-    monkeypatch.setattr(opensky.requests, "get", lambda url, params, **k: sky.append(params) or _resp(200, [flight]))
+    monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: sky.append(params) or _resp(200, [flight]))
     days = [TODAY - dt.timedelta(days=n) for n in range(0, 4)]
     found, unread = opensky.flights("a74f08", days, TODAY)
     # Three past days, today left to its batch at night: two calls, each of two days at the most.
@@ -72,14 +72,14 @@ def test_an_airplanes_flights_two_days_to_a_call_never_today_named_by_their_fiel
 
 def test_off_unanswered_or_out_of_credits_its_days_are_unread(sky, monkeypatch):
     def refused(*a, **k):
-        raise opensky.requests.ConnectionError("down")
+        raise opensky_api.requests.ConnectionError("down")
 
-    monkeypatch.setattr(opensky.requests, "get", refused)
+    monkeypatch.setattr(opensky_api.requests, "get", refused)
     assert opensky.flights("a74f08", [TODAY - dt.timedelta(days=1)], TODAY) == ([], 1)
     # OpenSky's own count under the reserve: not asked.
     today = dt.datetime.now(dt.timezone.utc).date()
-    opensky._BUDGET["flights"]["left"] = (opensky.RESERVE - 1, today)
-    monkeypatch.setattr(opensky.requests, "get", lambda *a, **k: pytest.fail("asked past the day's credits"))
+    opensky_api._BUDGET["flights"]["left"] = (opensky_api.RESERVE - 1, today)
+    monkeypatch.setattr(opensky_api.requests, "get", lambda *a, **k: pytest.fail("asked past the day's credits"))
     assert opensky.flights("a74f08", [TODAY - dt.timedelta(days=3)], TODAY) == ([], 1)
     monkeypatch.delenv("OPENSKY_CLIENT_ID")
     get_settings.cache_clear()
@@ -88,7 +88,7 @@ def test_off_unanswered_or_out_of_credits_its_days_are_unread(sky, monkeypatch):
 
 def test_a_flights_path_in_feet_none_on_the_ground_within_thirty_days(sky, monkeypatch):
     path = [[1795600000, 39.86, -104.67, None, 0.0, True], [1795600600, 40.5, -100.0, 10000.0, 80.0, False]]
-    monkeypatch.setattr(opensky.requests, "get", lambda url, params, **k: _resp(200, {"path": path}))
+    monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: _resp(200, {"path": path}))
     points = opensky.track("a74f08", 1795600000, 1795600000 + 3600)
     assert [p["alt_ft"] for p in points] == [None, 32808]
     assert opensky.track("a74f08", 1795600000, 1795600000 + 31 * 86400) is None
@@ -108,7 +108,7 @@ def test_a_flights_ends_and_highest_from_its_path_once_read_a_guess_it_does_not_
         [1795603000, 43.0, -86.5, 9000.0, 45.0, False],
         [1795606000, 41.6, -87.4, 3000.0, 270.0, False],
     ]
-    monkeypatch.setattr(opensky.requests, "get", lambda url, params, **k: _resp(200, {"path": path} if "tracks" in url else [flight]))
+    monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: _resp(200, {"path": path} if "tracks" in url else [flight]))
     monkeypatch.setattr(opensky, "_field_at", lambda point, landing: None)
     before, _ = opensky.flights("a74f08", [TODAY - dt.timedelta(days=1)], TODAY)
     # Before its path is read: the estimate, no highest, nothing private sent.
@@ -131,7 +131,7 @@ def test_the_followed_airplanes_yesterday_prefetched_once_a_day_after_the_batch(
         "estArrivalAirport": "KORD",
     }
     monkeypatch.setattr(
-        opensky.requests, "get", lambda url, params, **k: sky.append(url) or _resp(200, {"path": []} if "tracks" in url else [flight])
+        opensky_api.requests, "get", lambda url, params, **k: sky.append(url) or _resp(200, {"path": []} if "tracks" in url else [flight])
     )
     monkeypatch.setattr(recorded, "followed", lambda: ["a74f08"])
     monkeypatch.setattr(opensky, "_PREFETCHED", {"day": None})
@@ -147,13 +147,13 @@ def test_a_flight_listed_twice_is_listed_once_and_a_refusal_waits_a_day_at_the_m
         {"firstSeen": 1793826721, "lastSeen": 1793832400, "estDepartureAirport": "KORD", "estArrivalAirport": "KORD"},
         {"firstSeen": 1793826729, "lastSeen": 1793832400, "estDepartureAirport": "KORD", "estArrivalAirport": None},
     ]
-    monkeypatch.setattr(opensky.requests, "get", lambda url, params, **k: _resp(200, twice, {"X-Rate-Limit-Remaining": "3970"}))
+    monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: _resp(200, twice, {"X-Rate-Limit-Remaining": "3970"}))
     found, _ = opensky.flights("a89c1e", [TODAY - dt.timedelta(days=1)], TODAY)
-    assert [f["id"] for f in found] == [1793826721] and opensky._left("flights") == 3970
+    assert [f["id"] for f in found] == [1793826721] and opensky_api._left("flights") == 3970
     # A track refused with a wait of 292 years: not asked again for a day.
     asked = []
     refused = {"X-Rate-Limit-Retry-After-Seconds": "9223372036"}
-    monkeypatch.setattr(opensky.requests, "get", lambda url, params, **k: asked.append(url) or _resp(429, None, refused))
+    monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, **k: asked.append(url) or _resp(429, None, refused))
     assert opensky.track("a89c1e", 1793826721, 1793826721 + 86400) is None
     assert opensky.track("a89c1e", 1793826721 + 1, 1793826721 + 86400) is None
-    assert len(asked) == 1 and opensky._BUDGET["tracks"]["until"] - opensky._clock() <= opensky.REFUSED_MOST_S
+    assert len(asked) == 1 and opensky_api._BUDGET["tracks"]["until"] - opensky_api._clock() <= opensky_api.REFUSED_MOST_S
