@@ -4,11 +4,9 @@ import UIKit
 /// Light or dark, Appearance as iOS names it (Display & Brightness), as the
 /// web's Appearance has it (lookPicks): System follows the phone, Light and
 /// Dark set the app's own. How far the chart is dimmed is the Map card's
-/// Dimmer, one for each appearance (ChartLook), where Dark + Bright was the
-/// chart undimmed under the dark scheme until the web's 2026-11-18 change
-/// (the owner: "can we have a dimmer and contrast sliders under sunlight
-/// and remove it from the appearance?"); a kept one is Dark with a dark
-/// Dimmer of 0 (ChartLook.migrate).
+/// Dimmer, one for each appearance (ChartLook; the owner, 2026-11-18: "can
+/// we have a dimmer and contrast sliders under sunlight and remove it from
+/// the appearance?").
 enum Appearance: String, CaseIterable, Identifiable, Sendable {
     case system, light, dark
 

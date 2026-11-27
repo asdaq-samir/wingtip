@@ -10,6 +10,7 @@ import SwiftUI
 struct ForecastStrip: View {
     @Environment(DryRun.self) private var dryRun
     @Environment(Verdict.self) private var verdict
+    @Environment(\.colorScheme) private var scheme
     private let forecast = ForecastRun.shared
 
     /// The run asked for: on, and which run.
@@ -75,6 +76,12 @@ struct ForecastStrip: View {
         let end = max(start + 1, legs.last?.toT ?? start + 1)
         return Chart {
             ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
+                // At night the bar is cased in the chart's casing, a mark a
+                // point taller under it, as the dots are (CategoryCasing).
+                if scheme == .dark {
+                    BarMark(xStart: .value("From", leg.fromT), xEnd: .value("To", leg.toT), y: .value("Run", "Run"), height: .fixed(10 + 2 * CategoryCasing.width))
+                        .foregroundStyle(CategoryCasing.colour)
+                }
                 BarMark(xStart: .value("From", leg.fromT), xEnd: .value("To", leg.toT), y: .value("Run", "Run"), height: .fixed(10))
                     .foregroundStyle(Color(FlightCategory.mark(leg.category)))
             }

@@ -108,14 +108,14 @@ struct ChartMap: UIViewRepresentable {
         context.coordinator.onNavaid = onNavaid
         context.coordinator.onReveal = onReveal
         let shade = chartLook.shade(dark: colorScheme == .dark)
-        context.coordinator.dim(shade, night: colorScheme == .dark)
+        context.coordinator.dim(shade, night: colorScheme == .dark, on: map)
         context.coordinator.open(map, bottomInset: bottomInset)
         context.coordinator.onRegion = onRegion
         context.coordinator.useFields(extras.fieldSwitches(military: militaryFields, privateFields: privateFields), on: map)
         context.coordinator.weather.update(map, choice: airportWeather.choice, input: fieldWeather, zoom: Coordinator.zoom(of: map))
         context.coordinator.show(traffic, ownFt: ownFt, on: map)
         context.coordinator.flight?.update(map, flight)
-        context.coordinator.extras.update(map, extras, tiles: context.coordinator.overlay)
+        context.coordinator.extras.update(map, extras.shaded(shade), tiles: context.coordinator.overlay)
         context.coordinator.setFollowing = { [self] on in following = on }
         context.coordinator.setRouteAway = { [self] away in if routeAway != away { routeAway = away } }
         // Every move of the map here steps to its end with Reduce Motion
@@ -299,14 +299,14 @@ struct ChartMap: UIViewRepresentable {
             tiles = nil
         }
 
-        func dim(_ shade: CGFloat, night: Bool) {
+        func dim(_ shade: CGFloat, night: Bool, on map: MKMapView) {
             guard shade != self.shade || night != self.night else { return }
             (self.shade, self.night) = (shade, night)
             tiles?.shade = shade
             courseRenderer?.strokeColor = NightPalette.course
             edgeRenderer?.strokeColor = NightPalette.routeEdge(night: night)
-            edgeRenderer?.setNeedsDisplay()
-            courseRenderer?.setNeedsDisplay()
+            [edgeRenderer, courseRenderer].forEach { $0?.setNeedsDisplay() }
+            MarkDim.apply(MarkDim.alpha(shade: shade, night: night), on: map)
         }
 
         /// The course's two strokes, points, as the web draws them where a

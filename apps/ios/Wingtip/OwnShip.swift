@@ -63,6 +63,10 @@ final class OwnShip {
     /// what a card's distance from the airplane reads, so a parked
     /// airplane's jitter does not draw it again and ask the engine again.
     private(set) var coarseCoordinate: CLLocationCoordinate2D?
+    /// The fix's place by the mile (OwnShip.byTheMile), changed only when
+    /// it changes: what the lists of the fields near the airplane are
+    /// asked again by, so a fix a second does not run their views again.
+    private(set) var byTheMile: String?
     /// What the map's terrain hazard colouring is asked with (HazardInput):
     /// the height in the hazard's 50 ft steps (TerrainHazard.stepped) and
     /// whether the airplane is at flying speed, the one thing the engine's
@@ -258,6 +262,7 @@ final class OwnShip {
         hazardFix = nil
         hasFix = false
         coarseCoordinate = nil
+        byTheMile = nil
     }
 
     /// A fix taken: the live updates', and a test's.
@@ -274,6 +279,8 @@ final class OwnShip {
         if hazard != hazardFix { hazardFix = hazard }
         let coarse = Self.coarse(fix.coordinate)
         if coarse.latitude != coarseCoordinate?.latitude || coarse.longitude != coarseCoordinate?.longitude { coarseCoordinate = coarse }
+        let mile = Self.byTheMile(fix.coordinate)
+        if mile != byTheMile { byTheMile = mile }
         // The path flown, and the phone's position kept in the background
         // only while flying (the location background mode, project.yml):
         // on the ground the reading stops with the app, as any map's does.
@@ -303,6 +310,13 @@ final class OwnShip {
         guard yes != isPrecise else { return }
         isPrecise = yes
         read()
+    }
+
+    /// A place by the minute of arc, a nautical mile of latitude: the key a
+    /// list of the fields near it is asked again by once the airplane has
+    /// moved about a mile.
+    nonisolated static func byTheMile(_ at: CLLocationCoordinate2D) -> String {
+        "\((at.latitude * 60).rounded()),\((at.longitude * 60).rounded())"
     }
 
     /// A place to a thousandth of a degree (coarseCoordinate).

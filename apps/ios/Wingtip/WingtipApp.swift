@@ -22,8 +22,6 @@ struct WingtipApp: App {
         // (Metrics), so the figures the owner steers speed by come from
         // real flights rather than a simulator.
         Metrics.shared.start()
-        // Dark + Bright kept from before is Dark with the chart undimmed (ChartLook).
-        ChartLook.migrate()
         // A plate's "false" kept from before is no pick: it follows the appearance (PlateLook).
         PlateLook.migrate()
         let screens = ScreenModels()

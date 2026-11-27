@@ -48,6 +48,8 @@ final class RaisedMapView: MKMapView {
     private var lowered: Set<ObjectIdentifier> = []
     /// The route's destination's way in, drawn in 3D (ApproachLines).
     private let approach = ApproachLines()
+    /// The marks' alpha under the Dimmer at night (MarkDim).
+    var markAlpha: CGFloat = 1
     override init(frame: CGRect) {
         super.init(frame: frame)
         isPitchEnabled = false

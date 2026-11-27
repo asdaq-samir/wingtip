@@ -123,6 +123,8 @@ struct PictureViewer: View {
     @State private var problem: String?
     /// The pilot's own marks on, the tool picker up (PlateMarkup).
     @State private var markup = MarkupState()
+    /// A chart's pages at night as the plate on the map (PageLook).
+    private var pageLook = PageLookKept()
 
     var body: some View {
         NavigationStack {
@@ -130,9 +132,9 @@ struct PictureViewer: View {
                 if let images {
                     Group {
                         if let georeference = picture.georeference {
-                            PlatePictures(images: images, georeference: georeference, markup: markup)
+                            PlatePictures(images: images, georeference: georeference, markup: markup, look: pageLook.look(chart: true))
                         } else {
-                            ZoomablePictures(images: images, markup: markup)
+                            ZoomablePictures(images: images, markup: markup, look: pageLook.look(chart: picture.isChart))
                         }
                     }
                     .ignoresSafeArea(edges: .bottom)
@@ -187,10 +189,11 @@ struct PlatePictures: View {
     let images: [UIImage]
     let georeference: APIPlateGeoreference
     let markup: MarkupState
+    var look = PageLook()
 
     var body: some View {
         let mark = PlatePosition.mark(inFlight.fix, georeference: georeference)
-        ZoomablePictures(images: images, mark: mark, markup: markup)
+        ZoomablePictures(images: images, mark: mark, markup: markup, look: look)
             .accessibilityValue(mark == nil ? "" : "You are here")
     }
 }
@@ -208,6 +211,8 @@ struct ZoomablePictures: UIViewRepresentable {
     var mark: PageMark?
     /// The pilot's marks over the pages (PlateMarkup).
     var markup = MarkupState()
+    /// A chart's night look (PageLook); a photo's none.
+    var look = PageLook()
 
     func makeUIView(context: Context) -> PagesScrollView {
         let view = PagesScrollView()
@@ -220,6 +225,7 @@ struct ZoomablePictures: UIViewRepresentable {
     func updateUIView(_ view: PagesScrollView, context: Context) {
         if !view.images.elementsEqual(images, by: ===) { view.images = images }
         if view.mark != mark { view.mark = mark }
+        if view.look != look { view.look = look }
         view.markup.key = markup.key
         view.markup.on = markup.on
         if view.cleared != markup.clears {
@@ -248,12 +254,24 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             for image in images {
                 let page = UIImageView(image: image)
                 page.contentMode = .scaleAspectFit
-                page.backgroundColor = .white
                 container.addSubview(page)
             }
             container.addSubview(markup)
             laidWidth = 0
+            paint()
             setNeedsLayout()
+        }
+    }
+
+    /// The pages' night look, each page drawn again when it changes.
+    var look = PageLook() {
+        didSet { if look != oldValue { paint() } }
+    }
+
+    private func paint() {
+        for (page, image) in zip(container.subviews.compactMap { $0 as? UIImageView }, images) {
+            page.image = look.drawn(image)
+            page.backgroundColor = look.paper
         }
     }
 
@@ -336,41 +354,6 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             let size = CGSize(width: bounds.width / 3, height: bounds.height / 3)
             zoom(to: CGRect(x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height), animated: MapMotion.animated)
         }
-    }
-}
-
-/// Own ship on a plate's page: the map's airplane (PlaneMarkView), a blue
-/// arrow in a white disc turned to the track while flying, a dot where it
-/// is still or has no track.
-final class PageOwnShipView: UIView {
-    private let arrow = UIImageView()
-    static let side: CGFloat = 28
-
-    override init(frame: CGRect) {
-        super.init(frame: CGRect(x: 0, y: 0, width: Self.side, height: Self.side))
-        arrow.frame = bounds.insetBy(dx: 3, dy: 3)
-        arrow.contentMode = .scaleAspectFit
-        arrow.tintColor = UIColor.systemBlue
-        backgroundColor = NightPalette.markFill
-        layer.cornerRadius = Self.side / 2
-        layer.borderWidth = 1
-        layer.borderColor = WingtipColor.Chart.shade.withAlphaComponent(0.4).cgColor
-        addSubview(arrow)
-        isUserInteractionEnabled = false
-        isAccessibilityElement = false
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
-
-    /// Its glyph for the mark, kept its size at the page's zoom and
-    /// turned to the track on the page.
-    func show(_ mark: PageMark, zoom: CGFloat) {
-        let turned = mark.moving && mark.rotationDeg != nil
-        arrow.image = UIImage(systemName: turned ? "location.north.fill" : "circle.fill")
-        let scale = zoom > 0 ? 1 / zoom : 1
-        transform = CGAffineTransform(scaleX: scale, y: scale)
-            .rotated(by: turned ? (mark.rotationDeg ?? 0) * .pi / 180 : 0)
     }
 }
 

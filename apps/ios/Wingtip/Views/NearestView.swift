@@ -56,7 +56,7 @@ struct NearestView: View {
         .navigationTitle("Nearest")
         // Nearest needs the position: asked for here the first time.
         .onAppear { ownShip.askLocation() }
-        .task(id: place.map { "\(($0.latitude * 60).rounded()),\(($0.longitude * 60).rounded())" }) {
+        .task(id: dryRun.fix.map { OwnShip.byTheMile($0.coordinate) } ?? ownShip.byTheMile) {
             guard let at = place else { return }
             do {
                 (fields, from) = try await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude)

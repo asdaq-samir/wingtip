@@ -61,15 +61,17 @@ struct BesidePane: View {
     @AppStorage(BesideShare.key) private var share = BesideShare.half
     @State private var model = BesideModel()
     @State private var markup = MarkupState()
+    /// A chart's pages at night as the plate on the map (PageLook).
+    private var pageLook = PageLookKept()
 
     var body: some View {
         NavigationStack {
             Group {
                 if let images = model.images {
                     if let georeference = request.georeference {
-                        PlatePictures(images: images, georeference: georeference, markup: markup)
+                        PlatePictures(images: images, georeference: georeference, markup: markup, look: pageLook.look(chart: true))
                     } else {
-                        ZoomablePictures(images: images, markup: markup)
+                        ZoomablePictures(images: images, markup: markup, look: pageLook.look(chart: request.isChart))
                     }
                 } else if let problem = model.problem {
                     ContentUnavailableView {
