@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import android.app.UiModeManager
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -135,8 +136,33 @@ fun rememberChartLook(): State<ChartLook?> = ChartLookPreference.flow(LocalConte
  * the app's Dark or Light, not the phone's (the themes audit, 2026-11-27:
  * a pilot who set Dark launched into a white window). Set as Appearance is
  * picked and once at the start; the system keeps it across launches.
+ * Before Android 12 there is no such call: the activity's own
+ * configuration takes the pick as it is made (`override`, from
+ * MainActivity.attachBaseContext), so its window's DayNight theme is the
+ * app's from the first frame after the splash (the round-4 phones audit).
  */
 object NightMode {
+    /** The activity's uiMode with the app's Light or Dark in its night
+     *  bits, before Android 12 and where one is picked; null otherwise
+     *  (the system's own, or the phone's followed). Only uiMode is set,
+     *  so the rest of the configuration still follows the device. */
+    fun override(context: Context): Configuration? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return null
+        val night = when (AppearancePreference.flow(context).value) {
+            Appearance.LIGHT -> Configuration.UI_MODE_NIGHT_NO
+            Appearance.DARK -> Configuration.UI_MODE_NIGHT_YES
+            else -> return null
+        }
+        val type = context.resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+        return Configuration().apply { uiMode = type or night }
+    }
+
+    /** Whether the phone itself is dark: the application's configuration,
+     *  which `override` leaves the phone's, where the activity's may carry
+     *  the app's pick. */
+    fun systemDark(context: Context): Boolean =
+        (context.applicationContext.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
     fun apply(context: Context, appearance: Appearance) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         val mode = when (appearance) {

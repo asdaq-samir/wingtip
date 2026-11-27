@@ -2,7 +2,6 @@ package app.wingtipmaps.android.ui
 
 import android.app.Activity
 import android.content.Context
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
@@ -10,6 +9,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -86,7 +86,8 @@ val LocalShade = staticCompositionLocalOf { Shade(dark = false) }
 /** The appearance as the theme reads it, the phone's dark asked once. */
 @Composable
 internal fun rememberShade(): Shade {
-    val system = isSystemInDarkTheme()
+    // The phone's own dark (NightMode.systemDark), read again as the configuration changes.
+    val system = LocalConfiguration.current.let { NightMode.systemDark(LocalContext.current) }
     val picked = rememberAppearance().value ?: Appearance.SYSTEM
     val looked = rememberChartLook()
     val dark = picked.dark(system)
