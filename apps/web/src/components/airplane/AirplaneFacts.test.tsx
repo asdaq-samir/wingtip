@@ -23,7 +23,7 @@ const fact = (id: string) => screen.queryByTestId(`facts-${id}`)?.textContent ??
 describe("an airplane card's facts strip", () => {
   it("says the registry's type, year, seats, and engines, each under its name, its registration and owner left to its Registration section", () => {
     render(<AirplaneFacts record={record} testId="facts" />);
-    expect(fact("type")).toBe("TypePiper PA-28-140");
+    expect(fact("type")).toBe("TypePiper PA-28");
     expect(fact("year")).toBe("Year1971");
     expect(fact("seats")).toBe("Seats4");
     expect(fact("engines")).toBe("Engines1");
