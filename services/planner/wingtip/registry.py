@@ -261,8 +261,8 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
             row = db.execute("SELECT * FROM aircraft WHERE mode_s_hex = ?", (hex_id.lower(),)).fetchone()
         if row is None and re.fullmatch(r"N[1-9][0-9A-Z]{0,4}", n):
             row = db.execute("SELECT * FROM aircraft WHERE n_number = ?", (n,)).fetchone()
-    if row is None:
-        return None
+        if row is None:
+            return _last_registration(db, hex_id, n)
     found = dict(row)
     code = found.pop("status_code") or ""
     found["standing"] = codes.standing(code)
@@ -271,6 +271,41 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
     # A file of the older shape (SCHEMA 1) until the next read has none.
     found["co_owner_names"] = json.loads(found.get("co_owner_names") or "[]")
     return found
+
+
+def _last_registration(db: sqlite3.Connection, hex_id: str | None, n: str) -> dict | None:
+    """An airplane with no registration in effect, by its last canceled one
+    (DEREG.txt), newest canceled first: its make, model, year and address
+    as the FAA last had them, "Deregistered" its status and "lapsed" its
+    standing. The owner's N6460R, a 1966 PA-28-140 canceled 2024-03-09 with
+    its registration pending, read "Not registered" and nothing more
+    (2026-11-27): it is public data, shown (the owner, 2026-11-26)."""
+    try:
+        row = db.execute(
+            """SELECT d.*, m.manufacturer, m.model, m.aircraft_type, m.engines, m.seats,
+                      e.manufacturer || ' ' || e.model AS engine, e.engine_type, e.horsepower, e.thrust_lb
+               FROM deregistered d LEFT JOIN models m ON m.code = d.model_code LEFT JOIN engines e ON e.code = d.engine_code
+               WHERE d.n_number = ? OR (? != '' AND d.mode_s_hex = ?) ORDER BY d.cancel_date DESC LIMIT 1""",
+            (n, (hex_id or "").lower(), (hex_id or "").lower()),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        # A file of the older shape, without the table, until the next read.
+        return None
+    if row is None:
+        return None
+    found = dict(row)
+    found.pop("status_code", None)
+    found.pop("export_country", None)
+    cancelled = found.pop("cancel_date", None)
+    return {
+        **found,
+        "status": "Deregistered",
+        "standing": "lapsed",
+        "fractional": False,
+        "co_owner_names": [],
+        "expires": None,
+        "last_action": cancelled or found.get("last_action"),
+    }
 
 
 def _one(db_path: Path, table: str, code: str | None) -> dict | None:
