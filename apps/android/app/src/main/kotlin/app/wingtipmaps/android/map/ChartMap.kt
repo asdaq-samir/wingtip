@@ -158,7 +158,8 @@ fun ChartMap(
     }
 
     // Night and Larger Map Labels change the style in place (paint, layers), never by a new style.
-    LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.style(template, minZoom, maxZoom, overlays, line) }
+    LaunchedEffect(holder, template, minZoom, maxZoom, overlays) { holder.style(template, minZoom, maxZoom, overlays, line) }
+    LaunchedEffect(holder, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.downloads() }
     LaunchedEffect(holder, night, look) { holder.paint(night) }
     // Edge to edge: the credits clear a cutout or a navigation bar at the left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
@@ -222,6 +223,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastWeather: Map<String, String> = emptyMap()
     private var lastEmergency: EmergencyLine? = null
     private var lastSelected: String? = null
+    private var lastTemplate: TileTemplate? = null
     /** The chart's tiles' last {z}, where the imagery takes over (CloseMap). */
     private var chartTileMax = 12
     /** The traffic's and the trail's GeoJSON last made, set again as
@@ -269,7 +271,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             open(map)
             if (template == null) return@getMapAsync
             // Past the chart's own detail the imagery (CloseMap), to its zoom.
-            chartTileMax = maxZoom
+            chartTileMax = maxZoom.also { lastTemplate = template }
             map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
             val written = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather).also { writtenJson = it; writtenLayers = null }
             val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(written, MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac)
@@ -349,6 +351,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (colours == lastWeather) return
         lastWeather = colours
         redraw { style -> style.getLayer(MapStyle.AIRPORTS)?.setProperties(PropertyFactory.iconImage(Expression.raw(MapStyle.airportIcon(colours).toString()))) }
+    }
+
+    /** The downloaded regions drawn again over the chart as one finishes or goes, the rest of the style kept. */
+    fun downloads() {
+        lastTemplate?.takeIf { styled }?.let { t -> redraw { app.wingtipmaps.android.offline.OfflineLayers.redraw(view.context, it, t, lastLayers.tac) } }
     }
 
     /** The terminal area chart over the base while pinned, at every zoom
