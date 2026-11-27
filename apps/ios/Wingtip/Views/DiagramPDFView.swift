@@ -37,9 +37,10 @@ struct DiagramPDFView: UIViewRepresentable {
         view.displayMode = .singlePage
         view.displaysPageBreaks = false
         view.autoScales = true
-        view.backgroundColor = look.paper
-        (document.page(at: 0) as? DiagramNightPage)?.look = look
+        view.backgroundColor = look.shadedPaper
+        (document.page(at: 0) as? DiagramNightPage)?.look = PageLook(inverted: look.inverted)
         context.coordinator.look = look
+        context.coordinator.marks.look = look
         // Before the document, so PDFKit asks for the page's overlay as it lays it out.
         view.pageOverlayViewProvider = context.coordinator
         view.document = document
@@ -67,14 +68,19 @@ struct DiagramPDFView: UIViewRepresentable {
         /// Own ship and the rings, the page's one overlay.
         let marks = DiagramMarksView()
 
-        /// A new night look: the page's drawn again, the zoom and the
-        /// place on the page kept. PDFKit keeps its drawn tiles, so the
-        /// document is put back to have them drawn afresh.
+        /// A new night look. The Dimmer's shade is the marks' ground over
+        /// the page (DiagramMarksView.look), one alpha a step; only White
+        /// on Black draws the page again, the zoom and the place on the
+        /// page kept. PDFKit keeps its drawn tiles, so the document is put
+        /// back to have them drawn afresh.
         func paint(_ next: PageLook, on view: PDFView) {
             guard next != look, let document = view.document else { return }
+            let turned = next.inverted != look.inverted
             look = next
-            (document.page(at: 0) as? DiagramNightPage)?.look = next
-            view.backgroundColor = next.paper
+            marks.look = next
+            view.backgroundColor = next.shadedPaper
+            guard turned else { return }
+            (document.page(at: 0) as? DiagramNightPage)?.look = PageLook(inverted: next.inverted)
             let scale = view.scaleFactor, at = view.currentDestination
             view.document = nil
             view.document = document

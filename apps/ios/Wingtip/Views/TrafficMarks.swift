@@ -32,6 +32,9 @@ final class TrafficMarkView: MKAnnotationView, NightWords {
     static let reuse = "traffic"
     private let chevron = UIImageView(image: UIImage(systemName: "location.north.fill"))
     private let label = NightWordLabel()
+    /// The chevron's amber or cyan and the chart's brightness, its tint
+    /// the one dimmed by the other.
+    private var ink = NightPalette.trafficFar, brightness: CGFloat = 1
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
@@ -64,7 +67,8 @@ final class TrafficMarkView: MKAnnotationView, NightWords {
 
     func show(_ mark: TrafficAnnotation) {
         let drawn = mark.drawn
-        chevron.tintColor = drawn?.near == true ? NightPalette.trafficNear : NightPalette.trafficFar
+        ink = drawn?.near == true ? NightPalette.trafficNear : NightPalette.trafficFar
+        paint()
         chevron.transform = CGAffineTransform(rotationAngle: CGFloat((mark.plane.trackDeg ?? 0) * .pi / 180))
         label.text = drawn?.label ?? ""
         // Its height against own ship in words, and "near" said where the
@@ -74,8 +78,15 @@ final class TrafficMarkView: MKAnnotationView, NightWords {
         accessibilityLabel = "\(mark.title ?? "Airplane")\(height)\(against)\(drawn?.near == true ? ", near" : "")"
     }
 
+    /// At night the chevron is dimmed by its colour, its dark edge kept
+    /// whole (the obstacles' option A): the near amber about 3.2:1 on the
+    /// edge at the default Dimmer, where faded by its alpha with the edge
+    /// it was about 1.3 to 1.8:1 on the paper (themes round 7, N5).
     func dim(_ brightness: CGFloat) {
-        chevron.alpha = brightness
+        self.brightness = brightness
+        paint()
         label.brightness = brightness
     }
+
+    private func paint() { chevron.tintColor = OverlayDim.colour(ink, brightness: brightness) }
 }

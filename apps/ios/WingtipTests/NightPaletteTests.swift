@@ -38,7 +38,7 @@ struct NightPaletteTests {
 
     @Test func theHaloAndTheMarksFillFollowTheAppearance() throws {
         #expect(hex(NightPalette.halo, day) == 0xFFFFFF)
-        #expect(hex(NightPalette.halo, night) == 0x0B1422)
+        #expect(hex(NightPalette.halo, night) == hex(WingtipColor.Chart.tag, night))
         #expect(hex(NightPalette.markFill, night) == 0x17283A)
         #expect(alpha(NightPalette.halo, night) > 0.85)
         #expect(hex(NightPalette.trafficFar, night) == 0x06B6D4)
@@ -78,5 +78,29 @@ struct NightPaletteTests {
         // 1.4.11's 3:1 for what is not words).
         #expect(NightPalette.contrast(NightPalette.course, NightPalette.ground) >= 3)
         #expect(NightPalette.contrast(NightPalette.trafficFar, NightPalette.ground) >= 3)
+    }
+
+    /// The course's edge weights are the tokens (chart-look.route-edge-*):
+    /// whole at night and in the sunlight palette, lighter by day.
+    @Test func theCourseEdgeIsWeighedByTheTokens() {
+        func alpha(_ colour: UIColor) -> Double {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            colour.getRed(&r, green: &g, blue: &b, alpha: &a)
+            return Double(a)
+        }
+        #expect(alpha(NightPalette.routeEdge(night: true, sunlight: false)) == WingtipChartLook.routeEdgeNight)
+        #expect(alpha(NightPalette.routeEdge(night: false, sunlight: true)) == WingtipChartLook.routeEdgeSunlight)
+        #expect(alpha(NightPalette.routeEdge(night: false, sunlight: false)) == WingtipChartLook.routeEdgeDay)
+    }
+
+    /// A Brief hazard's legs at night: solid amber dimmed by colour no
+    /// further than 3:1 off the chart's dimmed paper; by day the web's
+    /// see-through amber.
+    @Test func theHazardLegsKeepThreeToOneAtNight() {
+        for brightness in [0.3, 0.5, 0.8] as [CGFloat] {
+            let paper = PageLook(shade: 1 - brightness).shadedPaper
+            #expect(NightPalette.contrast(HazardLegRenderer.ink(brightness: brightness), paper) >= 3)
+        }
+        #expect(HazardLegRenderer.ink(brightness: 1) == WingtipColor.Chart.caution.withAlphaComponent(0.6))
     }
 }

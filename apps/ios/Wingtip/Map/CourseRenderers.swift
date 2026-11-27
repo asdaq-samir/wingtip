@@ -18,8 +18,7 @@ enum CourseRenderers {
     /// The renderer of one of the course's lines; nil for any other overlay.
     static func renderer(for overlay: any MKOverlay, night: Bool) -> MKOverlayRenderer? {
         if let edge = overlay as? CourseEdgePolyline {
-            let renderer = MKPolylineRenderer(polyline: edge)
-            renderer.strokeColor = NightPalette.routeEdge(night: night)
+            let renderer = CourseEdgeRenderer(polyline: edge, night: night)
             renderer.lineWidth = edgeWidth
             renderer.lineJoin = .round
             renderer.lineCap = .round
@@ -28,8 +27,7 @@ enum CourseRenderers {
         if let hazard = overlay as? HazardPolyline {
             // The legs a hazard tapped in the Brief is on, wide in
             // amber under the course (HazardLegsViews.swift).
-            let renderer = MKPolylineRenderer(polyline: hazard)
-            renderer.strokeColor = WingtipColor.Chart.caution.withAlphaComponent(0.6)
+            let renderer = HazardLegRenderer(polyline: hazard)
             renderer.lineWidth = 10
             renderer.lineCap = .round
             renderer.lineJoin = .round
@@ -55,5 +53,66 @@ enum CourseRenderers {
             return renderer
         }
         return nil
+    }
+}
+
+/// A Brief hazard's legs, a warning cue the pilot asked for: by day the
+/// amber at 0.6 over the white chart, as the web draws it; at night solid
+/// and dimmed by colour, but only as far as it stays 3:1 off the dimmed
+/// paper (NightPalette.dimmed), where the see-through amber dimmed with
+/// the chart was 1.34:1 (themes round 7, R7-6). Unchecked: MKOverlayRenderer
+/// is not Sendable; it is coloured on the main actor alone, by OverlayDim.
+final nonisolated class HazardLegRenderer: MKPolylineRenderer, NightDimmed, @unchecked Sendable {
+    override init(polyline: MKPolyline) {
+        super.init(polyline: polyline)
+        strokeColor = Self.ink(brightness: 1)
+    }
+
+    func dim(brightness: CGFloat) {
+        strokeColor = Self.ink(brightness: brightness)
+        setNeedsDisplay()
+    }
+
+    /// The amber at the chart's brightness: the day's at full light, else solid on
+    /// the chart's paper shaded as ChartTileRenderer shades it.
+    static func ink(brightness: CGFloat) -> UIColor {
+        let amber = WingtipColor.Chart.caution
+        guard brightness < 1 else { return amber.withAlphaComponent(0.6) }
+        return NightPalette.dimmed(amber, brightness: brightness, on: PageLook(shade: 1 - brightness).shadedPaper)
+    }
+}
+
+/// The course's edge, which takes its weight again as Increase Contrast is
+/// turned while the map is up (NightPalette.routeEdge's sunlight weight),
+/// not only when it is made. At night its weight is the night's whatever
+/// the setting; the night's turn recolours it (`turn`, ChartMap's dim).
+/// Unchecked: MKOverlayRenderer is not Sendable; it is coloured on the
+/// main thread alone, where the notice comes.
+final nonisolated class CourseEdgeRenderer: MKPolylineRenderer, @unchecked Sendable {
+    private var night: Bool
+
+    @MainActor
+    init(polyline: CourseEdgePolyline, night: Bool) {
+        self.night = night
+        super.init(polyline: polyline)
+        strokeColor = NightPalette.routeEdge(night: night)
+        NotificationCenter.default.addObserver(self, selector: #selector(contrastChanged),
+                                               name: UIAccessibility.darkerSystemColorsStatusDidChangeNotification, object: nil)
+    }
+
+    /// The night came or went: its colour kept as its base under the dim.
+    @MainActor
+    func turn(night: Bool, dim: OverlayDim) {
+        self.night = night
+        dim.recolour(self, stroke: NightPalette.routeEdge(night: night))
+    }
+
+    @objc private func contrastChanged() {
+        MainActor.assumeIsolated {
+            guard !night else { return }
+            // By day the chart is not dimmed: the colour is the base itself.
+            strokeColor = NightPalette.routeEdge(night: false)
+            setNeedsDisplay()
+        }
     }
 }

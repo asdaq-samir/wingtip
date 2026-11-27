@@ -58,12 +58,25 @@ final class DiagramMarksView: UIView {
         didSet {
             guard spots != oldValue else { return }
             rings.forEach { $0.removeFromSuperview() }
-            rings = spots.map { _ in Self.ring() }
+            rings = spots.map { _ in Self.ring(Self.ringInk(look)) }
             rings.forEach { insertSubview($0, belowSubview: ship) }
             setNeedsLayout()
         }
     }
 
+    /// The night's look: the Dimmer's shade is this view's ground over the
+    /// page, under the marks, so a Dimmer step moves one alpha and PDFKit
+    /// draws no tile again; the rings are dimmed by colour with it.
+    var look = PageLook() {
+        didSet {
+            guard look != oldValue else { return }
+            shade.alpha = look.shade
+            let ink = Self.ringInk(look).cgColor
+            rings.forEach { $0.layer.borderColor = ink }
+        }
+    }
+
+    private let shade = UIView()
     private let ship = OwnShipView()
     private var rings: [UIView] = []
     /// A ring's side and line, in the page's points, as PDFKit's circle was.
@@ -76,22 +89,38 @@ final class DiagramMarksView: UIView {
         backgroundColor = .clear
         ship.bounds.size = CGSize(width: disc, height: disc)
         ship.isHidden = true
+        shade.isUserInteractionEnabled = false
+        shade.backgroundColor = NightPalette.ground
+        shade.alpha = 0
+        shade.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        addSubview(shade)
         addSubview(ship)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { nil }
 
-    private static func ring() -> UIView {
+    private static func ring(_ ink: UIColor) -> UIView {
         let ring = UIView()
         ring.isUserInteractionEnabled = false
         ring.backgroundColor = .clear
-        ring.layer.borderColor = WingtipColor.Chart.caution.cgColor
+        ring.layer.borderColor = ink.cgColor
         return ring
+    }
+
+    /// A hot spot's amber (chart.caution) under the look: dimmed by colour
+    /// with the page, as the chart's marks are (the owner's "Dim by
+    /// colour"), but never under 3:1 on the shaded paper (WCAG 2.2 1.4.11),
+    /// so at the deepest Dimmer the ring is dimmed only as far as it still
+    /// reads; by day, the page as printed, the amber itself.
+    nonisolated static func ringInk(_ look: PageLook) -> UIColor {
+        guard !look.plain else { return WingtipColor.Chart.caution }
+        return NightPalette.dimmed(WingtipColor.Chart.caution, brightness: 1 - look.shade, on: look.shadedPaper)
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        shade.frame = bounds
         place()
     }
 

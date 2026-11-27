@@ -33,13 +33,34 @@ nonisolated enum NightPalette {
     /// The thin edge round the course's magenta: the dark rim by day and
     /// at night (the web's CHART.routeEdge), where a light one at night
     /// stood out of the dimmed chart, brighter than the course it edged.
-    /// As the web's routeEdgePaint: 0.9 at night and under Increase
-    /// Contrast, where the magenta itself is under 3:1 on the dimmed paper
-    /// and the edge carries the line (about 4.7:1, WCAG 2.2 1.4.11 counting
-    /// the adjacent colour); 0.55 by day on the white chart.
+    /// As the web's routeEdgePaint, its weights design/tokens.json's
+    /// chart-look.route-edge-*: nearly whole at night, where the magenta
+    /// itself is under 3:1 on the dimmed paper and the edge carries the
+    /// line (about 4.7:1, WCAG 2.2 1.4.11 counting the adjacent colour);
+    /// as whole by day in the sunlight palette, which on iOS is the one
+    /// Increase Contrast brings (WingtipInk), the web's Sunlight look; else
+    /// lighter on the white chart.
     @MainActor
-    static func routeEdge(night: Bool) -> UIColor {
-        WingtipColor.Chart.routeEdge.withAlphaComponent(night || UIAccessibility.isDarkerSystemColorsEnabled ? 0.9 : 0.55)
+    static func routeEdge(night: Bool, sunlight: Bool = UIAccessibility.isDarkerSystemColorsEnabled) -> UIColor {
+        let weight = night ? WingtipChartLook.routeEdgeNight : sunlight ? WingtipChartLook.routeEdgeSunlight : WingtipChartLook.routeEdgeDay
+        return WingtipColor.Chart.routeEdge.withAlphaComponent(weight)
+    }
+
+    /// A mark's colour dimmed by colour to `brightness` (OverlayDim.colour),
+    /// moved only as far as it must to stand at least `least` to 1 off its
+    /// paper (WCAG 2.2 1.4.11's 3:1 for a mark that must be seen): the
+    /// brightness nearest the chart's that reaches it, so a warning cue is
+    /// never washed into the dimmed chart. Where none reaches it, the
+    /// chart's own.
+    static func dimmed(_ colour: UIColor, brightness: CGFloat, on paper: UIColor, least: Double = 3) -> UIColor {
+        let at = min(1, max(0, brightness))
+        for step in 0...100 {
+            let d = CGFloat(step) / 100
+            for b in [at - d, at + d] where (0...1).contains(b) {
+                if let ink = OverlayDim.colour(colour, brightness: b), contrast(ink, paper) >= least { return ink }
+            }
+        }
+        return OverlayDim.colour(colour, brightness: at) ?? colour
     }
 
     /// The casing under a line on the chart: white by day, the night's
