@@ -86,7 +86,7 @@ final class MarkupLayer: UIView, PKCanvasViewDelegate {
     /// The page's brightness at night (one less its Dimmer's shade): the
     /// marks dimmed by colour with it, as the map's lines are (OverlayDim),
     /// so a red or blue stroke is never the brightest thing on the page in
-    /// a dark cockpit (AIM 8-1-6). While Markup is on the marks are in
+    /// a dark cockpit, undoing the eyes' dark adaptation. While Markup is on the marks are in
     /// their own colours, being drawn.
     var brightness: CGFloat = 1 {
         didSet { if brightness != oldValue { show() } }
