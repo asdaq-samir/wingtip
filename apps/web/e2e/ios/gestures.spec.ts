@@ -271,7 +271,53 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
     ]);
     await hold(page, 100);
   }
-  // Still held: the edges it bared asked for already.
-  await expect.poll(() => asked, { timeout: slow(5_000) }).toBeGreaterThan(before);
+  // Still held: every chart tile the view now needs is in, the edges it
+  // bared filled. Counted by the tiles, not the requests: where the bared
+  // edges' tiles were in already (MapLibre keeps the tiles just out of
+  // sight), it asks for none and nothing is wrong, where a count of
+  // requests read that as a failure (the night of 2026-11-27, the iPad
+  // mini: 48 asked against 48). A tile still missing as the fingers stop
+  // is one it has to ask for.
+  const missing = await bareTiles(page);
+  await expect.poll(() => bareTiles(page), { timeout: slow(5_000) }).toBe(0);
+  if (missing > 0) expect(asked, `${missing} tiles were missing as the fingers stopped`).toBeGreaterThan(before);
   await touch("touchEnd", []);
 });
+
+/** How many of the tiles the view needs, on each chart in use, are not in
+ *  yet: MapLibre's own covering tiles for each chart source (its tile size
+ *  and levels), each looked up among the source's tiles; -1 with no chart
+ *  drawn at all. */
+function bareTiles(page: Page) {
+  return page.evaluate(() => {
+    type Id = { key: string };
+    type Source = {
+      tiles?: string[];
+      tileSize: number;
+      minzoom: number;
+      maxzoom: number;
+      roundZoom?: boolean;
+      hasTile?: (id: Id) => boolean;
+    };
+    type Manager = { used: boolean; getSource(): Source; getTileByID(key: string): { state: string } | undefined };
+    type GlMap = {
+      style: { tileManagers: Record<string, Manager> };
+      coveringTiles(o: { tileSize: number; minzoom: number; maxzoom: number; roundZoom?: boolean }): Id[];
+    };
+    const map = (window as unknown as { __wingtipMaps: GlMap[] }).__wingtipMaps.at(-1)!;
+    let charts = 0;
+    let bare = 0;
+    for (const manager of Object.values(map.style.tileManagers)) {
+      const source = manager.getSource();
+      if (!manager.used || !source.tiles?.some((url) => url.includes("/api/planner/chart-tile/"))) continue;
+      charts += 1;
+      const { tileSize, minzoom, maxzoom, roundZoom } = source;
+      for (const id of map.coveringTiles({ tileSize, minzoom, maxzoom, roundZoom })) {
+        // Past the chart's own bounds there is no tile to have.
+        if (source.hasTile && !source.hasTile(id)) continue;
+        if (manager.getTileByID(id.key)?.state !== "loaded") bare += 1;
+      }
+    }
+    return charts > 0 ? bare : -1;
+  });
+}
