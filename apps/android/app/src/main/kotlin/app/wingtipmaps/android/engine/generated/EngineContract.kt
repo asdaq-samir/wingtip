@@ -6055,6 +6055,57 @@ object EngineContract {
     )
 
     @Serializable
+    data class GonogoRunwayFindingsAnswer(
+        val pending: Boolean,
+        val worked: Boolean,
+        val short: List<String>,
+        val crosswind: List<String>,
+        val beyond: List<String>,
+        val tailwind: List<String>,
+        val close: List<String>,
+        val unchecked: List<String>,
+    )
+
+    @Serializable
+    data class GonogoRunwayFindingsInput(
+        /**
+         * The nav log is in.
+         */
+        val planned: Boolean,
+        /**
+         * The briefing is in.
+         */
+        val briefed: Boolean,
+        /**
+         * The nav log's airplane: its `takeoff` and `landing` tables, read as JavaScript reads them (present or not).
+         */
+        val aircraft: Map<String, JsonElement>? = null,
+        /**
+         * The runway checks (gonogo_runway_checks), each with its field's ident.
+         */
+        val checks: List<EngineContract.GonogoRunwayFindingsInputChecksItem>? = null,
+    )
+
+    @Serializable
+    data class GonogoRunwayFindingsInputChecksItem(
+        val ident: String,
+        @SerialName("headwind_kt")
+        val headwindKt: Double,
+        @SerialName("crosswind_over")
+        val crosswindOver: Boolean,
+        val unchecked: String? = null,
+        val distances: List<EngineContract.GonogoRunwayFindingsInputChecksItemDistancesItem>,
+    )
+
+    @Serializable
+    data class GonogoRunwayFindingsInputChecksItemDistancesItem(
+        val over: Boolean,
+        val beyond: Boolean,
+        val close: Boolean,
+        val unknown: Boolean,
+    )
+
+    @Serializable
     data class GonogoRunwayFlownInput(
         val runways: List<EngineContract.Runway>? = null,
         /**

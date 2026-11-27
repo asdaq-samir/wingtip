@@ -129,6 +129,7 @@ export const WEB_RULES = [
   "gonogo_risk_line",
   "gonogo_route_figures",
   "gonogo_runway_checks",
+  "gonogo_runway_findings",
   "gonogo_runway_flown",
   "gonogo_runway_in_use",
   "gonogo_runway_number",

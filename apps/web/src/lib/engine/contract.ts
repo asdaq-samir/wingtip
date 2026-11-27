@@ -2528,6 +2528,13 @@ export interface EngineContract {
     answer: GonogoRunwayChecksAnswer;
   };
   /**
+   * The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables or the nav log is awaited.
+   */
+  gonogo_runway_findings: {
+    input: GonogoRunwayFindingsInput;
+    answer: GonogoRunwayFindingsAnswer;
+  };
+  /**
    * The runway and end flown: the one picked where it is there, else the one the wind favours.
    */
   gonogo_runway_flown: {
@@ -8721,6 +8728,47 @@ export interface GonogoMetar {
   wind_dir_true_deg?: number | null;
   wind_speed_kt?: number | null;
   wind_gust_kt?: number | null;
+}
+export interface GonogoRunwayFindingsInput {
+  /**
+   * The nav log is in.
+   */
+  planned: boolean;
+  /**
+   * The briefing is in.
+   */
+  briefed: boolean;
+  /**
+   * The nav log's airplane: its `takeoff` and `landing` tables, read as JavaScript reads them (present or not).
+   */
+  aircraft?: {} | null;
+  /**
+   * The runway checks (gonogo_runway_checks), each with its field's ident.
+   */
+  checks:
+    | {
+        ident: string;
+        headwind_kt: number;
+        crosswind_over: boolean;
+        unchecked: string | null;
+        distances: {
+          over: boolean;
+          beyond: boolean;
+          close: boolean;
+          unknown: boolean;
+        }[];
+      }[]
+    | null;
+}
+export interface GonogoRunwayFindingsAnswer {
+  pending: boolean;
+  worked: boolean;
+  short: string[];
+  crosswind: string[];
+  beyond: string[];
+  tailwind: string[];
+  close: string[];
+  unchecked: string[];
 }
 export interface GonogoRunwayFlownInput {
   runways?: Runway[] | null;

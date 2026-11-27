@@ -5919,6 +5919,51 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct GonogoRunwayFindingsAnswer: Codable, Equatable, Sendable {
+        var pending: Bool
+        var worked: Bool
+        var short: [String]
+        var crosswind: [String]
+        var beyond: [String]
+        var tailwind: [String]
+        var close: [String]
+        var unchecked: [String]
+    }
+
+    nonisolated struct GonogoRunwayFindingsInput: Codable, Equatable, Sendable {
+        /// The nav log is in.
+        var planned: Bool
+        /// The briefing is in.
+        var briefed: Bool
+        /// The nav log's airplane: its `takeoff` and `landing` tables, read as JavaScript reads them (present or not).
+        var aircraft: [String: OpenAPIValueContainer]?
+        /// The runway checks (gonogo_runway_checks), each with its field's ident.
+        var checks: [EngineContract.GonogoRunwayFindingsInputChecksItem]?
+    }
+
+    nonisolated struct GonogoRunwayFindingsInputChecksItem: Codable, Equatable, Sendable {
+        var ident: String
+        var headwindKt: Double
+        var crosswindOver: Bool
+        var unchecked: String?
+        var distances: [EngineContract.GonogoRunwayFindingsInputChecksItemDistancesItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case headwindKt = "headwind_kt"
+            case crosswindOver = "crosswind_over"
+            case unchecked
+            case distances
+        }
+    }
+
+    nonisolated struct GonogoRunwayFindingsInputChecksItemDistancesItem: Codable, Equatable, Sendable {
+        var over: Bool
+        var beyond: Bool
+        var close: Bool
+        var unknown: Bool
+    }
+
     nonisolated struct GonogoRunwayFlownInput: Codable, Equatable, Sendable {
         var runways: [EngineContract.Runway]?
         /// The end picked.

@@ -1,0 +1,157 @@
+{
+  "x-call": "wingtip_brief::gonogo::runway_findings::call",
+  "description": "The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables or the nav log is awaited.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoRunwayFindingsInput",
+      "type": "object",
+      "properties": {
+        "planned": {
+          "type": "boolean",
+          "description": "The nav log is in."
+        },
+        "briefed": {
+          "type": "boolean",
+          "description": "The briefing is in."
+        },
+        "aircraft": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The nav log's airplane: its `takeoff` and `landing` tables, read as JavaScript reads them (present or not)."
+        },
+        "checks": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "The runway checks (gonogo_runway_checks), each with its field's ident.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "headwind_kt": {
+                "type": "number"
+              },
+              "crosswind_over": {
+                "type": "boolean"
+              },
+              "unchecked": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "distances": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "over": {
+                      "type": "boolean"
+                    },
+                    "beyond": {
+                      "type": "boolean"
+                    },
+                    "close": {
+                      "type": "boolean"
+                    },
+                    "unknown": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "over",
+                    "beyond",
+                    "close",
+                    "unknown"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "ident",
+              "headwind_kt",
+              "crosswind_over",
+              "unchecked",
+              "distances"
+            ]
+          }
+        }
+      },
+      "required": [
+        "planned",
+        "briefed",
+        "checks"
+      ]
+    },
+    "answer": {
+      "title": "GonogoRunwayFindingsAnswer",
+      "type": "object",
+      "properties": {
+        "pending": {
+          "type": "boolean"
+        },
+        "worked": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "crosswind": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "beyond": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tailwind": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "close": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unchecked": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "pending",
+        "worked",
+        "short",
+        "crosswind",
+        "beyond",
+        "tailwind",
+        "close",
+        "unchecked"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

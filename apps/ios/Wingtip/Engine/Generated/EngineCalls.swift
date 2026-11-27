@@ -945,6 +945,11 @@ nonisolated extension Engine {
         try Self.rule("gonogo_runway_checks", EngineContract.GonogoRunwayChecksInput(aircraft: aircraft, fields: fields, metars: metars, airports: airports, takeoffLb: takeoffLb, landingLb: landingLb, picks: picks))
     }
 
+    /// The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables or the nav log is awaited.
+    static func gonogoRunwayFindings(planned: Bool, briefed: Bool, aircraft: [String: OpenAPIValueContainer]? = nil, checks: [EngineContract.GonogoRunwayFindingsInputChecksItem]? = nil) throws -> EngineContract.GonogoRunwayFindingsAnswer {
+        try Self.rule("gonogo_runway_findings", EngineContract.GonogoRunwayFindingsInput(planned: planned, briefed: briefed, aircraft: aircraft, checks: checks))
+    }
+
     /// The runway and end flown: the one picked where it is there, else the one the wind favours.
     static func gonogoRunwayFlown(runways: [EngineContract.Runway]? = nil, picked: String? = nil) throws -> EngineContract.GonogoFlown {
         try Self.rule("gonogo_runway_flown", EngineContract.GonogoRunwayFlownInput(runways: runways, picked: picked))

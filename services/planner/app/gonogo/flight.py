@@ -361,19 +361,15 @@ def findings_for(
             "reserve_min": route_figures["reserve_min"],
             "ifr": ifr,
         },
-        "runways": {
-            "pending": not nav or not briefing,
-            "worked": not nav or (bool((nav["aircraft"] or {}).get("takeoff")) and bool((nav["aircraft"] or {}).get("landing"))),
-            "short": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["over"] for d in c["distances"]))),
-            "crosswind": list(dict.fromkeys(c["field"]["ident"] for c in checks if c["crosswind_over"])),
-            "beyond": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["beyond"] for d in c["distances"]))),
-            # The cautions FPL's runway chips ring too (the engine's runway::fit).
-            "tailwind": list(dict.fromkeys(c["field"]["ident"] for c in checks if c["headwind_kt"] < 0)),
-            "close": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["close"] for d in c["distances"]))),
-            "unchecked": list(
-                dict.fromkeys(c["field"]["ident"] for c in checks if c["unchecked"] or any(d["unknown"] for d in c["distances"]))
-            ),
-        },
+        # The fields each runway finding names, the engine's one copy the
+        # web's Brief asks too (gonogo_runway_findings).
+        "runways": engine_ask(
+            "gonogo_runway_findings",
+            planned=bool(nav),
+            briefed=bool(briefing),
+            aircraft=nav and nav["aircraft"],
+            checks=[{**c, "ident": c["field"]["ident"]} for c in checks],
+        ),
         "balance": {
             "pending": not nav,
             "worked": bool(nav_loaded),

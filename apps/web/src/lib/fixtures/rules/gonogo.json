@@ -691,6 +691,281 @@
         }
       ],
       "source": "AIM 7-1-5(b)(1): a standard briefing gives first the adverse conditions, \"significant meteorological and/or aeronautical information that might influence the pilot to alter or cancel the proposed flight\": a TFR the route crosses (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6) before a CWA, an urgent PIREP (UUA, AIM 7-1-18) or an AIRMET. A routine PIREP, a TFR only near the route and a SIGMET over before the flight are not adverse conditions on it."
+    },
+    {
+      "name": "Runway findings: each field named once, in the route's order, under each flag it has",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": true,
+        "briefed": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "checks": [
+          {
+            "ident": "KAAA",
+            "headwind_kt": -3,
+            "crosswind_over": false,
+            "unchecked": null,
+            "distances": [
+              {
+                "over": true,
+                "beyond": false,
+                "close": false,
+                "unknown": false,
+                "kind": "takeoff"
+              }
+            ]
+          },
+          {
+            "ident": "KBBB",
+            "headwind_kt": 10,
+            "crosswind_over": true,
+            "unchecked": null,
+            "distances": [
+              {
+                "over": false,
+                "beyond": true,
+                "close": false,
+                "unknown": false,
+                "kind": "landing"
+              },
+              {
+                "over": false,
+                "beyond": false,
+                "close": true,
+                "unknown": false,
+                "kind": "takeoff"
+              }
+            ]
+          },
+          {
+            "ident": "KCCC",
+            "headwind_kt": 10,
+            "crosswind_over": false,
+            "unchecked": "its elevation is not known",
+            "distances": []
+          },
+          {
+            "ident": "KAAA",
+            "headwind_kt": 10,
+            "crosswind_over": false,
+            "unchecked": null,
+            "distances": [
+              {
+                "over": false,
+                "beyond": false,
+                "close": true,
+                "unknown": false,
+                "kind": "landing"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": {
+            "pending": false,
+            "worked": true,
+            "short": [
+              "KAAA"
+            ],
+            "crosswind": [
+              "KBBB"
+            ],
+            "beyond": [
+              "KBBB"
+            ],
+            "tailwind": [
+              "KAAA"
+            ],
+            "close": [
+              "KBBB",
+              "KAAA"
+            ],
+            "unchecked": [
+              "KCCC"
+            ]
+          }
+        }
+      ],
+      "source": "14 CFR 91.103(b): \"For any flight, runway lengths at airports of intended use, and ... takeoff and landing distance information\"; the checks' flags are gonogo_runway_checks' (over the runway, past the POH's table, past its demonstrated crosswind, under SAFO 19001's 15 per cent to spare, the length or elevation not known)."
+    },
+    {
+      "name": "Runway findings: calm along the end is no tailwind, half a knot behind is",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": true,
+        "briefed": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "checks": [
+          {
+            "ident": "KAAA",
+            "headwind_kt": 0,
+            "crosswind_over": false,
+            "unchecked": null,
+            "distances": []
+          },
+          {
+            "ident": "KBBB",
+            "headwind_kt": -0.5,
+            "crosswind_over": false,
+            "unchecked": null,
+            "distances": []
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "tailwind",
+          "equals": [
+            "KBBB"
+          ]
+        }
+      ],
+      "source": "AIM 4-3-6: the runway most nearly into the wind; a wind along the end below zero is behind the airplane (gonogo_runway_checks' headwind_kt, negative for a tailwind)."
+    },
+    {
+      "name": "Runway findings: a length not known leaves the field unchecked; an empty reason does not",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": true,
+        "briefed": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "checks": [
+          {
+            "ident": "KAAA",
+            "headwind_kt": 10,
+            "crosswind_over": false,
+            "unchecked": "",
+            "distances": []
+          },
+          {
+            "ident": "KBBB",
+            "headwind_kt": 10,
+            "crosswind_over": false,
+            "unchecked": null,
+            "distances": [
+              {
+                "over": false,
+                "beyond": false,
+                "close": false,
+                "unknown": true,
+                "kind": "landing"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "unchecked",
+          "equals": [
+            "KBBB"
+          ]
+        },
+        {
+          "path": "short",
+          "equals": []
+        }
+      ],
+      "source": "14 CFR 91.103(b): with no runway length, whether the distances fit is not known, never \"within\"."
+    },
+    {
+      "name": "Runway findings: awaiting the nav log, pending and not held unworked",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": false,
+        "briefed": true,
+        "aircraft": null,
+        "checks": []
+      },
+      "expect": [
+        {
+          "path": "pending",
+          "equals": true
+        },
+        {
+          "path": "worked",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.103(b): \"For any flight, runway lengths at airports of intended use, and ... takeoff and landing distance information\"; the checks' flags are gonogo_runway_checks' (over the runway, past the POH's table, past its demonstrated crosswind, under SAFO 19001's 15 per cent to spare, the length or elevation not known)."
+    },
+    {
+      "name": "Runway findings: awaiting the briefing, pending",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": true,
+        "briefed": false,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": {
+            "rows": []
+          }
+        },
+        "checks": []
+      },
+      "expect": [
+        {
+          "path": "pending",
+          "equals": true
+        },
+        {
+          "path": "worked",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.103(b): \"For any flight, runway lengths at airports of intended use, and ... takeoff and landing distance information\"; the checks' flags are gonogo_runway_checks' (over the runway, past the POH's table, past its demonstrated crosswind, under SAFO 19001's 15 per cent to spare, the length or elevation not known)."
+    },
+    {
+      "name": "Runway findings: an airplane with no landing table is not worked",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": true,
+        "briefed": true,
+        "aircraft": {
+          "takeoff": {
+            "rows": []
+          },
+          "landing": null
+        },
+        "checks": []
+      },
+      "expect": [
+        {
+          "path": "pending",
+          "equals": false
+        },
+        {
+          "path": "worked",
+          "equals": false
+        }
+      ],
+      "source": "14 CFR 91.103(b)(1): the distances are the airplane flight manual's; without its landing table they cannot be worked out."
     }
   ]
 }

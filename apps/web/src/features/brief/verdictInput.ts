@@ -7,7 +7,7 @@ import { riskLine, type assess } from "../../lib/frat";
 import type { briefVerdict } from "../../lib/verdict";
 import { altitudeRange, WEATHER_SOURCE_LABEL } from "./briefingFigures";
 import type { runwayChecks } from "./runwayCheck";
-import type { callEngine } from "../../lib/engine/engine";
+import { callEngine } from "../../lib/engine/engine";
 
 type VerdictInput = Parameters<typeof briefVerdict>[0]["input"];
 
@@ -109,17 +109,20 @@ export function verdictInput({
       reserveMin: routeFigures.reserve_min,
       ifr,
     },
-    runways: {
-      pending: !nav || !briefing,
-      worked: !nav || (!!nav.aircraft?.takeoff && !!nav.aircraft?.landing),
-      short: [...new Set(checks.filter((c) => c.distances.some((d) => d.over)).map((c) => c.field.ident))],
-      crosswind: [...new Set(checks.filter((c) => c.crosswindOver).map((c) => c.field.ident))],
-      beyond: [...new Set(checks.filter((c) => c.distances.some((d) => d.beyond)).map((c) => c.field.ident))],
-      // The cautions FPL's runway chips ring too (the engine's fit): a tailwind, little to spare.
-      tailwind: [...new Set(checks.filter((c) => c.headwindKt < 0).map((c) => c.field.ident))],
-      close: [...new Set(checks.filter((c) => c.distances.some((d) => d.close)).map((c) => c.field.ident))],
-      unchecked: [...new Set(checks.filter((c) => c.unchecked || c.distances.some((d) => d.unknown)).map((c) => c.field.ident))],
-    },
+    // The fields each runway finding names, the engine's one copy the
+    // planner's Go / No-Go asks too.
+    runways: callEngine("gonogo_runway_findings", {
+      planned: !!nav,
+      briefed: !!briefing,
+      aircraft: nav?.aircraft ?? null,
+      checks: checks.map((c) => ({
+        ident: c.field.ident,
+        headwind_kt: c.headwindKt,
+        crosswind_over: c.crosswindOver,
+        unchecked: c.unchecked,
+        distances: c.distances,
+      })),
+    }),
     balance: {
       pending: !nav,
       worked: !!loading && !!loaded,
