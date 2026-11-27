@@ -150,12 +150,6 @@
     <string name="verdict_no_go">No-Go</string>
     <string name="where_to_or_ask">Where to, or ask</string>
 
-    <!-- Card actions (lib/cardActions.ts ACTION, docs/design/icons.md). -->
-    <string name="action_fly_here">Fly Here</string>
-    <string name="action_hold_here">Hold Here</string>
-    <string name="action_call">Call</string>
-    <string name="action_address">Address</string>
-    <string name="action_copy">Copy</string>
 
     <!-- The map's cards. -->
     <string name="airspace">Airspace</string>

@@ -203,7 +203,7 @@ private fun AirplaneButtons(tail: String, looked: AirplaneLookup.State, canFly: 
                 },
             )
         }
-        add(GroupAction(stringResource(R.string.action_favorite), if (starred) Icons.Filled.Star else Icons.Outlined.StarOutline, enabled = hex != null, checked = starred) {
+        add(GroupAction(stringResource(R.string.wording_favorite), if (starred) Icons.Filled.Star else Icons.Outlined.StarOutline, enabled = hex != null, checked = starred) {
             if (hex != null) tracking.toggleFavorite(hex, tail, what)
         })
         add(GroupAction(stringResource(R.string.share), null) {

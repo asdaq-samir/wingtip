@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.design.Haptics
+import app.wingtipmaps.android.design.generated.CardAction
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.FlightModel
