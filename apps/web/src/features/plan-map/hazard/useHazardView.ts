@@ -21,7 +21,9 @@ export function useHazardView(cruiseFt: number | null): HazardView | null {
   const speedKt = useOwnShip((s) => (s.enabled && s.fix && s.fix.speedKt != null ? Math.round(s.fix.speedKt) : null));
   const gpsFt = useOwnShip((s) => {
     const ft = s.enabled && s.fix ? s.fix.altitudeFt : null;
-    return ft === null ? null : Math.round(ft / STEP_FT) * STEP_FT;
+    // Rounded DOWN to the step: to the nearest it read up to 25 ft high and
+    // the red band began later (the phones' re-audit, 2026-11-27); down errs red.
+    return ft === null ? null : Math.floor(ft / STEP_FT) * STEP_FT;
   });
   if (setting === "off") return null;
   return hazardView(setting, { speedKt, altitudeFt: gpsFt }, cruiseFt, clearance);
