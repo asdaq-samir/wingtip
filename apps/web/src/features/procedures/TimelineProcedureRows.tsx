@@ -94,6 +94,7 @@ export function TimelineProcedureRows({
       label={loaded ? `${placed.label}, loaded` : placed.label}
       data={{ "data-kind": kind }}
       startOpen={!!vm.openAtFirst}
+      rows={fixes.length}
       // Its menu is its pill's (the owner, 2026-11-25: "design these pills
       // to be like route box where they open a menu for their selection
       // ... Then we won't need ... at the end"); a loaded approach's
