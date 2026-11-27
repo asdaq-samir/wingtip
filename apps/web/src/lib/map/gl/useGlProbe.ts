@@ -7,7 +7,7 @@ import { loadLogLooking } from "../../loadLog";
  *  asks: the probes are for the browser tests, and each one queries the
  *  map's drawn features and projects them at every idle, which a pilot's
  *  phone pays for nothing. */
-const testDriven = () => typeof navigator !== "undefined" && navigator.webdriver === true;
+export const testDriven = () => typeof navigator !== "undefined" && navigator.webdriver === true;
 
 /**
  * What a layer has drawn, where, for the browser tests: an empty element
