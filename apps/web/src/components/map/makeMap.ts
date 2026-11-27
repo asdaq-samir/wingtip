@@ -1,5 +1,5 @@
 import * as maplibregl from "maplibre-gl";
-import type { LayerSpecification, PaddingOptions, StyleSpecification } from "maplibre-gl";
+import type { LayerSpecification, MapSourceDataEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (worker.ts).
 import "../../lib/map/gl/worker";
@@ -42,8 +42,8 @@ import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/ove
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../../lib/map/position/ownShip";
 import { SLOTS, slotId, type Slot } from "../../lib/map/gl/glLayer";
 import type { DrawnImage } from "../../lib/map/gl/drawSvg";
-import { OVERLAY_SOURCE, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
-import { glZoom } from "../../lib/map/gl/glStyle";
+import { overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
+import { chartRole, glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { fewerPixelsOnSoftware } from "../../lib/map/gl/softwareGl";
 
@@ -188,19 +188,22 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     prefetchRing(tiles, { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, m.getZoom());
   });
   // The map shown as one thing (the owner, 2026-11-07): the canvas clear
-  // over the page's background until the map is first at rest with the
-  // chart's tiles drawn (none to wait for with the chart None) and the
-  // overlay tiles' first ones in, then faded in once; never longer than
-  // REVEAL_LATEST_MS, so a slow tile never leaves the map blank.
+  // over the page's background until the chart's and the overlays' tiles
+  // in view are all in and drawn, then faded in once; never longer than
+  // REVEAL_LATEST_MS, so a slow tile never leaves the map blank. Not only
+  // at the map's first rest (`idle`, still the latest it waits), which
+  // waited on every source, the relief's terrain tiles among them, and on
+  // every layer the page had added since.
   const canvas = m.getCanvas();
   canvas.style.opacity = "0";
-  let chartIn = usePreferences.getState().base === "none";
-  let overlaysIn = !tiles;
-  const tileIn = (e: { sourceId?: string; tile?: unknown }) => {
-    if (!e.tile) return;
-    if (e.sourceId?.startsWith("chart")) chartIn = true;
-    if (e.sourceId === OVERLAY_SOURCE) overlaysIn = true;
-  };
+  const overlayIds = Object.keys(overlays?.sources ?? {});
+  const watched = (id: string) => !!chartRole(id) || overlayIds.includes(id);
+  const noChart = usePreferences.getState().base === "none";
+  // The chart's and the overlays' sources the map has, and whether a tile
+  // of the chart (the overlays', with the chart None) has come: by then
+  // every source's tiles in view have been asked for.
+  const seen = new Set<string>();
+  let asked = false;
   let revealed = false;
   const reveal = () => {
     if (revealed) return;
@@ -213,17 +216,28 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     // For the page's loading mark (MapLoading) to fade as the map comes in.
     el.dispatchEvent(new Event(REVEAL_EVENT));
   };
-  // Ready at its first rest with those tiles drawn, whether or not
-  // REVEAL_LATEST_MS showed it first: marked once a page for Setup's Log
-  // (lib/loadLog), whose probes stop there.
-  const rested = () => {
-    if (!chartIn || !overlaysIn) return;
+  // Ready once those are drawn, whether or not REVEAL_LATEST_MS showed it
+  // first: marked once a page for Setup's Log (lib/loadLog), whose probes
+  // stop there.
+  const ready = () => {
     m.off("sourcedata", tileIn);
     m.off("idle", rested);
     if (!performance.getEntriesByName("map-ready").length) performance.mark("map-ready");
     reveal();
   };
+  const tileIn = (e: MapSourceDataEvent) => {
+    if (!watched(e.sourceId)) return;
+    seen.add(e.sourceId);
+    if (e.tile && (noChart || chartRole(e.sourceId))) asked = true;
+    if (!asked || ![...seen].every((id) => !m.getSource(id) || m.isSourceLoaded(id))) return;
+    m.off("sourcedata", tileIn);
+    m.once("render", ready);
+  };
   const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
+  // At its first rest at the latest, once the chart has come.
+  const rested = () => {
+    if (asked) ready();
+  };
   m.on("sourcedata", tileIn);
   m.on("idle", rested);
   return m;
