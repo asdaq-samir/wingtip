@@ -914,6 +914,40 @@
       "source": "14 CFR 91.103(b): \"For any flight, runway lengths at airports of intended use, and ... takeoff and landing distance information\"; the checks' flags are gonogo_runway_checks' (over the runway, past the POH's table, past its demonstrated crosswind, under SAFO 19001's 15 per cent to spare, the length or elevation not known)."
     },
     {
+      "name": "Runway findings: an empty takeoff table {} is not worked",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": true,
+        "briefed": true,
+        "aircraft": { "takeoff": {}, "landing": { "rows": [] } },
+        "checks": []
+      },
+      "expect": [
+        {
+          "path": "worked",
+          "equals": false
+        }
+      ],
+      "source": "14 CFR 91.103(b): the pilot is to become familiar with \"takeoff and landing distance information\"; an empty table holds none, so the distances were not worked from the POH (the planner's bool({}) was false)."
+    },
+    {
+      "name": "Runway findings: an empty landing table [] is not worked",
+      "rule": "gonogo_runway_findings",
+      "input": {
+        "planned": true,
+        "briefed": true,
+        "aircraft": { "takeoff": { "rows": [] }, "landing": [] },
+        "checks": []
+      },
+      "expect": [
+        {
+          "path": "worked",
+          "equals": false
+        }
+      ],
+      "source": "14 CFR 91.103(b): the pilot is to become familiar with \"takeoff and landing distance information\"; an empty table holds none, so the distances were not worked from the POH (the planner's bool({}) was false)."
+    },
+    {
       "name": "Runway findings: awaiting the briefing, pending",
       "rule": "gonogo_runway_findings",
       "input": {

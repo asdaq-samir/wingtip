@@ -39,6 +39,17 @@ fn any_distance(c: &Value, flag: &str) -> bool {
     c.get("distances").and_then(Value::as_array).is_some_and(|ds| ds.iter().any(|d| truth(d, flag)))
 }
 
+/// Whether the airplane has a table to read: a non-empty object or list.
+/// An empty `{}` or `[]` is no table (the planner's `bool({})` was false),
+/// so the distances were not worked from the POH (14 CFR 91.103(b)).
+fn table(aircraft: &Value, key: &str) -> bool {
+    match aircraft.get(key) {
+        Some(Value::Object(m)) => !m.is_empty(),
+        Some(Value::Array(a)) => !a.is_empty(),
+        _ => false,
+    }
+}
+
 /// `gonogo_runway_findings`: `{planned, briefed, aircraft, checks}` -- the
 /// nav log in, the briefing in, the airplane's profile (its takeoff and
 /// landing tables) and the runway checks, each with its field's `ident` --
@@ -54,7 +65,9 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         None | Some(Value::Null) => Vec::new(),
         Some(Value::Array(items)) => items
             .iter()
-            .map(|c| c.get("ident").and_then(Value::as_str).map(|i| (i.to_owned(), c)).ok_or(format!("{NAME}: a check's \"ident\" is missing")))
+            .map(|c| {
+                c.get("ident").and_then(Value::as_str).map(|i| (i.to_owned(), c)).ok_or(format!("{NAME}: a check's \"ident\" is missing"))
+            })
             .collect::<R<_>>()?,
         Some(_) => return Err(format!("{NAME}: \"checks\" is not a list")),
     };
@@ -71,7 +84,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
     // Worked where the airplane has both tables to read, or while the nav
     // log is awaited (pending says so then).
     out.push_str(",\"worked\":");
-    out.push_str(if !planned || (truth(aircraft, "takeoff") && truth(aircraft, "landing")) { "true" } else { "false" });
+    out.push_str(if !planned || (table(aircraft, "takeoff") && table(aircraft, "landing")) { "true" } else { "false" });
     for (key, idents) in &lists {
         out.push_str(",\"");
         out.push_str(key);

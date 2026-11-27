@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::gonogo::runway_findings::call",
-  "description": "The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables or the nav log is awaited.",
+  "description": "The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables (each a non-empty object or list) or the nav log is awaited.",
   "type": "object",
   "properties": {
     "input": {
