@@ -62,6 +62,16 @@ fn what_makes_the_flight_unlawful_is_high_whatever_the_points() {
     let checked = |good_through: &str| VorCheck::Checked { good_through: s(good_through), within_limit: true };
     assert!(frat::assess(&frat::Input { ifr: true, vor_check: checked("2026-10-20"), ..quiet_risk() }).factors.is_empty());
     assert_eq!(keys(&frat::assess(&frat::Input { ifr: true, vor_check: checked("2026-10-01"), ..quiet_risk() })), ["vor"]);
+    // 91.171(a)(2), "within the preceding 30 days": a check on 5 Sep is
+    // good through 5 Oct, DAY, its 30th day (inspections_due's until); one
+    // on 4 Sep is a day past it on its 31st.
+    let through = |on: &str| {
+        let due = call("inspections_due", &format!(r#"{{"vor_check":{{"on":"{on}","kind":"VOT","error_deg":0}}}}"#));
+        due["vor_check"]["until"].as_str().unwrap().to_owned()
+    };
+    assert_eq!((through("2026-09-05"), through("2026-09-04")), (s(DAY), s("2026-10-04")));
+    assert!(frat::assess(&frat::Input { ifr: true, vor_check: checked(&through("2026-09-05")), ..quiet_risk() }).factors.is_empty());
+    assert_eq!(keys(&frat::assess(&frat::Input { ifr: true, vor_check: checked(&through("2026-09-04")), ..quiet_risk() })), ["vor"]);
     assert!(frat::assess(&frat::Input { ifr: true, ..quiet_risk() }).factors.is_empty());
     let lapsed = Currency { flight_review_until: Some(s("2026-09-30")), ..current() };
     assert_eq!(frat::assess(&frat::Input { currency: Some(lapsed), ..quiet_risk() }).level, "high");
