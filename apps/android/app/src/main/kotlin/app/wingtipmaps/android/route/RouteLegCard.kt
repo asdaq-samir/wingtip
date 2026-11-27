@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,12 +42,15 @@ import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.FlightModel
+import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.ui.WingtipIcons
 import app.wingtipmaps.android.ui.largeType
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * A leg of the route, one card from the map's line, the nav log's row
@@ -67,10 +71,14 @@ import app.wingtipmaps.android.ui.sheet.CardPage
 fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit, flight: FlightModel = hiltViewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
-    val inFlight by flight.state.collectAsStateWithLifecycle()
-    // The point flying mode flies to: the engine's next waypoint on the route.
-    val flyingTo = inFlight.progress?.takeIf { ownShipOn && it.onRoute }?.next?.name
+    // Own ship's fix read only as Direct To is tapped, not drawn: the card
+    // is not composed again at each fix (the round-4 phones audit).
+    val fix = flight.ownShip.fix.collectAsStateWithLifecycle()
+    // The point flying mode flies to, the engine's next waypoint on the
+    // route, drawn again only as it changes, not at each fix.
+    val flyingTo by remember(flight, ownShipOn) {
+        flight.state.map { flyingToOf(it, ownShipOn) }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(flyingToOf(flight.state.value, ownShipOn))
     val leg = RouteLegModel.view(index, state, flyingTo)
     val haptics = rememberHaptics()
     if (leg == null) {
@@ -90,7 +98,7 @@ fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit, fli
                     if (leg.directOn) {
                         plan.cancelDirect()
                     } else {
-                        plan.directToStop(leg.to, if (ownShipOn) fix else null)
+                        plan.directToStop(leg.to, if (ownShipOn) fix.value else null)
                         haptics.tap(WingtipHaptic.DIRECT_TO)
                     }
                     exit.close()
@@ -115,6 +123,10 @@ fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit, fli
         }
     }
 }
+
+/** The waypoint flying mode flies to, where own ship is on and on the route. */
+private fun flyingToOf(state: InFlight.State, ownShipOn: Boolean): String? =
+    state.progress?.takeIf { ownShipOn && it.onRoute }?.next?.name
 
 /** "KJVL → KMSN", with Active Leg on the one being flown. */
 @Composable
