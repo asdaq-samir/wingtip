@@ -291,7 +291,7 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "id": "vfr-waypoints",
   "source": "faa-vfr-waypoints",
   "source-layer": "fixes",
-  "filter": ["all", ["==", ["get", "vfr"], true], ["!", ["in", ["get", "ident"], ["global-state", "routeWaypoints"]]]],
+  "filter": ["all", ["==", ["get", "vfr"], true], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeWaypoints"], ["literal", []]]]]],
   "minzoom": 9,
 }, {
   "type": "symbol",
@@ -313,7 +313,7 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "id": "vfr-waypoints-idents",
   "source": "faa-vfr-waypoints",
   "source-layer": "fixes",
-  "filter": ["all", ["==", ["get", "vfr"], true], ["!", ["in", ["get", "ident"], ["global-state", "routeWaypoints"]]]],
+  "filter": ["all", ["==", ["get", "vfr"], true], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeWaypoints"], ["literal", []]]]]],
   "minzoom": 9,
 }, {
   "type": "symbol",
@@ -354,7 +354,7 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "source": "faa-airports",
   "source-layer": "airports",
   "minzoom": 3,
-  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["global-state", "routeAirports"]]], ["!", ["==", ["get", "size"], "largest"]], ["!", ["==", ["get", "size"], "larger"]]],
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["!", ["==", ["get", "size"], "larger"]]],
   "layout": {
     "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
     "icon-padding": 2,
@@ -380,7 +380,7 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "source": "faa-airports",
   "source-layer": "airports",
   "minzoom": 3,
-  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["global-state", "routeAirports"]]], ["!", ["==", ["get", "size"], "largest"]], ["==", ["get", "size"], "larger"]],
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["!", ["==", ["get", "size"], "largest"]], ["==", ["get", "size"], "larger"]],
   "layout": {
     "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
     "icon-padding": 2,
@@ -406,7 +406,7 @@ export const OVERLAY_MARKS: LayerSpecification[] = [{
   "source": "faa-airports",
   "source-layer": "airports",
   "minzoom": 3,
-  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["global-state", "routeAirports"]]], ["==", ["get", "size"], "largest"], ["literal", true]],
+  "filter": ["all", ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]], ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]], ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]], ["==", ["get", "size"], "largest"], ["literal", true]],
   "layout": {
     "icon-size": ["interpolate", ["linear"], ["zoom"], 3, ["*", 0.35, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 9, ["*", 0.5, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]], 12, ["*", 0.625, ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]]],
     "icon-padding": 2,
@@ -440,8 +440,8 @@ export const OVERLAY_FEATURE_STATE = { placed: "placed", selected: "selected" } 
 export const OVERLAY_EXPRESSIONS: Record<"militaryShown" | "privateShown" | "notRouteAirport" | "notRouteWaypoint" | "keptField" | "classCField" | "towered" | "airportIdentInk" | "airportWeather" | "tileAirportIcon" | "markSize" | "airportIconSize" | "namedFar" | "airportIdentFar" | "airportIconNamed" | "suaRestricted" | "bandWidth" | "bandOffset", ExpressionSpecification> = {
   "militaryShown": ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]],
   "privateShown": ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]],
-  "notRouteAirport": ["!", ["in", ["get", "ident"], ["global-state", "routeAirports"]]],
-  "notRouteWaypoint": ["!", ["in", ["get", "ident"], ["global-state", "routeWaypoints"]]],
+  "notRouteAirport": ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]],
+  "notRouteWaypoint": ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeWaypoints"], ["literal", []]]]],
   "keptField": ["==", ["get", "size"], "largest"],
   "classCField": ["==", ["get", "size"], "larger"],
   "towered": ["==", ["get", "towered"], true],

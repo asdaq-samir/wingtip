@@ -269,7 +269,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     suspend fun style(template: TileTemplate?, minZoom: Int, maxZoom: Int, overlays: OverlayTiles?, line: List<List<Double>>) {
         if (destroyed) return
         if (template == null) return view.getMapAsync(::open)
-        val built = StyleTree.build(view.context.applicationContext, template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather, MapLabels.styled(lastLayers.largerLabels, view.context))
+        val built = StyleTree.build(view.context.applicationContext, template, minZoom, maxZoom, overlays, night, lastLayers, MapLabels.styled(lastLayers.largerLabels, view.context))
         if (destroyed) return
         writtenLayers = built.written
         view.getMapAsync { map ->
@@ -287,6 +287,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             map.setStyle(builder) { style ->
                 styled = true
                 paint(night) // the Dimmer and Contrast over the style's own night paint
+                OverlayState.set(style, lastLayers, lastWeather) // the switches and the fields' weather, as the map's state
                 terminal(style, lastTerminal)
                 CloseMap.draw(style, chartTileMax)
                 route(style, line, lastPoints)
@@ -327,8 +328,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
     }
 
     /** Setup's switches on the overlay layers (the web's
-     *  applyOverlayFilters): the airspace and the navaids shown or hidden,
-     *  the military and private fields filtered. */
+     *  applyOverlayFilters, OverlayState): the airspace and the navaids
+     *  shown or hidden, the military and private fields by the map's state. */
     fun layers(layers: MapLayers) {
         val larger = layers.largerLabels != lastLayers.largerLabels
         lastLayers = layers
@@ -336,22 +337,16 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             map.getStyle { style ->
                 if (larger) relabel(style)
-                for (id in MapStyle.AIRSPACE_LAYERS + MapStyle.NAVAID_LAYERS) {
-                    style.getLayer(id)?.setProperties(
-                        PropertyFactory.visibility(if (MapStyle.visible(id, layers)) Property.VISIBLE else Property.NONE),
-                    )
-                }
-                style.getLayerAs<org.maplibre.android.style.layers.SymbolLayer>(MapStyle.AIRPORTS)
-                    ?.setFilter(Expression.raw(MapStyle.airportsFilter(layers).toString()))
+                OverlayState.switches(style, layers)
             }
         }
     }
 
-    /** Each reporting field's weather pip on the tile airports (the web's setAirportWeather), on their own source. */
+    /** Each reporting field's weather pip on the tile airports (the web's setAirportWeather), as the map's state. */
     fun weather(colours: Map<String, String>) {
         if (colours == lastWeather) return
         lastWeather = colours
-        redraw { style -> style.getLayer(MapStyle.AIRPORTS)?.setProperties(PropertyFactory.iconImage(Expression.raw(MapStyle.airportIcon(colours).toString()))) }
+        redraw { style -> OverlayState.weather(style, colours) }
     }
 
     /** The downloaded regions drawn again over the chart as one finishes or goes, the rest of the style kept. */
@@ -545,7 +540,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
         val picked: MapPick? = near(TAP_MARK, MapStyle.TRAFFIC)?.let { f ->
             f.getStringProperty("hex")?.let { MapPick.Plane(it) }
-        } ?: near(TAP_MARK, MapStyle.AIRPORTS)?.let { f ->
+        } ?: near(TAP_MARK, *MapStyle.AIRPORT_LAYERS.toTypedArray())?.let { f ->
             f.getStringProperty("ident")?.let { MapPick.Airport(it) }
         } ?: near(TAP_MARK, MapStyle.VORS)?.let { f ->
             val (lat, lon) = pointOf(f) ?: return@let null

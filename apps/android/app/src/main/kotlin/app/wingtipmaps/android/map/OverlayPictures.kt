@@ -104,7 +104,7 @@ object OverlayPictures {
     private const val ROOM = 3f
 
     /** Drawn this much denser than the screen, so the largest size step
-     *  (MapStyle.MARK_SIZE, 1.5) is as sharp as the chart under it. */
+     *  (design/map-style.json's markSize, 1.5) is as sharp as the chart under it. */
     private const val SHARP = 2f
 
     /**

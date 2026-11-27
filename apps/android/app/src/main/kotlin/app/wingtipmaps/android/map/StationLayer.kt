@@ -68,7 +68,7 @@ object StationLayer {
             StationPictures.addTo(style, density)
             style.addSource(GeoJsonSource(SOURCE, json))
             for (layer in layers()) {
-                if (style.getLayer(MapStyle.AIRPORTS) != null) style.addLayerAbove(layer, MapStyle.AIRPORTS) else style.addLayer(layer)
+                if (style.getLayer(MapStyle.AIRPORT_LAYERS.last()) != null) style.addLayerAbove(layer, MapStyle.AIRPORT_LAYERS.last()) else style.addLayer(layer)
             }
         } else {
             source.setGeoJson(json)

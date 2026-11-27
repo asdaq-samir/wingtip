@@ -25,12 +25,12 @@
       "$value": ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]]
     },
     "notRouteAirport": {
-      "$comment": "Not one of the fields the route draws itself, held in the map's state (an unset state is none: MapLibre's `in` is false for a null list).",
-      "$value": ["!", ["in", ["get", "ident"], ["global-state", "routeAirports"]]]
+      "$comment": "Not one of the fields the route draws itself, held in the map's state, none while it is unset (a map that never sets it, Android's: MapLibre Native's `in` fails on a null list).",
+      "$value": ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]]
     },
     "notRouteWaypoint": {
       "$comment": "Not one of the waypoints the route draws itself.",
-      "$value": ["!", ["in", ["get", "ident"], ["global-state", "routeWaypoints"]]]
+      "$value": ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeWaypoints"], ["literal", []]]]]
     },
     "keptField": {
       "$comment": "The fields drawn whatever their name: a Class B's (field_mark_rank's largest; the owner, 2026-11-17, \"all the class B airports show even when zoomed out\").",
