@@ -91,6 +91,17 @@ object ChartLookPreference {
         return state.asStateFlow()
     }
 
+    /** A slider's place as it is dragged: the map follows it, and the
+     *  file is written once, as the drag ends (keep). */
+    fun drag(look: ChartLook) {
+        state.value = look
+    }
+
+    /** The place the drag ended at, written to the file. */
+    fun keep(context: Context) {
+        state.value?.let { set(context, it) }
+    }
+
     fun set(context: Context, look: ChartLook) {
         Kept.of(context, "wingtip").edit {
             it[DIM_LIGHT] = look.dimLight
@@ -150,12 +161,16 @@ fun ChartLookRows() {
             stringResource(R.string.chart_dimmer), look.dim(dark), 0f..ChartLook.DIM_MAX, "chart-dimmer",
             start = { Icon(Icons.Filled.BrightnessHigh, contentDescription = stringResource(R.string.chart_dimmer_bright)) },
             end = { Icon(Icons.Filled.BrightnessLow, contentDescription = stringResource(R.string.chart_dimmer_dim)) },
-        ) { v -> ChartLookPreference.set(context, if (dark) look.copy(dimDark = v) else look.copy(dimLight = v)) }
+            onChange = { v -> ChartLookPreference.drag(if (dark) look.copy(dimDark = v) else look.copy(dimLight = v)) },
+            onDone = { ChartLookPreference.keep(context) },
+        )
         LookSlider(
             stringResource(R.string.chart_contrast), look.offset, ChartLook.CONTRAST_MIN..ChartLook.CONTRAST_MAX, "chart-contrast",
             start = { Icon(Icons.Outlined.Circle, contentDescription = stringResource(R.string.chart_contrast_flatter)) },
             end = { Icon(Icons.Filled.Contrast, contentDescription = stringResource(R.string.chart_contrast_harder)) },
-        ) { v -> ChartLookPreference.set(context, look.copy(contrast = v)) }
+            onChange = { v -> ChartLookPreference.drag(look.copy(contrast = v)) },
+            onDone = { ChartLookPreference.keep(context) },
+        )
     }
 }
 
@@ -168,10 +183,12 @@ private fun LookSlider(
     start: @Composable () -> Unit,
     end: @Composable () -> Unit,
     onChange: (Float) -> Unit,
+    onDone: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         start()
-        // Material's state-holding slider, as the plate's transparency: dragged, the map follows.
+        // Material's state-holding slider, as the plate's transparency:
+        // dragged, the map follows; let go, the place is kept.
         val stops = ((range.endInclusive - range.start) / ChartLook.STEP).roundToInt() - 1
         val state = remember(range) { SliderState(value = value, steps = stops, trackRange = range) }
         if (!state.isDragging) state.value = value
@@ -181,6 +198,7 @@ private fun LookSlider(
                 state.value = v
                 onChange(v)
             },
+            onValueChangeFinished = onDone,
             modifier = Modifier.weight(1f).testTag(tag).semantics { contentDescription = name },
         )
         end()

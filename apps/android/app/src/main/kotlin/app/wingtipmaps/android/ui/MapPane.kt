@@ -238,7 +238,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             tracked = tracked,
             // The dark screen, and the Map card's Dimmer and Contrast on the chart (ChartLook).
             night = LocalShade.current.dark,
-            look = LocalShade.current.look,
+            look = LocalShade.current.let { shade -> { shade.look } },
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
             ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix ?: app.wingtipmaps.android.airplane.PastFlightReplay.state.fix) },

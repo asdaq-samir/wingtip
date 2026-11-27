@@ -5,7 +5,10 @@ import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -68,8 +71,15 @@ fun rememberAppearance(): State<Appearance?> = AppearancePreference.flow(LocalCo
 
 /** Whether the screen is dark, as the theme decided it (WingtipTheme),
  *  and the Map card's Dimmer and Contrast, for what draws below it: the
- *  map's paint and a plate's. */
-class Shade(val dark: Boolean, val look: ChartLook = ChartLook())
+ *  map's paint and a plate's. The look is a State read where it is used
+ *  (`look`), so a slider's step redraws those readers only, not every
+ *  screen under the theme as a new Shade in the static local did (the
+ *  round-4 phones audit, 2026-11-27); the Shade itself is new only as
+ *  the screen turns dark or light. */
+@Stable
+class Shade(val dark: Boolean, private val looked: State<ChartLook?> = mutableStateOf(null)) {
+    val look: ChartLook get() = looked.value ?: ChartLook()
+}
 
 val LocalShade = staticCompositionLocalOf { Shade(dark = false) }
 
@@ -78,7 +88,9 @@ val LocalShade = staticCompositionLocalOf { Shade(dark = false) }
 internal fun rememberShade(): Shade {
     val system = isSystemInDarkTheme()
     val picked = rememberAppearance().value ?: Appearance.SYSTEM
-    return Shade(picked.dark(system), rememberChartLook().value ?: ChartLook())
+    val looked = rememberChartLook()
+    val dark = picked.dark(system)
+    return remember(dark, looked) { Shade(dark, looked) }
 }
 
 /** The status and navigation bars' icons light on a dark screen and dark
