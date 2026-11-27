@@ -88,7 +88,8 @@ fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -
             }
             // The airplane's glide ratio asked for where it is missing.
             AskFigures(rememberAirplaneNow(plan), "glide")
-            LazyColumn { nearestRows(fields.orEmpty(), fix) { onOpen(it.ident) } }
+            val reach = rememberGlideReach(fields)
+            LazyColumn { nearestRows(fields.orEmpty(), reach) { onOpen(it.ident) } }
         }
     }
 }

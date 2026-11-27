@@ -38,7 +38,6 @@ import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.DragOut
 import app.wingtipmaps.android.ui.ProblemLine
@@ -120,7 +119,7 @@ fun LazyListScope.nothingTyped(
     recents: List<Remembered>,
     nearest: List<NearestAirport>?,
     nearestProblem: String?,
-    fix: OwnShip.Fix?,
+    reach: Map<String, Result<Boolean>>,
     onPick: (SearchPick) -> Unit,
     refusal: (ident: String, closed: String?) -> String? = { _, _ -> null },
 ) {
@@ -134,7 +133,7 @@ fun LazyListScope.nothingTyped(
         item(key = "nearest-open") { ResultRow(stringResource(R.string.find_nearest), null, null, Icons.Filled.NearMe) { onPick(SearchPick.Do(DoAction.Open(Screen.NEAREST))) } }
     } else {
         // The Nearest page's own rows (nearestRows), the three nearest.
-        nearestRows(nearest, fix, refusal = { n -> refusal(n.ident, null) }) { n -> onPick(SearchPick.Airport(n.ident, n.name)) }
+        nearestRows(nearest, reach, refusal = { n -> refusal(n.ident, null) }) { n -> onPick(SearchPick.Airport(n.ident, n.name)) }
     }
     val starred = (favorites + own.mapNotNull { r -> r.tail?.let { Remembered(Remembered.Kind.AIRPLANE, it, r.type, r.type) } }).distinctBy { it.kind.name + it.ident.uppercase() }
     if (starred.isNotEmpty()) {
