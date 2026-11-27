@@ -135,6 +135,10 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     touchPitch: false,
     // Symbols placed at once, not faded in over 0.3 s.
     fadeDuration: 0,
+    // Two levels of tiles kept in memory a source, not MapLibre's five: the service worker and the overlay tiles'
+    // store keep the bytes, and five levels of decoded chart and overlay tiles held an iPad's memory for views
+    // the pilot has left (the map speed audit, 2026-11-27).
+    maxTileCacheZoomLevels: 2,
     // And its world copies (its default): the Western Aleutian sectional runs across 180°.
   });
   if (tiles) overlaysOf.set(m, tiles);
