@@ -164,12 +164,13 @@ pub struct Run {
 /// The run played against the forecast (the module's doc).
 pub fn run(input: &Input) -> Run {
     let areas = checks::areas_met(input);
+    let tafs = met::Tafs::new(input.tafs);
     let samples: Vec<Meets> = input
         .track
         .iter()
-        .map(|s| Meets { met: met::at_sample(input.tafs, s), wind: met::wind_at(s), areas: checks::areas_at(&areas, s) })
+        .map(|s| Meets { met: met::at_sample(&tafs, s), wind: met::wind_at(s), areas: checks::areas_at(&areas, s) })
         .collect();
-    let fields: Vec<FieldMet> = input.fields.iter().map(|f| FieldMet { field: f.clone(), met: met::at_field(input.tafs, f) }).collect();
+    let fields: Vec<FieldMet> = input.fields.iter().map(|f| FieldMet { field: f.clone(), met: met::at_field(&tafs, f) }).collect();
     let legs = legs_of(&input.track, &samples);
     let alerts = checks::alerts(input, &samples, &fields, &areas);
     Run { samples, legs, fields, areas, alerts }

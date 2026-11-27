@@ -67,19 +67,45 @@ fn taf_met(station: &Value, nm: f64, start: f64, end: f64) -> Option<Met> {
     })
 }
 
+/// The TAF stations as the run reads them, read once a run rather than
+/// once a sample, in the order given.
+pub struct Tafs<'a> {
+    stations: Vec<Station<'a>>,
+}
+
+/// A TAF station's ident, its place and the station as given.
+type Station<'a> = (Option<&'a str>, Option<(f64, f64)>, &'a Value);
+
+impl<'a> Tafs<'a> {
+    /// TAF stations as awc.rs keeps them ({icaoId, lat, lon, elevation_ft, fcsts}).
+    pub fn new(tafs: &'a [Value]) -> Self {
+        let stations = tafs.iter().map(|s| (s.get("icaoId").and_then(Value::as_str), num(s, "lat").zip(num(s, "lon")), s)).collect();
+        Tafs { stations }
+    }
+}
+
 /// The TAF that speaks for (lat, lon) over [start, end]: a field's own
 /// (`ident`) first, else the nearest station within TAF_REACH_NM whose TAF
 /// says something of the window (field.rs: the reach the briefing and the
-/// altitude plan's clouds take a TAF over).
-fn taf_near(tafs: &[Value], ident: Option<&str>, lat: f64, lon: f64, start: f64, end: f64) -> Option<Met> {
-    if let Some(own) = ident.and_then(|i| tafs.iter().find(|s| s.get("icaoId").and_then(Value::as_str).is_some_and(|id| same_field(id, i))))
+/// altitude plan's clouds take a TAF over). A station the sphere's
+/// distance puts past the reach by more than it may be off
+/// (geo::SPHERE_WITHIN) is past it on the ellipsoid too, and is never
+/// measured there: a run's hundreds of samples against a few hundred
+/// stations were tens of thousands of geodesics.
+fn taf_near(tafs: &Tafs, ident: Option<&str>, lat: f64, lon: f64, start: f64, end: f64) -> Option<Met> {
+    if let Some(&(_, _, own)) = ident.and_then(|i| tafs.stations.iter().find(|s| s.0.is_some_and(|id| same_field(id, i))))
         && let Some(m) = taf_met(own, 0.0, start, end)
     {
         return Some(m);
     }
+    let beyond = TAF_REACH_NM * (1.0 + geo::SPHERE_WITHIN);
     let mut near: Vec<(f64, &Value)> = tafs
+        .stations
         .iter()
-        .filter_map(|s| Some((geo::distance_nm(lat, lon, num(s, "lat")?, num(s, "lon")?), s)))
+        .filter_map(|&(_, at, s)| {
+            let (slat, slon) = at?;
+            (geo::sphere_nm(lat, lon, slat, slon) <= beyond).then(|| (geo::distance_nm(lat, lon, slat, slon), s))
+        })
         .filter(|(nm, _)| *nm <= TAF_REACH_NM)
         .collect();
     near.stable_sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -122,14 +148,14 @@ fn worse(taf: Option<Met>, modelled: Option<Met>) -> Met {
 }
 
 /// The forecast where and when a sample is.
-pub fn at_sample(tafs: &[Value], s: &Sample) -> Met {
+pub fn at_sample(tafs: &Tafs, s: &Sample) -> Met {
     worse(taf_near(tafs, None, s.lat, s.lon, s.t, s.t), modelled_at(s))
 }
 
 /// A field's TAF at its time (FIELD_WINDOW_S): a landing's from an hour
 /// before the run is in to an hour after; the departure's from its time an
 /// hour on.
-pub fn at_field(tafs: &[Value], f: &Field) -> Met {
+pub fn at_field(tafs: &Tafs, f: &Field) -> Met {
     let (start, end) = match f.role {
         Role::Departure => (f.t, f.t + FIELD_WINDOW_S),
         _ => (f.t - FIELD_WINDOW_S, f.t + FIELD_WINDOW_S),
@@ -169,6 +195,40 @@ mod tests {
         // A known TAF ceiling still gives way to a worse model.
         let got = worse(Some(met(Some("VFR"), false, false)), Some(met(Some("MVFR"), false, true)));
         assert_eq!(got.category, Some("MVFR"));
+    }
+
+    #[test]
+    fn the_nearest_taf_is_the_one_every_geodesic_names() {
+        // Stations on rings 20 to 30 nm round a point, the 25 nm reach
+        // most of them, each a TAF of its own category (by its ceiling), at
+        // the equator, 60 degrees north and by the antimeridian: the sphere's
+        // cut must leave the nearest TAF and its distance as measuring each.
+        for &(lat, lon) in &[(0.0, 0.0), (60.0, -150.0), (52.0, 179.9)] {
+            let mut stations = Vec::new();
+            for (k, nm) in [20.0, 24.0, 24.9, 24.99, 25.0, 25.01, 25.1, 26.0, 30.0].iter().enumerate() {
+                for b in 0..12 {
+                    let (la, lo) = geo::destination(lat, lon, b as f64 * 30.0 + k as f64, *nm);
+                    stations.push(format!(
+                        r#"{{"icaoId":"K{k}{b:02}","lat":{la},"lon":{lo},"fcsts":[{{"timeFrom":0,"timeTo":7200,"ceiling_ft":{},"visibility_sm":6}}]}}"#,
+                        200 + 100 * (k * 12 + b)
+                    ));
+                }
+            }
+            let tafs = crate::json::parse(&format!("[{}]", stations.join(","))).unwrap();
+            let tafs = tafs.as_array().unwrap();
+            // The old way: every station measured on the ellipsoid.
+            let every = |(lat, lon): (f64, f64)| {
+                tafs.iter()
+                    .map(|s| (geo::distance_nm(lat, lon, num(s, "lat").unwrap(), num(s, "lon").unwrap()), s))
+                    .filter(|(nm, _)| *nm <= TAF_REACH_NM)
+                    .min_by(|a, b| a.0.total_cmp(&b.0))
+                    .and_then(|(nm, s)| taf_met(s, nm, 600.0, 600.0))
+            };
+            for at in [(lat, lon), (lat + 24.995 / 60.0, lon)] {
+                assert!(every(at).is_some());
+                assert_eq!(taf_near(&Tafs::new(tafs), None, at.0, at.1, 600.0, 600.0), every(at), "at {at:?}");
+            }
+        }
     }
 
     fn under_vfr_words(m: &Met) -> Vec<String> {
