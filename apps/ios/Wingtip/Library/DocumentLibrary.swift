@@ -42,15 +42,33 @@ final class DocumentLibrary {
     /// Why a file handed over was not added, said at the list's head.
     var problem: String?
     @ObservationIgnored private var askedAt: Date?
+    @ObservationIgnored private var loading: Task<Void, Never>?
+    /// The documents listed again since the load began (a PDF opened from
+    /// Files at launch): the load's older listing is not put over it.
+    @ObservationIgnored private var listed = false
 
     init(store: DeviceDocuments, cloud: DocumentCloud, places: ReaderPlaces) {
         self.store = store
         self.cloud = cloud
         self.places = places
-        shelf = store.loadShelf() ?? []
-        // A delete's Undo lasts the launch it was made in.
-        store.purge()
-        reloadDevice()
+        shelf = []
+    }
+
+    /// The device's side read off the main actor once, after the app's
+    /// first frame (ScreenModels.loadKept), where it was read in the
+    /// launch before it: a delete's Undo lasts the launch it was made in,
+    /// so the trash goes first, then the shelf as last read (unless one
+    /// has come from the planner meanwhile) and the documents' own files.
+    /// Each reader of the kept documents waits on it.
+    func load() async {
+        if loading == nil {
+            loading = Task {
+                let opened = await store.opening()
+                if shelf.isEmpty { shelf = opened.shelf ?? [] }
+                if !listed { (own, kept) = (opened.own, opened.kept) }
+            }
+        }
+        await loading?.value
     }
 
     /// This device's library, its iCloud switch and its places, made once
@@ -61,6 +79,7 @@ final class DocumentLibrary {
     }
 
     func reloadDevice() {
+        listed = true
         own = store.ownList()
         kept = store.keptList()
     }
@@ -102,6 +121,7 @@ final class DocumentLibrary {
             shelfFailed = true
             return
         }
+        await load()
         for entry in DeviceDocuments.stale(kept, shelf: shelf) { await keep(entry) }
     }
 
@@ -154,6 +174,7 @@ final class DocumentLibrary {
             guard FileManager.default.fileExists(atPath: file.path(percentEncoded: false)) else { throw CocoaError(.fileNoSuchFile) }
             return (.pdf(file), nil)
         }
+        await load()
         if shelf.isEmpty { await refreshShelf() }
         let wanted = shelf.first { $0.id == place.doc }?.edition
         if let mine = kept.first(where: { $0.doc == place.doc }), wanted == nil || wanted == mine.edition {

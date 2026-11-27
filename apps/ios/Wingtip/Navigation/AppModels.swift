@@ -110,4 +110,16 @@ final class ScreenModels {
         // The flight logged from the flight's own recorder (OwnShip.recorder).
         autoLogbook = AutoLogbook(recorder: flight.ownShip.recorder)
     }
+
+    /// What the app keeps on the phone between launches -- the path
+    /// flown, the flight recorder's track and its unsent tracks, the
+    /// documents library -- read off the main actor after the first frame
+    /// (AppLoops), each at most once; it was read in this init, on the
+    /// main thread, before the app drew anything.
+    func loadKept() async {
+        async let path: Void = flight.ownShip.trail.load()
+        async let track: Void = flight.ownShip.recorder.load()
+        async let documents: Void = library.load()
+        _ = await (path, track, documents)
+    }
 }

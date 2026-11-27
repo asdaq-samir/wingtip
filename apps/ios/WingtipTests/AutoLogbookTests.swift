@@ -52,6 +52,23 @@ struct AutoLogbookTests {
         #expect(recorder.points.isEmpty && !recorder.kept.flown)
     }
 
+    /// The track kept from before is read after the first frame: points
+    /// taken while it was being read go on after it, none twice, and
+    /// nothing is written over it before it has been read.
+    @Test func theTrackReadAfterLaunchKeepsThePointsTakenMeanwhile() async throws {
+        let file = FileManager.default.temporaryDirectory.appending(path: "recorder-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        let before = [FlightRecorder.Point(t: 1_000, lat: 42, lon: -88, altFt: 3_000), FlightRecorder.Point(t: 6_000, lat: 42.01, lon: -88, altFt: 3_000)]
+        try JSONEncoder().encode(FlightRecorder.Kept(points: before, askedTo: nil, flown: true)).write(to: file)
+        let now = FlightRecorder.Kept(points: [before[1], FlightRecorder.Point(t: 11_000, lat: 42.02, lon: -88, altFt: 3_000)], askedTo: nil, flown: false)
+        let joined = FlightRecorder.joined(FlightRecorder.Kept(points: before, askedTo: nil, flown: true), now)
+        #expect(joined.points.map(\.t) == [1_000, 6_000, 11_000] && joined.flown)
+        let recorder = FlightRecorder(file: file)
+        #expect(recorder.points.isEmpty)
+        await recorder.load()
+        #expect(recorder.points.map(\.t) == [1_000, 6_000] && recorder.kept.flown)
+    }
+
     @Test func theEntrySentIsTheDraftWithThePilotsChanges() throws {
         let points = try trackFixture().points
         let answer = try Engine.logbookFromTrack(points: points, aircraft: "N3429J", aircraftType: "C150", utcOffsetMin: -360)
@@ -78,6 +95,8 @@ struct AutoLogbookTests {
         defer { for f in [file, unsentFile] { try? FileManager.default.removeItem(at: f) } }
         try JSONEncoder().encode(FlightRecorder.Kept(points: points, askedTo: nil, flown: true)).write(to: file)
         let recorder = FlightRecorder(file: file)
+        await recorder.load()
+        #expect(recorder.points.count == points.count)
         let gateway = FakeGateway()
         let logbook = AutoLogbook(recorder: recorder, addEntry: { gateway.entries.append($0) },
                                   saveTrack: { flight, track in try gateway.save(flight, track) })
@@ -90,7 +109,9 @@ struct AutoLogbookTests {
         #expect(recorder.unsent.tracks.map(\.flight) == [40] && recorder.unsent.tracks.first?.track.points.count == points.count)
         #expect(logbook.trackProblem != nil)
         // Kept on the disk: a relaunch still has it.
-        #expect(FlightRecorder(file: file).unsent.tracks.count == 1)
+        let relaunched = FlightRecorder(file: file)
+        await relaunched.load()
+        #expect(relaunched.unsent.tracks.count == 1)
         // A later send with a network goes through, and the track is let go.
         gateway.online = true
         await logbook.sendUnsent()

@@ -27,7 +27,7 @@ struct AirplaneFacts: View {
     var year: String?
 
     var body: some View {
-        let made = [record?.manufacturer, record?.model].compactMap { $0 }.joined(separator: " ").nonEmpty ?? type
+        let made = record?.shortType ?? type
         let built = record?.year.map(String.init) ?? year?.nonEmpty
         let seats = model?.seats ?? record?.seats
         let engines = model?.engines ?? record?.engines

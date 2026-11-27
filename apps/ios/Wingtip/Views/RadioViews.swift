@@ -99,7 +99,7 @@ struct RadioCallBanner: View {
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: WingtipSpace.sm) {
-                    if let direct, ownShip.fix != nil {
+                    if let direct, ownShip.hasFix {
                         Button("Direct To \(direct.capitalized)") { Task { await go(direct) } }.disabled(busy)
                     }
                     if clearance.limit != nil || !clearance.route.isEmpty {

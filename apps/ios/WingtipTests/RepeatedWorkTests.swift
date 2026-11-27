@@ -86,6 +86,36 @@ struct RepeatedWorkTests {
         #expect(ownShip.markedFt == 3_280)
     }
 
+    /// The map's hazard colouring reads own ship's height in its 50 ft
+    /// steps and whether it is at flying speed, not each fix, so a fix in
+    /// cruise runs neither the map's body nor the engine's hazard_view.
+    @Test func theHazardIsAskedAgainOnlyAtAFiftyFootStepOrFlyingSpeed() throws {
+        let file = FileManager.default.temporaryDirectory.appending(path: "rec-\(UUID().uuidString).json")
+        let ownShip = OwnShip(recorder: FlightRecorder(file: file))
+        func take(feet: Double, kt: Double, at s: TimeInterval) {
+            let metres = Measurement(value: feet, unit: UnitLength.feet).converted(to: .meters).value
+            let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitude: metres,
+                                      horizontalAccuracy: 5, verticalAccuracy: 5, course: 0, speed: kt / Units.ktPerMS,
+                                      timestamp: Date(timeIntervalSince1970: s))
+            ownShip.took(OwnShip.fix(location))
+        }
+        #expect(!ownShip.hasFix)
+        take(feet: 3_000, kt: 0, at: 1)
+        #expect(ownShip.hasFix)
+        let parked = try #require(ownShip.hazardFix)
+        #expect(parked.gpsFt == 3_000 && !parked.underway)
+        // Ten feet of wander and a knot of taxi leave it alone: not even
+        // set again (its speed is still the parked fix's), so nothing
+        // observing it is told.
+        take(feet: 3_010, kt: 1, at: 2)
+        #expect(ownShip.hazardFix?.speedKt == 0)
+        // At flying speed, then the next step: asked again.
+        take(feet: 3_010, kt: 100, at: 3)
+        #expect(ownShip.hazardFix?.underway == true && ownShip.hazardFix?.speedKt ?? 0 > 99)
+        take(feet: 3_060, kt: 101, at: 4)
+        #expect(ownShip.hazardFix?.gpsFt == 3_050)
+    }
+
     // MARK: The airport card's distance (item 8)
 
     @Test func theCardsDistanceReadsAPlaceThatAParkedAirplanesJitterLeavesAlone() {

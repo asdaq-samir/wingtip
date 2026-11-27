@@ -147,8 +147,8 @@ struct AirplaneCard: View {
         VStack(spacing: WingtipSpace.md) {
             VStack(spacing: WingtipSpace.xs) {
                 Text(name).font(WingtipType.card).accessibilityAddTraits(.isHeader)
-                let what = [detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type,
-                            detail?.operatorName.map(FlightWords.nameCase)].compactMap { $0 }.joined(separator: " · ")
+                let what = [detail?.description.map { FlightWords.nameCase($0, .maker) } ?? detail?.type ?? plane?.type,
+                            detail?.operatorName.map { FlightWords.nameCase($0) }].compactMap { $0 }.joined(separator: " · ")
                 if !what.isEmpty { Text(what).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center) }
                 // Heard by the cockpit's own receiver, not the internet's,
                 // and how long ago.
@@ -195,7 +195,7 @@ struct AirplaneCard: View {
     /// Info: what it is, its flight number's scheduled route and the FAA's record.
     @ViewBuilder private var info: some View {
         Section("Airplane") {
-            if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
+            if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model, .maker)) }
             if let op = detail?.operatorName { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
             LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
             LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
@@ -298,8 +298,11 @@ struct NowFlightRow: View {
                     .foregroundStyle(FlightWords.squawk(squawk) != nil ? WingtipInk.problem : Color.secondary)
                     .accessibilityLabel("Squawk \(SpokenFigures.digits(squawk))\(FlightWords.squawk(squawk).map { ", \($0)" } ?? "")")
             }
-            if let fix = ownShip.fix {
-                switch Result(catching: { try FlightWords.fromYou(fix, lat: plane.lat, lon: plane.lon, altitudeFt: plane.altitudeFt) }) {
+            // Own ship's place to a thousandth of a degree and height to
+            // 10 ft, so the card and the engine's sums are not run again
+            // at every fix.
+            if let at = ownShip.coarseCoordinate {
+                switch Result(catching: { try FlightWords.fromYou(at, ownFt: ownShip.markedFt, lat: plane.lat, lon: plane.lon, altitudeFt: plane.altitudeFt) }) {
                 case .success(let from): Text(from).font(.subheadline).foregroundStyle(.secondary)
                 case .failure(let error): ProblemLine(Result<Void, any Error>.failure(error), "How far it is from you")
                 }

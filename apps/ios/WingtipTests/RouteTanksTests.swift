@@ -36,7 +36,7 @@ struct RouteTanksTests {
         let tanks = try RouteTanks.walk(legs: long, dep: "C81", stops: [], refuels: [], figures: figures, own: [:])
         let end = try #require(tanks[.destination])
         #expect(end.gal < 0 && end.low)
-        #expect(Format.tankGallons(end.gal).== "\(-Int(end.gal.rounded(.down))) gal short")
+        #expect(Format.tankGallons(end.gal) == "\(-Int(end.gal.rounded(.down))) gal short")
     }
 
     @Test func aStopNoLegEndsAtShowsNoGaugesRatherThanWrongOnes() throws {

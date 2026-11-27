@@ -34,6 +34,16 @@ final class OwnShip {
         static func == (a: Fix, b: Fix) -> Bool { a.at == b.at }
     }
 
+    /// Own ship as the hazard colouring reads it (hazardFix): the speed is
+    /// the fix's when the band last changed, equal while `underway` is.
+    struct HazardFix: Equatable, Sendable {
+        let underway: Bool
+        let speedKt: Double?
+        let gpsFt: Double?
+
+        static func == (a: HazardFix, b: HazardFix) -> Bool { a.underway == b.underway && a.gpsFt == b.gpsFt }
+    }
+
     private(set) var fix: Fix?
     /// Whose fix `fix` is, and what the engine said of the receiver's
     /// (OwnShipSource): nil until a receiver has been heard, when own
@@ -53,6 +63,17 @@ final class OwnShip {
     /// what a card's distance from the airplane reads, so a parked
     /// airplane's jitter does not draw it again and ask the engine again.
     private(set) var coarseCoordinate: CLLocationCoordinate2D?
+    /// What the map's terrain hazard colouring is asked with (HazardInput):
+    /// the height in the hazard's 50 ft steps (TerrainHazard.stepped) and
+    /// whether the airplane is at flying speed, the one thing the engine's
+    /// hazard_view reads the speed for (its `underway`). Changed only when
+    /// either changes, so a fix in cruise runs neither the map's body nor
+    /// its update, nor asks the engine again.
+    private(set) var hazardFix: HazardFix?
+    /// Whether there is a fix, changed only when that changes: what a card
+    /// offering something from the position reads in its body (From My
+    /// Position, Direct To), the fix itself read only in the action.
+    private(set) var hasFix = false
     /// The position refused, by the permission or by an update that says
     /// so (CLLocationUpdate.authorizationDenied).
     private(set) var denied = false
@@ -222,19 +243,32 @@ final class OwnShip {
         switch next.source {
         case .receiver: if let receiverFix = next.fix, receiverFix.at != fix?.at { took(receiverFix) }
         case .device: if let deviceFix, deviceFix.at != fix?.at { took(deviceFix) }
-        case .none: if fix != nil { fix = nil; markedFt = nil }
+        case .none: if fix != nil { lost() }
         }
     }
 
     private func handBack() {
-        if let deviceFix { took(deviceFix) } else { fix = nil; markedFt = nil }
+        if let deviceFix { took(deviceFix) } else { lost() }
+    }
+
+    /// No fix: none drawn and none read.
+    private func lost() {
+        fix = nil
+        markedFt = nil
+        hazardFix = nil
+        hasFix = false
+        coarseCoordinate = nil
     }
 
     /// A fix taken: the live updates', and a test's.
     func took(_ fix: Fix) {
         self.fix = fix
+        if !hasFix { hasFix = true }
         let marked = Traffic.markedFt(fix.altitudeFt)
         if marked != markedFt { markedFt = marked }
+        let hazard = HazardFix(underway: (try? Flight.underway(fix.groundspeedKt)) ?? false, speedKt: fix.groundspeedKt,
+                               gpsFt: TerrainHazard.stepped(fix.altitudeFt))
+        if hazard != hazardFix { hazardFix = hazard }
         let coarse = Self.coarse(fix.coordinate)
         if coarse.latitude != coarseCoordinate?.latitude || coarse.longitude != coarseCoordinate?.longitude { coarseCoordinate = coarse }
         // The path flown, and the phone's position kept in the background

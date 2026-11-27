@@ -23,6 +23,9 @@ struct AppLoops: View {
         Color.clear
             .frame(width: 0, height: 0)
             .accessibilityHidden(true)
+            // What the phone kept from before, read once the first frame
+            // is up (ScreenModels.loadKept).
+            .task { await screens.loadKept() }
             .task { if Self.first("ownShip") { ownShip.start() } }
             // Whether this iPhone transcribes English on itself (SpeechSession).
             .task { await SpeechSession.check() }

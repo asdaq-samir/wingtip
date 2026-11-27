@@ -104,7 +104,7 @@ final class Traffic {
     }
 
     /// The internet's airplanes still where they were heard, the engine's
-    /// `traffic_fresh` (30 s, wingtip.traffic's STALE_S); none where the
+    /// `traffic_fresh` (within its `traffic_figures` stale_s); none where the
     /// engine refuses, and why in `marksProblem`, never an old airplane
     /// drawn where it no longer is.
     private func fresh(_ answer: TrafficAnswer) -> [TrafficAircraft] {

@@ -5,9 +5,10 @@ import SwiftUI
 /// sheet or beside the iPad's sidebar (RootView). A view of its own, so
 /// what it reads as the flight goes -- the dry run, the traffic -- runs
 /// this body alone and leaves the root's, with its sheet, as it was. Own
-/// ship's fix itself is not read here (its height is `markedFt`), so a
-/// fix on the ground or in cruise runs neither this body nor the map's
-/// update, with its route and checkpoint comparisons.
+/// ship's fix itself is not read here (its height is `markedFt`, the
+/// hazard's `hazardFix`), so a fix on the ground or in cruise runs neither
+/// this body nor the map's update, with its route and checkpoint
+/// comparisons.
 struct RootMap: View {
     let layout: RootLayout
     /// The height of the map the sheet covers.
@@ -107,8 +108,8 @@ struct RootMap: View {
                 emergency: emergency.open != nil,
                 // Own ship's GPS in flight, the plan's cruise on the ground:
                 // the engine picks (TerrainHazard).
-                hazard: HazardInput(setting: hazardSetting, clearanceFt: hazardClearanceFt, speedKt: ownShip.fix?.groundspeedKt,
-                                    gpsFt: ownShip.fix?.altitudeFt, plannedFt: plan.altitudeFt)),
+                hazard: HazardInput(setting: hazardSetting, clearanceFt: hazardClearanceFt, speedKt: ownShip.hazardFix?.speedKt,
+                                    gpsFt: ownShip.hazardFix?.gpsFt, plannedFt: plan.altitudeFt)),
             // A tap on the course opens its nearest leg's card, that leg
             // cased in green while it is in sight (RouteLegView).
             routeLegs: RouteLegInput(

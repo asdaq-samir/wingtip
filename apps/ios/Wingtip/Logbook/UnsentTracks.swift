@@ -23,15 +23,33 @@ final class UnsentTracks {
     @ObservationIgnored private var sending = false
     /// Written off the main actor (BackgroundFile).
     @ObservationIgnored private let disk: BackgroundFile
+    /// The tracks kept from before read (load), or erased.
+    @ObservationIgnored private var loaded = false
+    @ObservationIgnored private var loading: Task<Void, Never>?
 
     init(file: URL) {
         disk = BackgroundFile(file)
-        tracks = (try? JSONDecoder().decode([Unsent].self, from: Data(contentsOf: file))) ?? []
+        tracks = []
+    }
+
+    /// The tracks kept from before, read off the main actor once, after
+    /// the app's first frame (FlightRecorder.load); each verb waits on it.
+    func load() async {
+        if loading == nil {
+            loading = Task {
+                let before = await disk.read([Unsent].self) ?? []
+                guard !loaded else { return }
+                loaded = true
+                tracks = before + tracks
+            }
+        }
+        await loading?.value
     }
 
     /// A track kept to be sent, returning once it is on the disk, so the
     /// recorder can let its own copy go after.
     func keep(_ flight: Int, _ track: SavedTrack, problem: String) async {
+        await load()
         tracks.append(Unsent(flight: flight, track: track))
         self.problem = problem
         disk.write(tracks)
@@ -41,6 +59,7 @@ final class UnsentTracks {
     /// Each kept track sent with `upload`, those that went let go; a
     /// failure keeps its track and says why.
     func send(_ upload: (Int, SavedTrack) async throws -> Void) async {
+        await load()
         guard !sending, !tracks.isEmpty else { return }
         sending = true
         defer { sending = false }
@@ -60,6 +79,7 @@ final class UnsentTracks {
     /// at all while it has none; asked each time the app comes to the
     /// front, and given up with the task when it goes behind.
     func sendWhenOnline(_ upload: (Int, SavedTrack) async throws -> Void) async {
+        await load()
         guard !tracks.isEmpty else { return }
         for await path in NWPathMonitor() where path.status == .satisfied {
             await send(upload)
@@ -69,6 +89,7 @@ final class UnsentTracks {
 
     /// Every kept track gone, and its file (signing out, deleting the account).
     func erase() {
+        loaded = true
         tracks = []
         problem = nil
         disk.remove()

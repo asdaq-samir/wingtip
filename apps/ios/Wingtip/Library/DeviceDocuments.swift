@@ -265,4 +265,14 @@ extension DeviceDocuments {
         if mine.name.isEmpty { mine.name = String(localized: "Document") }
         try? write(mine)
     }
+
+    /// What the library shows of this device as the app opens: the
+    /// deletes an earlier launch held behind their Undo gone for good,
+    /// then the shelf as last read and the pilot's own and kept documents
+    /// (each its info.json or kept.json), read after the first frame.
+    @concurrent
+    func opening() async -> (shelf: [LibraryEntry]?, own: [OwnDocument], kept: [KeptDocument]) {
+        purge()
+        return (loadShelf(), ownList(), keptList())
+    }
 }

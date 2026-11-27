@@ -50,8 +50,6 @@ enum AirplaneHits {
     /// The FAA record's line beside its N-number: "Piper PA-28-140 · FAA
     /// registry", or "FAA registry" with no type in it.
     static func registryLine(_ registration: AircraftRegistration) -> String {
-        let name = [registration.manufacturer, registration.model].compactMap { $0?.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }.joined(separator: " ")
-        return name.isEmpty ? "FAA registry" : "\(name) · FAA registry"
+        registration.shortType.map { "\($0) · FAA registry" } ?? "FAA registry"
     }
 }
