@@ -36,7 +36,6 @@ never waits on Planespotters.net.
 
 from __future__ import annotations
 
-import functools
 import logging
 import re
 import time
@@ -163,7 +162,7 @@ def _ask(by: str, value: str, headers: dict) -> tuple[Asked, dict | None]:
     if _SOURCE.held(time.monotonic()):
         return Asked.FAILED, None
     try:
-        resp = _get(API.format(by=by, key=value), headers=headers, timeout=TIMEOUT_S)
+        resp = outside.once_get(API.format(by=by, key=value), headers=headers, timeout=TIMEOUT_S)
         if resp.status_code == 429 or resp.status_code >= 500:
             _SOURCE.hold(max(HOLD_S, number(resp.headers.get("Retry-After")) or 0.0), time.monotonic())
         resp.raise_for_status()
@@ -174,14 +173,3 @@ def _ask(by: str, value: str, headers: dict) -> tuple[Asked, dict | None]:
         log.info("Planespotters.net photo of %s not had now", value, exc_info=True)
         return Asked.FAILED, None
     return (Asked.PHOTO, found) if found else (Asked.NONE, None)
-
-
-@functools.cache
-def _session():
-    # One try: the card's TIMEOUT_S is the most a way waits, and a refusal
-    # holds the source (_SOURCE) where the shared session asked again.
-    return outside.session(retries=False, pool=4)
-
-
-def _get(url: str, **kwargs):
-    return _session().get(url, **kwargs)
