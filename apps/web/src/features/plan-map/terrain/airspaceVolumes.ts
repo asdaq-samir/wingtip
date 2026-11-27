@@ -60,7 +60,7 @@ export type Kind = keyof typeof KINDS;
 export const classesAt = (zoom: number) => (["B", "C", "D", "E"] as const).filter((c) => zoom >= KINDS[c].from);
 
 /** The special use kinds by ink, by the FAA's TYPE_CODE (wingtip.sua
- *  TYPES), as the chart's specialUseLayers splits them: prohibited,
+ *  TYPES), as the chart's sua-line splits them (design/map-style.json): prohibited,
  *  restricted, warning and danger areas; MOAs and alert areas. */
 const SUA_RESTRICTED = ["P", "R", "W", "D"];
 

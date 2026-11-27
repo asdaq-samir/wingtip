@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { edgeOfPieces, type TilePiece } from "./tileEdge";
+import type { Map as MlMap } from "maplibre-gl";
+import { describe, expect, it, vi } from "vitest";
+import { edgeOfPieces, litEdge, type TilePiece } from "./tileEdge";
 
 const E = 4096;
 /** A square from (a, a) to (b, b) in a tile's units, closed. */
@@ -50,5 +51,38 @@ describe("a picked polygon's edge from its tiles' pieces", () => {
   it("draws nothing of a piece lying wholly in the buffer", () => {
     const edge = edgeOfPieces([{ rings: [square(-200, -10)], extent: E, tile: { z: 2, x: 1, y: 1 } }]);
     expect(edge.coordinates).toEqual([]);
+  });
+});
+
+describe("a lit volume's edge at a rest", () => {
+  /** A map whose tiles hold the volume's pieces `at` (z/x/y each), each piece counting its geometry's loads. */
+  function fakeMap(at: [number, number, number][]) {
+    const load = vi.fn(() => [square(1024, 3072)]);
+    const features = () => at.map(([z, x, y]) => ({ _vectorTileFeature: { loadGeometry: load, extent: E }, tile: { z, x, y } }));
+    return { map: { querySourceFeatures: vi.fn(features) } as unknown as MlMap, load };
+  }
+
+  it("is stitched once for the same tiles' pieces, and again when they change", () => {
+    const { map, load } = fakeMap([[0, 0, 0]]);
+    const first = litEdge(map, "faa-overlays", "7", null);
+    expect(first).not.toBe("drawn");
+    const { key, edge } = first as { key: string; edge: GeoJSON.Feature };
+    expect(edge.properties).toEqual({ number: "7" });
+    expect(load).toHaveBeenCalledTimes(1);
+    // The next rest finds the same pieces: nothing loaded, stitched or sent.
+    expect(litEdge(map, "faa-overlays", "7", key)).toBe("drawn");
+    expect(load).toHaveBeenCalledTimes(1);
+    // A tile more come in: stitched again.
+    const more = fakeMap([
+      [1, 0, 0],
+      [0, 0, 0],
+    ]);
+    expect(litEdge(more.map, "faa-overlays", "7", key)).not.toBe("drawn");
+  });
+
+  it("is none where no piece is loaded, said once", () => {
+    const { map } = fakeMap([]);
+    expect(litEdge(map, "faa-overlays", "7", null)).toEqual({ key: "", edge: null });
+    expect(litEdge(map, "faa-overlays", "7", "")).toBe("drawn");
   });
 });

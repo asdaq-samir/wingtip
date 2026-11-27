@@ -56,7 +56,7 @@ const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map((c) => [
 
 /** A special-use area's hatch, one tick of it: a short diagonal stroke
  *  in the area's ink on a faint wash of it, repeated along the band
- *  (specialUseLayers' line-pattern), as ForeFlight and the sectional
+ *  (design/map-style.json's sua-band line-pattern), as ForeFlight and the sectional
  *  hatch the inside of the boundary. */
 const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[])
   .map((ink): Picture => [
