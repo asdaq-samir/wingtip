@@ -14,6 +14,7 @@ import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
 import { PohRow } from "../documents/lazy";
 import { FlightPictures } from "../traffic/lazy";
+import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
 import { useAirplaneCardModel, type AirplaneCardModel } from "./useAirplaneCardModel";
 import type { AirplaneTab } from "./airplaneTabs";
 import FiguresTab from "./FiguresTab";
@@ -154,6 +155,17 @@ export default function AirplaneCard({
         <p className={cn("pt-2 text-tint", TEXT.note)} data-testid="flight-alerts-set">
           {live.waiting}
         </p>
+      )}
+      {/* What it is in a sideways strip (type, year, seats, engines …)
+          under its buttons and over its pictures, in sight whichever tab
+          is open (the owner, 2026-11-26: "It should be buttons, info strip
+          and then the pictures"). */}
+      {m.tail && (card.record || live.detail?.faa) && (
+        <AirplaneFacts
+          record={card.details?.registration ?? card.record ?? live.detail?.faa ?? null}
+          model={card.details?.model}
+          testId="airplane-facts"
+        />
       )}
       <div className="pt-3">
         <FlightPictures

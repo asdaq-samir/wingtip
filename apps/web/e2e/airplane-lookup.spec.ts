@@ -123,9 +123,10 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   await expect(card.getByTestId("airplane-tab-flight")).toHaveCount(0); // Flight and Flights one tab (the owner, 2026-11-26)
   await expect(card.getByTestId("airplane-tab-info")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
-  await expect(card.getByTestId("airplane-facts")).toBeVisible(); // Info's head alone (the owner, 2026-11-14)
+  await expect(card.getByTestId("airplane-facts")).toBeVisible();
   await card.getByTestId("airplane-tab-flights").click();
-  await expect(card.getByTestId("airplane-facts")).toBeHidden();
+  // Under the buttons and over the pictures, whichever tab is open (the owner, 2026-11-26).
+  await expect(card.getByTestId("airplane-facts")).toBeVisible();
   // Flights: its past flights, each ▶ its replay over this card.
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });

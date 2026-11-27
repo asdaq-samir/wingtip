@@ -55,7 +55,7 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   const card = page.getByTestId("airplane-profile");
   await grabberTo(page, "full"); // from the pill's size, as every card opens
   await card.getByTestId("airplane-tab-flights").click(); // its flights, on their tab (C1)
-  await expect(card.getByTestId("airplane-facts")).toBeHidden(); // the facts and photo Info's alone (2026-11-14)
+  await expect(card.getByTestId("airplane-facts")).toBeVisible(); // over the pictures, whichever tab (2026-11-26)
   const rows = card.getByTestId("past-flight");
   await expect(rows).toHaveCount(2, { timeout: slow(15_000) });
   // FlightAware's row: how it ended and how long, then each end's field, its town and when.

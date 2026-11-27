@@ -903,11 +903,13 @@ tower; traffic with no N-number its registration, type, owner, model,
 ICAO address and call sign there too, in the air or not), then
 `PastFlights` titled Earlier; on the ground `PastFlights` alone; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
-route, the summary's ends). Info (`InfoTab`) starts with the facts strip
+route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`: Type, Year, Seats,
 Engines, Registration, its status in the destructive ink where lapsed,
-and Owner, public as the FAA publishes it), then `AirplaneInfo`, its
-Airplane group holding its ICAO address and call sign.
+and Owner, public as the FAA publishes it) sits under the card's actions
+and over its pictures, whichever tab is open (the owner, 2026-11-26).
+Info (`InfoTab`) is `AirplaneInfo`, its Airplane group holding its ICAO
+address and call sign.
 Figures (`FiguresTab`) is `useAirplaneProfile`'s, with the POH's row
 under the figures (`documents/PohRow`, from the documents' `lazy.ts`, its
 view model `usePoh`; at Info's foot where there are no Figures): the

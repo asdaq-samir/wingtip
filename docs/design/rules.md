@@ -314,8 +314,9 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"; one card an airplane since the owner's design of
    2026-11-26): its facts in the strip (Type, Year, Seats, Engines,
-   Registration, Owner) at the head of its Info tab alone, the same
-   picture tiles under its actions (its flight now first, then its
+   Registration, Owner) under its actions and over its pictures, whichever
+   tab is open (the owner, 2026-11-26: "It should be buttons, info strip
+   and then the pictures"), the same picture tiles under it (its flight now first, then its
    photos and the sketch of where it has flown, 2026-11-26), and its tabs
    (Flights, Info, Figures, icons too: History, Info, Gauge) in the same
    floating glass bar. On
@@ -466,7 +467,7 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   last ten, more on asking, a day picked); on the ground the list alone;
   each ▶ opening its replay and debrief over the card (the owner,
   2026-11-14: "How do I see the flights of airplane and play them?");
-  Info its facts strip and public record, its identifiers with it (ICAO
+  Info its public record, its identifiers with it (ICAO
   address, Mode S octal, call sign); Figures every planning figure,
   edited in place, a missing one asked for there, for an airplane the
   planner can fly, then its **POH** (the owner, 2026-11-26): the app ships
