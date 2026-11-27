@@ -32,6 +32,11 @@ const CURRENT: Currency = {
   approachesInWindow: 0,
   holdingInWindow: false,
   trackingInWindow: false,
+  passengerClass: "airplane/single-engine land",
+  passengerTailwheel: false,
+  tailwheelPassengersUntil: null,
+  dayPassengersUnknown: null,
+  nightPassengersUnknown: null,
 };
 
 describe("the risk assessment", () => {

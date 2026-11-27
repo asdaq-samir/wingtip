@@ -66,6 +66,13 @@ export function entryRequest(draft: Drafted, edits: Edits, byInstruments: boolea
     touchAndGoes: e.touchAndGoes,
     fromTrack: true,
     flightId,
+    // The track can't tell the airplane's category, class or gear (14 CFR
+    // 61.57(a)(1)(ii)); its full stops the gateway reckons from its
+    // touch-and-goes.
+    category: null,
+    aircraftClass: null,
+    tailwheel: null,
+    fullStopLandings: null,
   };
 }
 
