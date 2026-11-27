@@ -27,7 +27,10 @@ import app.wingtipmaps.android.route.redoEdit
 import app.wingtipmaps.android.route.undoEdit
 import app.wingtipmaps.android.share.FileProblem
 import app.wingtipmaps.android.share.FlightFiles
+import app.wingtipmaps.android.ui.Appearance
+import app.wingtipmaps.android.ui.AppearancePreference
 import app.wingtipmaps.android.ui.FileTaker
+import app.wingtipmaps.android.ui.NightMode
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -64,6 +67,9 @@ class MainActivity : ComponentActivity(), FileTaker {
         // core's WindowCompat, its own enableEdgeToEdge deprecated).
         WindowCompat.enableEdgeToEdge(window)
         super.onCreate(savedInstanceState)
+        // The app's own Light or Dark to the system, so the next launch's
+        // window is in it (NightMode, Android 12 and later).
+        NightMode.apply(this, AppearancePreference.flow(this).value ?: Appearance.SYSTEM)
         setContent {
             WingtipTheme {
                 RootScreen(pending = pending, onHandled = { pending.value = null }, onLink = { pending.value = it })

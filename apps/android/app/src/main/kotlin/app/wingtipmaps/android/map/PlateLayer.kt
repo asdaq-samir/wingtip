@@ -153,12 +153,13 @@ class PlateLayer(private val density: Float) {
          * A page's paint: its opacity, and inverted for night by setting
          * the raster's brightness range end for end (MapLibre's style spec:
          * raster-brightness-min over raster-brightness-max maps white to
-         * black and black to white).
+         * black and black to white), its light end at the chart's own
+         * brightness, the Dimmer's (PlateLook.brightness).
          */
         fun paint(look: PlateLook) = arrayOf(
             PropertyFactory.rasterOpacity(look.opacity),
-            PropertyFactory.rasterBrightnessMin(if (look.invert) 1f else 0f),
-            PropertyFactory.rasterBrightnessMax(if (look.invert) 0f else 1f),
+            PropertyFactory.rasterBrightnessMin(if (look.inverted) look.brightness else 0f),
+            PropertyFactory.rasterBrightnessMax(if (look.inverted) 0f else look.brightness),
         )
     }
 }

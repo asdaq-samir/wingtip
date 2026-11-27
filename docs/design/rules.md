@@ -1433,10 +1433,17 @@ filled icon toggle over its name), and has no chart or overlay pictures,
 as the phone draws one chart and no imagery overlay yet; 3D and the
 pages' toggle are the left column's floating toolbar on the sheet
 (`SheetSideButtons`), the toggle the only way between Search and FPL;
-the welcome is Material's modal bottom sheet with Settings' own Theme
+the welcome is Material's modal bottom sheet with the Map card's own Theme
 and Appearance rows (`firstflight/WelcomeSheet`), the FPL tip the stock
 rich tooltip at the toggle; the route's Plan or Strip layout stays in
 Settings › Look, as Android has no route box, line or cards to choose.
+Theme and Appearance are the Map card's Look, as the web's and the
+iPhone's are (the owner, 2026-11-14; moved 2026-11-27), Appearance the
+web's three (a kept Dark + Bright is Dark with the chart undimmed), with
+the chart's Dimmer (one for light, one for dark) and Contrast as two
+stock sliders under them (`ui/ChartLook`); the app's Light or Dark is
+handed to the system (`NightMode`, Android 12 and later) so the launch's
+window is in it, not the phone's.
 
 ## 9. A status is a badge (the owner, 2026-11-14)
 

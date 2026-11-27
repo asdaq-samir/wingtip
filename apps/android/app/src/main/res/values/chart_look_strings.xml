@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The chart's Dimmer and Contrast under the Map card's Look, in the
+     web's words (features/map-settings/ChartLookRows; ui/ChartLook). -->
+<resources>
+    <string name="chart_dimmer">Dimmer</string>
+    <string name="chart_dimmer_bright">Bright</string>
+    <string name="chart_dimmer_dim">Dim</string>
+    <string name="chart_contrast">Contrast</string>
+    <string name="chart_contrast_flatter">Flatter</string>
+    <string name="chart_contrast_harder">Harder</string>
+</resources>

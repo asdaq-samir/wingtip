@@ -22,7 +22,6 @@
     <string name="appearance_system">System</string>
     <string name="appearance_light">Light</string>
     <string name="appearance_dark">Dark</string>
-    <string name="appearance_dark_bright">Dark + Bright</string>
     <string name="clear_your_path">Clear Your Path</string>
     <string name="comms_assist">Comms Assist</string>
     <string name="atc_alerts">ATC Alerts</string>

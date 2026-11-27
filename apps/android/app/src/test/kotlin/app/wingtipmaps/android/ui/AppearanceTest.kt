@@ -7,21 +7,33 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Settings' Appearance (the web's four, 2026-11-13) and You's head. */
+/** The Map card's Appearance (the web's three since 2026-11-18), the
+ *  chart's Dimmer and Contrast (ChartLook), and You's head. */
 class AppearanceTest {
     @Test
-    fun darkDimsTheChartAndDarkPlusBrightKeepsItAsPrinted() {
+    fun theAppearanceIsTheScreensAloneAndDarkPlusBrightIsGone() {
         assertTrue(Appearance.SYSTEM.dark(systemDark = true))
         assertFalse(Appearance.SYSTEM.dark(systemDark = false))
         assertFalse(Appearance.LIGHT.dark(systemDark = true))
         assertTrue(Appearance.DARK.dark(systemDark = false))
-        assertTrue(Appearance.DARK.chartDimmed(systemDark = false))
-        assertTrue(Appearance.DARK_BRIGHT.dark(systemDark = false))
-        assertFalse(Appearance.DARK_BRIGHT.chartDimmed(systemDark = true))
-        // The phone's own dark dims the chart, the night's default.
-        assertTrue(Appearance.SYSTEM.chartDimmed(systemDark = true))
+        assertEquals(listOf(Appearance.SYSTEM, Appearance.LIGHT, Appearance.DARK), Appearance.entries)
         assertEquals(Appearance.SYSTEM, Appearance.of(null))
-        assertEquals(Appearance.DARK_BRIGHT, Appearance.of("dark-bright"))
+    }
+
+    @Test
+    fun theDimmerIsKeptForEachAppearanceWithinItsEnds() {
+        // The web's defaults (lib/map/chartLook): none by day, half at night.
+        val look = ChartLook()
+        assertEquals(0f, look.dim(dark = false))
+        assertEquals(0.5f, look.dim(dark = true))
+        // Never past the deepest dim; the Contrast within its ends.
+        assertEquals(ChartLook.DIM_MAX, ChartLook(dimDark = 0.9f).dim(dark = true))
+        assertEquals(ChartLook.CONTRAST_MAX, ChartLook(contrast = 0.9f).offset)
+        // On the night's own paint: half as bright by default, the offset on its contrast.
+        val night = ChartLook(contrast = 0.1f).paint(night = true)
+        assertEquals(0.5f, night.brightnessMax)
+        assertEquals(0.23f, night.contrast, 1e-6f)
+        assertEquals(1f, ChartLook().paint(night = false).brightnessMax)
     }
 
     @Test
