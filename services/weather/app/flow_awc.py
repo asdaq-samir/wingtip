@@ -48,6 +48,7 @@ import requests
 from wingtip import outside, utc
 from wingtip.config import REQUEST_HEADERS
 from wingtip.engine import ask
+from wingtip.grid_index import grid_index
 
 from . import flow_grid
 
@@ -129,10 +130,8 @@ def _cells(features: list) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     points fall in it."""
     coords = np.array([f["geometry"]["coordinates"][:2] for f in features], dtype=np.float64).reshape(-1, 2)
     lons = ((coords[:, 0] + 180.0) % 360.0) - 180.0
-    rows = np.rint((flow_grid.NORTH - coords[:, 1]) / flow_grid.HALF_STEP_DEG).astype(np.int64)
-    cols = np.rint((lons - flow_grid.WEST) / flow_grid.HALF_STEP_DEG).astype(np.int64)
-    inside = (rows >= 0) & (rows < flow_grid.HALF_ROWS) & (cols >= 0) & (cols < flow_grid.HALF_COLS)
-    return rows, cols, inside
+    half = {"north": flow_grid.NORTH, "west": flow_grid.WEST, "step_deg": flow_grid.HALF_STEP_DEG}
+    return grid_index(coords[:, 1], lons, {**half, "rows": flow_grid.HALF_ROWS, "cols": flow_grid.HALF_COLS})
 
 
 def _blank() -> np.ndarray:
