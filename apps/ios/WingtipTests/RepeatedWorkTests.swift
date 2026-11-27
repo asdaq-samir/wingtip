@@ -100,19 +100,20 @@ struct RepeatedWorkTests {
             ownShip.took(OwnShip.fix(location))
         }
         #expect(!ownShip.hasFix)
-        take(feet: 3_000, kt: 0, at: 1)
+        take(feet: 3_020, kt: 0, at: 1)
         #expect(ownShip.hasFix)
         let parked = try #require(ownShip.hazardFix)
         #expect(parked.gpsFt == 3_000 && !parked.underway)
         // Ten feet of wander and a knot of taxi leave it alone: not even
         // set again (its speed is still the parked fix's), so nothing
         // observing it is told.
-        take(feet: 3_010, kt: 1, at: 2)
+        take(feet: 3_030, kt: 1, at: 2)
         #expect(ownShip.hazardFix?.speedKt == 0)
-        // At flying speed, then the next step: asked again.
-        take(feet: 3_010, kt: 100, at: 3)
+        // At flying speed, then the next step (rounded down, so never
+        // above the GPS's height): asked again.
+        take(feet: 3_030, kt: 100, at: 3)
         #expect(ownShip.hazardFix?.underway == true && ownShip.hazardFix?.speedKt ?? 0 > 99)
-        take(feet: 3_060, kt: 101, at: 4)
+        take(feet: 3_075, kt: 101, at: 4)
         #expect(ownShip.hazardFix?.gpsFt == 3_050)
     }
 
@@ -202,5 +203,18 @@ struct RepeatedWorkTests {
         #expect(!Traffic.wanted(covered: true, fix: fix(kt: 0)))
         #expect(!Traffic.wanted(covered: true, fix: nil))
         #expect(Traffic.wanted(covered: true, fix: fix(kt: 100)))
+    }
+
+    /// Own ship's flying speed is asked of the engine once a fix (OwnShip),
+    /// and the instruments take that answer rather than asking again: told
+    /// "not underway", a 100 kt fix is read so. (The other way round would
+    /// ask the planner for the nearest field, which a unit test does not.)
+    @Test func theInstrumentsTakeOwnShipsFlyingSpeedRatherThanAskingAgain() throws {
+        let fix = OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitudeFt: 800, trackDeg: 0,
+                              groundspeedKt: 100, accuracyM: 5, at: Date())
+        #expect(try Flight.underway(100))
+        let inFlight = InFlight()
+        inFlight.took(fix, plan: Plan(), underway: false)
+        #expect(!inFlight.underway)
     }
 }

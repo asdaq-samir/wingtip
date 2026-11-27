@@ -266,8 +266,11 @@ final class OwnShip {
         if !hasFix { hasFix = true }
         let marked = Traffic.markedFt(fix.altitudeFt)
         if marked != markedFt { markedFt = marked }
-        let hazard = HazardFix(underway: (try? Flight.underway(fix.groundspeedKt)) ?? false, speedKt: fix.groundspeedKt,
-                               gpsFt: TerrainHazard.stepped(fix.altitudeFt))
+        // Flying speed asked of the engine once a fix: the hazard, the path,
+        // the recorder and the instruments (InFlight, by FlightLoops) all
+        // read this one answer.
+        let underway = (try? Flight.underway(fix.groundspeedKt)) ?? false
+        let hazard = HazardFix(underway: underway, speedKt: fix.groundspeedKt, gpsFt: TerrainHazard.stepped(fix.altitudeFt))
         if hazard != hazardFix { hazardFix = hazard }
         let coarse = Self.coarse(fix.coordinate)
         if coarse.latitude != coarseCoordinate?.latitude || coarse.longitude != coarseCoordinate?.longitude { coarseCoordinate = coarse }
@@ -277,8 +280,8 @@ final class OwnShip {
         // The flight recorder (the automatic logbook) keeps it in the
         // background past the flying speed too, until the engine finds
         // the airplane landed and at rest: 1.1's flight time ends there.
-        let recording = recorder.took(fix)
-        flying = trail.took(fix) || recording
+        let recording = recorder.took(fix, underway: underway)
+        flying = trail.took(fix, underway: underway) || recording
         // Kept going with the phone locked or the app put away while
         // flying: the alerts ahead and the path flown went on only with the
         // screen on, where a pilot's phone in a mount locks itself. Apple's

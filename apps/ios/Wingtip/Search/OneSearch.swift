@@ -98,8 +98,11 @@ struct OneSearch: ViewModifier {
             }
             .task { await model.loadTypes() }
             // The nearest fields from where the airplane is, asked again
-            // once it has moved a mile.
-            .task(id: ownShip.fix.map { "\(($0.coordinate.latitude * 60).rounded()),\(($0.coordinate.longitude * 60).rounded())" }) {
+            // once it has moved a mile. The id reads the coarse place, not
+            // the fix, so a fix a second does not run this modifier's body
+            // again (the plan sheet, the iPad's main screen); the fix
+            // itself is read inside the task.
+            .task(id: ownShip.coarseCoordinate.map { "\(($0.latitude * 60).rounded()),\(($0.longitude * 60).rounded())" }) {
                 await model.findNearest(ownShip.fix)
             }
     }

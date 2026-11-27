@@ -459,7 +459,8 @@ these places:
 
 - **A fix a second** (`OwnShip`): a view's body reads what changes
   only when the screen would: the map its height to 10 ft (`markedFt`)
-  and the hazard colouring's height in 50 ft steps with whether the
+  and the hazard colouring's height rounded down to 50 ft steps (never
+  up, so the red band never starts late) with whether the
   airplane is at flying speed (`hazardFix`), so a fix in cruise runs
   neither the map's body nor `ChartMap.updateUIView` nor the engine's
   `hazard_view`; the cards their place to a thousandth of a degree
@@ -475,7 +476,16 @@ these places:
   meanwhile goes on after the track read.
 - **The loops** (`Repeating`): each wake may move by 15% of its
   interval, so the receiver's, the traffic's, the Watch's, the Lock
-  Screen's and the widgets' wakes fall together.
+  Screen's, the widgets' and the in-flight copilot's wakes fall
+  together; a parked copilot writes nothing at each look.
+- **Once a fix** (2026-11-27, round 3): flying speed is asked of the
+  engine once (`OwnShip.took`), and the hazard, the path, the recorder
+  and the instruments (`InFlight.took`'s `underway`) read that answer.
+  The search's nearest fields are asked again by the coarse place, not
+  the fix, so the plan sheet's search does not run again each second; a
+  VOR card's radial is its own view, reading the exact fix only within
+  5 nm of the station. The recorder sends the whole track to the engine
+  once a minute of points below flying speed and once ten minutes at it.
 
 ## The map's look, beside the web's
 

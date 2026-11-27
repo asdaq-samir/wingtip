@@ -221,6 +221,11 @@ struct TrafficExtrasTests {
         #expect(record.shortType == "PIPER AIRCRAFT INC PA-28-140")
         record.makeShort = "Piper"
         #expect(record.shortType == "Piper PA-28-140")
+        // The facts strip's first fact: the maker over the model, as the web's.
+        #expect(AirplaneFacts.made(record: record, type: nil)! == ("Piper", "PA-28-140"))
+        #expect(AirplaneFacts.made(record: nil, type: "Airbus A-350-1000")! == ("Airbus", "A-350-1000"))
+        #expect(AirplaneFacts.made(record: nil, type: "C172")! == ("Model", "C172"))
+        #expect(AirplaneFacts.made(record: nil, type: nil) == nil)
         #expect(FlightWords.lasted(3 * 3600 + 13 * 60) == "3h 13m" && FlightWords.lasted(41 * 60) == "41m")
         #expect(FlightWords.place(PastFlightField(city: "Rochester", ident: "KDAW", region: "US-NH")) == "Rochester, NH")
         #expect(FlightWords.place(PastFlightField(city: "London", ident: "EGLL", region: "GB-ENG")) == "London")

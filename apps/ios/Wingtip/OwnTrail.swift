@@ -62,8 +62,9 @@ final class OwnTrail {
     /// engine cannot say, nothing is kept and the position is not held
     /// with the screen locked; the instruments bar says why (InFlight,
     /// from the same fix).
-    func took(_ fix: OwnShip.Fix) -> Bool {
-        let flying = (try? Flight.underway(fix.groundspeedKt)) ?? false
+    /// `underway` is OwnShip's answer for this fix, where it has asked.
+    func took(_ fix: OwnShip.Fix, underway known: Bool? = nil) -> Bool {
+        let flying = known ?? (try? Flight.underway(fix.groundspeedKt)) ?? false
         underway = flying
         guard flying else { return false }
         let point = PathPoint(t: fix.at.timeIntervalSince1970, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, altFt: fix.altitudeFt)

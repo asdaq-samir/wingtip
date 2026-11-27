@@ -26,12 +26,12 @@ struct FlightLoops: ViewModifier {
             // own; the watches set; the alerts ahead said aloud where asked.
             .task { await tracking.run() }
             // The in-flight copilot looks again every few seconds while flying
-            // with a route (Copilot): own ship's fix or the dry run's.
+            // with a route (Copilot): own ship's fix or the dry run's. On
+            // Repeating's clock, its wakes let fall in with the other loops'.
             .task {
-                while !Task.isCancelled {
+                await Repeating.every(3) {
                     await copilot.look(fix: dryRun.fix ?? ownShip.fix, flying: inFlight.underway, plan: plan,
                                        ahead: ownShip.ahead, minimums: verdict.minimums)
-                    try? await Task.sleep(for: .seconds(3))
                 }
             }
             .onChange(of: traffic.planes) { _, planes in tracking.heard(planes) }
@@ -46,8 +46,15 @@ struct FlightLoops: ViewModifier {
             // Each fix, own ship's or the dry run's airplane, asked of the
             // engine once for the instruments, the strip and the glide ring
             // (InFlight); again when the route changes under it.
-            .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in inFlight.took(fix, plan: plan, emergency: emergency.open != nil) }
-            .onChange(of: plan.course) { _, _ in inFlight.took(dryRun.fix ?? ownShip.fix, plan: plan, emergency: emergency.open != nil) }
+            // Own ship's flying speed as OwnShip already asked it of this
+            // fix (hazardFix), not asked of the engine a second time.
+            .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in
+                inFlight.took(fix, plan: plan, emergency: emergency.open != nil, underway: dryRun.fix == nil ? ownShip.hazardFix?.underway : nil)
+            }
+            .onChange(of: plan.course) { _, _ in
+                inFlight.took(dryRun.fix ?? ownShip.fix, plan: plan, emergency: emergency.open != nil,
+                              underway: dryRun.fix == nil ? ownShip.hazardFix?.underway : nil)
+            }
             // The route's line for the packs read ahead (regions_ahead).
             .onChange(of: plan.course, initial: true) { _, course in ownShip.routeLine = course?.coordinates.map { [$0.latitude, $0.longitude] } }
             .onChange(of: ownShip.groundFt) { _, ft in inFlight.terrainFt = ft }

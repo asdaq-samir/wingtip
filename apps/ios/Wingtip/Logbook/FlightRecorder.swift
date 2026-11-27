@@ -26,6 +26,12 @@ final class FlightRecorder {
     /// The engine reads the track at most once a minute of points: whether
     /// the flight has ended is a question of minutes.
     nonisolated static let lookEvery = 12
+    /// At flying speed, once ten minutes of points: a flight cannot have
+    /// come to rest while the airplane is still at flying speed, and each
+    /// look sends the whole track (some 3,000 points four hours in). The
+    /// look in the air is kept, rarer, so a flight once found ended and
+    /// then flown on is no longer offered.
+    nonisolated static let lookEveryFlying = 120
     /// Before flying speed, the minutes of taxi kept.
     nonisolated static let groundKeptMs = 10 * 60 * 1000.0
     private static let writeEveryS = 30.0
@@ -101,15 +107,17 @@ final class FlightRecorder {
     /// whether the phone should keep reading its position in the
     /// background for it (a flight under way, not yet ended).
     @discardableResult
-    func took(_ fix: OwnShip.Fix) -> Bool {
+    /// `underway` is OwnShip's answer for this fix, where it has asked.
+    func took(_ fix: OwnShip.Fix, underway known: Bool? = nil) -> Bool {
         let t = fix.at.timeIntervalSince1970 * 1000
         if let last = kept.points.last, t - last.t < Self.everyMs { return wantsBackground }
         guard kept.points.count < Self.most else { return wantsBackground }
-        let takeoff = !kept.flown && (try? Flight.underway(fix.groundspeedKt)) == true
+        let underway = known ?? (try? Flight.underway(fix.groundspeedKt)) == true
+        let takeoff = !kept.flown && underway
         if takeoff { kept.flown = true }
         kept.points.append(Point(t: t, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, altFt: fix.altitudeFt))
         if !kept.flown { kept.points.removeAll { t - $0.t > Self.groundKeptMs } }
-        if kept.points.count % Self.lookEvery == 0 { look() }
+        if kept.points.count % (underway ? Self.lookEveryFlying : Self.lookEvery) == 0 { look() }
         if takeoff || Date().timeIntervalSince(lastWritten) >= (kept.flown ? Self.writeEveryS : Self.groundWriteEveryS) { write() }
         return wantsBackground
     }

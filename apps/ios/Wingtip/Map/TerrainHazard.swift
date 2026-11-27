@@ -41,8 +41,12 @@ enum TerrainHazard {
     /// step, not a rule: the bands are the engine's.
     static let stepFt = 50.0
 
+    /// Rounded down to the step, never to the nearest: a height read up to
+    /// 49 ft low colours the ground red a little early, where rounding to
+    /// the nearest read it up to 25 ft high and started the red band late.
+    /// Errs on the side of the warning.
     static func stepped(_ ft: Double?) -> Double? {
-        ft.map { ($0 / stepFt).rounded() * stepFt }
+        ft.map { ($0 / stepFt).rounded(.down) * stepFt }
     }
 
     /// The colouring now, from the setting, the GPS's speed and height and

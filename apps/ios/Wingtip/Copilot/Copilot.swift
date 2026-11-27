@@ -164,9 +164,12 @@ final class Copilot {
     }
 
     /// The next flight starts afresh: its first categories, its fuel.
+    /// Parked, this runs at every look (every 3 s): the observed values
+    /// are written only where they are not already clear, so a reset
+    /// copilot draws nothing again.
     private func reset() {
-        message = nil
-        around = nil
+        if message != nil { message = nil }
+        if around != nil { around = nil }
         askedKey = nil
         firstSeen = [:]
         startedAt = nil

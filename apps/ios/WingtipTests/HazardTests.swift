@@ -77,8 +77,11 @@ struct HazardTests {
         #expect(try TerrainHazard.clearances(picked: 2000).inUse == 2000)
     }
 
-    @Test func theGPSHeightIsPassedIn50FtSteps() {
-        #expect(TerrainHazard.stepped(5524) == 5500 && TerrainHazard.stepped(5526) == 5550 && TerrainHazard.stepped(nil) == nil)
+    /// Rounded down, so the height asked with is never above the GPS's and
+    /// the red band never starts late.
+    @Test func theGPSHeightIsPassedIn50FtStepsRoundedDown() {
+        #expect(TerrainHazard.stepped(5524) == 5500 && TerrainHazard.stepped(5549) == 5500 && TerrainHazard.stepped(5550) == 5550)
+        #expect(TerrainHazard.stepped(-10) == -50 && TerrainHazard.stepped(nil) == nil)
     }
 
     @Test func theSideViewsObstaclesAreTheEnginesAsTheFixtureSays() throws {

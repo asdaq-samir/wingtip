@@ -190,7 +190,12 @@ extension APIAircraftRegistration {
     /// AIRCRAFT INC PA-28-140"), each the registry's own where the planner
     /// gives none; nil where there is neither.
     var shortType: String? {
-        [makeShort ?? manufacturer, modelShort ?? model].compactMap { $0?.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }.joined(separator: " ").nonEmpty
+        [shortMake, shortModel].compactMap { $0 }.joined(separator: " ").nonEmpty
     }
+
+    /// Its maker in a word or two, "Piper": make_short, else the registry's own.
+    var shortMake: String? { (makeShort ?? manufacturer)?.trimmingCharacters(in: .whitespaces).nonEmpty }
+
+    /// Its model, "PA-28-140": model_short, else the registry's own.
+    var shortModel: String? { (modelShort ?? model)?.trimmingCharacters(in: .whitespaces).nonEmpty }
 }
