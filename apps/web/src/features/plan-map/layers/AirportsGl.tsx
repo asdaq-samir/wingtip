@@ -1,12 +1,12 @@
 import { useWeatherAgeCredit } from "../../../lib/map/marks/weatherAge";
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { MapGeoJSONFeature, MapSourceDataEvent, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../lib/api/client";
 import { airportsQuery } from "../airportsQuery";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
-import { nearestHit, useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { airportQuery } from "../../../lib/queryClient";
+import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
+import { prefetchAirport } from "../../../lib/queryClient";
 import {
   AIRPORTS_SOURCE,
   AIRPORT_ICON_SIZE,
@@ -60,10 +60,11 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
 };
 /** The open card's field's mark, the tile layers' own picture and size
  *  (glOverlays) from the tile's fields copied onto the ring's feature,
- *  always drawn and keeping its room as a Class B's field's mark does; the
- *  tile layers hide their copy by its feature state (markSelectedAirport),
- *  so a tap changes no filter and lays no overlay tile out again. None
- *  where the field wears its own chip, nor one the settings hide. */
+ *  always drawn and keeping its room as a Class B's field's mark does, over
+ *  the tile's own copy, the same picture at the same size; the tile layers
+ *  hide only their ident by its feature state (markSelectedAirport), so a
+ *  tap changes no filter and lays no overlay tile out again. None where the
+ *  field wears its own chip, nor one the settings hide. */
 const SELECTED_MARK: SymbolLayerSpecification = {
   id: "airport-selected-mark",
   type: "symbol",
@@ -75,6 +76,8 @@ const SELECTED_MARK: SymbolLayerSpecification = {
 /** Every layer a field's mark is drawn in, for the taps, the probes and
  *  the rings of the fields drawn: the tiles' and the open card's field's. */
 const MARK_LAYERS = [...AIRPORT_TILE_LAYERS, SELECTED_MARK.id];
+/** The longest the open card's field's tile ident waits for the ring's to be drawn. */
+const HIDE_LATEST_MS = 300;
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;
 /** The marks' weather's address, as the worker marks an answer it kept. */
@@ -138,7 +141,7 @@ function useAirportTaps(
   useGlLayer("top", { [SELECTED]: empty() }, [SELECTED_MARK, ...RING, SELECTED_IDENT]);
   const ringed = selected ?? picked ?? null;
   const chipped = !!ringed && others.some((a) => a.ident === ringed.ident);
-  const tile = useTileField(ringed?.ident ?? null);
+  const [tile, seedTile] = useTileField(ringed?.ident ?? null);
   const ring = useMemo<GeoJSON.FeatureCollection | null>(
     () =>
       ringed
@@ -158,17 +161,33 @@ function useAirportTaps(
   useGlData(SELECTED, ring);
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
   useGlProbe("airport-marks", MARK_LAYERS, fields);
-  useGlTap(MARK_LAYERS, TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
-  usePrefetchOnPress();
+  useGlTap(
+    MARK_LAYERS,
+    TAP.mark,
+    TAP.rank.mark,
+    (feature) => {
+      const ident = String(feature.properties.ident);
+      // The tile's own fields, copied at the tap, so its mark over the ring
+      // is drawn with the card's first frame, not a querySourceFeatures later.
+      if (AIRPORT_TILE_LAYERS.includes(feature.layer.id)) seedTile(ident, feature.properties);
+      onSelect(ident);
+    },
+    // Its card's answer asked as the finger lifts, before MapLibre's click,
+    // so the card opens on it sooner (the speed work, 2026-11-27).
+    (feature) => prefetchAirport(String(feature.properties.ident)),
+  );
 }
 
+type Found = { ident: string; fields: Record<string, unknown> };
+
 /** A field's fields as the airports' tiles have them (its airspace, use,
- *  size, rank), for its mark drawn over its ring; looked for again as each
- *  airports tile comes in until one has it (a field picked in a search, far
- *  from the tiles drawn). */
-function useTileField(ident: string | null): Record<string, unknown> | null {
+ *  size, rank), for its mark drawn over its ring: those of the tapped tile
+ *  feature (`seed`, at the tap), or looked for as each airports tile comes
+ *  in until one has it (a field picked in a search or a link, far from the
+ *  tiles drawn). */
+function useTileField(ident: string | null): [Record<string, unknown> | null, (ident: string, fields: Record<string, unknown>) => void] {
   const { map } = useGlMap();
-  const [found, setFound] = useState<{ ident: string; fields: Record<string, unknown> } | null>(null);
+  const [found, setFound] = useState<Found | null>(null);
   useEffect(() => {
     if (!ident) return;
     const look = (e?: MapSourceDataEvent) => {
@@ -176,7 +195,8 @@ function useTileField(ident: string | null): Record<string, unknown> | null {
       const f = map.querySourceFeatures(AIRPORTS_SOURCE, { sourceLayer: "airports", filter: ["==", ["get", "ident"], ident] })[0];
       if (!f) return;
       map.off("sourcedata", look);
-      setFound({ ident, fields: f.properties });
+      // Kept as it was where the tap's seed has it, so the ring is not set again.
+      setFound((was) => (was?.ident === ident ? was : { ident, fields: f.properties }));
     };
     map.on("sourcedata", look);
     const first = requestAnimationFrame(() => look());
@@ -185,63 +205,8 @@ function useTileField(ident: string | null): Record<string, unknown> | null {
       map.off("sourcedata", look);
     };
   }, [map, ident]);
-  return found && found.ident === ident ? found.fields : null;
-}
-
-/** How far a finger or a mouse may move between press and lift and still
- *  be a tap, px: MapLibre's own click tolerance is 3, a finger's wobble
- *  more. */
-const TAP_SLOP_PX = 6;
-
-/** The field under a tap, its card's answer asked as the finger or the
- *  mouse lifts (airportQuery, PlaceCard's) rather than at the card's open,
- *  so the card opens on it sooner (the speed work, 2026-11-27). Asked at
- *  the lift, not the press: at the press every pan and pinch paid a
- *  queryRenderedFeatures, a project and a fetch on its first frame (the
- *  round-2 speed audit). Only a lift within TAP_SLOP_PX of its press, with
- *  no second finger down in between; the same reach and the same nearest
- *  mark the tap takes (nearestHit). */
-function usePrefetchOnPress() {
-  const { map } = useGlMap();
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const target = map.getCanvasContainer();
-    let press: { id: number; x: number; y: number } | null = null;
-    const pressed = (e: PointerEvent) => {
-      press = e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY } : null;
-    };
-    const lifted = (e: PointerEvent) => {
-      const was = press;
-      press = null;
-      if (!was || was.id !== e.pointerId || !map.style) return;
-      if (Math.hypot(e.clientX - was.x, e.clientY - was.y) > TAP_SLOP_PX) return;
-      const layers = MARK_LAYERS.filter((l) => map.getLayer(l));
-      if (!layers.length) return;
-      const box = target.getBoundingClientRect();
-      const at = { x: e.clientX - box.left, y: e.clientY - box.top };
-      const r = TAP.mark;
-      const found = map.queryRenderedFeatures(
-        [
-          [at.x - r, at.y - r],
-          [at.x + r, at.y + r],
-        ],
-        { layers },
-      );
-      const ident = nearestHit(found, at, r, (p) => map.project(p))?.properties.ident;
-      if (ident) void queryClient.prefetchQuery(airportQuery(String(ident)));
-    };
-    const cancelled = () => {
-      press = null;
-    };
-    target.addEventListener("pointerdown", pressed);
-    target.addEventListener("pointerup", lifted);
-    target.addEventListener("pointercancel", cancelled);
-    return () => {
-      target.removeEventListener("pointerdown", pressed);
-      target.removeEventListener("pointerup", lifted);
-      target.removeEventListener("pointercancel", cancelled);
-    };
-  }, [map, queryClient]);
+  const seed = (ident: string, fields: Record<string, unknown>) => setFound({ ident, fields });
+  return [found && found.ident === ident ? found.fields : null, seed];
 }
 
 /** The overlay tiles' airports: the settings' filters and the route's
@@ -263,13 +228,30 @@ function TileAirports(props: Props) {
     MARK_LAYERS,
     others.map((a) => a.ident),
   );
-  // The ringed field's tile mark and ident hidden (its feature state), the
-  // ring's layers drawing them.
+  // The ringed field's tile ident hidden (its feature state) once the
+  // ring's layers have it to draw: set at the tap, it was gone two to four
+  // frames before the ring's source came back from MapLibre's worker.
   const selectedIdent = (props.selected ?? props.picked)?.ident ?? null;
   useEffect(() => {
     if (!selectedIdent) return;
-    markSelectedAirport(map, selectedIdent, true);
-    return () => markSelectedAirport(map, selectedIdent, false);
+    let hidden = false;
+    const hide = () => {
+      if (hidden || !map.style) return;
+      hidden = true;
+      map.off("sourcedata", drawn);
+      markSelectedAirport(map, selectedIdent, true);
+    };
+    const drawn = (e: MapSourceDataEvent) => {
+      if (e.sourceId === SELECTED && e.sourceDataType !== "metadata" && map.getSource(SELECTED) && map.isSourceLoaded(SELECTED)) hide();
+    };
+    map.on("sourcedata", drawn);
+    // However the ring's source answers, the ident is not drawn twice for long.
+    const late = setTimeout(hide, HIDE_LATEST_MS);
+    return () => {
+      clearTimeout(late);
+      map.off("sourcedata", drawn);
+      if (hidden) markSelectedAirport(map, selectedIdent, false);
+    };
   }, [map, selectedIdent]);
   const { box, level } = useGlView();
   const { data: inView, dataUpdatedAt } = useQuery({
