@@ -7,7 +7,7 @@ import { drawOwnShip, ownShipMarker, placeOwnShip } from "./ownShipMarker";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
-import { cameraOf } from "../camera";
+import { cameraOf, scrub } from "../camera";
 import { CAMERA_MS } from "../cameraRules";
 import { TAP } from "./common";
 import { pictureLayer } from "../markLayers";
@@ -128,7 +128,9 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     // by while a pick has the camera, as the next fix's ease, a quarter
     // second on in a dry run, stopped it part way, the map left two
     // levels short of the run's zoom (dry-run.spec, 2026-11-13).
-    if (follow) camera.follow(intent, [fix.lon, fix.lat]);
+    // A dry run's scrub under the finger jumps with it, an ease behind it
+    // being a step late at every move (the speed work, 2026-11-27).
+    if (follow) camera.follow(intent, [fix.lon, fix.lat], { jump: simulated && scrub.held });
   }, [map, fix, enabled, simulated, follow, recentred, recentreZoom]);
   // A tap on it its card (`card`), as Apple Maps' My Location opens one:
   // in the map's one tap, before anything under it, within a finger's

@@ -217,6 +217,13 @@ describe("the camera's one owner", () => {
     expect(calls.at(-1)!.name).toBe("easeTo");
   });
 
+  it("jumps a dry run's follow with the scrubbing finger, never easing behind it", () => {
+    const { map, calls } = fakeMap();
+    cameraOf(map).follow("dry-run", [0.5, 0], { jump: true });
+    nextFrame();
+    expect(calls).toEqual([{ name: "jumpTo", options: { center: [0.5, 0] } }]);
+  });
+
   it("keeps a tracked airplane where it is on the screen, moving the map by its own move, not drawing it to the middle", () => {
     const { map, calls } = fakeMap();
     const camera = cameraOf(map);

@@ -1779,7 +1779,7 @@ times an ordinary towered field), one GL picture per variant
 drawn, from 5, and the long hard runways' fields, whose marks come in at
 7, named from 8 with every field (rules.md, "What is drawn from which
 zoom"; the speed audit of 2026-11-21, finding 8). From
-zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
+zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`, asked for every field at once as `wind_marks`:
 flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
 FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
 ("2 SM BR") and the ceiling with its cover ("OVC 008", "VV 002", from the
@@ -2393,11 +2393,18 @@ change (`RouteGl`'s `useNamesInView`), not by a `within` polygon at every
 rest. What asks the engine over a list asks it once (`lib/geo`'s `fromTo`,
 `legs`, `destinations`): the route through a weather area, the nearest
 fields, a TFR's nearest corner, the route's straight miles; the airport
-weather marks' wind rules, which have no list form, are remembered by
-what was asked; the next checkpoint in flight (`in_flight`) is asked once
+weather marks' winds are asked once a rebuild for every field in view
+(`wind_marks`, the list form of `wind_arrow` and `wind_barb`); the next
+checkpoint in flight (`in_flight`) is asked once
 a fix. A pick's or a fit's camera move is 400 ms (`CAMERA_MS`), where it
 was 600 to 800, a follow's first ease a quarter second, and a replay
-scrubbed while paused keeps the airplane in sight with a jump.
+scrubbed while paused keeps the airplane in sight with a jump, as a dry
+run's scrub does while the finger is down (the camera's follow with
+`jump`, `scrub.held`). An airport's card asks for its field as the
+finger goes down on the field's mark (`AirportsGl`'s
+`usePrefetchOnPress`) and as the one search's row is lit and stays lit
+150 ms (`usePrefetchHighlighted`), so it opens on its answer rather than
+asking at the tap's end (wave 2, 2026-11-27).
 
 **Sources.** [webdev-install], [webdev-richer-install], [safari-26],
 [webkit-push], [mdn-id], [mdn-wco], [mdn-launch-handler],
