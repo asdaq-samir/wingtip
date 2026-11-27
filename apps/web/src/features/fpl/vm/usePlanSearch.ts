@@ -29,7 +29,7 @@ export function usePlanSearch(
   const near = nearOrigin ?? centre;
   const { data: nearStrip } = useQuery({ ...nearestQuery(near?.lat ?? 0, near?.lon ?? 0), enabled: homeShown && !!near });
   // The search bars (useSearchPanel).
-  const panel = useSearchPanel({ view, selectPlace, listAway, address, setAddress });
+  const panel = useSearchPanel({ selectPlace, listAway, address, setAddress });
   // One object while nothing in it changes (useKept), as each slice is.
   return useKept({ ...panel, nearStrip, nearMap: !nearOrigin && !!centre });
 }

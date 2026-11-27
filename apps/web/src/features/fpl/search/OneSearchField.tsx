@@ -7,7 +7,7 @@ import { askSearch, useSearchPick, type SearchPick } from "../../../lib/oneSearc
 import { useVoice } from "../../voice";
 import SearchBox from "./SearchBox";
 import { AccountButton } from "../../pilot";
-import type { OneSearchModel } from "./useOneSearch";
+import { useOneSearchModel } from "./oneSearchModel";
 import { WORDING } from "../../../lib/wording/generated/wording";
 
 /**
@@ -35,7 +35,9 @@ import { WORDING } from "../../../lib/wording/generated/wording";
  *  Stop), else Add Stop for a stop, else what it asks for (Departure). */
 const askTitle = (pick: SearchPick) => pick.title ?? (pick.stop ? WORDING.addStop : pick.label);
 
-export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
+export default function OneSearchField({ inputRef }: { inputRef: React.RefObject<HTMLInputElement | null> }) {
+  // Its view model (OneSearchRoot round the panel).
+  const model = useOneSearchModel();
   // What is said typed in the field once a pause ends it, the field
   // focused to go on from there.
   const voice = useVoice("search", (said) => {

@@ -1,6 +1,5 @@
 import { Suspense, useCallback, useDeferredValue, useMemo } from "react";
 import { TEXT } from "../../lib/text";
-import { CommandRoot } from "../../components/ui/command";
 import type { WorkspaceProps } from "../../lib/workspace";
 import { ShareMenu } from "../share";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
@@ -32,7 +31,7 @@ import { Search } from "lucide-react";
 import IconButton from "../../components/IconButton";
 import { routesOffered } from "./workspace/routeEditing";
 import OneSearchField from "./search/OneSearchField";
-import { useOneSearch } from "./search/useOneSearch";
+import OneSearchRoot from "./search/OneSearchRoot";
 
 /**
  * The planner: two idents in, a charted course with checkpoints and a
@@ -67,9 +66,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   const routeVm = { brief, cards, flight: flightVm, leg, picks, plan, route, routeList, stops, view: viewVm };
   const mapVm = { cards, flight: flightVm, fpl, leg, map, picks, plan, route, routeList, stops, view: viewVm };
   const pageVm = { ...mapVm, brief };
-  // The one search over the sheet (the owner's one-search design,
-  // 2026-11-09): its field the sheet's first row, its results the body's.
-  const search = useOneSearch({ cards, map, plan, route, search: searchVm, view: viewVm });
   const { view, pickPage } = vm.view;
   const { altitudeFt, altitudeNearest, depart, flightRules, flyAltitude, planned, routed, setLoad } = vm.route;
   const { aircraft, aircraftChoices, aircraftValue, changeAircraft, changeDepart, course, pickTail, s, selected } = vm.plan;
@@ -267,7 +263,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // Recents and what answers, or Nearest's list; Aircraft's list. A card --
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
-        sidebar: <PlanSidebar vm={{ cards, fpl, map, plan, route, routeList, search: searchVm, stops, view: viewVm }} model={search} />,
+        sidebar: <PlanSidebar vm={{ cards, fpl, map, plan, route, routeList, search: searchVm, stops, view: viewVm }} />,
         // The pages, turned by the toggle at the first row's end (PageToggle): Search over `sidebar`; FPL its bar (FplBar), `route` and the plan.
         pages: {
           at: view === "plan" ? 1 : 0,
@@ -297,23 +293,17 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           ),
           second: <PlanPage vm={pageVm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
-        // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
-        around: (panel) => (
-          <CommandRoot
-            value={vm.search.query}
-            onValueChange={search.setTyped}
-            onItemHighlighted={search.highlighted}
-            autoHighlight="always"
-          >
-            {panel}
-          </CommandRoot>
-        ),
+        // The one search over the sheet (the owner's one-search design,
+        // 2026-11-09), its Autocomplete round the whole panel: its field the
+        // first row, its list the body's, one combobox. What is typed is
+        // read there (OneSearchRoot), so a keystroke draws the search alone.
+        around: (panel) => <OneSearchRoot vm={{ cards, map, plan, route, search: searchVm, view: viewVm }}>{panel}</OneSearchRoot>,
         // A card over the page: its card alone, the page's head gone while it is open, at the pilot's ask.
         alone: cardOpen || briefShown,
         toEdge: !!place,
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
-        bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
+        bar: <OneSearchField inputRef={vm.search.searchInput} />,
         // FPL's foot (FlightFoot): from half up its actions' floating bar, at the pill its figures alone, large,
         // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
         foot:

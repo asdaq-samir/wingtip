@@ -7,7 +7,8 @@ import { sameField } from "../../../lib/procedures";
 import { arrivalMin } from "../../plan";
 import { useInspector } from "../../../hooks/use-inspector";
 import { AircraftRecentRows, usePrefetchAircraftTiles, loadAircraftFavoriteGroups } from "../../aircraft-pick";
-import type { OneSearchModel } from "../search/useOneSearch";
+import { useOneSearchModel } from "../search/oneSearchModel";
+import { useSearchQuery } from "../search/searchQuery";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
 import { loadRecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../search";
@@ -61,12 +62,11 @@ const NearestCard = lazy(() => loadNearestCard());
  */
 export default function PlanSidebar({
   vm,
-  model,
 }: {
   vm: PlanSlices<"cards" | "fpl" | "map" | "plan" | "route" | "routeList" | "search" | "stops" | "view">;
-  /** The one search's view model (useOneSearch). */
-  model: OneSearchModel;
 }) {
+  // The one search's view model (OneSearchRoot round the panel).
+  const model = useOneSearchModel();
   const { stripsDrawn, view } = vm.view;
   const { addStop, depart, planned, routePoints, routed } = vm.route;
   const { course, s } = vm.plan;
@@ -101,7 +101,8 @@ export default function PlanSidebar({
   const { keepFuelStops, suggestedAt } = vm.stops;
   const { dropIntoRoute } = vm.routeList;
   const { closeNearest, closeSaved, savedOpen } = vm.fpl;
-  const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, query, setHomeAirport, toggleFavoriteAirport } = vm.search;
+  const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, setHomeAirport, toggleFavoriteAirport } = vm.search;
+  const typing = useSearchQuery((s) => s.query !== "");
   usePrefetchAircraftTiles();
   useEffect(() => {
     // Once the route opened has drawn (lib/routeDrawn), out of its first seconds.
@@ -246,7 +247,7 @@ export default function PlanSidebar({
               />
             </Waits>
           </TabPage>
-        ) : airportRecentsOpen && !query ? (
+        ) : airportRecentsOpen && !typing ? (
           <TabPage>
             <Waits>
               <RecentsPage

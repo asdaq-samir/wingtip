@@ -4,11 +4,11 @@ import { identOf } from "../../../lib/identSchema";
 import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
 import { airportQuery, queryClient } from "../../../lib/queryClient";
 import { useTabSearch } from "../../search";
-import { useAirportSearch } from "../../../lib/useAirportSearch";
-import type { PanelView } from "../../plan";
+import { clearSearchQuery } from "./searchQuery";
 
 /**
- * The planner's search fields (usePlanWorkspace): the one search, whose
+ * The planner's search fields (usePlanWorkspace): the one search (what is
+ * typed in it its own store's, searchQuery, read by its parts alone), whose
  * airport opens its card or is made Home or a Favorite, and whose airplane
  * opens its card or is made the pilot's Airplane or a Favorite; Nearest's,
  * whose text lives in features/search/tabSearch; the Adds that focus
@@ -19,27 +19,21 @@ import type { PanelView } from "../../plan";
  * VirtualKeyboardProvider.
  */
 export function useSearchPanel({
-  view,
   selectPlace,
   listAway,
   address,
   setAddress,
 }: {
-  view: PanelView;
   selectPlace: (ident: string | null) => void;
   /** A list in full put away, where it is the one open. */
   listAway: (name: "favorites") => void;
   address: Address;
   setAddress: SetAddress;
 }) {
-  const [query, setQuery] = useState("");
   // What the one search is asked for: a place to open, Home or a Favorite
   // airport to keep, the pilot's Airplane or a Favorite airplane to keep.
   const [picking, setPicking] = useState<"place" | "home" | "favorite" | "mine" | "airplane">("place");
   const searchInput = useRef<HTMLInputElement>(null);
-  // The one search's airports and, with them, the waypoints and navaids
-  // (its Waypoints and Navaids group), asked while it is the place up.
-  const search = useAirportSearch(query, view === "search", true);
   const { addRecentAirport: addRecent, setHomeAirport, toggleFavoriteAirport, moveFavoriteAirport } = usePreferences.getState();
   const home = usePreferences((p) => p.homeAirport);
   const favorites = usePreferences((p) => p.favoriteAirports);
@@ -55,7 +49,7 @@ export function useSearchPanel({
         return;
       }
       // Home or a Favorite picked: the words let go with the ask.
-      setQuery("");
+      clearSearchQuery();
       // Where it is, for how far it is from own ship.
       const full = await queryClient.fetchQuery(airportQuery(airport.ident)).catch(() => null);
       const kept = full ? { ident: full.ident, name: full.name, municipality: full.municipality, lat: full.lat, lon: full.lon } : airport;
@@ -88,7 +82,7 @@ export function useSearchPanel({
         open(kept.hex);
         return;
       }
-      setQuery("");
+      clearSearchQuery();
       setPicking("place");
       (document.activeElement as HTMLElement | null)?.blur();
     },
@@ -122,12 +116,9 @@ export function useSearchPanel({
     })();
   }, [address, setAddress]);
   return {
-    query,
-    setQuery,
     picking,
     setPicking,
     searchInput,
-    search,
     pickPlace,
     askFor,
     pickAirplane,
