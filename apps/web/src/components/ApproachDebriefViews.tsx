@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { cn } from "cn";
 import type { ApproachDebrief as Debriefed } from "./approachDebriefModel";
 import { feet, wholeNm } from "../lib/format";
-import { rad } from "../lib/geo";
+import { lonScale } from "../lib/geo";
 import { TEXT } from "../lib/text";
 import { AltitudeLegend } from "./AltitudeLegend";
 
@@ -12,7 +12,7 @@ function useFrame(d: Debriefed, width: number, height: number, pad: number) {
   return useMemo(() => {
     const all = [...d.plan.inbound.map(([lat, lon]) => ({ lat, lon })), ...d.plan.track];
     const lat0 = all.reduce((s, p) => s + p.lat, 0) / all.length;
-    const kx = Math.cos(rad(lat0));
+    const kx = lonScale(lat0);
     const xs = all.map((p) => p.lon * kx),
       ys = all.map((p) => p.lat);
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];

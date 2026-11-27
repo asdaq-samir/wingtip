@@ -584,6 +584,19 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
 .tab-page[data-hidden] {
   content-visibility: hidden;
 }
+/* A tab's page still the last route's while the new route's is drawn
+   (PanelTabs' stale): dimmed, after a moment so a draw within a frame or two
+   never flickers, and back at once when the new page is in. Opacity only,
+   so it is the compositor's; under Reduce Motion the dim still comes, on
+   the same wait, without its fade. */
+.tab-stale {
+  transition: opacity var(--motion-fade) var(--motion-sheet-ease);
+}
+.tab-stale[data-stale] {
+  opacity: 0.5;
+  transition-delay: 150ms;
+}
+
 @supports not (content-visibility: hidden) {
   .tab-away,
   .tab-page[data-hidden] {
@@ -690,6 +703,33 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
   pointer-events: none;
 }
 
+/* The stock Skeleton (components/ui/skeleton): out of sight for its first
+   120 ms, then in on a short fade, so a prefetched answer drawn a frame or
+   two after its card never flashes a skeleton (the round-2 speed audit);
+   then breathing once a motion.skeleton-pulse, held still with Reduce
+   Motion (its wait kept: the global rule below shortens durations, not
+   delays). */
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes skeleton-breath {
+  50% {
+    opacity: 0.5;
+  }
+}
+[data-slot="skeleton"] {
+  animation: skeleton-in var(--motion-fade) var(--motion-sheet-ease) 120ms backwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="skeleton"] {
+    animation:
+      skeleton-in var(--motion-fade) var(--motion-sheet-ease) 120ms backwards,
+      skeleton-breath var(--motion-skeleton-pulse) cubic-bezier(0.4, 0, 0.6, 1) 120ms infinite;
+  }
+}
+
 /* Reduce Motion, honoured: sheets and popovers arrive, sections open,
    the map zooms and the spinners hold still, all without the motion.
    The durations are near zero rather than none, so the events the
@@ -715,6 +755,23 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
      none under Reduce Motion: a fade is what iOS gives in a move's place
      (the r5-ui audit's L6). */
   .card-fade {
+    transition-duration: var(--motion-drawer) !important;
+  }
+  /* A card put away keeps its shorter time (cardMotion's AWAY, the
+     motion's page), where the two rules above held it to the Drawer's
+     450 ms and it left slower than it came. */
+  .sheet-slide[data-ending-style],
+  .card-fade[data-ending-style] {
+    transition-duration: var(--motion-page) !important;
+  }
+  /* And the sheet's content giving way to a card and back (SheetDrawer's
+     GIVE_WAY), a fade iOS keeps under Reduce Motion: cut, the search
+     stood back whole under a card still leaving. On the card's times:
+     the Drawer's as a card comes, the page's as it goes. */
+  .give-way {
+    transition-duration: var(--motion-page) !important;
+  }
+  [data-nested-drawer-open] .give-way {
     transition-duration: var(--motion-drawer) !important;
   }
 }

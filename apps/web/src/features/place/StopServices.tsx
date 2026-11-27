@@ -17,6 +17,7 @@ import { TEXT } from "../../lib/text";
 import { duration, wholeNm } from "../../lib/format";
 import type { SuggestedStop } from "../plan";
 import { WORDING } from "../../lib/wording/generated/wording";
+import { capitalised } from "../../lib/capitals";
 
 export type { SuggestedStop };
 
@@ -122,10 +123,11 @@ export function StopServices({
   }
   // Sentence case, as every value on the card starts: "Airframe major,
   // engine major".
-  const repair = [s.airframe_repair && `airframe ${s.airframe_repair}`, s.powerplant_repair && `engine ${s.powerplant_repair}`]
-    .filter(Boolean)
-    .join(", ")
-    .replace(/^./, (c) => c.toUpperCase());
+  const repair = capitalised(
+    [s.airframe_repair && `airframe ${s.airframe_repair}`, s.powerplant_repair && `engine ${s.powerplant_repair}`]
+      .filter(Boolean)
+      .join(", "),
+  );
   // Its fuel first among what is on the field (the owner, 2026-11-11:
   // "Fuel should move to on the field section"), from its Chart Supplement
   // entry, the remarks in words as the planner gives them (the engine's

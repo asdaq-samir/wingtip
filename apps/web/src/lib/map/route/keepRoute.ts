@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ChartLayer, Course } from "../../api/types";
-import { flatNm, lonScale, M_PER_NM } from "../../geo";
+import { flatNm, M_PER_NM } from "../../geo";
 import { kindCycle } from "../sources/tiles";
-import { tileOf, WORLD_WIDTH_M } from "../tileMath";
+import { tileOf, worldMetresAt } from "../tileMath";
 import { coursePoints } from "../../course";
 // The route's answers noted as the page asks them, from its first load
 // (routeAnswers' planner middleware): imported here, on the route's own
@@ -49,7 +49,7 @@ export interface KeepProgress {
 /** Tile width in nautical miles at a latitude and zoom: the Web Mercator
  *  world's width shrunk by the parallel's cosine. */
 function tileNm(lat: number, zoom: number): number {
-  return ((WORLD_WIDTH_M / M_PER_NM) * lonScale(lat)) / 2 ** zoom;
+  return worldMetresAt(lat) / M_PER_NM / 2 ** zoom;
 }
 
 /** The {z, x, y} of every tile within the corridor, per zoom. */

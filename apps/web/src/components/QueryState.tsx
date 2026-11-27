@@ -8,6 +8,7 @@ import { TEXT } from "../lib/text";
 import { NO_CONNECTION, noConnection } from "../lib/problems";
 import { FieldError } from "./ui/field";
 import { skeletonRows } from "./skeletonRows";
+import { CardFacts } from "./CardFacts";
 
 /** What a query says of itself (TanStack Query's own flags). */
 interface Asked {
@@ -113,8 +114,21 @@ export function SkeletonRows(props: { rows: number; lines?: number; fetching: st
   return <>{skeletonRows(props)}</>;
 }
 
-/** A card's Info still coming: its facts strip (CardFacts, `facts` of
- *  them, each its small name over its value) and its pictures' first tile
+/** Each placeholder fact's name and value, ch wide, as the airport card's
+ *  five run (Weather VFR, Airspace D, Elev. 808 ft, Pattern 1,800 ft,
+ *  Dist. 12 nm): uneven, as words are. */
+const FACT_WIDTHS: readonly (readonly [string, string])[] = [
+  ["w-[6ch]", "w-[4ch]"],
+  ["w-[7ch]", "w-[2ch]"],
+  ["w-[4ch]", "w-[6ch]"],
+  ["w-[6ch]", "w-[8ch]"],
+  ["w-[4ch]", "w-[5ch]"],
+];
+
+/** A card's Info still coming: its facts strip in the real CardFacts
+ *  (`fit`, wrapping as the facts do at a larger text), `facts` of them,
+ *  each a name at the note's size over a value at the row's, sized in ch
+ *  so they grow with the pilot's text, and its pictures' first tile
  *  (CardPictures' 4:3 at 70 % of the card, 60 % from sm), so the card
  *  opens in its own shape and fills in place, where it stood empty under
  *  a grey "Fetching…" and then jumped (the feel audit, 2026-11-27). */
@@ -122,13 +136,22 @@ export function SkeletonCardInfo({ facts, fetching }: { facts: number; fetching:
   return (
     <div role="status" data-testid="card-info-coming">
       <span className="sr-only">{fetching}</span>
-      <div className="flex justify-between gap-x-2 pt-4" aria-hidden="true">
-        {Array.from({ length: facts }, (_, i) => (
-          <span key={i} className={cn("flex flex-col gap-1.5", TEXT.row)}>
-            <Skeleton className="h-3 w-10" />
-            <SkeletonLine className="w-12" />
-          </span>
-        ))}
+      <div aria-hidden="true">
+        <CardFacts testId="card-facts-coming" fit>
+          {Array.from({ length: facts }, (_, i) => {
+            const [name, value] = FACT_WIDTHS[i % FACT_WIDTHS.length]!;
+            return (
+              <div key={i} className="flex shrink-0 flex-col gap-0.5">
+                <dt className={TEXT.note}>
+                  <SkeletonLine className={name} />
+                </dt>
+                <dd className={TEXT.row}>
+                  <SkeletonLine className={value} />
+                </dd>
+              </div>
+            );
+          })}
+        </CardFacts>
       </div>
       <div className="@container pt-4" aria-hidden="true">
         <Skeleton className="aspect-4/3 w-[70%] rounded-(--radius-card) sm:w-[60%]" />

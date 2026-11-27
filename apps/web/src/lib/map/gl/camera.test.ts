@@ -224,6 +224,13 @@ describe("the camera's one owner", () => {
     expect(calls).toEqual([{ name: "jumpTo", options: { center: [0.5, 0] } }]);
   });
 
+  it("glides a dry run's first scrubbed step, the press landing miles along, on the page's time", () => {
+    const { map, calls } = fakeMap();
+    cameraOf(map).follow("dry-run", [3, 0], { jump: "glide" });
+    nextFrame();
+    expect(calls).toEqual([{ name: "easeTo", options: expect.objectContaining({ center: [3, 0], duration: 250 }) }]);
+  });
+
   it("keeps a tracked airplane where it is on the screen, moving the map by its own move, not drawing it to the middle", () => {
     const { map, calls } = fakeMap();
     const camera = cameraOf(map);

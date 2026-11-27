@@ -58,18 +58,20 @@ const decoder = new TextDecoder();
 /** The module compiled from the network, streaming where the server
  *  says application/wasm, else from its bytes: Safari and some servers
  *  (a file:// shell, a CDN with the wrong type) refuse the streaming
- *  compile, and the bytes always work. */
+ *  compile, and the bytes always work. One fetch: the stream reads a
+ *  copy of the answer (clone), the bytes the answer itself, where a
+ *  refused stream fetched the 1.2 MB file again (the round-2 speed
+ *  audit). */
 async function fromNetwork(url: string): Promise<WebAssembly.Instance> {
-  const response = fetch(url);
+  const response = await fetch(url);
   if (typeof WebAssembly.instantiateStreaming === "function") {
     try {
-      return (await WebAssembly.instantiateStreaming(response, {})).instance;
+      return (await WebAssembly.instantiateStreaming(response.clone(), {})).instance;
     } catch {
-      // Fall through to the bytes, fetched again (the first body is used).
+      // Fall through to the bytes of the same answer.
     }
   }
-  const bytes = await (await fetch(url)).arrayBuffer();
-  return (await WebAssembly.instantiate(bytes, {})).instance;
+  return (await WebAssembly.instantiate(await response.arrayBuffer(), {})).instance;
 }
 
 /**

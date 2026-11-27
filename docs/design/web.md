@@ -506,7 +506,10 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   picture (`SkeletonCardInfo`), the airplane card's history and flights
   three rows each (`skeletonRows`, an array so the group draws its lines
   between them), the Brief's sections two bars (`Pending`'s `coming`,
-  the briefing on its way), each with its words for a screen reader. A
+  the briefing on its way), each with its words for a screen reader; the
+  airport card's facts in the real `CardFacts fit`, ch-wide so they wrap
+  at a larger text as the facts do. Every skeleton waits 120 ms before
+  it fades in (index.css), so a prefetched answer never flashes one. A
   list's row answers a finger at once (`pointer-coarse:active:duration-0`,
   as ListPicks' and the stock Button's dim) and the Toggle eases its dim.
   A card is put away on a page's time (`motion.page`, cardMotion's
@@ -867,9 +870,14 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    buttons: on a phone's bottom sheet in the card's foot slot, a fixed
    slot at the screen's foot beside the sliding cards (`sheet/CardFoot`),
    so the card slides behind it at every height; in sight while the card
-   is the top one and above the pill, changed as a drag is let go, never
-   with the finger; the slot's height the card's end room and scroll
-   padding (`useCardFootHeight`), so the last row scrolls clear of it.
+   is the top one, above the pill and at rest (`usePopupStill`: Base UI's
+   data-swiping and the popup's own transform transition, two frames
+   after both end), fading in on opacity alone (`@starting-style`, the
+   motion's `fade`) once the card has come up under it, never ahead of
+   it, and gone at once as a finger takes the card; the slot's height,
+   kept while it is out of sight, the card's end room and scroll
+   padding (`useCardFootHeight`), so the last row scrolls clear of it
+   and the end room does not jump at every drag.
    Beside the side panel and on a top sheet it is sticky at the foot of
    the card's scroller, its own room in the flow the last row's. Glass (`liquid-glass`) because it floats over the
    card, the one place glass stays (rules.md; the owner, 2026-11-10), at

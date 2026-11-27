@@ -1,6 +1,6 @@
 import type { EaseToOptions, Map as GlMap } from "maplibre-gl";
 import { picked, watchPilotMoves } from "./pilotCamera";
-import { followMs, followStep, linear, pickHow, verdict, FOLLOW_LEAST_PX, type Follow, type Intent } from "./cameraRules";
+import { followMs, followStep, linear, pickHow, verdict, FOLLOW_LEAST_PX, SCRUB_GLIDE, type Follow, type Intent } from "./cameraRules";
 import {
   endFollows,
   inRoom,
@@ -10,6 +10,7 @@ import {
   padOf,
   type Aim,
   type Bounds,
+  type Jump,
   type Keep,
   type Margin,
   type Pad,
@@ -33,7 +34,7 @@ class Camera {
   /** A follow's latest point, moved to at the next frame: a pick or a fit
    *  asked in the same frame (a route's first fit with own ship's first
    *  fix, FL-22) takes the camera instead. */
-  private pending: { intent: Follow; at: Point; edge: number | null; keep: Keep; jump: boolean } | null = null;
+  private pending: { intent: Follow; at: Point; edge: number | null; keep: Keep; jump: Jump } | null = null;
   /** Each follow's point the map last went with, for a follow that keeps
    *  its point where it is on the screen. */
   private applied = new Map<Follow, Point>();
@@ -202,12 +203,13 @@ class Camera {
    * than drawn to the middle (an airplane tracked: tapped on the chart it
    * is in sight already, and drawing it to the middle of the room as a
    * card came up was a second move back the other way, FL-7). With
-   * `jump`, put in the middle at once, never eased (a dry run scrubbed).
+   * `jump`, put in the middle at once, never eased (a dry run scrubbed);
+   * "glide", eased there on SCRUB_GLIDE (its first step after the press).
    */
   follow(
     intent: Follow,
     at: Point,
-    { edge = null, keep = "middle", jump = false }: { edge?: number | null; keep?: Keep; jump?: boolean } = {},
+    { edge = null, keep = "middle", jump = false }: { edge?: number | null; keep?: Keep; jump?: Jump } = {},
   ) {
     const now = performance.now();
     const last = this.asked.get(intent);
@@ -258,6 +260,7 @@ class Camera {
     const middle = map.project(map.getCenter());
     const step = Math.hypot(there.x - middle.x, there.y - middle.y);
     if (step < FOLLOW_LEAST_PX) return;
+    if (p.jump === "glide") return this.ease(p.intent, p.at, SCRUB_GLIDE);
     if (p.jump || followStep(p.intent, step) === "jump") {
       // Own ship a few pixels on: one redraw for the fix, not a frame-rate
       // ease (cameraRules' FOLLOW_JUMP_UNDER_PX); or kept up with a finger.
@@ -271,9 +274,10 @@ class Camera {
     this.ease(p.intent, p.at);
   }
 
-  /** A follow's one linear ease to `center`, lasting till its next point. */
-  private ease(intent: Follow, center: Point) {
-    const options = { center, duration: this.nextMs.get(intent) ?? followMs(null), easing: linear };
+  /** A follow's one linear ease to `center`, lasting till its next point;
+   *  or on `timing` (a scrub's glide). */
+  private ease(intent: Follow, center: Point, timing = { duration: this.nextMs.get(intent) ?? followMs(null), easing: linear }) {
+    const options = { center, ...timing };
     this.running = { intent, aim: null };
     this.fresh = null;
     this.followAim = center;
@@ -376,8 +380,10 @@ const FRESH_MS = 1000;
 const samePad = (a: Pad, b: Pad) => a.top === b.top && a.bottom === b.bottom && a.left === b.left && a.right === b.right;
 
 /** The dry run's scrub held under a pointer (DryRunPanel): own ship's
- *  follow then jumps with the finger, as a past flight's replay does. */
-export const scrub = { held: false };
+ *  follow then keeps up with the finger, as a past flight's replay does,
+ *  its first step after the press eased (`moved` not yet), each later one
+ *  a jump. */
+export const scrub = { held: false, moved: false };
 
 const owners = new WeakMap<GlMap, Camera>();
 

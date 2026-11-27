@@ -28,17 +28,14 @@ export function useSheetRestOffset(): number {
   return useSheetMoving((s) => s.offset);
 }
 
-/** Watches the sheet's popup (SheetDrawer's) for useSheetMoving while it
- *  is on the page. Answers the watch's end. */
-export function watchSheetMotion(popup: HTMLElement): () => void {
+/** Follows a drawer's popup (the sheet's, a card's) from Base UI's own
+ *  signals: `told(moving)` at each of them, `moving` while a finger has it
+ *  (data-swiping) or its own slide runs (its transform's transitionrun to
+ *  transitionend or transitioncancel). Answers the watch's end. */
+function followPopup(popup: HTMLElement, told: (moving: boolean) => void): () => void {
   let swiping = popup.hasAttribute("data-swiping");
   let settling = false;
-  const tell = () => {
-    const moving = swiping || settling;
-    const offset = parseFloat(snapOffset(popup) ?? "") || 0;
-    const was = useSheetMoving.getState();
-    if (was.moving !== moving || was.offset !== offset) useSheetMoving.setState({ moving, offset });
-  };
+  const tell = () => told(swiping || settling);
   // Base UI writes the finger's movement on the popup's style at every
   // move, which changes nothing here; the offset only at a new rest.
   const swiped = new MutationObserver(() => {
@@ -72,8 +69,49 @@ export function watchSheetMotion(popup: HTMLElement): () => void {
     popup.removeEventListener("transitionrun", run);
     popup.removeEventListener("transitionend", end);
     popup.removeEventListener("transitioncancel", end);
+  };
+}
+
+/** Watches the sheet's popup (SheetDrawer's) for useSheetMoving while it
+ *  is on the page. Answers the watch's end. */
+export function watchSheetMotion(popup: HTMLElement): () => void {
+  const stop = followPopup(popup, (moving) => {
+    const offset = parseFloat(snapOffset(popup) ?? "") || 0;
+    const was = useSheetMoving.getState();
+    if (was.moving !== moving || was.offset !== offset) useSheetMoving.setState({ moving, offset });
+  });
+  return () => {
+    stop();
     useSheetMoving.setState({ moving: false, offset: 0 });
   };
+}
+
+/**
+ * Whether a card's popup is still, `wanted` and the card neither under a
+ * finger nor sliding (followPopup): false at once as either starts, true
+ * two frames after both end, so a slide a tap or an opening has just set
+ * going (its transitionrun a frame on) is seen first, as useRestSize's
+ * size is. What stays still at the screen's foot beside the card (its tab
+ * bar, sheet/CardFoot) comes in once the card has come to rest under it.
+ */
+export function usePopupStill(popup: HTMLElement | null, wanted: boolean): boolean {
+  const [moving, setMoving] = useState(true);
+  useEffect(() => (popup ? followPopup(popup, setMoving) : undefined), [popup]);
+  const [still, setStill] = useState(false);
+  const want = wanted && !moving && !!popup;
+  if (!want && still) setStill(false);
+  useEffect(() => {
+    if (!want) return;
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setStill(true));
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [want]);
+  return want && still;
 }
 
 /**

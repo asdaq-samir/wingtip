@@ -5,7 +5,8 @@ import { prefersReducedMotion } from "../../lib/motion";
 import { MOTION } from "../../lib/tokens";
 import { EDGE_ROOM } from "./insets";
 import { CONTROLS_TAPPABLE } from "./sheetLayout";
-import { FootRest, useFootBarHeight, useRestSize } from "./sheetMotion";
+import { FootRest, useRestSize } from "./sheetMotion";
+import { tellFootPill, useTellFootBar } from "./footBarHeight";
 import { useGroundTaps } from "./groundTaps";
 
 /** The foot's size told to what it holds, taken at rest. */
@@ -73,24 +74,12 @@ function foldedHeight(el: HTMLElement): number | undefined {
 export function FootBar({ size, shown, children }: { size: PanelState; shown: boolean; children: ReactNode }) {
   const pill = size === "peek";
   const bar = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const el = bar.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const watch = new ResizeObserver(([entry]) => {
-      const height = Math.round(entry?.borderBoxSize[0]?.blockSize ?? el.offsetHeight);
-      useFootBarHeight.setState((was) => ({ height, pill: foldedHeight(el) ?? was.pill }));
-    });
-    watch.observe(el);
-    return () => {
-      watch.disconnect();
-      useFootBarHeight.setState({ height: 0, pill: 0 });
-    };
-  }, []);
+  useTellFootBar(bar, foldedHeight);
   // And as it comes into sight folded, which need not resize it (FPL's
   // page turned to at the pill).
   useLayoutEffect(() => {
     const height = bar.current && foldedHeight(bar.current);
-    if (height) useFootBarHeight.setState({ pill: height });
+    if (height) tellFootPill(bar.current!, height);
   }, [pill, shown]);
   // From half up, a tap on its ground goes no further: the row it lands on is hidden under it.
   useGroundTaps(bar, !pill && shown);

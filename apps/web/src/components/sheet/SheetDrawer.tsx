@@ -32,9 +32,11 @@ export const UNDER_INDICATOR =
  * card went away the search was back whole while the card was still a
  * third in sight (the apple-design and gestures audits of 2026-11-23, N5
  * and N6). Back in on the card's shorter time going (cardMotion's AWAY).
+ * Its fade kept under Reduce Motion (index.css's give-way), as iOS keeps a
+ * fade where it drops a move.
  */
 const GIVE_WAY =
-  "transition-[opacity,visibility] duration-(--motion-page) ease-(--motion-drawer-ease) motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0 group-data-nested-drawer-open/sheet:duration-(--motion-drawer)";
+  "give-way transition-[opacity,visibility] duration-(--motion-page) ease-(--motion-drawer-ease) group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0 group-data-nested-drawer-open/sheet:duration-(--motion-drawer)";
 
 /**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner

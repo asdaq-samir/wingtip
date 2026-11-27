@@ -17,12 +17,9 @@ import { NO_CONNECTION, noConnection } from "../../lib/problems";
 import type { AirportPlace } from "../../lib/api/types";
 import { useGeo, type LatLon } from "../../lib/geo";
 import { placeWeather } from "./placeWeather";
-import { awayOf, distanceOf, kindOf, knownOf, zonedClock } from "./placeCardWords";
+import { awayOf, distanceOf, kindOf, knownOf } from "./placeCardWords";
 import { runwaysLeftOut, stripsOf } from "./runwayDrawing";
-import { useMinuteClock } from "../../lib/useMinuteClock";
 import { prefersReducedMotion } from "../../lib/motion";
-import { arrivalHour, hoursOf, sentenceOf } from "./hourly";
-import { tafValidity } from "./tafValidity";
 import { airportQuery, photosQuery, servicesQuery } from "../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
 import { PlaceChartsTab } from "./PlaceChartsTab";
@@ -205,23 +202,6 @@ export default function PlaceCard({
       )}
     </StatusBadge>
   );
-  // And hour by hour, as Apple's Weather has it (the owner's pick, G1):
-  // Now from the report, each hour after it from the field's own TAF,
-  // and a sentence of what they say, written from them (features/place/hourly). Read
-  // again each minute, as the hours move on.
-  const tafText = place?.taf ?? null;
-  const now = useMinuteClock();
-  // The TAF's own valid period (the engine's taf_validity): one kept from
-  // before the signal was lost says it has run out, here and in the
-  // sentence, rather than reading as a field with no forecast.
-  const hourly = useMemo(() => {
-    const hours = hoursOf({ metar, taf: tafText, now });
-    const taf = tafValidity(tafText, now);
-    return { hours, taf, sentence: sentenceOf(hours, zonedClock, taf?.state === "expired" ? "its TAF has expired" : undefined) };
-  }, [metar, tafText, now]);
-  // The hour the planned flight lands in, where this is its destination.
-  const landsAt = arrival ? (arrival.depart ? Date.parse(arrival.depart) : now) + arrival.minutes * 60_000 : null;
-  const landsIn = landsAt != null && !Number.isNaN(landsAt) ? arrivalHour(hourly.hours, landsAt) : null;
   const ident4 = place?.ident ?? ident;
   // The Charts tab's count: the d-TPP's charts it lists, the diagram once.
   const charts = (place?.procedures ?? []).filter((c) => c.kind !== "APD").length + (place?.airport_diagram_url ? 1 : 0);
@@ -304,7 +284,6 @@ export default function PlaceCard({
             {place ? (
               <PlaceInfoPage
                 place={place}
-                now={now}
                 where={where}
                 facts={{ category, approximate: weather?.category ? null : (approximate?.said ?? null), away: distance }}
                 pictures={{ photos, sketchedRunways, leftOut, noRunwaysPicture, onNoRunwaysPicture: () => setNoRunwaysPicture(true) }}
@@ -320,10 +299,9 @@ export default function PlaceCard({
               place={place}
               known={known}
               chip={chip}
-              hourly={hourly}
+              forecast={{ metar, taf: place?.taf ?? null, arrival }}
               weatherLine={weatherLine}
               observedAt={observedAt}
-              arrival={landsIn != null && landsAt != null ? { index: landsIn, at: landsAt } : null}
             />
           </CardTabPanel>
 

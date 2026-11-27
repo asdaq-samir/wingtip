@@ -17,6 +17,7 @@ import { Flag, Pending } from "./BriefingBits";
 import { hazardAltitudeRange } from "./briefingWords";
 import ForecastIcingRows from "./ForecastIcingRows";
 import { WORDING } from "../../lib/wording/generated/wording";
+import { capitalised } from "../../lib/capitals";
 
 interface Props {
   vm: FlightBriefing;
@@ -158,7 +159,7 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
               key={`f${f.ident}${f.source}`}
               media={<FindingIcon finding="caution" />}
               title={`${f.ident} below VFR · ${f.source === "METAR" ? `${f.flight_category ?? "IFR"} now` : "forecast then"}`}
-              description={ceilingAndVisibility(f.ceiling_ft, f.visibility_sm).replace(/^./, (c) => c.toUpperCase())}
+              description={capitalised(ceilingAndVisibility(f.ceiling_ft, f.visibility_sm))}
               data-testid="field-below-vfr"
             />,
             <OnRouteRow key={`f${f.ident}${f.source}-on`} on={f.on_route} briefing={briefing} hazardKey={`field-${f.ident}-${f.source}`} />,

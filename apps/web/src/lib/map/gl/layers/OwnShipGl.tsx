@@ -129,8 +129,12 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     // second on in a dry run, stopped it part way, the map left two
     // levels short of the run's zoom (dry-run.spec, 2026-11-13).
     // A dry run's scrub under the finger jumps with it, an ease behind it
-    // being a step late at every move (the speed work, 2026-11-27).
-    if (follow) camera.follow(intent, [fix.lon, fix.lat], { jump: simulated && scrub.held });
+    // being a step late at every move (the speed work, 2026-11-27); its
+    // first step after the press glides, the press landing miles along.
+    if (!follow) return;
+    const scrubbed = simulated && scrub.held;
+    camera.follow(intent, [fix.lon, fix.lat], { jump: scrubbed && (scrub.moved || "glide") });
+    if (scrubbed) scrub.moved = true;
   }, [map, fix, enabled, simulated, follow, recentred, recentreZoom]);
   // A tap on it its card (`card`), as Apple Maps' My Location opens one:
   // in the map's one tap, before anything under it, within a finger's

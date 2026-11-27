@@ -8,8 +8,8 @@ import type { AirportPlace } from "../../lib/api/types";
 import { zuluTime } from "../../lib/format";
 import Observed from "../../components/Observed";
 import { compassPoint } from "../../lib/compass";
-import type { Hour } from "./hourly";
 import { tafLine, type TafValidity } from "./tafValidity";
+import { usePlaceHourly, type HourlyFrom } from "./placeHourly";
 import { BADGE } from "../../lib/rowBadges";
 import { TEXT } from "../../lib/text";
 import { feet, miles, nm } from "../../lib/format";
@@ -30,10 +30,9 @@ export function PlaceWeatherTab({
   place,
   known,
   chip,
-  hourly,
+  forecast,
   weatherLine,
   observedAt,
-  arrival,
 }: {
   /** The ident the card was opened on. */
   ident: string;
@@ -42,16 +41,14 @@ export function PlaceWeatherTab({
   known: unknown;
   /** Its category's chip, in the FAA's colour (PlaceCard). */
   chip: ReactNode;
-  /** Hour by hour, a sentence of what the hours say (features/place/hourly),
-   *  and the TAF's own valid period (features/place/tafValidity). */
-  hourly: { hours: Hour[]; sentence: string | null; taf: TafValidity | null };
+  /** What its hour by hour is made from, read here each minute (usePlaceHourly). */
+  forecast: HourlyFrom;
   /** The weather in a line where there is no forecast to say. */
   weatherLine: string;
   /** When its report (or the nearest station's) was observed, for its age. */
   observedAt: string | null;
-  /** The planned flight's landing hour, where this is its destination. */
-  arrival: { index: number; at: number } | null;
 }) {
+  const { hourly, arrival } = usePlaceHourly(forecast);
   const metar = place?.metar ?? null;
   // The nearest station's within 30 nm, for one with no report of its own
   // (wingtip.weather.nearest_report), and its category.

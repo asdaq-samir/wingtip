@@ -38,6 +38,9 @@ export type RoomHow = "still" | "set" | "ease";
 
 /** Where a follow keeps its point: the middle of the room, or where it is. */
 export type Keep = "middle" | "place";
+/** A follow's step put at once (true), eased on cameraRules' SCRUB_GLIDE
+ *  ("glide": a dry run's scrub's first), or the follow's own (false). */
+export type Jump = boolean | "glide";
 
 /** Whether a test drives this browser, as useGlProbe asks. */
 const testDriven = () => typeof navigator !== "undefined" && navigator.webdriver === true;

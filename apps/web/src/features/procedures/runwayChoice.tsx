@@ -20,8 +20,8 @@ type Fit = NonNullable<EndFit["fit"]>;
  *  caution. */
 const NOTES: Record<Fit, (f: EndFit) => string> = {
   short: () => "Too short today",
-  crosswind: (f) => `Crosswind ${f.crosswindKt} kt`,
-  tailwind: (f) => `Tailwind ${f.tailwindKt} kt`,
+  crosswind: (f) => `Crosswind ${f.crosswind_kt} kt`,
+  tailwind: (f) => `Tailwind ${f.tailwind_kt} kt`,
   close: () => "Little to spare",
   beyond: () => "Past the POH's tables",
 };
@@ -32,7 +32,7 @@ const NOTES: Record<Fit, (f: EndFit) => string> = {
 export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, fitOf: (runway: Runway, end: RunwayEnd) => EndFit | null) {
   const id = runwayNumber(end.ident);
   const fitted = fitOf(runway, end);
-  const tail = fitted && fitted.tailwindKt > 0 ? fitted.tailwindKt : 0;
+  const tail = fitted && fitted.tailwind_kt > 0 ? fitted.tailwind_kt : 0;
   const level = fitted?.fit ?? undefined;
   // Never "into the wind" with the wind behind it: the pick's best end
   // where only one end has a heading can have it (the aviation audit,
@@ -48,10 +48,10 @@ export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, f
   // The crosswind said as a figure, grey, where nothing else is said of
   // the end and there is one: an airplane with no demonstrated crosswind
   // to judge it by still hears of 25 knots across (the owner, 2026-11-26).
-  const across = fitted && !fitted.crosswindOver && fitted.crosswindKt > 0 ? fitted.crosswindKt : 0;
+  const across = fitted && !fitted.crosswind_over && fitted.crosswind_kt > 0 ? fitted.crosswind_kt : 0;
   // Everything that holds, after its number: what the pill's name and a
   // menu row's say past "Runway 14".
-  const detail = `${windward ? ", into the wind" : ""}${tail ? `, tailwind ${tail} knots` : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : across ? `, crosswind ${across} knots` : ""}${said}`;
+  const detail = `${windward ? ", into the wind" : ""}${tail ? `, tailwind ${tail} knots` : ""}${fitted?.crosswind_over ? `, crosswind ${fitted.crosswind_kt} knots, past the airplane's demonstrated` : across ? `, crosswind ${across} knots` : ""}${said}`;
   const words = `Runway ${id}${detail}`;
   const calm = windward ? (across ? `Into the wind · Crosswind ${across} kt` : "Into the wind") : across ? `Crosswind ${across} kt` : null;
   // How it fits in a few words, for a menu's row: the chip's ring has no

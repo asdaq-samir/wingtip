@@ -3,7 +3,7 @@ import { callEngine, type EngineAnswer } from "./engine/engine";
 import { M_PER_NM, type Geo, type LatLon } from "./geo";
 import type { GlRun } from "./map/gl/useGlLines";
 import type { Fix } from "./map/position/ownShip";
-import { WORLD_WIDTH_M } from "./map/tileMath";
+import { metresPerPoint } from "./map/tileMath";
 
 /*
  * The rules here -- the height under an airplane as TCAS writes it, whether
@@ -128,8 +128,7 @@ export function carriedOn(geo: Geo, plane: TrafficAircraft, seconds: number): La
 export function trendPx(speedKt: number | null | undefined, lat: number, zoom: number, max = 160): number {
   if (!speedKt) return 0;
   const metres = ((speedKt * TREND_S) / 3600) * M_PER_NM;
-  const metresPerPoint = ((WORLD_WIDTH_M / 512) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
-  return Math.min(max, metres / metresPerPoint);
+  return Math.min(max, metres / metresPerPoint(lat, zoom));
 }
 
 /** How far ahead its trend line reaches as the map draws it, seconds:

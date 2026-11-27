@@ -23,6 +23,7 @@ import { useNotInProfileSummary } from "./notInProfileSummary";
 import { NO_RUNWAYS } from "../../lib/emptyWords";
 import { loadEnvelopeChart } from "../navlog";
 import { WORDING } from "../../lib/wording/generated/wording";
+import { capitalised } from "../../lib/capitals";
 
 /** The envelope's picture: Recharts, loaded with the section. */
 const EnvelopeChart = lazy(() => loadEnvelopeChart());
@@ -366,7 +367,7 @@ export function TakeoffLandingSection({
                   <ListRow
                     media={<FindingIcon finding="unknown" />}
                     title="Distances not worked out"
-                    description={`${c.unchecked ?? "the field's elevation is not known"}`.replace(/^./, (ch) => ch.toUpperCase())}
+                    description={capitalised(c.unchecked ?? "the field's elevation is not known")}
                     data-testid="runway-unchecked"
                   />
                 ) : (

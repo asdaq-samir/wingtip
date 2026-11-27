@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
+import type { Map as MlMap } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { api } from "../../../lib/api/client";
@@ -23,18 +23,21 @@ import { CAMERA_MS } from "../../../lib/map/gl/cameraRules";
 import { useTerrainView } from "../terrain/useTerrainView";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
+import { sendTraffic } from "./trafficSend";
 import { pickOnMap } from "../../../lib/map/mapPick";
 
 /** Asked every five seconds, each airplane carried on
  *  between answers a frame at a time (more often closer in), blended over
- *  a second onto where the next answer puts it; heights from zoom 9 and
+ *  a second, or two frames where they are slower, onto where the next
+ *  answer puts it; heights from zoom 9 and
  *  call signs from 10, in the app's levels.
  *
  *  A frame is the whole collection sent to the map's worker and indexed
  *  again there, so it comes once a second at the chart's scales, where an
  *  airplane at 120 kt moves a pixel or two in it, and up to four a second
  *  only zoomed in close (the speed audit of 2026-11-27: ten a second from
- *  zoom 10, each a JSON.stringify and a setData). An airplane followed
+ *  zoom 10, each a JSON.stringify and a setData; now only the airplanes
+ *  that changed, trafficSend). An airplane followed
  *  keeps ten a second: the camera's follow eases linearly between frames,
  *  so a mark stepped once a second would slide back on the screen and jump. */
 const EVERY_MS = 5000;
@@ -51,13 +54,18 @@ const PROBLEM = "traffic";
 const POINTS = "traffic";
 const TRENDS = "traffic-trends";
 const IDS = { marks: "traffic-marks", tags: "traffic-tags", trends: "traffic-trend-lines" };
-const SOURCES = { [POINTS]: { type: "geojson" as const, data: EMPTY }, [TRENDS]: { type: "geojson" as const, data: EMPTY } };
+// Keyed by hex (promoteId), so a frame sends only what changed (trafficSend).
+const SOURCES = {
+  [POINTS]: { type: "geojson" as const, data: EMPTY, promoteId: "hex" },
+  [TRENDS]: { type: "geojson" as const, data: EMPTY, promoteId: "hex" },
+};
 const LAYERS = trafficLayers(IDS, { points: POINTS, trends: TRENDS });
 
 interface Target {
   plane: TrafficAircraft;
   at: number;
-  shift: { lat: number; lon: number; from: number } | null;
+  /** The gap blended away from `from` over `ms`. */
+  shift: { lat: number; lon: number; from: number; ms: number } | null;
   /** Where it is drawn now, carried on (null until it is first drawn). */
   pos: { lat: number; lon: number } | null;
   /** How it looks, from its report, own ship's height and the map's zoom. */
@@ -201,16 +209,20 @@ function Traffic({ geo }: { geo: Geo }) {
       }
       if (at <= held.at) continue;
       const now = Date.now();
-      // Blended over a second from where it is drawn onto where the new
-      // report carries it, not jumped.
+      // Blended from where it is drawn onto where the new report carries
+      // it, not jumped: over a second, or two frames where a frame is a
+      // second (the chart's scales), where the whole gap went in one frame
+      // and the mark hopped 1 to 3 px (the round-2 speed audit).
       const should = carriedOn(geo, plane, (now - at) / 1000);
-      held.shift = held.pos ? { lat: held.pos.lat - should.lat, lon: held.pos.lon - should.lon, from: now } : null;
+      const { hex: tracked, follow: following } = useTracking.getState();
+      const ms = Math.max(BLEND_MS, 2 * frameMs(appZoomOf(map.getZoom()), !!tracked && following));
+      held.shift = held.pos ? { lat: held.pos.lat - should.lat, lon: held.pos.lon - should.lon, from: now, ms } : null;
       held.plane = plane;
       held.at = at;
     }
     for (const hex of targets.current.keys()) if (!seen.has(hex)) targets.current.delete(hex);
     useTracking.setState({ seen: reports });
-  }, [geo, merged]);
+  }, [geo, map, merged]);
 
   useEffect(() => {
     const heights = view.zoom >= HEIGHT_ZOOM,
@@ -286,7 +298,7 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
     dLon = (b.getEast() - b.getWest()) / 4;
   const { hex: tracked } = useTracking.getState();
   const points: GeoJSON.Feature<GeoJSON.Point, TrafficMarkProps>[] = [];
-  const trends: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+  const trends: GeoJSON.Feature<GeoJSON.LineString, { hex: string; colour: string }>[] = [];
   const carry = carryS();
   for (const [hex, target] of targets) {
     const age = (now - target.at) / 1000;
@@ -298,7 +310,7 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
     if (!look) continue;
     let shift = { lat: 0, lon: 0 };
     if (target.shift) {
-      const left = 1 - (now - target.shift.from) / BLEND_MS;
+      const left = 1 - (now - target.shift.from) / target.shift.ms;
       if (left <= 0) target.shift = null;
       else shift = { lat: target.shift.lat * left, lon: target.shift.lon * left };
     }
@@ -335,12 +347,12 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
             [ahead.lon + shift.lon, ahead.lat + shift.lat],
           ],
         },
-        properties: { colour },
+        properties: { hex, colour },
       });
     }
   }
-  setIfNew(map, POINTS, points);
-  setIfNew(map, TRENDS, trends);
+  sendTraffic(map, POINTS, points);
+  sendTraffic(map, TRENDS, trends);
   const { follow } = useTracking.getState();
   const replaying = usePastFlight.getState().hex === tracked;
   const target = tracked && follow && !replaying ? targets.get(tracked) : undefined;
@@ -354,18 +366,4 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
 function ownFix() {
   const ship = useOwnShip.getState();
   return ship.enabled ? ship.fix : null;
-}
-
-/** What each source was last sent, as JSON: a frame with nothing moved
- *  (none in sight, or every one on the ground and still) sends nothing to
- *  the map's worker, where each setData is indexed again from nothing. By
- *  the source itself, so one made again (a new style) is sent afresh. */
-const lastSent = new WeakMap<GeoJSONSource, string>();
-function setIfNew(map: MlMap, id: string, features: GeoJSON.Feature[]) {
-  const source = map.getSource<GeoJSONSource>(id);
-  if (!source) return;
-  const json = JSON.stringify(features);
-  if (lastSent.get(source) === json) return;
-  lastSent.set(source, json);
-  source.setData({ type: "FeatureCollection", features });
 }

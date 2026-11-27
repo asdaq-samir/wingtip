@@ -4,7 +4,7 @@ import { CardId } from "../../lib/sheetCards";
 
 /** Each card's foot slot on a phone's bottom sheet (sheet/CardFoot), by the
  *  card's id: its element, whether it is in sight, and its height, px,
- *  while it is. */
+ *  as last measured in sight. */
 type Foot = { el: HTMLElement; shown: boolean; height: number };
 
 /** Where the cards' foot slots go (SheetDrawer's, in its viewport beside
@@ -44,7 +44,8 @@ export function useCardFootSlot(): HTMLElement | null | undefined {
   });
 }
 
-/** Card `id`'s foot slot's height, px, while it is in sight; 0 else: the
+/** Card `id`'s foot slot's height, px, as last measured in sight (kept
+ *  while it is out of sight); 0 before it ever was: the
  *  card's end room and scroll padding under its tab bar (SheetCard,
  *  sheet/cardScrollRoom), as useFootBarHeight is FPL's page's. */
 export function useCardFootHeight(id: string | null | undefined): number {

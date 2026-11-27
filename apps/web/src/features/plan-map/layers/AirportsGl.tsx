@@ -138,19 +138,33 @@ function useAirportTaps(
   usePrefetchOnPress();
 }
 
-/** The field under a finger or a mouse as it goes down, its card's answer
- *  asked then (airportQuery, PlaceCard's) rather than at the tap's end, so
- *  the card opens on it about a press sooner (the speed work, 2026-11-27).
- *  The same reach and the same nearest mark the tap takes (nearestHit); a
- *  press that becomes a pan asks for a field kept five minutes all the
- *  same, which the card would ask for at its open. */
+/** How far a finger or a mouse may move between press and lift and still
+ *  be a tap, px: MapLibre's own click tolerance is 3, a finger's wobble
+ *  more. */
+const TAP_SLOP_PX = 6;
+
+/** The field under a tap, its card's answer asked as the finger or the
+ *  mouse lifts (airportQuery, PlaceCard's) rather than at the card's open,
+ *  so the card opens on it sooner (the speed work, 2026-11-27). Asked at
+ *  the lift, not the press: at the press every pan and pinch paid a
+ *  queryRenderedFeatures, a project and a fetch on its first frame (the
+ *  round-2 speed audit). Only a lift within TAP_SLOP_PX of its press, with
+ *  no second finger down in between; the same reach and the same nearest
+ *  mark the tap takes (nearestHit). */
 function usePrefetchOnPress() {
   const { map } = useGlMap();
   const queryClient = useQueryClient();
   useEffect(() => {
     const target = map.getCanvasContainer();
+    let press: { id: number; x: number; y: number } | null = null;
     const pressed = (e: PointerEvent) => {
-      if (!e.isPrimary || !map.style) return;
+      press = e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY } : null;
+    };
+    const lifted = (e: PointerEvent) => {
+      const was = press;
+      press = null;
+      if (!was || was.id !== e.pointerId || !map.style) return;
+      if (Math.hypot(e.clientX - was.x, e.clientY - was.y) > TAP_SLOP_PX) return;
       const layers = AIRPORT_TILE_LAYERS.filter((l) => map.getLayer(l));
       if (!layers.length) return;
       const box = target.getBoundingClientRect();
@@ -166,8 +180,17 @@ function usePrefetchOnPress() {
       const ident = nearestHit(found, at, r, (p) => map.project(p))?.properties.ident;
       if (ident) void queryClient.prefetchQuery(airportQuery(String(ident)));
     };
+    const cancelled = () => {
+      press = null;
+    };
     target.addEventListener("pointerdown", pressed);
-    return () => target.removeEventListener("pointerdown", pressed);
+    target.addEventListener("pointerup", lifted);
+    target.addEventListener("pointercancel", cancelled);
+    return () => {
+      target.removeEventListener("pointerdown", pressed);
+      target.removeEventListener("pointerup", lifted);
+      target.removeEventListener("pointercancel", cancelled);
+    };
   }, [map, queryClient]);
 }
 

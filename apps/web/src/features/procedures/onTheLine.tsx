@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger, FOLD_PANEL } from "../../components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, foldPanel } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { WIDE_PILL } from "./routeListStyle";
@@ -85,6 +85,7 @@ export function FoldSection({
   label,
   data,
   startOpen = false,
+  rows,
   children,
 }: {
   head?: ReactNode;
@@ -103,6 +104,8 @@ export function FoldSection({
   /** Open at first: the browser specs' fields (useProceduresRoute's
    *  openAtFirst), each worked on whole. */
   startOpen?: boolean;
+  /** How many rows it folds: a long fold opens at once (foldPanel). */
+  rows: number;
   children: ReactNode;
 }) {
   // Folded at first, its head alone, so opening a field's line shows what
@@ -111,7 +114,9 @@ export function FoldSection({
   const [open, setOpen] = useState(startOpen);
   // Folding, the pill keeps its card's outline until its fixes have folded
   // away under it, so the card closes as one thing; its inset set at once,
-  // as a margin eased is laid out anew each frame (the feel audit, 2026-11-27).
+  // as a margin eased is laid out anew each frame (the feel audit, 2026-11-27),
+  // and kept with the outline till the fold ends, where it went with `open`
+  // and the folding card jumped 12 px as it began (the round-2 speed audit).
   const [closing, setClosing] = useState(false);
   const card = open || closing;
   return (
@@ -126,7 +131,7 @@ export function FoldSection({
           aria-label={label}
           data-testid={testId}
           data-section-folded={open ? undefined : ""}
-          className={cn(pill && "relative", pill && open && "mb-1.5 pb-1.5")}
+          className={cn(pill && "relative", pill && card && "mb-1.5 pb-1.5")}
           {...data}
         />
       }
@@ -182,7 +187,7 @@ export function FoldSection({
           </>
         )}
       </OnTheLine>
-      {/* The stock fold (FOLD_PANEL); its card kept round it as it closes. */}
+      {/* The stock fold (foldPanel); its card kept round it as it closes. */}
       <CollapsibleContent
         onTransitionEnd={(event) => {
           if (event.target === event.currentTarget && !open) setClosing(false);
@@ -193,7 +198,7 @@ export function FoldSection({
           // the owner, 2026-11-25: "Go ahead", rows of 48 for a name and
           // an altitude).
           pill && "[&_[data-words]]:min-h-10 [&_[data-words]]:pl-3 [&_[data-words]]:pr-6!",
-          FOLD_PANEL,
+          foldPanel(rows),
         )}
       >
         <div>{children}</div>

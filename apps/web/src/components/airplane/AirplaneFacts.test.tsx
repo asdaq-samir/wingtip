@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { AirplaneFacts } from "./AirplaneFacts";
-import { shortWeight } from "./shortType";
+import { shortWeight } from "./shortWeight";
 import type { AircraftRegistration } from "../../lib/api/types";
 
 afterEach(cleanup);

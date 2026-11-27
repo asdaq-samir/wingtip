@@ -75,6 +75,12 @@ export function followMs(sinceLastMs: number | null): number {
  *  start and a stop at each one. */
 export const linear = (t: number) => t;
 
+/** A dry run's scrub's first step after the press (camera's `glide`): the
+ *  press may land miles along the course, so the map eases there on a
+ *  page's time (motion.page), fast first and settling, rather than jump
+ *  (the round-2 speed audit); each later move jumps with the finger. */
+export const SCRUB_GLIDE = { duration: 250, easing: (t: number) => 1 - (1 - t) ** 3 };
+
 /** How many screens away a pick is still eased to, not flown. */
 const EASE_SCREENS = 3;
 

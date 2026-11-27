@@ -19,14 +19,24 @@ function CollapsibleTrigger({ ...props }: CollapsiblePrimitive.Trigger.Props) {
  * once grown: overflow, a discrete property, turns visible a fold's time
  * after it opens, as Base UI marks only the first frame
  * (data-starting-style). The panel needs that one child, `<div>`. A
- * long fold, nine rows or more in it or in its list, opens and closes at
- * once: a grid's rows eased lay out every row anew each frame, and a
+ * long fold (foldPanel's `rows`, LONG_FOLD_ROWS or more) opens and closes
+ * at once: a grid's rows eased lay out every row anew each frame, and a
  * procedure's twenty fixes stuttered on a phone (the feel audit,
  * 2026-11-27); 0.01 ms, as Reduce Motion's, so its transitionend still
- * comes (onTheLine's FoldSection waits on it).
+ * comes (onTheLine's FoldSection waits on it). Told by its caller's row
+ * count, where a :has() rule counted them, matched again at every style
+ * change under it (the round-2 speed audit).
  */
 export const FOLD_PANEL =
-  "grid grid-rows-[1fr] transition-[grid-template-rows] duration-(--motion-fade) ease-(--motion-sheet-ease) [&:has(>div>:nth-child(9),>div>ol>:nth-child(9))]:duration-[0.01ms] data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr] [&>div]:min-h-0 [&>div]:overflow-hidden [&>div]:[transition:overflow_0s_var(--motion-fade)_allow-discrete] [&[data-open]:not([data-starting-style]):not([data-ending-style])>div]:overflow-visible data-ending-style:[&>div]:[transition:overflow_0s]";
+  "grid grid-rows-[1fr] transition-[grid-template-rows] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr] [&>div]:min-h-0 [&>div]:overflow-hidden [&>div]:[transition:overflow_0s_var(--motion-fade)_allow-discrete] [&[data-open]:not([data-starting-style]):not([data-ending-style])>div]:overflow-visible data-ending-style:[&>div]:[transition:overflow_0s]";
+
+/** How many rows make a fold long: it opens and closes at once. */
+const LONG_FOLD_ROWS = 9;
+
+/** FOLD_PANEL for a fold of `rows` rows, a long one at once. */
+export function foldPanel(rows: number): string {
+  return rows >= LONG_FOLD_ROWS ? `${FOLD_PANEL} duration-[0.01ms]` : FOLD_PANEL;
+}
 
 function CollapsibleContent({ ...props }: CollapsiblePrimitive.Panel.Props) {
   return <CollapsiblePrimitive.Panel data-slot="collapsible-content" {...props} />;

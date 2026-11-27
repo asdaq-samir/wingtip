@@ -83,6 +83,7 @@ export function MissedApproach({
       label={flown ? `${field.ident} missed approach` : `${field.ident} missed approach, suspended`}
       data={{ "data-flown": String(flown) }}
       startOpen={!!vm.openAtFirst}
+      rows={fixes.length}
     >
       <ol aria-label={`${field.ident} missed approach, its fixes`}>
         {fixes.map((fix, i) => (

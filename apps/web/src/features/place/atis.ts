@@ -13,6 +13,7 @@ import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import { listen, saidSoFar } from "../../lib/listen";
 import { altFt, reportedDirection, reportedVisibility } from "../../lib/format";
 import { windText } from "../plan";
+import { capitalised } from "../../lib/capitals";
 
 /** A broadcast's figures as the engine reads them (read_atis): a figure
  *  not heard is null. The shapes are the engine's contract's. */
@@ -97,7 +98,7 @@ export function skyWords(sky: AtisLayer[]): string {
   const ceiling = ceiling_ft == null ? undefined : [...sky].reverse().find((l) => l.base_ft === ceiling_ft);
   return sky
     .map((l) => {
-      const cover = l.cover[0]!.toUpperCase() + l.cover.slice(1);
+      const cover = capitalised(l.cover);
       return `${cover}${l.base_ft != null ? ` ${altFt(l.base_ft)} ft` : ""}${l === ceiling ? " (ceiling)" : ""}`;
     })
     .join(" · ");
