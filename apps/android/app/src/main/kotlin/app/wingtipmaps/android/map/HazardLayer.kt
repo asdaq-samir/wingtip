@@ -43,6 +43,9 @@ object HazardLayer {
     private const val TINT = "terrain-hazard"
     private const val OBSTACLES = "obstacles-hazard"
 
+    /** Each level ringed and its ink. */
+    private val LEVELS = mapOf(Hazard.WARNING to WingtipColors.Chart.WARNING_HEX, Hazard.CAUTION to WingtipColors.Chart.CAUTION_HEX)
+
     private var view: Hazard.View? = null
     private var obstacles: List<Obstacle> = emptyList()
     private var rings: String? = null
@@ -152,7 +155,7 @@ object HazardLayer {
     private fun ring(style: Style, json: String?) {
         val source = style.getSourceAs<GeoJsonSource>(OBSTACLES)
         if (json == null) {
-            style.getLayer(OBSTACLES)?.let(style::removeLayer)
+            LEVELS.keys.forEach { style.getLayer("$OBSTACLES-$it")?.let(style::removeLayer) }
             source?.let(style::removeSource)
             return
         }
@@ -161,19 +164,18 @@ object HazardLayer {
             return
         }
         style.addSource(GeoJsonSource(OBSTACLES, json))
-        val colour = Expression.match(
-            Expression.get("level"),
-            Expression.color(WingtipColors.Chart.CAUTION_HEX.toColorInt()),
-            Expression.stop(Hazard.WARNING, Expression.color(WingtipColors.Chart.WARNING_HEX.toColorInt())),
-        )
         // MapLibre's zoom is the app's less one (Map3dLayer's appZoom).
         val from = (Hazard.OBSTACLE_APP_ZOOM - 1).toFloat()
-        val layer = CircleLayer(OBSTACLES, OBSTACLES).withProperties(
-            PropertyFactory.circleColor(colour),
-            PropertyFactory.circleRadius(Expression.interpolate(Expression.linear(), Expression.zoom(), Expression.stop(from, 3f), Expression.stop(from + 4, 6f))),
-            PropertyFactory.circleStrokeColor(WingtipColors.Chart.CASING_HEX.toColorInt()),
-            PropertyFactory.circleStrokeWidth(1f),
-        ).apply { minZoom = from }
-        if (style.getLayer(MapStyle.ROUTE_SLOT) != null) style.addLayerBelow(layer, MapStyle.ROUTE_SLOT) else style.addLayer(layer)
+        // A layer a level, so each ring's ink is one colour, dimmed with the chart by it at night (MapDim.colour,
+        // the owner's "Dim by colour", 2026-11-27): darker with the chart, its contrast with it kept, never faded.
+        for ((level, ink) in LEVELS) {
+            val layer = CircleLayer("$OBSTACLES-$level", OBSTACLES).withProperties(
+                PropertyFactory.circleColor(MapDim.colour(ink.toColorInt())),
+                PropertyFactory.circleRadius(Expression.interpolate(Expression.linear(), Expression.zoom(), Expression.stop(from, 3f), Expression.stop(from + 4, 6f))),
+                PropertyFactory.circleStrokeColor(MapDim.colour(WingtipColors.Chart.CASING_HEX.toColorInt())),
+                PropertyFactory.circleStrokeWidth(1f),
+            ).withFilter(Expression.eq(Expression.get("level"), level)).apply { minZoom = from }
+            if (style.getLayer(MapStyle.ROUTE_SLOT) != null) style.addLayerBelow(layer, MapStyle.ROUTE_SLOT) else style.addLayer(layer)
+        }
     }
 }

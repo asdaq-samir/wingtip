@@ -33,7 +33,7 @@ import java.io.File
 object OfflineLayers {
     /** The id of the map's chart layer the regions go over (MapStyle.CHART). */
     const val CHART = "chart"
-    private const val PREFIX = "offline-"
+    const val PREFIX = "offline-"
     /** How often the map asks whether a kept cycle has taken over. */
     private const val CHANGEOVER_LOOK_MS = 60_000L
 

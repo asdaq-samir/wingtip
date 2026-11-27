@@ -120,14 +120,17 @@ object RouteMarksLayer {
     private fun kind(k: String) = Expression.eq(Expression.get("kind"), Expression.literal(k))
 
     private fun layers(): List<org.maplibre.android.style.layers.Layer> {
-        val casing = Expression.color(WingtipColors.Chart.CASING_HEX.toColorInt())
-        val dark = Expression.color(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt())
-        val ink = Expression.color(WingtipColors.Chart.FIX_INK_HEX.toColorInt())
+        // Words and halos dimmed with the chart by their colour at night (MapDim.colour), the pill's
+        // white on dark and the tops' ink on white kept apart as the course they mark is; the diamond by its light.
+        val casing = MapDim.colour(WingtipColors.Chart.CASING_HEX.toColorInt())
+        val dark = MapDim.colour(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt())
+        val ink = MapDim.colour(WingtipColors.Chart.FIX_INK_HEX.toColorInt())
         return listOf(
             // The tops, from a route-readable zoom: over the whole country a
             // TOD's pill sat on the fields it was between.
             SymbolLayer(TOPS, SOURCE).withFilter(kind("top")).withProperties(
                 PropertyFactory.iconImage(DIAMOND),
+                PropertyFactory.iconOpacity(MapDim.opacity()),
                 PropertyFactory.iconAllowOverlap(true),
                 PropertyFactory.iconIgnorePlacement(true),
                 PropertyFactory.textField(Expression.get("text")),

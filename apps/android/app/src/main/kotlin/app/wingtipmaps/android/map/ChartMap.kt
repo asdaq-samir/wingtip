@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -159,8 +160,9 @@ fun ChartMap(
     // Night and Larger Map Labels change the style in place (paint, layers), never by a new style.
     LaunchedEffect(holder, template, minZoom, maxZoom, overlays) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.downloads() }
-    // The Dimmer and Contrast read as they move (a State, so no recomposition), the words relabelled only as night turns.
-    LaunchedEffect(holder, night) { holder.paint(night); androidx.compose.runtime.snapshotFlow(look).collect { holder.look = it; holder.paint(night, relabel = false) } }
+    // The Dimmer and Contrast read as they move (a State, so no recomposition), first before the first paint, so it is
+    // never the default's; the words relabelled only as night turns.
+    LaunchedEffect(holder, night) { holder.look = look(); holder.paint(night); androidx.compose.runtime.snapshotFlow(look).collect { holder.look = it; holder.paint(night, relabel = false) } }
     // Edge to edge: the credits clear a cutout or a navigation bar at the left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
     LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
@@ -310,11 +312,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax) } // the marks at the chart's light (MapDim)
                 if (relabel) relabel(style)
                 RouteLegLayer.paint(style, night)
-                style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
-                    PropertyFactory.lineColor(edgeColour(night)),
-                    PropertyFactory.lineOpacity(if (night) 0.35f else 0.6f),
-                )
-                for (id in MapStyle.CHART_LAYERS) {
+                // A downloaded region's chart (offline-N) is the chart too: dimmed with it, never left at day's light.
+                val charts = MapStyle.CHART_LAYERS + style.layers.map { it.id }.filter { it.startsWith(app.wingtipmaps.android.offline.OfflineLayers.PREFIX) }
+                for (id in charts) {
                     style.getLayerAs<RasterLayer>(id)?.setProperties(
                         PropertyFactory.rasterBrightnessMax(paint.brightnessMax),
                         PropertyFactory.rasterContrast(paint.contrast),
@@ -591,7 +591,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         val layer = LineLayer(TRAIL, TRAIL).withProperties(
             PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
             PropertyFactory.lineWidth(2.5f),
-            PropertyFactory.lineOpacity(0.6f),
+            PropertyFactory.lineOpacity(MapDim.opacity(0.6f)),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
@@ -616,18 +616,19 @@ private class MapHolder(val view: MapView, private val density: Float) {
         // is selected (the owner, 2026-11-09): the leg whose Route Leg sheet is open (RouteLegLayer). Over the
         // airspace, under the navaids and the airports (the style's route slot), as the web's map lays them.
         // Widths as the web's at zoom 10 (glStyle's routeLayers).
+        // At night dimmed by its colour with the chart (MapDim.colour, the web's DIM_BY_COLOUR): solid, its contrast kept.
         val layer = LineLayer(ROUTE, ROUTE).withProperties(
-            PropertyFactory.lineColor(COURSE_MAGENTA),
+            PropertyFactory.lineColor(MapDim.colour(COURSE_MAGENTA)),
             PropertyFactory.lineWidth(4.5f),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
-        // The edge keeps the magenta legible: a dark rim by day, a faint
-        // light one on the dimmed night chart (the web's routeEdgePaint).
+        // The edge keeps the magenta legible: a dark rim by day and by night (the web's CHART.routeEdge), where a
+        // light one at night stood out of the dimmed chart at 1.75 to 1, brighter than the course it edged.
         val edge = LineLayer(ROUTE_EDGE, ROUTE).withProperties(
-            PropertyFactory.lineColor(edgeColour(night)),
+            PropertyFactory.lineColor(ROUTE_EDGE_INK),
             PropertyFactory.lineWidth(6.5f),
-            PropertyFactory.lineOpacity(if (night) 0.35f else 0.6f),
+            PropertyFactory.lineOpacity(0.6f),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
@@ -636,13 +637,12 @@ private class MapHolder(val view: MapView, private val density: Float) {
         RouteLegLayer.add(style, ROUTE, ROUTE_EDGE, night, lastLeg)
     }
 
-    private fun edgeColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x0b, 0x0f, 0x0a)
-
     private companion object {
         const val ROUTE = "route"
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */
         val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)
+        val ROUTE_EDGE_INK = app.wingtipmaps.android.design.generated.WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt()
         const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's
          *  TAP.mark and TAP.line). */

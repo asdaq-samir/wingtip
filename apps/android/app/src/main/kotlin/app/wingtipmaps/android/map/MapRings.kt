@@ -24,7 +24,7 @@ internal object GlideLayer {
         }
         style.addSource(GeoJsonSource(id, geoJson))
         val layer = LineLayer(id, id).withProperties(
-            PropertyFactory.lineColor(WingtipColors.Chart.MAP_BLUE_HEX.toColorInt()),
+            PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.MAP_BLUE_HEX.toColorInt())),
             PropertyFactory.lineWidth(2f),
             PropertyFactory.lineOpacity(0.85f),
             PropertyFactory.lineDasharray(arrayOf(4f, 3f)),
@@ -72,7 +72,8 @@ internal object SelectedAirportLayer {
             val layer = CircleLayer(id, MapStyle.AIRPORTS_SOURCE).withProperties(
                 PropertyFactory.circleRadius(RADIUS),
                 PropertyFactory.circleOpacity(0f),
-                PropertyFactory.circleStrokeColor(colour),
+                // Dimmed with the chart by its colour at night (MapDim.colour): the ring keeps its edge on the chart.
+                PropertyFactory.circleStrokeColor(MapDim.colour(colour)),
                 PropertyFactory.circleStrokeWidth(width),
             )
             layer.sourceLayer = "airports" // the tiles' layer of fields, as MapStyle's airports layer reads
