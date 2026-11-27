@@ -9,8 +9,9 @@ import time
 from ..engine import ask as engine
 from ..figure import number as _number
 from ..units import NM_PER_DEG_LAT
+from ..config import user_agent
 
-HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; traffic for pilots' situational awareness)"}
+HEADERS = {"User-Agent": user_agent("VFR flight planner; traffic for pilots' situational awareness")}
 #: How long a refusal for the day's quota keeps adsb.lol unasked where it
 #: names no Retry-After, s: an hour.
 QUOTA_WAIT_S = 3600.0

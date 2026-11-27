@@ -26,7 +26,7 @@ import requests
 
 from . import geo, outside
 from .atomic import atomic_path
-from .config import DATA_DIR
+from .config import DATA_DIR, user_agent
 from .units import M_PER_NM
 
 log = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ USGS_EXPORT = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryO
 WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 #: Wikimedia asks every client to name itself.
-HEADERS = {"User-Agent": "WingtipMaps/1.0 (VFR flight planner; airport photos)"}
+HEADERS = {"User-Agent": user_agent("VFR flight planner; airport photos")}
 
 AERIAL_DIR = DATA_DIR / "raw" / "airport_aerials"
 PHOTO_DIR = DATA_DIR / "raw" / "airport_photos"

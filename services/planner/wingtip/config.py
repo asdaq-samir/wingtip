@@ -52,8 +52,23 @@ PLAN_LIMIT_S = 240
 # Who wingtip says it is to the sources it downloads from. Most take the
 # project's own name; the FAA's sites (and the Census geocoder's) 403 a
 # bare python-requests User-Agent and want one that reads as a browser's.
-REQUEST_HEADERS = {"User-Agent": "wingtip-maps/0.1"}
-FAA_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; wingtip-maps/0.1)"}
+AGENT = "wingtip-maps/0.1"
+
+
+def user_agent(purpose: str | None = None, browser: bool = False) -> str:
+    """The User-Agent the planner sends: AGENT with what it asks for
+    ("wingtip-maps/0.1 (VFR flight planner; terrain floor)"), or in a
+    browser's form where a site turns a bare client away ("Mozilla/5.0
+    (compatible; wingtip-maps/0.1; terrain floor)"). Seven modules wrote
+    their own, under two names (round-3 audit, 2026-11-27). The registry's
+    host alone wants a whole browser's (wingtip.registry.HEADERS)."""
+    if browser:
+        return f"Mozilla/5.0 (compatible; {AGENT}{'; ' + purpose if purpose else ''})"
+    return f"{AGENT} ({purpose})" if purpose else AGENT
+
+
+REQUEST_HEADERS = {"User-Agent": user_agent()}
+FAA_HEADERS = {"User-Agent": user_agent(browser=True)}
 
 # Below this many labeled examples, a train/test split and 5-fold CV
 # aren't meaningful (some rating classes may have 0-1 examples), so

@@ -42,7 +42,7 @@ import requests
 from cachetools import TTLCache
 
 from . import outside
-from .config import get_settings
+from .config import get_settings, user_agent
 
 log = logging.getLogger(__name__)
 
@@ -53,10 +53,6 @@ TIMEOUT_S = 5.0
 SOURCE = "Planespotters.net"
 _KEPT: TTLCache = TTLCache(maxsize=2048, ttl=KEEP_S)
 _HEX = re.compile(r"^[0-9a-f]{6}$")
-
-
-def _user_agent(contact: str) -> str:
-    return f"WingtipMaps/1.0 (+{contact})"
 
 
 def read(answer: dict) -> dict | None:
@@ -97,7 +93,7 @@ def photo(hex_id: str | None, registration: str | None) -> dict | None:
     found = None
     for by, value in tries:
         try:
-            resp = outside.get(API.format(by=by, key=value), headers={"User-Agent": _user_agent(contact)}, timeout=TIMEOUT_S)
+            resp = outside.get(API.format(by=by, key=value), headers={"User-Agent": user_agent(f"+{contact}")}, timeout=TIMEOUT_S)
             resp.raise_for_status()
             found = read(resp.json())
         except (requests.RequestException, ValueError):

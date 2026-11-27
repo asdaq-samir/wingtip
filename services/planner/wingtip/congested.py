@@ -43,6 +43,7 @@ import shapely
 
 from . import geocode, outside
 from .atomic import atomic_path
+from .config import user_agent
 from .engine import ask as engine
 from .units import M_PER_FT, M_PER_NM, NM_PER_DEG_LAT
 
@@ -53,7 +54,7 @@ DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "census"
 #: delineation cannot move a town's edge under a kept answer.
 URBAN_AREAS_URL = "https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_ua20_corrected_500k.zip"
 URBAN_AREAS_PATH = DIR / "cb_2020_us_ua20_corrected_500k.zip"
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; wingtip-maps/0.1; terrain floor)"}
+HEADERS = {"User-Agent": user_agent("terrain floor", browser=True)}
 #: The largest circle a gazetteer place is drawn as, m: a nautical mile,
 #: the planner's own figure -- about the built-up core of a small town.
 PLACE_RADIUS_M = M_PER_NM
