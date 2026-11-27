@@ -96,10 +96,14 @@ const AIRPORT_ICON_NAMED: ExpressionSpecification = [
  *  B airports show even when zoomed out"). The open card's is AirportsGl's own layer's: a tap changes no filter. */
 const KEPT_FIELD: ExpressionSpecification = ["==", ["get", "size"], "largest"];
 
+/** The map's global state the settings' Private/Military switch sets (applyOverlayFilters), read by AIRPORT_SHOWN. */
+const SHOW_MILITARY = "showMilitary";
+const SHOW_PRIVATE = "showPrivate";
+
 /** No armed services' or private field unless asked for (a joint-use one always), by the settings (applyOverlayFilters). */
 export const AIRPORT_SHOWN: ExpressionSpecification[] = [
-  ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]],
-  ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]],
+  ["any", ["boolean", ["global-state", SHOW_MILITARY], false], ["!=", ["get", "military"], "military"]],
+  ["any", ["boolean", ["global-state", SHOW_PRIVATE], false], ["!=", ["get", "use"], "private"]],
 ];
 
 /** A field's mark's size, the tile layers' and the open card's field's alike (airportIconSize). */
@@ -330,8 +334,8 @@ export function applyOverlayFilters(map: MlMap, emergency = false, routeOnly = f
   visible(AIRSPACE_TILE_LAYERS, prefs.aeronautical && !routeOnly);
   visible(NAVAID_TILE_LAYERS, prefs.aeronautical && !routeOnly);
   visible(ROUTE_ONLY_HIDDEN, !routeOnly);
-  setState(map, "showMilitary", prefs.privateMilitary || emergency);
-  setState(map, "showPrivate", prefs.privateMilitary || emergency);
+  setState(map, SHOW_MILITARY, prefs.privateMilitary || emergency);
+  setState(map, SHOW_PRIVATE, prefs.privateMilitary || emergency);
 }
 
 /** The idents the route draws itself (its fields' chips, its waypoints),
