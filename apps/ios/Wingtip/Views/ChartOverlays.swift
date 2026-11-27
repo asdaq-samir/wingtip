@@ -39,18 +39,6 @@ struct AirspaceVolume: Decodable, Equatable, Sendable {
 
 // MARK: - Airspace
 
-/// From which Leaflet zoom each class and the tabs are drawn: design/tokens.json's map.zoom, the web's AIRSPACE_FROM.
-enum AirspaceZoom {
-    static func from(_ cls: String) -> Double {
-        switch cls {
-        case "B": return WingtipMapZoom.airspaceB
-        case "C": return WingtipMapZoom.airspaceC
-        default: return WingtipMapZoom.airspaceD
-        }
-    }
-    static let tabsFrom = WingtipMapZoom.airspaceLabels
-}
-
 /// One line of a volume's ring, told by its class.
 final nonisolated class AirspaceLine: MKPolyline {
     var cls = "D"
@@ -386,6 +374,8 @@ final class RunwayEndView: MKAnnotationView {
     /// Told once, the first time the airspace is answered (or cannot be): the map shows itself with its rings on (ChartMap's reveal).
     var onFirstAnswer: (() -> Void)?
     private var answered = false
+    /// The classes' zooms passed when the lines were last put on (AirspaceZoom.band).
+    private var drawnBand: Int?
 
     func attach(to map: MKMapView) {
         marks.attach(to: map)
@@ -494,7 +484,10 @@ final class RunwayEndView: MKAnnotationView {
                 vors = [:]
                 vorFetch.forget()
             }
-            drawAirspace(map, zoom: zoom, chart: chart)
+            // Through a pinch, only as the zoom crosses a class's own: the
+            // lines wanted change nowhere else, and walking every one at
+            // each frame is the main thread's at 120 Hz.
+            if !live || AirspaceZoom.band(zoom) != drawnBand { drawAirspace(map, zoom: zoom, chart: chart) }
             if !live { placeTabs(map, zoom: zoom) }
         }
         // The runway ends turned only as the map turns by a degree: a new
@@ -562,6 +555,7 @@ final class RunwayEndView: MKAnnotationView {
     /// Each volume's lines on the map from its class's zoom, off before it,
     /// over the chart and under the route.
     private func drawAirspace(_ map: MKMapView, zoom: Double, chart: (any MKOverlay)?) {
+        drawnBand = AirspaceZoom.band(zoom)
         let on = Set(map.overlays.filter { $0 is AirspaceLine || $0 is AirspaceVignette }.map { ObjectIdentifier($0) })
         // Whether the chart is on the map, asked once, not for each line.
         let chartOn = chart.map { chart in map.overlays.contains { $0 === chart } } ?? false
