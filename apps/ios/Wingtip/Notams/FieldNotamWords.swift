@@ -26,16 +26,28 @@ enum FieldNotamWords {
                                   field: t?.field.map { .init(lat: $0.lat, lon: $0.lon) }, edge: t?.edge.map { .init(lat: $0.lat, lon: $0.lon) })
     }
 
-    /// Whether each NOTAM of a list runs until the charts are updated, the
-    /// engine's notam_card (PERM with an EST end or none, JO 7930.2 4-2-1),
-    /// worked out once for the list, off the main actor, as FieldNotams
-    /// reads its cards. A NOTAM the engine could not read, or a TFR, has no
-    /// entry: its row then never says a firm end (NotamRows.when).
+    /// One of the planner's readings of a NOTAM (app.notam_reading: the
+    /// engine's notam_read, notam_card, notam_subject and notam_affects,
+    /// asked there once with the field's own card, as the web reads them)
+    /// in the engine's own shape; nil where it sent none or it does not read.
+    nonisolated static func planner<Out: Decodable>(_ payload: (some Encodable)?) -> Out? {
+        guard let payload else { return nil }
+        return try? Engine.recoded(payload)
+    }
+
+    /// Whether each NOTAM of a list runs until the charts are updated
+    /// (notam_card's until_charts: PERM with an EST end or none, JO 7930.2
+    /// 4-2-1): the planner's card where it sent one (a field's list), else
+    /// the engine asked here for a route's list, which comes without cards,
+    /// worked out once for the list, off the main actor. A NOTAM neither
+    /// could read, or a TFR, has no entry: its row then never says a firm
+    /// end (NotamRows.when).
     @concurrent
     nonisolated static func untilCharts(_ notams: [APIRankedNotam]) async -> [String: Bool] {
         var out: [String: Bool] = [:]
         for notam in notams where notam.kind != "tfr" {
-            if let card = try? Engine.notamCard(text: notam.raw, ends: notam.ends) { out[notam.id] = card.untilCharts }
+            let card: EngineContract.NotamCardAnswer? = planner(notam.card) ?? (try? Engine.notamCard(text: notam.raw, ends: notam.ends))
+            if let card { out[notam.id] = card.untilCharts }
         }
         return out
     }
@@ -48,23 +60,19 @@ enum FieldNotamWords {
                             ceilingFt: tfr.ceilingFt, ceilingRef: tfr.ceilingRef)
     }
 
-    /// What each NOTAM in force addresses on the card, as the engine reads
-    /// it (notam_subject: JO 7930.2's keywords and conditions matched to the
-    /// card's own runways, lights, approaches and frequencies). One not yet
-    /// in force has none: it is in the list, marked Inactive (the owner,
-    /// 2026-11-11: "If notam is not active, no need to put a caution badge
-    /// on the thing").
-    static func marks(_ notams: [APIRankedNotam], idents: [String], place: AirportPlace?) -> NotamMarks {
+    /// What each NOTAM in force addresses on the card, as the planner sends
+    /// it read (its `subject`, the engine's notam_subject: JO 7930.2's
+    /// keywords and conditions matched to the card's own runways, lights,
+    /// approaches and frequencies, in /api/airport's order, as the web's
+    /// notamMarks reads it). One not yet in force has none: it is in the
+    /// list, marked Inactive (the owner, 2026-11-11: "If notam is not
+    /// active, no need to put a caution badge on the thing").
+    static func marks(_ notams: [APIRankedNotam], place: AirportPlace?) -> NotamMarks {
         let approaches = (place?.procedures ?? []).filter { $0.kind == "IAP" }
-        let runways = (place?.runways ?? []).map { $0.ends ?? "" }
-        let lights = (place?.lights ?? []).map { EngineContract.NotamSubjectInputLightsItem(code: $0.code, name: $0.name, runways: $0.runways) }
-        let frequencies = (place?.frequencies ?? []).map { EngineContract.NotamSubjectInputFrequenciesItem(type: $0.type, mhz: $0.frequencyMhz) }
         var marks = NotamMarks()
         for notam in notams where notam.inForce != false {
-            guard let badges = try? Engine.notamSubject(text: notam.raw, tfr: notam.kind == "tfr", idents: idents, runways: runways,
-                                                        lights: lights, approaches: approaches.map(\.name), frequencies: frequencies).badges
-            else { continue }
-            for badge in badges {
+            guard let subject: EngineContract.NotamSubjectAnswer = planner(notam.subject) else { continue }
+            for badge in subject.badges {
                 let i = badge.index ?? -1
                 switch badge.on {
                 case "field": marks.field = add(marks.field, badge, notam)
