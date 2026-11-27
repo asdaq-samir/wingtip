@@ -110,8 +110,8 @@ export const plannerMap = {
   /** The FAA's record of a US airplane by its N-number or ICAO address,
    *  null for any other name: off the planner's disk, at once, where the
    *  find waits on the live sources (lib/airplane/lookup). */
-  trafficRegistered: (q: string) =>
-    planner.GET("/api/traffic/registered", { params: { query: { q } } }).then(data<AircraftRegistration | null>),
+  trafficRegistered: (q: string, signal?: AbortSignal) =>
+    planner.GET("/api/traffic/registered", { params: { query: { q } }, signal }).then(data<AircraftRegistration | null>),
 
   /** A tracked flight's airplane, where it took off and its path today,
    *  and a US airplane's FAA registration. */

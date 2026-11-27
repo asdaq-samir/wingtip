@@ -5,10 +5,12 @@ import { useTailLookup } from "../../lib/airplane/lookup";
 import { profileOfRegistered } from "../../lib/aircraftChoice";
 import { track, useTracking } from "../../lib/map/position/tracking";
 import { usePreferences } from "../../lib/preferences";
+import { NO_CONNECTION } from "../../lib/problems";
 import { shareOrCopy } from "../../lib/share";
 import { useFlightLive } from "../traffic/lazy";
 import { useAirplaneProfile } from "./useAirplaneProfile";
-import { useTabScroll } from "../../lib/tabScroll";
+import { useCardTabs } from "../../lib/cardTab";
+import { planeLink } from "../../lib/flightLink";
 
 /** The airplane card's tabs, in the bar's order. */
 export type AirplaneTab = "info" | "flights";
@@ -73,8 +75,9 @@ export function useAirplaneCardModel({
   // info and flights. by default info opens, and then flights are fetched
   // in the background": useAirplaneCard asks for its flights as the card
   // opens), each opening at its own top (useTabScroll).
-  const [tab, pick] = useState<AirplaneTab>("info");
-  const [, setTop] = useTabScroll(tab);
+  // Kept for the airplane while the page is open (useCardTabs), so back
+  // from Figures, a card over it, it is on the tab it was left on.
+  const { tab, pick, top: setTop } = useCardTabs<AirplaneTab>(`airplane:${openHex ?? openTail ?? ""}`, "info");
   const kept = card.kept ?? live.kept;
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));
   const title = tail ?? live.name;
@@ -100,7 +103,7 @@ export function useAirplaneCardModel({
         .join(" · ") || "Type not known",
     /** The card's link, its N-number's where it has one, shared where the device can, copied where not. */
     share: () =>
-      void shareOrCopy({ title, url: `${location.origin}/app/plan?${tail ? `airplane=${tail}` : `flight=${hex}`}` }).catch(() => {
+      void shareOrCopy(planeLink({ hex, tail, name: title ?? hex ?? "" })).catch(() => {
         /* put away, or not allowed: nothing to say */
       }),
     close,
@@ -136,7 +139,18 @@ export function useAirplaneCardModel({
     /** A field's card over this one: an end of its flight tapped. */
     openAirport: (ident: string) => void setAddress({ place: ident, at: null }),
   };
+  // Opened by its N-number and its record could not be had, nor is it
+  // heard in the air: the card says why where its tabs would be, with Try
+  // again (CardUnhad), as the airport card does; it had no such state.
+  const unhad =
+    openTail && !openHex && registry.failed && !live.plane
+      ? {
+          line: registry.offline ? NO_CONNECTION : "Could not be looked up",
+          retry: { fetching: registry.fetching, onRetry: registry.retry, testId: "airplane-retry" },
+        }
+      : null;
   return {
+    unhad,
     /** Its record, flights and figures (useAirplaneProfile). */
     profile,
     card,

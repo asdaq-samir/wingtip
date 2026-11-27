@@ -4,6 +4,7 @@ import { CardPictures, type CardSlide } from "../../components/CardPictures";
 import { PhotoCredit, PhotoSlide } from "../../components/PictureSlides";
 import type { AirportPhotos, AirportPlace } from "../../lib/api/types";
 import { TEXT } from "../../lib/text";
+import { Skeleton } from "../../components/ui/skeleton";
 import { FaaChart } from "../../components/AirportDiagram";
 import { RunwaySketch } from "./RunwaySketch";
 import { useNotamMarks } from "./notamBadges";
@@ -26,6 +27,7 @@ const PictureViewer = lazy(() => import("../../components/AirportDiagramViewer")
 export function PlacePictures({
   place,
   photos,
+  photosPending = false,
   sketchedRunways,
   leftOut,
   noRunwaysPicture,
@@ -33,6 +35,8 @@ export function PlacePictures({
 }: {
   place: AirportPlace;
   photos: AirportPhotos | undefined;
+  /** The photos still asked: the aerial's place held first meanwhile. */
+  photosPending?: boolean;
   /** The runways sketched, "09/27" each; none where none can be drawn. */
   sketchedRunways: string[];
   /** How many more are not drawn, their ends unsurveyed. */
@@ -108,6 +112,12 @@ export function PlacePictures({
     </div>
   );
   const slides: (CardSlide | null | undefined)[] = [
+    // The aerial's tile held first while the photos are asked: the
+    // diagram alone took the card's whole width, then shrank to 70% when
+    // they came, and the aerial, coming later, went after it.
+    !photos && photosPending
+      ? { key: "aerial", label: `${ident} from the air, coming`, picture: <Skeleton className="size-full rounded-none" /> }
+      : null,
     photos && {
       key: "aerial",
       open: () => setPicture("aerial"),

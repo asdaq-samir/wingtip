@@ -3,14 +3,13 @@ import { usePrefetchQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useKeptAirport } from "../../lib/preferences";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../lib/share";
-import { CardHead } from "../../components/CardHead";
+import { placeLink } from "../../lib/flightLink";
 import { SheetCard } from "../../components/SheetCard";
 import { CardTitle } from "../../components/CardTitle";
-import { ListGroup, ListRow } from "../../components/GroupedList";
 import { SkeletonCardInfo } from "../../components/QueryState";
 import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
-import { useCardTab } from "../../lib/cardTab";
-import { useTabScroll } from "../../lib/tabScroll";
+import { useCardTabs } from "../../lib/cardTab";
+import { CardUnhad } from "../../components/CardUnhad";
 import PlaceActions from "./PlaceActions";
 import { ApiError } from "../../lib/api/client";
 import { NO_CONNECTION, noConnection } from "../../lib/problems";
@@ -29,9 +28,8 @@ import { PlaceWeatherTab } from "./PlaceWeatherTab";
 import { PlaceSubtitle } from "./PlaceSubtitle";
 import { PlaceTabBar, type PlaceTab } from "./PlaceTabBar";
 import { useFlyHereMinutes } from "./flyHereTime";
-import { useShown } from "../../lib/shown";
+import { useShown, useShownStore } from "../../lib/shown";
 import StatusBadge from "../../components/StatusBadge";
-import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * An airport's card in the panel, as a place's is in Maps, laid out at
@@ -119,8 +117,10 @@ export default function PlaceCard({
   // How far, from own ship's fix as it is (not useOwnShipNear's, a hundredth
   // of a degree old), as words, so the card redraws only when they change.
   const geo = useGeo();
+  // Followed while in sight (lib/shown): a card kept under another did the
+  // sums at every fix. A string, so it is the same snapshot until it changes.
   const distance = awayOf(
-    useOwnShip((o) => (place ? distanceOf(geo, place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null)),
+    useShownStore(useOwnShip, (o) => (place ? distanceOf(geo, place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null)),
   );
   const flyTime = useFlyHereMinutes(place ?? null, from);
   // Fly Here tapped: the tile says so at once, a frame before the route
@@ -130,8 +130,12 @@ export default function PlaceCard({
   const [flying, setFlying] = useState(false);
 
   // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab opening at its own top (useTabScroll).
-  const [tab, setPicked] = useCardTab<PlaceTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
-  const [tabBar, setTabBar] = useTabScroll(tab);
+  const {
+    tab,
+    pick: setPicked,
+    top: setTabBar,
+    topNode: tabBar,
+  } = useCardTabs<PlaceTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
   // Opened on its approaches (the route's Approaches): at half as every
   // card opens (the owner, 2026-11-11), Charts open on the approaches once
   // the answer is in; the pilot swipes up for the plates. The card may
@@ -168,7 +172,7 @@ export default function PlaceCard({
   // airport diagram thumbnail", 2026-10-23). Which is open full screen.
   // Asked for with the field itself, not after it: they waited for the
   // card's first answer and went 0.6 s after the tap (the 23 Oct timings).
-  const { data: photos } = useQuery(photosQuery(ident));
+  const { data: photos, isPending: photosPending } = useQuery(photosQuery(ident));
   // The services asked for with it, for the Info tab's foot (StopServices:
   // the fuel first in its On the field).
   usePrefetchQuery(servicesQuery(ident));
@@ -205,8 +209,7 @@ export default function PlaceCard({
   const ident4 = place?.ident ?? ident;
   // The Charts tab's count: the d-TPP's charts it lists, the diagram once.
   const charts = (place?.procedures ?? []).filter((c) => c.kind !== "APD").length + (place?.airport_diagram_url ? 1 : 0);
-  const share = () =>
-    void shareOrCopy({ title: place?.name ?? ident, url: `${location.origin}/app/plan?place=${place?.ident ?? ident}` }).catch(() => {});
+  const share = () => void shareOrCopy(placeLink({ ident: place?.ident ?? ident, name: place?.name })).catch(() => {});
   return (
     // Half way as it opens, from the map, the search or a list alike (the
     // card rule's 2); its own drawer, sized from here (useCardSize).
@@ -256,18 +259,23 @@ export default function PlaceCard({
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
         </>
       ) : (
-        <div className="flex flex-col pt-[var(--corner-inset,0.75rem)]" data-to-edge="">
-          <CardHead
-            name={kept?.name ?? known?.name ?? ident}
-            nameTestId="place-name"
-            // Not found only where the planner said so: a planner out of
-            // reach for a moment (restarted) read "not found" for KBUR.
-            line={line}
-            lineTestId="place-line"
-            onClose={onClose}
-            closeTestId="place-close"
-          />
-        </div>
+        <CardUnhad
+          name={kept?.name ?? known?.name ?? ident}
+          nameTestId="place-name"
+          // Not found only where the planner said so: a planner out of
+          // reach for a moment (restarted) read "not found" for KBUR.
+          line={line ?? ""}
+          lineTestId="place-line"
+          onClose={onClose}
+          closeTestId="place-close"
+          // The way to ask again where the planner could not be reached; an
+          // airport not found has nothing to ask again.
+          retry={
+            error && !(error instanceof ApiError && error.status === 404)
+              ? { fetching: isFetching, onRetry: () => void refetch(), testId: "place-retry" }
+              : null
+          }
+        />
       )}
 
       {/* The tab's page, then the tabs in a bar floating at the card's foot (C1, the owner, 2026-11-14), greyed
@@ -286,7 +294,14 @@ export default function PlaceCard({
                 place={place}
                 where={where}
                 facts={{ category, approximate: weather?.category ? null : (approximate?.said ?? null), away: distance }}
-                pictures={{ photos, sketchedRunways, leftOut, noRunwaysPicture, onNoRunwaysPicture: () => setNoRunwaysPicture(true) }}
+                pictures={{
+                  photos,
+                  photosPending,
+                  sketchedRunways,
+                  leftOut,
+                  noRunwaysPicture,
+                  onNoRunwaysPicture: () => setNoRunwaysPicture(true),
+                }}
               />
             ) : (
               // Its shape while it comes: the five facts and the first picture (PlaceFacts, PlacePictures).
@@ -313,20 +328,6 @@ export default function PlaceCard({
             {place && <PlaceChartsTab place={place} sketched={sketched} startOn={startOn} />}
           </CardTabPanel>
         </CardTabPages>
-      )}
-      {/* Where the planner could not be reached, the way to ask again, in
-          the card that could not be had (lib/problems: errors where they
-          happen); an airport not found has nothing to ask again. */}
-      {error && !place && !(error instanceof ApiError && error.status === 404) && (
-        <div className="pt-4">
-          <ListGroup>
-            <ListRow
-              title={<span className="text-tint">{isFetching ? "Trying again…" : WORDING.tryAgain}</span>}
-              onClick={isFetching ? undefined : () => void refetch()}
-              data-testid="place-retry"
-            />
-          </ListGroup>
-        </div>
       )}
     </SheetCard>
   );

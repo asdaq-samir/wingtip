@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { addressParams, loadAddress } from "./address";
-import { picksOf, planHrefOf } from "./flightLink";
+import { picksOf, placeLink, planHrefOf, planeLink } from "./flightLink";
 
 const flight = { departureIdent: "C81", destinationIdent: "KDLH", stops: ["KMSN"], cruiseAltitudeFt: 5500, altitudes: "VPBNG:4500" };
 
@@ -39,5 +39,25 @@ describe("a flight's picks", () => {
     // None written is VFR, the connector's own reading, not the last flight's.
     const none = planHrefOf({ ...flight, picks: "fuel=KMSN" });
     expect(loadAddress(none.slice(none.indexOf("?"))).rules).toBe("vfr");
+  });
+});
+
+describe("the share links", () => {
+  beforeEach(() => vi.stubGlobal("location", { origin: "https://wingtip.test" }));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("give one airplane the same link from its card and from a Favorite", () => {
+    const card = planeLink({ hex: "a1b2c3", tail: "N12345", name: "N12345" });
+    const favorite = planeLink({ hex: "a1b2c3", name: "N12345" });
+    expect(card.url).toBe(favorite.url);
+    expect(card.url).toMatch(/\/app\/plan\?flight=a1b2c3$/);
+  });
+
+  it("name an airplane with no address by its N-number, an airport by its ident", () => {
+    expect(planeLink({ hex: null, tail: "N606FR", name: "N606FR" }).url).toMatch(/\?airplane=N606FR$/);
+    expect(placeLink({ ident: "KOSH", name: "Wittman Regional" })).toEqual({
+      title: "Wittman Regional",
+      url: expect.stringMatching(/\/app\/plan\?place=KOSH$/),
+    });
   });
 });

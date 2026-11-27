@@ -4,6 +4,7 @@ import { cn } from "cn";
 import { SheetCard } from "../../components/SheetCard";
 import { CardAction, CardActionRow } from "../../components/CardAction";
 import { CardTitle } from "../../components/CardTitle";
+import { CardUnhad } from "../../components/CardUnhad";
 import { ACTION } from "../../lib/cardActions";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import { FavoriteTile } from "../../components/FavoriteTile";
@@ -131,6 +132,20 @@ export default function AirplaneCard({
   const { card, live, head, nav } = m;
   // Its POH on Figures, else on the page: one row.
   const poh = m.tail ? <PohRow tail={m.tail} model={m.pohModel} /> : null;
+  if (m.unhad)
+    return (
+      <SheetCard head={false} onClose={head.close} testId="airplane-profile">
+        <CardUnhad
+          name={head.title ?? m.tail ?? ""}
+          nameTestId="airplane-name"
+          line={m.unhad.line}
+          lineTestId="airplane-line"
+          onClose={head.close}
+          closeTestId="sheet-card-close"
+          retry={m.unhad.retry}
+        />
+      </SheetCard>
+    );
   return (
     <SheetCard head={false} onClose={head.close} testId="airplane-profile">
       {/* The airport card's head (CardTitle): Share at its start, its name
