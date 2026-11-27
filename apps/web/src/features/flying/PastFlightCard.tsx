@@ -118,15 +118,18 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
         title="Time"
         value={value(lasted(flight.on - flight.off))}
       />
-      <ListRow
-        media={
-          <RowBadge colour={BADGE.weather}>
-            <MoveVertical />
-          </RowBadge>
-        }
-        title="Highest"
-        value={value(feet(flight.max_alt_ft))}
-      />
+      {/* None where its source gives no altitudes (the OpenSky Network's flights). */}
+      {flight.max_alt_ft != null && (
+        <ListRow
+          media={
+            <RowBadge colour={BADGE.weather}>
+              <MoveVertical />
+            </RowBadge>
+          }
+          title="Highest"
+          value={value(feet(flight.max_alt_ft))}
+        />
+      )}
       {points.length > 1 && flown !== null && (
         <>
           <ListRow
@@ -150,6 +153,8 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
           />
         </>
       )}
+      {/* Its source credited where it is not adsb.lol or this app's own recording. */}
+      {flight.source && <ListRow muted title={`Flight from the ${flight.source}`} data-testid="past-flight-source" />}
     </ListGroup>
   );
 }

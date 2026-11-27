@@ -329,6 +329,10 @@ services:
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
       # adsb.lol's API key, where there is one (wingtip.traffic.common).
       ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
+      # The OpenSky Network's API client, an airplane's past flights
+      # (wingtip.traffic.opensky): off without both.
+      OPENSKY_CLIENT_ID: ${OPENSKY_CLIENT_ID:-}
+      OPENSKY_CLIENT_SECRET: ${OPENSKY_CLIENT_SECRET:-}
       # The contact Planespotters.net's photo API asks a server to name in
       # its User-Agent (wingtip.aircraft_photo): the site's support page,
       # no one's own address; unset, the airplane card had no photo, the

@@ -152,7 +152,11 @@ class PastFlightSummary(BaseModel):
     on: float
     landed: bool
     in_air: bool
-    max_alt_ft: float
+    #: None where its source gives no altitudes (OpenSky's flights).
+    max_alt_ft: float | None = None
+    #: Where it came from where not adsb.lol or the planner's own recording
+    #: ("OpenSky Network"), for the card's credit.
+    source: str | None = None
 
 
 class PastFlights(BaseModel):

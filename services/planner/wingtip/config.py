@@ -124,6 +124,11 @@ class Settings(BaseSettings):
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
     #: adsb.lol's API key (x-api-key), its day's quota above an address's 500 (wingtip.traffic.common).
     adsblol_api_key: str | None = None
+    #: The OpenSky Network's API client (OAuth2 client credentials), an
+    #: airplane's past flights where adsb.lol's archive is closed
+    #: (wingtip.traffic.opensky); either None turns that source off.
+    opensky_client_id: str | None = None
+    opensky_client_secret: str | None = None
     #: ADS-B Exchange's RapidAPI key; None turns that source off (wingtip.traffic).
     adsbx_rapidapi_key: str | None = None
     #: ADS-B Exchange requests a month at most, short of the plan's 10,000.

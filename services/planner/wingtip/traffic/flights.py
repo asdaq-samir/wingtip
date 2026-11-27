@@ -16,6 +16,7 @@ from .common import _LOCK, _clock, _number
 from .adsb_lol import GLOBE, UNREAD, _GlobeRefused, _Unread, _globe_get, _trace
 from .recorded import _recorded, follow
 from .watched import _WATCHED, _watch
+from . import opensky
 
 #: At most this many points of a trail are sent: enough for a line on a phone, a fraction of a long flight's.
 TRAIL_POINTS = 600
@@ -267,9 +268,15 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     day = until - dt.timedelta(days=1) if until == today else until
     unread = 0
     flights: list[dict] = []
+    # The flights OpenSky has for the days adsb.lol's archive would not give.
+    elsewhere: list[dict] = []
 
     def found() -> list[dict]:
         listed = _summaries(_merged(traces))
+        taken = [(f["off"], f["on"]) for f in listed]
+        listed = sorted(
+            listed + [f for f in elsewhere if not any(off <= f["on"] and f["off"] <= on for off, on in taken)], key=lambda f: f["id"]
+        )
         return [f for f in listed if f["id"] < before] if before is not None else listed
 
     with ThreadPoolExecutor(max_workers=HISTORY_BATCH) as pool:
@@ -282,7 +289,10 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
                 break
             batch = [day - dt.timedelta(days=n) for n in range(HISTORY_BATCH) if day - dt.timedelta(days=n) >= stop]
             past = list(pool.map(lambda d: _day_trace(hex_id, d), batch))
-            unread += sum(1 for t in past if t is UNREAD)
+            missed = [d for d, t in zip(batch, past) if t is UNREAD]
+            more, still = opensky.flights(hex_id, missed, today) if missed and opensky.on() else ([], len(missed))
+            elsewhere += more
+            unread += still
             traces += past
             day = batch[-1] - dt.timedelta(days=1)
     named = next((t for t in traces if isinstance(t, dict)), {})
@@ -342,6 +352,11 @@ def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
             "id": flight_id,
             "points": [{k: p[k] for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
         }
+    # One OpenSky has (`history` lists those too): its path from there.
+    path = opensky.track(hex_id, flight_id, time.time())
+    if path:
+        step = max(1, math.ceil(len(path) / PAST_POINTS))
+        return {"id": flight_id, "points": path[::step]}
     # One watched here (`history` lists those too).
     for leg in _legs(_recorded(hex_id)):
         if int(leg[0]["t"]) == flight_id:

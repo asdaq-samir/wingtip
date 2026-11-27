@@ -17007,8 +17007,15 @@
             "type": "boolean"
           },
           "max_alt_ft": {
-            "title": "Max Alt Ft",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Alt Ft"
           },
           "off": {
             "title": "Off",
@@ -17027,6 +17034,17 @@
                 "type": "null"
               }
             ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
           }
         },
         "required": [
@@ -17034,8 +17052,7 @@
           "off",
           "on",
           "landed",
-          "in_air",
-          "max_alt_ft"
+          "in_air"
         ],
         "title": "PastFlightSummary",
         "type": "object"
