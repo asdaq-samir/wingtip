@@ -9,15 +9,15 @@ import type { EndFit } from "./runwayFit";
 const runway = { ends: "14/32" } as Runway;
 const end = { ident: "14", heading_true_deg: 127 } as RunwayEnd;
 const fit = (over: Partial<EndFit>): EndFit => ({
-  crosswindKt: 25,
-  crosswindOver: false,
-  neededFt: null,
-  lengthFt: null,
+  crosswind_kt: 25,
+  crosswind_over: false,
+  needed_ft: null,
+  length_ft: null,
   short: false,
   close: false,
   unknown: true,
   beyond: false,
-  tailwindKt: 0,
+  tailwind_kt: 0,
   finding: "unknown",
   fit: null,
   ...over,
@@ -33,33 +33,33 @@ describe("a runway end's note in its menu", () => {
   });
 
   it("past the demonstrated, a caution with its ring", () => {
-    const c = endChoice(runway, end, "05", () => fit({ crosswindOver: true, finding: "caution", fit: "crosswind" }));
+    const c = endChoice(runway, end, "05", () => fit({ crosswind_over: true, finding: "caution", fit: "crosswind" }));
     expect(c.note).toBe("Crosswind 25 kt");
     expect(c.fit).toBe("crosswind");
     expect(c.ring).toContain("ring-caution");
   });
 
   it("a tailwind and into the wind are said before a crosswind", () => {
-    expect(endChoice(runway, end, "05", () => fit({ tailwindKt: 10, finding: "caution", fit: "tailwind" })).note).toBe("Tailwind 10 kt");
-    expect(endChoice(runway, end, "14", () => fit({ crosswindKt: 0 })).note).toBe("Into the wind");
+    expect(endChoice(runway, end, "05", () => fit({ tailwind_kt: 10, finding: "caution", fit: "tailwind" })).note).toBe("Tailwind 10 kt");
+    expect(endChoice(runway, end, "14", () => fit({ crosswind_kt: 0 })).note).toBe("Into the wind");
     // Into the wind with the wind across it too, both said: a field of one
     // runway, its windward end 25 across in the gusts.
     expect(endChoice(runway, end, "14", () => fit({})).note).toBe("Into the wind · Crosswind 25 kt");
   });
 
   it("no crosswind, nothing said", () => {
-    expect(endChoice(runway, end, "05", () => fit({ crosswindKt: 0 })).note).toBeNull();
+    expect(endChoice(runway, end, "05", () => fit({ crosswind_kt: 0 })).note).toBeNull();
   });
 
   // Which fit leads is the engine's (runway::fit, worst first, asked in
   // fixtures/rules/runwayFit.json); the chip says what it is told.
   it("rings and notes the engine's fit: red too short, amber for a caution", () => {
-    const all = { short: true, crosswindOver: true, tailwindKt: 10, close: true };
+    const all = { short: true, crosswind_over: true, tailwind_kt: 10, close: true };
     const short = endChoice(runway, end, "05", () => fit({ ...all, finding: "stop", fit: "short" }));
     expect([short.fit, short.note, short.ring]).toEqual(["short", "Too short today", "ring-2 ring-destructive"]);
-    const close = endChoice(runway, end, "05", () => fit({ close: true, crosswindKt: 0, finding: "caution", fit: "close" }));
+    const close = endChoice(runway, end, "05", () => fit({ close: true, crosswind_kt: 0, finding: "caution", fit: "close" }));
     expect([close.fit, close.note, close.ring]).toEqual(["close", "Little to spare", "ring-2 ring-caution"]);
-    const beyond = endChoice(runway, end, "05", () => fit({ beyond: true, crosswindKt: 0, finding: "caution", fit: "beyond" }));
+    const beyond = endChoice(runway, end, "05", () => fit({ beyond: true, crosswind_kt: 0, finding: "caution", fit: "beyond" }));
     expect([beyond.fit, beyond.note, beyond.ring]).toEqual(["beyond", "Past the POH's tables", "ring-2 ring-caution"]);
     // Its words say all that holds, after its number.
     expect(short.words).toBe(`Runway 14${short.detail}`);

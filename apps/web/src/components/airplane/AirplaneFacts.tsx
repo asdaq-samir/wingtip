@@ -1,5 +1,5 @@
 import { CardFact, CardFacts } from "../CardFacts";
-import { shortWeight } from "./shortType";
+import { shortWeight } from "./shortWeight";
 import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types";
 
 /**

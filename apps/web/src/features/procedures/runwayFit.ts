@@ -5,9 +5,10 @@
  * 50 ft obstacle for the airplane's weight, the field's pressure and
  * density altitude and the headwind on it, against the runway's length
  * -- what 14 CFR 91.103(b) asks a pilot to know. Worked out by the
- * shared engine (engine/crates/brief/src/runway/performance.rs, through
- * lib/engine) with the Brief's runway check's own evaluator, which says
- * the same for the runway flown: the rules and their sources live there.
+ * shared engine (runway_end_fit, engine/crates/brief/src/runway/fit.rs,
+ * through lib/engine) with the Brief's runway check's own evaluator, which
+ * says the same for the runway flown: the rules and their sources live
+ * there, and its answer is the one shown, as the contract names it.
  */
 import type { AircraftProfile, Runway } from "../../lib/api/types";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
@@ -20,31 +21,13 @@ export interface FitWind {
   gustKt: number | null | undefined;
 }
 
-export interface EndFit {
-  /** The crosswind on the end, its gusts' where they are more, knots. */
-  crosswindKt: number;
-  /** Past the most the POH demonstrates (not a limitation, but beyond
-   *  what was flown). */
-  crosswindOver: boolean;
-  /** The distance over a 50 ft obstacle, and the runway's length. */
-  neededFt: number | null;
-  lengthFt: number | null;
-  /** Longer than the runway; or within its margin (the engine's
-   *  DISTANCE_MARGIN, runway/performance.rs: SAFO 19001's 15 per cent). */
-  short: boolean;
-  close: boolean;
-  /** The distance or the runway's length not known: whether it fits is
-   *  not known either. */
-  unknown: boolean;
-  /** The distance was read past the POH's table. */
-  beyond: boolean;
-  /** The steady wind's tailwind on the end, whole knots, 0 for none. */
-  tailwindKt: number;
-  /** How it fits, worst first, and why: the engine's (runway::fit), the
-   *  same finding the Brief's runway check gives the field. */
-  finding: EngineAnswer<"runway_end_fit">["finding"];
-  fit: EngineAnswer<"runway_end_fit">["fit"];
-}
+/** How an end fits (the engine's runway_end_fit): its crosswind (gusts'
+ *  where more) against the POH's demonstrated, the distance over a 50 ft
+ *  obstacle against the length judged (`short`, or `close` within the
+ *  engine's DISTANCE_MARGIN, SAFO 19001's 15 per cent; `unknown` where
+ *  either is not known; `beyond` read past the POH's table), the steady
+ *  wind's tailwind, and the finding, worst first. */
+export type EndFit = EngineAnswer<"runway_end_fit">;
 
 export function endFit({
   aircraft,
@@ -68,7 +51,7 @@ export function endFit({
   weightLb: number | null;
   kind: "takeoff" | "landing";
 }): EndFit {
-  const fit = callEngine("runway_end_fit", {
+  return callEngine("runway_end_fit", {
     aircraft: aircraft
       ? { takeoff: aircraft.takeoff ?? null, landing: aircraft.landing ?? null, crosswind: aircraft.crosswind ?? null }
       : null,
@@ -85,17 +68,4 @@ export function endFit({
     weight_lb: weightLb,
     kind,
   });
-  return {
-    crosswindKt: fit.crosswind_kt,
-    crosswindOver: fit.crosswind_over,
-    neededFt: fit.needed_ft,
-    lengthFt: fit.length_ft,
-    short: fit.short,
-    close: fit.close,
-    unknown: fit.unknown,
-    beyond: fit.beyond,
-    tailwindKt: fit.tailwind_kt,
-    finding: fit.finding,
-    fit: fit.fit,
-  };
 }
