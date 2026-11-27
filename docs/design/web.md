@@ -1396,7 +1396,12 @@ slices it reads (`PlanSlices`), not the whole model. A search's
 keystroke, one query's answer or the minute's clock draws again only the
 parts that read what changed, where each drew the map, the sheet's pages
 and FPL's cards again (the speed work, 2026-11-27; `useKept.test.tsx`
-counts the commits with React's Profiler).
+counts the commits with React's Profiler). The route list's own view
+model (features/procedures' useProceduresRoute) is three hooks by concern:
+the procedures' sheet and its picks (useProcedureSheet), each field's wind
+and the runways picked into it (useRunwayWinds), and the rows' layout
+(useRouteLayout), the fields' folds kept in fieldsOpen; a part reads its
+fields by name (`RouteListSlice`).
 
 **Stock parts.** The rows: React Aria GridList with `useDragAndDrop` and
 `onReorder`, a `<Button slot="drag">` handle per typed point, keyboard

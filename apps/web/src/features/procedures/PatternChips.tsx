@@ -8,7 +8,7 @@ import type { Runway } from "../../lib/api/types";
 import { landingRunway, runwayNumber, type RunwayEnd, type WindPick, type Landing, type ProcedureAirport } from "../plan";
 import { trafficPattern } from "../../lib/trafficPattern";
 import type { EndFit } from "./runwayFit";
-import { setRunwayLine, useOpenRunwayLines } from "./useProceduresRoute";
+import { setRunwayLine, useOpenRunwayLines } from "./fieldsOpen";
 import { CHIP } from "./routeListStyle";
 import { Chips, NONE, TRAY_BODY } from "./RunwayChips";
 import { endChoice, runwayEnds } from "./runwayChoice";

@@ -6,7 +6,7 @@ import { FixFigures } from "./FixList";
 import { approachAt } from "./approachState";
 import { FoldSection, OnTheLine, ProcedureFace } from "./onTheLine";
 import { fixSub } from "./procedureWords";
-import type { ProceduresRouteModel } from "./useProceduresRoute";
+import type { RouteListSlice } from "./useProceduresRoute";
 
 // An approach on FPL's timeline as a GPS navigator has one, at the owner's
 // ask (2026-11-22: "When approach is loaded it should be a grouped box
@@ -26,7 +26,15 @@ import type { ProceduresRouteModel } from "./useProceduresRoute";
  *  says it, with Unsuspend or Suspend at its end; its fixes on a dashed
  *  line while it is suspended, on the route's magenta once the pilot goes
  *  on into it, flown on to its hold. */
-export function MissedApproach({ vm, field, stop }: { vm: ProceduresRouteModel; field: ProcedureAirport; stop: boolean }) {
+export function MissedApproach({
+  vm,
+  field,
+  stop,
+}: {
+  vm: RouteListSlice<"inRoute" | "onApproach" | "openAtFirst">;
+  field: ProcedureAirport;
+  stop: boolean;
+}) {
   const placed = approachAt(vm, field);
   const fixes = placed?.missedFixes ?? [];
   if (!placed || placed.loaded || fixes.length === 0) return null;

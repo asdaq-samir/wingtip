@@ -1,6 +1,6 @@
 import { procedureTitle, sameField } from "../../lib/procedures";
 import type { ProcedureAirport } from "../plan";
-import type { ProceduresRouteModel } from "./useProceduresRoute";
+import type { ProceduresRouteModel, RouteListSlice } from "./useProceduresRoute";
 
 // What FPL's timeline reads of a field's procedure as it draws it
 // (TimelineProcedureRows, TimelineApproachParts).
@@ -30,12 +30,12 @@ export function headSub(placed: ProceduresRouteModel["inRoute"][number]): string
 }
 
 /** The approach picked at a field, as the route list has it. */
-export const approachAt = (vm: ProceduresRouteModel, field: ProcedureAirport) =>
+export const approachAt = (vm: RouteListSlice<"inRoute">, field: ProcedureAirport) =>
   vm.inRoute.find((p) => sameField(p.ident, field.ident) && p.kind === "approach");
 
 /** Whether the field's approach is activated with its missed approach
  *  unsuspended, coded to fly: the line goes on past the field's own. */
-export const missedOnTheLine = (vm: ProceduresRouteModel, field: ProcedureAirport) => {
+export const missedOnTheLine = (vm: RouteListSlice<"inRoute">, field: ProcedureAirport) => {
   const placed = approachAt(vm, field);
   return !!placed && !placed.loaded && !!placed.missed && (placed.missedFixes?.length ?? 0) > 0;
 };

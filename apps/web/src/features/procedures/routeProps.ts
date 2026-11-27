@@ -191,3 +191,11 @@ export interface ProceduresRouteProps {
    *  at its end. None, the route as it is read (in flight, a dry run). */
   edit?: RouteListEdit;
 }
+
+/** The list's props read flat (useProceduresRoute): the route's data and
+ *  each group's fields side by side, as the list's hooks are handed them. */
+export type RouteListFlat = Omit<ProceduresRouteProps, "runways" | "procedurePicks" | "pointActions" | "stopPlans"> &
+  RunwayPicks &
+  ProcedurePicks &
+  PointActions &
+  StopPlans;
