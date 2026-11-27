@@ -97,6 +97,12 @@ export default function PanelTabs({
   // their places lost (the feel audit, 2026-11-27). On paper at once.
   const deferred = useDeferredValue<Record<PanelTab, ReactNode> | null>(contents, null);
   const shown = printing ? contents : deferred;
+  // The last route's pages while the next route's are drawn: dimmed and
+  // marked busy, never read as the new route's weather and NOTAMs (the
+  // round-2 speed audit: 2.5 to 3.6 s of the last route's Brief under the
+  // new route's name on a phone). The dim waits a moment (index.css's
+  // tab-stale), so a draw that lands within a frame or two never flickers.
+  const stale = !printing && deferred !== null && deferred !== contents;
   // Preflight up to begin with -- whether to go is what is read first --
   // or the overview where there is one (null).
   const [tab, setTab] = useState<PanelTab | null>(Overview ? null : "preflight");
@@ -306,7 +312,9 @@ export default function PanelTabs({
                       hidden={false}
                       data-testid={`panel-${t}`}
                       data-tab={t}
-                      className={cn("mt-0", !printing && "tab-page")}
+                      data-stale={stale || undefined}
+                      aria-busy={stale || undefined}
+                      className={cn("mt-0", !printing && "tab-page tab-stale")}
                     >
                       {shown[t]}
                     </TabsContent>
