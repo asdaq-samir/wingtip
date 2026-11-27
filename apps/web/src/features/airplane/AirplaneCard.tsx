@@ -12,6 +12,7 @@ import { CardTabBar, type CardTab } from "../../components/CardTabBar";
 import { StatusLine } from "../../components/StatusBadge";
 import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
+import { PohRow } from "../documents/lazy";
 import { FlightPictures } from "../traffic/lazy";
 import { useAirplaneCardModel, type AirplaneCardModel } from "./useAirplaneCardModel";
 import type { AirplaneTab } from "./airplaneTabs";
@@ -107,7 +108,8 @@ function Actions({ m }: { m: AirplaneCardModel }) {
  * page of the tab picked in the glass bar at its foot (CardTabBar):
  * Flights, its flight now and its earlier ones, each its replay and
  * debrief (FlightsTab); Info, its FAA record and identifiers; Figures,
- * its planning figures, for an airplane the planner can fly. Traffic the
+ * its planning figures, for an airplane the planner can fly. Its POH, the
+ * pilot's own PDF (PohRow), on Figures, else on Info. Traffic the
  * FAA's registry does not hold has Flights alone. Its view model is
  * useAirplaneCardModel.
  */
@@ -125,6 +127,8 @@ export default function AirplaneCard({
 }) {
   const m = useAirplaneCardModel({ tail, hex, figures });
   const { card, live, vm } = m;
+  // Its POH on Figures, else on Info: one row, where its tab is offered.
+  const poh = m.tail ? <PohRow tail={m.tail} model={m.pohModel} /> : null;
   return (
     <SheetCard
       title={m.title}
@@ -193,12 +197,18 @@ export default function AirplaneCard({
         )}
         {m.tail && (
           <CardTabPanel value="info" className="pt-0">
-            <InfoTab card={card} faa={live.detail?.faa} hex={m.hex} callsign={live.plane?.callsign?.trim() || null} />
+            <InfoTab
+              card={card}
+              faa={live.detail?.faa}
+              hex={m.hex}
+              callsign={live.plane?.callsign?.trim() || null}
+              poh={m.flyable ? null : poh}
+            />
           </CardTabPanel>
         )}
         {m.flyable && (
           <CardTabPanel value="figures">
-            <FiguresTab vm={vm} />
+            <FiguresTab vm={vm} poh={poh} />
           </CardTabPanel>
         )}
       </CardTabPages>

@@ -908,7 +908,13 @@ route, the summary's ends). Info (`InfoTab`) starts with the facts strip
 Engines, Registration, its status in the destructive ink where lapsed,
 and Owner, public as the FAA publishes it), then `AirplaneInfo`, its
 Airplane group holding its ICAO address and call sign.
-Figures (`FiguresTab`) is `useAirplaneProfile`'s. It reads its N-number
+Figures (`FiguresTab`) is `useAirplaneProfile`'s, with the POH's row
+under the figures (`documents/PohRow`, from the documents' `lazy.ts`, its
+view model `usePoh`; at Info's foot where there are no Figures): the
+link from an N-number, or from every airplane of its model, to one of
+the pilot's own PDFs is `documents/pohLinks`, kept with the documents in
+the device's IndexedDB (`deviceFiles`), an N-number's own over its
+model's, and none once its document is deleted. It reads its N-number
 two ways at once (`lib/airplane/lookup`, `useTailLookup`, in
 `useAirplaneCard`): the FAA's record from the planner's
 `/api/traffic/registered`, off its disk in milliseconds, for the line,

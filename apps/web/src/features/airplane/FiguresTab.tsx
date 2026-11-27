@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
@@ -111,11 +112,12 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
 /**
  * The airplane card's Figures tab (AirplaneCard), only for an airplane the
  * planner can fly: every planning figure editable in place, a missing one
- * asking there, with where each comes from; its endurance; and its
+ * asking there, with where each comes from (the book's page cited); its
+ * POH, the pilot's own PDF (`poh`, PohRow); its endurance; and its
  * handbook's page read from a photo. Signed out, what is set stays on this
  * device. Its view model is useAirplaneProfile.
  */
-export default function FiguresTab({ vm }: { vm: AirplaneProfileModel }) {
+export default function FiguresTab({ vm, poh }: { vm: AirplaneProfileModel; poh: ReactNode }) {
   return (
     <>
       <ListGroup title="Figures">
@@ -123,6 +125,7 @@ export default function FiguresTab({ vm }: { vm: AirplaneProfileModel }) {
           <FigureRow key={row.key} vm={vm} row={row} />
         ))}
       </ListGroup>
+      {poh}
       <EnduranceSection
         tail={vm.tail}
         usableGal={vm.rows.find((r) => r.key === "usable_fuel_gal")?.value ?? null}
