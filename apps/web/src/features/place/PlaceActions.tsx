@@ -1,5 +1,4 @@
-import { cn } from "cn";
-import { CardAction as Action } from "../../components/CardAction";
+import { CardAction as Action, CardActionRow } from "../../components/CardAction";
 import { FavoriteTile } from "../../components/FavoriteTile";
 import { useIsDesktop } from "../../hooks/use-desktop";
 import type { AirportPlace } from "../../lib/api/types";
@@ -99,9 +98,7 @@ export default function PlaceActions({
     />
   );
   return (
-    // Every tile 56 tall (min-h-14) as Maps' are: the shared tile keeps its
-    // own size elsewhere, where the half card has no room for it.
-    <div className={cn("grid gap-2 pt-3 *:min-h-14", onAddStop ? "grid-cols-4" : "grid-cols-3")} data-testid="place-actions">
+    <CardActionRow columns={onAddStop ? 4 : 3} testId="place-actions">
       {asStop ? (
         addStop
       ) : (
@@ -148,7 +145,7 @@ export default function PlaceActions({
           testId="place-address-action"
         />
       )}
-    </div>
+    </CardActionRow>
   );
 }
 

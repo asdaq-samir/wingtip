@@ -2,7 +2,7 @@ import { Bell, Crosshair, Gauge, History, Info } from "lucide-react";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { SheetCard } from "../../components/SheetCard";
-import { CardAction } from "../../components/CardAction";
+import { CardAction, CardActionRow } from "../../components/CardAction";
 import { CardTitle } from "../../components/CardTitle";
 import { ACTION } from "../../lib/cardActions";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
@@ -92,11 +92,10 @@ function Actions({ m }: { m: AirplaneSlices<"actions" | "head" | "hex" | "live">
       testId="airplane-figures-open"
     />,
   ];
-  // Every tile 56 tall, as the airport card's are (PlaceActions).
   return (
-    <div className="grid grid-cols-4 gap-2 *:min-h-14" data-testid="airplane-actions">
+    <CardActionRow columns={4} testId="airplane-actions">
       {tiles}
-    </div>
+    </CardActionRow>
   );
 }
 

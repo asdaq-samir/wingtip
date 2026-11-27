@@ -156,3 +156,18 @@ export function CardAction({
     </Toggle>
   );
 }
+
+/**
+ * A card's row of action tiles under its head, the same on every card:
+ * 12 points under the head's last line and each tile 56 tall (min-h-14)
+ * as Maps' are. The airport and airplane cards each wrote their own row,
+ * and the airplane's without the 12 points sat higher than the airport's
+ * (the owner, 2026-11-27: "Is that not common code?").
+ */
+export function CardActionRow({ columns, testId, children }: { columns: 3 | 4; testId: string; children: ReactNode }) {
+  return (
+    <div className={cn("grid gap-2 pt-3 *:min-h-14", columns === 4 ? "grid-cols-4" : "grid-cols-3")} data-testid={testId}>
+      {children}
+    </div>
+  );
+}
