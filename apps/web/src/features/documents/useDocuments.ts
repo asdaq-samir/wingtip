@@ -4,7 +4,7 @@ import { api } from "../../lib/api/client";
 import type { LibraryDocument } from "../../lib/api/types";
 import { useAddressKey } from "../../lib/address";
 import { toast } from "../../lib/toast";
-import { addOwn, deviceStore, forgetDoc, keepDoc, removeOwn, renameOwn, restoreOwn, staleKept } from "./deviceFiles";
+import { addOwn, deviceStore, forgetDoc, isPdf, keepDoc, removeOwn, renameOwn, restoreOwn, staleKept } from "./deviceFiles";
 import { docPlaceText, ownDocName, type DocPlace } from "./docPlace";
 import { keptDocsQuery, libraryQuery, ownDocsQuery } from "./libraryQueries";
 import { forgetPlaces } from "./readerPlaces";
@@ -83,7 +83,7 @@ export function useDocuments() {
     },
     /** PDFs picked from the device's files, each added to the pilot's own. */
     add: async (files: Iterable<File>) => {
-      for (const file of files) if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) await addOwn(deviceStore(), file);
+      for (const file of files) if (isPdf(file)) await addOwn(deviceStore(), file);
       await refresh();
     },
     rename: async (id: string, name: string) => {

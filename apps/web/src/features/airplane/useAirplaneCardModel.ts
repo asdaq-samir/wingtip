@@ -95,6 +95,9 @@ export function useAirplaneCardModel({
     following,
     follow: (on: boolean) => useTracking.setState({ follow: on }),
     flyable,
+    /** The model its POH may be linked for (features/documents' PohRow): the
+     *  registry's make and model, else its profile's type. */
+    pohModel: [card.record?.manufacturer, card.record?.model].filter(Boolean).join(" ") || vm.type,
     tabs,
     tab,
     pick,

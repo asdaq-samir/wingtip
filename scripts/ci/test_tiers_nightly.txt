@@ -8,6 +8,7 @@ a11y-screens.spec.ts
 a11y.spec.ts
 airplane-lookup.spec.ts
 airplane-mode.spec.ts
+airplane-poh.spec.ts
 airport-diagram.spec.ts
 airport-weather.spec.ts
 airspace-3d.spec.ts

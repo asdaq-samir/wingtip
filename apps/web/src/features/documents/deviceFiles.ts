@@ -61,6 +61,9 @@ const KEPT = "kept";
 export const ownDocs = async (s: FileStore): Promise<OwnDoc[]> => (await s.get<OwnDoc[]>(OWN)) ?? [];
 export const ownBlob = (s: FileStore, id: string) => s.get<Blob>(`${OWN}/${id}`);
 
+/** A file the library takes: a PDF, by its type or, where the device gives none, its name. */
+export const isPdf = (file: File) => file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
 /** A PDF the pilot picked, added to their own; its name without ".pdf". */
 export async function addOwn(s: FileStore, file: Blob & { name?: string }, id: string = crypto.randomUUID()): Promise<OwnDoc> {
   const doc: OwnDoc = { id, name: (file.name ?? "Document").replace(/\.pdf$/i, ""), bytes: file.size, added: new Date().toISOString() };

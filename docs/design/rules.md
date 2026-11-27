@@ -469,7 +469,13 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   Info its facts strip and public record, its identifiers with it (ICAO
   address, Mode S octal, call sign); Figures every planning figure,
   edited in place, a missing one asked for there, for an airplane the
-  planner can fly. Traffic the FAA's registry does not hold is the same
+  planner can fly, then its **POH** (the owner, 2026-11-26): the app ships
+  none, the manufacturers' being copyrighted, so the row is Add Your POH,
+  a PDF from the device kept in the pilot's own documents and linked to
+  the N-number, with "Use for All <model>" under it (the registry's make
+  and model, else the profile's type); linked, it opens in the reader, and
+  its menu changes or unlinks it, the document kept. An airplane with no
+  Figures has the row at the foot of Info. Traffic the FAA's registry does not hold is the same
   card titled with its call sign, Flights its one tab, its registration,
   type, owner, model, ICAO address and call sign in that tab's first
   group, its registration row saying it is not in the FAA's registry,
