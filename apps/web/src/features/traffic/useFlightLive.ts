@@ -42,9 +42,8 @@ const townOf = (field: { city?: string | null; region?: string | null; name?: st
 
 /**
  * What the airplane card says of an airplane's flight by its ICAO address
- * (features/airplane's AirplaneCard), what was the traffic card's own
- * (FlightCard, merged into the one airplane card at the owner's word,
- * 2026-11-26): its last report while the map tracks it, adsb.lol's detail
+ * (features/airplane's AirplaneCard, one card for an airplane however it
+ * is opened, at the owner's word, 2026-11-26): its last report while the map tracks it, adsb.lol's detail
  * of it, its flight number's route, its flights for the summary's ends,
  * the state badge and the line it shows not heard now. `hex` null asks
  * nothing: an N-number whose registry record gives no address. Seconds-old
@@ -177,14 +176,11 @@ export function useFlightLive(hex: string | null) {
     toField: toField ?? null,
     fromEnd: fromIdent ? { ident: fromIdent, place: townOf(fromField) ?? (plane ? (route?.airports[0]?.location ?? null) : null) } : null,
     toEnd: toIdent ? { ident: toIdent, place: townOf(toField) ?? (plane ? (flying?.airports.at(-1)?.location ?? null) : null) } : null,
-    // How long it has flown only from its departure: today's first point is
-    // when it was first heard, which for a flight heard mid-way read "0m"
-    // over Las Vegas to Detroit nearly flown (the owner's screenshot,
-    // 2026-11-26, DAL1864).
-    startedAt: detail?.departed?.at ?? null,
+    /** When it took off, Unix seconds, while it flies: how long it has
+     *  flown counts from it alone, as today's first point is only when it
+     *  was first heard, which for a flight heard mid-way read "0m" over Las
+     *  Vegas to Detroit nearly flown (the owner's screenshot, DAL1864). */
     departedAt: plane ? (detail?.departed?.at ?? null) : null,
-    /** Its airport: the field it left while it is flying. */
-    airport: plane ? fromIdent : null,
   };
 }
 

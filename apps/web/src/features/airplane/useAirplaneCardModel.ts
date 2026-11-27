@@ -40,8 +40,8 @@ export function useAirplaneCardModel({
   const live = useFlightLive(hex);
   // Its N-number: the one it was opened by, else its US registration from the flight's detail.
   const tail = openTail ?? live.tail;
-  const vm = useAirplaneProfile(tail ?? "", hex);
-  const { card } = vm;
+  const profile = useAirplaneProfile(tail ?? "", hex);
+  const { card } = profile;
   // Opened by its N-number while the live find has it in the air: tracked,
   // as traffic tapped on the map is, so the card shows its flight -- without
   // the map moving to it, which Track asks for. Once a card, so a Track let
@@ -62,7 +62,7 @@ export function useAirplaneCardModel({
   // pilot's own (their list, the plan's airplane) -- not any the registry
   // holds, which offered an A321's Fly This and Figures (the owner's
   // screenshot, 2026-11-26, N606FR).
-  const flyable = !!tail && ((!!card.record && profileOfRegistered(card.record) !== null) || vm.owned || vm.flying);
+  const flyable = !!tail && ((!!card.record && profileOfRegistered(card.record) !== null) || profile.owned || profile.flying);
   // Its Figures, a card of their own over this one from the fourth button
   // (the owner, 2026-11-26: "we don't need a tab bar"; "It should be the
   // fourth button above"), open from the start where they were asked for:
@@ -85,50 +85,50 @@ export function useAirplaneCardModel({
     track(null);
     void setAddress({ flight: null, past: null });
   };
-  return {
-    vm,
-    card,
-    live,
-    hex,
-    tail,
+  // Its slices, each read by the parts that need it (AirplaneSlices): the
+  // head's, the actions', and the tabs' and the cards over it.
+  const head = {
     title,
     /** Under its name: its call sign while it flies, what it is, and a foreign registration. */
     sub:
       [
         airborne && callsign !== title ? callsign : null,
-        card.line ?? live.model ?? vm.type,
+        card.line ?? live.model ?? profile.type,
         !tail && registration !== title ? registration : null,
       ]
         .filter(Boolean)
         .join(" · ") || "Type not known",
-    airborne,
-    following,
-    follow: (on: boolean) => useTracking.setState({ follow: on }),
-    flyable,
-    /** The model its POH may be linked for (features/documents' PohRow): the
-     *  registry's make and model, else its profile's type. */
-    pohModel: [card.record?.manufacturer, card.record?.model].filter(Boolean).join(" ") || vm.type,
-    tab,
-    pick,
-    setTop,
-    figuresOpen,
-    openFigures: () => setFiguresOpen(true),
-    closeFigures: () => setFiguresOpen(false),
-    kept,
-    starred,
-    toggleFavorite: () => {
-      if (kept) usePreferences.getState().toggleFavoriteAircraft(kept);
-    },
     /** The card's link, its N-number's where it has one, shared where the device can, copied where not. */
     share: () =>
       void shareOrCopy({ title, url: `${location.origin}/app/plan?${tail ? `airplane=${tail}` : `flight=${hex}`}` }).catch(() => {
         /* put away, or not allowed: nothing to say */
       }),
+    close,
+  };
+  const actions = {
+    airborne,
+    following,
+    follow: (on: boolean) => useTracking.setState({ follow: on }),
+    flyable,
+    /** The plan's airplane already. */
+    flying: profile.flying,
     fly: () => {
-      vm.fly();
+      profile.fly();
       close();
     },
-    close,
+    kept,
+    starred,
+    toggleFavorite: () => {
+      if (kept) usePreferences.getState().toggleFavoriteAircraft(kept);
+    },
+    openFigures: () => setFiguresOpen(true),
+  };
+  const nav = {
+    tab,
+    pick,
+    setTop,
+    figuresOpen,
+    closeFigures: () => setFiguresOpen(false),
     /** One of its past flights' cards, its replay and debrief, over this one (PastFlightCard, `?flight=&past=`). */
     openPast: (id: number) => {
       if (hex) void setAddress({ flight: hex, past: id, place: null, at: null, near: null, nearAt: null, nearName: null });
@@ -136,6 +136,24 @@ export function useAirplaneCardModel({
     /** A field's card over this one: an end of its flight tapped. */
     openAirport: (ident: string) => void setAddress({ place: ident, at: null }),
   };
+  return {
+    /** Its record, flights and figures (useAirplaneProfile). */
+    profile,
+    card,
+    live,
+    hex,
+    tail,
+    /** The model its POH may be linked for (features/documents' PohRow): the
+     *  registry's make and model, else its profile's type. */
+    pohModel: [card.record?.manufacturer, card.record?.model].filter(Boolean).join(" ") || profile.type,
+    head,
+    actions,
+    nav,
+  };
 }
 
-export type AirplaneCardModel = ReturnType<typeof useAirplaneCardModel>;
+type AirplaneCardModel = ReturnType<typeof useAirplaneCardModel>;
+
+/** The slices of the airplane card's view model a part reads, by name, as
+ *  FPL's PlanSlices: `m: AirplaneSlices<"head" | "nav">`. */
+export type AirplaneSlices<K extends keyof AirplaneCardModel> = Pick<AirplaneCardModel, K>;

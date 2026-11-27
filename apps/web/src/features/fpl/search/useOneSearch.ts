@@ -17,10 +17,12 @@ import { useSearchAirplanes, type AirplaneHit } from "./searchAirplanes";
 import { doHits } from "./searchDoes";
 import { useSearchAskFocus } from "./useSearchAskFocus";
 import { usePrefetchHighlighted } from "./usePrefetchHighlighted";
+import { useSearchQuery } from "./searchQuery";
+import { useAirportSearch } from "../../../lib/useAirportSearch";
 
 /**
  * The one search's view model (the one-search design, 2026-11-09) over the
- * planner's: what is typed (the planner's query, so Home, a Favorite and a
+ * planner's: what is typed (searchQuery, so Home, a Favorite and a
  * picker's airport ask through the same field) and its results: Airports,
  * Waypoints and navaids, Airplanes, and Do (Direct To, the screens by name,
  * "Ask:"). Each pick opens a card, a profile or a screen that works the
@@ -32,8 +34,13 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   const { changeAircraft } = vm.plan;
   const { place, selectPlace, selectFlight, listAway } = vm.cards;
   const { flyHere } = vm.map;
-  const { query, setQuery, search, pickPlace, picking, setPicking, pickAirplane } = vm.search;
+  const { pickPlace, picking, setPicking, pickAirplane } = vm.search;
+  const query = useSearchQuery((s) => s.query);
+  const setQuery = useSearchQuery((s) => s.setQuery);
   const typed = query.trim();
+  // Its airports and, with them, the waypoints and navaids (its Waypoints
+  // and Navaids group), asked while it is the place up.
+  const search = useAirportSearch(query, vm.view.view === "search", true);
   // Asked for an airplane to keep (an Add of the pilot's Airplane or a
   // Favorite): airplanes alone, the one picked kept rather than opened.
   const airplaneAsk = picking === "mine" || picking === "airplane";

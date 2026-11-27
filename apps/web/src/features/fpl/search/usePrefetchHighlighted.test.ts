@@ -14,14 +14,29 @@ describe("the one search's lit row", () => {
     vi.useFakeTimers();
     const prefetch = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
     const { result } = renderHook(() => usePrefetchHighlighted(["KDLH", "KMSP", "KOSH"]));
-    result.current("KDLH");
+    const arrow = { reason: "keyboard" };
+    result.current("KDLH", arrow);
     vi.advanceTimersByTime(50);
-    result.current("KMSP");
+    result.current("KMSP", arrow);
     vi.advanceTimersByTime(50);
-    result.current("KOSH");
+    result.current("KOSH", arrow);
     vi.advanceTimersByTime(200);
     expect(prefetch).toHaveBeenCalledTimes(1);
     expect(prefetch.mock.calls[0]?.[0]).toMatchObject({ queryKey: ["airport", "KOSH"] });
+  });
+
+  it("waits for the typing to pause before asking for the row it lights", () => {
+    vi.useFakeTimers();
+    const prefetch = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { result } = renderHook(() => usePrefetchHighlighted(["KDL", "KDLH"]));
+    result.current("KDL", { reason: "none" });
+    vi.advanceTimersByTime(200);
+    result.current("KDLH", { reason: "none" });
+    vi.advanceTimersByTime(200);
+    expect(prefetch).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(250);
+    expect(prefetch).toHaveBeenCalledTimes(1);
+    expect(prefetch.mock.calls[0]?.[0]).toMatchObject({ queryKey: ["airport", "KDLH"] });
   });
 
   it("asks nothing for an airplane's or a waypoint's row, or none lit", () => {
@@ -31,7 +46,7 @@ describe("the one search's lit row", () => {
     result.current("KDLH");
     result.current("fix:DLH");
     result.current(undefined);
-    vi.advanceTimersByTime(200);
+    vi.advanceTimersByTime(500);
     expect(prefetch).not.toHaveBeenCalled();
   });
 });

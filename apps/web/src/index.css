@@ -585,16 +585,13 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   content-visibility: hidden;
 }
 /* A tab's page still the last route's while the new route's is drawn
-   (PanelTabs' stale): dimmed, after a moment so a draw within a frame or two
-   never flickers, and back at once when the new page is in. Opacity only,
-   so it is the compositor's; under Reduce Motion the dim still comes, on
-   the same wait, without its fade. */
-.tab-stale {
-  transition: opacity var(--motion-fade) var(--motion-sheet-ease);
-}
+   (PanelTabs' stale): dimmed after a moment, so a draw within a frame or
+   two never shows it, and back at once, with no fade, the moment the new
+   page is in. Opacity only, so it is the compositor's; under Reduce Motion
+   the dim still comes, on the same wait, without its fade. */
 .tab-stale[data-stale] {
   opacity: 0.5;
-  transition-delay: 150ms;
+  transition: opacity var(--motion-fade) var(--motion-sheet-ease) 150ms;
 }
 
 @supports not (content-visibility: hidden) {
@@ -704,8 +701,9 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
 }
 
 /* The stock Skeleton (components/ui/skeleton): out of sight for its first
-   120 ms, then in on a short fade, so a prefetched answer drawn a frame or
-   two after its card never flashes a skeleton (the round-2 speed audit);
+   300 ms, then in on a short fade, so an answer that comes within the
+   wait -- a prefetched one, and most of the planner's, 120 to 350 ms in
+   the round-4 audit -- is drawn without a skeleton flashing first;
    then breathing once a motion.skeleton-pulse, held still with Reduce
    Motion (its wait kept: the global rule below shortens durations, not
    delays). */
@@ -720,13 +718,13 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
   }
 }
 [data-slot="skeleton"] {
-  animation: skeleton-in var(--motion-fade) var(--motion-sheet-ease) 120ms backwards;
+  animation: skeleton-in var(--motion-fade) var(--motion-sheet-ease) 300ms backwards;
 }
 @media (prefers-reduced-motion: no-preference) {
   [data-slot="skeleton"] {
     animation:
-      skeleton-in var(--motion-fade) var(--motion-sheet-ease) 120ms backwards,
-      skeleton-breath var(--motion-skeleton-pulse) cubic-bezier(0.4, 0, 0.6, 1) 120ms infinite;
+      skeleton-in var(--motion-fade) var(--motion-sheet-ease) 300ms backwards,
+      skeleton-breath var(--motion-skeleton-pulse) cubic-bezier(0.4, 0, 0.6, 1) 300ms infinite;
   }
 }
 

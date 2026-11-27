@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
+import { sameFields, useLatest } from "../../lib/steady";
 import type { Detour } from "../../lib/api/types";
 import { frdOf, identOf, isPosition, MAX_STOPS, stopOf } from "../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../lib/preferences";
@@ -8,7 +9,7 @@ import { engineLoaded } from "../../lib/engine/engine";
 import { useAirportSearch } from "../../lib/useAirportSearch";
 import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "./routeEdit";
 import { releaseTyped } from "./routeEdit";
-import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf } from "./routeTokens";
+import { endedWords, removedPoint, routeValue, takeTyped, tokensOf, typedOf } from "./routeTokens";
 import type { RouteValue } from "./routeTokens";
 import { useRouteCaret } from "./useRouteCaret";
 import { useStopAsked } from "./useStopAsked";
@@ -70,7 +71,7 @@ export function useRouteBox({
     );
     setShownRoute({ dep, stops, dest });
     const planned = pointsOf({ dep, stops, dest });
-    if (!samePoints(tokensOf(value), planned)) {
+    if (!sameFields(tokensOf(value), planned)) {
       const typed = typedOf(value);
       setValue(routeValue(planned, typed.text, typed.at, value));
     }
@@ -93,10 +94,7 @@ export function useRouteBox({
   const slideRow = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
   // The value now, for the field's blur, which acts after a tap elsewhere.
-  const valueNow = useRef(value);
-  useEffect(() => {
-    valueNow.current = value;
-  }, [value]);
+  const valueNowRef = useLatest(value);
 
   const change = (list: string[], withDep = hasDep, withDest = hasDest) => {
     const route = routeOf(list, withDep, withDest, isEnd);
@@ -128,12 +126,12 @@ export function useRouteBox({
     // the field's blur after Return, Done after a word -- finds nothing
     // typed, where it put the same words in a second time (KMSP the
     // destination and a stop, KMSN both ends of a cleared route).
-    valueNow.current = shown;
+    valueNowRef.current = shown;
     setValue(shown);
     if (ready.length) onTypedProcedures?.(ready, { dep: route?.dep ?? shownRoute.dep, dest: route?.dest ?? shownRoute.dest });
   };
   // Everything typed, put in where it was typed: false where nothing was.
-  const commit = (from: RouteValue = valueNow.current) => {
+  const commit = (from: RouteValue = valueNowRef.current) => {
     const taken = takeTyped(from);
     if (taken) put(taken.words, taken.at, taken.rest, true);
     return !!taken;
@@ -152,7 +150,7 @@ export function useRouteBox({
       return;
     }
     const list = tokensOf(next);
-    if (samePoints(list, points)) {
+    if (sameFields(list, points)) {
       setValue(next);
       return;
     }
@@ -259,7 +257,7 @@ export function useRouteBox({
     field,
     slide,
     slideRow,
-    valueNow,
+    valueNow: valueNowRef,
     points,
     hasDep,
     typedAt: typed.at,

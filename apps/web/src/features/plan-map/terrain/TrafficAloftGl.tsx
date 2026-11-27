@@ -10,19 +10,13 @@ import { useTracking, type Report } from "../../../lib/map/position/tracking";
 import { usePreferences, type HeightStretch } from "../../../lib/preferences";
 import { CHART } from "../../../lib/tokens";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "../layers/trafficMarks";
-import { sendTraffic } from "../layers/trafficSend";
+import { sendTraffic, trafficFrameMs } from "../layers/trafficSend";
+import { appZoomOf } from "../../../lib/map/gl/glStyle";
 import { carryS, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../../../lib/traffic";
 import { standAtM } from "./trafficAloft";
 import { useGeo, type Geo } from "../../../lib/geo";
 import { pickOnMap } from "../../../lib/map/mapPick";
 
-/** How often the airplanes are carried on along their tracks, ms: about
- *  the 2D map's own step close in (TrafficGl's FRAME_MS) while one is
- *  followed, the camera's ease running between steps; else once a second,
- *  an airplane at 120 kt moving a pixel or two in it at the 3D view's
- *  scales (the round-2 speed audit: five a second for nothing). */
-const FOLLOW_STEP_MS = 200;
-const STEP_MS = 1000;
 const POINTS = "traffic-aloft";
 const TRENDS = "traffic-aloft-trends";
 const IDS = { marks: "traffic-aloft", tags: "traffic-aloft-tags", trends: "traffic-aloft-trend-lines" };
@@ -93,7 +87,10 @@ function Aloft({ geo }: { geo: Geo }) {
       if (document.hidden) return;
       step();
       const { hex: tracked, follow } = useTracking.getState();
-      timer = window.setTimeout(run, tracked && follow ? FOLLOW_STEP_MS : STEP_MS);
+      // As often as the flat map steps at this zoom (trafficFrameMs): once
+      // a second at the chart's scales, more often close in and while one
+      // is followed, so a mark close in never hops a second at a time.
+      timer = window.setTimeout(run, trafficFrameMs(appZoomOf(map.getZoom()), !!tracked && follow));
     };
     run();
     document.addEventListener("visibilitychange", run);
@@ -163,8 +160,9 @@ function drawAloft(
       },
     });
   }
-  // Only the airplanes that changed, by hex (trafficSend).
-  sendTraffic(map, POINTS, features);
+  // Only the airplanes that changed, by hex (trafficSend), the height
+  // sent with the place as it changes each step, not as a new look.
+  sendTraffic(map, POINTS, features, ["alt_m"]);
   drawnWithData(map, POINTS, { type: "FeatureCollection", features });
   const hexes = drawn.map((d) => d.hex).join();
   let held = dropped.get(map);

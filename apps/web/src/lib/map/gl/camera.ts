@@ -1,6 +1,6 @@
 import type { EaseToOptions, Map as GlMap } from "maplibre-gl";
 import { picked, watchPilotMoves } from "./pilotCamera";
-import { followMs, followStep, linear, pickHow, verdict, FOLLOW_LEAST_PX, SCRUB_GLIDE, type Follow, type Intent } from "./cameraRules";
+import { followMs, followStep, linear, pickHow, scrubGlide, verdict, FOLLOW_LEAST_PX, type Follow, type Intent } from "./cameraRules";
 import {
   endFollows,
   inRoom,
@@ -41,6 +41,7 @@ class Camera {
   /** Where the follow under way is taking the map's middle. */
   private followAim: Point | null = null;
   private frame = 0;
+  private glideEnds = 0; // When a scrub's glide ends (scrubGlide).
   /** When each follow last asked, for its ease to last till the next. */
   private asked = new Map<Follow, number>();
   /** How long the next follow's ease runs, from that interval. */
@@ -203,8 +204,8 @@ class Camera {
    * than drawn to the middle (an airplane tracked: tapped on the chart it
    * is in sight already, and drawing it to the middle of the room as a
    * card came up was a second move back the other way, FL-7). With
-   * `jump`, put in the middle at once, never eased (a dry run scrubbed);
-   * "glide", eased there on SCRUB_GLIDE (its first step after the press).
+   * `jump`, put in the middle at once (a dry run scrubbed; its glide, if under
+   * way, aimed there); "glide", eased (the press's step; scrubGlide).
    */
   follow(
     intent: Follow,
@@ -260,7 +261,9 @@ class Camera {
     const middle = map.project(map.getCenter());
     const step = Math.hypot(there.x - middle.x, there.y - middle.y);
     if (step < FOLLOW_LEAST_PX) return;
-    if (p.jump === "glide") return this.ease(p.intent, p.at, SCRUB_GLIDE);
+    const glide = scrubGlide(p.jump, this.glideEnds, performance.now());
+    if (glide) this.glideEnds = glide.ends;
+    if (glide) return this.ease(p.intent, p.at, glide.timing);
     if (p.jump || followStep(p.intent, step) === "jump") {
       // Own ship a few pixels on: one redraw for the fix, not a frame-rate
       // ease (cameraRules' FOLLOW_JUMP_UNDER_PX); or kept up with a finger.

@@ -23,7 +23,7 @@ import { CAMERA_MS } from "../../../lib/map/gl/cameraRules";
 import { useTerrainView } from "../terrain/useTerrainView";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
-import { sendTraffic } from "./trafficSend";
+import { sendTraffic, trafficFrameMs } from "./trafficSend";
 import { pickOnMap } from "../../../lib/map/mapPick";
 
 /** Asked every five seconds, each airplane carried on
@@ -32,21 +32,14 @@ import { pickOnMap } from "../../../lib/map/mapPick";
  *  answer puts it; heights from zoom 9 and
  *  call signs from 10, in the app's levels.
  *
- *  A frame is the whole collection sent to the map's worker and indexed
- *  again there, so it comes once a second at the chart's scales, where an
+ *  A frame sends the map's worker only the airplanes that changed
+ *  (trafficSend), and comes once a second at the chart's scales, where an
  *  airplane at 120 kt moves a pixel or two in it, and up to four a second
- *  only zoomed in close (the speed audit of 2026-11-27: ten a second from
- *  zoom 10, each a JSON.stringify and a setData; now only the airplanes
- *  that changed, trafficSend). An airplane followed
- *  keeps ten a second: the camera's follow eases linearly between frames,
+ *  only zoomed in close (trafficFrameMs; the speed audit of 2026-11-27
+ *  measured ten a second from zoom 10 as work for nothing). An airplane
+ *  followed keeps ten a second: the camera's follow eases linearly between frames,
  *  so a mark stepped once a second would slide back on the screen and jump. */
 const EVERY_MS = 5000;
-const FOLLOW_FRAME_MS = 100;
-const FRAME_MS = 250;
-const frameMs = (zoom: number, following: boolean) =>
-  following
-    ? Math.min(1000, FOLLOW_FRAME_MS * 2 ** Math.max(0, 10 - Math.round(zoom)))
-    : Math.min(1000, FRAME_MS * 2 ** Math.max(0, 12 - Math.round(zoom)));
 const BLEND_MS = 1000;
 const HEIGHT_ZOOM = 9;
 const CALLSIGN_ZOOM = 10;
@@ -215,7 +208,7 @@ function Traffic({ geo }: { geo: Geo }) {
       // and the mark hopped 1 to 3 px (the round-2 speed audit).
       const should = carriedOn(geo, plane, (now - at) / 1000);
       const { hex: tracked, follow: following } = useTracking.getState();
-      const ms = Math.max(BLEND_MS, 2 * frameMs(appZoomOf(map.getZoom()), !!tracked && following));
+      const ms = Math.max(BLEND_MS, 2 * trafficFrameMs(appZoomOf(map.getZoom()), !!tracked && following));
       held.shift = held.pos ? { lat: held.pos.lat - should.lat, lon: held.pos.lon - should.lon, from: now, ms } : null;
       held.plane = plane;
       held.at = at;
@@ -272,7 +265,7 @@ function Traffic({ geo }: { geo: Geo }) {
     let timer = 0;
     const step = () => {
       const { hex: tracked, follow: following } = useTracking.getState();
-      timer = document.hidden ? 0 : window.setTimeout(step, frameMs(appZoomOf(map.getZoom()), !!tracked && following));
+      timer = document.hidden ? 0 : window.setTimeout(step, trafficFrameMs(appZoomOf(map.getZoom()), !!tracked && following));
       if (!map.isZooming()) drawTargets(geo, map, targets.current);
     };
     const back = () => {

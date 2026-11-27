@@ -8,6 +8,8 @@
  * its ease at every fix (FL-13).
  */
 
+import { MOTION } from "../../tokens";
+
 /** What a move is for. The pilot's own hand is heard, never asked. */
 export type Intent = "hand" | "pick" | "fit" | Follow;
 
@@ -78,8 +80,25 @@ export const linear = (t: number) => t;
 /** A dry run's scrub's first step after the press (camera's `glide`): the
  *  press may land miles along the course, so the map eases there on a
  *  page's time (motion.page), fast first and settling, rather than jump
- *  (the round-2 speed audit); each later move jumps with the finger. */
-export const SCRUB_GLIDE = { duration: 250, easing: (t: number) => 1 - (1 - t) ** 3 };
+ *  (the round-2 speed audit). */
+export const SCRUB_GLIDE = { duration: MOTION.page * 1000, easing: (t: number) => 1 - (1 - t) ** 3 };
+
+/** A frame at 60 Hz, ms: a glide with less left than this is over. */
+const FRAME_MS = 16;
+
+/**
+ * How a dry run's scrubbed step eases, if it does, and when its glide
+ * ends, `glideEnds` and `now` on performance.now's clock: the press's step
+ * ("glide") on SCRUB_GLIDE; a later step while that glide is under way
+ * aims it again at the finger's latest point for the time it has left,
+ * so the next move carries it on rather than cutting it off; null once it
+ * is over, when each move jumps with the finger.
+ */
+export function scrubGlide(jump: boolean | "glide", glideEnds: number, now: number) {
+  if (jump === "glide") return { ends: now + SCRUB_GLIDE.duration, timing: SCRUB_GLIDE };
+  const left = glideEnds - now;
+  return jump && left > FRAME_MS ? { ends: glideEnds, timing: { duration: left, easing: SCRUB_GLIDE.easing } } : null;
+}
 
 /** How many screens away a pick is still eased to, not flown. */
 const EASE_SCREENS = 3;
