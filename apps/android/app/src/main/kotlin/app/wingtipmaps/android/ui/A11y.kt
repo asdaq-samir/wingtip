@@ -1,10 +1,17 @@
 package app.wingtipmaps.android.ui
 
 import android.content.Context
+import android.os.Build
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 
@@ -34,6 +41,27 @@ object A11y {
  *  should stack rather than shrink or cut their figures. */
 @Composable
 fun largeType(): Boolean = LocalDensity.current.fontScale >= A11y.LARGE_TYPE
+
+/**
+ * Android's High contrast text (Settings, Accessibility), followed as it
+ * turns: the web's prefers-contrast: more and the iPhone's Increase
+ * Contrast, under which the grey words are lifted (WingtipTheme). Its own
+ * switch is read from Android 16 (API 36), which made it public; false
+ * before.
+ */
+@Composable
+fun highContrastText(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return false
+    val context = LocalContext.current
+    val manager = remember(context) { context.getSystemService(AccessibilityManager::class.java) }
+    var on by remember(manager) { mutableStateOf(manager?.isHighContrastTextEnabled == true) }
+    DisposableEffect(manager) {
+        val listener = AccessibilityManager.HighContrastTextStateChangeListener { on = it }
+        manager?.addHighContrastTextStateChangeListener(context.mainExecutor, listener)
+        onDispose { manager?.removeHighContrastTextStateChangeListener(listener) }
+    }
+    return on
+}
 
 /**
  * Says `words` once each time `key` changes to something new, for an
