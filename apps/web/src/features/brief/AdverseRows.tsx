@@ -7,6 +7,7 @@ import { useDataCycles } from "../../lib/map/sources/layerAges";
 import { TEXT } from "../../lib/text";
 import type { PanelTab } from "../plan";
 import type { Adverse, AdverseRow } from "./adverse";
+import { capitalised } from "../../lib/capitals";
 
 /** A clock time with its zone, "14:40 CST", as the Brief's rows say one. */
 const time = (iso: string) => `${clockTime(new Date(iso))} ${zoneName(new Date(iso))}`;
@@ -25,7 +26,7 @@ function whenWords(row: AdverseRow): string {
         : `reported ${time(row.time)}`
     : null;
   const said = [legs, at].filter(Boolean).join(" · ");
-  return said ? said.charAt(0).toUpperCase() + said.slice(1) : "During the flight";
+  return said ? capitalised(said) : "During the flight";
 }
 
 /**

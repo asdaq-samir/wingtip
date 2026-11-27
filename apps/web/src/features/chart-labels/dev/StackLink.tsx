@@ -4,6 +4,7 @@ import { ListRow } from "../../../components/GroupedList";
 import { api, errorMessage } from "../../../lib/api/client";
 import { done } from "../../../lib/doneNote";
 import { showError } from "../../../lib/problems";
+import { capitalised } from "../../../lib/capitals";
 
 /**
  * One door into the stack, which opens what it links to -- starting the
@@ -55,7 +56,7 @@ export function StackLink({ link }: { link: { label: string; href: string; servi
         if (tab) tab.opener = null;
         start.mutate(link.service!, {
           onSuccess: () => {
-            done(`${(link.service ?? "").replace(/^./, (c) => c.toUpperCase())} Started`);
+            done(`${capitalised(link.service ?? "")} Started`);
             // So the control goes back to being a plain link rather
             // than still offering to start what is now running.
             void queryClient.invalidateQueries({ queryKey: ["devServices"] });

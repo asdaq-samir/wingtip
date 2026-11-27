@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
 import type { Briefing, IcingForecast, Leg } from "../../lib/api/types";
+import { capitalised } from "../../lib/capitals";
 
 interface IcingWhere {
   /** Under IFR alone: VFR stays clear of cloud (14 CFR 91.155), where
@@ -45,5 +46,5 @@ export function useIcingForecast({ ifr, briefing, legs, depart }: IcingWhere) {
 /** A severity as a row says it: "Light", "None"; "No forecast" for a leg
  *  the AWC had none for. */
 export function severityWord(severity: IcingForecast["legs"][number]["severity"]): string {
-  return severity ? severity[0]!.toUpperCase() + severity.slice(1) : "No forecast";
+  return severity ? capitalised(severity) : "No forecast";
 }
