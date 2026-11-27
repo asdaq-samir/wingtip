@@ -92,7 +92,7 @@ export default function AirplaneInfo({
         title="Airplane"
         testId="airplane-info-airplane"
         rows={facts([
-          ["Type", [full.manufacturer, full.model].filter(Boolean).join(" "), "airplane-info-model"],
+          ["Model", [full.manufacturer, full.model].filter(Boolean).join(" "), "airplane-info-model"],
           ["Year", full.year],
           ["Category", ref?.category ?? full.aircraft_type],
           ["Builder Certification", ref?.builder_certification],
