@@ -226,7 +226,7 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(pictures.getByTestId("airplane-photo-open")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
   await expect(info.getByTestId("airplane-photo")).toHaveCount(0);
   await expect(card.getByTestId("airplane-facts-owner")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-facts-type")).toHaveText("TypePiper PA-28");
+  await expect(card.getByTestId("airplane-facts-type")).toHaveText("Make/ModelPiper PA-28");
   // Figures: the planning figures, a card of their own from the fourth button, its close back to this one.
   await card.getByTestId("airplane-figures-open").click();
   const figures = page.getByTestId("airplane-figures");

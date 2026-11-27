@@ -23,7 +23,7 @@ const fact = (id: string) => screen.queryByTestId(`facts-${id}`)?.textContent ??
 describe("an airplane card's facts strip", () => {
   it("says the registry's type, year, seats, and engines, each under its name, its registration and owner left to its Registration section", () => {
     render(<AirplaneFacts record={record} testId="facts" />);
-    expect(fact("type")).toBe("TypePiper PA-28");
+    expect(fact("type")).toBe("Make/ModelPiper PA-28");
     expect(fact("year")).toBe("Year1971");
     expect(fact("seats")).toBe("Seats4");
     expect(fact("engines")).toBe("Engines1");
@@ -39,7 +39,7 @@ describe("an airplane card's facts strip", () => {
 
   it("falls back to the traffic's type and year with no record, and draws nothing with nothing to say", () => {
     render(<AirplaneFacts record={null} type="A321" year="2019" testId="facts" />);
-    expect(fact("type")).toBe("TypeA321");
+    expect(fact("type")).toBe("Make/ModelA321");
     expect(fact("year")).toBe("Year2019");
     expect(fact("owner")).toBeNull();
     cleanup();

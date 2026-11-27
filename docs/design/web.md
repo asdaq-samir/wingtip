@@ -902,7 +902,7 @@ three rows, its title the rest): `AirplaneInfo` for an N-number, then
 Flights FirstFew's `after` once the section is open; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). The facts strip
-(`components/airplane/AirplaneFacts` on `CardFacts`: Type, Year, Seats,
+(`components/airplane/AirplaneFacts` on `CardFacts`: Make/Model, Year, Seats,
 Engines, then Operator from `traffic`'s `liveFacts` (the squawk on
 the in-the-air slide's state line), and for traffic with no N-number its own
 registration mark, ICAO address and call sign; the Now section gone, and

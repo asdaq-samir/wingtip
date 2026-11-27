@@ -10,7 +10,7 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  * the FAA aircraft registry's record (wingtip.registry), its reference
  * model's figures over the record's own where the card has them, each only
  * where there is one:
- *  - Type: the registry's maker and model in a few words (shortType,
+ *  - Make/Model: the registry's maker and model in a few words (shortType,
  *    "Airbus A321"), else the traffic's type.
  *  - Year: the year it was built.
  *  - Seats and Engines: the FAA's reference record (ACFTREF), else the
@@ -54,7 +54,7 @@ export function AirplaneFacts({
   return (
     <CardFacts testId={testId}>
       {made && (
-        <CardFact label="Type" testId={`${testId}-type`}>
+        <CardFact label="Make/Model" testId={`${testId}-type`}>
           {made}
         </CardFact>
       )}

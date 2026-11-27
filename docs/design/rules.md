@@ -313,7 +313,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    The airplane cards are laid out the same way, with the same parts (the
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"; one card an airplane since the owner's design of
-   2026-11-26): its facts in the strip (Type, Year, Seats, Engines,
+   2026-11-26): its facts in the strip (Make/Model, Year, Seats, Engines,
    Operator; its registration and owner in its Registration section, the
    owner, 2026-11-27) under its actions and over its pictures (the
    owner, 2026-11-26: "It should be buttons, info strip and then the
