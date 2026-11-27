@@ -46,7 +46,9 @@ internal object GlideLayer {
  * Yellow alone is about 1.6:1 on the sectional's yellow towns and 1.4:1
  * on its pale greens; the dark edge holds on every part of the chart, by
  * day and dimmed at night. Drawn from the overlay tiles' own airports, the
- * one whose ident it is, under the marks; nothing without the overlays.
+ * one whose ident it is, under the marks; nothing without the overlays. On
+ * the airports' own source, so a tap's new filter lays out the fields' tiles
+ * alone (MapStyle.AIRPORTS_SOURCE).
  */
 internal object SelectedAirportLayer {
     private val RINGS = listOf(
@@ -60,14 +62,14 @@ internal object SelectedAirportLayer {
     fun filter(ident: String?): Expression = Expression.eq(Expression.get("ident"), Expression.literal(ident ?: ""))
 
     fun draw(style: Style, ident: String?) {
-        if (style.getSource(MapStyle.OVERLAY_SOURCE) == null) return
+        if (style.getSource(MapStyle.AIRPORTS_SOURCE) == null) return
         for ((id, colour, width) in RINGS) {
             val kept = style.getLayerAs<CircleLayer>(id)
             if (kept != null) {
                 kept.setFilter(filter(ident))
                 continue
             }
-            val layer = CircleLayer(id, MapStyle.OVERLAY_SOURCE).withProperties(
+            val layer = CircleLayer(id, MapStyle.AIRPORTS_SOURCE).withProperties(
                 PropertyFactory.circleRadius(RADIUS),
                 PropertyFactory.circleOpacity(0f),
                 PropertyFactory.circleStrokeColor(colour),

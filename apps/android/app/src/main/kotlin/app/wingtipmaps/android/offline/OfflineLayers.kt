@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.tiles.TileTemplate
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
@@ -16,6 +17,9 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.RasterLayer
+import org.maplibre.android.style.sources.RasterSource
 import java.io.File
 
 /**
@@ -73,7 +77,29 @@ object OfflineLayers {
         return JsonObject(root + mapOf("sources" to JsonObject(sources), "layers" to JsonArray(list))).toString()
     }
 
-    /** The map restyles when a region finishes or goes (Setup → Downloads),
+    /** The regions on a style already drawn, as withDownloads puts them in a first style: the archives of the chart
+     *  now (`template`, with its terminal charts or not) over the chart and its terminal chart in the chart's own
+     *  paint, the ones there before taken off, and nothing else of the style touched. A region finishing or going,
+     *  or a kept cycle taking over, set the whole style anew before, which dropped every source the map draws and
+     *  fetched the chart, the overlays and the route again (the map speed audit, 2026-11-27). */
+    fun redraw(context: Context, style: Style, template: TileTemplate, terminal: Boolean) {
+        val chart = style.getLayerAs<RasterLayer>(CHART) ?: return
+        val files = archives(OfflineStore.of(context), template.cycle, template.kind, template.scale, terminal).map(::url)
+        val kept = style.sources.filter { it.id.startsWith(PREFIX) }
+        if (kept.map { (it as? RasterSource)?.uri }.sortedBy { it } == files.sorted()) return
+        style.layers.filter { it.id.startsWith(PREFIX) }.forEach { style.removeLayer(it) }
+        kept.forEach { style.removeSource(it) }
+        var above = if (style.getLayer(MapStyle.CHART_TERMINAL) != null) MapStyle.CHART_TERMINAL else CHART
+        files.forEachIndexed { i, file ->
+            val id = "$PREFIX$i"
+            style.addSource(RasterSource(id, file, 256))
+            val paint = arrayOf(chart.rasterFadeDuration, chart.rasterResampling, chart.rasterBrightnessMax, chart.rasterContrast, chart.rasterSaturation)
+            style.addLayerAbove(RasterLayer(id, id).withProperties(*paint), above)
+            above = id
+        }
+    }
+
+    /** The map's regions are drawn again (redraw) when a region finishes or goes (Setup → Downloads),
      *  and when a kept cycle takes over at 0901Z with the app open (asked
      *  each minute; the data-cycles audit's 14): the tiles done in each
      *  kept region and the kept cycles begun, read as the effect's key. */

@@ -72,6 +72,10 @@ class MapStyleTest {
             source["url"]!!.jsonPrimitive.content,
         )
         assertEquals(MapStyle.GLYPHS, s["glyphs"]!!.jsonPrimitive.content)
+        // The airports on a source of their own over the same archive, so a weather answer or a tap lays out their tiles alone.
+        assertEquals(source, s["sources"]!!.jsonObject[MapStyle.AIRPORTS_SOURCE])
+        assertEquals(MapStyle.AIRPORTS_SOURCE, layer(s, "airports")["source"]!!.jsonPrimitive.content)
+        assertEquals(MapStyle.OVERLAY_SOURCE, layer(s, "airspace-C")["source"]!!.jsonPrimitive.content)
         // Lines under the route's slot, marks over it, as the web's slots.
         assertEquals(
             listOf(
