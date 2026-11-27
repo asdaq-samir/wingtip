@@ -1,8 +1,11 @@
 import {
+  Bell,
   ChartArea,
   ClipboardCopy,
   FileText,
+  Gauge,
   CloudSun,
+  Crosshair,
   Info,
   Ellipsis,
   ListOrdered,
@@ -63,8 +66,6 @@ export const ICON = {
   nearest: LocateFixed,
   /** Fly direct to a point from where the airplane is: the chart's D-arrow. */
   directTo: DirectToIcon,
-  /** Fly here: the route from the airplane to this field. */
-  flyHere: DirectToIcon,
   /** Depart from this field: the route's start. */
   departFrom: PlaneTakeoff,
   /** Put the point or field in the route. */
@@ -83,6 +84,12 @@ export const ICON = {
   copy: ClipboardCopy,
   /** File or send a flight plan. */
   send: Send,
+  /** An airplane in the air kept in sight on the map (the airplane card's Track). */
+  track: Crosshair,
+  /** Alerts as an airplane takes off and lands (the airplane card's Alerts). */
+  alerts: Bell,
+  /** An airplane's book figures (the airplane card's Figures). */
+  figures: Gauge,
   /** A course line's direction, where no D-arrow fits. */
   course: MoveUpRight,
 } satisfies Record<string, Glyph>;

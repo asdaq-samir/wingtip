@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { ACTION } from "../../../lib/cardActions";
+import { ACTION } from "../../../lib/generated/cardActions";
 import { degreesMinutes } from "../../../lib/coords";
 import { altFt, knots } from "../../../lib/format";
 import { ICON } from "../../../lib/icons";

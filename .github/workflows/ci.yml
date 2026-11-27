@@ -463,6 +463,9 @@ jobs:
                 - scripts/build/wording.py
                 - docs/design/rules.md
                 - apps/android/app/src/main/res/values/wording_strings.xml
+                - scripts/build/card-actions.sh
+                - scripts/build/card_actions.py
+                - docs/design/icons.md
                 - apps/ios/Wingtip/Assets.xcassets/**
                 - docs/brand/**
                 - scripts/build/app-icons.sh

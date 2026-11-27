@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ci.yml's test-web: the files generated and committed -- the phones' API
 # models and engine calls, the design tokens, the screens' links, the
-# shared words, the app icons -- each checked against what its generator makes, but on a pull
+# shared words, each card's actions, the app icons -- each checked against what its generator makes, but on a pull
 # request only where the change touched the generator, its source or its
 # output. They took 1.5 of test-web's 3.8 minutes on every web change
 # (PR #577's runs), though a change to apps/web/src alone can change none
@@ -45,6 +45,9 @@ check "The words every app says the same" "scripts/build/wording.sh --check" -- 
   design/wording.json 'scripts/build/wording.*' docs/design/rules.md \
   apps/web/src/lib/wording/generated apps/ios/Wingtip/Design/Generated \
   apps/android/app/src/main/res/values/wording_strings.xml
+check "Each card's actions" "scripts/build/card-actions.sh --check" -- \
+  design/card-actions.json design/wording.json 'scripts/build/card-actions.*' 'scripts/build/card_actions.*' docs/design/icons.md \
+  apps/web/src/lib/generated/cardActions.ts apps/ios/Wingtip/Design/Generated/CardActions.swift "$A/design/generated/CardActions.kt"
 check "The app icons" "scripts/build/app-icons.sh --check" -- \
   docs/brand docs/store design/tokens.json 'scripts/build/app-icons.sh' 'scripts/build/app_icons*' \
   'scripts/build/brand-render*' apps/ios/Wingtip/Assets.xcassets apps/ios/WingtipWatch/Assets.xcassets \

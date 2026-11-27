@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Ban, Cloud, Gauge, KeyRound, Radio, ShieldAlert } from "lucide-react";
-import { ACTION, CARD_ACTIONS } from "../../lib/cardActions";
+import { ACTION, CARD_ACTIONS } from "../../lib/generated/cardActions";
 import { cn } from "cn";
 import { PillSection } from "../../components/Favorites";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -156,7 +156,7 @@ export default function AirspaceCard({
   const ground = data?.ground_ft ?? null;
   const named = data?.point ?? null;
   // A held point's actions, the point card's set in its order
-  // (lib/cardActions): Direct To first, filled, as every card's is.
+  // (design/card-actions.json): Direct To first, filled, as every card's is.
   const handlers = { directTo: onDirect, addToRoute: onAdd, holdHere: onHold };
   const testIds = { directTo: "point-direct", addToRoute: "point-add", holdHere: "point-hold" };
   // Held from the first frame while the point is asked about: the tiles,

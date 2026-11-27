@@ -138,6 +138,9 @@ if [ -x scripts/build/wording.sh ]; then
     "apps/web/src/lib/wording/generated apps/ios/Wingtip/Design/Generated/Wording.swift apps/android/app/src/main/res/values/wording_strings.xml docs/design/rules.md" \
     scripts/build/wording.sh "scripts/build/wording.sh --check"
 fi
+step "card actions (card-actions.sh)" 0 "design/card-actions.json design/wording.json scripts/build/card-actions.sh scripts/build/card_actions.py" \
+  "apps/web/src/lib/generated/cardActions.ts apps/ios/Wingtip/Design/Generated/CardActions.swift $A/design/generated/CardActions.kt docs/design/icons.md" \
+  scripts/build/card-actions.sh "scripts/build/card-actions.sh --check"
 step "web's engine rules (web_rules.py)" 0 "apps/web/src scripts/build/web_rules.py" "engine/facade/web-rules.txt apps/web/src/lib/engine/webRules.ts" \
   "python3 scripts/build/web_rules.py" "python3 scripts/build/web_rules.py --check"
 step "WebAssembly (build-engine-wasm.sh)" 1 "engine/facade engine/crates engine/bindings/wasm engine/Cargo.lock scripts/build/build-engine-wasm.sh" \

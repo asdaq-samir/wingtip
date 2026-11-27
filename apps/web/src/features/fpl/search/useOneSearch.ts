@@ -19,6 +19,10 @@ import { useSearchAskFocus } from "./useSearchAskFocus";
 import { usePrefetchHighlighted } from "./usePrefetchHighlighted";
 import { useSearchQuery } from "./searchQuery";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
+import { ACTION } from "../../../lib/generated/cardActions";
+
+/** A top hit's quick action: its label, what it does, its test id. */
+type QuickAction = { label: string; run: () => void; testId: string };
 
 /**
  * The one search's view model (the one-search design, 2026-11-09) over the
@@ -172,12 +176,12 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   };
   // Those that apply: Fly Here unless it is the destination, Depart From unless the departure --
   // one, a single wide pill, where only one does (Apple's "Directions"); none for a closed field (0043).
-  const quick = (r: AirportSearchRow) =>
+  const quick = (r: AirportSearchRow): QuickAction[] =>
     [
-      r.ident !== vm.route.planned.dest && !r.closed && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
+      r.ident !== vm.route.planned.dest && !r.closed && { label: ACTION.flyHere.label, run: () => flyTo(r), testId: "search-top-fly-here" },
       r.ident !== vm.route.planned.dep &&
-        !r.closed && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
-    ].filter((a): a is { label: string; run: () => void; testId: string } => !!a);
+        !r.closed && { label: ACTION.departFrom.label, run: () => departFromHit(r), testId: "search-top-depart-from" },
+    ].filter((a) => a !== false);
   const flyAirplane = (hit: AirplaneHit) => {
     if (!hit.fly) return;
     done();

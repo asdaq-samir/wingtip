@@ -39,6 +39,28 @@ nonisolated enum Wording {
     static let clearRouteQuestion = String(localized: "Clear Route?")
     /// Flies straight to the point picked, the avionics' own name.
     static let directTo = String(localized: "Direct To")
+    /// A new route from the airplane to the airport shown (design/card-actions.json).
+    static let flyHere = String(localized: "Fly Here")
+    /// The airport shown the route's departure, the rest of the route kept.
+    static let departFrom = String(localized: "Depart From")
+    /// A hold at the point shown (AIM 5-3-8).
+    static let holdHere = String(localized: "Hold Here")
+    /// The airport's own telephone, from the FAA's airport file.
+    static let call = String(localized: "Call")
+    /// The airport or airplane shown in the Favorites or out, a switch in a card's row.
+    static let favorite = String(localized: "Favorite")
+    /// The place shown in the maps app, by its street address where the FAA lists one.
+    static let address = String(localized: "Address")
+    /// A frequency or an ident to the clipboard.
+    static let copy = String(localized: "Copy")
+    /// The airplane card's first tile: the airplane shown the one the plan flies.
+    static let flyThis = String(localized: "Fly This")
+    /// The airplane card's first tile while it flies: the map keeps it in sight.
+    static let track = String(localized: "Track")
+    /// The airplane card's menu of alerts as it takes off and lands, by its ICAO address.
+    static let alerts = String(localized: "Alerts")
+    /// The airplane card's tile that opens its book figures.
+    static let figures = String(localized: "Figures")
     /// Puts a clearance's route into the plan.
     static let enterRoute = String(localized: "Enter Route")
     /// Starts the pilot's read back of a clearance.
