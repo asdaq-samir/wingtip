@@ -48,8 +48,8 @@ final class TrackedRingView: MKAnnotationView {
         frame = CGRect(x: 0, y: 0, width: 40, height: 40)
         layer.cornerRadius = 20
         layer.borderWidth = 3
-        layer.borderColor = UIColor.systemBlue.cgColor
-        backgroundColor = UIColor.systemBlue.withAlphaComponent(0.12)
+        layer.borderColor = WingtipColor.Chart.mapBlue.cgColor
+        backgroundColor = WingtipColor.Chart.mapBlue.withAlphaComponent(0.12)
         isEnabled = false
         displayPriority = .required
         zPriority = .min
@@ -180,7 +180,7 @@ final class FlightMapLayer: NSObject {
             // Dashed in the tint, as the web app's ring: what the airplane
             // reaches in still air, not a boundary to fly by.
             let renderer = MKPolylineRenderer(polyline: ring)
-            renderer.strokeColor = UIColor.systemBlue.withAlphaComponent(0.85)
+            renderer.strokeColor = WingtipColor.Chart.mapBlue.withAlphaComponent(0.85)
             renderer.lineWidth = 2
             renderer.lineDashPattern = [8, 6]
             return renderer

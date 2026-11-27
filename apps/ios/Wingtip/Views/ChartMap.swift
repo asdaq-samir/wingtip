@@ -344,7 +344,7 @@ struct ChartMap: UIViewRepresentable {
                 // The legs a hazard tapped in the Brief is on, wide in
                 // amber under the course (HazardLegsViews.swift).
                 let renderer = MKPolylineRenderer(polyline: hazard)
-                renderer.strokeColor = UIColor.systemOrange.withAlphaComponent(0.6)
+                renderer.strokeColor = WingtipColor.Chart.caution.withAlphaComponent(0.6)
                 renderer.lineWidth = 10
                 renderer.lineCap = .round
                 renderer.lineJoin = .round

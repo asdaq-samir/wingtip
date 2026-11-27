@@ -11,7 +11,7 @@ final class PageOwnShipView: UIView {
         super.init(frame: CGRect(x: 0, y: 0, width: Self.side, height: Self.side))
         arrow.frame = bounds.insetBy(dx: 3, dy: 3)
         arrow.contentMode = .scaleAspectFit
-        arrow.tintColor = UIColor.systemBlue
+        arrow.tintColor = WingtipColor.Chart.mapBlue
         backgroundColor = NightPalette.markFill
         layer.cornerRadius = Self.side / 2
         layer.borderWidth = 1

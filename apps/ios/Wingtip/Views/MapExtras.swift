@@ -265,7 +265,7 @@ final class MapExtrasState: NSObject {
         }
         if annotation is HeldAnnotation {
             let view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: nil)
-            view.markerTintColor = .systemRed
+            view.markerTintColor = WingtipColor.Chart.warning
             view.displayPriority = .required
             view.accessibilityLabel = "The point held, whose airspace the card shows"
             return view
