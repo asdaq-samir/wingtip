@@ -18,7 +18,7 @@ nonisolated enum WingtipColor {
         static let routeGreen = rgb(0x52C41A)
         /// The route's green a shade deeper over the dimmed chart, so it does not glare.
         static let routeGreenNight = rgb(0x3F9A1C)
-        /// The thin edge round the course's magenta by day (white at 35% over the dimmed chart).
+        /// The thin edge round the course's magenta, by day and at night: at night it keeps the course 4.7:1 against the dimmed paper (a white edge gave 1.0:1).
         static let routeEdge = rgb(0x0B0F0A)
         /// A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in.
         static let waypoint = rgb(0xC0309F)

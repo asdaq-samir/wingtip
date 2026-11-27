@@ -60,7 +60,10 @@ enum TypedRoute {
         guard let answer = try? Engine.routeTypedPicks(procedures: typed, departure: departure, arrival: arrival) else {
             return ([], read.procedures.map(\.name))
         }
-        return (answer.picks.map { ProcedurePick(ident: $0.ident, id: $0.id, kind: $0.kind, name: $0.name, transition: $0.transition) }, answer.missed)
+        // The engine's pick names its procedure by id; its name is the field's own list's.
+        let listed = [depList, destList].compactMap { $0 }.flatMap(\.procedures)
+        func name(_ kind: String, _ id: String) -> String { listed.first { $0.kind == kind && $0.id == id }?.name ?? id }
+        return (answer.picks.map { ProcedurePick(ident: $0.ident, id: $0.id, kind: $0.kind, name: name($0.kind, $0.id), transition: $0.transition) }, answer.missed)
     }
 
     /// What is said where typed procedures were not found, the web's words:

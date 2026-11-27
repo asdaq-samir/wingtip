@@ -28,7 +28,7 @@ object WingtipColors {
         /** The route's green a shade deeper over the dimmed chart, so it does not glare. */
         val RouteGreenNight = Color(0xFF3F9A1C)
         const val ROUTE_GREEN_NIGHT_HEX = "#3f9a1c"
-        /** The thin edge round the course's magenta by day (white at 35% over the dimmed chart). */
+        /** The thin edge round the course's magenta, by day and at night: at night it keeps the course 4.7:1 against the dimmed paper (a white edge gave 1.0:1). */
         val RouteEdge = Color(0xFF0B0F0A)
         const val ROUTE_EDGE_HEX = "#0b0f0a"
         /** A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in. */

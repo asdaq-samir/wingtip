@@ -75,7 +75,9 @@ object TypedRoute {
         }
         val typed = read.procedures.map { EngineContract.RouteTypedPicksInputProceduresItem(it.name, it.before, it.after) }
         val answer = Engine.routeTypedPicks(typed, departure, arrival).getOrNull() ?: return emptyList<PlanProcedures.Pick>() to read.procedures.map { it.name }
-        return answer.picks.map { PlanProcedures.Pick(it.ident, it.id, it.kind, it.name, it.transition) } to answer.missed
+        // The engine's pick names its procedure by id; its name is the field's own list's.
+        val names = lists.values.filterNotNull().flatMap { l -> l.procedures.map { (it.kind to it.id) to it.name } }.toMap()
+        return answer.picks.map { PlanProcedures.Pick(it.ident, it.id, it.kind, names[it.kind to it.id] ?: it.id, it.transition) } to answer.missed
     }
 
     /** How the typing went, for the box to say where it was typed. */
