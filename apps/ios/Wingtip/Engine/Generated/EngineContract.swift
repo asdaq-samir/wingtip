@@ -6461,7 +6461,7 @@ nonisolated enum EngineContract {
         var setting: String
         /// The GPS's ground speed, kt; null with no fix.
         var speedKt: Double?
-        /// The GPS's height, ft, where it gives one.
+        /// The GPS's height, ft, where it gives one, as read: the engine takes it in 50 ft steps, rounded down (the warning's side).
         var gpsAltitudeFt: Double?
         /// The plan's cruise, ft MSL.
         var plannedAltitudeFt: Double?

@@ -6659,7 +6659,7 @@ object EngineContract {
         @SerialName("speed_kt")
         val speedKt: Double? = null,
         /**
-         * The GPS's height, ft, where it gives one.
+         * The GPS's height, ft, where it gives one, as read: the engine takes it in 50 ft steps, rounded down (the warning's side).
          */
         @SerialName("gps_altitude_ft")
         val gpsAltitudeFt: Double? = null,

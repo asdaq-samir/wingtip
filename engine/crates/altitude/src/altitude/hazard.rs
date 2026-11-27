@@ -41,7 +41,7 @@
 //! altitude and the colours err red, the safer side. The iPhone and
 //! Android apps send the platform's own height over mean sea level (the
 //! owner's pick, 2026-11-21), so this applies to the web alone. Either is
-//! taken as it comes.
+//! taken as it comes, stepped down to the 50 ft below (GPS_STEP_FT).
 
 use super::calls::{list, num, obj, opt_num, written, R};
 use super::clearance::{RED_WITHIN_FT, YELLOW_WITHIN_FT};
@@ -56,6 +56,14 @@ pub const CLEARANCES_FT: [f64; 3] = [500.0, 1000.0, 2000.0];
 pub const DEFAULT_CLEARANCE_FT: f64 = 1000.0;
 /// The yellow band under the red, ft.
 pub const CAUTION_BAND_FT: f64 = 1000.0;
+/// The GPS's height is taken in steps of this, ft, so a height wandering a
+/// few feet does not colour the map again at every fix (as the pilot's
+/// view's 50 ft). Rounded down, never to the nearest: a height read up to
+/// 49 ft low starts the red band a little early, where the nearest read it
+/// up to 25 ft high and started it late (the phones' re-audit,
+/// 2026-11-27); down errs on the side of the warning. One step for every
+/// app, which each rounded on its own before (round 4's engine audit).
+pub const GPS_STEP_FT: f64 = 50.0;
 
 /// The map's setting: never, always, or by itself in flight.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,11 +92,12 @@ pub fn clearance(picked: Option<f64>) -> f64 {
     picked.filter(|ft| CLEARANCES_FT.contains(ft)).unwrap_or(DEFAULT_CLEARANCE_FT)
 }
 
-/// The view for `setting`, the GPS's ground speed and height, and the plan's cruise.
+/// The view for `setting`, the GPS's ground speed and height (as read,
+/// stepped down to GPS_STEP_FT here), and the plan's cruise.
 pub fn view(setting: Setting, speed_kt: Option<f64>, gps_ft: Option<f64>, planned_ft: Option<f64>, picked: Option<f64>) -> View {
     let in_flight = underway(speed_kt);
     let (altitude_ft, source) = match (in_flight, gps_ft, planned_ft) {
-        (true, Some(ft), _) => (Some(ft), Some("gps")),
+        (true, Some(ft), _) => (Some((ft / GPS_STEP_FT).floor() * GPS_STEP_FT), Some("gps")),
         (_, _, Some(ft)) => (Some(ft), Some("plan")),
         _ => (None, None),
     };
