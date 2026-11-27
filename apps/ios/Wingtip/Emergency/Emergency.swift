@@ -97,7 +97,7 @@ final class Emergency {
             } catch {
                 guard !Task.isCancelled else { return }
                 do {
-                    if let kept = try Self.deviceFields(fix: fix, aircraft: aircraft, glideRatio: glideRatio, pins: pins) {
+                    if let kept = try await Self.deviceFields(fix: fix, aircraft: aircraft, glideRatio: glideRatio, pins: pins) {
                         answer = kept
                         from = .device
                         askedKey = key
@@ -132,8 +132,10 @@ final class Emergency {
     /// planner sends an own airplane's), with no best-glide speed or wind,
     /// so the engine works the reach in still air only where it can; none
     /// with no airplane picked or no ratio, and the nearest come first.
-    /// Nil where no pack is kept round the airplane.
-    static func deviceFields(fix: OwnShip.Fix, aircraft: String?, glideRatio: Double?, pins: PackFields.Pins) throws -> APIEmergencyFields? {
+    /// Nil where no pack is kept round the airplane. Off the main thread,
+    /// as the emergency's sheet is up: the box is widened read by read.
+    @concurrent
+    nonisolated static func deviceFields(fix: OwnShip.Fix, aircraft: String?, glideRatio: Double?, pins: PackFields.Pins) async throws -> APIEmergencyFields? {
         let at = fix.coordinate
         guard let kept = try PackFields.ranked(lat: at.latitude, lon: at.longitude, altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
                                                limit: 12, pins: pins), !kept.pins.isEmpty else { return nil }

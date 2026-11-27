@@ -47,9 +47,9 @@ struct PlateCard: View {
             }
             Section {
                 Toggle("Show Annotations", isOn: $annotations)
-                // The pilot's pick, else the appearance (PlateLook.inverted).
+                // The pilot's pick, else the appearance (PageLook.inverted).
                 Toggle("Invert Plate Colors", isOn: Binding(
-                    get: { PlateLook.inverted(kept: inverted, dark: scheme == .dark) },
+                    get: { PageLook.inverted(kept: inverted, dark: scheme == .dark) },
                     set: { inverted = $0 }))
                 // Continuous, so a slider (the owner circled ForeFlight's):
                 // its ends a clear page and a solid one.

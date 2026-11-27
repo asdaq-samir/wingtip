@@ -54,7 +54,7 @@ export interface MapLabelKind {
 export const MAP_LABEL = {
   size: { small: 11, normal: 12, large: 13, count: 14, runway: 16, picked: 17 },
   halo: 2,
-  haloNight: 0.85,
+  haloNight: 1,
   scaleMax: 1.2,
   /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */
   nightInk: { "#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#62d48e", "#1c1a17": "#eef1f5", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8fb4ff", "#b45309": "#fbbf24", "#7c3aed": "#bba1ff", "#78716c": "#cdc8c3", "#be185d": "#f58cc4", "#0f766e": "#4fd1c5", "#57534e": "#cfcac5", "#9333ea": "#c99cff" } as Record<string, string>,

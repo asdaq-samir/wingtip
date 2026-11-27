@@ -1414,7 +1414,7 @@ object WingtipMapLabel {
     const val SIZE_RUNWAY = 16f
     const val SIZE_PICKED = 17f
     const val HALO = 2f
-    const val HALO_NIGHT = 0.85f
+    const val HALO_NIGHT = 1f
     const val SCALE_MAX = 1.2f
     /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */
     val NIGHT_INK = mapOf("#2465b8" to "#82b4ff", "#c0309f" to "#f28ddc", "#117a35" to "#62d48e", "#1c1a17" to "#eef1f5", "#dc2626" to "#ff8a8a", "#d70015" to "#ff8a8a", "#c2410c" to "#fb9466", "#2563eb" to "#8fb4ff", "#b45309" to "#fbbf24", "#7c3aed" to "#bba1ff", "#78716c" to "#cdc8c3", "#be185d" to "#f58cc4", "#0f766e" to "#4fd1c5", "#57534e" to "#cfcac5", "#9333ea" to "#c99cff")

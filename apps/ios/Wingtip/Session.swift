@@ -190,13 +190,12 @@ final class Session {
 
     /// The figures kept per N-number on this device, the pilot's own, and
     /// their airplanes' checklists (LocalChecklists); the Favorites are
-    /// the store's (Tracking.forgetFavorites), and the old key of theirs
-    /// is gone with the first launch's migration. Of what Keep for the Air
+    /// the store's (Tracking.forgetFavorites). Of what Keep for the Air
     /// kept, the Go / No-Go (their minimums, loading and currency) and the
     /// routes; the FAA's and the weather's public data stay (KeptForAir).
     static func forgetPilot(_ defaults: UserDefaults = .standard, kept: URL = KeptForAir.folder) {
         for key in defaults.dictionaryRepresentation().keys
-            where key.hasPrefix(OwnFigureStore.prefix) || key.hasPrefix(LocalChecklists.prefix) || key == KeptAirplane.key {
+            where key.hasPrefix(OwnFigureStore.prefix) || key.hasPrefix(LocalChecklists.prefix) {
             defaults.removeObject(forKey: key)
         }
         KeptForAir.forgetPilotOwn(in: kept)

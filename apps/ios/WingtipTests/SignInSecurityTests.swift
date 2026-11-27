@@ -94,19 +94,6 @@ struct SignInSecurityTests {
         #expect(SessionCookies.decode(Data("not a plist".utf8)).isEmpty)
     }
 
-    @Test func theOldJarIsMovedIntoTheKeychainOnceAndEmptied() throws {
-        let old = try #require(URLSessionConfiguration.ephemeral.httpCookieStorage)
-        old.setCookie(cookie("SESSION", expires: Date().addingTimeInterval(86400)))
-        old.setCookie(cookie("STALE", expires: Date().addingTimeInterval(-60)))
-        let vault = vault()
-        defer { vault.write(nil) }
-        let moved = SessionCookies.migrate(from: old, vault: vault)
-        #expect(moved.map(\.name) == ["SESSION"])
-        #expect((old.cookies ?? []).isEmpty)
-        let kept = SessionCookies.decode(try #require(vault.read()))
-        #expect(kept.map(\.name) == ["SESSION"])
-    }
-
     @Test func aSignOutDeletesTheKeychainItem() throws {
         let jar = try #require(URLSessionConfiguration.ephemeral.httpCookieStorage)
         let vault = vault()

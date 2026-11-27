@@ -21,17 +21,17 @@ struct OfflineFieldsTests {
                     groundspeedKt: 105, accuracyM: 5, at: Date(timeIntervalSince1970: 1_762_700_000))
     }
 
-    @Test func nearestFromThePacksIsTheEnginesNearestFirst() throws {
-        let fields = try #require(try PackFields.nearest(lat: 46.80, lon: -92.22, limit: 10, pins: pins))
+    @Test func nearestFromThePacksIsTheEnginesNearestFirst() async throws {
+        let fields = try #require(try await PackFields.nearest(lat: 46.80, lon: -92.22, limit: 10, pins: pins))
         #expect(fields.map(\.ident) == ["KDLH", "KDYT"])
         #expect(fields.allSatisfy { $0.flightCategory == nil && $0.distanceNm > 0 })
         #expect(fields[0].kind == "large_airport" && fields[0].towered == true)
-        #expect(try PackFields.nearest(lat: 46.80, lon: -92.22, limit: 10, pins: noPack) == nil)
+        #expect(try await PackFields.nearest(lat: 46.80, lon: -92.22, limit: 10, pins: noPack) == nil)
     }
 
     /// The boxes are the engine's fields_near: half a degree each way
     /// first, then wider while the packs hold fewer than wanted.
-    @Test func theBoxReadIsTheEnginesAndWidensForTooFewFields() throws {
+    @Test func theBoxReadIsTheEnginesAndWidensForTooFewFields() async throws {
         let asked = Mutex<[Double]>([])
         let pins = pins
         let counted: PackFields.Pins = { south, west, north, east in
@@ -48,8 +48,8 @@ struct OfflineFieldsTests {
         #expect(asked.withLock { $0.count } == 1)
     }
 
-    @Test func theEmergencyFieldsComeFromThePacksWithTheEnginesDistances() throws {
-        let kept = try #require(try Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: nil, pins: pins))
+    @Test func theEmergencyFieldsComeFromThePacksWithTheEnginesDistances() async throws {
+        let kept = try #require(try await Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: nil, pins: pins))
         #expect(kept.fields.map(\.ident) == ["KDLH", "KDYT"])
         // No weather, runways or elevation: the packs hold none.
         #expect(kept.fields.allSatisfy { $0.metar == nil && $0.runways.isEmpty && $0.elevationFt == nil })
@@ -59,18 +59,18 @@ struct OfflineFieldsTests {
             [AirportPin(ident: "KFHU", kind: "medium", lat: 46.83, lon: -92.21, military: "joint", name: "Joint field")]
         }
         #expect(PackFields.candidates(joint(0, 0, 0, 0) ?? []).first?.military == "joint")
-        #expect(try Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: nil, pins: joint)?.fields.first?.military == "joint")
+        #expect(try await Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: nil, pins: joint)?.fields.first?.military == "joint")
         // No airplane: no glide is guessed, and the engine says so.
         let ranked = try Emergency.bestFields(kept, fix: fix, variationDeg: nil)
         #expect(ranked.needsAirplane)
-        #expect(try Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: nil, pins: noPack) == nil)
+        #expect(try await Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: nil, pins: noPack) == nil)
     }
 
-    @Test func thePilotsOwnGlideRatioGoesWithThePacksFields() throws {
-        let kept = try #require(try Emergency.deviceFields(fix: fix, aircraft: "own", glideRatio: 9, pins: pins))
+    @Test func thePilotsOwnGlideRatioGoesWithThePacksFields() async throws {
+        let kept = try #require(try await Emergency.deviceFields(fix: fix, aircraft: "own", glideRatio: 9, pins: pins))
         #expect(kept.airplane?.glide?.ratio == 9 && kept.airplane?.glide?.bestGlideKias == nil)
         // A ratio with no airplane picked is not used: never another's.
-        #expect(try Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: 9, pins: pins)?.airplane == nil)
+        #expect(try await Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: 9, pins: pins)?.airplane == nil)
     }
 
     @Test func theSearchFindsTheKeptAirportsByIdentAndName() throws {

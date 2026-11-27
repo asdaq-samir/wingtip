@@ -214,14 +214,13 @@ struct DeviceKeptTests {
     @Test func signingOutForgetsThePilotsFiguresAndFavorites() throws {
         let defaults = try #require(UserDefaults(suiteName: "wingtip-tests-\(UUID().uuidString)"))
         defaults.set(Data(), forKey: OwnFigureStore.prefix + "N3429J")
-        defaults.set(Data(), forKey: "aircraftFavorites")
         defaults.set(true, forKey: "traffic")
         Session.forgetPilot(defaults)
-        #expect(defaults.data(forKey: OwnFigureStore.prefix + "N3429J") == nil && defaults.data(forKey: "aircraftFavorites") == nil)
+        #expect(defaults.data(forKey: OwnFigureStore.prefix + "N3429J") == nil)
         #expect(defaults.bool(forKey: "traffic"))
 
         // The Favorites live in the store now: they go, the Recents stay.
-        let tracking = try Tracking(container: Records.inMemory(), defaults: defaults)
+        let tracking = try Tracking(container: Records.inMemory())
         let plane = KeptAirplane(hex: "a1b2c3", name: "N3429J", type: "P28A")
         tracking.toggleFavorite(plane)
         tracking.remember(plane)

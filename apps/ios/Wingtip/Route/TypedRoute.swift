@@ -43,11 +43,14 @@ enum TypedRoute {
     /// route_typed_picks among the route's fields' procedures, the one copy
     /// the web's route box and both phones ask (AIM 5-2-9, a SID out of the
     /// departure; AIM 5-4-1, a STAR into the destination). `missed` names
-    /// those neither field publishes; `list` is a field's procedures
-    /// (Planner.procedures), nil where it could not be had. Where the
-    /// engine cannot answer, every typed name is said missed, never guessed.
+    /// those neither field publishes, both lists in hand; `unchecked` those
+    /// not found where a field's list could not be had, so not said
+    /// unpublished (14 CFR 91.103, the engine's contract); `list` is a
+    /// field's procedures (Planner.procedures), nil where it could not be
+    /// had. Where the engine cannot answer, every typed name is unchecked:
+    /// nothing was looked at, so nothing is said missing.
     @MainActor
-    static func picks(_ read: Read, list: @MainActor (String) async -> ProcedureList?) async -> (picks: [ProcedurePick], missed: [String]) {
+    static func picks(_ read: Read, list: @MainActor (String) async -> ProcedureList?) async -> Found {
         let typed = read.procedures.map { EngineContract.RouteTypedPicksInputProceduresItem(name: $0.name, before: $0.before, after: $0.after) }
         let depList = await list(read.dep)
         let destList = read.dest == read.dep ? depList : await list(read.dest)
@@ -58,12 +61,27 @@ enum TypedRoute {
             .init(kind: $0.kind, id: $0.id, name: $0.name, transitions: $0.transitions)
         }) }
         guard let answer = try? Engine.routeTypedPicks(procedures: typed, departure: departure, arrival: arrival) else {
-            return ([], read.procedures.map(\.name))
+            return Found(picks: [], missed: [], unchecked: read.procedures.map(\.name))
         }
         // The engine's pick names its procedure by id; its name is the field's own list's.
         let listed = [depList, destList].compactMap { $0 }.flatMap(\.procedures)
         func name(_ kind: String, _ id: String) -> String { listed.first { $0.kind == kind && $0.id == id }?.name ?? id }
-        return (answer.picks.map { ProcedurePick(ident: $0.ident, id: $0.id, kind: $0.kind, name: name($0.kind, $0.id), transition: $0.transition) }, answer.missed)
+        return Found(picks: answer.picks.map { ProcedurePick(ident: $0.ident, id: $0.id, kind: $0.kind, name: name($0.kind, $0.id), transition: $0.transition) },
+                     missed: answer.missed, unchecked: answer.unchecked)
+    }
+
+    /// The typed procedures as the fields' lists answer them.
+    struct Found: Equatable {
+        var picks: [ProcedurePick]
+        var missed: [String]
+        var unchecked: [String]
+    }
+
+    /// What is said where a field's list did not come, the web's words: not
+    /// looked at, so not said unpublished; the words are left in the box.
+    static func uncheckedWords(_ unchecked: [String], read: Read) -> String {
+        "\(unchecked.joined(separator: " and ")) could not be checked: the procedures of \(read.dep) or \(read.dest) did not load. "
+            + "Try again shortly, or pick it in Procedures."
     }
 
     /// What is said where typed procedures were not found, the web's words:
@@ -127,6 +145,9 @@ extension Plan {
         }
         let found = await TypedRoute.picks(read) { try? await Planner.procedures($0) }
         guard found.missed.isEmpty else { return TypedRoute.missedWords(found.missed, read: read) }
+        // Never planned without a procedure the pilot typed: the route is
+        // left as it was and the words stay in the box to be tried again.
+        guard found.unchecked.isEmpty else { return TypedRoute.uncheckedWords(found.unchecked, read: read) }
         useTypedRoute(read, picks: found.picks)
         return nil
     }

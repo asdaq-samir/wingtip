@@ -265,7 +265,7 @@ final class MapExtrasState: NSObject {
         }
         if annotation is HeldAnnotation {
             let view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: nil)
-            view.markerTintColor = .systemRed
+            view.markerTintColor = WingtipColor.Chart.warning
             view.displayPriority = .required
             view.accessibilityLabel = "The point held, whose airspace the card shows"
             return view
@@ -353,7 +353,7 @@ extension MapExtrasInput {
     /// this input (RootMap) is not drawn again at each step of the slider.
     func shaded(_ shade: CGFloat) -> MapExtrasInput {
         var shaded = self
-        shaded.plateLook.shade = shade
+        shaded.plateLook.page.shade = shade
         return shaded
     }
 }

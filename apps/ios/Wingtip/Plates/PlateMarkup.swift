@@ -67,7 +67,8 @@ final class MarkupLayer: UIView, PKCanvasViewDelegate {
     var key: String? {
         didSet {
             guard key != oldValue else { return }
-            canvas.drawing = key.map(PlateMarkup.load) ?? PKDrawing()
+            kept = key.map(PlateMarkup.load) ?? PKDrawing()
+            show()
         }
     }
 
@@ -76,10 +77,25 @@ final class MarkupLayer: UIView, PKCanvasViewDelegate {
         didSet {
             guard on != oldValue else { return }
             isUserInteractionEnabled = on
+            show()
             tools.setVisible(on, forFirstResponder: canvas)
             if on { canvas.becomeFirstResponder() } else { canvas.resignFirstResponder() }
         }
     }
+
+    /// The page's brightness at night (one less its Dimmer's shade): the
+    /// marks dimmed by colour with it, as the map's lines are (OverlayDim),
+    /// so a red or blue stroke is never the brightest thing on the page in
+    /// a dark cockpit, undoing the eyes' dark adaptation. While Markup is on the marks are in
+    /// their own colours, being drawn.
+    var brightness: CGFloat = 1 {
+        didSet { if brightness != oldValue { show() } }
+    }
+
+    /// The marks as kept; the canvas shows them, or their dimmed copy.
+    private var kept = PKDrawing()
+    /// The canvas is being given a copy, not the pilot's change.
+    private var showing = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -112,11 +128,35 @@ final class MarkupLayer: UIView, PKCanvasViewDelegate {
 
     /// Every mark on this chart taken off (the viewer's Clear Markup).
     func clear() {
-        canvas.drawing = PKDrawing()
-        if let key { PlateMarkup.save(canvas.drawing, key) }
+        kept = PKDrawing()
+        show()
+        if let key { PlateMarkup.save(kept, key) }
     }
 
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-        if let key { PlateMarkup.save(canvasView.drawing, key) }
+        guard !showing else { return }
+        kept = canvasView.drawing
+        if let key { PlateMarkup.save(kept, key) }
+    }
+
+    private func show() {
+        showing = true
+        defer { showing = false }
+        canvas.drawing = !on && brightness < 1 ? Self.dimmed(kept, brightness) : kept
+    }
+
+    /// Each stroke's colour as PencilKit shows it after dark, times the
+    /// brightness (OverlayDim.colour), handed back in the light colour
+    /// PencilKit turns into that dimmed one at night.
+    private static func dimmed(_ drawing: PKDrawing, _ brightness: CGFloat) -> PKDrawing {
+        var out = drawing
+        out.strokes = drawing.strokes.map { stroke in
+            var dim = stroke
+            let shown = PKInkingTool.convertColor(stroke.ink.color, from: .light, to: .dark)
+            let dark = OverlayDim.colour(shown, brightness: brightness) ?? shown
+            dim.ink = PKInk(stroke.ink.inkType, color: PKInkingTool.convertColor(dark, from: .dark, to: .light))
+            return dim
+        }
+        return out
     }
 }

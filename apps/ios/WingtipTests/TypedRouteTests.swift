@@ -58,4 +58,17 @@ struct TypedRouteTests {
         #expect(found.picks.first?.transition == "BAE" && found.picks.first?.ident == "KMSP")
         #expect(found.missed == ["NOPE1"])
     }
+
+    /// A STAR into a field whose list did not come is unchecked, never
+    /// said unpublished; the SID out of the one that did is picked.
+    @Test @MainActor func aProcedureOfAFieldWithNoListIsUnchecked() async throws {
+        let read = try #require(try TypedRoute.read("KMSP BAEE1 BAE OSH OSHH2 KATW"))
+        let kmsp = ProcedureList(airport: "KMSP", cycle: "2611", procedures: [
+            APIProcedureSummary(id: "BAEE1", kind: "departure", name: "BAEE ONE", runwayTransitions: [], transitions: ["BAE"]),
+        ])
+        let found = await TypedRoute.picks(read) { $0 == "KMSP" ? kmsp : nil }
+        #expect(found.picks.map(\.id) == ["BAEE1"])
+        #expect(found.missed.isEmpty && found.unchecked == ["OSHH2"])
+        #expect(TypedRoute.uncheckedWords(found.unchecked, read: read).hasPrefix("OSHH2 could not be checked"))
+    }
 }

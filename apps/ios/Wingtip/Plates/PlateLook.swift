@@ -1,5 +1,5 @@
-import Foundation
 import Observation
+import UIKit
 
 /// How the plates on the map are drawn, from the plate's card: how solid
 /// the page is, whether its colours are turned white on black for the
@@ -7,32 +7,15 @@ import Observation
 /// plate settings, the owner's screenshot, 2026-11-11). Kept on the
 /// device, as the map's other switches are (MapExtrasInput.Keys).
 ///
-/// White on black is the pilot's own pick, else the dark appearance, as
-/// the reader's pages are (ReaderModel.inverted), and the page is shaded
-/// as the chart is by the Dimmer (ChartLook): a plate at night is never a
-/// white page on the dark map, which would undo the pilot's dark
-/// adaptation (AIM 8-1-6, Vision in Flight; the themes audit, 2026-11-27).
+/// The page at night is a page's own night look (PageLook): white on
+/// black as the pilot picked, else by the appearance, and shaded as the
+/// chart is by the Dimmer (ChartLook).
 nonisolated struct PlateLook: Equatable {
     /// The page's opacity, from clear (0) to solid (1).
     var opacity: Double = PlateLook.defaultOpacity
-    /// White on black, as drawn: the kept pick, else the dark appearance.
-    var inverted = false
     var annotations = true
-    /// The night's ground laid over the page, the chart's own shade.
-    var shade: CGFloat = 0
-
-    /// White on black for a kept pick (nil: none) under an appearance.
-    static func inverted(kept: Bool?, dark: Bool) -> Bool { kept ?? dark }
-
-    /// Before version 2 the switch was kept "false" for every pilot who
-    /// never touched it, which drew a white plate on the night's map; that
-    /// "false" is read as no pick, so the plate follows the appearance. A
-    /// kept "true" stays the pilot's.
-    static func migrate(_ defaults: UserDefaults = .standard) {
-        guard defaults.integer(forKey: Keys.version) < 2 else { return }
-        if defaults.object(forKey: Keys.inverted) as? Bool == false { defaults.removeObject(forKey: Keys.inverted) }
-        defaults.set(2, forKey: Keys.version)
-    }
+    /// White on black and the Dimmer's shade, as every page has them.
+    var page = PageLook()
 
     /// Solid enough to read the plate, the chart still faintly under it,
     /// as ForeFlight opens its plate on the map.
@@ -45,7 +28,6 @@ nonisolated struct PlateLook: Equatable {
         static let opacity = "plate.opacity"
         static let inverted = "plate.inverted"
         static let annotations = "plate.annotations"
-        static let version = "plate.lookVersion"
     }
 }
 

@@ -91,7 +91,6 @@ nonisolated enum Problems {
     /// no full stop of its own.
     private static func sentence(_ what: String) -> String {
         let trimmed = what.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: ".:"))
-        guard let first = trimmed.first else { return trimmed }
-        return first.uppercased() + trimmed.dropFirst()
+        return Format.capital(trimmed)
     }
 }

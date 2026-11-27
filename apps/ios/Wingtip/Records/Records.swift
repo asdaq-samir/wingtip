@@ -4,9 +4,8 @@ import SwiftData
 /// The pilot's own records on the device -- the airplanes kept as
 /// Favorites and Recents, the watches set on them, the routes planned --
 /// in one SwiftData store that iCloud carries to their other devices,
-/// so a favourite set on the iPad is on the iPhone in the cockpit. They
-/// were lists encoded into UserDefaults until 2026-11-03; `migrate`
-/// takes those in once. CloudKit's rules are kept by every model here:
+/// so a favourite set on the iPad is on the iPhone in the cockpit.
+/// CloudKit's rules are kept by every model here:
 /// each attribute optional or given a value, and nothing unique, since
 /// two devices may each make the same record before they meet
 /// (`Tracking.reload` folds those together).
@@ -42,47 +41,6 @@ enum Records {
     /// A store that lives only as long as the test that made it.
     static func inMemory() throws -> ModelContainer {
         try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)])
-    }
-
-    /// The old UserDefaults keys, each read once into the store and then
-    /// removed, so a second launch finds nothing to take in.
-    enum OldKeys {
-        static let favorites = KeptAirplane.key
-        static let recents = "recentAircraft"
-        static let watches = "aircraftWatches"
-    }
-
-    /// The lists the app kept in UserDefaults before the store, taken in
-    /// on the first launch after it: a favourite that was also recent is
-    /// one record with both flags; the keys are removed once read.
-    static func migrate(from defaults: UserDefaults, into context: ModelContext) {
-        let favorites = defaults.decoded([KeptAirplane].self, forKey: OldKeys.favorites) ?? []
-        let recents = defaults.decoded([KeptAirplane].self, forKey: OldKeys.recents) ?? []
-        let watches = defaults.decoded([AirplaneWatch].self, forKey: OldKeys.watches) ?? []
-        guard !favorites.isEmpty || !recents.isEmpty || !watches.isEmpty else {
-            for key in [OldKeys.favorites, OldKeys.recents, OldKeys.watches] { defaults.removeObject(forKey: key) }
-            return
-        }
-        var records: [String: KeptAirplaneRecord] = [:]
-        let now = Date()
-        // The favourites in their order (addedAt a second apart keeps it).
-        for (i, kept) in favorites.enumerated() {
-            let record = KeptAirplaneRecord(hex: kept.hex, name: kept.name, type: kept.type)
-            record.favorite = true
-            record.addedAt = now.addingTimeInterval(Double(i) - Double(favorites.count))
-            records[kept.hex] = record
-        }
-        // The recents newest first, as the list was kept.
-        for (i, kept) in recents.enumerated() {
-            let record = records[kept.hex] ?? KeptAirplaneRecord(hex: kept.hex, name: kept.name, type: kept.type)
-            record.recent = true
-            record.recentAt = now.addingTimeInterval(-Double(i))
-            records[kept.hex] = record
-        }
-        for record in records.values { context.insert(record) }
-        for watch in watches { context.insert(AirplaneWatchRecord(watch)) }
-        try? context.save()
-        for key in [OldKeys.favorites, OldKeys.recents, OldKeys.watches] { defaults.removeObject(forKey: key) }
     }
 
     /// Everything the store holds, gone: the account deleted

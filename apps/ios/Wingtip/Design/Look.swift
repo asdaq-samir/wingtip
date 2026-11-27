@@ -90,6 +90,8 @@ private struct LookTint: ViewModifier {
             .environment(\.look, picked)
             .environment(\.lookAccent, picked.appliedTint(dark: scheme == .dark) ?? .blue)
             .background(WindowTint(tint: picked.windowTint, style: Appearance.style(appearance)).allowsHitTesting(false).accessibilityHidden(true))
+            // The states' and sheet's colours follow the look picked (WingtipInk).
+            .onChange(of: look, initial: true) { WingtipInk.keep(look: look) }
     }
 }
 

@@ -9,9 +9,7 @@ import Valet
 /// default Data Protection (the security audit of 2026-11-10, L9). The
 /// app and its widgets each hold them in memory (`jar`), read from the
 /// Keychain item they share through the App Group's access group, and
-/// write them back after each answer that changed them (`keep`). The
-/// first launch with this moves the cookies the App Group's jar held
-/// into the Keychain and empties that jar, once. Nonisolated: the
+/// write them back after each answer that changed them (`keep`). Nonisolated: the
 /// servers' middleware keeps them on the network's threads, and
 /// HTTPCookieStorage and the Keychain are safe from any.
 nonisolated enum SessionCookies {
@@ -20,14 +18,13 @@ nonisolated enum SessionCookies {
     static let account = "gateway-cookies"
 
     /// The cookies in memory, as URLSession keeps them, filled from the
-    /// Keychain (or the old jar, moved) when first used.
+    /// Keychain when first used.
     static let jar: HTTPCookieStorage = {
         // An ephemeral configuration's own store, in memory only; it
         // always has one.
         let jar = URLSessionConfiguration.ephemeral.httpCookieStorage!
         jar.cookieAcceptPolicy = .always
-        let vault = Vault.shared
-        let kept = vault.read().map(decode) ?? (vault.isUnread ? [] : migrate(from: HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: WidgetSnapshot.suite), vault: vault))
+        let kept = Vault.shared.read().map(decode) ?? []
         for cookie in kept { jar.setCookie(cookie) }
         return jar
     }()
@@ -38,16 +35,6 @@ nonisolated enum SessionCookies {
     static func keep(_ jar: HTTPCookieStorage = jar, vault: Vault = .shared) {
         let live = (jar.cookies ?? []).filter { ($0.expiresDate ?? .distantFuture) > Date() }
         vault.write(live.isEmpty ? nil : encode(live))
-    }
-
-    /// The cookies of the App Group's old jar, put in the Keychain and
-    /// taken out of the jar: the move made once, since the jar is then
-    /// empty and the Keychain answers from then on.
-    static func migrate(from old: HTTPCookieStorage, vault: Vault) -> [HTTPCookie] {
-        let cookies = (old.cookies ?? []).filter { ($0.expiresDate ?? .distantFuture) > Date() }
-        if !cookies.isEmpty { vault.write(encode(cookies)) }
-        for cookie in old.cookies ?? [] { old.deleteCookie(cookie) }
-        return cookies
     }
 
     // MARK: The cookies as bytes
@@ -103,9 +90,6 @@ nonisolated enum SessionCookies {
                 .map { Valet.sharedGroupValet(with: $0, identifier: identifier, accessibility: .afterFirstUnlockThisDeviceOnly) }
             valets = [shared, own].compactMap { $0 }
         }
-
-        /// Whether the last read failed other than for want of the item.
-        var isUnread: Bool { unread.withLock { $0 } }
 
         func read() -> Data? {
             for valet in valets {

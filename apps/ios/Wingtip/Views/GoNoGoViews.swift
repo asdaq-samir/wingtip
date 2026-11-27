@@ -116,8 +116,15 @@ struct GoNoGoSection: View {
                         FindingFold(item: item, words: line.words, open: open)
                     }
                 }
-                // The ADIZs the route meets (14 CFR part 99), the engine's one line.
-                AdizLine(result: RouteAdiz.brief(plan))
+                // The route's borders, the planner's lines on its course:
+                // leaving the United States, then the ADIZs it meets (14 CFR
+                // part 99), as the web's glance has them.
+                if let outside = plan.course?.outside {
+                    BorderLineRow(line: outside).accessibilityIdentifier("brief-outside")
+                }
+                if let adiz = plan.course?.adiz {
+                    BorderLineRow(line: adiz).accessibilityIdentifier("brief-adiz")
+                }
                 if let rest = glance.restWords {
                     DisclosureGroup(isExpanded: $restOpen) {
                         ForEach(glance.rest) { item in row(item) }

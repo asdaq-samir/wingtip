@@ -56,8 +56,11 @@ nonisolated enum PackFields {
 
     /// Nearest's list from the packs, nearest first: each field's distance
     /// and true course the engine's; no weather, which the packs do not
-    /// hold. Nil where no pack is kept round the point.
-    static func nearest(lat: Double, lon: Double, limit: Int, pins: Pins = FlightFigures.packPins) throws -> [NearestAirport]? {
+    /// hold. Nil where no pack is kept round the point. On the concurrent
+    /// pool: the box is widened read by read, each a pack read and an
+    /// engine call, while the planner has just failed to answer.
+    @concurrent
+    static func nearest(lat: Double, lon: Double, limit: Int, pins: Pins = FlightFigures.packPins) async throws -> [NearestAirport]? {
         guard let kept = try ranked(lat: lat, lon: lon, limit: limit, pins: pins) else { return nil }
         let byIdent = Dictionary(kept.pins.map { ($0.ident, $0) }, uniquingKeysWith: { a, _ in a })
         return kept.ranked.fields.map { field in
@@ -83,7 +86,7 @@ extension Planner {
             return (try await nearest(lat: lat, lon: lon, limit: limit), .planner)
         } catch {
             if Task.isCancelled { throw error }
-            guard let kept = try PackFields.nearest(lat: lat, lon: lon, limit: limit, pins: pins) else { throw error }
+            guard let kept = try await PackFields.nearest(lat: lat, lon: lon, limit: limit, pins: pins) else { throw error }
             return (kept, .device)
         }
     }

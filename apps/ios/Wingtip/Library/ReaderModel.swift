@@ -43,7 +43,7 @@ final class ReaderModel {
     }
 
     /// White on black: the pilot's own choice, else the dark appearance.
-    func inverted(dark: Bool) -> Bool { places.inverted ?? dark }
+    func inverted(dark: Bool) -> Bool { PageLook.inverted(kept: places.inverted, dark: dark) }
 
     func setInverted(_ on: Bool) {
         places.setInverted(on)

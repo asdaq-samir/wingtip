@@ -100,13 +100,13 @@ final class AirportAnnotation: NSObject, MKAnnotation {
 /// ident to its right in bold, in the field's ink on a halo, as the web
 /// map sets it (glOverlays' airportMarksLayer). One view class reused for
 /// every field; the mark grows a little closer in (FieldMark.scale).
-final class AirportMarkView: MKAnnotationView {
+final class AirportMarkView: MKAnnotationView, NightWords {
     static let reuse = "airport"
     /// The symbol, the ident, the ring and the weather, moved together
     /// within the view where a far barb widens it (`show`).
     private let content = UIView()
     private let symbol = UIImageView()
-    private let label = UILabel()
+    private let label = NightWordLabel()
     /// The ring round the field whose card is open (SelectedHalo).
     private let halo = SelectedHalo()
     /// The barb, the station model's lines and the ↓ (FieldWeatherLayer).
@@ -195,7 +195,7 @@ final class AirportMarkView: MKAnnotationView {
         label.isHidden = far
         // A lighter ink of its colour after dark, and the pilot's text
         // size with Larger Map Labels on (MapLabelLook).
-        label.textColor = MapLabelLook.ink(ink)
+        label.ink = MapLabelLook.ink(ink)
         label.font = MapLabelLook.font(WingtipMapLabel.sizeNormal, weight: .bold, traits: traitCollection)
         label.sizeToFit()
         let width = far ? box : box + Self.gap + label.bounds.width
@@ -229,6 +229,15 @@ final class AirportMarkView: MKAnnotationView {
         collisionMode = .rectangle
         halo.isHidden = !picked
         zPriority = picked ? .max : .defaultUnselected
+    }
+
+    /// The ident dimmed by colour on its opaque halo; the symbol, the ring
+    /// and the weather by their alpha.
+    func dim(_ brightness: CGFloat) {
+        label.brightness = brightness
+        symbol.alpha = brightness
+        halo.opacity = Float(brightness)
+        weatherLayer.opacity = Float(brightness)
     }
 
     /// The weather drawn again on every mark in view, as a setting, the
