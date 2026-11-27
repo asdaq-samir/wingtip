@@ -5,7 +5,7 @@ import { clockTime, flightLevel, zoneName } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
 import { legsWithoutWind } from "../../plan";
 import { usePlanFigures } from "./usePlanFigures";
-import { useGeo } from "../../../lib/geo";
+import { useGeo, type LatLon } from "../../../lib/geo";
 import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
 import { useProgressToast } from "../../../lib/useProgressToast";
 import { useVerdict } from "../../../lib/verdict";
@@ -60,10 +60,10 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const straightNm = useMemo(() => {
     if (!geo || !routed || !index || !planned.dest) return null;
     const points = [planned.dep, ...planned.stops, `${planned.dest}`].map((p) => placeOf(index, p));
-    if (points.some((p) => !p)) return null;
-    let nm = 0;
-    for (let i = 1; i < points.length; i++) nm += geo.distanceNm(points[i - 1]!, points[i]!);
-    return nm;
+    const placed = points.filter((p): p is LatLon => p !== null);
+    if (placed.length !== points.length) return null;
+    // Every leg in one call to the engine (legsNm), not one a leg.
+    return geo.legsNm(placed).reduce((sum, nm) => sum + nm, 0);
   }, [geo, routed, index, planned.dep, planned.stops, planned.dest]);
   const estimate = useMemo(
     () =>

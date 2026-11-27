@@ -26,6 +26,7 @@ import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan-map/routeMapChunk";
 import { prefetchRouteBox } from "./features/route/routeBoxChunk";
+import { prefetchTripFigures } from "./features/navlog";
 import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
 import { TooltipProvider } from "./components/ui/tooltip-provider";
@@ -67,6 +68,8 @@ followDynamicType();
 // fetched while the page draws.
 prefetchRouteMap();
 prefetchRouteBox();
+// The figures strip at FPL's foot (TripFigures), drawn once the engine is in.
+prefetchTripFigures();
 // The menus, popovers and tooltips (popupsChunk), and the route's menu.
 void loadPopups().catch(() => {});
 prefetchShareMenu();
@@ -90,9 +93,10 @@ startLoadLog();
 // (features/shell/newBuild); that reload keeps the route on screen, a
 // person's starts clean (features/shell/freshLoad).
 // Registered once the page has loaded, not during it: the worker's
-// install fetches every chunk it precaches (2.7 MB), which competed
-// with the map, its tiles and the planner on a cold start and after
-// each deploy.
+// install fetches every file it precaches (10.4 MB in 343 files on
+// 2026-11-27, the engine's .wasm, pdf.js and MapLibre the largest; after
+// a deploy only those changed), which competed with the map, its tiles
+// and the planner on a cold start and after each deploy.
 const takeNewBuild = takeNewBuildsWhenAway(registerSW);
 startFresh();
 

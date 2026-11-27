@@ -20,7 +20,10 @@ interface Placed {
  * WGS-84, Karney's geodesic), handed in once the engine is loaded.
  */
 export function nearestFrom<T extends Placed>(fields: readonly T[], at: LatLon, geo: Geo): T[] {
+  // Every field in one call (fromTo), where two a field was 50 crossings
+  // into the .wasm for a list of 25 at each fix's draw.
+  const { distanceNm, bearingDeg } = geo.fromTo(at, fields);
   return fields
-    .map((f) => ({ ...f, distance_nm: geo.distanceNm(at, f), bearing_deg: geo.bearingDeg(at, f) }))
+    .map((f, i) => ({ ...f, distance_nm: distanceNm[i]!, bearing_deg: bearingDeg[i]! }))
     .sort((a, b) => a.distance_nm - b.distance_nm);
 }

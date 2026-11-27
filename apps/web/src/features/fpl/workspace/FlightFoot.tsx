@@ -60,14 +60,18 @@ export function FlightFigures({
         </div>
       )}
       <div data-testid="flight-line">
-        <TripFigures
-          {...line}
-          grow={grow}
-          thin={thin}
-          pill={pill}
-          unknown={s.unknownPlace}
-          legCourseDeg={s.legs[0]?.magnetic_course_deg ?? null}
-        />
+        {/* On a chunk of its own (navlog's index), asked for at the start,
+            so almost always in by the time the engine is. */}
+        <Suspense fallback={null}>
+          <TripFigures
+            {...line}
+            grow={grow}
+            thin={thin}
+            pill={pill}
+            unknown={s.unknownPlace}
+            legCourseDeg={s.legs[0]?.magnetic_course_deg ?? null}
+          />
+        </Suspense>
       </div>
     </EngineGate>
   );

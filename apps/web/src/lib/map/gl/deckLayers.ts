@@ -71,6 +71,17 @@ export function useDeckLayers(key: string, layers: Layer[]) {
   }, [map, key, layers]);
 }
 
+/** `layers` under `key` now, from outside React: for a part that steps
+ *  its layers on a timer (TrafficAloftGl) rather than drawing again to
+ *  give useDeckLayers a new array. The key must be useDeckLayers' while it
+ *  is mounted; before the overlay is made, nothing. */
+export function putDeckLayers(map: MlMap, key: string, layers: Layer[]) {
+  const h = held.get(map);
+  if (!h?.sets.has(key)) return;
+  h.sets.set(key, layers);
+  draw(h);
+}
+
 /** A deck.gl layer's place in the map's style, as a style layer's slot
  *  (lib/map/gl/glLayer SLOTS): under the slot's own empty layer. A prop
  *  of @deck.gl/maplibre's the layers' own types do not list, so spread. */

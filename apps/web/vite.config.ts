@@ -6,7 +6,15 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { CHART_TILES, IN_FLIGHT_READS, LIBRARY_BOOKS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
+import {
+  APP_CHUNKS,
+  CHART_TILES,
+  IN_FLIGHT_READS,
+  LIBRARY_BOOKS,
+  OVERLAY_ARCHIVE,
+  RADAR_FRAMES,
+  markFromCache,
+} from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
@@ -101,10 +109,15 @@ export default defineConfig({
         // deploy: Inter's non-Latin subsets (170 KB), fetched by the browser
         // only for a glyph they hold, the developer's pages (77 KB), and the
         // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
+        // Nor what a pilot turns on: the 3D layers (deckLayers, 657 KB),
+        // the wind flow (FlowGl, 301 KB) and the ACS table (acs, 143 KB),
+        // kept by APP_CHUNKS the first time they open. The precache went
+        // from 11.5 MB in 340 files to 10.4 MB (2026-11-27). pdf.js stays:
+        // a document kept for the air opens in it with no connection.
         // Asked for when needed.
         globIgnores: [
           "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
-          "**/{DevPanel,TrainWorkspace}-*.js",
+          "**/{DevPanel,TrainWorkspace,deckLayers,FlowGl,acs}-*.js",
           "tesseract/**",
           // The connector's live view, which Claude shows, not this app.
           "claude-view.html",
@@ -281,6 +294,8 @@ export default defineConfig({
           // The library's books never through the caches; in flight, a shorter wait (vite-plugins/workboxRules).
           LIBRARY_BOOKS,
           IN_FLIGHT_READS,
+          // The app's chunks the precache leaves out, kept once opened (vite-plugins/workboxRules).
+          APP_CHUNKS,
           {
             // The planner's answers: the network when there is one
             // (the winds change), the last answer when there is not --

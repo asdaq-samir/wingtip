@@ -1,6 +1,5 @@
 import type { MapGeoJSONFeature, Marker } from "maplibre-gl";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { SHEET_SECONDS } from "../../../mapChrome";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
 import { usePreferences } from "../../../preferences";
@@ -9,6 +8,7 @@ import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
 import { cameraOf } from "../camera";
+import { CAMERA_MS } from "../cameraRules";
 import { TAP } from "./common";
 import { pictureLayer } from "../markLayers";
 import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
@@ -121,7 +121,7 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
       // endFollows); the recentre had asked for it before the route came.
       if (!follow) return;
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
-      camera.pick([fix.lon, fix.lat], { zoom, duration: SHEET_SECONDS * 2000, keeps: intent });
+      camera.pick([fix.lon, fix.lat], { zoom, duration: CAMERA_MS, keeps: intent });
       return;
     }
     // Not over the arrow's move in: the owner lets the follow's steps go

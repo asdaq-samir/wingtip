@@ -42,8 +42,17 @@ export function verdict(running: Intent | null, ask: Intent): "go" | "wait" {
   return running && rank(running) > rank(ask) ? "wait" : "go";
 }
 
-/** A follow's first ease, before there is an interval to match, ms. */
-const FOLLOW_FIRST_MS = 500;
+/** A follow's first ease, before there is an interval to match, ms: the
+ *  dry run's fix step (a quarter second), so a scrub's first step lands as
+ *  its next comes rather than half a second behind the finger (the motion
+ *  changes the owner took, 2026-11-27: "Do it all"). */
+const FOLLOW_FIRST_MS = 250;
+
+/** A pick's or a fit's move on the map, ms, on the camera's own ease:
+ *  near enough at once that the map answers the tap, long enough to see
+ *  where it went. 600 to 800 ms had the map still moving after the card
+ *  was up (the speed audit of 2026-11-27). */
+export const CAMERA_MS = 400;
 /** The shortest and longest a follow's ease runs, ms: a frame-rate stream
  *  is not eased shorter than this, and a GPS gone quiet for a while is not
  *  crept towards over many seconds. */
