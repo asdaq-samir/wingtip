@@ -105,7 +105,7 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
   ]);
   const style: StyleSpecification = {
     version: 8,
-    sources: overlays ? { [OVERLAY_SOURCE]: overlays.source } : {},
+    sources: overlays?.sources ?? {},
     layers,
     // The same variable font under a second name: MapLibre draws a name
     // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).

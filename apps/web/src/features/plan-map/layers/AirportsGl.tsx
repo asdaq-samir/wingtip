@@ -1,19 +1,25 @@
 import { useWeatherAgeCredit } from "../../../lib/map/marks/weatherAge";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useRef } from "react";
+import type { MapGeoJSONFeature, MapSourceDataEvent, SymbolLayerSpecification } from "maplibre-gl";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../lib/api/client";
 import { airportsQuery } from "../airportsQuery";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { nearestHit, useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { airportQuery } from "../../../lib/queryClient";
 import {
+  AIRPORTS_SOURCE,
+  AIRPORT_ICON_SIZE,
+  AIRPORT_SHOWN,
   AIRPORT_TILE_LAYERS,
   OVERLAY_SOURCE,
+  markSelectedAirport,
   setAirportWeather,
   setOverlayExclusion,
-  setSelectedAirport,
 } from "../../../lib/map/gl/glOverlays";
+import { TILE_AIRPORT_ICON } from "../../../lib/map/gl/airportIcons";
+import { glZoom } from "../../../lib/map/gl/glStyle";
+import { MAP_ZOOM } from "../../../lib/tokens";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { usePlacedFieldRings } from "../../../lib/map/gl/placedRings";
@@ -52,6 +58,23 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
   },
   paint: { "text-color": CHART.casing, ...labelHalo("airportPicked") },
 };
+/** The open card's field's mark, the tile layers' own picture and size
+ *  (glOverlays) from the tile's fields copied onto the ring's feature,
+ *  always drawn and keeping its room as a Class B's field's mark does; the
+ *  tile layers hide their copy by its feature state (markSelectedAirport),
+ *  so a tap changes no filter and lays no overlay tile out again. None
+ *  where the field wears its own chip, nor one the settings hide. */
+const SELECTED_MARK: SymbolLayerSpecification = {
+  id: "airport-selected-mark",
+  type: "symbol",
+  source: SELECTED,
+  minzoom: glZoom(MAP_ZOOM.airportsFarthest),
+  filter: ["all", ["==", ["get", "tile"], true], ["!", ["get", "chipped"]], ...AIRPORT_SHOWN],
+  layout: { "icon-image": TILE_AIRPORT_ICON, "icon-size": AIRPORT_ICON_SIZE, "icon-allow-overlap": true, "icon-padding": 2 },
+};
+/** Every layer a field's mark is drawn in, for the taps, the probes and
+ *  the rings of the fields drawn: the tiles' and the open card's field's. */
+const MARK_LAYERS = [...AIRPORT_TILE_LAYERS, SELECTED_MARK.id];
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;
 /** The marks' weather's address, as the worker marks an answer it kept. */
@@ -112,9 +135,10 @@ function useAirportTaps(
   { selected, picked, others, onSelect }: Pick<Props, "selected" | "picked" | "others" | "onSelect">,
   fields: (f: MapGeoJSONFeature) => Record<string, unknown>,
 ) {
-  useGlLayer("top", { [SELECTED]: empty() }, [...RING, SELECTED_IDENT]);
+  useGlLayer("top", { [SELECTED]: empty() }, [SELECTED_MARK, ...RING, SELECTED_IDENT]);
   const ringed = selected ?? picked ?? null;
   const chipped = !!ringed && others.some((a) => a.ident === ringed.ident);
+  const tile = useTileField(ringed?.ident ?? null);
   const ring = useMemo<GeoJSON.FeatureCollection | null>(
     () =>
       ringed
@@ -123,19 +147,45 @@ function useAirportTaps(
             features: [
               {
                 type: "Feature",
-                properties: { ident: ringed.ident, chipped },
+                properties: { ...tile, tile: !!tile, ident: ringed.ident, chipped },
                 geometry: { type: "Point", coordinates: [ringed.lon, ringed.lat] },
               },
             ],
           }
         : null,
-    [ringed, chipped],
+    [ringed, chipped, tile],
   );
   useGlData(SELECTED, ring);
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
-  useGlProbe("airport-marks", AIRPORT_TILE_LAYERS, fields);
-  useGlTap(AIRPORT_TILE_LAYERS, TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
+  useGlProbe("airport-marks", MARK_LAYERS, fields);
+  useGlTap(MARK_LAYERS, TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
   usePrefetchOnPress();
+}
+
+/** A field's fields as the airports' tiles have them (its airspace, use,
+ *  size, rank), for its mark drawn over its ring; looked for again as each
+ *  airports tile comes in until one has it (a field picked in a search, far
+ *  from the tiles drawn). */
+function useTileField(ident: string | null): Record<string, unknown> | null {
+  const { map } = useGlMap();
+  const [found, setFound] = useState<{ ident: string; fields: Record<string, unknown> } | null>(null);
+  useEffect(() => {
+    if (!ident) return;
+    const look = (e?: MapSourceDataEvent) => {
+      if ((e && (e.sourceId !== AIRPORTS_SOURCE || !e.tile)) || !map.getSource(AIRPORTS_SOURCE)) return;
+      const f = map.querySourceFeatures(AIRPORTS_SOURCE, { sourceLayer: "airports", filter: ["==", ["get", "ident"], ident] })[0];
+      if (!f) return;
+      map.off("sourcedata", look);
+      setFound({ ident, fields: f.properties });
+    };
+    map.on("sourcedata", look);
+    const first = requestAnimationFrame(() => look());
+    return () => {
+      cancelAnimationFrame(first);
+      map.off("sourcedata", look);
+    };
+  }, [map, ident]);
+  return found && found.ident === ident ? found.fields : null;
 }
 
 /** How far a finger or a mouse may move between press and lift and still
@@ -165,7 +215,7 @@ function usePrefetchOnPress() {
       press = null;
       if (!was || was.id !== e.pointerId || !map.style) return;
       if (Math.hypot(e.clientX - was.x, e.clientY - was.y) > TAP_SLOP_PX) return;
-      const layers = AIRPORT_TILE_LAYERS.filter((l) => map.getLayer(l));
+      const layers = MARK_LAYERS.filter((l) => map.getLayer(l));
       if (!layers.length) return;
       const box = target.getBoundingClientRect();
       const at = { x: e.clientX - box.left, y: e.clientY - box.top };
@@ -209,12 +259,17 @@ function TileAirports(props: Props) {
   usePlacedFieldRings(
     map,
     OVERLAY_SOURCE,
-    AIRPORT_TILE_LAYERS,
+    AIRPORTS_SOURCE,
+    MARK_LAYERS,
     others.map((a) => a.ident),
   );
-  const selectedIdent = props.selected?.ident ?? null;
+  // The ringed field's tile mark and ident hidden (its feature state), the
+  // ring's layers drawing them.
+  const selectedIdent = (props.selected ?? props.picked)?.ident ?? null;
   useEffect(() => {
-    setSelectedAirport(map, selectedIdent);
+    if (!selectedIdent) return;
+    markSelectedAirport(map, selectedIdent, true);
+    return () => markSelectedAirport(map, selectedIdent, false);
   }, [map, selectedIdent]);
   const { box, level } = useGlView();
   const { data: inView, dataUpdatedAt } = useQuery({

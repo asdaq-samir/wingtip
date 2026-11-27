@@ -9,9 +9,11 @@ import {
   AIRSPACE_TILE_LAYERS,
   applyOverlayFilters,
   overlayStyle,
+  AIRPORTS_SOURCE,
+  OVERLAY_SOURCE,
+  markSelectedAirport,
   setAirportWeather,
   setOverlayExclusion,
-  setSelectedAirport,
 } from "./glOverlays";
 import { volumeOfTile, vorOfTile } from "./glTileFeatures";
 import { glZoom } from "./glStyle";
@@ -36,6 +38,8 @@ function fakeMap(ids: string[]) {
   const map = {
     style: {},
     setGlobalStateProperty: vi.fn((k: string, v: unknown) => set.state.set(k, v)),
+    getSource: () => ({}),
+    setFeatureState: vi.fn((f: { id: string }, v: unknown) => set.state.set(`feature:${f.id}`, v)),
     getLayer: (id: string) => (ids.includes(id) ? { id } : undefined),
     setFilter: vi.fn((id: string, f: unknown) => set.filter.set(id, f)),
     setLayoutProperty: vi.fn((id: string, k: string, v: unknown) => set.layout.set(`${id}.${k}`, v)),
@@ -97,20 +101,25 @@ describe("the overlay tiles' layers", () => {
     );
   });
 
-  it("leave the open card's field's ident to the ring's own, larger one", () => {
+  it("leave the open card's field's mark and ident to the ring's own, by its feature state", () => {
     const { map, set } = fakeMap(["airports"]);
-    setSelectedAirport(map, "KMSN");
-    expect(set.state.get("selectedAirport")).toBe("KMSN");
-    setSelectedAirport(map, null);
-    expect(set.state.get("selectedAirport")).toBeNull();
-    const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
-    // Hidden by its paint, so the tiles are not laid out again at a tap;
-    // at the Dimmer's share at night as every word on the chart (mapDim).
-    expect(airports.paint!["text-opacity"]).toEqual([
-      "*",
-      ["coalesce", ["global-state", "mapDim"], 1],
-      ["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1],
-    ]);
+    markSelectedAirport(map, "KMSN", true);
+    expect(set.state.get("feature:KMSN")).toEqual({ selected: true });
+    markSelectedAirport(map, "KMSN", false);
+    expect(set.state.get("feature:KMSN")).toEqual({ selected: false });
+    const style = overlayStyle(TILES, ORIGIN);
+    const airports = style.layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
+    // Hidden by its paint and the feature's state, so a tap lays no tile
+    // out again; at the Dimmer's share at night as every word on the chart (mapDim).
+    const hidden = ["*", ["coalesce", ["global-state", "mapDim"], 1], ["case", ["boolean", ["feature-state", "selected"], false], 0, 1]];
+    expect(airports.paint!["text-opacity"]).toEqual(hidden);
+    expect(airports.paint!["icon-opacity"]).toEqual(hidden);
+    expect(JSON.stringify(airports.filter)).not.toContain("selected");
+    // The fields on a source of their own, each by its ident; the rest on another, each ring by its field's.
+    expect(airports.source).toBe(AIRPORTS_SOURCE);
+    expect(style.sources[AIRPORTS_SOURCE]).toMatchObject({ promoteId: { airports: "ident" } });
+    expect(style.sources[OVERLAY_SOURCE]).toMatchObject({ promoteId: { airspace: "ident" } });
+    expect(style.layers.lines!.every((l) => "source" in l && l.source === OVERLAY_SOURCE)).toBe(true);
   });
 
   it("name the towered fields wherever they are drawn, from 5, and every other field from 8, each mark a little apart", () => {
