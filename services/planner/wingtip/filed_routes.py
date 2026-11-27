@@ -22,6 +22,7 @@ import xml.etree.ElementTree as ET
 from . import stores
 from .config import Settings, get_settings
 from .engine import ask as engine
+from . import xml_names
 
 STORE = get_settings().filed_store
 #: Where the store was kept before FILED_STORE moved it (the data
@@ -104,10 +105,6 @@ def route_stops(route: str, dep: str, dest: str) -> list[str] | None:
     return stops
 
 
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
-
-
 def filings(xml: str) -> list[dict]:
     """A TFMData message's flights that carry a route of flight, each
     {"gufi", "dep", "dest", "route", "aircraft"}: a flight plan's, an
@@ -120,15 +117,15 @@ def filings(xml: str) -> list[dict]:
         return []
     out = []
     for message in root.iter():
-        if _local(message.tag) != "fltdMessage":
+        if xml_names.local(message.tag) != "fltdMessage":
             continue
         found: dict = {}
         for el in message.iter():
-            name = _local(el.tag)
+            name = xml_names.local(el.tag)
             if name == "gufi":
                 found["gufi"] = (el.text or "").strip()
             elif name in ("departurePoint", "arrivalPoint"):
-                airport = next((a for a in el.iter() if _local(a.tag) == "airport"), None)
+                airport = next((a for a in el.iter() if xml_names.local(a.tag) == "airport"), None)
                 if airport is not None:
                     found["dep" if name == "departurePoint" else "dest"] = (airport.text or "").strip().upper()
             elif name in ("routeOfFlight", "newRouteOfFlight") and el.get("legacyFormat"):

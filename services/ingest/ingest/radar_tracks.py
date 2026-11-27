@@ -13,14 +13,12 @@ import xml.etree.ElementTree as ET
 
 from wingtip import utc
 from wingtip.engine import ask as engine
+from wingtip.xml_names import number
 
 
 def _number(element, tag: str) -> float | None:
-    text = element.findtext(tag)
-    try:
-        return float(text) if text not in (None, "") else None
-    except ValueError:
-        return None
+    """A track's own field (a direct child, as STDDS writes them) as a number."""
+    return number(element.findtext(tag))
 
 
 Velocity = tuple[float | None, float | None]

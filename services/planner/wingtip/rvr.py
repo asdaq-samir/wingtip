@@ -32,21 +32,11 @@ import xml.etree.ElementTree as ET
 
 from . import live_reports
 from .engine import ask as engine
+from . import xml_names
 
 KIND = "rvr"
 #: The parts of a runway each reading is of, as the message names them.
 PARTS = ("touchdown", "midpoint", "rollout")
-
-
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
-
-
-def _child(element, name: str) -> str:
-    for child in element.iter():
-        if _local(child.tag) == name:
-            return child.text or ""
-    return ""
 
 
 def readings(texts: list[str]) -> list[dict]:
@@ -65,14 +55,14 @@ def runways(xml: str) -> tuple[str, list[dict]]:
         root = ET.fromstring(xml)
     except ET.ParseError:
         return "", []
-    airport = _child(root, "airport").strip().upper()
+    airport = xml_names.text(root, "airport").strip().upper()
     ends = []
-    for data in (e for e in root.iter() if _local(e.tag) == "runwayData"):
-        runway = _child(data, "numericRunwayID").strip() + _child(data, "runwaySubID").strip()
+    for data in (e for e in root.iter() if xml_names.local(e.tag) == "runwayData"):
+        runway = xml_names.text(data, "numericRunwayID").strip() + xml_names.text(data, "runwaySubID").strip()
         if runway:
             ends.append((runway, data))
     # Every end's readings read at once, three an end.
-    read = iter(readings([_child(data, f"{part}VisualRange") for _, data in ends for part in PARTS]))
+    read = iter(readings([xml_names.text(data, f"{part}VisualRange") for _, data in ends for part in PARTS]))
     found = []
     for runway, data in ends:
         end = {"runway": runway}
@@ -80,8 +70,8 @@ def runways(xml: str) -> tuple[str, list[dict]]:
             reading = next(read)
             end[f"{part}_ft"] = reading["ft"]
             end[f"{part}_more"] = reading["more"]
-            end[f"{part}_trend"] = _child(data, f"{part}Trend").strip() or None
-        end["edge_lights"] = _child(data, "runwayEdgeLightSetting").strip() or None
+            end[f"{part}_trend"] = xml_names.text(data, f"{part}Trend").strip() or None
+        end["edge_lights"] = xml_names.text(data, "runwayEdgeLightSetting").strip() or None
         found.append(end)
     return airport, found
 
