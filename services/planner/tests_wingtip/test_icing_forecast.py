@@ -22,21 +22,30 @@ GRID = {"south": 40.0, "west": -92.0, "step_deg": 0.125, "rows": 41, "cols": 49}
 KEPT = [ft for ft in icing_forecast.LEVELS_FT if ft <= 30000]
 
 
-def _store(severity_at: dict[int, tuple[int, int]], steps: int = 4, until: float | None = None) -> None:
-    """A cycle at CYCLE of `steps` hours; at each step in `severity_at`, a
-    (level ft, category) over the whole grid, 0 elsewhere."""
-    hours = []
-    for step in range(steps):
-        grid = np.zeros((len(KEPT), GRID["rows"], GRID["cols"]), dtype=np.int8)
-        if step in severity_at:
-            ft, category = severity_at[step]
-            grid[KEPT.index(ft)] = category
-        name = f"icingf-{CYCLE:%Y%m%d%H}-{step:02d}"
+def _grid(severity: tuple[int, int] | None, rows: slice = slice(None)) -> np.ndarray:
+    """The stored grid: `severity` (level ft, category) over `rows`, 0 elsewhere."""
+    grid = np.zeros((len(KEPT), GRID["rows"], GRID["cols"]), dtype=np.int8)
+    if severity is not None:
+        grid[KEPT.index(severity[0]), rows] = severity[1]
+    return grid
+
+
+def _store_hours(hours: list[tuple[int, str, np.ndarray]], until: float | None = None) -> None:
+    """Hours (from CYCLE, source, grid) as the weather service stores them."""
+    stored = []
+    for step, source, grid in hours:
+        name = f"icingf-{source}-{CYCLE:%Y%m%d%H}-{step:02d}"
         weather_store.write_array(name, grid)
-        hours.append({"valid": utc.iso(CYCLE + timedelta(hours=step)), "array": name})
-    data = {"cycle": utc.iso(CYCLE), "levels_ft": KEPT, "grid": GRID, "hours": hours}
-    last = (CYCLE + timedelta(hours=steps - 1, minutes=30)).timestamp()
+        stored.append({"valid": utc.iso(CYCLE + timedelta(hours=step)), "array": name, "source": source})
+    data = {"cycle": utc.iso(CYCLE), "analysis": None, "levels_ft": KEPT, "grid": GRID, "hours": stored}
+    last = (CYCLE + timedelta(hours=max(h[0] for h in hours), minutes=30)).timestamp()
     weather_store.write(icing_forecast.STORE_NAME, data, fetched_at=time.time(), until=until or last)
+
+
+def _store(severity_at: dict[int, tuple[int, int]], steps: int = 4, until: float | None = None) -> None:
+    """IFI hours 0 to `steps` - 1; at each step in `severity_at`, a (level
+    ft, category) over the whole grid, 0 elsewhere."""
+    _store_hours([(step, "ifi", _grid(severity_at.get(step))) for step in range(steps)], until)
 
 
 @pytest.fixture(autouse=True)
@@ -52,8 +61,10 @@ def test_the_levels_are_the_awcs_39():
 
 def test_each_leg_is_read_for_the_hour_of_its_middle():
     # Leaving at 14:20Z: leg 1's middle at 14:50 (the 15Z hour, step 2),
-    # 30 minutes on the ground, leg 2's middle at 16:20 (the 16Z hour, step 3).
-    _store({2: (8000, 2), 3: (6000, 2)})
+    # 30 minutes on the ground, leg 2's middle at 16:20 (the 16Z hour,
+    # step 3). Steps 1 and 4 are clear, and the hours beside each leg's
+    # are read too, so the icing is put on no leg it is not near.
+    _store({2: (8000, 2), 3: (6000, 2)}, steps=5)
     answer = icing_forecast.along([(41.9, -87.9), (42.5, -89.0), (43.1, -90.0)], [8000, 9000], [60, 60], [30, 0], NOW, now=NOW)
     assert answer["issued"] == "2026-11-08T13:00:00Z"
     # Light at 8,000 on leg 1; at 9,000 leg 2 reads 9,000 alone: clear,
@@ -65,7 +76,7 @@ def test_each_leg_is_read_for_the_hour_of_its_middle():
 
 def test_a_section_has_the_awcs_shape_and_the_ground_under_it():
     _store({0: (6000, 3)})
-    grid = weather_store.read_array(f"icingf-{CYCLE:%Y%m%d%H}-00")
+    grid = weather_store.read_array(f"icingf-ifi-{CYCLE:%Y%m%d%H}-00")
     found = icing_forecast.section(grid, GRID, KEPT, (41.9, -87.9), (42.5, -89.0))
     levels = len(icing_forecast.LEVELS_FT)
     assert found["width"] == icing_forecast.COLUMNS and found["data_levels"] == levels
@@ -113,3 +124,35 @@ def test_an_hours_grid_gone_is_unchecked():
 def test_the_legs_and_fixes_must_agree():
     with pytest.raises(ValueError):
         icing_forecast.along([(41.9, -87.9)], [6000], [40], None, NOW, now=NOW)
+
+
+def test_a_leg_is_never_read_under_the_worst_stored_near_it():
+    # Leaving at 14:00Z for 20 minutes: the middle at 14:10, the CIP's
+    # hour (CYCLE + 1). The CIP has trace at 8,000 over the north of the
+    # grid; the IFI has moderate there at 15Z, 50 minutes off: the leg reads
+    # moderate, the worst near it, its share the CIP's own.
+    depart = (CYCLE + timedelta(hours=1)).timestamp()
+    north = slice(GRID["rows"] // 2, None)
+    leg = ([(41.0, -90.0), (44.5, -89.0)], [8000], [20], None, depart)
+    _store_hours([(1, "cip", _grid((8000, 1), north))])
+    alone = icing_forecast.along(*leg, now=depart)
+    assert alone["legs"][0]["severity"] == "trace"
+    _store_hours([(1, "cip", _grid((8000, 1), north)), (1, "ifi", _grid(None)), (2, "ifi", _grid((8000, 3)))])
+    answer = icing_forecast.along(*leg, now=depart)
+    assert answer["legs"][0]["severity"] == "moderate"
+    assert answer["line"] == "Forecast icing, moderate, at 8,000 ft on leg 1"
+    assert 0 < answer["legs"][0]["share"] == alone["legs"][0]["share"] < 1
+
+
+def test_the_cips_hour_is_the_nearest_where_an_ifi_hour_is_as_near():
+    hours = [{"valid": utc.iso(CYCLE), "source": "ifi"}, {"valid": utc.iso(CYCLE), "source": "cip"}]
+    assert icing_forecast._primary(hours, CYCLE.timestamp())["source"] == "cip"
+    assert icing_forecast._primary(hours, (CYCLE + timedelta(minutes=31)).timestamp()) is None
+
+
+def test_icing_only_another_hour_has_takes_that_hours_share():
+    depart = (CYCLE + timedelta(hours=1)).timestamp()
+    north = slice(GRID["rows"] // 2, None)
+    _store_hours([(1, "cip", _grid(None)), (2, "ifi", _grid((8000, 2), north))])
+    leg = icing_forecast.along([(41.0, -90.0), (44.5, -89.0)], [8000], [20], None, depart, now=depart)["legs"][0]
+    assert leg["severity"] == "light" and 0 < leg["share"] < 1

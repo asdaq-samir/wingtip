@@ -134,7 +134,7 @@ Each service fetches its own; the engine never fetches.
 | FAA NMS-API | The NOTAM Management Service API: every NOTAM in force (its initial load), then its changes, where the FAA's credentials are set (decision 0059) | ingest |
 | aviationweather.gov | METAR, TAF, PIREP, SIGMET, G-AIRMET | weather |
 | NOAA NOMADS | GFS winds and temperatures aloft, GLMP | weather |
-| NOAA NOMADS, DAFS | The In-Flight Icing (IFI, the operational FIP) severity every hour to 15 hours ahead, which the planner reads along an IFR route's legs | weather |
+| NOAA NOMADS, CIP and DAFS | The icing severity, the Current Icing Product's analysis each hour (CIP2) and the In-Flight Icing forecast (IFI, the operational FIP) to 15 hours ahead, which the planner reads along an IFR route's legs | weather |
 | tfr.faa.gov | TFRs | weather |
 | adsb.lol, ADS-B Exchange | The map's traffic, by region; the followed airplanes (adsb.lol) | planner; ingest |
 | OpenSky Network | An airplane's past flights and their paths where adsb.lol's archive is closed to the planner; the followed airplanes' yesterday prefetched each night into the live store, which the planner reads before asking | planner; ingest |
