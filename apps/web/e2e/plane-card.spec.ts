@@ -84,12 +84,8 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   }
   await page.evaluate(() => (document.documentElement.style.fontSize = ""));
 
-  // Its one slide, its status (no photo, nothing flown to sketch), spans the card, as its record does.
-  const pictures = card.getByTestId("airplane-pictures");
-  await expect(pictures.getByTestId("airplane-status")).toBeVisible();
-  await expect(pictures.getByTestId("flight-trail")).toHaveCount(0);
-  const [pic, list] = [await pictures.boundingBox(), await card.getByTestId("airplane-info").boundingBox()];
-  expect(Math.abs(pic!.width - list!.width)).toBeLessThan(4);
+  // No photo and nothing flown to sketch: Info has no pictures row (the owner, 2026-11-27).
+  await expect(card.getByTestId("airplane-pictures")).toHaveCount(0);
 
   // Scrolled down to a row far down its record, it is in sight: the card pulled up
   // first, as a pilot does, since at half a card's body does not scroll

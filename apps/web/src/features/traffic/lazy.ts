@@ -11,5 +11,5 @@
  */
 
 export { useFlightLive } from "./useFlightLive";
-export { FlightPictures } from "./FlightParts";
+export { FlightNowBox, FlightPictures } from "./FlightParts";
 export { liveFacts } from "./liveFacts";

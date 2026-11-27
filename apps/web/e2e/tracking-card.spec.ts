@@ -76,7 +76,7 @@ test("the card's sketch of where an airplane has flown is in its heights' colour
   );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  // A slide of the row across its card's top, after its flight now (the owner's word, 2026-11-26).
+  // A slide of Info's pictures row (the owner, 2026-11-27).
   const sketch = page.getByTestId("airplane-profile").getByTestId("airplane-pictures").getByTestId("trail-sketch");
   await expect(sketch).toBeVisible({ timeout: slow(15_000) });
   // The fields, each its dot and its ident.
@@ -143,7 +143,8 @@ test("an airplane's card in the air has Track, Alerts and Favorite in a row, Sha
   expect(close!.x, "the close at the right").toBeGreaterThan(box.x + box.width / 2);
   expect(share!.y + share!.height, "Share over the actions").toBeLessThanOrEqual(row[0]!.y);
   await expect(card.getByTestId("airplane-share")).toHaveAccessibleName("Share N14511");
-  // Descending 1,200 ft a minute, at 7,000 ft and 250 kt: said in its flight's box.
+  // Descending 1,200 ft a minute, at 7,000 ft and 250 kt: said in its flight's box, the Flights tab's head.
+  await card.getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("flight-state")).toHaveText("DES");
   await expect(card.getByTestId("flight-altitude")).toHaveText("7,000 ft ↓ 1,200 fpm · 250 kt · 090° true");
   // Its airport: the field it left, its card over the airplane's, and its
@@ -196,15 +197,16 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   );
   await page.goto("/app/plan?flight=a89c1e");
   await settle(page);
-  // One card for it, its N-number's (the owner's design, 2026-11-26): on the
-  // ground the first slide under its actions one line, where it landed.
+  // One card for it, its N-number's (the owner's design, 2026-11-26).
   const card = page.getByTestId("airplane-profile");
-  await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-track")).toHaveCount(0);
-  // No photo of it on Planespotters: its last flight sketched in the row after its status.
+  // No photo of it on Planespotters: its last flight sketched in Info's pictures.
+  await expect(card.getByTestId("airplane-pictures").getByTestId("trail-sketch")).toBeAttached({ timeout: slow(15_000) });
   await expect(card.getByTestId("flight-photo-open")).toHaveCount(0);
   await expect(card.getByTestId("airplane-photo-open")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-pictures").getByTestId("trail-sketch")).toBeAttached();
+  // On the ground the Flights tab's head one line, where it landed (the owner, 2026-11-27).
+  await card.getByTestId("airplane-tab-flights").click();
+  await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /);
   // Debrief is in its flights, on the card's one page: each row its replay and debrief.
   await card.getByTestId("past-flight").first().click();
   await expect(page).toHaveURL(new RegExp(`[?&]past=${Math.floor(off)}`));

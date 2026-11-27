@@ -121,11 +121,12 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   await expect(card.getByTestId("airplane-actions").getByTestId("airplane-share")).toHaveCount(0);
   // No tab bar: one page, its Figures the fourth button's card (the owner, 2026-11-26).
   await expect(card.getByTestId("airplane-actions").getByTestId("airplane-figures-open")).toBeVisible();
-  await expect(card.getByTestId("airplane-tab-bar")).toHaveCount(0);
+  // Under the buttons, over its two tabs, Info open (the owner, 2026-11-27).
+  await expect(card.getByTestId("airplane-facts")).toBeVisible({ timeout: slow(15_000) });
+  await expect(card.getByTestId("airplane-tab-bar")).toBeVisible();
+  // Flights: its status at the head, then its flights, each ▶ its replay over this card.
+  await card.getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
-  // Under the buttons and over the pictures (the owner, 2026-11-26).
-  await expect(card.getByTestId("airplane-facts")).toBeVisible();
-  // Its flights on the same page, after its record, each ▶ its replay over this card.
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });
   await expect(flight.getByTestId("past-flight-play")).toBeVisible();
@@ -260,13 +261,13 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   await row.getByTestId("search-airplane-track").click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, in the air Track first, no Fly
-  // This, one page with no tab bar, the flight's slide in sight under the facts.
+  // This, its flight now at the head of its Flights tab (the owner, 2026-11-27).
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-track")).toBeVisible();
   await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-tab-bar")).toHaveCount(0);
-  await expect(card.getByTestId("airplane-pictures").getByTestId("flight-now")).toBeVisible();
+  await card.getByTestId("airplane-tab-flights").click();
+  await expect(card.getByTestId("airplane-flight-now").getByTestId("flight-now")).toBeVisible();
   await expect(page.getByTestId("airplane-profile")).toHaveCount(1);
 });
 

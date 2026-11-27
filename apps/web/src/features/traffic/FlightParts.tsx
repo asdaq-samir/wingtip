@@ -8,12 +8,11 @@ import { FlightNow, LiveSketch } from "./FlightSummary";
 import { planePhotoQuery } from "./planePhoto";
 import type { FlightLive } from "./useFlightLive";
 
-// The flight's box filling its slide, the tile's own corners, its lines a
-// little closer so the five of them fit the strip's height.
-const SLIDE_BOX = "mt-0 h-full gap-1.5 rounded-(--radius-card) ring-inset";
+// The flight's box at the head of the Flights tab, the cards' own corners.
+const SLIDE_BOX = "mt-0 gap-1.5 rounded-(--radius-card) ring-inset";
 
 /**
- * The airplane card's first slide while it flies (the owner's design of
+ * The airplane card's flight while it flies (the owner's design of
  * 2026-11-26, "Main"): its state, its ends with a bar as far along as it
  * has flown, its height, speed and track, when it arrives and how far and
  * how high it is from own ship (FlightNow), carried on each second by
@@ -42,47 +41,57 @@ function FlightLiveBox({ live, onOpenAirport }: { live: FlightLive; onOpenAirpor
 }
 
 /**
- * The airplane card's top, one sideways row of slides as the airport
- * card's pictures (CardPictures; the owner's word, 2026-11-26): first its
- * flight now (FlightLiveBox), or on the ground its one status line
- * (`ground`, the card's words); then its photos -- the N-number's from the
- * card (`photo`), or for traffic the FAA's registry does not hold, its
- * own by its address (`trafficPhoto`) -- then where it has flown,
- * sketched, where there is a way flown to draw.
+ * The airplane card's flight now, at the head of its Flights tab (the
+ * owner, 2026-11-27: "flights can show the in the air card"): in the air
+ * its live box (FlightLiveBox), on the ground its one status line
+ * (`ground`, the card's words).
  */
-export function FlightPictures({
+export function FlightNowBox({
   live,
   title,
   ground,
-  photo,
-  trafficPhoto,
   onOpenAirport,
 }: {
   live: FlightLive;
   title: string;
   ground: ReactNode;
+  onOpenAirport?: (ident: string) => void;
+}) {
+  return (
+    <section aria-label={live.plane ? `${title}'s flight now` : `Where ${title} is`} data-testid="airplane-flight-now">
+      {live.plane ? (
+        <FlightLiveBox live={live} onOpenAirport={onOpenAirport} />
+      ) : (
+        <div className="flex items-center rounded-(--radius-card) bg-card px-3.5 py-3 ring-1 ring-border/60 ring-inset">{ground}</div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * The airplane card's pictures, one sideways row as the airport card's
+ * (CardPictures), on its Info tab (the owner, 2026-11-27: "info can show
+ * the pictures"): its photos -- the N-number's from the card (`photo`),
+ * or for traffic the FAA's registry does not hold, its own by its address
+ * (`trafficPhoto`) -- then where it has flown, sketched, where there is a
+ * way flown to draw. Nothing where it has none.
+ */
+export function FlightPictures({
+  live,
+  title,
+  photo,
+  trafficPhoto,
+}: {
+  live: FlightLive;
+  title: string;
   photo: CardSlide | null;
   /** Traffic with no N-number: its photo by its ICAO address (Planespotters). */
   trafficPhoto: string | null;
-  onOpenAirport?: (ident: string) => void;
 }) {
   const geo = useGeo();
   const { data: picture } = useQuery({ ...planePhotoQuery(trafficPhoto ?? ""), enabled: !!trafficPhoto });
   const { name, plane, trail } = live;
   const slides: (CardSlide | null)[] = [
-    // One key for the air and the ground, so the flight stays the row's first as it lands or is heard.
-    {
-      key: "flight",
-      content: true,
-      label: plane ? `${title}'s flight now` : `Where ${title} is`,
-      picture: plane ? (
-        <FlightLiveBox live={live} onOpenAirport={onOpenAirport} />
-      ) : (
-        <div className="flex size-full items-center rounded-(--radius-card) bg-card px-3.5 py-3 ring-1 ring-border/60 ring-inset">
-          {ground}
-        </div>
-      ),
-    },
     photo,
     trafficPhoto && picture
       ? {
@@ -125,5 +134,5 @@ export function FlightPictures({
         }
       : null,
   ];
-  return <CardPictures slides={slides} label={`${title}: its flight and pictures`} testId="airplane-pictures" />;
+  return <CardPictures slides={slides} label={`${title}: its pictures`} testId="airplane-pictures" />;
 }

@@ -223,8 +223,8 @@ export const SCREENS: Screen[] = [
       );
       await page.goto("/app/plan?flight=a89c1e");
       await settle(page);
-      // Half way, as it opens: not heard now, its one line under the actions.
-      await expect(sideDrawer(page).getByTestId("airplane-status")).toBeAttached({ timeout: slow(30000) });
+      // Half way, as it opens on Info (the owner, 2026-11-27): its facts under the actions.
+      await expect(sideDrawer(page).getByTestId("airplane-facts")).toBeAttached({ timeout: slow(30000) });
       if (part === "Alert menu") {
         await sideDrawer(page).getByTestId("airplane-alerts").click();
         await expect(page.getByTestId("flight-alert-menu")).toBeVisible();

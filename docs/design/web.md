@@ -885,21 +885,23 @@ owner's P1 of 2026-11-14 (canvas
 head (`SheetCard`: Share at its start, `?airplane=` or `?flight=`, the
 N-number or call sign, ✕); the `CardAction` row by its state, Track (a
 Base UI Toggle on `useTracking`'s follow) or Fly This, then Alerts
-(`AircraftAlertMenu`) and Favorite (`FavoriteTile`); then one row of
-slides, the airport card's picture tiles (`traffic/FlightParts`'
-`FlightPictures` on `CardPictures`, 2026-11-26): the flight in the air
-(`FlightLiveBox` over `FlightSummary`, a `content` slide, a labelled
-group and not a picture, its ends each a tap; its per-second clock
-`FlightNow`'s own, so only it redraws) or the one status line
-(`airplaneStatus`), one key for both so it stays first; the N-number's
-Planespotters.net photo (`photoSlide`, the tile the link to its page,
-the photographer named on it), or traffic's by its address; and the
-sketch of where it has flown (`LiveSketch`) where there are two reports
-at the least. Then one page, no tab bar (`AirplanePage`; the owner,
-2026-11-26), each section the shared `components/FirstFew` (its first
+(`AircraftAlertMenu`) and Favorite (`FavoriteTile`); then two tabs,
+`CardTabPages` with the `CardTabBar` at its foot as the airport card's
+(`tab` in `useAirplaneCardModel`, Info first; the owner, 2026-11-27), the
+flights asked for by `useAirplaneCard` as the card opens whichever tab is
+shown. Info (`AirplanePage`'s `InfoPage`): the picture tiles
+(`traffic/FlightParts`' `FlightPictures` on `CardPictures`): the
+N-number's Planespotters.net photo (`photoSlide`, the tile the link to
+its page, the photographer named on it), or traffic's by its address,
+and the sketch of where it has flown (`LiveSketch`) where there are two
+reports at the least; then `AirplaneInfo`. Flights (`FlightsPage`):
+`FlightNowBox`, the flight in the air (`FlightLiveBox` over
+`FlightSummary`, its ends each a tap; its per-second clock `FlightNow`'s
+own, so only it redraws) or the one status line (`airplaneStatus`); then,
+each section the shared `components/FirstFew` (its first
 three rows, its title the rest): `PastFlights` titled Earlier (Flights
 on the ground), Show Earlier Flights FirstFew's `after` once the section
-is open, then `AirplaneInfo` for an N-number (flights first, 2026-11-27); its data
+is open; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`, `fit` as the airport card's, no sideways

@@ -8,6 +8,10 @@ import { usePreferences } from "../../lib/preferences";
 import { shareOrCopy } from "../../lib/share";
 import { useFlightLive } from "../traffic/lazy";
 import { useAirplaneProfile } from "./useAirplaneProfile";
+import { useTabScroll } from "../../lib/tabScroll";
+
+/** The airplane card's tabs, in the bar's order. */
+export type AirplaneTab = "info" | "flights";
 
 /**
  * The one airplane card's view model (MVVM; the owner's design of
@@ -65,6 +69,12 @@ export function useAirplaneCardModel({
   // the plan's N-number's ⓘ, a figure asked for.
   const [figuresAsked, setFiguresOpen] = useState(figures);
   const figuresOpen = figuresAsked && flyable;
+  // Its two tabs, Info first (the owner, 2026-11-27: "let's have two tabs,
+  // info and flights. by default info opens, and then flights are fetched
+  // in the background": useAirplaneCard asks for its flights as the card
+  // opens), each opening at its own top (useTabScroll).
+  const [tab, pick] = useState<AirplaneTab>("info");
+  const [, setTop] = useTabScroll(tab);
   const kept = card.kept ?? live.kept;
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));
   const title = tail ?? live.name;
@@ -98,6 +108,9 @@ export function useAirplaneCardModel({
     /** The model its POH may be linked for (features/documents' PohRow): the
      *  registry's make and model, else its profile's type. */
     pohModel: [card.record?.manufacturer, card.record?.model].filter(Boolean).join(" ") || vm.type,
+    tab,
+    pick,
+    setTop,
     figuresOpen,
     openFigures: () => setFiguresOpen(true),
     closeFigures: () => setFiguresOpen(false),

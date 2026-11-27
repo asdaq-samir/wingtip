@@ -1,4 +1,4 @@
-import { Bell, Crosshair, Gauge, Share } from "lucide-react";
+import { Bell, Crosshair, Gauge, History, Info, Share } from "lucide-react";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { SheetCard } from "../../components/SheetCard";
@@ -7,14 +7,16 @@ import IconButton from "../../components/IconButton";
 import { ACTION } from "../../lib/cardActions";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import { FavoriteTile } from "../../components/FavoriteTile";
+import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
+import { CardTabBar } from "../../components/CardTabBar";
 import { StatusLine } from "../../components/StatusBadge";
 import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
 import { PohRow } from "../documents/lazy";
-import { FlightPictures, liveFacts } from "../traffic/lazy";
+import { FlightNowBox, FlightPictures, liveFacts } from "../traffic/lazy";
 import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
-import { useAirplaneCardModel, type AirplaneCardModel } from "./useAirplaneCardModel";
-import AirplanePage from "./AirplanePage";
+import { useAirplaneCardModel, type AirplaneCardModel, type AirplaneTab } from "./useAirplaneCardModel";
+import { FlightsPage, InfoPage } from "./AirplanePage";
 import FiguresCard from "./FiguresCard";
 import { airplanePhotoSlide } from "./photoSlide";
 
@@ -103,12 +105,13 @@ function Actions({ m }: { m: AirplaneCardModel }) {
  * Unregistered): a card over the map's sheet by the one card rule, laid out
  * as the airport card is. Its head: Share, its N-number (else its call
  * sign) with its call sign and what it is under it, and ✕. Its actions by
- * its state (Actions). Under them one sideways row of slides
- * (FlightPictures): its flight while it flies, else one line of where it
- * last landed; its photos; the sketch of where it has flown. Then one
- * page, no tab bar (AirplanePage): Now, its record, its flights. Its
- * Figures a card of their own from its fourth button (FiguresCard). Its
- * POH, the pilot's own PDF (PohRow), on Figures, else on the page. Its
+ * its state (Actions), its facts strip (AirplaneFacts). Then its two
+ * tabs, the bar at its foot as the airport card's (the owner, 2026-11-27):
+ * Info, where it opens, its pictures and record (InfoPage); Flights, its
+ * flight now and its flights (FlightNowBox, FlightsPage), asked for in the
+ * background as it opens. Its Figures a card of their own from its fourth
+ * button (FiguresCard). Its POH, the pilot's own PDF (PohRow), on Figures,
+ * else on Info. Its
  * view model is useAirplaneCardModel.
  */
 export default function AirplaneCard({
@@ -158,25 +161,48 @@ export default function AirplaneCard({
         {...liveFacts(m.hex, live, !m.tail)}
         testId="airplane-facts"
       />
-      <div className="pt-3">
-        <FlightPictures
-          live={live}
-          title={m.title}
-          onOpenAirport={m.openAirport}
-          photo={airplanePhotoSlide(m.tail, card.photo)}
-          trafficPhoto={m.tail ? null : m.hex}
-          ground={
-            <p
-              role="status"
-              className={cn(m.tail && card.status.problem ? "text-destructive-ink" : "text-muted-foreground", TEXT.detail)}
-              data-testid="airplane-status"
-            >
-              {m.tail ? <StatusLine words={card.status} /> : (live.chip ?? "Not heard today")}
-            </p>
-          }
-        />
-      </div>
-      <AirplanePage m={m} poh={m.flyable ? null : poh} />
+      {/* Two tabs in the glass bar at its foot, as the airport card's: Info,
+          where it opens, and Flights (the owner, 2026-11-27). */}
+      <CardTabPages
+        tab={m.tab}
+        onPick={m.pick}
+        top={m.setTop}
+        bar={
+          <CardTabBar<AirplaneTab>
+            testId="airplane-tab-bar"
+            tabTestId="airplane-tab-"
+            onPick={m.pick}
+            tabs={[
+              { value: "info", label: "Info", icon: Info },
+              { value: "flights", label: "Flights", icon: History, hint: card.flightCount ? String(card.flightCount) : null },
+            ]}
+          />
+        }
+      >
+        <CardTabPanel value="info">
+          {/* Its photos and where it has flown (the owner, 2026-11-27: "info can show the pictures"). */}
+          <FlightPictures live={live} title={m.title} photo={airplanePhotoSlide(m.tail, card.photo)} trafficPhoto={m.tail ? null : m.hex} />
+          <InfoPage m={m} poh={m.flyable ? null : poh} />
+        </CardTabPanel>
+        <CardTabPanel value="flights">
+          {/* Its flight now, then its flights (the owner, 2026-11-27: "flights can show the in the air card"). */}
+          <FlightNowBox
+            live={live}
+            title={m.title}
+            onOpenAirport={m.openAirport}
+            ground={
+              <p
+                role="status"
+                className={cn(m.tail && card.status.problem ? "text-destructive-ink" : "text-muted-foreground", TEXT.detail)}
+                data-testid="airplane-status"
+              >
+                {m.tail ? <StatusLine words={card.status} /> : (live.chip ?? "Not heard today")}
+              </p>
+            }
+          />
+          <FlightsPage m={m} />
+        </CardTabPanel>
+      </CardTabPages>
       {m.figuresOpen && <FiguresCard m={m} poh={poh} focus={focus} />}
     </SheetCard>
   );

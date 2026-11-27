@@ -319,13 +319,15 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    no sideways scroll as the airport card's, 2026-11-27; its registration and owner in its Registration section, the
    owner, 2026-11-27) under its actions and over its pictures (the
    owner, 2026-11-26: "It should be buttons, info strip and then the
-   pictures"), the same picture tiles under it (its flight now first, then its
-   photos and the sketch of where it has flown, 2026-11-26), then one
-   page with no tab bar, each section its first three rows and its title
-   the rest, as the airport card's sections (the owner, 2026-11-26:
-   "Merge the info and flights tab, we don't need a tab bar"; "make the
-   sections of 3 entries like airport card"), its Figures a fourth button
-   opening their own card. On
+   pictures"), then two tabs in the glass bar at its foot as the airport
+   card's (the owner, 2026-11-27: "let's have two tabs, info and flights.
+   by default info opens, and then flights are fetched in the
+   background"; "info can show the pictures, flights can show the in the
+   air card"): Info, its photos and sketch then its record; Flights, its
+   flight now then its flights. Each section its first three rows and its
+   title the rest, as the airport card's sections ("make the sections of
+   3 entries like airport card"), its Figures a fourth button opening
+   their own card. On
    Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision
@@ -458,27 +460,29 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   Figures for an airplane the planner cannot fly (it can fly one the
   FAA's registry holds, or the pilot's own). Alerts is offered
   where its history is, greyed where the registry gives no ICAO address.
-  Under the tiles one sideways row of slides, as the airport card's
-  pictures (the owner, 2026-11-26): first its flight, in the air the
+  Then two tabs, the glass bar at its foot (the owner, 2026-11-27): Info,
+  where it opens, and Flights, its flights asked for in the background as
+  the card opens (OpenSky's take seconds). Flights opens with its flight
+  now (the owner, 2026-11-27: "flights can show the in the air card"): in the air the
   status badge, its ends with the bar of the way flown, height, speed and
   track, when it arrives, how far and how high from own ship, carried on
   each second; on the ground one line ("On the ground · landed KPWK 2h
   ago", "Not heard in the last 6 weeks", "Checking whether it's in the
-  air…" while the live find is out); then its photo, credited and linked
-  to its page; then, where it has flown two reports at the least, the
-  sketch of where it has flown. Each is shown once. Who flies it and its
+  air…" while the live find is out). Info opens with its pictures, one sideways row as the
+  airport card's ("info can show the pictures"): its photo, credited and
+  linked to its page, then, where it has flown two reports at the least,
+  the sketch of where it has flown; none where it has neither. Who flies it and its
   squawk are facts in the strip over the pictures, as is traffic's ICAO
   address where the FAA's
   registry does not hold it (the owner, 2026-11-27: no Now section, its
   scheduled route and departure being the flight slide's). Opened by
   its N-number while it flies, it is tracked without the map moving.
-  Then one page, no tab bar (the owner, 2026-11-26), each section its
-  first three rows, its title opening the rest and "3 of 12" at its
-  right (FirstFew): its flights first (the owner, 2026-11-27), Earlier
+  Each section its first three rows, its title opening the rest and "3
+  of 12" at its right (FirstFew): on Flights its flights, Earlier
   while it flies, newest first (the last ten, Show Earlier Flights once
   the section is open, a day picked), each ▶ opening its replay and
   debrief over the card (the owner, 2026-11-14: "How do I see the
-  flights of airplane and play them?"); then its public record, its
+  flights of airplane and play them?"); on Info its public record, its
   identifiers with it (ICAO address, Mode S octal, call sign).
   **Figures**, the fourth action button for an airplane the
   planner can fly (the owner, 2026-11-26: "It should be the fourth

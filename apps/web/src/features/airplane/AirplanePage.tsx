@@ -5,47 +5,53 @@ import AirplaneInfo from "./AirplaneInfo";
 import type { AirplaneCardModel } from "./useAirplaneCardModel";
 
 /**
- * The airplane card's one page under its pictures, with no tab bar (the
- * owner, 2026-11-26: "Merge the info and flights tab, we don't need a tab
- * bar"), each section its first three rows and its title the rest, as the
- * airport card's are (FirstFew): its flights, "Earlier" while it flies,
- * each ▶ its replay and debrief over this card (PastFlightCard), then its
- * public record for an N-number (AirplaneInfo: Registration, Airplane,
- * Engine, Airworthiness, its history), its POH's row after it for an
- * airplane with no Figures. What it is
- * flying now (squawk, operator) and traffic's identifiers are the facts
- * strip's (the owner, 2026-11-27, the Now section gone). Its Figures are a card of their own
- * (FiguresCard).
+ * The airplane card's Info tab, the one it opens on (the owner,
+ * 2026-11-27: "let's have two tabs, info and flights. by default info
+ * opens"): its public record for an N-number (AirplaneInfo: Registration,
+ * Airplane, Engine, Airworthiness, its history), each section its first
+ * three rows and its title the rest (FirstFew), then its POH's row for an
+ * airplane with no Figures. Traffic the FAA's registry does not hold has no
+ * record to show, said so.
  */
-export default function AirplanePage({ m, poh }: { m: AirplaneCardModel; poh: ReactNode }) {
+export function InfoPage({ m, poh }: { m: AirplaneCardModel; poh: ReactNode }) {
   const { hex, tail, live, card } = m;
-  return (
-    <div className="space-y-5 pt-5" data-testid="airplane-page">
-      {/* Its flights first, then its record (the owner, 2026-11-27: "move
-          flights section to before registration"). */}
-      {hex ? (
-        <PastFlights
-          hex={hex}
-          onOpen={m.openPast}
-          play
-          title={live.plane ? "Earlier" : "Flights"}
-          type={live.detail?.type ?? live.plane?.type ?? null}
-        />
-      ) : (
-        <ListGroup title="Flights">
-          <ListRow muted title="No flights to show: the FAA's registry gives no address for this N-number." />
-        </ListGroup>
-      )}
-      {tail && (
-        <AirplaneInfo
-          record={card.record ?? live.detail?.faa ?? null}
-          details={card.details}
-          detailsFailed={card.detailsFailed}
-          hex={hex}
-          callsign={live.plane?.callsign?.trim() || null}
-        />
-      )}
+  return tail ? (
+    <>
+      <AirplaneInfo
+        record={card.record ?? live.detail?.faa ?? null}
+        details={card.details}
+        detailsFailed={card.detailsFailed}
+        hex={hex}
+        callsign={live.plane?.callsign?.trim() || null}
+      />
       {poh}
-    </div>
+    </>
+  ) : (
+    <ListGroup title="Registration">
+      <ListRow muted title="Not in the FAA's registry, so it has no public record here." />
+    </ListGroup>
+  );
+}
+
+/**
+ * The airplane card's Flights tab: its flights, "Earlier" while it flies,
+ * each ▶ its replay and debrief over this card (PastFlightCard), asked for
+ * in the background as the card opens (useAirplaneCard), so they are in
+ * when the tab is picked: OpenSky's take seconds (the owner, 2026-11-27).
+ */
+export function FlightsPage({ m }: { m: AirplaneCardModel }) {
+  const { hex, live } = m;
+  return hex ? (
+    <PastFlights
+      hex={hex}
+      onOpen={m.openPast}
+      play
+      title={live.plane ? "Earlier" : "Flights"}
+      type={live.detail?.type ?? live.plane?.type ?? null}
+    />
+  ) : (
+    <ListGroup title="Flights">
+      <ListRow muted title="No flights to show: the FAA's registry gives no address for this N-number." />
+    </ListGroup>
   );
 }
