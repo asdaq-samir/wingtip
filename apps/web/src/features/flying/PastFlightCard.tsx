@@ -1,6 +1,6 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { Gauge, MoveVertical, PlaneLanding, PlaneTakeoff, Route, Timer } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -20,7 +20,7 @@ import { BADGE } from "../../lib/rowBadges";
 import { TEXT } from "../../lib/text";
 import { altFt, bearing, grouped } from "../../lib/format";
 import { dayOf, lasted, legOf, statusOf, when } from "../../components/airplane/pastFlightFormat";
-import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
+import { pastFlightQuery, pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import { loadPastFlightChart } from "../navlog";
 
 /** The track log's rows shown before "All reports" is asked for. */
@@ -48,6 +48,10 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
     .flatMap((page) => page.flights ?? []);
   const flight = [...(data?.pages.flatMap((page) => page.flights ?? []) ?? []), ...held].find((f) => f.id === id) ?? null;
   const points = usePastFlight((s) => s.points);
+  // Its path from the planner (the map's PastFlightPath asks the same):
+  // none to be had, an older OpenSky flight's, said so in the player's
+  // place (N654FL's of 4 Nov, an empty player, 2026-11-27).
+  const { isError: noPath } = useQuery(pastFlightQuery(hex, id));
   const off = when(flight?.off ?? id);
   return (
     // At half as it opens, as every card does (the owner, 2026-11-11).
@@ -66,7 +70,13 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
           plays at the half sheet, at the pilot's ask; the figures and each
           report under. */}
       <div className="space-y-5 pt-3">
-        <Replay />
+        {noPath ? (
+          <ListGroup>
+            <ListRow muted title="Its path can't be had now, so there is nothing to replay." data-testid="past-flight-no-path" />
+          </ListGroup>
+        ) : (
+          <Replay />
+        )}
         {flight && <Figures flight={flight} points={points} />}
         {flight?.destination && points.length > 1 && <ApproachRow ident={flight.destination.ident} points={points} />}
         {points.length > 1 && <TrackLog points={points} />}

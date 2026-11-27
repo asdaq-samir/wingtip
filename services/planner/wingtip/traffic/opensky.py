@@ -37,11 +37,18 @@ OPENSKY_SOURCE = "OpenSky Network"
 DAYS_PER_CALL = 2
 #: How far back `/tracks/all` goes, days.
 TRACK_DAYS = 30
-#: Credits a day each of the flights and the tracks may spend, short of a
-#: standard account's 4,000 a family: a 1-2 day flights call costs 30, a
-#: track 4 (the REST page's table). Counted here from the UTC day's start.
-DAILY_CREDITS = 3600
-FLIGHTS_COST, TRACK_COST = 30, 4
+#: A standard account's credits a day, each of the flights and the tracks
+#: (the REST page's table). What is left is OpenSky's own count, its
+#: X-Rate-Limit-Remaining on each answer: a count kept here began again at
+#: each restart, and older days cost more than the table's 30 (1,120 of
+#: 4,000 were left on 2026-11-27 where the planner had counted far fewer).
+DAILY_CREDITS = 4000
+#: Credits kept back from the pilots' own asks for the next of them.
+RESERVE = 200
+#: The longest it is left alone after a 429, s: a track older than this
+#: account may have answered 429 with a wait of 292 years (N654FL's of
+#: 4 Nov, 2026-11-27), so the family is asked again the next day.
+REFUSED_MOST_S = 86400.0
 #: How long one of its answers may take, s: a track took longer than the
 #: 5 s the live feeds are given (N570GJ's, 2026-11-27).
 TIMEOUT_S = 20.0
@@ -58,7 +65,9 @@ PREFETCH_EVERY_S = 3600.0
 _PREFETCHED: dict[str, dt.date | None] = {"day": None}
 
 _TOKEN = {"value": None, "until": 0.0}
-_SPENT: dict[str, list] = {"flights": [None, 0], "tracks": [None, 0]}
+#: Each family's {"left": OpenSky's remaining count and when it said it,
+#: "until": when a refusal's wait ends}.
+_BUDGET: dict[str, dict] = {"flights": {"left": None, "until": 0.0}, "tracks": {"left": None, "until": 0.0}}
 _FLIGHTS: TTLCache = TTLCache(maxsize=2048, ttl=KEEP_S)
 _TRACKS: TTLCache = TTLCache(maxsize=512, ttl=KEEP_S)
 
@@ -92,25 +101,36 @@ def _token() -> str:
         return _TOKEN["value"]
 
 
-def _spend(family: str, credits: int) -> None:
-    """The day's credits of `family` counted, or _Unread past DAILY_CREDITS."""
+def _left(family: str) -> int | None:
+    """OpenSky's count of the family's credits left today, where it said one today."""
     today = dt.datetime.now(dt.timezone.utc).date()
     with _LOCK:
-        day, spent = _SPENT[family]
-        spent = spent if day == today else 0
-        if spent + credits > DAILY_CREDITS:
-            raise _Unread(f"OpenSky's {family} credits for the day are spent")
-        _SPENT[family] = [today, spent + credits]
+        left = _BUDGET[family]["left"]
+    return left[0] if left and left[1] == today else None
 
 
-def _get(path: str, params: dict, family: str, credits: int):
+def _get(path: str, params: dict, family: str):
     """OpenSky's answer, None for its 404 (nothing found); _Unread where it
-    is off, out of credits or does not answer."""
+    is off, refused it lately, has fewer than RESERVE credits left, or does
+    not answer."""
     if not on():
         raise _Unread("OpenSky is not set up")
-    _spend(family, credits)
+    with _LOCK:
+        if _clock() < _BUDGET[family]["until"]:
+            raise _Unread(f"OpenSky refused its {family} lately")
+    left = _left(family)
+    if left is not None and left < RESERVE:
+        raise _Unread(f"OpenSky's {family} credits for the day are spent")
     try:
         resp = requests.get(f"{API}{path}", params=params, headers={**HEADERS, "Authorization": f"Bearer {_token()}"}, timeout=TIMEOUT_S)
+        remaining = _number(resp.headers.get("X-Rate-Limit-Remaining"))
+        if remaining is not None:
+            with _LOCK:
+                _BUDGET[family]["left"] = (int(remaining), dt.datetime.now(dt.timezone.utc).date())
+        if resp.status_code == 429:
+            wait = _number(resp.headers.get("X-Rate-Limit-Retry-After-Seconds")) or 60.0
+            with _LOCK:
+                _BUDGET[family]["until"] = _clock() + min(wait, REFUSED_MOST_S)
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
@@ -191,6 +211,17 @@ def _flight(entry: dict) -> dict | None:
     }
 
 
+def _once(listed: list[dict]) -> list[dict]:
+    """Each flight once: OpenSky can list one twice, seconds apart, one of
+    them with no arrival (N654FL's of 4 Nov, 21:12Z, 2026-11-27); of two
+    whose times overlap the one with an arrival is kept, else the first."""
+    kept: list[dict] = []
+    for flight in sorted(listed, key=lambda f: (f["destination"] is None, f["id"])):
+        if not any(k["off"] <= flight["on"] and flight["off"] <= k["on"] for k in kept):
+            kept.append(flight)
+    return sorted(kept, key=lambda f: f["id"])
+
+
 def flights(hex_id: str, days: list[dt.date], today: dt.date) -> tuple[list[dict], int]:
     """An airplane's flights on these UTC days, from OpenSky, oldest first,
     and how many of the days could not be had: today's never (its batch
@@ -206,11 +237,11 @@ def flights(hex_id: str, days: list[dt.date], today: dt.date) -> tuple[list[dict
             begin = int(dt.datetime.combine(pair[0], dt.time(), dt.timezone.utc).timestamp())
             end = int(dt.datetime.combine(pair[-1] + dt.timedelta(days=1), dt.time(), dt.timezone.utc).timestamp()) - 1
             try:
-                answer = _get("/flights/aircraft", {"icao24": hex_id, "begin": begin, "end": end}, "flights", FLIGHTS_COST)
+                answer = _get("/flights/aircraft", {"icao24": hex_id, "begin": begin, "end": end}, "flights")
             except _Unread:
                 unread += len(pair)
                 continue
-            _FLIGHTS[key] = [f for f in (_flight(e) for e in answer or [] if isinstance(e, dict)) if f is not None]
+            _FLIGHTS[key] = _once([f for f in (_flight(e) for e in answer or [] if isinstance(e, dict)) if f is not None])
         found += [_with_path(f, _TRACKS.get((hex_id, f["id"]))) for f in _FLIGHTS[key]]
     return sorted(found, key=lambda f: f["id"]), unread
 
@@ -225,7 +256,7 @@ def track(hex_id: str, flight_id: int, now: float) -> list[dict] | None:
     key = (hex_id, flight_id)
     if key not in _TRACKS:
         try:
-            answer = _get("/tracks/all", {"icao24": hex_id, "time": flight_id}, "tracks", TRACK_COST)
+            answer = _get("/tracks/all", {"icao24": hex_id, "time": flight_id}, "tracks")
         except _Unread:
             return None
         path = (answer or {}).get("path") or []
@@ -261,7 +292,7 @@ def prefetch() -> int:
     yesterday = today - dt.timedelta(days=1)
     read = 0
     for hex_id in followed():
-        if _spent_share("flights") >= PREFETCH_SHARE or _spent_share("tracks") >= PREFETCH_SHARE:
+        if _spent_share("flights") >= PREFETCH_SHARE or _spent_share("tracks") >= PREFETCH_SHARE:  # OpenSky's own count
             break
         found, _ = flights(hex_id, [yesterday], today)
         for flight in found:
@@ -271,7 +302,6 @@ def prefetch() -> int:
 
 
 def _spent_share(family: str) -> float:
-    today = dt.datetime.now(dt.timezone.utc).date()
-    with _LOCK:
-        day, spent = _SPENT[family]
-    return (spent if day == today else 0) / DAILY_CREDITS
+    """The share of the family's day spent, by OpenSky's own count; none known, none spent."""
+    left = _left(family)
+    return 0.0 if left is None else 1 - left / DAILY_CREDITS
