@@ -7,12 +7,12 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import { CardHead } from "../../components/CardHead";
 import { SheetCard } from "../../components/SheetCard";
 import { RowBadge } from "../../components/RowBadge";
-import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../lib/api/types";
+import type { PastFlights, PastFlightSummary } from "../../lib/api/types";
 import { clockTime, feet, knots, wholeNm } from "../../lib/format";
 import { compassPoint } from "../../lib/compass";
 import { useGeo } from "../../lib/geo";
 import { callEngine } from "../../lib/engine/engine";
-import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../plan";
+import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight, type ReplayPoint } from "../plan";
 import { useThreeD } from "../../lib/extras";
 import { CameraMenu, ReplayTimeline } from "../replay";
 import { setReplayCamera } from "../../lib/replay/camera/cameraStore";
@@ -86,7 +86,7 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
 }
 
 /** Off and on, how long, how high, how far over the ground and how fast. */
-function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFlightPoint[] }) {
+function Figures({ flight, points }: { flight: PastFlightSummary; points: ReplayPoint[] }) {
   // The miles flown are the engine's (lib/geo): their rows wait for it.
   const geo = useGeo();
   const flown = useMemo(() => geo?.legsNm(points).reduce((sum, nm) => sum + nm, 0) ?? null, [geo, points]);
@@ -195,7 +195,7 @@ function Replay() {
 /** Its height and ground speed over the flight, the replay's moment
  *  marked on it and said over it -- with the controls, so the graph is in
  *  sight as it plays at the half sheet, at the pilot's ask. */
-function ReplayChart({ points }: { points: PastFlightPoint[] }) {
+function ReplayChart({ points }: { points: ReplayPoint[] }) {
   const second = usePastFlight((s) => (s.at === null ? null : Math.floor(s.at)));
   const here = second === null ? null : positionAt(points, second);
   const box = useRef<HTMLDivElement>(null);
@@ -238,7 +238,7 @@ const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
  * student's airplane can go over it after: at a tap, as it asks for the
  * field's procedures, each drawn.
  */
-function ApproachRow({ ident, points }: { ident: string; points: PastFlightPoint[] }) {
+function ApproachRow({ ident, points }: { ident: string; points: ReplayPoint[] }) {
   const [asked, setAsked] = useState(false);
   // Its reports as a track: seconds to ms, the height on the ground none.
   const track = useMemo(() => points.map((p) => ({ t: p.t * 1000, lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null })), [points]);
@@ -308,7 +308,7 @@ function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
 
 /** Each report of the flight, as FlightAware's Track Log, in the figures a
  *  pilot uses (feet, knots, degrees, feet a minute). */
-function TrackLog({ points }: { points: PastFlightPoint[] }) {
+function TrackLog({ points }: { points: ReplayPoint[] }) {
   return (
     <ListGroup title="Track Log">
       <LogTable points={points} />
@@ -318,7 +318,7 @@ function TrackLog({ points }: { points: PastFlightPoint[] }) {
 
 /** Each report, a row: drawn again only when the reports change (memo),
  *  not with the replay's every second -- the chart above carries that. */
-const LogTable = memo(function LogTable({ points }: { points: PastFlightPoint[] }) {
+const LogTable = memo(function LogTable({ points }: { points: ReplayPoint[] }) {
   const [all, setAll] = useState(false);
   const rows = all ? points : points.slice(0, LOG_ROWS);
   return (

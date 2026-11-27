@@ -125,11 +125,13 @@ def traffic_history(
 @router.get("/api/traffic/flight/{hex_id}/history/{flight_id}", response_model=PastFlight, openapi_extra=PUBLIC)
 def traffic_past_flight(hex_id: str = Path(pattern=r"^~?[0-9a-fA-F]{6}$"), flight_id: int = Path(gt=0)) -> PastFlight:
     """One of those flights' reports, for its track log and its replay
-    (wingtip.traffic.past_flight); 404 where it is not one of them."""
+    (wingtip.traffic.past_flight), made ready to replay by the engine
+    (wingtip.traffic.replay_ready: gaps, a held or missing height carried at
+    the last good one); 404 where it is not one of them."""
     found = traffic.past_flight(hex_id, flight_id)
     if found is None:
         raise HTTPException(404, "No such flight of this airplane in adsb.lol's archive.")
-    return PastFlight(**found)
+    return PastFlight(id=found["id"], points=traffic.replay_ready(found["points"]))
 
 
 @router.get("/api/traffic/based", response_model=AircraftBases, openapi_extra=PUBLIC)

@@ -281,6 +281,8 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
  *  heights' colours, fitted, and its replay. */
 export function PastFlightGl({ hex, id }: { hex: string; id: number }) {
   const { data } = useQuery(pastFlightQuery(hex, id));
+  // Made ready by the engine on the planner (replay_track: gaps, a held
+  // or missing height carried at the last good one), drawn and played alike.
   useEffect(() => {
     if (data) usePastFlight.setState({ points: data.points });
   }, [data]);
