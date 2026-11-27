@@ -474,13 +474,13 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   its N-number while it flies, it is tracked without the map moving.
   Then one page, no tab bar (the owner, 2026-11-26), each section its
   first three rows, its title opening the rest and "3 of 12" at its
-  right (FirstFew): its
-  public record, its identifiers with it (ICAO address, Mode S octal,
-  call sign); then its flights, Earlier while it flies, newest first
-  (the last ten, Show Earlier Flights once the section is open, a day
-  picked), each ▶ opening its replay and debrief over the card (the
-  owner, 2026-11-14: "How do I see the flights of airplane and play
-  them?"). **Figures**, the fourth action button for an airplane the
+  right (FirstFew): its flights first (the owner, 2026-11-27), Earlier
+  while it flies, newest first (the last ten, Show Earlier Flights once
+  the section is open, a day picked), each ▶ opening its replay and
+  debrief over the card (the owner, 2026-11-14: "How do I see the
+  flights of airplane and play them?"); then its public record, its
+  identifiers with it (ICAO address, Mode S octal, call sign).
+  **Figures**, the fourth action button for an airplane the
   planner can fly (the owner, 2026-11-26: "It should be the fourth
   button above"), opens a card of its own over this one, open at once
   from the plan's N-number's ⓘ or a figure asked for: every planning

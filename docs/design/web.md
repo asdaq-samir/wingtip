@@ -897,9 +897,9 @@ the photographer named on it), or traffic's by its address; and the
 sketch of where it has flown (`LiveSketch`) where there are two reports
 at the least. Then one page, no tab bar (`AirplanePage`; the owner,
 2026-11-26), each section the shared `components/FirstFew` (its first
-three rows, its title the rest): `AirplaneInfo` for an N-number, then
-`PastFlights` titled Earlier (Flights on the ground), Show Earlier
-Flights FirstFew's `after` once the section is open; its data
+three rows, its title the rest): `PastFlights` titled Earlier (Flights
+on the ground), Show Earlier Flights FirstFew's `after` once the section
+is open, then `AirplaneInfo` for an N-number (flights first, 2026-11-27); its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`, `fit` as the airport card's, no sideways
