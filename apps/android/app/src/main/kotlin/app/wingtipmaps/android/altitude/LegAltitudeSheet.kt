@@ -100,7 +100,7 @@ fun LegAltitudeSheet(
 
 /** A change as written: "Descent from 12.0 nm to 18.7 nm · 4m · 0.8 gal". */
 internal fun changeWords(c: AltitudeEngine.Change): String = listOfNotNull(
-    "${c.kind.replaceFirstChar { it.uppercase() }} from ${Format.distance(c.beginsNm)} to ${Format.distance(c.endsNm)}",
+    "${Format.capital(c.kind)} from ${Format.distance(c.beginsNm)} to ${Format.distance(c.endsNm)}",
     c.minutes?.let(Format::duration),
     c.gallons?.let(Format::fuel),
 ).joinToString(" · ")

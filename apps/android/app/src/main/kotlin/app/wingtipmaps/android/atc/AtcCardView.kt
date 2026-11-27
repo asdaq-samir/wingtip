@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.AnnounceOnce
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.WingtipIcons
@@ -112,7 +113,7 @@ private fun label(action: ItemAction): Int = when (action) {
 @Composable
 private fun KeptLine(kept: AtcCopilotModel.Kept) {
     val next = kept.frequency?.let { f ->
-        stringResource(R.string.atc_kept_next, listOfNotNull(kept.facility?.replaceFirstChar { it.uppercase() }, f).joinToString(" "))
+        stringResource(R.string.atc_kept_next, listOfNotNull(kept.facility?.let(Format::capital), f).joinToString(" "))
     }
     val code = kept.squawk?.let { stringResource(R.string.atc_kept_code, it) }
     val line = listOfNotNull(next, code).joinToString(" · ")
