@@ -6440,6 +6440,8 @@ data class NotamsRanked (
  */
 @Serializable
 data class RankedNotam (
+    val affects: JsonArray? = null,
+    val card: JsonObject? = null,
     val closed: Boolean,
     val ends: String? = null,
     val field: String? = null,
@@ -6460,11 +6462,13 @@ data class RankedNotam (
 
     val rank: Int,
     val raw: String,
+    val reading: JsonObject? = null,
     val reasons: List<NotamReason>,
     val role: String? = null,
     val runways: List<String>,
     val score: Int,
     val starts: String? = null,
+    val subject: JsonObject? = null,
     val tfr: TfrFacts? = null,
     val tied: Boolean,
     val top: Boolean

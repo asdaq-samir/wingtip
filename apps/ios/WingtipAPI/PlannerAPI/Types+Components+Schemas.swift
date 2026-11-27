@@ -18080,6 +18080,48 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/RankedNotam`.
         public struct RankedNotam: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/AffectsPayload`.
+            public struct AffectsPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `AffectsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/affects`.
+            public typealias AffectsPayload = [Components.Schemas.RankedNotam.AffectsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/affects`.
+            public var affects: Components.Schemas.RankedNotam.AffectsPayload?
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/card`.
+            public struct CardPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `CardPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/card`.
+            public var card: Components.Schemas.RankedNotam.CardPayload?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/closed`.
             public var closed: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/RankedNotam/ends`.
@@ -18102,6 +18144,26 @@ extension Components {
             public var rank: Swift.Int
             /// - Remark: Generated from `#/components/schemas/RankedNotam/raw`.
             public var raw: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/reading`.
+            public struct ReadingPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `ReadingPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/reading`.
+            public var reading: Components.Schemas.RankedNotam.ReadingPayload?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/reasons`.
             public var reasons: [Components.Schemas.NotamReason]
             /// - Remark: Generated from `#/components/schemas/RankedNotam/role`.
@@ -18112,6 +18174,26 @@ extension Components {
             public var score: Swift.Int
             /// - Remark: Generated from `#/components/schemas/RankedNotam/starts`.
             public var starts: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/subject`.
+            public struct SubjectPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `SubjectPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/subject`.
+            public var subject: Components.Schemas.RankedNotam.SubjectPayload?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/tfr`.
             public var tfr: Components.Schemas.TfrFacts?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/tied`.
@@ -18121,6 +18203,8 @@ extension Components {
             /// Creates a new `RankedNotam`.
             ///
             /// - Parameters:
+            ///   - affects:
+            ///   - card:
             ///   - closed:
             ///   - ends:
             ///   - field:
@@ -18132,15 +18216,19 @@ extension Components {
             ///   - lowFt:
             ///   - rank:
             ///   - raw:
+            ///   - reading:
             ///   - reasons:
             ///   - role:
             ///   - runways:
             ///   - score:
             ///   - starts:
+            ///   - subject:
             ///   - tfr:
             ///   - tied:
             ///   - top:
             public init(
+                affects: Components.Schemas.RankedNotam.AffectsPayload? = nil,
+                card: Components.Schemas.RankedNotam.CardPayload? = nil,
                 closed: Swift.Bool,
                 ends: Swift.String? = nil,
                 field: Swift.String? = nil,
@@ -18152,15 +18240,19 @@ extension Components {
                 lowFt: Swift.Double? = nil,
                 rank: Swift.Int,
                 raw: Swift.String,
+                reading: Components.Schemas.RankedNotam.ReadingPayload? = nil,
                 reasons: [Components.Schemas.NotamReason],
                 role: Swift.String? = nil,
                 runways: [Swift.String],
                 score: Swift.Int,
                 starts: Swift.String? = nil,
+                subject: Components.Schemas.RankedNotam.SubjectPayload? = nil,
                 tfr: Components.Schemas.TfrFacts? = nil,
                 tied: Swift.Bool,
                 top: Swift.Bool
             ) {
+                self.affects = affects
+                self.card = card
                 self.closed = closed
                 self.ends = ends
                 self.field = field
@@ -18172,16 +18264,20 @@ extension Components {
                 self.lowFt = lowFt
                 self.rank = rank
                 self.raw = raw
+                self.reading = reading
                 self.reasons = reasons
                 self.role = role
                 self.runways = runways
                 self.score = score
                 self.starts = starts
+                self.subject = subject
                 self.tfr = tfr
                 self.tied = tied
                 self.top = top
             }
             public enum CodingKeys: String, CodingKey {
+                case affects
+                case card
                 case closed
                 case ends
                 case field
@@ -18193,11 +18289,13 @@ extension Components {
                 case lowFt = "low_ft"
                 case rank
                 case raw
+                case reading
                 case reasons
                 case role
                 case runways
                 case score
                 case starts
+                case subject
                 case tfr
                 case tied
                 case top

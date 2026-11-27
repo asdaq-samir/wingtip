@@ -62,31 +62,20 @@ export function identsOf(ident: string): string[] {
   return callEngine("field_names", { ident });
 }
 
-/** The NOTAM read by the engine (notam_read): its heading, its words
- *  written out, its window. Drawn inside an EngineGate. */
-export function readNotam(n: FieldNotam, ident: string): NotamReading {
-  return callEngine("notam_read", { text: n.raw, idents: identsOf(ident) });
+/** The NOTAM as the engine read it on the planner (notam_read, the
+ *  NOTAM's `reading`, app.notam_reading): its heading, its words written
+ *  out, its window. */
+export function readNotam(n: FieldNotam): NotamReading {
+  return n.reading as unknown as NotamReading;
 }
 
-/** The NOTAM's card read by the engine from its parts (notam_card): what
- *  happened, its category, one sentence of its effect, the procedures it
- *  takes away, whether it is permanent and so runs until the charts are
- *  updated (the feed's end given, so a firm one is said as its time).
- *  Drawn inside an EngineGate. */
-export function cardOf(n: FieldNotam, ident: string): NotamCardReading {
-  // Asked once a NOTAM and field: a row's title, its times and its card
-  // each want it, at every render, and the reading parses the whole text.
-  // The query's answers are kept objects, so a NOTAM is its own key.
-  const byField = cards.get(n) ?? new Map<string, NotamCardReading>();
-  cards.set(n, byField);
-  const known = byField.get(ident);
-  if (known) return known;
-  const card = callEngine("notam_card", { text: n.raw, idents: identsOf(ident), ends: n.ends ?? null });
-  byField.set(ident, card);
-  return card;
+/** The NOTAM's card as the engine read it on the planner from its parts
+ *  (notam_card, the NOTAM's `card`): what happened, its category, one
+ *  sentence of its effect, the procedures it takes away, whether it is
+ *  permanent and so runs until the charts are updated. */
+export function cardOf(n: FieldNotam): NotamCardReading {
+  return n.card as unknown as NotamCardReading;
 }
-
-const cards = new WeakMap<FieldNotam, Map<string, NotamCardReading>>();
 
 /** A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it
  *  (the planner's `tfr`): its kind as a heading, its kind and rule, how
@@ -114,9 +103,9 @@ export function readTfr(n: FieldNotam): TfrReading {
  *  repeats their start (the owner, 2026-11-11: "avoid redundant
  *  information"); a TFR's kind and rule ("Security TFR, 14 CFR 99.7",
  *  tfr_read). */
-export function whatOf(n: FieldNotam, ident: string): string {
+export function whatOf(n: FieldNotam): string {
   if (n.kind === "tfr") return readTfr(n).what;
-  return cardOf(n, ident).title ?? readNotam(n, ident).words;
+  return cardOf(n).title ?? readNotam(n).words;
 }
 
 /** Where it is, the engine's, only where that is not obvious: a NOTAM's
@@ -130,9 +119,9 @@ export function whereOf(n: FieldNotam, read: NotamReading): string | null {
  *  "Obstacle", the engine's heading; a TFR's kind, "Security TFR"), its
  *  first line under it saying which, so "TFR" is said once (the owner,
  *  2026-11-12). */
-export function headingOf(n: FieldNotam, ident: string): string {
+export function headingOf(n: FieldNotam): string {
   if (n.kind === "tfr") return readTfr(n).heading;
-  return readNotam(n, ident).heading ?? "NOTAM";
+  return readNotam(n).heading ?? "NOTAM";
 }
 
 /** Its number as a briefer reads it, the field's own name off it on the

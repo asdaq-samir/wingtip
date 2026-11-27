@@ -20027,6 +20027,33 @@
       "RankedNotam": {
         "description": "One NOTAM or TFR, ranked: its place in the list and score, whether it\nis one of the top three said first, whether its score is shared\n(`tied`), what was read of it, and its text as sent (`raw`).",
         "properties": {
+          "affects": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affects"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card"
+          },
           "closed": {
             "title": "Closed",
             "type": "boolean"
@@ -20117,6 +20144,18 @@
             "title": "Raw",
             "type": "string"
           },
+          "reading": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading"
+          },
           "reasons": {
             "items": {
               "$ref": "#/components/schemas/NotamReason"
@@ -20156,6 +20195,18 @@
               }
             ],
             "title": "Starts"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
           },
           "tfr": {
             "anyOf": [
@@ -26507,7 +26558,7 @@
     },
     "/api/airport/{ident}/notams": {
       "get": {
-        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had;\n`time_zone` is the field's, for its NOTAMs' local times.",
+        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had;\n`time_zone` is the field's, for its NOTAMs' local times. Each NOTAM\ncomes read for the card: its `reading`, `card` and `subject`\n(app.notam_reading).",
         "operationId": "airport_notams_api_airport__ident__notams_get",
         "parameters": [
           {

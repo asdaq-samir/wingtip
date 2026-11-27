@@ -72,8 +72,14 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # reader left the module; the wind triangle and gonogo_input no longer
 # asked by the web by name (gonogo_brief builds the facts itself), and
 # oxygen_words in.
-RAW_BUDGET = 1_175_000
-GZIP_BUDGET = 530_000
+# 2026-11-27 (round 6's engine audit): lowered again to just over the
+# module, 1,118,706 bytes and 502,955 gzipped from 1,172,181 and 527,329:
+# the NOTAM reader (notam_read, notam_card, notam_subject, notam_affects)
+# asked by the planner with a field's NOTAMs (app.notam_reading), with
+# the round's rule changes (variable winds, closed alternates, the
+# standard day) in.
+RAW_BUDGET = 1_125_000
+GZIP_BUDGET = 506_000
 # A warning, not a failure, from here: the budget is not raised, so the next
 # rule that grows the module should be looked at before it is the one that fails.
 WARN_AT = 0.95

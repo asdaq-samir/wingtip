@@ -167,10 +167,6 @@ navlog_leg
 navlog_totals
 night_at_either_end
 nm_along
-notam_affects
-notam_card
-notam_read
-notam_subject
 our_call
 own_ship_hex
 oxygen_words

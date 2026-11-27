@@ -113,7 +113,7 @@ describe("the Go / No-Go", () => {
 });
 
 describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
-  const check = (good: boolean) => ({
+  const check = (good: boolean | null) => ({
     ident: "KMSN",
     approach: true,
     precision: true,
@@ -147,7 +147,9 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
 
   it("is not checked, never ok, where no check was made or it failed (14 CFR 91.169(b))", () => {
     expect(weather(ifr()).finding).toBe("unknown");
-    expect(weather(ifr(), { failed: true }).detail).toBe("Alternate not checked: 14 CFR 91.169(b) excuses one only where the destination's forecast shows it");
+    expect(weather(ifr(), { failed: true }).detail).toBe(
+      "Alternate not checked: 14 CFR 91.169(b) excuses one only where the destination's forecast shows it",
+    );
   });
 
   it("asks for one where one is needed, and stops on one under its minimums, opening its section", () => {
@@ -160,7 +162,7 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
     expect(weather(ifr(), answer(true, check(false))).finding).toBe("stop");
   });
 
-  it("leaves the weather's own caution where its caution is no worse", () => {
-    expect(weather(ifr({ hazards: ["IFR G-AIRMET"] }), answer(true, null)).detail).toBe("IFR G-AIRMET along the route");
+  it("leaves the weather's own caution where its caution is no worse (none filed is a stop, 91.169(a)(2))", () => {
+    expect(weather(ifr({ hazards: ["IFR G-AIRMET"] }), answer(true, check(null))).detail).toBe("IFR G-AIRMET along the route");
   });
 });
