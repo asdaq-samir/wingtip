@@ -7,6 +7,7 @@ import { cardOpening, dropCard, openedFrom, setCard, useSheetCards, type CardEnt
 import { AT_PILL, letGo, snapsOf } from "./insets";
 import { EASE, FROM_BELOW, FROM_EDGE, RISE, SIDE_EASE } from "./cardMotion";
 import { UNDER_INDICATOR } from "./SheetDrawer";
+import { GRABBER_FOOT_ROOM } from "./SheetGrabber";
 import { cardSettled, frontOffset, frontUnder, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
 import { PointerTapDiv } from "./PointerTapDiv";
@@ -302,7 +303,16 @@ function CardDrawer({
                 />
               )}
               {onPhone && fromBottom && top && p.grabber(at, ask)}
-              <div className="flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">
+              {/* Its scroller ends over the grabber's box where the grabber is
+                  at the foot (the side panel, a top sheet), so a row scrolled
+                  to the foot is not under the box: the iOS audit's P1 found
+                  "plates-row" and a nav log row there, lost 3 to the grabber. */}
+              <div
+                className={cn(
+                  "flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]",
+                  !(onPhone && fromBottom) && !p.inspector && GRABBER_FOOT_ROOM,
+                )}
+              >
                 <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} footPx={footPx} />
               </div>
               {!(onPhone && fromBottom) && top && p.grabber(at, ask)}

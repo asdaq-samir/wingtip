@@ -8,8 +8,11 @@ import { FloatingBar, FloatingBarFace } from "./FloatingBar";
 import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM, FLOATING_BAR_PICKED, FLOATING_BAR_ROOM } from "./floatingBarLook";
 
 /** The grabber's 16-point box (a rem) under the bar where the card's
- *  grabber is at its foot: the side panel, md up (useIsMobile's width). */
-const GRABBER_ROOM = "md:pb-[calc(var(--bar-foot)+1rem)]";
+ *  grabber is at its foot is its scroller's own room now (CardStack's
+ *  GRABBER_FOOT_ROOM), so a row is never under the box either; in the
+ *  inspector's column, which has no grabber, the bar keeps the same rem, so
+ *  it rests as high as the side panel's beside it. */
+const GRABBER_ROOM = "in-data-[slot=map-inspector]:pb-[calc(var(--bar-foot)+1rem)]";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in

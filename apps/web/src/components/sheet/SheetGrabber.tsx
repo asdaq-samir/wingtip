@@ -17,6 +17,11 @@ const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
  *  settled (the owner, 2026-11-11: "The grabber shows up after card
  *  settles"). */
 const BOX = "absolute inset-x-0 z-30 mx-auto flex h-4 w-14 transform-gpu print:hidden";
+/** The box's 16 points (BOX's h-4) kept clear over the sheet's free edge
+ *  where the grabber is at the foot, so no row scrolled to a card's foot
+ *  lies under the box: the side panel's own pb-4 (MapPanel) and a card's
+ *  scroller (CardStack). */
+export const GRABBER_FOOT_ROOM = "mb-4";
 const edge = (at: "top" | "bottom") => (at === "top" ? "top-0 items-start pt-1.25" : "bottom-0 items-end pb-1.25");
 const RING = "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
 
