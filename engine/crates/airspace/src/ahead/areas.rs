@@ -133,6 +133,32 @@ pub(super) fn special_use_alerts(track: &Track, areas: Vec<Area>) -> Vec<Alert> 
     found
 }
 
+/// A special-use area's kind as the pack keeps it, its first four bytes up
+/// to the first zero ("R", "MOA" ...); empty where not UTF-8, which no
+/// kind is.
+fn kind_of(a: &[u8]) -> &str {
+    std::str::from_utf8(a[..4].split(|&c| c == 0).next().unwrap_or(&[])).unwrap_or("")
+}
+
+/// Each of a pack's special-use areas' heights, by its place in the
+/// layer, None for a kind no alert is given for or a row not read: the
+/// FAA's codes and DESC as the pack keeps them (wingtip.sua `_area`), its
+/// JSON parsed once a pack and kept (pack_kept), not once an area a fix.
+fn sua_heights(p: &Pack) -> Vec<Option<sua_limit::Heights>> {
+    let (Some(layer), Some(alt), Some(rec)) = (p.layer("sua"), p.section("sua.alt"), p.section("sua.rec")) else {
+        return Vec::new();
+    };
+    let codes = p.section("sua.json");
+    (0..layer.count)
+        .map(|i| {
+            let (a, r) = (alt.get(32 * i..32 * i + 32)?, rec.get(24 * i..24 * i + 24)?);
+            special_use_need(kind_of(a))?;
+            let codes = codes.and_then(|d| text(d, r, 8)).and_then(|t| json::parse(t).ok());
+            Some(sua_limit::heights(codes.as_ref(), f64_at(a, 8), f64_at(a, 16), [a[4], a[5]]))
+        })
+        .collect()
+}
+
 pub(super) fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) -> Vec<Alert> {
     let boxes = track.boxes(1.0);
     let mut areas = Vec::new();
@@ -142,20 +168,18 @@ pub(super) fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) ->
         else {
             continue;
         };
+        let held = crate::pack_kept::kept(p, "sua_heights", sua_heights);
         for i in 0..layer.count {
-            let (Some(a), Some(r)) = (alt.get(32 * i..32 * i + 32), rec.get(24 * i..24 * i + 24)) else { continue };
-            let kind = String::from_utf8_lossy(a[..4].split(|&c| c == 0).next().unwrap_or(&[])).into_owned();
-            if special_use_need(&kind).is_none() {
+            let (Some(a), Some(r), Some(Some(heights))) =
+                (alt.get(32 * i..32 * i + 32), rec.get(24 * i..24 * i + 24), held.get(i).copied())
+            else {
                 continue;
-            }
+            };
             let bbox = layer.bbox(i);
             if !meets(bbox, &boxes) {
                 continue;
             }
             let (Some(wkb), Some(name)) = (layer.wkb(i), text(names, r, 16)) else { continue };
-            // The FAA's codes and DESC as the pack keeps them (wingtip.sua `_area`).
-            let codes = p.section("sua.json").and_then(|d| text(d, r, 8)).and_then(|t| json::parse(t).ok());
-            let heights = sua_limit::heights(codes.as_ref(), f64_at(a, 8), f64_at(a, 16), [a[4], a[5]]);
             // The ground under the area for its AGL heights: the middle of
             // its box, the airplane's own where that cannot be read.
             let under = if heights.floor_agl || heights.ceiling_agl {
@@ -164,7 +188,7 @@ pub(super) fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) ->
                 ground
             };
             areas.push(Area {
-                kind,
+                kind: kind_of(a).to_owned(),
                 name: name.to_string(),
                 heights,
                 under,

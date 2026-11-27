@@ -323,7 +323,8 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
     ))
 }
 
-pub fn call(name: &str, v: &Value) -> Result<String, String> {
+/// terrain_way_frame and terrain_way_round: the heights `given`, else the input's "terrain_ft".
+pub(super) fn call(name: &str, v: &Value, given: Option<&[f64]>) -> Result<String, String> {
     let r = Reader { name };
     let point = |key: &str| -> Result<Point, String> { r.point(v.get(key).ok_or_else(|| format!("{name}: \"{key}\" is missing"))?) };
     // The end read within 180 degrees of the start (wrap.rs), so a way
@@ -356,12 +357,10 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push_str("]}");
         return Ok(out);
     }
-    let heights: Vec<f64> = r
-        .opt_list(v, "terrain_ft")?
-        .ok_or_else(|| format!("{name}: \"terrain_ft\" is missing"))?
-        .iter()
-        .map(|x| x.as_f64().unwrap_or(0.0))
-        .collect();
+    let heights: std::borrow::Cow<[f64]> = match given {
+        Some(h) => h.into(),
+        None => r.numbers(v, "terrain_ft").ok_or_else(|| format!("{name}: \"terrain_ft\" is missing"))??.into(),
+    };
     let fields: Vec<Field> = r
         .opt_list(v, "fields")?
         .unwrap_or(&[])

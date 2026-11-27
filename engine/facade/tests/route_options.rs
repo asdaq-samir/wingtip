@@ -11,7 +11,7 @@
 use serde_json::Value;
 use std::path::PathBuf;
 use std::time::Instant;
-use wingtip_engine::call::call;
+use wingtip_engine::call::{call, call_with_numbers};
 
 fn fixture() -> Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/routeOptions.json");
@@ -223,9 +223,21 @@ fn a_long_route_is_worked_out_in_good_time() {
             })
             .collect(),
     );
-    let input = flat_ground(input).to_string();
+    // Ground rising to the east, so the heights handed over are not all one.
+    let mut input = flat_ground(input);
+    let heights: Vec<f64> = (0..input["terrain_ft"].as_array().unwrap().len()).map(|i| (i % 997) as f64).collect();
+    input["terrain_ft"] = Value::from(heights.clone());
+    let text = input.to_string();
     let started = Instant::now();
-    let answer: Value = serde_json::from_str(&call("route_options", &input).unwrap()).unwrap();
+    let by_text = call("route_options", &text).unwrap();
     println!("route_options, 900 nm round a line of storms: {:?}", started.elapsed());
+    let answer: Value = serde_json::from_str(&by_text).unwrap();
     assert!(!answer["options"].as_array().unwrap().is_empty());
+    // The heights handed over as numbers (wingtip_native.call_numbers) give
+    // the same answer as the same heights in the JSON.
+    input.as_object_mut().unwrap().remove("terrain_ft");
+    let started = Instant::now();
+    let by_numbers = call_with_numbers("route_options", &input.to_string(), "terrain_ft", &heights).unwrap();
+    println!("route_options, the heights handed over: {:?} ({} heights)", started.elapsed(), heights.len());
+    assert_eq!(by_numbers, by_text);
 }

@@ -46,6 +46,12 @@ impl Reader<'_> {
         }
     }
 
+    /// A list of numbers (the ground's heights), one not a number as 0,
+    /// None where it is missing or null.
+    pub fn numbers(&self, v: &Value, key: &str) -> Option<Result<Vec<f64>, String>> {
+        self.opt_list(v, key).transpose().map(|l| Ok(l?.iter().map(|x| x.as_f64().unwrap_or(0.0)).collect()))
+    }
+
     pub fn point(&self, v: &Value) -> Result<Point, String> {
         match v.as_array() {
             Some([lat, lon, ..]) => match (lat.as_f64(), lon.as_f64()) {
@@ -224,9 +230,6 @@ impl Reader<'_> {
                 landed: self.opt_list(c, "landed")?.unwrap_or(&[]).iter().map(|b| matches!(b, Value::Bool(true))).collect(),
             }),
         };
-        let numbers = |key: &str| -> Result<Option<Vec<f64>>, String> {
-            self.opt_list(v, key)?.map(|items| items.iter().map(|x| Ok(x.as_f64().unwrap_or(0.0))).collect()).transpose()
-        };
         let water_far = match v.get("water_far") {
             None | Some(Value::Null) => None,
             Some(Value::String(s)) => Some(s.bytes().map(|b| b == b'1').collect()),
@@ -270,7 +273,7 @@ impl Reader<'_> {
                 Some(Value::Bool(b)) => Some(*b),
                 Some(_) => return Err(self.bad("\"night\" is not true or false")),
             },
-            terrain_ft: numbers("terrain_ft")?,
+            terrain_ft: self.numbers(v, "terrain_ft").transpose()?,
             water_far,
             tafs: self.reports(v, "tafs")?,
             metars: self.reports(v, "metars")?,

@@ -43,3 +43,14 @@ fn bad_json_says_where() {
     let deep = "[".repeat(100) + &"]".repeat(100);
     assert!(parse(&deep).unwrap_err().contains("nested too deep"));
 }
+
+#[test]
+fn a_string_keeps_its_text_and_its_escapes() {
+    // Raw UTF-8 either side of each escape, an escaped slash, and a
+    // character past ASCII escaped, which stands for itself whole.
+    let v = parse(r#"["Zürich\n\t\b\f\/ é\é→", "\""]"#).unwrap();
+    let a = v.as_array().unwrap();
+    assert_eq!(a[0].as_str(), Some("Zürich\n\t\u{8}\u{c}/ éé→"));
+    assert_eq!(a[1].as_str(), Some("\""));
+    assert!(parse(r#""cut \"#).is_err());
+}

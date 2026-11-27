@@ -146,29 +146,72 @@ pub(super) fn near_field_given(distance_nm: f64, elevation_ft: Option<f64>, alt:
     distance_nm <= NEAR_FIELD_NM && elevation_ft.is_none_or(|e| alt <= e + NEAR_FIELD_AGL_FT)
 }
 
+/// The landing fields of a pack's airports table as (lat, lon, elevation
+/// ft): NASR's airports, seaplane bases, gliderports and ultralight fields
+/// (SITE_TYPE_CODE A, C, G, U; a heliport or a balloonport is no field),
+/// the elevation None where not on file. Read once a pack and kept
+/// (pack_kept), as the phones ask near_field every 10 s in the air.
+fn landing_fields(p: &Pack) -> Vec<(f64, f64, Option<f64>)> {
+    let Some(t) = p.section("airports").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else {
+        return Vec::new();
+    };
+    let (Some(la), Some(lo), Some(el), Some(kind)) = (t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("ELEV"), t.col("SITE_TYPE_CODE"))
+    else {
+        return Vec::new();
+    };
+    t.rows
+        .iter()
+        .filter(|row| matches!(row[kind].as_str(), "A" | "C" | "G" | "U"))
+        .filter_map(|row| Some((row[la].parse::<f64>().ok()?, row[lo].parse::<f64>().ok()?, row[el].parse::<f64>().ok())))
+        .collect()
+}
+
 /// Whether the airplane is taking off or landing at a field: within 3 nm
 /// of one and no more than 1,000 ft over it (wingtip.alerts' `_near_field`),
-/// from the packs' airports (NASR's airports, seaplane bases, gliderports
-/// and ultralight fields; a heliport or a balloonport is no field).
+/// from the packs' landing fields. The nearest is the first at the least
+/// geodesic distance, as a scan of every field gives; geo::nearest solves
+/// the ellipsoid only for those the sphere cannot rule out.
 pub(super) fn near_field(packs: &[Pack], lat: f64, lon: f64, alt: f64) -> bool {
-    let mut best: Option<(f64, Option<f64>)> = None;
-    for p in packs {
-        let Some(t) = p.section("airports").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { continue };
-        let (Some(la), Some(lo), Some(el), Some(kind)) =
-            (t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("ELEV"), t.col("SITE_TYPE_CODE"))
-        else {
-            continue;
-        };
-        for row in &t.rows {
-            if !matches!(row[kind].as_str(), "A" | "C" | "G" | "U") {
-                continue;
-            }
-            let (Ok(y), Ok(x)) = (row[la].parse::<f64>(), row[lo].parse::<f64>()) else { continue };
-            let d = crate::geo::distance_nm(lat, lon, y, x);
-            if best.is_none_or(|b| d < b.0) {
-                best = Some((d, row[el].parse::<f64>().ok()));
+    let held: Vec<_> = packs.iter().map(|p| crate::pack_kept::kept(p, "landing_fields", landing_fields)).collect();
+    let all = || held.iter().flat_map(|h| h.iter());
+    let Some((i, d)) = crate::geo::nearest(lat, lon, all().map(|f| (f.0, f.1)), |y, x| crate::geo::distance_nm(lat, lon, y, x)) else {
+        return false;
+    };
+    let elev = all().nth(i).and_then(|f| f.2);
+    d.is_finite() && near_field_given(d, elev, alt)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The kept, sphere-filtered nearest field is the one a scan of every
+    /// row's geodesic finds, over the Chicago phone packs.
+    #[test]
+    fn the_nearest_field_is_the_scans() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../services/planner/tests_wingtip/fixtures/native/phone");
+        let bytes: Vec<Vec<u8>> = ["n40w088.pack", "n40w092.pack"].iter().map(|f| std::fs::read(dir.join(f)).unwrap()).collect();
+        let packs: Vec<Pack> = bytes.iter().map(|b| Pack::read(b).unwrap()).collect();
+        let fields: Vec<_> = packs.iter().flat_map(landing_fields).collect();
+        assert!(fields.len() > 100, "{}", fields.len());
+        let started = std::time::Instant::now();
+        for k in 0..400 {
+            let (lat, lon) = (40.0 + (k / 20) as f64 * 0.2, -92.0 + (k % 20) as f64 * 0.4);
+            let scan = fields.iter().fold(None::<(f64, Option<f64>)>, |b, f| {
+                let d = crate::geo::distance_nm(lat, lon, f.0, f.1);
+                if b.is_none_or(|b| d < b.0) {
+                    Some((d, f.2))
+                } else {
+                    b
+                }
+            });
+            for alt in [0.0, 900.0, 3000.0] {
+                let want = scan.is_some_and(|(d, e)| near_field_given(d, e, alt));
+                assert_eq!(near_field(&packs, lat, lon, alt), want, "{lat} {lon} {alt}");
             }
         }
+        // A field's own point: near it, on the ground.
+        assert!(near_field(&packs, fields[0].0, fields[0].1, fields[0].2.unwrap_or(0.0)));
+        eprintln!("near_field, 1,200 asks of {} fields: {:?}", fields.len(), started.elapsed());
     }
-    best.is_some_and(|(d, elev)| near_field_given(d, elev, alt))
 }

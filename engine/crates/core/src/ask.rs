@@ -52,7 +52,21 @@ impl<'a> Ask<'a> {
 
     /// A list that must be there.
     pub fn list(&self, key: &str) -> Result<&'a [Value], String> {
-        self.v.get(key).and_then(Value::as_array).ok_or_else(|| format!("{}: \"{key}\" is missing or not a list", self.name))
+        list_in(self.name, self.v, key)
+    }
+}
+
+/// Member `key` of `v` as a list that must be there.
+pub fn list_in<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a [Value], String> {
+    v.get(key).and_then(Value::as_array).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a list"))
+}
+
+/// Member `key` of `v` as a list, empty where missing or null.
+pub fn opt_list_in<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a [Value], String> {
+    match v.get(key) {
+        None | Some(Value::Null) => Ok(&[]),
+        Some(Value::Array(items)) => Ok(items),
+        Some(_) => Err(format!("{name}: \"{key}\" is not a list")),
     }
 }
 
