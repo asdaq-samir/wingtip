@@ -61,7 +61,7 @@ def user_agent(purpose: str | None = None, browser: bool = False) -> str:
     browser's form where a site turns a bare client away ("Mozilla/5.0
     (compatible; wingtip-maps/0.1; terrain floor)"). Seven modules wrote
     their own, under two names (round-3 audit, 2026-11-27). The registry's
-    host alone wants a whole browser's (wingtip.registry.HEADERS)."""
+    host alone wants a whole browser's (REGISTRY_HEADERS)."""
     if browser:
         return f"Mozilla/5.0 (compatible; {AGENT}{'; ' + purpose if purpose else ''})"
     return f"{AGENT} ({purpose})" if purpose else AGENT
@@ -69,6 +69,15 @@ def user_agent(purpose: str | None = None, browser: bool = False) -> str:
 
 REQUEST_HEADERS = {"User-Agent": user_agent()}
 FAA_HEADERS = {"User-Agent": user_agent(browser=True)}
+#: registry.faa.gov's host (Akamai), for the registry's download and the
+#: airmen file (wingtip.registry, ingest.airmen): it turns a plain client
+#: away (403) and a browser's agent alone too (503), and answers one with a
+#: browser's Accept and Accept-Language as well (measured 2026-10-11).
+REGISTRY_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 # Below this many labeled examples, a train/test split and 5-fold CV
 # aren't meaningful (some rating classes may have 0-1 examples), so

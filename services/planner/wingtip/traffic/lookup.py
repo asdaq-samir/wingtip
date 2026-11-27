@@ -158,23 +158,27 @@ def _asked_or_radar(text: str, hex_id: str | None) -> tuple[list[dict], dict]:
 
 def _asked(text: str, adsbx_tried: bool = False) -> tuple[list[dict], dict]:
     """adsb.lol's answer to a search, and its credit: by address, callsign
-    or registration, as the text reads, the next way where one finds none;
-    where it turns us away, ADS-B Exchange asked the same way, unless it
-    was asked about this search already (`adsbx_tried`)."""
+    or registration, as the text reads, the next way where one finds none
+    -- in the same turn, as the next turn is a gap off, further than a
+    search waits, so the second way was never asked (round 4's audit: a
+    foreign registration typed without its dash, whose callsign search
+    finds nothing, was never found); where it turns us away, ADS-B
+    Exchange asked the same way, unless it was asked about this search
+    already (`adsbx_tried`)."""
     if _HEX.fullmatch(text.lower()):
         tries = [("hex", text.lower()), ("callsign", text)]
     elif _N_NUMBER.fullmatch(text) or "-" in text:
         tries = [("reg", text)]
     else:
         tries = [("callsign", text), ("reg", text)]
-    for by, value in tries:
+    for n, (by, value) in enumerate(tries):
         credit = ADSB_LOL_SOURCE
         try:
             found = [
                 a
                 for a in (
                     _aircraft(e)
-                    for e in _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S, SEARCH_TIMEOUT_S).get("ac") or []
+                    for e in _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S, SEARCH_TIMEOUT_S, same_turn=n > 0).get("ac") or []
                     if isinstance(e, dict)
                 )
                 if a is not None

@@ -210,6 +210,39 @@ def test_a_cards_newest_paths_asked_ahead_once_and_an_open_waits_for_the_one_bei
     assert [p["alt_ft"] for p in asked[-1]] == [9843]
 
 
+def test_an_open_whose_path_is_still_queued_is_asked_at_once_and_the_queue_is_capped(sky, monkeypatch):
+    """Round 4's audit: a pilot's tap waited up to TRACK_TIMEOUT_S on a path
+    queued behind other cards' (3 workers, every card adding 3)."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    let_go, asked = threading.Event(), []
+
+    def get(url, params, timeout, **k):
+        asked.append((params["icao24"], params["time"], timeout))
+        if params["icao24"] != "a00001":
+            let_go.wait(5)
+        return _resp(200, {"path": [[params["time"], 41.98, -87.90, 3000.0, 90.0, False]]})
+
+    monkeypatch.setattr(opensky_api.requests, "get", get)
+    monkeypatch.setattr(opensky, "_WARM_POOL", ThreadPoolExecutor(max_workers=opensky.WARM_WORKERS))
+    monkeypatch.setattr(opensky, "_ASKING", {})
+    now = 1795600000 + 3600
+    for card in range(5):
+        hex_id = f"a0000{card}"
+        opensky.warm(hex_id, [{"id": 1795600000 - n * 86400, "source": opensky.OPENSKY_SOURCE} for n in range(3)], now)
+    # The first card's three hold the workers; the second's wait, the third's
+    # fill the queue to WARM_MOST and the last two cards' ask none ahead.
+    assert len(opensky._ASKING) == opensky.WARM_MOST
+    assert not any(key[0] in ("a00003", "a00004") for key in opensky._ASKING)
+    path = opensky.track("a00001", 1795600000, now)
+    assert path and path[0]["alt_ft"] == 9843
+    # Asked directly with a pilot's time, never by the cancelled background ask.
+    assert [a for a in asked if a[0] == "a00001"] == [("a00001", 1795600000, opensky_api.TRACK_TIMEOUT_S)]
+    let_go.set()
+    opensky._WARM_POOL.shutdown(wait=True)
+
+
 def test_a_prefetch_that_could_not_read_a_path_leaves_the_day_for_the_next_run(sky, monkeypatch):
     from wingtip.traffic import recorded
 

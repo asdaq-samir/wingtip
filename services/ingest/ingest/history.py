@@ -18,7 +18,10 @@ month.
   2026-11-27, and here runs beside the feeds' threads instead.
 
 Each is a job on ingest's scheduler (wingtip.schedule): a failure is
-logged and tried again at the next turn; neither holds up the feeds.
+logged and tried again at the next turn; neither holds up the feeds. The
+three heavy ones take their first turns FIRST_TURNS_APART_S apart, the
+registry first: all three at start-up, a rebuild of the registry beside
+the NTSB's and the airmen's, held ingest's 384 MB at once (round 4's audit).
 """
 
 from __future__ import annotations
@@ -39,16 +42,21 @@ AIRMEN_EVERY_S = 86400.0
 #: How often the registry's age is looked at, s: it is read again once it
 #: is a day old (registry.MAX_AGE_S), so within six hours of that.
 REGISTRY_EVERY_S = 6 * 3600.0
+#: How far apart the registry's, the NTSB's and the airmen's first turns
+#: are, s: longer than a registry rebuild (some 40 s of CPU and the 73 MB
+#: download) takes.
+FIRST_TURNS_APART_S = 300.0
 
 
 def jobs(on: BaseScheduler) -> None:
     """The archive brought up to date each SNAPSHOT_EVERY_S, the NTSB's
     store each NTSB_EVERY_S, the airmen's each AIRMEN_EVERY_S and the
-    registry's age looked at each REGISTRY_EVERY_S, all first now: each a
-    job on `on`."""
+    registry's age looked at each REGISTRY_EVERY_S, the archive's first
+    now and the registry's, the NTSB's and the airmen's FIRST_TURNS_APART_S
+    apart: each a job on `on`."""
     schedule.every(on, SNAPSHOT_EVERY_S, notam_archive.snapshot, name="notam-archive")
-    schedule.every(on, NTSB_EVERY_S, ntsb.refresh, name="ntsb")
-    schedule.every(on, AIRMEN_EVERY_S, airmen.refresh, name="airmen")
     # Off on a stack that downloads nothing it need not (REGISTRY_REFRESH=0).
     if get_settings().registry_refresh:
         schedule.every(on, REGISTRY_EVERY_S, registry.refresh, name="aircraft-registry")
+    schedule.every(on, NTSB_EVERY_S, ntsb.refresh, name="ntsb", after=FIRST_TURNS_APART_S)
+    schedule.every(on, AIRMEN_EVERY_S, airmen.refresh, name="airmen", after=2 * FIRST_TURNS_APART_S)

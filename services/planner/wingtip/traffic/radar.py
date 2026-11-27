@@ -99,14 +99,16 @@ def prune() -> dict[str, int]:
     (app.main) so nothing outlives its promise when ingest or the map is
     quiet: the regions nobody looks at (LOOKED_S), the airplanes whose card
     has not been opened for FOLLOW_KEEP_S and the track points past
-    RECORD_KEEP_S, and OpenSky's days and paths past their KEEP_S. How
-    many of each went."""
+    RECORD_KEEP_S, OpenSky's days and paths past their KEEP_S, and the
+    sources' answers past their own time (an airplane's photo within
+    Planespotters.net's day). How many of each went."""
     now = _wall()
     return {
         "looked": forget_looks(),
         "followed": store.unfollow_before(now - FOLLOW_KEEP_S) + store.unfollow_unheard(now - FOLLOW_UNHEARD_S),
         "points": store.forget_points(now - RECORD_KEEP_S),
         "opensky": store.forget_opensky(now - OPENSKY_KEEP_S),
+        "answers": store.forget_answers(now),
     }
 
 

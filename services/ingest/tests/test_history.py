@@ -32,6 +32,9 @@ def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now():
     # The FAA's aircraft registry, read here rather than in the planner's one process.
     assert jobs["aircraft-registry"].func is registry.refresh
     assert jobs["aircraft-registry"].trigger.interval.total_seconds() == history.REGISTRY_EVERY_S
+    # The heavy first turns apart, the registry's first (round 4: all three at start-up).
+    apart = [(jobs[n].next_run_time - jobs["aircraft-registry"].next_run_time).total_seconds() for n in ("ntsb", "airmen")]
+    assert [round(s) for s in apart] == [history.FIRST_TURNS_APART_S, 2 * history.FIRST_TURNS_APART_S]
 
 
 PAGE = (Path(__file__).parent / "fixtures" / "avdata_2026-11-12.html").read_text()

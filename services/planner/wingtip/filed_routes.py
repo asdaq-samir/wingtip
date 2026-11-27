@@ -125,7 +125,7 @@ def filings(xml: str) -> list[dict]:
             if name == "gufi":
                 found["gufi"] = (el.text or "").strip()
             elif name in ("departurePoint", "arrivalPoint"):
-                airport = next((a for a in el.iter() if xml_names.local(a.tag) == "airport"), None)
+                airport = xml_names.first(el, "airport")
                 if airport is not None:
                     found["dep" if name == "departurePoint" else "dest"] = (airport.text or "").strip().upper()
             elif name in ("routeOfFlight", "newRouteOfFlight") and el.get("legacyFormat"):

@@ -22,7 +22,7 @@ The tables:
   pilot's id, never the id: recorded.share_of); dropped FOLLOW_KEEP_S
   after that (recorded.py).
 - points: each recorded airplane's track, a point a row, kept as long as
-  RECORD_KEEP_S (wingtip.traffic.recorded).
+  RECORD_KEEP_S (wingtip.traffic.recorded), pruned by `t`, which is indexed.
 Nothing in any table names a pilot or an account; `following` counts
 each pilot's share by a hash it cannot be read back from. The planner prunes all
 three on a schedule (wingtip.traffic.radar.prune, from app.main), not
@@ -33,6 +33,9 @@ only when ingest or a request happens to write.
   them (wingtip.traffic.opensky), kept a day and a bit: ingest's nightly
   prefetch and a pilot's card both write them, and both read them before
   asking OpenSky again; pruned by `at`, which is indexed.
+- answers: an outside source's answer about one airplane or flight number
+  (an airplane's photo, a flight number's route), its absence too, kept
+  until `until` so a restart or the other process asks again for none.
 The key the shares are hashed with is never kept here, beside them
 (FOLLOW_SHARE_KEY, recorded._share_key; the round 7 audit, P-M1).
 """
@@ -55,15 +58,15 @@ _SCHEMA = """
     CREATE TABLE IF NOT EXISTS radar (hex TEXT PRIMARY KEY, lat REAL, lon REAL, at REAL, plane TEXT);
     CREATE INDEX IF NOT EXISTS radar_at ON radar (at);
     CREATE TABLE IF NOT EXISTS looked (place TEXT PRIMARY KEY, lat REAL, lon REAL, radius REAL, at REAL);
-    DROP TABLE IF EXISTS followed;
     CREATE TABLE IF NOT EXISTS following (who TEXT, hex TEXT, since REAL, PRIMARY KEY (who, hex));
     CREATE INDEX IF NOT EXISTS following_hex ON following (hex);
     CREATE TABLE IF NOT EXISTS points (hex TEXT, t REAL, point TEXT, PRIMARY KEY (hex, t)) WITHOUT ROWID;
+    CREATE INDEX IF NOT EXISTS points_t ON points (t);
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
-    DROP TABLE IF EXISTS opensky_days;
-    DROP TABLE IF EXISTS opensky_paths;
     CREATE TABLE IF NOT EXISTS opensky (hex TEXT, key TEXT, at REAL, body TEXT, PRIMARY KEY (hex, key)) WITHOUT ROWID;
     CREATE INDEX IF NOT EXISTS opensky_at ON opensky (at);
+    CREATE TABLE IF NOT EXISTS answers (source TEXT, key TEXT, until REAL, body TEXT, PRIMARY KEY (source, key)) WITHOUT ROWID;
+    CREATE INDEX IF NOT EXISTS answers_until ON answers (until);
 """
 
 
@@ -77,27 +80,8 @@ def _connection() -> sqlite3.Connection:
         # traffic, never the file), as every store ingest and the planner share.
         db = stores.connect(STORE, autocommit=True)
         db.executescript(_SCHEMA)
-        _drop_the_store_key(db)
         _db = db
     return _db
-
-
-def _drop_the_store_key(db: sqlite3.Connection) -> None:
-    """Once, where a store still holds the key round 6 kept in it: the key
-    deleted, and with it every pilot's follows, whose shares were hashed
-    with it (or, before it, with no key at all) and would otherwise sit
-    orphaned in the largest-share eviction until they expired (the round 7
-    audit, P-L1). A pilot's next card opened follows again under the new
-    key; the follows no pilot asked (share "") stay."""
-    db.execute("BEGIN IMMEDIATE")
-    try:
-        if db.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'keys'").fetchone():
-            db.execute("DELETE FROM following WHERE who != ''")
-            db.execute("DROP TABLE keys")
-        db.execute("COMMIT")
-    except BaseException:
-        db.execute("ROLLBACK")
-        raise
 
 
 def reset() -> None:
@@ -365,3 +349,26 @@ def opensky_path(hex_id: str, flight_id: int, since: float) -> list[dict] | None
 def forget_opensky(before: float) -> int:
     """OpenSky's days and paths kept before `before` dropped; how many."""
     return _write("DELETE FROM opensky WHERE at < ?", (before,))
+
+
+# Outside sources' answers, each kept to its own time.
+
+
+def keep_answer(source: str, key: str, body, until: float) -> None:
+    """A source's answer (JSON, None for "it has none") kept until `until`, wall seconds."""
+    _write(
+        "INSERT INTO answers (source, key, until, body) VALUES (?, ?, ?, ?) "
+        "ON CONFLICT (source, key) DO UPDATE SET until = excluded.until, body = excluded.body",
+        (source, key, until, json.dumps(body)),
+    )
+
+
+def kept_answer(source: str, key: str, now: float) -> tuple[bool, object]:
+    """(True, the answer) where one is kept and not past its time, else (False, None)."""
+    rows = _query("SELECT body FROM answers WHERE source = ? AND key = ? AND until > ?", (source, key, now))
+    return (True, json.loads(rows[0][0])) if rows else (False, None)
+
+
+def forget_answers(now: float) -> int:
+    """The answers past their time dropped; how many."""
+    return _write("DELETE FROM answers WHERE until <= ?", (now,))

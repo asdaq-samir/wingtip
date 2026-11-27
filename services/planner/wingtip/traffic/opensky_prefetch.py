@@ -28,7 +28,6 @@ PREFETCH_EVERY_S = 3600.0
 PREFETCH_MOST_S = 600.0
 PREFETCH_WORKERS = 4
 _PREFETCHED: dict[str, dt.date | None] = {"day": None}
-_PREFETCHED: dict[str, dt.date | None] = {"day": None}
 
 
 def prefetch() -> int:

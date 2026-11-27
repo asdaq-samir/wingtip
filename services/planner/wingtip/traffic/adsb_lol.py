@@ -183,16 +183,12 @@ def _covering(lat: float, lon: float, radius_nm: float) -> tuple[float, list[dic
 
 
 FIND_URL = "https://api.adsb.lol/v2/{by}/{value}"
-#: The same open data's globe (adsb.lol's tar1090), where the traces are:
-#: adsb.lol itself, as globe.adsb.lol answers every read with a redirect
-#: here (seen 2026-10-16), a hop that cost 0.4 s a file (1.1 s against
-#: 0.7 s, three reads each way).
+#: The same open data's globe (adsb.lol's tar1090), where the traces are: adsb.lol itself, as globe.adsb.lol
+#: answers every read with a redirect here (seen 2026-10-16), a hop that cost 0.4 s a file (1.1 s against 0.7 s).
 GLOBE = "https://adsb.lol"
-#: The day's track of an airplane, by its ICAO address: readsb's trace,
-#: on the globe, gzip JSON.
+#: The day's track of an airplane, by its ICAO address: readsb's trace, on the globe, gzip JSON.
 TRACE_URL = GLOBE + "/data/traces/{last2}/trace_full_{hex}.json"
-#: A trace is read again after this long, s: the map adds the reports
-#: between (TrafficLayer).
+#: A trace is read again after this long, s: the map adds the reports between (TrafficLayer).
 TRACE_TTL_S = 60
 
 _TRACES: TTLCache = TTLCache(maxsize=64, ttl=TRACE_TTL_S)
@@ -203,21 +199,22 @@ _TRACES: TTLCache = TTLCache(maxsize=64, ttl=TRACE_TTL_S)
 RECENT_URL = GLOBE + "/data/traces/{last2}/trace_recent_{hex}.json"
 #: A recent trace is read again after this long, s.
 RECENT_TTL_S = 5
-#: Each airplane's recent trace as read (None for a 404), for its search's
-#: answer and its alerts' state (`status`).
+#: Each airplane's recent trace as read (None for a 404), for its search's answer and its alerts' state (`status`).
 _RECENT: TTLCache = TTLCache(maxsize=256, ttl=RECENT_TTL_S)
 
 
-def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOUT_S) -> dict:
+def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOUT_S, same_turn: bool = False) -> dict:
     """adsb.lol's answer to a pilot's search, asked ahead of the regions'
     turns: a gap after the last request that went and the last search's,
     never two within MIN_GAP_S still (a region whose turn it falls near
-    gives way, `_region_answer`). A turn further off than `wait_most_s`
-    (a refusal's back-off, other searches) is not waited for: TrafficUnavailable."""
+    gives way, `_region_answer`). A turn further off than `wait_most_s` is
+    not waited for: TrafficUnavailable. `same_turn`: a search's second way,
+    sent at once in its first's turn (its own is a gap off, past the wait).
+    A search's own short timeout holds adsb.lol for no one; a refusal does."""
     with _LOCK:
         now = _clock()
-        slot = max(now, _LOL.last + MIN_GAP_S, _STATE["search_at"] + MIN_GAP_S, _LOL.until)
-        if slot - now > wait_most_s:
+        slot = now if same_turn else max(now, _LOL.last + MIN_GAP_S, _STATE["search_at"] + MIN_GAP_S, _LOL.until)
+        if slot - now > wait_most_s or _LOL.held(now):
             raise TrafficUnavailable("adsb.lol's next turn is too far off")
         _STATE["search_at"] = slot
     if slot > now:
@@ -228,10 +225,11 @@ def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOU
         resp.raise_for_status()
         return resp.json()
     except (requests.RequestException, ValueError) as err:
-        with _LOCK:
-            wait = max(BACKOFF_S, refused_for_s(err.response) if getattr(err, "response", None) is not None else 0.0)
-            _LOL.hold(wait, _clock())
-            _STATE["next_ask"] = _LOL.until
+        if not isinstance(err, requests.Timeout):
+            refusal = getattr(err, "response", None)
+            with _LOCK:
+                _LOL.hold(max(BACKOFF_S, refused_for_s(refusal) if refusal is not None else 0.0), _clock())
+                _STATE["next_ask"] = _LOL.until
         raise TrafficUnavailable(f"adsb.lol did not answer: {err}") from err
 
 

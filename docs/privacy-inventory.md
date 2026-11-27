@@ -389,8 +389,7 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   shares: production's comes from the stack's `FollowShareKeySecret` in
   Secrets Manager, and the planner does not start without it; the
   development stack makes one at random into the planner's own secrets
-  volume (`FOLLOW_SHARE_KEY_FILE`). A store that once kept the key loses
-  it, and the pilots' follows hashed with it, the first time it is opened.
+  volume (`FOLLOW_SHARE_KEY_FILE`).
 - **Other airplanes' tracks** (`points`): a followed airplane's public
   ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange
   (while a card is open) and the FAA's radar, card open or not, so its card can show its
@@ -398,6 +397,10 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   not the airplane is heard again. No pilot or account is stored with
   them; a pilot who opens their own airplane's card has its public
   flights recorded the same way.
+- **Sources' answers about an airplane** (`answers`): Planespotters.net's
+  photo of an airplane (by its address and registration) kept a day, the
+  terms' most, and a flight number's route kept six hours, an absence
+  too, so a restart asks again for none. Neither names who asked.
 
 The planner counts its own calls, for the owner's status page
 (`app.route_metrics`, Prometheus's client): for each route its template
