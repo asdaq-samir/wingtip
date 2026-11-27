@@ -904,9 +904,11 @@ Flights FirstFew's `after` once the section is open; its data
 route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`, `fit` as the airport card's, no sideways
 scroll, a fact with no room on a second row: Make/Model, Year, Seats,
-Engines, Weight (the registry's class short, "≤12,499 lb", 2026-11-27), then Operator from `traffic`'s `liveFacts` (the squawk on
-the in-the-air slide's state line), and for traffic with no N-number its own
-registration mark, ICAO address and call sign; the Now section gone, and
+Engines, Weight (the registry's class short, "≤12,499 lb", 2026-11-27), then Operator,
+five at the most, Engines giving way to Operator, Make/Model its maker over its
+model on two lines so the strip stays one row from `traffic`'s `liveFacts` (the squawk on
+the in-the-air slide's state line), and for traffic with no N-number its
+ICAO address, its mark and call sign under its title; the Now section gone, and
 its registration's status and owner left to AirplaneInfo's Registration
 section, the owner, 2026-11-27) sits under the card's actions
 and over its pictures (the owner, 2026-11-26). `AirplaneInfo`'s

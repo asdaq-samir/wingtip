@@ -32,12 +32,18 @@ const cased = (word: string) => (/^[A-Z]{2,}$/.test(word) ? word[0] + word.slice
  * sections'.
  */
 export function shortType(manufacturer: string | null | undefined, model: string | null | undefined): string | null {
+  return shortTypeParts(manufacturer, model).join(" ") || null;
+}
+
+/** Its maker and model short, apart: the facts strip sets them on two
+ *  lines ("Airbus" over "A321"); either may be missing. */
+export function shortTypeParts(manufacturer: string | null | undefined, model: string | null | undefined): string[] {
   const words = (manufacturer ?? "").trim().split(/\s+/).filter(Boolean);
   const cut = words.findIndex((w, i) => i > 0 && (COMPANY.has(w.toUpperCase()) || w.length === 1));
   const maker = (cut < 0 ? words : words.slice(0, cut)).map(cased).join(" ");
   const parts = (model ?? "").trim().split("-");
   const base = /^[A-Za-z]+$/.test(parts[0] ?? "") && parts.length > 1 ? parts.slice(0, 2).join("-") : (parts[0] ?? "");
-  return [maker, base].filter(Boolean).join(" ") || null;
+  return [maker, base].filter(Boolean);
 }
 
 /** The registry's weight class written short for the strip: "Up to

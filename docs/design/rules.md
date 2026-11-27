@@ -314,8 +314,9 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"; one card an airplane since the owner's design of
    2026-11-26): its facts in the strip (Make/Model, Year, Seats, Engines,
-   Weight, Operator, spread with no sideways scroll as the airport
-   card's, 2026-11-27; its registration and owner in its Registration section, the
+   Weight, Operator, five at the most and one row, Make/Model its maker
+   over its model on two lines, Engines giving way to Operator, spread with
+   no sideways scroll as the airport card's, 2026-11-27; its registration and owner in its Registration section, the
    owner, 2026-11-27) under its actions and over its pictures (the
    owner, 2026-11-26: "It should be buttons, info strip and then the
    pictures"), the same picture tiles under it (its flight now first, then its
@@ -466,8 +467,8 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   air…" while the live find is out); then its photo, credited and linked
   to its page; then, where it has flown two reports at the least, the
   sketch of where it has flown. Each is shown once. Who flies it and its
-  squawk are facts in the strip over the pictures, as are traffic's own
-  registration mark, ICAO address and call sign where the FAA's
+  squawk are facts in the strip over the pictures, as is traffic's ICAO
+  address where the FAA's
   registry does not hold it (the owner, 2026-11-27: no Now section, its
   scheduled route and departure being the flight slide's). Opened by
   its N-number while it flies, it is tracked without the map moving.

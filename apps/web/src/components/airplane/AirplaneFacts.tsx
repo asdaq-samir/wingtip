@@ -1,5 +1,5 @@
 import { CardFact, CardFacts } from "../CardFacts";
-import { shortType, shortWeight } from "./shortType";
+import { shortTypeParts, shortWeight } from "./shortType";
 import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types";
 
 /**
@@ -25,9 +25,9 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  *  airport card"), a fact with no room wrapping to a second row.
  *  - Operator: who flies it now, where adsb.lol's detail names one (an
  *    airline is often not the registered owner).
- *  - For traffic the FAA's registry does not hold, its own registration
- *    mark, ICAO address and call sign, the card having no record's
- *    sections (`traffic`). The strip took the place of the flight's "Now"
+ *  - For traffic the FAA's registry does not hold, its ICAO address, the
+ *    card having no record's sections (`traffic`); its registration mark
+ *    and call sign are the line under its title's. The strip took the place of the flight's "Now"
  *    section (the owner, 2026-11-27).
  */
 export function AirplaneFacts({
@@ -46,22 +46,31 @@ export function AirplaneFacts({
   year?: string | number | null;
   operator?: string | null;
   /** Traffic the FAA's registry does not hold: its own identifiers. */
-  traffic?: { mark: string | null; address: string; callsign: string | null } | null;
+  traffic?: { address: string } | null;
   /** The strip's; each fact's is this and its name, "airplane-facts-type". */
   testId: string;
 }) {
-  const made = shortType(record?.manufacturer, record?.model) ?? type ?? null;
+  // Its maker over its model, so the longest fact takes two short lines and
+  // the strip stays one row (the owner, 2026-11-27: "Not two rows ... split
+  // the longer make/model into two lines within the same row"); traffic's
+  // own type split at its first space ("Airbus" over "A-350-1000").
+  const registered = shortTypeParts(record?.manufacturer, record?.model);
+  const made = registered.length ? registered : type ? [type.split(" ")[0]!, type.split(" ").slice(1).join(" ")].filter(Boolean) : [];
   const built = record?.year ?? year ?? null;
   const seats = model?.seats ?? record?.seats ?? null;
   const engines = model?.engines ?? record?.engines ?? null;
   const weight = shortWeight(model?.weight_class);
   // No strip where there is nothing to say: its room is the pictures'.
-  if (!record && !traffic && !made && (built == null || built === "")) return null;
+  if (!record && !traffic && !made.length && (built == null || built === "")) return null;
   return (
     <CardFacts testId={testId} fit>
-      {made && (
+      {made.length > 0 && (
         <CardFact label="Make/Model" testId={`${testId}-type`}>
-          {made}
+          {made.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
         </CardFact>
       )}
       {built != null && built !== "" && (
@@ -74,14 +83,11 @@ export function AirplaneFacts({
           {seats}
         </CardFact>
       )}
-      {engines != null && (
+      {/* Engines gives way to who flies it, five facts at the most as the
+          airport card's (the Engine section says them). */}
+      {engines != null && !operator && (
         <CardFact label="Engines" testId={`${testId}-engines`}>
           {engines}
-        </CardFact>
-      )}
-      {traffic && (
-        <CardFact label="Registration" testId={`${testId}-mark`}>
-          {traffic.mark ?? "Not in the FAA's registry"}
         </CardFact>
       )}
       {weight && (
@@ -90,18 +96,13 @@ export function AirplaneFacts({
         </CardFact>
       )}
       {operator && (
-        <CardFact label="Operator" testId={`${testId}-operator`} className="max-w-56 truncate">
+        <CardFact label="Operator" testId={`${testId}-operator`} className="line-clamp-2 max-w-28 whitespace-normal">
           {operator}
         </CardFact>
       )}
       {traffic && (
         <CardFact label="ICAO Address" testId={`${testId}-address`} className="uppercase">
           {traffic.address}
-        </CardFact>
-      )}
-      {traffic?.callsign && (
-        <CardFact label="Callsign" testId={`${testId}-callsign`}>
-          {traffic.callsign}
         </CardFact>
       )}
     </CardFacts>

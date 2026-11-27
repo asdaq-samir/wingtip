@@ -24,7 +24,7 @@ const fact = (id: string) => screen.queryByTestId(`facts-${id}`)?.textContent ??
 describe("an airplane card's facts strip", () => {
   it("says the registry's type, year, seats, and engines, each under its name, its registration and owner left to its Registration section", () => {
     render(<AirplaneFacts record={record} testId="facts" />);
-    expect(fact("type")).toBe("Make/ModelPiper PA-28");
+    expect(fact("type")).toBe("Make/ModelPiperPA-28"); // its maker over its model, two lines
     expect(fact("year")).toBe("Year1971");
     expect(fact("seats")).toBe("Seats4");
     expect(fact("engines")).toBe("Engines1");
@@ -37,6 +37,24 @@ describe("an airplane card's facts strip", () => {
     expect(fact("seats")).toBe("Seats6");
     expect(fact("engines")).toBe("Engines2");
     expect(fact("weight")).toBe("Weight≤12,499 lb");
+  });
+
+  it("keeps to five facts, Engines giving way to who flies it, and gives traffic's ICAO address", () => {
+    render(
+      <AirplaneFacts
+        record={null}
+        type="Airbus A-350-1000"
+        year="2019"
+        operator="Qatar Airways"
+        traffic={{ address: "06a1e7" }}
+        testId="facts"
+      />,
+    );
+    expect(fact("type")).toBe("Make/ModelAirbusA-350-1000");
+    expect(fact("operator")).toBe("OperatorQatar Airways");
+    expect(fact("engines")).toBeNull();
+    expect(fact("address")).toBe("ICAO Address06a1e7");
+    expect(screen.getByTestId("facts").children).toHaveLength(4);
   });
 
   it("writes every weight class short", () => {
