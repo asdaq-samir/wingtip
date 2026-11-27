@@ -65,4 +65,15 @@ describe("a runway end's fit", () => {
     const checked = endDistance(c172.takeoff!, grass, fieldAir(900, 29.72, 30), 2550, 10);
     expect(fit.needed_ft).toBe(Math.round(checked.totalFt));
   });
+
+  it("sends the report's variable arc: 27015G25KT 230V310 is 16 kt across 27, not 0", () => {
+    // FMH-1 chapter 12, AIM 7-1-28: the gust at 40 degrees off, 25 sin 40.
+    const wind = { dirTrueDeg: 270, speedKt: 15, gustKt: 25, variableDeg: [230, 310] as [number, number] };
+    expect(endFit({ ...at, runway: runway(5000), wind }).crosswind_kt).toBe(16);
+  });
+
+  it("says when no temperature was reported, the distances a standard day's", () => {
+    const fit = endFit({ ...at, tempC: null, runway: runway(10000), wind: null });
+    expect([fit.temp_assumed, fit.fit]).toEqual([true, "standard_day"]);
+  });
 });

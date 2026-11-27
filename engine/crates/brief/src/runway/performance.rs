@@ -261,6 +261,10 @@ pub struct EndFit {
     pub unknown: bool,
     /// The distance was read past the POH's table (Distances::beyond).
     pub beyond: bool,
+    /// The distance was worked out on a standard day's temperature at the
+    /// field (field_air), none being reported: a hot day's is longer
+    /// (FAA-H-8083-25C, chapter 11), so it is said, never "within" alone.
+    pub temp_assumed: bool,
     /// The tailwind on the end, its gusts' where more (as the crosswind's,
     /// erring toward the stronger wind), whole knots, 0 for none (AIM 4-3-6).
     pub tailwind_kt: f64,
@@ -336,6 +340,7 @@ pub fn end_fit(
         close,
         unknown: needed_ft.is_none() || length_ft.is_none(),
         beyond: distances.as_ref().is_some_and(Distances::beyond),
+        temp_assumed: distances.is_some() && field.temp_c.is_none(),
         tailwind_kt: js_round((-headwind).max(-along(wind.and_then(|w| w.gust_kt))).max(0.0)),
     }
 }

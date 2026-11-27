@@ -14,11 +14,14 @@ import type { AircraftProfile, Runway } from "../../lib/api/types";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import type { RunwayEnd } from "../plan";
 
-/** A wind as a METAR reports it: true, in knots. */
+/** A wind as a METAR reports it: true, in knots, and its variable
+ *  direction's two bounds where it reports one ("230V310", FMH-1 chapter
+ *  12), which the engine judges the crosswind at the worst of. */
 export interface FitWind {
   dirTrueDeg: number | null | undefined;
   speedKt: number | null | undefined;
   gustKt: number | null | undefined;
+  variableDeg?: [number, number] | null;
 }
 
 /** How an end fits (the engine's runway_end_fit): its crosswind (gusts'
@@ -61,7 +64,16 @@ export function endFit({
     // APT_RWY_END; AIM 2-3-3), the engine reading them from the runway's
     // ends (the web audit's WEB-1).
     end: { ident: end.ident, heading_true_deg: end.heading_true_deg ?? null },
-    wind: wind ? { dir_true_deg: wind.dirTrueDeg ?? null, speed_kt: wind.speedKt ?? null, gust_kt: wind.gustKt ?? null } : null,
+    // The variable arc too: 27015G25KT 230V310 is 16 kt across 27 at its
+    // worst, where the mean alone read 0 (round 7's N4).
+    wind: wind
+      ? {
+          dir_true_deg: wind.dirTrueDeg ?? null,
+          speed_kt: wind.speedKt ?? null,
+          gust_kt: wind.gustKt ?? null,
+          variable_deg: wind.variableDeg ?? null,
+        }
+      : null,
     elevation_ft: elevationFt,
     altimeter_in_hg: altimeterInHg ?? null,
     temp_c: tempC ?? null,

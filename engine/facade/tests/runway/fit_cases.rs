@@ -208,3 +208,32 @@ fn a_fit_with_no_elevation_or_no_length_is_unknown_and_one_past_the_table_beyond
     // Heavier than the 172's heaviest table, 2,550 lb.
     assert_eq!(fit(5000.0, "ASP", json!(null), json!({"weight_lb": 2600}))["beyond"], json!(true));
 }
+
+#[test]
+fn no_temperature_reported_is_a_standard_days_distance_and_says_so() {
+    // FAA-H-8083-25C, chapter 11: the distances grow with density
+    // altitude, so a standard day's, taken where no temperature is
+    // reported, is shorter than a hot day's and never "within" alone; the
+    // Go / No-Go's runway finding says the same (runway_findings).
+    let still = json!({"dir_true_deg": null, "speed_kt": 0});
+    let f = fit(10000.0, "ASP", still.clone(), json!({"temp_c": null}));
+    assert_eq!((f["temp_assumed"].clone(), f["finding"].clone(), f["fit"].clone()), (json!(true), json!("caution"), json!("standard_day")));
+    let f = fit(10000.0, "ASP", still.clone(), json!({}));
+    assert_eq!((f["temp_assumed"].clone(), f["finding"].clone()), (json!(false), json!("ok")));
+    // No distance worked out (no elevation): nothing was assumed of it.
+    let f = fit(10000.0, "ASP", still, json!({"temp_c": null, "elevation_ft": null}));
+    assert_eq!((f["temp_assumed"].clone(), f["finding"].clone()), (json!(false), json!("unknown")));
+}
+
+#[test]
+fn a_variable_wind_is_judged_at_the_worst_of_its_arc_on_the_end() {
+    // 27015G25KT 230V310 on runway 27: the arc reaches 40 degrees off the
+    // runway each side, so the gust's 25 kt at 40 degrees is across (FMH-1
+    // chapter 12; AIM 7-1-28): 25 sin 40 = 16.07, past the 172S's
+    // demonstrated 15 kt. Without the arc it reads 0 across.
+    let wind = json!({"dir_true_deg": 270, "speed_kt": 15, "gust_kt": 25, "variable_deg": [230, 310]});
+    let f = fit(5000.0, "ASP", wind, json!({}));
+    assert_eq!((num(&f["crosswind_kt"]), f["crosswind_over"].clone()), (16.0, json!(true)));
+    let f = fit(5000.0, "ASP", json!({"dir_true_deg": 270, "speed_kt": 15, "gust_kt": 25}), json!({}));
+    assert_eq!(num(&f["crosswind_kt"]), 0.0);
+}

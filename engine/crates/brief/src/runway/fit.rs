@@ -26,6 +26,11 @@
 //!   heavier or more tailwind than it goes, so its figures are the table's
 //!   edge and shorter than the airplane will need (FAA-H-8083-25C, chapter
 //!   11: performance charts hold only within their stated conditions).
+//! - **standard_day** (caution): no temperature reported, so the distances
+//!   are a standard day's (performance::field_air), and a hot day's are
+//!   longer (FAA-H-8083-25C, chapter 11: density altitude; 14 CFR
+//!   91.103(b)(1)), as the Go / No-Go's runway finding says
+//!   (runway_findings' standard_day).
 //! - **unknown**: the distance or the runway's length is not known, so
 //!   whether it fits is not either, never read as fitting (14 CFR
 //!   91.103(b)). A known caution says more than "not known", so it comes
@@ -46,12 +51,15 @@ pub struct FitFacts {
     pub tailwind_kt: f64,
     pub close: bool,
     pub beyond: bool,
+    /// The distances were worked out on a standard day's temperature,
+    /// none being reported.
+    pub standard_day: bool,
     pub unknown: bool,
 }
 
 /// The finding ("stop", "caution", "unknown" or "ok") and its reason
-/// ("short", "crosswind", "tailwind", "close", "beyond"; None for unknown
-/// and ok), worst first as the module says.
+/// ("short", "crosswind", "tailwind", "close", "beyond", "standard_day";
+/// None for unknown and ok), worst first as the module says.
 pub fn fit_level(f: &FitFacts) -> (&'static str, Option<&'static str>) {
     if f.short {
         ("stop", Some("short"))
@@ -63,6 +71,8 @@ pub fn fit_level(f: &FitFacts) -> (&'static str, Option<&'static str>) {
         ("caution", Some("close"))
     } else if f.beyond {
         ("caution", Some("beyond"))
+    } else if f.standard_day {
+        ("caution", Some("standard_day"))
     } else if f.unknown {
         ("unknown", None)
     } else {
@@ -134,7 +144,10 @@ pub(crate) fn end_fit_rule(i: In, v: &Value) -> Result<String, String> {
     json::opt_number(&mut out, f.needed_ft);
     out.push_str(",\"length_ft\":");
     json::opt_number(&mut out, f.length_ft);
-    out.push_str(&format!(",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{}", f.short, f.close, f.unknown, f.beyond));
+    out.push_str(&format!(
+        ",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{},\"temp_assumed\":{}",
+        f.short, f.close, f.unknown, f.beyond, f.temp_assumed
+    ));
     out.push_str(",\"tailwind_kt\":");
     json::number(&mut out, f.tailwind_kt);
     let facts = FitFacts {
@@ -143,6 +156,7 @@ pub(crate) fn end_fit_rule(i: In, v: &Value) -> Result<String, String> {
         tailwind_kt: f.tailwind_kt,
         close: f.close,
         beyond: f.beyond,
+        standard_day: f.temp_assumed,
         unknown: f.unknown,
     };
     fit_json(&mut out, &facts);
@@ -156,13 +170,15 @@ mod tests {
 
     #[test]
     fn worst_first() {
-        let all = FitFacts { short: true, crosswind_over: true, tailwind_kt: 3.0, close: true, beyond: true, unknown: true };
+        let all =
+            FitFacts { short: true, crosswind_over: true, tailwind_kt: 3.0, close: true, beyond: true, standard_day: true, unknown: true };
         assert_eq!(fit_level(&all), ("stop", Some("short")));
         assert_eq!(fit_level(&FitFacts { short: false, ..all }), ("caution", Some("crosswind")));
         assert_eq!(fit_level(&FitFacts { short: false, crosswind_over: false, ..all }), ("caution", Some("tailwind")));
         let calm = FitFacts { tailwind_kt: 0.0, ..FitFacts::default() };
         assert_eq!(fit_level(&FitFacts { close: true, beyond: true, ..calm }), ("caution", Some("close")));
-        assert_eq!(fit_level(&FitFacts { beyond: true, unknown: true, ..calm }), ("caution", Some("beyond")));
+        assert_eq!(fit_level(&FitFacts { beyond: true, standard_day: true, ..calm }), ("caution", Some("beyond")));
+        assert_eq!(fit_level(&FitFacts { standard_day: true, unknown: true, ..calm }), ("caution", Some("standard_day")));
         assert_eq!(fit_level(&FitFacts { unknown: true, ..calm }), ("unknown", None));
         assert_eq!(fit_level(&calm), ("ok", None));
     }

@@ -306,6 +306,7 @@
               "tailwind",
               "close",
               "beyond",
+              "standard_day",
               null
             ],
             "description": "The finding's reason, the worst first; null for unknown and ok."

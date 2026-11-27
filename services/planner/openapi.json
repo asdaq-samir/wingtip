@@ -14802,6 +14802,11 @@
             ],
             "title": "Temp C"
           },
+          "visibility_minus": {
+            "default": false,
+            "title": "Visibility Minus",
+            "type": "boolean"
+          },
           "visibility_plus": {
             "default": false,
             "title": "Visibility Plus",
@@ -14850,6 +14855,27 @@
               }
             ],
             "title": "Wind Speed Kt"
+          },
+          "wind_variable_deg": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Variable Deg"
           }
         },
         "title": "Metar",
