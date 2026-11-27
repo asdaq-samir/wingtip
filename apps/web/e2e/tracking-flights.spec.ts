@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, drawn, grabberTo, settle, slow } from "./helpers";
+import { closeCard, drawn, grabberTo, settle, slow, withFoot } from "./helpers";
 import { sky } from "./trackingSky";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 
@@ -54,7 +54,7 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await settle(page);
   const card = page.getByTestId("airplane-profile");
   // Its flights are the Flights tab's, Info open first (the owner, 2026-11-27).
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await grabberTo(page, "full"); // from the pill's size, as every card opens
   await expect(card.getByTestId("airplane-facts")).toBeVisible(); // over the pictures (2026-11-26)
   const rows = card.getByTestId("past-flight");
@@ -145,7 +145,7 @@ test("an airplane's last flights found are listed, the ones before them on askin
   await settle(page);
   const card = page.getByTestId("airplane-profile");
   // Its flights are the Flights tab's, Info open first (the owner, 2026-11-27).
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await grabberTo(page, "full"); // from the pill's size, as every card opens
   const rows = card.getByTestId("past-flight");
   await expect(rows).toHaveCount(2, { timeout: slow(15_000) });
@@ -201,7 +201,7 @@ test("an airplane quiet for a fortnight is looked for further back by itself, an
   await settle(page);
   const card = page.getByTestId("airplane-profile");
   // Its flights are the Flights tab's, Info open first (the owner, 2026-11-27).
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await grabberTo(page, "full"); // from the pill's size, as every card opens
   await expect(card.getByTestId("past-flights-none")).toHaveText("No flights heard in the last six weeks", { timeout: slow(15_000) });
   expect(asked.map((q) => q.get("until"))).toEqual([null, "2026-09-28", "2026-09-14"]);

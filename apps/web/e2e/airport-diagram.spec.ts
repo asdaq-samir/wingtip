@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, settled, sideDrawer, slow, frontSheet } from "./helpers";
+import { grabberTo, settle, settled, sideDrawer, slow, frontSheet, withFoot } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -37,7 +37,7 @@ async function noPhotos(page: Page) {
 
 /** The card's Charts tab, which takes the panel all the way up. */
 async function toCharts(page: Page) {
-  await card(page).getByTestId("place-tab-diagrams").click();
+  await withFoot(card(page)).getByTestId("place-tab-diagrams").click();
   // A card stays half way on a tab, as it opened (e7bb15ec8, the card
   // rule's 2): pulled all the way up for the charts, as a pilot would.
   await grabberTo(page, "full");
@@ -326,7 +326,7 @@ test("a tap on the card's sketch of a field the FAA draws no diagram for shows t
   // Not the Runways tab, which the tap used to open: the card still half
   // way, on its first tab.
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  await expect(card(page).getByTestId("place-tab-runways")).not.toHaveAttribute("data-active");
+  await expect(withFoot(card(page)).getByTestId("place-tab-runways")).not.toHaveAttribute("data-active");
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);
 });

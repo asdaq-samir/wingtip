@@ -6,6 +6,7 @@ import { MOTION } from "../../lib/tokens";
 import { EDGE_ROOM } from "./insets";
 import { CONTROLS_TAPPABLE } from "./sheetLayout";
 import { FootRest, useFootBarHeight, useRestSize } from "./sheetMotion";
+import { useGroundTaps } from "./groundTaps";
 
 /** The foot's size told to what it holds, taken at rest. */
 export function FootRestOf({ size, children }: { size: PanelState; children: ReactNode }) {
@@ -91,23 +92,8 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
     const height = bar.current && foldedHeight(bar.current);
     if (height) useFootBarHeight.setState({ pill: height });
   }, [pill, shown]);
-  // From half up, a tap on its ground, which falls through to the popup,
-  // goes no further: the row it lands on is hidden under the bar. Only
-  // the click is stopped; the press still reaches the Drawer, for a drag.
-  useEffect(() => {
-    const el = bar.current;
-    const host = el?.parentElement;
-    if (!el || !host || pill || !shown) return;
-    const guard = (event: MouseEvent) => {
-      if (!(event.target instanceof Node) || el.contains(event.target)) return;
-      const box = el.getBoundingClientRect();
-      if (event.clientY < box.top || event.clientY > box.bottom) return;
-      event.preventDefault();
-      event.stopPropagation();
-    };
-    host.addEventListener("click", guard, true);
-    return () => host.removeEventListener("click", guard, true);
-  }, [pill, shown]);
+  // From half up, a tap on its ground goes no further: the row it lands on is hidden under it.
+  useGroundTaps(bar, !pill && shown);
   // A short fade of what it holds as it changes, on the compositor; none
   // the first time. Not of the bar itself, whose ground would let the
   // route through.

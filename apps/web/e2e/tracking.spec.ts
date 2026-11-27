@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, drawn, findAirplane, grabberTo, inSheet, mapStill, settle, sideDrawer, slow, trafficOnMap } from "./helpers";
+import { closeCard, drawn, findAirplane, grabberTo, inSheet, mapStill, settle, sideDrawer, slow, trafficOnMap, withFoot } from "./helpers";
 import { FAA } from "./faaRecord";
 import { DETAIL, UAL, sky } from "./trackingSky";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
@@ -35,8 +35,8 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   await expect(card).toContainText("N14511");
   await expect(card).toContainText("UAL2088 · Airbus A-321neo");
   // Two tabs, Info open (the owner, 2026-11-27); its flight now heads Flights.
-  await expect(card.getByTestId("airplane-tab-bar")).toBeVisible();
-  await card.getByTestId("airplane-tab-flights").click();
+  await expect(withFoot(card).getByTestId("airplane-tab-bar")).toBeVisible();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   // The flight it is on, as FlightAware's: where it left and where it is bound, and how it is flying.
   await expect(card.getByTestId("flight-departed")).toContainText("TJSJ");
   await expect(card.getByTestId("flight-bound")).toContainText("KORD");
@@ -48,7 +48,7 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   // Tracked, the map on it, as it is opened from the search.
   await expect(card.getByTestId("airplane-track")).toHaveAttribute("aria-pressed", "true");
   // Its FAA registration on Info, from the flight's detail before its N-number's own record.
-  await card.getByTestId("airplane-tab-info").click();
+  await withFoot(card).getByTestId("airplane-tab-info").click();
   const info = card.getByTestId("airplane-info");
   await expect(info.getByTestId("airplane-info-owner")).toContainText("United Airlines Inc");
   await expect(info).toContainText("Chicago, IL");
@@ -139,7 +139,7 @@ test("an airplane not in the air opened by its link: its card says when it was l
   await grabberTo(page, "full");
   await expect(card.getByTestId("airplane-info-owner")).toContainText("Roca Roja LLC");
   await expect(card.getByTestId("airplane-track")).toHaveCount(0);
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("flight-now")).toHaveCount(0);
   await expect(card.getByTestId("airplane-status")).toBeVisible();
 });

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, sideDrawer, slow } from "./helpers";
+import { grabberTo, settle, sideDrawer, slow, withFoot } from "./helpers";
 
 /**
  * The runway proximity advisor on the FAA's airport diagram
@@ -86,7 +86,7 @@ test.describe("on the runway", () => {
     await page.goto("/app/plan?place=KDLH");
     await settle(page);
     const card = sideDrawer(page).getByTestId("place-card");
-    await card.getByTestId("place-tab-diagrams").click();
+    await withFoot(card).getByTestId("place-tab-diagrams").click();
     await grabberTo(page, "full");
     const row = card.getByTestId("airport-diagram");
     await row.scrollIntoViewIfNeeded();

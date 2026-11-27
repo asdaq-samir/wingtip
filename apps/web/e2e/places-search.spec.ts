@@ -11,6 +11,7 @@ import {
   sheetFoot,
   slow,
   frontSheet,
+  withFoot,
 } from "./helpers";
 import { card, cardWeather, holdPlannerSearch } from "./placeCard";
 import { ownHomeBase, showPage } from "./oneSearch";
@@ -217,7 +218,7 @@ test("the Weather tab listens to an ATIS and shows the runway in use and the alt
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   const listen = card(page).getByTestId("place-atis-listen");
   await expect(listen).toContainText("Listen to ATIS");
   // A tab only switches what is shown (the owner, 2026-11-11): the card

@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
 import { SETTLE_MS, SHEET_SLIDE } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
-import { useSwipeRelay } from "./sheetFollow";
+import { cardFeetHost } from "./cardFeet";
 import { watchSheetMotion } from "./sheetMotion";
 import { SheetViewport } from "./SheetViewport";
 
@@ -91,18 +91,15 @@ export function SheetDrawer({
   foot?: ReactNode;
   children: ReactNode;
 }) {
-  // The popup watched for its movement's few readers (sheet/sheetFollow),
-  // and for whether it is moving (sheet/sheetMotion).
+  // The popup watched for whether it is moving (sheet/sheetMotion).
   const [popupNode, setPopupNode] = useState<HTMLElement | null>(null);
   useEffect(() => (popupNode ? watchSheetMotion(popupNode) : undefined), [popupNode]);
-  const relayed = useSwipeRelay(
-    useCallback(
-      (node: HTMLElement | null) => {
-        popupRef(node);
-        setPopupNode(node);
-      },
-      [popupRef],
-    ),
+  const relayed = useCallback(
+    (node: HTMLElement | null) => {
+      popupRef(node);
+      setPopupNode(node);
+    },
+    [popupRef],
   );
   const { shown, letGo } = useSnapFirst(snapPoint, snapped);
   // The stock Drawer's own gaps, left to it, not drawn by hand (decision
@@ -149,8 +146,6 @@ export function SheetDrawer({
               render={(own, state) => <Told swiping={state.swiping || state.nestedDrawerSwiping} {...own} />}
               initialFocus={false}
               finalFocus={false}
-              // Eased once drawn where it rests (useDrawn), for what eases with it (SheetScroller's cut).
-              data-ready={ready || undefined}
               style={{
                 // All the way up clear of the status bar (a bottom sheet's) or
                 // the home indicator (a top sheet's), and eight: the Drawer's
@@ -166,11 +161,9 @@ export function SheetDrawer({
                 // under a finger, and not before its first measure (it would
                 // slide in from its full height as the page opens).
                 "[transform:translateY(calc(var(--drawer-snap-point-offset)_+_var(--drawer-swipe-movement-y)))]",
-                // Its snap offset copied for what is inside it (SheetParts,
-                // CardStack): Base UI's own does not inherit. It changes once
-                // a let-go; the finger's movement, which changes at every
-                // move, is handed only to the parts that read it
-                // (sheet/sheetFollow), not inherited by the whole sheet.
+                // Its snap offset copied for what is inside it (the cards,
+                // CardStack; a card's room, ProfileCard): Base UI's own does
+                // not inherit. It changes once a let-go, never with a finger.
                 "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-base:var(--drawer-snap-point-offset)]",
                 // Its transform alone eased: its ground, edge and shadow go
                 // at once under a card, which covers them as it comes and
@@ -219,6 +212,8 @@ export function SheetDrawer({
                 foot, over the home indicator and on the keyboard as the
                 sheet is (sheet/FootBar). */}
             {foot}
+            {/* And the cards' tab bars, each in its card's slot (sheet/CardFoot). */}
+            {fromBottom && <div ref={cardFeetHost} className="contents" />}
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>

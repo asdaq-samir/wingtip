@@ -8,11 +8,12 @@ import { AT_PILL, letGo, snapsOf } from "./insets";
 import { EASE, FROM_BELOW, FROM_EDGE, RISE, SIDE_EASE } from "./cardMotion";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, frontOffset, frontUnder, sheetTopRef, useRidingCard } from "./sheetTopSlot";
-import { useSwipeRelay } from "./sheetFollow";
 import { SheetViewport } from "./SheetViewport";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { tapOpens } from "./sheetLayout";
 import { useCardScrollRoom } from "./cardScrollRoom";
+import { CardFootSlot } from "./CardFoot";
+import { inCardFoot, useCardFootHeight } from "./cardFeet";
 
 export interface StackProps {
   /** A phone's sheet: the cards are drawers with its sizes and its swipe.
@@ -136,9 +137,8 @@ function CardDrawer({
   ...p
 }: StackProps & { entry: CardEntry; top: boolean; riding: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
-  // Its popup, watched for its movement's readers (sheet/sheetFollow).
+  // Its popup, for where it goes back down to as it closes.
   const [popup, setPopup] = useState<HTMLElement | null>(null);
-  const relayed = useSwipeRelay(setPopup);
   // The card's own content box taken into this drawer's scroller (useCardFrame).
   const content = entry.host;
   const slot = useCallback(
@@ -193,6 +193,10 @@ function CardDrawer({
     else if (point === null) details.cancel();
   };
   const topSlot = onPhone && fromBottom && riding;
+  // Its tab bar's slot at the screen's foot, in sight while it is the top
+  // card, open and above the pill (sheet/CardFoot).
+  const footShown = top && entry.state === "open" && entry.at !== undefined && at !== "peek";
+  const footPx = useCardFootHeight(id);
   return (
     <Drawer.Root
       // Mounted closed, opened once its size is set (the layout effect
@@ -216,7 +220,9 @@ function CardDrawer({
         // topmost of nested drawers; kept here for a tap or a swipe.
         // The focus going elsewhere -- the sheet, the map -- leaves it
         // open: it is no modal.
-        if (!top || details.reason === "focus-out") return details.cancel();
+        // A tap on its tab bar, in its foot slot beside it (sheet/CardFoot), is not outside it.
+        if (!top || details.reason === "focus-out" || (details.reason === "outside-press" && inCardFoot(details.event.target)))
+          return details.cancel();
         // The Drawer's own close carries a card swiped from half down;
         // all the way up, it comes down to half.
         if (details.reason === "swipe" && swipeCloses) return swipeClose();
@@ -245,7 +251,7 @@ function CardDrawer({
             style={{ bottom: "var(--drawer-keyboard-inset, 0px)" }}
           >
             <Drawer.Popup
-              ref={relayed}
+              ref={setPopup}
               role="region"
               aria-label={frame.label}
               aria-labelledby={frame.label ? undefined : frame.labelledBy}
@@ -270,9 +276,8 @@ function CardDrawer({
                 p.look,
                 // Its own snap offset and drag, from the sheet's offset it is
                 // drawn in (--sheet-base, SheetDrawer). Its offset copied for
-                // what is inside (sheet/insets' HOLD_AT_EDGE): Base UI's own
-                // does not inherit; the finger's movement handed to its
-                // readers alone (sheet/sheetFollow).
+                // what is inside (a card's room, ProfileCard, PastFlightCard):
+                // Base UI's own does not inherit.
                 onPhone &&
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)]",
                 onPhone && p.ready && EASE,
@@ -294,13 +299,14 @@ function CardDrawer({
               )}
               {onPhone && fromBottom && top && p.grabber(at, ask)}
               <div className="flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">
-                <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} />
+                <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} footPx={footPx} />
               </div>
               {!(onPhone && fromBottom) && top && p.grabber(at, ask)}
             </Drawer.Popup>
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>
+      {onPhone && fromBottom && <CardFootSlot id={id} shown={footShown} />}
     </Drawer.Root>
   );
 }
@@ -317,7 +323,8 @@ function CardScroller({
   pill,
   raise,
   below,
-}: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void }) {
+  footPx,
+}: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void; footPx: number }) {
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
   const placed = useCallback(
     (node: HTMLElement | null) => {
@@ -326,7 +333,7 @@ function CardScroller({
     },
     [slot],
   );
-  useCardScrollRoom(scroller);
+  useCardScrollRoom(scroller, footPx);
   return (
     <PointerTapDiv
       onClick={pill ? (event) => tapOpens(event, raise) : undefined}

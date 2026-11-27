@@ -9,6 +9,7 @@ import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { CardDialogs } from "./sheet/CardDialogs";
 import { CARD_FOOT_ROOM } from "./sheet/insets";
+import { useCardFootHeight } from "./sheet/cardFeet";
 import { holdOpenCard, type OpenCard } from "../lib/openCards";
 import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
 
@@ -188,6 +189,10 @@ export function SheetCard({
     id,
   );
   const fromMarker = useFromMarker();
+  // Its end room: under a tab bar in its foot slot (sheet/CardFoot) the
+  // bar's height, so its last row scrolls clear above it; else 16 points or
+  // the home indicator's inset, clear of the screen's foot.
+  const footPx = useCardFootHeight(id);
 
   // The name in its own head row, where the content draws it (a map
   // card's, MapCard).
@@ -223,7 +228,7 @@ export function SheetCard({
       <div
         ref={head ? undefined : fromMarker}
         className="relative shrink-0 px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
-        style={{ paddingBottom: CARD_FOOT_ROOM }}
+        style={{ paddingBottom: footPx ? `${footPx}px` : CARD_FOOT_ROOM }}
         data-testid={head ? undefined : testId}
       >
         {!head ? (

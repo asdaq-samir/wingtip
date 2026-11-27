@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { controlsInSight, openNavLog, grabberTo, openSection, openTab, settle, sideDrawer, sheetFoot, slow } from "../helpers";
+import { controlsInSight, openNavLog, grabberTo, openSection, openTab, settle, sideDrawer, sheetFoot, slow, withFoot } from "../helpers";
 import { markWith } from "../marks";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
@@ -112,7 +112,7 @@ export const SCREENS: Screen[] = [
         await expect(sideDrawer(page).getByTestId("place-details")).toBeVisible();
       }
       if (part === ", its Weather tab") {
-        await sideDrawer(page).getByTestId("place-tab-weather").click();
+        await withFoot(sideDrawer(page)).getByTestId("place-tab-weather").click();
         // Then pulled all the way up, as a pilot does to read it: a tab
         // picked leaves the card where it is (rules.md, the pilot's drag
         // chooses the size), and the wait for it to rise on its own held

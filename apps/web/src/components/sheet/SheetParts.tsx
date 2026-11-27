@@ -46,7 +46,8 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
   const parts = { layout, onFootTap };
   const barRow = slots.bar && <SheetBarRow bar={slots.bar} shown={barShown} hairline layout={layout} panelSize={panelSize} />;
 
-  // FPL's foot on a phone's bottom sheet is a bar beside the sheet, not in it (sheet/FootBar).
+  // A phone's bottom sheet's foot is a bar beside the sheet, not in it
+  // (sheet/FootBar, SheetFoot's BesideSheet; MapPanel's `foot`).
   const foot = !!slots.foot && !layout.footBar && (footShown || cardsUp) && (
     <SheetFoot foot={slots.foot} pillFoot={pillFoot} floats={!!pages?.floats} {...parts} />
   );
@@ -74,7 +75,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
     content = (
       <div data-testid="sheet-pages" data-page={at} className="flex min-h-0 flex-1 flex-col print:block">
         <SheetPage at={0} up={at === 0}>
-          <SheetScroller band={barRow} body={slots.children} alone={searchAlone} off={at !== 0} head={sheetHead} cut={false} {...parts} />
+          <SheetScroller band={barRow} body={slots.children} alone={searchAlone} off={at !== 0} head={sheetHead} {...parts} />
         </SheetPage>
         <SheetPage at={1} up={at === 1}>
           <SheetScroller
@@ -88,7 +89,6 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
             alone={routeAlone}
             off={at !== 1}
             head="0px"
-            cut={footShown && !pages.floats}
             endRoom={layout.footBar ? "bar" : undefined}
             rises={rises}
             bandScrolls
@@ -112,7 +112,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
         alone={headAlone}
         off={false}
         head={sheetHead}
-        cut={footShown}
+        endRoom={layout.footBar ? "bar" : undefined}
         {...parts}
       />
     );

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer, slow } from "./helpers";
+import { settle, sideDrawer, slow, withFoot } from "./helpers";
 
 /**
  * What a pilot reads with a poor or lost connection (the offline audit of
@@ -30,7 +30,7 @@ test("a TAF kept past its valid period says it has expired, in the caution colou
   await settle(page);
   const card = sideDrawer(page).getByTestId("place-card");
   await expect(card).toBeVisible({ timeout: slow(30_000) });
-  await card.getByTestId("place-tab-weather").click();
+  await withFoot(card).getByTestId("place-tab-weather").click();
   const line = card.getByTestId("place-taf-valid");
   await expect(line).toHaveAttribute("data-state", "expired", { timeout: slow(20_000) });
   await expect(line).toContainText(`TAF expired ${ended.getUTCDate()} 0600Z: no forecast in force`);
@@ -55,5 +55,5 @@ test("an airport card nothing was kept for says No connection, and fills once th
   offline = false;
   await context.setOffline(false);
   await expect(card.getByTestId("place-line")).toHaveCount(0, { timeout: slow(45_000) });
-  await expect(card.getByTestId("place-tab-weather")).toBeEnabled();
+  await expect(withFoot(card).getByTestId("place-tab-weather")).toBeEnabled();
 });

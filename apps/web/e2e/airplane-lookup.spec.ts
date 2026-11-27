@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { controlsInSight, grabberTo, settle, sideDrawer, slow } from "./helpers";
+import { controlsInSight, grabberTo, settle, sideDrawer, slow, withFoot } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 import { showSearch } from "./oneSearch";
 import { FAA } from "./faaRecord";
@@ -123,9 +123,9 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   await expect(card.getByTestId("airplane-actions").getByTestId("airplane-figures-open")).toBeVisible();
   // Under the buttons, over its two tabs, Info open (the owner, 2026-11-27).
   await expect(card.getByTestId("airplane-facts")).toBeVisible({ timeout: slow(15_000) });
-  await expect(card.getByTestId("airplane-tab-bar")).toBeVisible();
+  await expect(withFoot(card).getByTestId("airplane-tab-bar")).toBeVisible();
   // Flights: its status at the head, then its flights, each ▶ its replay over this card.
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });
@@ -266,7 +266,7 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   await expect(card).toContainText("N654FL", { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-track")).toBeVisible();
   await expect(card.getByTestId("fly-this-airplane")).toHaveCount(0);
-  await card.getByTestId("airplane-tab-flights").click();
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await expect(card.getByTestId("airplane-flight-now").getByTestId("flight-now")).toBeVisible();
   await expect(page.getByTestId("airplane-profile")).toHaveCount(1);
 });
