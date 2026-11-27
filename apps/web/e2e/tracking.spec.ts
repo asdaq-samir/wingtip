@@ -40,11 +40,10 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   await expect(card.getByTestId("flight-departed")).toContainText("TJSJ");
   await expect(card.getByTestId("flight-bound")).toContainText("KORD");
   await expect(card.getByTestId("flight-altitude")).toContainText("7,000 ft");
-  // In its Now section who flies it and its flight number's route, at
-  // the pilot's ask; its make and model in its record's sections.
-  await expect(card.getByTestId("flight-route")).toContainText("TJSJ → KORD");
-  await expect(card.getByTestId("flight-route")).toContainText("San Juan to Chicago");
-  await expect(card.getByTestId("flight-operator")).toHaveText("United Airlines Inc");
+  // Who flies it in the facts strip, its flight number's route its slide's
+  // ends (the owner, 2026-11-27, the Now section gone); its make and model
+  // in its record's sections.
+  await expect(card.getByTestId("airplane-facts-operator")).toHaveText("United Airlines Inc");
   // Tracked, the map on it, as it is opened from the search.
   await expect(card.getByTestId("airplane-track")).toHaveAttribute("aria-pressed", "true");
   // Its FAA registration on the same page, from the flight's detail before its N-number's own record.
@@ -235,7 +234,9 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(card).toContainText("UAL2088", { timeout: slow(15_000) });
   await expect(card.getByTestId("airplane-info")).toHaveCount(0);
   await expect(card.getByTestId("airplane-figures-open")).toHaveCount(0);
-  await expect(card.getByTestId("flight-registration")).toContainText("Not in the FAA's registry");
+  // Its own identifiers in the facts strip, the card having no record's sections.
+  await expect(card.getByTestId("airplane-facts-mark")).toContainText("C-FSES");
+  await expect(card.getByTestId("airplane-facts-address")).toContainText("A0B7D8");
   const photo = card.getByTestId("flight-photo");
   await expect(photo).toBeVisible({ timeout: slow(15_000) });
   await expect(card.getByTestId("flight-photo-credit")).toHaveText("© Jane Spotter · Planespotters");

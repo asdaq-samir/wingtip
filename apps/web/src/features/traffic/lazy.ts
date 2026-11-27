@@ -1,7 +1,7 @@
 /**
  * An airplane's flight, for the one airplane card (features/airplane's
- * AirplaneCard): its flight and pictures across its top, and its
- * flight's details on its Flights tab.
+ * AirplaneCard): its flight and pictures across its top, and what its
+ * facts strip takes from the flight.
  *
  * What other features draw of traffic only inside their own lazily loaded
  * chunks (the airplane card's). Nothing on the first load imports this
@@ -11,4 +11,5 @@
  */
 
 export { useFlightLive } from "./useFlightLive";
-export { FlightNowDetails, FlightPictures } from "./FlightParts";
+export { FlightPictures } from "./FlightParts";
+export { liveFacts } from "./liveFacts";

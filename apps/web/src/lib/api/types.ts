@@ -192,8 +192,6 @@ export type RunwayRvr = Schemas["RunwayRvr"];
 export type AirportAtis = Schemas["AirportAtis"];
 export type FlowAtAirports = Schemas["FlowAtAirports"];
 export type FlowProgram = Schemas["FlowProgram"];
-export type DepartureEvents = Schemas["DepartureEvents"];
-export type DepartureEvent = Schemas["DepartureEvent"];
 export type AheadAlert = Schemas["AheadAlert"];
 /** The airplanes ADS-B receivers hear near a point (wingtip.traffic). */
 export type Traffic = Schemas["Traffic"];

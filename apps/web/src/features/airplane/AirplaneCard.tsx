@@ -11,7 +11,7 @@ import { StatusLine } from "../../components/StatusBadge";
 import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
 import { PohRow } from "../documents/lazy";
-import { FlightPictures } from "../traffic/lazy";
+import { FlightPictures, liveFacts } from "../traffic/lazy";
 import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
 import { useAirplaneCardModel, type AirplaneCardModel } from "./useAirplaneCardModel";
 import AirplanePage from "./AirplanePage";
@@ -140,16 +140,16 @@ export default function AirplaneCard({
           {live.waiting}
         </p>
       )}
-      {/* What it is in a sideways strip (type, year, seats, engines …)
-          under its buttons and over its pictures (the owner, 2026-11-26: "It should be buttons, info strip
-          and then the pictures"). */}
-      {m.tail && (card.record || live.detail?.faa) && (
-        <AirplaneFacts
-          record={card.details?.registration ?? card.record ?? live.detail?.faa ?? null}
-          model={card.details?.model}
-          testId="airplane-facts"
-        />
-      )}
+      {/* What it is in a sideways strip (type, year, seats, engines …, who
+          flies it and its squawk) under its buttons and over its pictures
+          (the owner, 2026-11-26: "It should be buttons, info strip and then
+          the pictures"); for traffic with no N-number its own identifiers. */}
+      <AirplaneFacts
+        record={m.tail ? (card.details?.registration ?? card.record ?? live.detail?.faa ?? null) : null}
+        model={m.tail ? card.details?.model : undefined}
+        {...liveFacts(m.hex, live, !m.tail)}
+        testId="airplane-facts"
+      />
       <div className="pt-3">
         <FlightPictures
           live={live}

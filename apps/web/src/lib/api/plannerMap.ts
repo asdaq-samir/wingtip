@@ -25,7 +25,6 @@ import type {
   AirportAtis,
   AirportRvr,
   CopilotAround,
-  DepartureEvents,
   FlowAtAirports,
   ItwsAlerts,
   SaaStatuses,
@@ -84,7 +83,6 @@ export const plannerMap = {
   liveAtis: (airport: string) => planner.GET("/api/live/atis", { params: { query: { airport } } }).then(data<AirportAtis>),
   liveFlow: (airports: string[]) =>
     planner.GET("/api/live/flow", { params: { query: { airports: airports.join(",") } } }).then(data<FlowAtAirports>),
-  liveDepartures: (ident: string) => planner.GET("/api/live/departures", { params: { query: { ident } } }).then(data<DepartureEvents>),
 
   /** What the in-flight copilot reads (features/copilot): the fields round
    *  the airplane with their METARs, the areas on the rest of the route

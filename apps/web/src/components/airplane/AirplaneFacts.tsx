@@ -18,12 +18,24 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  *    owner, 2026-11-14: "For owner info though, it's public info"); "Not
  *    in the record" where the owner asked the FAA to withhold the name
  *    (49 U.S.C. 44114(b)). Capped to a width, the whole of it in Info.
+ *  - Operator: who flies it now, where adsb.lol's detail names one (an
+ *    airline is often not the registered owner).
+ *  - Squawk: its transponder code while it flies, an emergency code
+ *    (7500, 7600, 7700) in the destructive ink as its slide's badge is.
+ *  - For traffic the FAA's registry does not hold, its own registration
+ *    mark, ICAO address and call sign, the card having no record's
+ *    sections (`traffic`). The strip took the place of the flight's "Now"
+ *    section (the owner, 2026-11-27).
  */
 export function AirplaneFacts({
   record,
   model,
   type,
   year,
+  operator,
+  squawk,
+  squawkAlarm,
+  traffic,
   testId,
 }: {
   record: AircraftRegistration | null | undefined;
@@ -31,6 +43,12 @@ export function AirplaneFacts({
   /** What it is where the registry has no record (the traffic's type). */
   type?: string | null;
   year?: string | number | null;
+  operator?: string | null;
+  squawk?: string | null;
+  /** The squawk is an emergency code (squawkMeaning). */
+  squawkAlarm?: boolean;
+  /** Traffic the FAA's registry does not hold: its own identifiers. */
+  traffic?: { mark: string | null; address: string; callsign: string | null } | null;
   /** The strip's; each fact's is this and its name, "airplane-facts-owner". */
   testId: string;
 }) {
@@ -40,7 +58,7 @@ export function AirplaneFacts({
   const engines = model?.engines ?? record?.engines ?? null;
   const lapsed = record?.standing === "lapsed";
   // No strip where there is nothing to say: its room is the pictures'.
-  if (!record && !made && (built == null || built === "")) return null;
+  if (!record && !traffic && !made && (built == null || built === "")) return null;
   return (
     <CardFacts testId={testId}>
       {made && (
@@ -68,9 +86,34 @@ export function AirplaneFacts({
           {record.status}
         </CardFact>
       )}
+      {traffic && (
+        <CardFact label="Registration" testId={`${testId}-mark`}>
+          {traffic.mark ?? "Not in the FAA's registry"}
+        </CardFact>
+      )}
       {record && (
         <CardFact label="Owner" testId={`${testId}-owner`} className="max-w-56 truncate">
           {record.owner ?? "Not in the record"}
+        </CardFact>
+      )}
+      {operator && (
+        <CardFact label="Operator" testId={`${testId}-operator`} className="max-w-56 truncate">
+          {operator}
+        </CardFact>
+      )}
+      {squawk && (
+        <CardFact label="Squawk" testId={`${testId}-squawk`} className={squawkAlarm ? "text-destructive-ink" : undefined}>
+          {squawk}
+        </CardFact>
+      )}
+      {traffic && (
+        <CardFact label="ICAO Address" testId={`${testId}-address`} className="uppercase">
+          {traffic.address}
+        </CardFact>
+      )}
+      {traffic?.callsign && (
+        <CardFact label="Callsign" testId={`${testId}-callsign`}>
+          {traffic.callsign}
         </CardFact>
       )}
     </CardFacts>

@@ -460,12 +460,15 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   ago", "Not heard in the last 6 weeks", "Checking whether it's in the
   air…" while the live find is out); then its photo, credited and linked
   to its page; then, where it has flown two reports at the least, the
-  sketch of where it has flown. Each is shown once. Opened by
+  sketch of where it has flown. Each is shown once. Who flies it and its
+  squawk are facts in the strip over the pictures, as are traffic's own
+  registration mark, ICAO address and call sign where the FAA's
+  registry does not hold it (the owner, 2026-11-27: no Now section, its
+  scheduled route and departure being the flight slide's). Opened by
   its N-number while it flies, it is tracked without the map moving.
   Then one page, no tab bar (the owner, 2026-11-26), each section its
   first three rows, its title opening the rest and "3 of 12" at its
-  right (FirstFew): while it flies a short Now section (its squawk,
-  operator, scheduled route and the tower's departure event); its
+  right (FirstFew): its
   public record, its identifiers with it (ICAO address, Mode S octal,
   call sign); then its flights, Earlier while it flies, newest first
   (the last ten, Show Earlier Flights once the section is open, a day

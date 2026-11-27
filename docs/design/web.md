@@ -897,17 +897,17 @@ the photographer named on it), or traffic's by its address; and the
 sketch of where it has flown (`LiveSketch`) where there are two reports
 at the least. Then one page, no tab bar (`AirplanePage`; the owner,
 2026-11-26), each section the shared `components/FirstFew` (its first
-three rows, its title the rest): while it flies `traffic/FlightNowRows`'
-Now (squawk, operator, scheduled route, tower; traffic with no N-number
-its registration, type, owner, model, ICAO address and call sign there
-too, in the air or not), then `AirplaneInfo` for an N-number, then
+three rows, its title the rest): `AirplaneInfo` for an N-number, then
 `PastFlights` titled Earlier (Flights on the ground), Show Earlier
 Flights FirstFew's `after` once the section is open; its data
 `traffic/useFlightLive` (the tracked report, adsb.lol's detail, the
 route, the summary's ends). The facts strip
 (`components/airplane/AirplaneFacts` on `CardFacts`: Type, Year, Seats,
 Engines, Registration, its status in the destructive ink where lapsed,
-and Owner, public as the FAA publishes it) sits under the card's actions
+Owner, public as the FAA publishes it, then Operator and Squawk from
+`traffic`'s `liveFacts`, and for traffic with no N-number its own
+registration mark, ICAO address and call sign; the Now section gone,
+the owner, 2026-11-27) sits under the card's actions
 and over its pictures (the owner, 2026-11-26). `AirplaneInfo`'s
 Airplane section holds its ICAO address and call sign.
 Figures (`FiguresCard`, a `SheetCard` over the airplane's from its

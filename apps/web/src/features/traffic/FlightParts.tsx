@@ -6,7 +6,6 @@ import { CardPictures, type CardSlide } from "../../components/CardPictures";
 import { PhotoSlide } from "../../components/PictureSlides";
 import { FlightNow, LiveSketch } from "./FlightSummary";
 import { planePhotoQuery } from "./planePhoto";
-import FlightNowRows from "./FlightNowRows";
 import type { FlightLive } from "./useFlightLive";
 
 // The flight's box filling its slide, the tile's own corners, its lines a
@@ -127,19 +126,4 @@ export function FlightPictures({
       : null,
   ];
   return <CardPictures slides={slides} label={`${title}: its flight and pictures`} testId="airplane-pictures" />;
-}
-
-/** The Flights tab's "Now" group (FlightNowRows), from the flight's live data. */
-export function FlightNowDetails({ hex, live, registry }: { hex: string; live: FlightLive; registry: boolean }) {
-  return (
-    <FlightNowRows
-      hex={hex}
-      plane={live.plane}
-      detail={live.detail}
-      detailLoading={live.detailLoading}
-      registered={live.registered}
-      route={live.route}
-      registry={registry}
-    />
-  );
 }

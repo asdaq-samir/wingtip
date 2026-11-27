@@ -87,14 +87,6 @@ export const datisQuery = (airport: string | null | undefined) => ({
   meta: { silent: true },
 });
 
-export const departuresQuery = (ident: string | null | undefined) => ({
-  queryKey: ["live", "departures", ident?.toUpperCase() ?? ""],
-  queryFn: () => api.liveDepartures(ident!),
-  enabled: !!ident && ident.length >= 2,
-  ...cadence("departures"),
-  meta: { silent: true },
-});
-
 /** A time as the app says one in Zulu: "2130Z". */
 export function zulu(unixS: number): string {
   return zuluTime(new Date(unixS * 1000));
