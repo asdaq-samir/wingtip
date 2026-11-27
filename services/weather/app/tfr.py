@@ -34,7 +34,7 @@ import xml.etree.ElementTree as ET
 
 import requests
 from cachetools import LRUCache
-from wingtip import outside, weather_store
+from wingtip import outside, ratelimit, weather_store
 
 # The site turns away a bare python-requests User-Agent, as the FAA's
 # others do (wingtip.faa_data).
@@ -54,6 +54,9 @@ _DETAILS: LRUCache = LRUCache(maxsize=1024)
 #: The pause between two detail files asked of tfr.faa.gov, s: the site is
 #: asked one file at a time, and only for a TFR new or changed.
 DETAIL_PAUSE_S = 0.5
+#: The detail files' turns, DETAIL_PAUSE_S apart (wingtip.ratelimit): the
+#: first asked at once, where each slept the pause first.
+_DETAILS_GATE = ratelimit.Gate(gap_s=DETAIL_PAUSE_S)
 #: The detail's members, as parse_detail gives them: what a stored TFR
 #: carries over to the next fetch when its modification is the same.
 DETAIL_KEYS = (
@@ -107,7 +110,7 @@ def _detail(notam_id: str, modified: str) -> dict:
     hit = _DETAILS.get(key)
     if hit is not None:
         return hit
-    time.sleep(DETAIL_PAUSE_S)
+    _DETAILS_GATE.turn(time.monotonic, time.sleep)
     try:
         resp = outside.get(DETAIL_URL.format(notam_id.replace("/", "_")), headers=HEADERS, timeout=20)
         resp.raise_for_status()

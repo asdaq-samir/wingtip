@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, Mock
 
 import requests
 from wingtip import tfr as planner_tfr
-from wingtip import weather, weather_store
+from wingtip import ratelimit, weather, weather_store
 
 from app import aviationweather, fetch, main, tfr
 
@@ -102,7 +102,7 @@ def test_an_unchanged_tfr_list_is_not_written_again_and_its_age_is_the_last_try(
         return Mock(json=lambda: {"features": [feature]}, raise_for_status=lambda: None)
 
     monkeypatch.setattr(tfr, "_DETAILS", tfr.LRUCache(maxsize=8))
-    monkeypatch.setattr(tfr, "DETAIL_PAUSE_S", 0)
+    monkeypatch.setattr(tfr, "_DETAILS_GATE", ratelimit.Gate())
     monkeypatch.setattr(tfr.outside, "get", get)
     now = [1000.0]
     monkeypatch.setattr(tfr.time, "time", lambda: now[0])

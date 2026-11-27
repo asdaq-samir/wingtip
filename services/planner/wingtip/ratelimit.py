@@ -5,7 +5,8 @@ wait where it names one, held to a most), and what the source itself
 says is left of the day's budget.
 
 Each was a dict of its own in its own module, written three ways
-(the audit of 2026-11-27). The times are the caller's clock, passed in,
+(the audit of 2026-11-27); the weather service's paced sources take a
+turn from one too (`turn`). The times are the caller's clock, passed in,
 so a test's stand-in clock is the one used; the gate keeps no clock and
 asks nothing itself.
 """
@@ -49,6 +50,19 @@ class Gate:
         """An ask went now (a later one already marked is kept)."""
         with self._lock:
             self.last = max(self.last, now)
+
+    def turn(self, clock, sleep) -> None:
+        """This ask's turn, `gap_s` after the last one's: slept for with
+        `sleep` where it is still to come, by `clock`'s time. Taken under
+        the lock, so asks from several threads queue a gap apart. A source
+        asked one at a time (aviationweather.gov's map, tfr.faa.gov's
+        detail files) needs no more of the gate."""
+        with self._lock:
+            now = clock()
+            at = max(now, self.last + self.gap_s)
+            self.last = at
+        if at > now:
+            sleep(at - now)
 
     def counted(self, remaining: float | None, day: dt.date) -> None:
         """The source's own count of what is left today, where it sent one."""

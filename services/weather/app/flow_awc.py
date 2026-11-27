@@ -45,7 +45,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import requests
-from wingtip import outside, utc
+from wingtip import outside, ratelimit, utc
 from wingtip.config import REQUEST_HEADERS
 from wingtip.engine import ask
 from wingtip.grid_index import grid_index
@@ -73,7 +73,8 @@ CYCLES_TRIED = 4
 BELOW_GROUND = 999
 
 HEADERS = {**REQUEST_HEADERS, "Accept-Encoding": "gzip"}
-_last_asked = [0.0]
+#: Its turns, REQUEST_GAP_S apart (wingtip.ratelimit).
+_AWC = ratelimit.Gate(gap_s=REQUEST_GAP_S)
 
 
 class AwcUnavailable(RuntimeError):
@@ -82,10 +83,7 @@ class AwcUnavailable(RuntimeError):
 
 def _get(path: str, params: dict) -> dict | None:
     """One answer, spaced from the last; None for 204, nothing then."""
-    wait = _last_asked[0] + REQUEST_GAP_S - time.monotonic()
-    if wait > 0:
-        time.sleep(wait)
-    _last_asked[0] = time.monotonic()
+    _AWC.turn(time.monotonic, time.sleep)
     try:
         resp = outside.get(f"{BASE}/{path}", params=params, headers=HEADERS, timeout=60)
     except requests.RequestException as err:

@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 import requests
 from wingtip import tfr as planner_tfr
-from wingtip import weather_store
+from wingtip import ratelimit, weather_store
 
 from app import tfr
 
@@ -103,7 +103,7 @@ def test_the_list_is_one_tfr_per_notam_with_its_detail_and_stored(monkeypatch):
         return Mock(json=lambda: {"features": features}, raise_for_status=lambda: None)
 
     monkeypatch.setattr(tfr, "_DETAILS", tfr.LRUCache(maxsize=8))
-    monkeypatch.setattr(tfr, "DETAIL_PAUSE_S", 0)
+    monkeypatch.setattr(tfr, "_DETAILS_GATE", ratelimit.Gate())
     monkeypatch.setattr(tfr.outside, "get", get)
     tfr.fetch()
     stored = weather_store.read("tfrs").data
