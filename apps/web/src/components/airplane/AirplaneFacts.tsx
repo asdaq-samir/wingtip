@@ -1,5 +1,5 @@
 import { CardFact, CardFacts } from "../CardFacts";
-import { shortMaker, shortWeight } from "./shortType";
+import { shortMaker, shortModel, shortWeight } from "./shortType";
 import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types";
 
 /**
@@ -10,9 +10,9 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  * the FAA aircraft registry's record (wingtip.registry), its reference
  * model's figures over the record's own where the card has them, each only
  * where there is one:
- *  - Make: the registry's maker alone ("Airbus", shortMaker), else the
- *    first word of traffic's own description; its model is the line
- *    under the title's.
+ *  - Its maker as the name, its model as the value ("Airbus" over "A321",
+ *    shortMaker and shortModel), else traffic's own description split
+ *    at its first space.
  *  - Year: the year it was built.
  *  - Seats and Engines: the FAA's reference record (ACFTREF), else the
  *    registration's.
@@ -51,24 +51,26 @@ export function AirplaneFacts({
   /** The strip's; each fact's is this and its name, "airplane-facts-make". */
   testId: string;
 }) {
-  // Its maker alone, the model being the line under its title's (the
-  // owner, 2026-11-27: "maybe drop the Make/Model instead, just have the
-  // make itself there"): the registry's, else the first word of traffic's
-  // own description where it has more than one ("Airbus A-350-1000"), never
-  // a bare type code.
+  // Its maker as the first fact's small grey name and its model as its
+  // value, "Airbus" over "A321" (the owner, 2026-11-27: "replace the title
+  // "Make" with like Airbus in small grey font and then model A321 as the
+  // value"): the registry's, else traffic's own description split at its
+  // first space ("Airbus" over "A-350-1000"); a bare type code its value
+  // under "Model".
   const words = type?.trim().split(/\s+/) ?? [];
-  const make = shortMaker(record?.manufacturer) ?? (words.length > 1 ? words[0]! : null);
+  const maker = shortMaker(record?.manufacturer) ?? (words.length > 1 ? words[0]! : null);
+  const made = record ? shortModel(record.model) : words.length ? (words.length > 1 ? words.slice(1).join(" ") : words[0]!) : null;
   const built = record?.year ?? year ?? null;
   const seats = model?.seats ?? record?.seats ?? null;
   const engines = model?.engines ?? record?.engines ?? null;
   const weight = shortWeight(model?.weight_class);
   // No strip where there is nothing to say: its room is the pictures'.
-  if (!record && !traffic && !make && (built == null || built === "")) return null;
+  if (!record && !traffic && !maker && !made && (built == null || built === "")) return null;
   return (
     <CardFacts testId={testId} fit>
-      {make && (
-        <CardFact label="Make" testId={`${testId}-make`}>
-          {make}
+      {(maker || made) && (
+        <CardFact label={made ? (maker ?? "Model") : "Make"} testId={`${testId}-make`}>
+          {made ?? maker}
         </CardFact>
       )}
       {built != null && built !== "" && (

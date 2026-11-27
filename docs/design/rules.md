@@ -313,9 +313,9 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    The airplane cards are laid out the same way, with the same parts (the
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"; one card an airplane since the owner's design of
-   2026-11-26): its facts in the strip (Make, Year, Seats, Engines,
-   Weight, Operator, five at the most and one row, Make its maker alone,
-   its model the line under the title's, Engines giving way to Operator, spread with
+   2026-11-26): its facts in the strip (its maker over its model, "Airbus" over "A321", Year, Seats, Engines,
+   Weight, Operator, five at the most and one row, its maker the small grey name,
+   its model the value, Engines giving way to Operator, spread with
    no sideways scroll as the airport card's, 2026-11-27; its registration and owner in its Registration section, the
    owner, 2026-11-27) under its actions and over its pictures (the
    owner, 2026-11-26: "It should be buttons, info strip and then the
