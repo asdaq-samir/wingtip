@@ -353,7 +353,7 @@ extension MapExtrasInput {
     /// this input (RootMap) is not drawn again at each step of the slider.
     func shaded(_ shade: CGFloat) -> MapExtrasInput {
         var shaded = self
-        shaded.plateLook.shade = shade
+        shaded.plateLook.page.shade = shade
         return shaded
     }
 }

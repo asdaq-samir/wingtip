@@ -95,8 +95,8 @@ struct RootMap: View {
                 route: Set(plan.course.map { [$0.departure, $0.destination] + ($0.stops ?? []) }?.map(\.ident) ?? []),
                 plates: platesOn, approaches: plan.procedures,
                 hiddenPlates: HiddenPlates.shared.keys,
-                plateLook: PlateLook(opacity: plateOpacity, inverted: PlateLook.inverted(kept: plateInverted, dark: colorScheme == .dark),
-                                     annotations: plateAnnotations),
+                plateLook: PlateLook(opacity: plateOpacity, annotations: plateAnnotations,
+                                     page: PageLook(inverted: PageLook.inverted(kept: plateInverted, dark: colorScheme == .dark))),
                 // A plate's page tapped: its card, half way up, as a field's.
                 onPlate: { key in nav.open(.plate(key)) },
                 // A finger held on the chart: the airspace there, half way

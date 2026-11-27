@@ -127,7 +127,7 @@ final nonisolated class PlateRenderer: MKOverlayRenderer {
             return look
         }
         if was.opacity != next.opacity { alpha = CGFloat(next.opacity) }
-        if was.inverted != next.inverted || was.shade != next.shade { setNeedsDisplay() }
+        if was.page != next.page { setNeedsDisplay() }
     }
 
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
@@ -139,26 +139,15 @@ final nonisolated class PlateRenderer: MKOverlayRenderer {
         context.concatenate(PlatePlacement.transform(size: size, topLeft: point(for: points[0]), topRight: point(for: points[1]), bottomLeft: point(for: points[3])))
         context.interpolationQuality = .high
         // The paper's white, then the page: a plan view cut black on clear
-        // reads as the plate it is.
-        context.setFillColor(UIColor.white.cgColor)
-        context.fill(page)
+        // reads as the plate it is; then its night look (NightPage).
+        NightPage.paper(in: context, rect: page)
+        context.saveGState()
         // CGContext draws upward; the page's top at its top.
         context.translateBy(x: 0, y: size.height)
         context.scaleBy(x: 1, y: -1)
         context.draw(picture, in: page)
-        if look.inverted {
-            // White under a difference is each colour's opposite: the
-            // page's white black, its ink white, for the night.
-            context.setBlendMode(.difference)
-            context.fill(page)
-        }
-        if look.shade > 0 {
-            // The Dimmer's shade, as on the chart's tiles: the plate no
-            // brighter than the chart under it (AIM 8-1-6).
-            context.setBlendMode(.normal)
-            context.setFillColor(NightPalette.ground.withAlphaComponent(look.shade).cgColor)
-            context.fill(page)
-        }
+        context.restoreGState()
+        NightPage.over(in: context, rect: page, look: look.page)
         context.restoreGState()
     }
 }

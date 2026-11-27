@@ -9,7 +9,7 @@ import SwiftUI
 /// label is drawn; the engine does the rest. A diagram with no labels
 /// (KORD's) is shown without the airplane, and says so. The page is
 /// PDFKit's own view (DiagramPDFView), vector-sharp at any zoom, own ship
-/// an annotation on it that moves with the page.
+/// a view over it that moves with the page.
 ///
 /// For a pilot's awareness on the ground, not for navigation: the signs,
 /// the markings and ATC's taxi instructions are what count (AC 120-74B;
@@ -52,7 +52,15 @@ struct DiagramOwnShipView: View {
                     // Drawn again each second, so a fix that stops coming
                     // takes the airplane off rather than freezing it.
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        page(diagram, fix: drawn(inFlight.fix, now: context.date))
+                        let now = DiagramNow(diagram, fix: inFlight.fix, at: context.date)
+                        page(diagram, now: now)
+                            .safeAreaInset(edge: .bottom) {
+                                Text(note(diagram, now))
+                                    .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                                    .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.xs)
+                                    .floatingGlass(in: Capsule())
+                                    .padding(.bottom, WingtipSpace.sm)
+                            }
                     }
                 } else if let problem {
                     ContentUnavailableView {
@@ -82,15 +90,6 @@ struct DiagramOwnShipView: View {
                     RunwayAdvisorLine(shown: lines.shown, detail: lines.detail, urgent: advisor.urgent)
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                if let diagram {
-                    Text(note(diagram))
-                        .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                        .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.xs)
-                        .floatingGlass(in: Capsule())
-                        .padding(.bottom, WingtipSpace.sm)
-                }
-            }
         }
         .task { await load() }
         .task { await advisor.watch({ inFlight.fix }, hotSpots: { diagram?.hotSpots ?? [] }) }
@@ -99,62 +98,33 @@ struct DiagramOwnShipView: View {
         .onDisappear { ownShip.diagramShown = false }
     }
 
-    /// The fix drawn: none where it is stale or coarse, or where the
-    /// engine cannot say (the note says that, DiagramPage.usable).
-    private func drawn(_ fix: OwnShip.Fix?, now: Date) -> OwnShip.Fix? {
-        try? DiagramPage.usable(fix, now: now)
-    }
-
     /// The line under the page: where the airplane is not drawn, why;
     /// and the planning aid's words with the FAA's credit.
-    private func note(_ diagram: DiagramPage) -> String {
+    private func note(_ diagram: DiagramPage, _ now: DiagramNow) -> String {
         let aid = "FAA · Planning aid, not for navigation"
         if let problem = advisor.problem { return "\(problem) \(aid)" }
         if let problem = diagram.problem { return "\(problem) \(aid)" }
         guard diagram.graticule != nil else { return "This diagram has no latitude and longitude marks to place the airplane by. \(aid)" }
-        let usable = Result { try DiagramPage.usable(inFlight.fix, now: Date()) }
-        if case .failure = usable { return "Your fix could not be checked for age and accuracy, so the airplane isn't drawn. \(aid)" }
-        guard let fix = try? usable.get() else { return "Finding your position… \(aid)" }
-        switch Result(catching: { try diagram.place(fix) }) {
+        if case .failure = now.usable { return "Your fix could not be checked for age and accuracy, so the airplane isn't drawn. \(aid)" }
+        switch now.placed {
+        case nil: return "Finding your position… \(aid)"
         case .failure: return "Your position could not be placed on this diagram. \(aid)"
         case .success(let at): return at?.onPage == true ? aid : "You are off this diagram. \(aid)"
         }
     }
 
-    private func page(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> some View {
-        DiagramPDFView(document: diagram.document, mark: mark(diagram, fix: fix), disc: disc, handle: handle,
-                       hotSpots: diagram.hotSpots.map { diagram.pagePoint(x: $0.x, y: $0.y) }, look: night)
+    private func page(_ diagram: DiagramPage, now: DiagramNow) -> some View {
+        DiagramPDFView(document: diagram.document, mark: now.mark(diagram), disc: disc, handle: handle,
+                       hotSpots: diagram.hotSpots.map { diagram.pagePoint(x: $0.x, y: $0.y) }, look: pageLook.look(chart: true))
             // VoiceOver's three-finger zoom and Switch Control, which
             // cannot pinch: the page one element, where the airplane is
             // its value.
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Airport diagram")
-            .accessibilityValue([youAreHere(diagram, fix: fix), hotSpotWords(diagram)].compactMap { $0 }.joined(separator: ". "))
+            .accessibilityValue([now.youAreHere, hotSpotWords(diagram)].compactMap { $0 }.joined(separator: ". "))
             .accessibilityAddTraits(.isImage)
             .accessibilityZoomAction { zoom in handle.zoom(in: zoom.direction == .zoomIn) }
             .accessibilityAction(named: "Fit the page") { handle.fit() }
-    }
-
-    /// The page's night look, a chart's own (PageLookKept).
-    private var night: DiagramNight {
-        let look = pageLook.look(chart: true)
-        return DiagramNight(inverted: look.inverted, shade: look.shade)
-    }
-
-    /// Own ship on the page where the engine places it, turned by the
-    /// page's north and the track; none off the page or unplaced.
-    private func mark(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> DiagramOwnShipMark? {
-        guard let fix, let at = try? diagram.place(fix), at.onPage else { return nil }
-        return DiagramOwnShipMark(at: diagram.pagePoint(x: at.x, y: at.y),
-                                  turnDeg: (diagram.graticule?.northDeg ?? 0) + (fix.trackDeg ?? 0),
-                                  tracking: fix.trackDeg != nil)
-    }
-
-    /// Where the airplane is on the page, as VoiceOver says it.
-    private func youAreHere(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> String {
-        // Where the engine cannot place it, the note under the page says why.
-        guard let fix, let at = try? diagram.place(fix), at.onPage else { return "You are not on this diagram" }
-        return fix.trackDeg.map { "You are here, tracking \(Format.spokenHeadingTrue($0))" } ?? "You are here"
     }
 
     /// The hot spots ringed, as VoiceOver names them.
@@ -167,16 +137,18 @@ struct DiagramOwnShipView: View {
         do {
             guard let address = URL(string: url) else { throw Planner.Failure(status: 404, detail: "No diagram for \(ident).") }
             let data: Data
+            let key = KeptForAir.pdfKey(url)
+            var fresh = true
             do {
                 (data, _) = try await URLSession.shared.data(from: address)
-                KeptForAir.writePicture(data, path: KeptForAir.pdfKey(url))
             } catch {
                 // With no signal, the PDF Keep for the Air kept (or the last
                 // one opened); the FAA's diagram changes only with the cycle.
-                guard let kept = KeptForAir.picture(KeptForAir.pdfKey(url)) else { throw error }
+                guard let kept = KeptForAir.picture(key) else { throw error }
                 data = kept
+                fresh = false
             }
-            guard let read = DiagramPage.read(data) else {
+            guard let read = await DiagramPage.read(data, keep: fresh ? key : nil) else {
                 problem = "The FAA's diagram for \(ident) could not be read."
                 return
             }
@@ -206,5 +178,44 @@ struct RunwayAdvisorLine: View {
         .padding(.top, WingtipSpace.sm)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("runway-advisor")
+    }
+}
+
+/// The fix this second, asked of the engine once and read by the page,
+/// its VoiceOver value and the note under it: whether it may be drawn
+/// (DiagramPage.usable) and where it falls on the page.
+struct DiagramNow {
+    let fix: OwnShip.Fix?
+    /// Thrown where the engine cannot say whether the fix may be drawn.
+    let usable: Result<OwnShip.Fix?, any Error>
+    /// Where the usable fix falls; nil with no usable fix.
+    let placed: Result<DiagramPage.Placed?, any Error>?
+
+    init(_ diagram: DiagramPage, fix: OwnShip.Fix?, at now: Date) {
+        usable = Result { try DiagramPage.usable(fix, now: now) }
+        let drawn = try? usable.get()
+        self.fix = drawn
+        placed = drawn.map { fix in Result { try diagram.place(fix) } }
+    }
+
+    private var onPage: DiagramPage.Placed? {
+        guard case .success(let at)? = placed, let at, at.onPage else { return nil }
+        return at
+    }
+
+    /// Own ship on the page where the engine places it, turned by the
+    /// page's north and the track; none off the page or unplaced.
+    func mark(_ diagram: DiagramPage) -> DiagramOwnShipMark? {
+        guard let fix, let at = onPage else { return nil }
+        return DiagramOwnShipMark(at: diagram.pagePoint(x: at.x, y: at.y),
+                                  turnDeg: (diagram.graticule?.northDeg ?? 0) + (fix.trackDeg ?? 0),
+                                  tracking: fix.trackDeg != nil)
+    }
+
+    /// Where the airplane is on the page, as VoiceOver says it; where the
+    /// engine cannot place it, the note under the page says why.
+    var youAreHere: String {
+        guard let fix, onPage != nil else { return "You are not on this diagram" }
+        return fix.trackDeg.map { "You are here, tracking \(Format.spokenHeadingTrue($0))" } ?? "You are here"
     }
 }

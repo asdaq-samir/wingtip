@@ -23,18 +23,32 @@ final nonisolated class ReaderDocument: PDFDocument, PDFDocumentDelegate {
     func classForPage() -> AnyClass { InvertiblePage.self }
 }
 
-/// A page drawn as PDFKit draws it, then, on an inverted document, every
-/// colour turned over by a white fill in the difference blend: white
-/// paper black, black type white, a chart's colours their opposites. The
-/// way Apple's PDFKit sample draws over a page (draw(with:to:)).
+/// A page drawn as PDFKit draws it, on an inverted document white on
+/// black (NightPage): white paper black, black type white, a chart's
+/// colours their opposites.
 final nonisolated class InvertiblePage: PDFPage {
     override func draw(with box: PDFDisplayBox, to context: CGContext) {
-        super.draw(with: box, to: context)
-        guard (document as? ReaderDocument)?.inverted == true else { return }
+        let look = PageLook(inverted: (document as? ReaderDocument)?.inverted == true)
+        drawPage(with: box, to: context, look: look) { super.draw(with: box, to: context) }
+    }
+}
+
+nonisolated extension PDFPage {
+    /// The page under a night look (NightPage), in the page's own space:
+    /// PDFKit hands the context over in the box's space, and transforms it
+    /// itself inside its own drawing (`draw`), so the paper and the look
+    /// over it are drawn in the same space as the page, whatever the box's
+    /// origin and the page's rotation.
+    func drawPage(with box: PDFDisplayBox, to context: CGContext, look: PageLook, draw: () -> Void) {
+        let rect = bounds(for: box)
         context.saveGState()
-        context.setBlendMode(.difference)
-        context.setFillColor(UIColor.white.cgColor)
-        context.fill(bounds(for: box))
+        transform(context, for: box)
+        if !look.plain { NightPage.paper(in: context, rect: rect) }
+        context.restoreGState()
+        draw()
+        context.saveGState()
+        transform(context, for: box)
+        NightPage.over(in: context, rect: rect, look: look)
         context.restoreGState()
     }
 }

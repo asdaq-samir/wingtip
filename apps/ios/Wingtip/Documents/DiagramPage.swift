@@ -3,8 +3,10 @@ import UIKit
 
 /// A diagram's first page as PDFKit reads it, drawn as the vector page it
 /// is (DiagramOwnShipView), with its graticule from its labels (nil where
-/// it has none the engine can fit).
-struct DiagramPage {
+/// it has none the engine can fit). Read off the main thread (`read`):
+/// the document's text searched once a label, which on a dense diagram
+/// would hold the sheet as it comes up.
+nonisolated struct DiagramPage {
     typealias Graticule = EngineContract.DiagramGraticuleAnswer
     typealias Placed = EngineContract.DiagramPointAnswer
 
@@ -53,8 +55,16 @@ struct DiagramPage {
 
     /// The PDF's first page, and its labels found: their words by the
     /// engine (diagram_labels), where each is drawn by PDFKit, the fit by
-    /// the engine (diagram_graticule).
-    static func read(_ data: Data) -> DiagramPage? {
+    /// the engine (diagram_graticule). On the concurrent pool, the
+    /// document touched by nothing else until it is handed back; the bytes
+    /// fetched are kept for the air there too (`keep`, KeptForAir).
+    @concurrent
+    static func read(_ data: Data, keep key: String? = nil) async -> sending DiagramPage? {
+        if let key { KeptForAir.writePicture(data, path: key) }
+        return parse(data)
+    }
+
+    private static func parse(_ data: Data) -> DiagramPage? {
         guard let document = PDFDocument(data: data) else { return nil }
         // Its page drawn under the night's look (DiagramNightPage): the
         // delegate, held weakly, is asked as the page is made.
