@@ -14,6 +14,7 @@ from ..geo_boxes import split_box
 from . import ladd, store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
 from .common import STALE_S, _NM_PER_DEG, _wall
+from .opensky import KEEP_S as OPENSKY_KEEP_S
 from .recorded import FOLLOW_KEEP_S, FOLLOW_UNHEARD_S, RECORD_KEEP_S, _followed, _key, _last_recorded, _record, followed
 
 #: A followed airplane's report from elsewhere is recorded at most this
@@ -98,12 +99,14 @@ def prune() -> dict[str, int]:
     (app.main) so nothing outlives its promise when ingest or the map is
     quiet: the regions nobody looks at (LOOKED_S), the airplanes whose card
     has not been opened for FOLLOW_KEEP_S and the track points past
-    RECORD_KEEP_S. How many of each went."""
+    RECORD_KEEP_S, and OpenSky's days and paths past their KEEP_S. How
+    many of each went."""
     now = _wall()
     return {
         "looked": forget_looks(),
         "followed": store.unfollow_before(now - FOLLOW_KEEP_S) + store.unfollow_unheard(now - FOLLOW_UNHEARD_S),
         "points": store.forget_points(now - RECORD_KEEP_S),
+        "opensky": store.forget_opensky(now - OPENSKY_KEEP_S),
     }
 
 

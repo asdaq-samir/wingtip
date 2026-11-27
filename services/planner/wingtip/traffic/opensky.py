@@ -16,15 +16,15 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-
-from cachetools import TTLCache
+from concurrent.futures import ThreadPoolExecutor
 
 from .. import airports
 from ..geo import distance_nm
 from ..units import M_TO_FT
+from . import store
 from .legs import FIELD_APPROACH_NM, _field_at
 from .common import _number, _wall
-from .opensky_api import DAILY_CREDITS, _get, _left, _Unread, on
+from .opensky_api import DAILY_CREDITS, FLIGHTS_TIMEOUT_S, _get, _left, _Unread, on
 
 log = logging.getLogger(__name__)
 
@@ -35,19 +35,22 @@ DAYS_PER_CALL = 2
 #: How far back `/tracks/all` goes, days.
 TRACK_DAYS = 30
 #: A past day's flights and a past flight's path no longer change, s: a
-#: day and a bit, so the night's prefetch lasts until the next.
+#: day and a bit, so the night's prefetch lasts until the next. Kept in
+#: the live store (store.opensky_*), which ingest's prefetch and the
+#: planner both read and write, a day at a time: the next page of a card's
+#: flights, whose pairs of days fall otherwise, asks again for none.
 KEEP_S = 26 * 3600
+#: Pairs of days asked side by side for one card, at most: each answer
+#: took up to several seconds one after another (2026-11-27).
+WORKERS = 4
 #: The followed airplanes' yesterday asked for once a UTC day from this
 #: hour, after OpenSky's batch at night has built it, and their paths with
-#: it (prefetch): their flights then open at once. At most this share of
-#: the day's credits, the rest left to the pilots' own asks.
+#: it (prefetch, ingest's job): their flights then open at once. At most
+#: this share of the day's credits, the rest left to the pilots' own asks.
 PREFETCH_FROM_HOUR_UTC = 6
 PREFETCH_SHARE = 0.5
 PREFETCH_EVERY_S = 3600.0
 _PREFETCHED: dict[str, dt.date | None] = {"day": None}
-
-_FLIGHTS: TTLCache = TTLCache(maxsize=2048, ttl=KEEP_S)
-_TRACKS: TTLCache = TTLCache(maxsize=512, ttl=KEEP_S)
 
 
 def _field(icao: str | None) -> dict | None:
@@ -132,45 +135,74 @@ def _once(listed: list[dict]) -> list[dict]:
     return sorted(kept, key=lambda f: f["id"])
 
 
-def flights(hex_id: str, days: list[dt.date], today: dt.date) -> tuple[list[dict], int]:
+def _ask_pair(hex_id: str, pair: list[dt.date]) -> list[dict] | None:
+    """OpenSky's flights of one or two days in a row, each day kept in the
+    store, the flight under the day it took off (one before the first day
+    under the first); None where they could not be had."""
+    begin = int(dt.datetime.combine(pair[0], dt.time(), dt.timezone.utc).timestamp())
+    end = int(dt.datetime.combine(pair[-1] + dt.timedelta(days=1), dt.time(), dt.timezone.utc).timestamp()) - 1
+    try:
+        answer = _get("/flights/aircraft", {"icao24": hex_id, "begin": begin, "end": end}, "flights", FLIGHTS_TIMEOUT_S)
+    except _Unread:
+        return None
+    listed = _once([f for f in (_flight(e) for e in answer or [] if isinstance(e, dict)) if f is not None])
+    by_day: dict[dt.date, list[dict]] = {d: [] for d in pair}
+    for flight in listed:
+        day = dt.datetime.fromtimestamp(flight["off"], dt.timezone.utc).date()
+        by_day[min(max(day, pair[0]), pair[-1])].append(flight)
+    now = _wall()
+    for day, kept in by_day.items():
+        store.opensky_keep_day(hex_id, day.isoformat(), kept, now)
+    return listed
+
+
+def flights(hex_id: str, days: list[dt.date], today: dt.date, ask: bool = True) -> tuple[list[dict], int]:
     """An airplane's flights on these UTC days, from OpenSky, oldest first,
     and how many of the days could not be had: today's never (its batch
-    runs at night), two days to a call, each pair kept KEEP_S."""
-    wanted = sorted(d for d in set(days) if d < today)
+    runs at night), each day kept KEEP_S, those not kept asked two days to
+    a call, WORKERS calls side by side. Where `ask` is False only what is
+    kept is given (an airplane's base, bases.py, spends no credits)."""
+    since = _wall() - KEEP_S
     found: list[dict] = []
+    missing = []
+    for day in sorted(d for d in set(days) if d < today):
+        kept = store.opensky_day(hex_id, day.isoformat(), since)
+        if kept is None:
+            missing.append(day)
+        else:
+            found += kept
+    pairs = []
+    while missing:
+        pair = [d for d in missing[:DAYS_PER_CALL] if (d - missing[0]).days < DAYS_PER_CALL]
+        missing = missing[len(pair) :]
+        pairs.append(pair)
     unread = 0
-    while wanted:
-        pair = [d for d in wanted[:DAYS_PER_CALL] if (d - wanted[0]).days < DAYS_PER_CALL]
-        wanted = wanted[len(pair) :]
-        key = (hex_id, pair[0], pair[-1])
-        if key not in _FLIGHTS:
-            begin = int(dt.datetime.combine(pair[0], dt.time(), dt.timezone.utc).timestamp())
-            end = int(dt.datetime.combine(pair[-1] + dt.timedelta(days=1), dt.time(), dt.timezone.utc).timestamp()) - 1
-            try:
-                answer = _get("/flights/aircraft", {"icao24": hex_id, "begin": begin, "end": end}, "flights")
-            except _Unread:
-                unread += len(pair)
-                continue
-            _FLIGHTS[key] = _once([f for f in (_flight(e) for e in answer or [] if isinstance(e, dict)) if f is not None])
-        found += [_with_path(f, _TRACKS.get((hex_id, f["id"]))) for f in _FLIGHTS[key]]
-    return sorted(found, key=lambda f: f["id"]), unread
+    if pairs and ask:
+        with ThreadPoolExecutor(max_workers=min(WORKERS, len(pairs))) as pool:
+            for pair, listed in zip(pairs, pool.map(lambda p: _ask_pair(hex_id, p), pairs)):
+                if listed is None:
+                    unread += len(pair)
+                else:
+                    found += listed
+    else:
+        unread = sum(len(p) for p in pairs)
+    return [_with_path(f, store.opensky_path(hex_id, f["id"], since)) for f in _once(found)], unread
 
 
 def track(hex_id: str, flight_id: int, now: float) -> list[dict] | None:
     """A flight's path from OpenSky as a past flight's points ({"t", "lat",
     "lon", "alt_ft" (None on the ground), "gs_kt", "track_deg",
     "vrate_fpm"}), where it is TRACK_DAYS old at the most; None where it
-    cannot be had."""
+    cannot be had. Kept KEEP_S in the store, an empty path too."""
     if now - flight_id > TRACK_DAYS * 86400 or not on():
         return None
-    key = (hex_id, flight_id)
-    if key not in _TRACKS:
+    path = store.opensky_path(hex_id, flight_id, _wall() - KEEP_S)
+    if path is None:
         try:
             answer = _get("/tracks/all", {"icao24": hex_id, "time": flight_id}, "tracks")
         except _Unread:
             return None
-        path = (answer or {}).get("path") or []
-        _TRACKS[key] = [
+        path = [
             {
                 "t": float(p[0]),
                 "lat": float(p[1]),
@@ -181,17 +213,19 @@ def track(hex_id: str, flight_id: int, now: float) -> list[dict] | None:
                 "track_deg": _number(p[4]),
                 "vrate_fpm": None,
             }
-            for p in path
+            for p in (answer or {}).get("path") or []
             if isinstance(p, list) and len(p) >= 6 and _number(p[1]) is not None and _number(p[2]) is not None
         ]
-    return _TRACKS[key] or None
+        store.opensky_keep_path(hex_id, flight_id, path, _wall())
+    return path or None
 
 
 def prefetch() -> int:
     """The followed airplanes' flights of yesterday and their paths asked
     for once a UTC day, from PREFETCH_FROM_HOUR_UTC, within PREFETCH_SHARE
-    of the day's credits, so their cards' flights open at once: the planner's
-    job every PREFETCH_EVERY_S (app.main). How many paths were read."""
+    of the day's credits, so their cards' flights open at once: ingest's
+    job every PREFETCH_EVERY_S (ingest.main), into the live store the
+    planner reads. How many paths were read."""
     from .recorded import followed
 
     now = dt.datetime.now(dt.timezone.utc)

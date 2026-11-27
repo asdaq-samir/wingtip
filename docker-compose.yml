@@ -389,6 +389,10 @@ services:
       LADD_REQUIRED: ${LADD_REQUIRED:-0}
       # The followed airplanes' rounds ask adsb.lol with the planner's key.
       ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
+      # Their past flights prefetched each night from the OpenSky Network
+      # with the planner's client (wingtip.traffic.opensky): off without both.
+      OPENSKY_CLIENT_ID: ${OPENSKY_CLIENT_ID:-}
+      OPENSKY_CLIENT_SECRET: ${OPENSKY_CLIENT_SECRET:-}
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}

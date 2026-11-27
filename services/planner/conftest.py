@@ -8,7 +8,7 @@ import pytest
 import requests
 from pytest_guards import _module_doubles_restored, pytest_collection_modifyitems  # noqa: F401
 from wingtip import outside
-from wingtip.traffic import store
+from wingtip.traffic import legs, store
 
 
 @pytest.fixture(autouse=True)
@@ -24,3 +24,9 @@ def _traffic_asks_through_requests(monkeypatch):
     """The traffic sources' kept-alive session (outside.live_get) asks
     through requests.get and requests.post, which the tests stand in for."""
     monkeypatch.setattr(outside, "_live", lambda: requests)
+
+
+@pytest.fixture(autouse=True)
+def _no_fields_kept_near_flights():
+    """No test is given another's fields near a flight's end (legs._near)."""
+    legs._NEAR.clear()

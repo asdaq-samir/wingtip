@@ -268,7 +268,10 @@ def test_the_bases_asked_for_are_given_as_they_are_found(clock, monkeypatch):
             fn(*args)
 
     stand_in(monkeypatch, "_BASED_POOL", Now())
-    stand_in(monkeypatch, "history", lambda hex_id: {"flights": [{"origin": lwm, "destination": lwm, "landed": True}] * 3})
+    # From what is kept alone: a base spends none of OpenSky's credits.
+    stand_in(
+        monkeypatch, "history", lambda hex_id, ask: {"flights": [] if ask else [{"origin": lwm, "destination": lwm, "landed": True}] * 3}
+    )
     first = traffic.based(["A89C1E", "~abcdef", "nothex"])
     # Not known yet: looked up (the address only, not a pseudo-address or
     # what is not one), and said to be pending.

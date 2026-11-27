@@ -28,6 +28,10 @@ each pilot's share by a hash it cannot be read back from. The planner prunes all
 three on a schedule (wingtip.traffic.radar.prune, from app.main), not
 only when ingest or a request happens to write.
 - beats: what ingest last said of each feed and of itself (its health).
+- opensky_days, opensky_paths: an airplane's past flights of a UTC day
+  and a flight's path as the OpenSky Network gave them (wingtip.traffic.
+  opensky), kept a day and a bit: ingest's nightly prefetch and a pilot's
+  card both write them, and both read them before asking OpenSky again.
 The key the shares are hashed with is never kept here, beside them
 (FOLLOW_SHARE_KEY, recorded._share_key; the round 7 audit, P-M1).
 """
@@ -54,6 +58,8 @@ _SCHEMA = """
     CREATE INDEX IF NOT EXISTS following_hex ON following (hex);
     CREATE TABLE IF NOT EXISTS points (hex TEXT, t REAL, point TEXT, PRIMARY KEY (hex, t)) WITHOUT ROWID;
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
+    CREATE TABLE IF NOT EXISTS opensky_days (hex TEXT, day TEXT, at REAL, flights TEXT, PRIMARY KEY (hex, day)) WITHOUT ROWID;
+    CREATE TABLE IF NOT EXISTS opensky_paths (hex TEXT, flight INTEGER, at REAL, path TEXT, PRIMARY KEY (hex, flight)) WITHOUT ROWID;
 """
 
 
@@ -317,3 +323,41 @@ def beat(name: str, at: float, state: dict | None = None) -> None:
 def beats() -> dict[str, dict]:
     """Every feed's and ingest's last word: {name: {"at", **state}}."""
     return {name: {"at": at, **json.loads(state)} for name, at, state in _query("SELECT name, at, state FROM beats")}
+
+
+# The OpenSky Network's past flights and paths.
+
+
+def opensky_keep_day(hex_id: str, day: str, flights: list[dict], at: float) -> None:
+    """An airplane's flights on a UTC day (ISO), as OpenSky listed them."""
+    _write(
+        "INSERT INTO opensky_days (hex, day, at, flights) VALUES (?, ?, ?, ?) "
+        "ON CONFLICT (hex, day) DO UPDATE SET at = excluded.at, flights = excluded.flights",
+        (hex_id, day, at, json.dumps(flights)),
+    )
+
+
+def opensky_day(hex_id: str, day: str, since: float) -> list[dict] | None:
+    """The flights kept for that day since `since`; None where none are."""
+    rows = _query("SELECT flights FROM opensky_days WHERE hex = ? AND day = ? AND at >= ?", (hex_id, day, since))
+    return json.loads(rows[0][0]) if rows else None
+
+
+def opensky_keep_path(hex_id: str, flight_id: int, path: list[dict], at: float) -> None:
+    """A flight's path as OpenSky gave it, an empty one too."""
+    _write(
+        "INSERT INTO opensky_paths (hex, flight, at, path) VALUES (?, ?, ?, ?) "
+        "ON CONFLICT (hex, flight) DO UPDATE SET at = excluded.at, path = excluded.path",
+        (hex_id, flight_id, at, json.dumps(path)),
+    )
+
+
+def opensky_path(hex_id: str, flight_id: int, since: float) -> list[dict] | None:
+    """The path kept for that flight since `since`; None where none is."""
+    rows = _query("SELECT path FROM opensky_paths WHERE hex = ? AND flight = ? AND at >= ?", (hex_id, flight_id, since))
+    return json.loads(rows[0][0]) if rows else None
+
+
+def forget_opensky(before: float) -> int:
+    """OpenSky's days and paths kept before `before` dropped; how many."""
+    return _write("DELETE FROM opensky_days WHERE at < ?", (before,)) + _write("DELETE FROM opensky_paths WHERE at < ?", (before,))

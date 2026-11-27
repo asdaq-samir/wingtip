@@ -136,6 +136,7 @@ Each service fetches its own; the engine never fetches.
 | NOAA NOMADS | GFS winds and temperatures aloft, GLMP | weather |
 | tfr.faa.gov | TFRs | weather |
 | adsb.lol, ADS-B Exchange | The map's traffic, by region; the followed airplanes (adsb.lol) | planner; ingest |
+| OpenSky Network | An airplane's past flights and their paths where adsb.lol's archive is closed to the planner; the followed airplanes' yesterday prefetched each night into the live store, which the planner reads before asking | planner; ingest |
 
 ## Tech stack
 

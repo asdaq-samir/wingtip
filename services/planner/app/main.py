@@ -39,7 +39,6 @@ from fastapi.responses import JSONResponse
 from prometheus_client import make_asgi_app
 from wingtip import chart_upkeep, log_lines, schedule, weather
 from wingtip import traffic as traffic_store
-from wingtip.traffic import opensky
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 
@@ -86,7 +85,8 @@ async def _lifespan(app: FastAPI):
     # the warm-up's checks once it is done (app.warm_up), and from now
     # whether the live feeds and the weather still come in (app.feeds), a
     # check a minute. The feeds themselves are read by ingest into the
-    # stores the planner reads: none here.
+    # stores the planner reads: none here, nor the OpenSky Network's
+    # nightly prefetch of the followed airplanes' flights (ingest.main).
     on = schedule.scheduler()
     schedule.every(on, feeds_watch.CHECK_EVERY_S, feeds_watch.check, name="feed-watch")
     schedule.every(on, traffic_store.PRUNE_EVERY_S, traffic_store.prune, name="live-store-prune")
@@ -94,9 +94,6 @@ async def _lifespan(app: FastAPI):
     schedule.every(on, chart_upkeep.PRUNE_EVERY_S, chart_upkeep.prune_behind_served, name="chart-sheets-prune", now=False)
     # Each day's calls by route, to the file the gateway reads each night (app.usage_days).
     schedule.every(on, usage_days.FLUSH_EVERY_S, usage_days.flush, name="usage-days", now=False)
-    # The followed airplanes' flights of yesterday and their paths from the
-    # OpenSky Network, once a day after its batch (wingtip.traffic.opensky).
-    schedule.every(on, opensky.PREFETCH_EVERY_S, opensky.prefetch, name="opensky-prefetch", now=False)
     on.start()
     threading.Thread(target=warm_reference_data, args=(on,), name="reference-data-warm-up", daemon=True).start()
     yield

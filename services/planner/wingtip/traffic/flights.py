@@ -202,13 +202,14 @@ def _points(trace: dict | None) -> list[dict]:
     return out
 
 
-def _summaries(points: list[dict]) -> list[dict]:
-    """A merged trace's flights, oldest first, as `history` lists them."""
+def _summaries(points: list[dict], named: bool = True) -> list[dict]:
+    """A merged trace's flights, oldest first, as `history` lists them; their
+    ends not looked for where not `named` (how many there are, and when)."""
     now = time.time()
     flights = []
     for leg in _legs(points):
         air = [p for p in leg if p["alt_ft"] is not None]
-        start, end = _field_at(leg[0], landing=False), _field_at(leg[-1], landing=True)
+        start, end = (_field_at(leg[0], landing=False), _field_at(leg[-1], landing=True)) if named else (None, None)
         in_air = now - leg[-1]["t"] < 5 * 60 and leg[-1]["alt_ft"] is not None
         flights.append(
             {
@@ -239,7 +240,7 @@ def _recorded_flights(hex_id: str) -> list[dict]:
     return out
 
 
-def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float | None = None, today=None) -> dict:
+def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float | None = None, today=None, ask: bool = True) -> dict:
     """An airplane's last `limit` flights found, newest first, as FlightAware
     lists them: {"hex", "registration", "type", "flights": [{"id" (its
     takeoff's time, s), "origin", "destination" (each {"ident", "name",
@@ -254,7 +255,8 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     days at a time side by side, until the flights are found or the
     archive's ARCHIVE_DAYS run out: today's from the recent trace, the
     days before from the archive. A day that cannot be had is left out and
-    counted, not an error."""
+    counted, not an error. OpenSky is asked only where `ask`; else what it
+    gave before is given."""
     import datetime as dt
 
     hex_id = hex_id.lower()
@@ -271,8 +273,8 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     # The flights OpenSky has for the days adsb.lol's archive would not give.
     elsewhere: list[dict] = []
 
-    def found() -> list[dict]:
-        listed = _summaries(_merged(traces))
+    def found(named: bool = True) -> list[dict]:
+        listed = _summaries(_merged(traces), named)
         taken = [(f["off"], f["on"]) for f in listed]
         listed = sorted(
             listed + [f for f in elsewhere if not any(off <= f["on"] and f["off"] <= on for off, on in taken)], key=lambda f: f["id"]
@@ -283,18 +285,21 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
         while True:
             # The flights of the days read so far, the oldest day's first
             # flight possibly begun the day before: one more is wanted than
-            # is shown, so the last shown is whole.
-            flights = found()
+            # is shown, so the last shown is whole. Their ends are named once,
+            # after: each pass named every flight's again, two nearest-field
+            # searches a flight.
+            flights = found(named=False)
             if len(flights) > limit or day < stop:
                 break
             batch = [day - dt.timedelta(days=n) for n in range(HISTORY_BATCH) if day - dt.timedelta(days=n) >= stop]
             past = list(pool.map(lambda d: _day_trace(hex_id, d), batch))
             missed = [d for d, t in zip(batch, past) if t is UNREAD]
-            more, still = opensky.flights(hex_id, missed, today) if missed and opensky.on() else ([], len(missed))
+            more, still = opensky.flights(hex_id, missed, today, ask) if missed and opensky.on() else ([], len(missed))
             elsewhere += more
             unread += still
             traces += past
             day = batch[-1] - dt.timedelta(days=1)
+    flights = found()
     named = next((t for t in traces if isinstance(t, dict)), {})
     # And the flights watched here (`_watch`), where the archive has none
     # at that time: adsb.lol's history closed to the planner behind a

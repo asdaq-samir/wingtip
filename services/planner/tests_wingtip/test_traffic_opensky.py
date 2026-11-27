@@ -5,7 +5,6 @@ import datetime as dt
 from unittest.mock import Mock
 
 import pytest
-from cachetools import TTLCache
 
 from wingtip import airports, ratelimit
 from wingtip.config import get_settings
@@ -23,12 +22,10 @@ def _resp(code, body=None, headers=None):
 
 @pytest.fixture
 def sky(monkeypatch):
-    """OpenSky set up, nothing kept or spent, its token given, every GET recorded."""
+    """OpenSky set up, nothing kept (the live store is the test's own) or spent, its token given, every GET recorded."""
     monkeypatch.setenv("OPENSKY_CLIENT_ID", "id")
     monkeypatch.setenv("OPENSKY_CLIENT_SECRET", "secret")
     get_settings.cache_clear()
-    monkeypatch.setattr(opensky, "_FLIGHTS", TTLCache(maxsize=16, ttl=60))
-    monkeypatch.setattr(opensky, "_TRACKS", TTLCache(maxsize=16, ttl=60))
     gate = {"hold_most_s": opensky_api.REFUSED_MOST_S, "reserve": opensky_api.RESERVE}
     monkeypatch.setattr(opensky_api, "_BUDGET", {"flights": ratelimit.Gate(**gate), "tracks": ratelimit.Gate(**gate)})
     monkeypatch.setattr(opensky_api, "_TOKEN", {"value": None, "until": 0.0})
@@ -158,3 +155,22 @@ def test_a_flight_listed_twice_is_listed_once_and_a_refusal_waits_a_day_at_the_m
     assert opensky.track("a89c1e", 1793826721, 1793826721 + 86400) is None
     assert opensky.track("a89c1e", 1793826721 + 1, 1793826721 + 86400) is None
     assert len(asked) == 1 and opensky_api._BUDGET["tracks"].until - opensky_api._clock() <= opensky_api.REFUSED_MOST_S
+
+
+def test_days_kept_one_by_one_in_the_store_so_a_next_page_and_ingests_prefetch_ask_for_none(sky, monkeypatch):
+    from wingtip.traffic import store
+
+    asked = []
+    monkeypatch.setattr(opensky_api.requests, "get", lambda url, params, timeout, **k: asked.append(timeout) or _resp(200, []))
+    opensky.flights("a74f08", [TODAY - dt.timedelta(days=n) for n in range(1, 5)], TODAY)
+    # Four days, two pairs asked side by side, each held to the flight list's time.
+    assert asked == [opensky_api.FLIGHTS_TIMEOUT_S] * 2
+    # The next page, a day further back: the three days kept, the fifth asked alone.
+    opensky.flights("a74f08", [TODAY - dt.timedelta(days=n) for n in range(2, 6)], TODAY)
+    assert len(asked) == 3
+    # A day ingest's prefetch kept is read, not asked.
+    store.opensky_keep_day("a74f08", (TODAY - dt.timedelta(days=7)).isoformat(), [], opensky._wall())
+    assert opensky.flights("a74f08", [TODAY - dt.timedelta(days=7)], TODAY) == ([], 0)
+    # An airplane's base: what is kept alone, a day not kept unread, nothing asked.
+    assert opensky.flights("a74f08", [TODAY - dt.timedelta(days=9)], TODAY, ask=False) == ([], 1)
+    assert len(asked) == 3
