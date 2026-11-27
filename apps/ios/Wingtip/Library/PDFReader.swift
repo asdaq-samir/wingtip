@@ -137,11 +137,19 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
         view?.go(to: target)
     }
 
+    /// A heading of the outline gone to, and its page the page in view at
+    /// once: PDFKit's page-changed notice comes on the main queue a moment
+    /// later, and a bookmark made before it was named for the page left
+    /// (DocumentsIPadTests' testContentsAndABookmark on the iPhone, where
+    /// Contents is a sheet gone with the row's tap and Bookmark is at hand
+    /// straight away).
     func go(_ row: ReaderFinding.OutlineRow) {
-        if let destination = row.item?.destination {
-            view?.go(to: destination)
-        } else if let action = row.item?.action as? PDFActionGoTo {
-            view?.go(to: action.destination)
+        let jump = row.item?.action as? PDFActionGoTo
+        guard let destination = row.item?.destination ?? jump?.destination else { return }
+        view?.go(to: destination)
+        if let target = destination.page, let doc = document {
+            page = doc.index(for: target) + 1
+            onPage(page)
         }
     }
 
