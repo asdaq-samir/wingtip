@@ -1,7 +1,7 @@
 import { Ellipsis, Fuel, Navigation, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { colourOf } from "../../lib/map/marks/flightCategory";
+import { DOT_RING, colourOf } from "../../lib/map/marks/flightCategory";
 import { pointName } from "../../lib/identSchema";
 import { TEXT } from "../../lib/text";
 import type { TimelinePoint } from "./lineModel";
@@ -41,11 +41,14 @@ export function TimelineMark({ point, position }: { point: TimelinePoint; positi
             ? "bg-primary text-primary-foreground"
             : !point.field || !point.category
               ? "bg-muted-foreground text-background"
-              : "text-white",
+              : cn("text-white", DOT_RING),
       )}
-      // The category's colour from the map's own scale (flightCategory). With
-      // no report, the text's grey, as a waypoint's: on the map's own grey
-      // (CATEGORY_UNKNOWN) the white "•••" read 2.6:1 by day and night.
+      // The category's colour from the map's own scale (flightCategory),
+      // ringed in the chart's casing as the map's dots are (DOT_RING): LIFR's
+      // #a371f7 was 2.75:1 on Chart ink's muted, 3.35:1 against the ring (the
+      // round-4 themes audit; the chip's deeper #7e3fb8 would be 1.96:1 on the
+      // night's muted). With no report, the text's grey, as a waypoint's: on
+      // the map's own grey (CATEGORY_UNKNOWN) the white "•••" read 2.6:1.
       style={point.field && point.category && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
       data-testid={point.fuelStop ? "timeline-fuel" : undefined}
     >
