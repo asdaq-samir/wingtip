@@ -304,8 +304,9 @@ export default function PlaceCard({
                 }}
               />
             ) : (
-              // Its shape while it comes: the five facts and the first picture (PlaceFacts, PlacePictures).
-              <SkeletonCardInfo facts={5} fetching="Fetching the airport…" />
+              // Its shape while it comes: the five facts, Airspace's note
+              // line kept, and the first picture (PlaceFacts, PlacePictures).
+              <SkeletonCardInfo facts={5} note={1} fetching="Fetching the airport…" />
             )}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">

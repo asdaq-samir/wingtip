@@ -132,7 +132,19 @@ const FACT_WIDTHS: readonly (readonly [string, string])[] = [
  *  (CardPictures' 4:3 at 70 % of the card, 60 % from sm), so the card
  *  opens in its own shape and fills in place, where it stood empty under
  *  a grey "Fetching…" and then jumped (the feel audit, 2026-11-27). */
-export function SkeletonCardInfo({ facts, fetching }: { facts: number; fetching: string }) {
+export function SkeletonCardInfo({
+  facts,
+  fetching,
+  note,
+}: {
+  facts: number;
+  fetching: string;
+  /** The fact with a note under it, a caption line kept for it: the
+   *  airport card's Airspace ("Part-time"), whose note pushed the pictures
+   *  down some 16 px when the facts came in at a part-time towered field
+   *  (round 7's N16). */
+  note?: number;
+}) {
   return (
     <div role="status" data-testid="card-info-coming">
       <span className="sr-only">{fetching}</span>
@@ -148,6 +160,11 @@ export function SkeletonCardInfo({ facts, fetching }: { facts: number; fetching:
                 <dd className={TEXT.row}>
                   <SkeletonLine className={value} />
                 </dd>
+                {i === note && (
+                  <dd className={TEXT.caption}>
+                    <SkeletonLine className="w-[7ch]" />
+                  </dd>
+                )}
               </div>
             );
           })}
