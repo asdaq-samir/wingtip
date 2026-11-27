@@ -95,6 +95,7 @@ fn a_tfrs_detail_from_its_xnotam_file() {
     let want = json!({
         "effective": "2026-11-02T14:00:00Z", "expires": "2026-11-02T20:00:00Z", "rule": "VIP movement (91.141)",
         "purpose": "VIP movement", "floor_ft": 0, "floor_ref": "AGL", "ceiling_ft": 17900, "ceiling_ref": "MSL",
+        "floor_varies": false, "ceiling_varies": false,
         "instructions": ["NO PILOTS MAY OPERATE AN AIRCRAFT IN THE AREAS COVERED BY THIS NOTAM."],
         "text": "!FDC 6/1234 ZAU IL..AIRSPACE CHICAGO, IL..TEMPORARY FLIGHT RESTRICTIONS.",
         "facility": null, "contact": null

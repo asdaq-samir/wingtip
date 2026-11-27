@@ -14806,6 +14806,16 @@ object EngineContract {
         @SerialName("ceiling_ref")
         val ceilingRef: String? = null,
         /**
+         * Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read.
+         */
+        @SerialName("floor_varies")
+        val floorVaries: Boolean,
+        /**
+         * Likewise for the highest ceiling.
+         */
+        @SerialName("ceiling_varies")
+        val ceilingVaries: Boolean,
+        /**
          * Its operative instructions, a line each as sent.
          */
         val instructions: List<String>,

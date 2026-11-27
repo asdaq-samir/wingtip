@@ -70,6 +70,14 @@
             "null"
           ]
         },
+        "floor_varies": {
+          "type": "boolean",
+          "description": "Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read."
+        },
+        "ceiling_varies": {
+          "type": "boolean",
+          "description": "Likewise for the highest ceiling."
+        },
         "instructions": {
           "type": "array",
           "items": {
@@ -155,7 +163,9 @@
         "instructions",
         "text",
         "facility",
-        "contact"
+        "contact",
+        "floor_varies",
+        "ceiling_varies"
       ]
     }
   },

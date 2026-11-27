@@ -14150,6 +14150,10 @@ nonisolated enum EngineContract {
         var floorRef: String?
         var ceilingFt: Double?
         var ceilingRef: String?
+        /// Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read.
+        var floorVaries: Bool
+        /// Likewise for the highest ceiling.
+        var ceilingVaries: Bool
         /// Its operative instructions, a line each as sent.
         var instructions: [String]
         /// Its NOTAM's text as sent.
@@ -14168,6 +14172,8 @@ nonisolated enum EngineContract {
             case floorRef = "floor_ref"
             case ceilingFt = "ceiling_ft"
             case ceilingRef = "ceiling_ref"
+            case floorVaries = "floor_varies"
+            case ceilingVaries = "ceiling_varies"
             case instructions
             case text
             case facility

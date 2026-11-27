@@ -1105,6 +1105,14 @@ export type TfrDetailReadAnswer = {
   ceiling_ft: number | null;
   ceiling_ref: string | null;
   /**
+   * Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read.
+   */
+  floor_varies: boolean;
+  /**
+   * Likewise for the highest ceiling.
+   */
+  ceiling_varies: boolean;
+  /**
    * Its operative instructions, a line each as sent.
    */
   instructions: string[];
