@@ -1,7 +1,11 @@
-import type { ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Tabs, TabsContent } from "./ui/tabs";
 import { PINNED_BELOW } from "./PinnedHead";
+import { Shown, useShown } from "../lib/shown";
+
+/** The tab up, for each page to know whether it is. */
+const TabUp = createContext<string | null>(null);
 
 /**
  * A card's tab pages, laid out after Apple Maps' place card (C1, the owner,
@@ -13,9 +17,9 @@ import { PINNED_BELOW } from "./PinnedHead";
  *
  * - CardTabPages: the stock Tabs round a card's pages and its bar.
  * - CardTabPanel: a tab's content, spaced as every card's is.
- * - useCardTab (lib/cardTab): the tab picked, kept for each airport or
- *   airplane while the page is open: back from a card over it, the same tab.
- * - useTabScroll (lib/tabScroll): each tab opening at its own top, under the actions.
+ * - useCardTabs (lib/cardTab): the tab picked, kept for each airport or airplane while
+ *   the page is open (lib/cardTab): back from a card over it, the same
+ *   tab; and each tab opening at its own top, under the actions (lib/tabScroll).
  */
 
 /** The stock Tabs round a card's pages and, last, its floating bar. `top`
@@ -38,18 +42,28 @@ export function CardTabPages<T extends string>({
   return (
     <Tabs value={tab} onValueChange={(next) => onPick(next as T)} className="gap-0">
       <div ref={top} aria-hidden className={cn("sticky h-0", PINNED_BELOW)} />
-      {children}
+      <TabUp.Provider value={tab}>{children}</TabUp.Provider>
       {bar}
     </Tabs>
   );
 }
 
 /** A tab's content in a card: the space under the bar, and between its
- *  groups, every card's. */
+ *  groups, every card's. Built at its first visit and kept once opened, as
+ *  the route's pages are (PanelTabs): a page not up is skipped by Base UI's
+ *  data-hidden (index.css's tab-page), its layout kept, inert by Base UI's
+ *  own, and told it is out of sight (lib/shown) so its polls and clocks
+ *  stop. Unmounted at each switch, Info's pictures carousel, its NOTAM
+ *  marks and the Flights list were built and asked again at every return. */
 export function CardTabPanel({ value, className, children }: { value: string; className?: string; children: ReactNode }) {
+  const up = useContext(TabUp) === value;
+  const shown = useShown() && up;
+  const [seen, setSeen] = useState(up);
+  if (up && !seen) setSeen(true);
+  if (!seen) return null;
   return (
-    <TabsContent value={value} className={cn("space-y-5 pt-4", className)}>
-      {children}
+    <TabsContent value={value} keepMounted hidden={false} className={cn("tab-page space-y-5 pt-4 data-hidden:pt-0", className)}>
+      <Shown.Provider value={shown}>{children}</Shown.Provider>
     </TabsContent>
   );
 }

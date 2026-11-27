@@ -75,7 +75,26 @@ export function notamMarks(notams: FieldNotam[], ident: string, place: AirportPl
  *  Info tab's list reads) against its place. */
 export function useNotamMarks(ident: string, place: AirportPlace | undefined): NotamMarks {
   const { data } = useQuery(fieldNotamsQuery(ident));
-  return notamMarks(data?.notams ?? [], ident, place);
+  return marksOnce(data?.notams ?? NO_NOTAMS, ident, place);
+}
+
+const NO_NOTAMS: FieldNotam[] = [];
+const NO_PLACE = {};
+
+/** The marks worked out once per answer and card, kept by the two
+ *  answers' own objects (the queries' data, the same until refetched):
+ *  the subtitle, the pictures and each tab ask for them, and each worked
+ *  every NOTAM in force out again with the engine, some 300 calls at a
+ *  busy field's opening. */
+const kept = new WeakMap<FieldNotam[], WeakMap<object, { ident: string; marks: NotamMarks }>>();
+function marksOnce(notams: FieldNotam[], ident: string, place: AirportPlace | undefined): NotamMarks {
+  let byPlace = kept.get(notams);
+  if (!byPlace) kept.set(notams, (byPlace = new WeakMap()));
+  const hit = byPlace.get(place ?? NO_PLACE);
+  if (hit && hit.ident === ident) return hit.marks;
+  const marks = notamMarks(notams, ident, place);
+  byPlace.set(place ?? NO_PLACE, { ident, marks });
+  return marks;
 }
 
 /** Which NOTAMs are open over the card, from a tap on a thing's badge or

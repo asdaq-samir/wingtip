@@ -49,7 +49,7 @@ const zoneFormats = new Map<string, Intl.DateTimeFormat | null>();
 /** One Intl formatter for a zone and its options, made the first time it
  *  is asked for and kept (making one is costly, the note above); null
  *  where the browser does not know the zone. Every per-zone formatter in
- *  the app is this one cache's (the code audit of 2026-11-23, R5-9). */
+ *  the app is this one cache's. */
 export function formatIn(timeZone: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat | null {
   const key = `${timeZone} ${JSON.stringify(options)}`;
   if (!zoneFormats.has(key)) {
@@ -74,11 +74,22 @@ function wallIn(at: Date, timeZone: string): { time: string; zone: string } | nu
   return { time: `${parts.hour}:${parts.minute}`, zone: parts.timeZoneName ?? timeZone };
 }
 
+/** This device's zone, read once and again when the page comes back in
+ *  sight (a flight across a zone line, the device set to the new zone):
+ *  read at every point of the route's timeline, it was one Intl lookup a
+ *  point at every draw. */
+let zone: string | null = null;
+function deviceZone(): string {
+  zone ??= Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return zone;
+}
+if (typeof document !== "undefined") document.addEventListener("visibilitychange", () => (zone = null));
+
 const DAY = { year: "numeric", month: "numeric", day: "numeric", weekday: "short" } as const;
 /** An instant's calendar day in a zone, this device's without one: a count
  *  of days to tell two apart, its weekday ("Tue") and "11/24". */
 function dayIn(at: Date, timeZone: string | null | undefined) {
-  const format = formatIn(timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone, DAY);
+  const format = formatIn(timeZone || deviceZone(), DAY);
   const parts = format ? Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value])) : null;
   if (!parts) return { count: Math.floor((at.getTime() - at.getTimezoneOffset() * 60_000) / 86_400_000), weekday: "", monthDay: "" };
   return {
@@ -125,7 +136,7 @@ export function clockElsewhere(
  *  keeps another zone than the departure's (the owner, 2026-11-20: "When
  *  the time zone changes then show it on all the stops"). */
 export function clockIn(at: Date, timeZone: string | null | undefined): { time: string; zone: string } | null {
-  return wallIn(at, timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+  return wallIn(at, timeZone || deviceZone());
 }
 
 /** UTC hours and minutes in four figures, as a flight plan's item 13

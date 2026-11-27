@@ -20,7 +20,7 @@ import { useDebounced } from "../useDebounced";
 export const registeredQuery = (tail: string) =>
   queryOptions({
     queryKey: ["registered", tail],
-    queryFn: () => api.trafficRegistered(tail),
+    queryFn: ({ signal }) => api.trafficRegistered(tail, signal),
     staleTime: 24 * 60 * 60_000,
     meta: { silent: true },
   });
@@ -118,8 +118,11 @@ const TYPING_MS = 500;
  * in the air…" until the find is back.
  */
 export function useTailLookup(tail: string | null, live = true) {
-  const registry = useQuery({ ...registeredQuery(tail ?? ""), enabled: !!tail });
+  // The record asked for the N-number once typing pauses, as the live find
+  // is: asked at each letter, N12345 was five requests, the four on the way
+  // let go. A card opened on an N-number asks at once (the first value).
   const asked = useDebounced(tail, TYPING_MS);
+  const registry = useQuery({ ...registeredQuery(asked ?? ""), enabled: !!asked && asked === tail });
   const settled = live && !!tail && asked === tail;
   const liveFind = liveFindQuery(tail ?? "");
   const find = useQuery({ ...liveFind, enabled: settled });
@@ -128,8 +131,13 @@ export function useTailLookup(tail: string | null, live = true) {
   const inAir: InAir = settled ? inAirOf(find, record?.mode_s_hex, answers) : { state: "checking" };
   return {
     record,
-    /** The record still being fetched. */
-    fetching: registry.isFetching,
+    /** The record still being fetched, or waiting on the typing. */
+    fetching: registry.isFetching || asked !== tail,
+    /** The record could not be had: the planner failed, or no connection (`offline`). */
+    failed: !record && (registry.isError || noConnection(registry)),
+    offline: !record && noConnection(registry),
+    /** Ask the record again. */
+    retry: () => void registry.refetch(),
     /** Its ICAO address, the FAA's, for its flights; null where none. */
     hex: record?.mode_s_hex?.toLowerCase() ?? null,
     inAir,

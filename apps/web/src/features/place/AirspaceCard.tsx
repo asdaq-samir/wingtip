@@ -15,7 +15,7 @@ import { TEXT } from "../../lib/text";
 import { CardHead } from "../../components/CardHead";
 import { SheetCard } from "../../components/SheetCard";
 import { useCardSize } from "../../lib/sheetCards";
-import { CardAction } from "../../components/CardAction";
+import { CardAction, CardActionRow } from "../../components/CardAction";
 import { RowBadge } from "../../components/RowBadge";
 import { BADGE } from "../../lib/rowBadges";
 import { FINDING_TONE } from "../../lib/findings";
@@ -161,7 +161,7 @@ export default function AirspaceCard({
   const testIds = { directTo: "point-direct", addToRoute: "point-add", holdHere: "point-hold" };
   // Held from the first frame while the point is asked about: the tiles,
   // not to be pressed till it is named, and its name's line, as both came
-  // in over the bands once it answered (the flicker audit's FL-11).
+  // in over the bands once it answered.
   const naming = !!named || isLoading;
   const actions = naming
     ? CARD_ACTIONS.point.map((name) => ({ ...ACTION[name], go: handlers[name], testId: testIds[name] })).filter((a) => a.go)
@@ -204,7 +204,7 @@ export default function AirspaceCard({
       {/* The point into the route, as Maps' dropped pin's card offers its
           directions: the first the tint's, the others its wash. */}
       {naming && actions.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 pt-3" data-testid="point-actions">
+        <CardActionRow columns={3} testId="point-actions">
           {/* The cards' own tiles (CardAction), as a VOR's and an airport's. */}
           {actions.map((a, i) => (
             <CardAction
@@ -217,7 +217,7 @@ export default function AirspaceCard({
               testId={a.testId}
             />
           ))}
-        </div>
+        </CardActionRow>
       )}
 
       {/* The layers under the head at every size, from the ground up: at

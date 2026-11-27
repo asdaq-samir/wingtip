@@ -77,6 +77,17 @@ function nearness(index: AirportIndex, row: number, near: readonly { lat: number
   return least;
 }
 
+/** A match's order: its rank, closed after open, size, a name that starts
+ *  with it, nearness, ident; then its row. */
+type Ranked = [rank: number, closed: number, size: number, named: number, near: number, ident: string, row: number];
+
+function before(a: Ranked, b: Ranked): number {
+  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3] || a[4] - b[4] || (a[5] < b[5] ? -1 : a[5] > b[5] ? 1 : 0);
+}
+
+/** Each index's last search, what was typed and the rows that matched it. */
+const lastScan = new WeakMap<AirportIndex, { query: string; rows: number[] }>();
+
 /**
  * The airports answering what is typed, as the planner's search_airports
  * answers: the ident typed whole first, then the idents that start with
@@ -97,26 +108,39 @@ export function searchIndex(
 ): AirportSearchRow[] {
   const query = typed.trim().toUpperCase();
   if (!query) return [];
-  const ranked: [number, number, number, number, number, string, number][] = [];
   const word = ` ${query}`;
-  for (let row = 0; row < index.rows.length; row++) {
+  // A letter added to the last search can only narrow it: every row that
+  // matches "KOS" matched "KO", so only the last search's matches are read
+  // again, not every row. And only the best `limit` are kept as they come,
+  // where every match was sorted to take eight ("K" matches thousands).
+  const last = lastScan.get(index);
+  const pool = last && query.startsWith(last.query) ? last.rows : null;
+  const matched: number[] = [];
+  const ranked: Ranked[] = [];
+  const visit = (row: number) => {
     const keys = index.keys[row]!;
     const rank = keys.includes(query) ? 0 : keys.some((key) => key.startsWith(query)) ? 1 : index.words[row]!.includes(word) ? 2 : -1;
-    if (rank >= 0) {
-      ranked.push([
-        rank,
-        index.closed[row] ? 1 : 0,
-        index.rows[row]![4],
-        index.names[row]!.startsWith(query) ? 0 : 1,
-        nearness(index, row, near),
-        index.rows[row]![0],
-        row,
-      ]);
-    }
-  }
-  ranked.sort(
-    (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3] || a[4] - b[4] || (a[5] < b[5] ? -1 : a[5] > b[5] ? 1 : 0),
-  );
+    if (rank < 0) return;
+    matched.push(row);
+    const entry: Ranked = [
+      rank,
+      index.closed[row] ? 1 : 0,
+      index.rows[row]![4],
+      index.names[row]!.startsWith(query) ? 0 : 1,
+      nearness(index, row, near),
+      index.rows[row]![0],
+      row,
+    ];
+    if (ranked.length === limit && before(ranked[limit - 1]!, entry) <= 0) return;
+    // After every one it does not come before: the order a stable sort gives.
+    let at = ranked.length;
+    while (at > 0 && before(entry, ranked[at - 1]!) < 0) at--;
+    ranked.splice(at, 0, entry);
+    if (ranked.length > limit) ranked.pop();
+  };
+  if (pool) for (const row of pool) visit(row);
+  else for (let row = 0; row < index.rows.length; row++) visit(row);
+  lastScan.set(index, { query, rows: matched });
   return ranked.slice(0, limit).map(([, , , , , , row]) => {
     const [ident, name, town, state] = index.rows[row]!;
     return {
@@ -191,6 +215,11 @@ export function useAirportIndex(enabled = true, wanted = false): AirportIndex | 
 // reads the browser's cache.
 let warming: Promise<unknown> | null = null;
 let reading: Promise<AirportIndex> | null = null;
+// The index read ahead, once its bytes are in and the page is idle
+// (warm), for the first focus to find it read: read at the focus, its
+// half megabyte of JSON and its lookups were a long task while the
+// keyboard came up and the first letters were typed.
+let ahead: Promise<AirportIndex> | null = null;
 
 /** The download and the read forgotten, as a page load starts without
  *  them: for the tests, which each start as a fresh page, without
@@ -199,11 +228,16 @@ let reading: Promise<AirportIndex> | null = null;
 export function forgetAirportIndex() {
   warming = null;
   reading = null;
+  ahead = null;
 }
+
+const fetchIndex = () => api.airportIndex().then(({ airports, closed, use }) => indexInSlices(airports as Entry[], closed, use));
 
 async function read(): Promise<AirportIndex> {
   await warming?.catch(() => {});
-  reading = api.airportIndex().then(({ airports, closed, use }) => indexOf(airports as Entry[], closed, use));
+  const early = ahead;
+  ahead = null;
+  reading = early ?? fetchIndex();
   return reading;
 }
 
@@ -214,7 +248,52 @@ function warm(): Promise<boolean> {
       () => true,
     );
   warming = api.warmAirportIndex();
-  return warming.then(() => true);
+  return warming.then(() => {
+    whenIdle(() => {
+      if (reading || ahead) return;
+      ahead = fetchIndex();
+      // Its failure is the focus's to meet (read), not an unhandled one here.
+      ahead.catch(() => {});
+    });
+    return true;
+  });
+}
+
+/** Once the page has nothing else to do; Safari has no
+ *  requestIdleCallback, and two seconds stand in for it there. */
+function whenIdle(go: () => void) {
+  const wait = window.requestIdleCallback ?? ((then: () => void) => window.setTimeout(then, 2000));
+  wait(go, { timeout: 4000 });
+}
+
+/** A turn of the page's own between two slices of work. */
+const yieldToPage = () => new Promise<void>((go) => setTimeout(go, 0));
+
+/** The index's lookups built a slice of rows at a time, the page given a
+ *  turn between them: built at once, its 20,000 rows were one long task. */
+const SLICE = 2500;
+async function indexInSlices(rows: Entry[], closed?: Record<string, string>, use?: Record<string, FieldUse>): Promise<AirportIndex> {
+  const parts: AirportIndex[] = [];
+  for (let i = 0; i < rows.length; i += SLICE) {
+    if (i > 0) await yieldToPage();
+    parts.push(indexOf(rows.slice(i, i + SLICE), closed, use));
+  }
+  const lat = new Float64Array(rows.length);
+  const lon = new Float64Array(rows.length);
+  parts.forEach((part, k) => {
+    lat.set(part.lat, k * SLICE);
+    lon.set(part.lon, k * SLICE);
+  });
+  return {
+    rows,
+    lat,
+    lon,
+    names: parts.flatMap((p) => p.names),
+    keys: parts.flatMap((p) => p.keys),
+    words: parts.flatMap((p) => p.words),
+    closed: parts.flatMap((p) => p.closed),
+    use: parts.flatMap((p) => p.use),
+  };
 }
 
 /** The index's bytes downloaded once the page is idle, by the page itself

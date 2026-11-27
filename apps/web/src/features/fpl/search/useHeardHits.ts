@@ -1,10 +1,10 @@
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { inAirWords, type StatusWords } from "../../../lib/airplane/lookup";
 import { useTracking } from "../../../lib/map/position/tracking";
 import type { AirplaneRow } from "../../plan";
 
-const NONE: { plane: TrafficAircraft }[] = [];
 /** The most heard airplanes offered at once. */
 const MOST = 4;
 
@@ -32,26 +32,36 @@ function named(plane: TrafficAircraft, text: string): boolean {
 export function useHeardHits(typed: string, enabled: boolean): (AirplaneRow & { plane: TrafficAircraft; live: StatusWords })[] {
   const wanted = typed.replace(/\s+/g, "").toUpperCase();
   const on = enabled && wanted.length >= 3;
-  const seen = useTracking((s) => (on ? s.seen : NONE));
-  return useMemo(() => {
-    if (!on) return [];
-    const bare = wanted.replace(/-/g, "");
-    const whole = (p: TrafficAircraft) =>
-      (p.callsign ?? "").trim().toUpperCase() === wanted ||
-      (p.registration ?? "").replace(/-/g, "").toUpperCase() === bare ||
-      p.hex.toUpperCase() === wanted;
-    return seen
-      .map((r) => r.plane)
-      .filter((plane) => named(plane, wanted))
-      .sort((a, b) => Number(whole(b)) - Number(whole(a)))
-      .slice(0, MOST)
-      .map((plane) => ({
+  // The matches found in the store's own selector and compared one by one
+  // (useShallow): each traffic answer replaced the heard list and drew the
+  // whole search again while the pilot typed, though none of it matched.
+  const planes = useTracking(useShallow((s) => (on ? matching(s.seen, wanted) : NO_PLANES)));
+  return useMemo(
+    () =>
+      planes.map((plane) => ({
         key: `heard-${plane.hex}`,
         title: plane.callsign?.trim() || plane.registration || plane.hex.toUpperCase(),
         detail:
           [plane.type, plane.registration && plane.callsign?.trim() ? plane.registration : null].filter(Boolean).join(" · ") || "Heard now",
         plane,
         live: inAirWords({ state: "flying", plane }),
-      }));
-  }, [on, seen, wanted]);
+      })),
+    [planes],
+  );
+}
+
+const NO_PLANES: TrafficAircraft[] = [];
+
+/** The heard airplanes named by what is typed, a whole name first, MOST at most. */
+function matching(seen: readonly { plane: TrafficAircraft }[], wanted: string): TrafficAircraft[] {
+  const bare = wanted.replace(/-/g, "");
+  const whole = (p: TrafficAircraft) =>
+    (p.callsign ?? "").trim().toUpperCase() === wanted ||
+    (p.registration ?? "").replace(/-/g, "").toUpperCase() === bare ||
+    p.hex.toUpperCase() === wanted;
+  return seen
+    .map((r) => r.plane)
+    .filter((plane) => named(plane, wanted))
+    .sort((a, b) => Number(whole(b)) - Number(whole(a)))
+    .slice(0, MOST);
 }

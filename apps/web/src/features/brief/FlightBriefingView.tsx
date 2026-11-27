@@ -9,7 +9,8 @@ import { AltitudeReasoning } from "../navlog/lazy";
 import type { Course, Leg, NavLogAltitude, Totals } from "../../lib/api/types";
 import { type BriefingState, clockTime, type BriefingPart } from "../plan";
 import { useFlightBriefing } from "./useFlightBriefing";
-import { WEATHER_SOURCE_LABEL } from "./briefingFigures";
+import { useBriefingModel } from "./useBriefingModel";
+import { WEATHER_SOURCE_LABEL, briefingPendingMessage } from "./briefingFigures";
 import { TakeoffLandingSection } from "./PreflightSections";
 import AirportSections from "./AirportSectionsPart";
 import WeatherAlongRoute from "./WeatherAlongRoute";
@@ -90,11 +91,35 @@ const NO_STOPS: string[] = [];
 // Drawn again only when its plan changes (memo): every tab is one of
 // these, and the page draws again at every row picked in the nav log.
 export default memo(function FlightBriefingView(props: Props) {
-  const { part, nav, legs, dep, dest, stops = NO_STOPS, course = null, totals = null, depart = "", briefing: briefingState } = props;
-  const vm = useFlightBriefing(props);
-  const { briefing, briefingPendingMessage, briefingComing, unchecked, opened, landings, ownCallSign, loaded, ifr, alternateWhere } = vm;
+  return props.publish ? <BriefingPublisher {...props} /> : <BriefingPage {...props} />;
+});
 
+/** The one instance that works the briefing out, for every page. */
+function BriefingPublisher(props: Props) {
+  useBriefingModel(props);
+  return null;
+}
+
+function BriefingPage(props: Props) {
+  const { part, nav, legs, dep, dest, stops = NO_STOPS, course = null, totals = null, depart = "", briefing: briefingState } = props;
+  const page = useFlightBriefing(props);
   if (part === null) return null;
+  // Not yet worked out (the publishing instance's first render): the
+  // part's shape, as a briefing on its way.
+  if (!page) return <Pending coming>{briefingPendingMessage(briefingState)}</Pending>;
+  const vm = page;
+  const {
+    briefing,
+    briefingPendingMessage: pendingLine,
+    briefingComing,
+    unchecked,
+    opened,
+    landings,
+    ownCallSign,
+    loaded,
+    ifr,
+    alternateWhere,
+  } = vm;
 
   return (
     // No header, title or scroller of its own: the planning panel's tabs
@@ -144,7 +169,7 @@ export default memo(function FlightBriefingView(props: Props) {
             />
           ) : (
             <AccordionSection title="Weather">
-              <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
+              <Pending coming={briefingComing}>{pendingLine}</Pending>
             </AccordionSection>
           )}
           <TakeoffLandingSection
@@ -159,7 +184,7 @@ export default memo(function FlightBriefingView(props: Props) {
             <AirportSections briefing={briefing} landings={landings} legs={legs} callSign={ownCallSign} phase="depart" />
           ) : (
             <AccordionSection title="Airport">
-              <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
+              <Pending coming={briefingComing}>{pendingLine}</Pending>
             </AccordionSection>
           )}
         </>
@@ -200,7 +225,7 @@ export default memo(function FlightBriefingView(props: Props) {
             <AirportSections briefing={briefing} landings={landings} legs={legs} callSign={ownCallSign} phase="enroute" />
           ) : (
             <AccordionSection title="Airport">
-              <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
+              <Pending coming={briefingComing}>{pendingLine}</Pending>
             </AccordionSection>
           )}
         </>
@@ -221,7 +246,7 @@ export default memo(function FlightBriefingView(props: Props) {
             />
           ) : (
             <AccordionSection title="Weather">
-              <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
+              <Pending coming={briefingComing}>{pendingLine}</Pending>
             </AccordionSection>
           )}
           <TakeoffLandingSection
@@ -236,7 +261,7 @@ export default memo(function FlightBriefingView(props: Props) {
             <AirportSections briefing={briefing} landings={landings} legs={legs} callSign={ownCallSign} phase="arrive" />
           ) : (
             <AccordionSection title="Airport">
-              <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
+              <Pending coming={briefingComing}>{pendingLine}</Pending>
             </AccordionSection>
           )}
           {ifr && <AlternateSection {...alternateWhere} />}
@@ -244,7 +269,7 @@ export default memo(function FlightBriefingView(props: Props) {
       )}
     </>
   );
-});
+}
 
 /**
  * Which weather sources the briefing could not check, above every

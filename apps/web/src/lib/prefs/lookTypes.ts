@@ -1,3 +1,5 @@
+import type { LOOKS } from "./firstFrame";
+
 /** The screen edge the map panel is on -- and so what the consoles and
  *  panels come in from, and which edge the map's buttons keep clear
  *  of (useNavEdge): the bottom on a phone, always (the owner, 2026-11-13,
@@ -6,7 +8,7 @@ export type NavEdge = "top" | "bottom";
 /** The app's look (lib/brand): Wingtip, the brand's blue and the
  *  default (the owner, 2026-11-09), Glass Cockpit or Chart ink (kept
  *  2026-11-04), or Native, stock out of the box (2026-11-10). */
-export type Brand = "wingtip" | "cockpit" | "ink" | "native";
+export type Brand = (typeof LOOKS)[number];
 /** The flight rules a route is planned under (the altitude's popover):
  *  VFR, or IFR -- its minimum altitudes, its thousands by direction of
  *  flight and its 45-minute reserve (the planner's wingtip.ifr). */

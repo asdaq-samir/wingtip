@@ -179,7 +179,7 @@ export function useRouteBox({
   // The airports and waypoints that answer what is typed, under the box;
   // before anything is typed, Fly via's ways round. Put away with Escape
   // or a tap elsewhere, until the next thing typed.
-  const { rows, answered } = useAirportSearch(text, !!text, true);
+  const { rows, answered, airportsAnswered } = useAirportSearch(text, !!text, true);
   // The pilot's own point off a fix, typed as a flight plan writes one
   // ("VPBNG/090/30", at the owner's ask): offered first, as it reads.
   const ownPoint = stopOf(text) && frdOf(stopOf(text)) ? stopOf(text) : null;
@@ -304,7 +304,9 @@ export function useRouteBox({
     toEnd,
     isRoom,
     insertAt,
-    suggestions: { open, rows: text ? rows : [], answered: !text || answered, via: !text ? (via ?? []) : [], ownPoint, pick },
+    // Dimmed only while the airports are not the answer: the copy's are at
+    // once, the planner's waypoints merged in as they come.
+    suggestions: { open, rows: text ? rows : [], answered: !text || airportsAnswered, via: !text ? (via ?? []) : [], ownPoint, pick },
     dismiss: () => {
       setDismissed(text);
       onAddingChange(false);

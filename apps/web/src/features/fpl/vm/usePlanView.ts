@@ -46,8 +46,11 @@ export function usePlanView(
   // finger and the map's follow of the sheet waiting behind them (the drag
   // probe at CPU 4x, 2026-11-04: 100 to 170 ms each; the animation audit
   // of 2026-11-23, M8).
-  const moving = usePanelDragging((d) => panel !== "peek" || d.dragging);
-  const [stripsDrawn, setStripsDrawn] = useState(moving);
+  // Once drawn, the selector is true for good, so a drag's start and its
+  // settle no longer draw the whole view model again at the first frame of
+  // each pull from the pill.
+  const [stripsDrawn, setStripsDrawn] = useState(() => panel !== "peek" || usePanelDragging.getState().dragging);
+  const moving = usePanelDragging((d) => stripsDrawn || panel !== "peek" || d.dragging);
   if (moving && !stripsDrawn) setStripsDrawn(true);
   useEffect(() => {
     if (stripsDrawn) return;

@@ -281,7 +281,7 @@ const render = () =>
         sets it, next-themes keeps it and puts the `dark` class on
         <html>, which is what every colour token in index.css keys off
         (and what the Toaster below already reads). The first frame's
-        class is public/first-frame.js's, put on before the body paints:
+        class is first-frame.js's (lib/prefs/firstFrame), put on before the body paints:
         next-themes' own inline script never runs in a client root. */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey={THEME_KEY} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>

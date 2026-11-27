@@ -112,9 +112,9 @@
       }
     </style>
     <!-- The pilot's theme, look and sunlight scheme on <html> before the
-         body is painted: a load at night never opens white (AIM 8-1-6).
-         A blocking script of the page's own origin, as the CSP allows. -->
-    <script src="/first-frame.js"></script>
+         body is painted (AIM 8-1-6): first-frame.js, a blocking script of
+         the page's own origin put last in the head by the build
+         (vite-plugins/firstFrame, from src/lib/prefs/firstFrame.ts). -->
   </head>
   <body>
     <div id="root"></div>
