@@ -139,4 +139,9 @@ def test_the_edge_limits_each_address_on_the_tile_paths_the_server_answers():
     # Every behaviour that sends a tile to the server is scoped by the rule.
     for behaviour in re.findall(r"PathPattern: (api/planner/\w+-tile)/\*\n\s+TargetOriginId: server", TEMPLATE):
         assert f"SearchString: /{behaviour}/" in body, behaviour
-    assert "WebACLId: !GetAtt TileRateLimit.Arn" in TEMPLATE
+    # Made and attached only with EdgeRateLimit=on, off at launch (the
+    # owner, 2026-11-27, decision 0063): N5 stays open until it is on.
+    assert "    Condition: EdgeRateLimitOn\n" in body
+    assert "WebACLId: !If [EdgeRateLimitOn, !GetAtt TileRateLimit.Arn, !Ref AWS::NoValue]" in TEMPLATE
+    switch = re.search(r"^  EdgeRateLimit:\n(.*?)(?=\n  \w)", TEMPLATE, re.S | re.M)
+    assert switch and 'Default: "off"' in switch[1] and 'AllowedValues: ["on", "off"]' in switch[1]

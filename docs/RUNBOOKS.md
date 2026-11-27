@@ -24,6 +24,7 @@ alias dc='docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.pr
 - [Restore a backup](#restore-a-backup) — [the drill](#the-restore-drill)
 - [Reading the logs](#reading-the-logs)
 - [Load](#load)
+- [The server under load](#the-server-under-load)
 
 ## Which alert is which
 
@@ -341,3 +342,28 @@ scripts/dev/one-at-a-time.sh --alone "load test" scripts/dev/after-merge/load.sh
 k6 exits non-zero when a threshold is missed. The server is a t3a.large's
 two cores; the stack is held to two of the Mac's, which do more a second,
 so a pass here is a ceiling, not a promise.
+
+## The server under load
+
+The edge's rate limit is off at launch (`EdgeRateLimit=off`, decision
+0063), so nothing stops one address from asking for thousands of tiles
+whose `?c=` or `?r=` misses CloudFront's cache, or for plans and nav logs
+in a loop. The signs: `HealthAlarm` or `ServicesAlarm` with no Spot
+interruption behind it, the planner slow in its logs, or the budget's 80%
+mail with CloudFront's requests the cause in Cost Explorer.
+
+Turn the limit on, which makes the AWS WAF web ACL (`TileRateLimit`) and
+puts it on the distribution: 429 to an address past 3,000 tile requests,
+or 3,000 other planner requests, in five minutes. Every other parameter
+keeps its value:
+
+```bash
+aws cloudformation deploy --region us-east-1 --stack-name wingtip \
+  --template-file infra/cloudformation/template.yaml \
+  --capabilities CAPABILITY_IAM \
+  --parameter-overrides EdgeRateLimit=on
+```
+
+The distribution takes some minutes to deploy the change. It costs about
+$7.20 a month from then (README-AWS.md, "What it costs");
+`EdgeRateLimit=off` takes it away again.
