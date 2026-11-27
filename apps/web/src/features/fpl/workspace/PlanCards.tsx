@@ -46,7 +46,7 @@ export default function PlanCards({
   briefContents: ComponentProps<typeof BriefCard>["contents"];
   briefNotice: ReactNode;
 }) {
-  const { flightRules, routeKey, routed, setFlightRules } = vm.route;
+  const { flightRules, routed, setFlightRules } = vm.route;
   const { course, s } = vm.plan;
   const { cardUp, selectPlace } = vm.cards;
   const { addStopField } = vm.stops;
@@ -85,7 +85,6 @@ export default function PlanCards({
           marks={marks}
           onClose={closeBrief}
           onLegs={showLegs}
-          route={routeKey}
         />
       )}
       {navLogDrawn && routed && (

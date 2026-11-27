@@ -31,10 +31,10 @@ export const UNDER_INDICATOR =
  * and curve, not the demo's 300 ms: the two ran on two clocks, and as a
  * card went away the search was back whole while the card was still a
  * third in sight (the apple-design and gestures audits of 2026-11-23, N5
- * and N6).
+ * and N6). Back in on the card's shorter time going (cardMotion's AWAY).
  */
 const GIVE_WAY =
-  "transition-[opacity,visibility] duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0";
+  "transition-[opacity,visibility] duration-(--motion-page) ease-(--motion-drawer-ease) motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0 group-data-nested-drawer-open/sheet:duration-(--motion-drawer)";
 
 /**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner

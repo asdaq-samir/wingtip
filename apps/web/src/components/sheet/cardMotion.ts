@@ -1,9 +1,17 @@
 import { cn } from "cn";
 import { SHEET_SLIDE } from "./insets";
 
+/** How a card is put away: on a page's time (motion.page), shorter than
+ *  its coming, as a system answers faster than the pilot decides (the
+ *  feel audit, 2026-11-27, the owner taking it). Base UI's own ending
+ *  style, its time alone changed: the Drawer waits on the popup's own
+ *  transition, so nothing mirrors it. SheetDrawer's GIVE_WAY brings the
+ *  sheet back on the same time. */
+const AWAY = "data-ending-style:duration-(--motion-page)";
+
 /** A card's drag eased on the Drawer's own curve, never under a finger;
- *  its fade as it is put away on the same time. */
-export const EASE = `transition-[transform,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) data-swiping:transition-none ${SHEET_SLIDE}`;
+ *  its fade as it is put away the same, on AWAY's time. */
+export const EASE = `transition-[transform,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) ${AWAY} data-swiping:transition-none ${SHEET_SLIDE}`;
 
 /**
  * A card comes up where the front sheet's top is -- the sheet's, or the
@@ -52,7 +60,6 @@ export const RISE = cn(
  *  there and gone in one frame while the map eased to make room for it
  *  (the apple-design audit of 2026-11-23, H1). Opacity only under Reduce
  *  Motion. */
-export const SIDE_EASE =
-  "card-fade transition-[translate,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:translate-none";
+export const SIDE_EASE = `card-fade transition-[translate,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) ${AWAY} data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:translate-none`;
 export const FROM_EDGE = "data-starting-style:translate-x-4 data-ending-style:translate-x-4";
 export const FROM_BELOW = "data-starting-style:translate-y-2 data-ending-style:translate-y-2";

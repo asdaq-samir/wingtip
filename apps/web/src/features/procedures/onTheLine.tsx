@@ -110,8 +110,8 @@ export function FoldSection({
   // unfold all of the subsections"); a tap on a head opens that one.
   const [open, setOpen] = useState(startOpen);
   // Folding, the pill keeps its card's outline until its fixes have folded
-  // away under it, so the card closes as one thing; its inset eases with
-  // the fold on the fold's own time.
+  // away under it, so the card closes as one thing; its inset set at once,
+  // as a margin eased is laid out anew each frame (the feel audit, 2026-11-27).
   const [closing, setClosing] = useState(false);
   const card = open || closing;
   return (
@@ -126,10 +126,7 @@ export function FoldSection({
           aria-label={label}
           data-testid={testId}
           data-section-folded={open ? undefined : ""}
-          className={cn(
-            pill && "relative transition-[margin,padding] duration-(--motion-fade) ease-(--motion-sheet-ease)",
-            pill && open && "mb-1.5 pb-1.5",
-          )}
+          className={cn(pill && "relative", pill && open && "mb-1.5 pb-1.5")}
           {...data}
         />
       }

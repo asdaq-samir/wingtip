@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { Skeleton } from "./ui/skeleton";
@@ -6,6 +7,7 @@ import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
 import { NO_CONNECTION, noConnection } from "../lib/problems";
 import { FieldError } from "./ui/field";
+import { skeletonRows } from "./skeletonRows";
 
 /** What a query says of itself (TanStack Query's own flags). */
 interface Asked {
@@ -81,16 +83,22 @@ export default function QueryState({
   // audit, 2026-10-26).
   if (query.isLoading || query.isError) {
     if (row && rows) return <SkeletonRows rows={rows} lines={lines} fetching={fetching} />;
-    const bars = (
-      <span role="status" className="flex w-full flex-col gap-2 py-1">
-        <span className="sr-only">{fetching}</span>
-        <Skeleton aria-hidden="true" className="h-4 w-3/5" />
-        <Skeleton aria-hidden="true" className="h-3 w-2/5" />
-      </span>
-    );
+    const bars = <SkeletonBars fetching={fetching} />;
     return row ? <ListRow title={bars} /> : <div className="px-1">{bars}</div>;
   }
   return null;
+}
+
+/** Two lines still coming, a line and a shorter one under it, their
+ *  words for a screen reader. */
+export function SkeletonBars({ fetching }: { fetching: ReactNode }) {
+  return (
+    <span role="status" className="flex w-full flex-col gap-2 py-1">
+      <span className="sr-only">{fetching}</span>
+      <Skeleton aria-hidden="true" className="h-4 w-3/5" />
+      <Skeleton aria-hidden="true" className="h-3 w-2/5" />
+    </span>
+  );
 }
 
 /** A line of words to come at the line's own height: the stock Skeleton
@@ -100,34 +108,31 @@ export function SkeletonLine({ className }: { className?: string }) {
   return <Skeleton aria-hidden="true" className={cn("inline-block h-[0.8em] align-middle", className)} />;
 }
 
-/** `rows` list rows still coming, each its name and `lines` lines under it
- *  in the row's own type, so each is the height of the row that replaces
- *  it; their words for a screen reader once. */
-export function SkeletonRows({ rows, lines = 1, fetching }: { rows: number; lines?: number; fetching: string }) {
+/** skeletonRows (./skeletonRows) as an element. */
+export function SkeletonRows(props: { rows: number; lines?: number; fetching: string }) {
+  return <>{skeletonRows(props)}</>;
+}
+
+/** A card's Info still coming: its facts strip (CardFacts, `facts` of
+ *  them, each its small name over its value) and its pictures' first tile
+ *  (CardPictures' 4:3 at 70 % of the card, 60 % from sm), so the card
+ *  opens in its own shape and fills in place, where it stood empty under
+ *  a grey "Fetching…" and then jumped (the feel audit, 2026-11-27). */
+export function SkeletonCardInfo({ facts, fetching }: { facts: number; fetching: string }) {
   return (
-    <>
-      {Array.from({ length: rows }, (_, i) => (
-        <ListRow
-          key={i}
-          title={
-            <span role={i === 0 ? "status" : undefined}>
-              {i === 0 && <span className="sr-only">{fetching}</span>}
-              <SkeletonLine className="w-40" />
-            </span>
-          }
-          description={
-            lines > 0 && (
-              <>
-                {Array.from({ length: lines }, (_, l) => (
-                  <span key={l} className="block">
-                    <SkeletonLine className={l === lines - 1 ? "w-28" : "w-52"} />
-                  </span>
-                ))}
-              </>
-            )
-          }
-        />
-      ))}
-    </>
+    <div role="status" data-testid="card-info-coming">
+      <span className="sr-only">{fetching}</span>
+      <div className="flex justify-between gap-x-2 pt-4" aria-hidden="true">
+        {Array.from({ length: facts }, (_, i) => (
+          <span key={i} className={cn("flex flex-col gap-1.5", TEXT.row)}>
+            <Skeleton className="h-3 w-10" />
+            <SkeletonLine className="w-12" />
+          </span>
+        ))}
+      </div>
+      <div className="@container pt-4" aria-hidden="true">
+        <Skeleton className="aspect-4/3 w-[70%] rounded-(--radius-card) sm:w-[60%]" />
+      </div>
+    </div>
   );
 }

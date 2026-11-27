@@ -46,7 +46,7 @@ interface Props {
  *  and the NOTAMs, then what is done before leaving -- the airspace, the
  *  risk, the paperwork, the loading. */
 export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Props) {
-  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing } = vm;
+  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, briefingComing, ifr, planForms, briefing } = vm;
   return (
     <>
       <BriefChecks
@@ -84,7 +84,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
               ) : undefined
             }
           >
-            {!assessment ? <Pending>{briefingPendingMessage}</Pending> : <RiskAssessment assessment={assessment} />}
+            {!assessment ? <Pending coming={briefingComing}>{briefingPendingMessage}</Pending> : <RiskAssessment assessment={assessment} />}
           </AccordionSection>
 
           {/* The loading, done at home: its envelope and what it changes. */}
@@ -136,7 +136,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
  *  -- and the special-use areas the legs cross, with when the flight gets
  *  to each against its times of use. */
 function AirspaceSection({ vm }: { vm: FlightBriefing }) {
-  const { tfrsCrossed, specialUse, briefing, briefingPendingMessage, unchecked, passAt, tfrInForce } = vm;
+  const { tfrsCrossed, specialUse, briefing, briefingPendingMessage, briefingComing, unchecked, passAt, tfrInForce } = vm;
   return (
     <AccordionSection
       title="TFRs & Special Use"
@@ -153,7 +153,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
       }
     >
       {!briefing ? (
-        <Pending>{briefingPendingMessage}</Pending>
+        <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
       ) : (
         <div className="space-y-4">
           <div data-testid="tfrs">

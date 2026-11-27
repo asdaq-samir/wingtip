@@ -498,6 +498,27 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   the web's own value (design/tokens.json's `web` override of motion's
   sheet-ease); the phones keep theirs. Base UI's Drawer keeps its own curve
   and swipe (`--motion-drawer-ease`), and the Native look shadcn's stock.
+- What makes it feel fast (the feel audit of 2026-11-27, after Emil
+  Kowalski's design-engineering guidance; the owner: "Do it all"). What
+  is still coming is drawn in its shape, not a grey "Fetching…" line
+  that then jumps: the airport card's Info its five facts and its first
+  picture (`SkeletonCardInfo`), the airplane card's history and flights
+  three rows each (`skeletonRows`, an array so the group draws its lines
+  between them), the Brief's sections two bars (`Pending`'s `coming`,
+  the briefing on its way), each with its words for a screen reader. A
+  list's row answers a finger at once (`pointer-coarse:active:duration-0`,
+  as ListPicks' and the stock Button's dim) and the Toggle eases its dim.
+  A card is put away on a page's time (`motion.page`, cardMotion's
+  `AWAY`, Base UI's own ending style with only its time changed), the
+  sheet under it back on the same; the iPad inspector's ground fades on a
+  control's. No margin or padding eased (a procedure's pill), no blur on
+  a figure's roll (a filter is painted every frame), and a fold of nine
+  rows or more opens at once (`FOLD_PANEL`). A view transition's
+  snapshots take no taps (`::view-transition { pointer-events: none }`),
+  so a second tap during the slide reaches the page coming in. The Brief's
+  pages keep their last contents while a new route's are drawn in the
+  background (`useDeferredValue` of the contents), where each new route
+  took them down and drew them from nothing.
 - `prefers-reduced-motion`: animate only inside `(prefers-reduced-motion:
   no-preference)`, keep normal scrolling, drop zooms and autoplay
   ([web.dev reduced motion][webdev-reduced-motion]). One exception, as
@@ -2623,9 +2644,10 @@ its reason:
 - **The profile's chart (navlog MiniProfile):** a drawing, not a control;
   no stock chart draws the ground, the airspace and the altitude line
   together. It is read-only now, the Slider beside it the control.
-- **The "Fetching…" lines** in the Brief's sections, the account pages
-  and the coach: words, not a component; `QueryState` and `SkeletonLines`
-  are the stock way, and each moves as its section is next changed.
+- **The "Fetching…" lines** in the account pages and the coach: words,
+  not a component; `QueryState` and `skeletonRows` are the stock way, and
+  each moves as its section is next changed (the Brief's sections, the
+  airport card's Info and the airplane card's lists moved on 2026-11-27).
 - **Map gestures** (the ruler's two-finger hold, the zoom banner): on
   MapLibre's canvas, where no stock component reaches.
 - **The map's buttons, the radio's, the 3D and the page toggle on the sheet's top**

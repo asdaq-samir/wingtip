@@ -64,7 +64,6 @@ export default function PanelTabs({
   printing,
   marks,
   onLegs,
-  route,
   overview: Overview,
 }: {
   /** What shows before any page, its rows each opening one (`open`), at
@@ -85,19 +84,19 @@ export default function PanelTabs({
   /** The legs asked for (LEGS): FPL's nav log, under which the fuel is
    *  checked, in place of the Brief. */
   onLegs?: () => void;
-  /** Which route the contents are of: drawn just after the frame that
-   *  shows a new one (below). */
-  route: string;
 }) {
   // The tabs' contents drawn just after the frame that shows a new route,
   // not in it: the route's box, its figures and the map first, the nav
   // log's rows and the briefing's sections a moment later, in the
-  // background (useDeferredValue's first value) -- at half the panel ends
-  // at the tabs, and they are out of sight anyway. In the same frame they
-  // held Fly Here's route back 2.5 to 3.6 s at a phone's speed (measured
-  // 2026-10-08). On paper at once.
-  const drawnFor = useDeferredValue(route, "");
-  const drawn = printing || drawnFor === route;
+  // background -- at half the panel ends at the tabs, and they are out of
+  // sight anyway. In the same frame they held Fly Here's route back 2.5
+  // to 3.6 s at a phone's speed (measured 2026-10-08). Nothing at first
+  // (useDeferredValue's first value); after that the last contents drawn
+  // stay while the next are drawn, where every new route took them all
+  // down for a frame and drew them again from nothing, the pages blank and
+  // their places lost (the feel audit, 2026-11-27). On paper at once.
+  const deferred = useDeferredValue<Record<PanelTab, ReactNode> | null>(contents, null);
+  const shown = printing ? contents : deferred;
   // Preflight up to begin with -- whether to go is what is read first --
   // or the overview where there is one (null).
   const [tab, setTab] = useState<PanelTab | null>(Overview ? null : "preflight");
@@ -292,7 +291,7 @@ export default function PanelTabs({
               {/* Every page's sections one under another, each under its
                 title, not pills to pick one by, at the owner's ask ("Make
                 the subtabs into sections Legs, Profile"). */}
-              {drawn &&
+              {shown &&
                 (printing ? PRINTED : TABS.map((t) => t.value).filter((t) => opened.includes(t))).map((t) => {
                   return (
                     <TabsContent
@@ -309,7 +308,7 @@ export default function PanelTabs({
                       data-tab={t}
                       className={cn("mt-0", !printing && "tab-page")}
                     >
-                      {contents[t]}
+                      {shown[t]}
                     </TabsContent>
                   );
                 })}

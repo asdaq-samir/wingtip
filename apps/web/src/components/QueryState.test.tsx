@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { QueryObserver, onlineManager } from "@tanstack/react-query";
-import QueryState from "./QueryState";
+import QueryState, { SkeletonCardInfo } from "./QueryState";
+import { skeletonRows } from "./skeletonRows";
 import { queryClient } from "../lib/queryClient";
 
 afterEach(() => {
@@ -41,5 +42,20 @@ describe("the query client offline", () => {
     const answered = new Promise((done) => observer.subscribe((r) => r.data && done(r.data)));
     expect(await answered).toBe("kept");
     expect(queryFn).toHaveBeenCalledOnce();
+  });
+});
+
+describe("what is still coming", () => {
+  it("draws a card's Info in its shape, its words once for a screen reader", () => {
+    render(<SkeletonCardInfo facts={5} fetching="Fetching the airport…" />);
+    expect(screen.getByRole("status").textContent).toBe("Fetching the airport…");
+    expect(screen.getByTestId("card-info-coming").querySelectorAll("[data-slot=skeleton]").length).toBeGreaterThanOrEqual(11);
+  });
+
+  it("gives skeleton rows as separate rows, so a group draws its lines between them", () => {
+    const rows = skeletonRows({ rows: 3, fetching: "Fetching its flights…" });
+    expect(rows).toHaveLength(3);
+    render(<>{rows}</>);
+    expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 });

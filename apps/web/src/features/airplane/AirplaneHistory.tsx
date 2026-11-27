@@ -3,6 +3,7 @@ import type { AirplaneDetails } from "../../lib/api/types";
 import { day } from "./infoDay";
 import { WORDING } from "../../lib/wording/generated/wording";
 import { FirstFew } from "../../components/FirstFew";
+import { skeletonRows } from "../../components/skeletonRows";
 
 const joined = (...parts: (string | number | null | undefined)[]) =>
   parts.filter((p) => p !== null && p !== undefined && p !== "").join(" · ");
@@ -26,7 +27,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
   if (!details)
     return (
       <ListGroup title="History">
-        <None text={failed ? WORDING.historyNotFetched : "Fetching its history…"} />
+        {failed ? <None text={WORDING.historyNotFetched} /> : skeletonRows({ rows: 3, fetching: "Fetching its history…" })}
       </ListGroup>
     );
   const { based, ntsb, documents, reservation } = details;

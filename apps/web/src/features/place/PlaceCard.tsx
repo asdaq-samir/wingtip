@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cn } from "cn";
 import { useKeptAirport } from "../../lib/preferences";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../lib/share";
@@ -8,6 +7,7 @@ import { CardHead } from "../../components/CardHead";
 import { SheetCard } from "../../components/SheetCard";
 import { CardTitle } from "../../components/CardTitle";
 import { ListGroup, ListRow } from "../../components/GroupedList";
+import { SkeletonCardInfo } from "../../components/QueryState";
 import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
 import { useCardTab } from "../../lib/cardTab";
 import { useTabScroll } from "../../lib/tabScroll";
@@ -19,7 +19,6 @@ import { useGeo, type LatLon } from "../../lib/geo";
 import { placeWeather } from "./placeWeather";
 import { awayOf, distanceOf, kindOf, knownOf, zonedClock } from "./placeCardWords";
 import { runwaysLeftOut, stripsOf } from "./runwayDrawing";
-import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { prefersReducedMotion } from "../../lib/motion";
 import { arrivalHour, hoursOf, sentenceOf } from "./hourly";
@@ -100,7 +99,7 @@ export default function PlaceCard({
   // Asked again every five minutes in sight (lib/shown): its METAR stayed the one it opened with (the audit's finding).
   const asked = { ...airportQuery(ident), refetchInterval: 5 * 60_000, subscribed: useShown() };
   const answer = useQuery(asked);
-  const { data: place, isLoading, error, refetch, isFetching } = answer;
+  const { data: place, error, refetch, isFetching } = answer;
   // With no connection and nothing kept of it, its ask waits paused
   // (lib/queryRetry): said so, not "Fetching the airport…" for good.
   const offline = !place && noConnection(answer);
@@ -302,7 +301,7 @@ export default function PlaceCard({
         >
           {/* Info's page alone starts with the facts and pictures (the owner, 2026-11-14: "Switching tabs should not show those"). */}
           <CardTabPanel value="radio" className="space-y-0 pt-0">
-            {place && (
+            {place ? (
               <PlaceInfoPage
                 place={place}
                 now={now}
@@ -310,6 +309,9 @@ export default function PlaceCard({
                 facts={{ category, approximate: weather?.category ? null : (approximate?.said ?? null), away: distance }}
                 pictures={{ photos, sketchedRunways, leftOut, noRunwaysPicture, onNoRunwaysPicture: () => setNoRunwaysPicture(true) }}
               />
+            ) : (
+              // Its shape while it comes: the five facts and the first picture (PlaceFacts, PlacePictures).
+              <SkeletonCardInfo facts={5} fetching="Fetching the airport…" />
             )}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
@@ -334,7 +336,6 @@ export default function PlaceCard({
           </CardTabPanel>
         </CardTabPages>
       )}
-      {isLoading && !known && !offline && <p className={cn("pt-4 text-muted-foreground", TEXT.prose)}>Fetching the airport…</p>}
       {/* Where the planner could not be reached, the way to ask again, in
           the card that could not be had (lib/problems: errors where they
           happen); an airport not found has nothing to ask again. */}
