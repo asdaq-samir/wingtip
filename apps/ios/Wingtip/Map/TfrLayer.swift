@@ -28,8 +28,8 @@ final class TfrLabel: NSObject, MKAnnotation {
 /// the numbers are dimmed by colour at night with the chart (OverlayDim,
 /// NightWords; the owner's "Dim by colour", about 3:1 at the default
 /// Dimmer). Asked of the planner (/api/tfrs) as the map opens and every ten
-/// minutes, the web's tfrsQuery; a failed ask again in one, the last
-/// answer kept on the map meanwhile.
+/// minutes while the app is in front, the web's tfrsQuery; a failed ask
+/// again in one, the last answer kept on the map meanwhile.
 @MainActor
 final class TfrLayer {
     /// The web's tfrsQuery: asked again every ten minutes; a failed ask again in one.
@@ -39,16 +39,40 @@ final class TfrLayer {
     private var areas: [TfrPolygon] = []
     private var labels: [TfrLabel] = []
     private var asking: Task<Void, Never>?
+    /// What is on the map: the answer and each area's in force, so a
+    /// refresh that changes neither redraws nothing.
+    private var drawn: Drawn?
+
+    private struct Drawn: Equatable {
+        let tfrs: [APITfr]
+        let active: [Bool]
+    }
+
+    /// One area as plain values, read off the main actor (MKPolygon is
+    /// not Sendable): its NOTAM number, in force, its edge and its holes.
+    nonisolated struct Outline: Sendable {
+        let notamId: String
+        let active: Bool
+        let edge: [CLLocationCoordinate2D]
+        let holes: [[CLLocationCoordinate2D]]
+    }
 
     func attach(_ map: MKMapView) {
         self.map = map
         map.register(TfrLabelView.self, forAnnotationViewWithReuseIdentifier: TfrLabelView.reuse)
         asking = Task { [weak self] in
             while !Task.isCancelled {
+                // Not asked while the app is behind another: no fetch and
+                // no reading for a map no one sees; looked at again each
+                // minute, so a return brings the answer within one.
+                guard self?.map?.window?.windowScene?.activationState != .background else {
+                    try? await Task.sleep(for: TfrLayer.retry)
+                    continue
+                }
                 let tfrs = try? await Planner.tfrs()
                 // Gone with the map: nothing more to ask for.
                 guard self != nil else { return }
-                if let tfrs { self?.draw(tfrs, now: Date()) }
+                if let tfrs { await self?.draw(tfrs, now: Date()) }
                 try? await Task.sleep(for: tfrs == nil ? TfrLayer.retry : TfrLayer.every)
             }
         }
@@ -56,36 +80,64 @@ final class TfrLayer {
 
     isolated deinit { asking?.cancel() }
 
-    private func draw(_ tfrs: [APITfr], now: Date) {
-        guard let map else { return }
+    private func draw(_ tfrs: [APITfr], now: Date) async {
+        let outlines = await Self.read(tfrs, now: now)
+        let next = Drawn(tfrs: tfrs, active: outlines.map(\.active))
+        guard let map, next != drawn else { return }
+        drawn = next
         map.removeOverlays(areas)
         map.removeAnnotations(labels)
-        (areas, labels) = Self.shapes(tfrs, now: now)
-        // Over the chart and the airspace, under the course (added before it is drawn again).
-        map.addOverlays(areas, level: .aboveLabels)
+        (areas, labels) = Self.shapes(outlines)
+        // Over the chart, its imagery and the hazard tiles, under the
+        // course and everything else drawn over the chart: inserted at
+        // that place, so a refresh never lays the red over the magenta.
+        let ground = map.overlays(in: .aboveLabels).lastIndex {
+            $0 is ChartTileOverlay || $0 is CloseImageryOverlay || $0 is HazardTileOverlay
+        }
+        for (k, area) in areas.enumerated() { map.insertOverlay(area, at: (ground ?? -1) + 1 + k, level: .aboveLabels) }
         map.addAnnotations(labels)
     }
 
-    /// Each TFR's areas, its polygons from its GeoJSON, and its number at
-    /// the northernmost point of its first area's edge.
-    static func shapes(_ tfrs: [APITfr], now: Date) -> (areas: [TfrPolygon], labels: [TfrLabel]) {
-        var areas: [TfrPolygon] = [], labels: [TfrLabel] = []
-        for tfr in tfrs {
+    /// Each TFR's areas read and judged off the main actor: about a
+    /// hundred GeoJSON shapes and an engine call each at every refresh.
+    @concurrent
+    nonisolated static func read(_ tfrs: [APITfr], now: Date) async -> [Outline] { outlines(tfrs, now: now) }
+
+    /// Each TFR's areas, its polygons from its GeoJSON, in force or not.
+    nonisolated static func outlines(_ tfrs: [APITfr], now: Date) -> [Outline] {
+        tfrs.flatMap { tfr -> [Outline] in
             let active = inForce(tfr, now: now)
-            let polygons = self.polygons(tfr.geometry).map { shape -> TfrPolygon in
-                var points = [CLLocationCoordinate2D](repeating: .init(), count: shape.pointCount)
-                shape.getCoordinates(&points, range: NSRange(location: 0, length: shape.pointCount))
-                let area = TfrPolygon(coordinates: points, count: points.count, interiorPolygons: shape.interiorPolygons)
-                area.notamId = tfr.notamId
-                area.active = active
-                return area
-            }
-            areas += polygons
-            if let first = polygons.first, let top = (0..<first.pointCount).map({ first.points()[$0].coordinate }).max(by: { $0.latitude < $1.latitude }) {
-                labels.append(TfrLabel(tfr.notamId, at: top))
+            return polygons(tfr.geometry).map { shape in
+                Outline(notamId: tfr.notamId, active: active, edge: coordinates(shape), holes: (shape.interiorPolygons ?? []).map(coordinates))
             }
         }
+    }
+
+    private nonisolated static func coordinates(_ shape: MKPolygon) -> [CLLocationCoordinate2D] {
+        var points = [CLLocationCoordinate2D](repeating: .init(), count: shape.pointCount)
+        shape.getCoordinates(&points, range: NSRange(location: 0, length: shape.pointCount))
+        return points
+    }
+
+    /// The areas on the map, and each TFR's number at the northernmost
+    /// point of its first area's edge.
+    static func shapes(_ outlines: [Outline]) -> (areas: [TfrPolygon], labels: [TfrLabel]) {
+        var areas: [TfrPolygon] = [], labels: [TfrLabel] = []
+        for outline in outlines {
+            let holes = outline.holes.map { MKPolygon(coordinates: $0, count: $0.count) }
+            let area = TfrPolygon(coordinates: outline.edge, count: outline.edge.count, interiorPolygons: holes)
+            area.notamId = outline.notamId
+            area.active = outline.active
+            if areas.last?.notamId != outline.notamId, let top = outline.edge.max(by: { $0.latitude < $1.latitude }) {
+                labels.append(TfrLabel(outline.notamId, at: top))
+            }
+            areas.append(area)
+        }
         return (areas, labels)
+    }
+
+    static func shapes(_ tfrs: [APITfr], now: Date) -> (areas: [TfrPolygon], labels: [TfrLabel]) {
+        shapes(outlines(tfrs, now: now))
     }
 
     /// The polygons of a TFR's GeoJSON geometry (a Polygon or a
