@@ -14,6 +14,7 @@ import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
 import { PohRow } from "../documents/lazy";
 import { FlightPictures } from "../traffic/lazy";
+import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
 import { useAirplaneCardModel, type AirplaneCardModel } from "./useAirplaneCardModel";
 import type { AirplaneTab } from "./airplaneTabs";
 import FiguresTab from "./FiguresTab";
@@ -173,6 +174,18 @@ export default function AirplaneCard({
           }
         />
       </div>
+      {/* What it is in a sideways strip (type, year, seats, engines …),
+          under its pictures and over the tabs, in sight whichever tab is
+          open, as the airport card's facts are; where Info held it alone,
+          a flying airplane, opened on Flights, showed none (the owner,
+          2026-11-26: "I dont see the info strip"). */}
+      {m.tail && (card.record || live.detail?.faa) && (
+        <AirplaneFacts
+          record={card.details?.registration ?? card.record ?? live.detail?.faa ?? null}
+          model={card.details?.model}
+          testId="airplane-facts"
+        />
+      )}
       <CardTabPages
         tab={m.tab}
         onPick={m.pick}
