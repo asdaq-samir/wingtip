@@ -14,7 +14,7 @@ import { StatusLine } from "../../components/StatusBadge";
 import type { FigureKey } from "../../lib/airplane/figures";
 import { TEXT } from "../../lib/text";
 import { PohRow } from "../documents/lazy";
-import { FlightNowBox, FlightPictures, liveFacts } from "../traffic/lazy";
+import { FlightNowBox, FlightPictures } from "../traffic/lazy";
 import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
 import { useAirplaneCardModel, type AirplaneSlices, type AirplaneTab } from "./useAirplaneCardModel";
 import { FlightsPage, InfoPage } from "./AirplanePage";
@@ -31,14 +31,12 @@ import { airplanePhotoSlide } from "./photoSlide";
  *  2026-11-27: "Keep four buttons on top, just disable the one when
  *  needed"): Fly This and Figures for one the planner cannot fly, Alerts
  *  with no ICAO address, Favorite with nothing to keep. */
-function Actions({ m }: { m: AirplaneSlices<"actions" | "head" | "hex" | "live"> }) {
-  const { actions: a, live, hex } = m;
-  const { title } = m.head;
+function Actions({ a, title, hex }: { a: AirplaneSlices<"actions">["actions"]; title: string; hex: string | null }) {
   const first = a.airborne ? (
     <TogglePrimitive
       key="track"
       pressed={a.following}
-      disabled={!live.plane}
+      disabled={!a.trackable}
       onPressedChange={a.follow}
       render={
         <CardAction
@@ -72,8 +70,8 @@ function Actions({ m }: { m: AirplaneSlices<"actions" | "head" | "hex" | "live">
       hex={hex}
       name={title}
       airborne={a.airborne}
-      from={live.fromField}
-      to={live.toField}
+      from={a.from}
+      to={a.to}
       label="Alerts"
       testId="airplane-alerts"
     />
@@ -160,7 +158,7 @@ export default function AirplaneCard({
         closeTestId="sheet-card-close"
         shareTestId="airplane-share"
       />
-      <Actions m={m} />
+      <Actions a={m.actions} title={head.title} hex={m.hex} />
       {live.waiting && (
         <p className={cn("pt-2 text-tint", TEXT.note)} data-testid="flight-alerts-set">
           {live.waiting}
@@ -173,7 +171,7 @@ export default function AirplaneCard({
       <AirplaneFacts
         record={m.tail ? (card.details?.registration ?? card.record ?? live.detail?.faa ?? null) : null}
         model={m.tail ? card.details?.model : undefined}
-        {...liveFacts(m.hex, live, !m.tail)}
+        {...m.facts}
         testId="airplane-facts"
       />
       {/* Two tabs in the glass bar at its foot, as the airport card's: Info,
@@ -197,7 +195,7 @@ export default function AirplaneCard({
         <CardTabPanel value="info">
           {/* Its photos and where it has flown (the owner, 2026-11-27: "info can show the pictures"). */}
           <FlightPictures
-            live={live}
+            flown={m.pictures}
             title={head.title}
             photo={airplanePhotoSlide(m.tail, card.photo)}
             trafficPhoto={m.tail ? null : m.hex}

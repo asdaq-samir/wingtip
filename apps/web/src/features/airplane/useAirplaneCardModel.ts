@@ -7,7 +7,7 @@ import { track, useTracking } from "../../lib/map/position/tracking";
 import { usePreferences } from "../../lib/preferences";
 import { NO_CONNECTION } from "../../lib/problems";
 import { shareOrCopy } from "../../lib/share";
-import { useFlightLive } from "../traffic/lazy";
+import { liveFacts, useFlightLive } from "../traffic/lazy";
 import { useAirplaneProfile } from "./useAirplaneProfile";
 import { useCardTabs } from "../../lib/cardTab";
 import { planeLink } from "../../lib/flightLink";
@@ -111,6 +111,11 @@ export function useAirplaneCardModel({
   const actions = {
     airborne,
     following,
+    /** Heard now: Track can keep it in sight. */
+    trackable: !!live.plane,
+    /** Its flight's ends, for Alerts' takes-off and lands. */
+    from: live.fromField,
+    to: live.toField,
     follow: (on: boolean) => useTracking.setState({ follow: on }),
     flyable,
     /** The plan's airplane already. */
@@ -139,6 +144,20 @@ export function useAirplaneCardModel({
     /** A field's card over this one: an end of its flight tapped. */
     openAirport: (ident: string) => void setAddress({ place: ident, at: null }),
   };
+  // What the facts strip and the pictures draw of its flight, each part
+  // apart: handed the whole flight (`live`, a new object at each 5-second
+  // report), the strip, its carousel and the pictures were drawn again at
+  // every report for as long as the card was open (round 7's W2).
+  const facts = liveFacts(hex, { detail: live.detail, planeType: live.plane?.type ?? null, registered: live.registered }, !tail);
+  const pictures = {
+    name: live.name,
+    trail: live.trail,
+    latest: live.latest,
+    trackDeg: live.plane?.track_deg ?? null,
+    from: live.fromField,
+    to: live.toField,
+    note: live.sketchNote,
+  };
   // Opened by its N-number and its record could not be had, nor is it
   // heard in the air: the card says why where its tabs would be, with Try
   // again (CardUnhad), as the airport card does; it had no such state.
@@ -163,6 +182,8 @@ export function useAirplaneCardModel({
     head,
     actions,
     nav,
+    facts,
+    pictures,
   };
 }
 

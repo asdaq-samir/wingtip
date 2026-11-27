@@ -7,15 +7,21 @@ import type { FlightLive } from "./useFlightLive";
  * who flies it, and for traffic the FAA's registry does not
  * hold (`registry`) what it is and its ICAO address. The scheduled
  * route, the tower's departure time and its squawk are its slide's.
+ * Given the parts it reads, not the whole flight, so the strip is drawn
+ * again only when one of them changes, not at each 5-second report
+ * (useAirplaneCardModel's `facts`).
  */
-export function liveFacts(hex: string | null, live: FlightLive, registry: boolean) {
-  const { plane, detail } = live;
+export function liveFacts(
+  hex: string | null,
+  { detail, planeType, registered }: { detail: FlightLive["detail"]; planeType: string | null; registered: string | null },
+  registry: boolean,
+) {
   return {
     operator: detail?.operator ? nameCase(detail.operator) : null,
     ...(registry && hex
       ? {
           record: detail?.faa ?? null,
-          type: (detail?.description ? nameCase(detail.description) : null) ?? detail?.type ?? plane?.type ?? live.registered,
+          type: (detail?.description ? nameCase(detail.description) : null) ?? detail?.type ?? planeType ?? registered,
           year: detail?.year ?? null,
           traffic: { address: hex },
         }
