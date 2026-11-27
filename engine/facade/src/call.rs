@@ -30,11 +30,17 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
 /// otherwise write out and the engine parse back, tens of milliseconds a
 /// call. `key` is set to `numbers` in the input object, so the rule reads
 /// the same `Value` it would have parsed: the rule and its contract are
-/// unchanged.
+/// unchanged. The two rules the planner hands its heights to
+/// (route_options, terrain_way_round) take the buffer itself, so the
+/// numbers are never made JSON values (6.4 MB for 200,000) and copied back.
 pub fn call_with_numbers(name: &str, input: &str, key: &str, numbers: &[f64]) -> Result<String, String> {
     let mut v = json::parse(input)?;
     if let Value::Object(members) = &mut v {
         members.retain(|(k, _)| k != key);
+        #[cfg(feature = "route-options")]
+        if key == "terrain_ft" && matches!(name, "route_options" | "terrain_way_round") {
+            return wingtip_route::route::options::call_with_terrain(name, &v, numbers);
+        }
         members.push((key.to_owned(), Value::Array(numbers.iter().map(|&n| Value::Number(n)).collect())));
     }
     answer(name, v)
