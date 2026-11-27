@@ -13,7 +13,8 @@ import { listedPoints } from "./stopsRow";
 import { AddStopRow, StopsRow, TIMELINE_CARD } from "./TimelineRows";
 import { visitRow } from "./visits";
 import type { ProceduresRouteProps } from "./routeProps";
-import { toggleField, useProceduresRoute } from "./useProceduresRoute";
+import { toggleField } from "./fieldsOpen";
+import { useProceduresRoute } from "./useProceduresRoute";
 
 export type { TimelinePoint } from "./lineModel";
 

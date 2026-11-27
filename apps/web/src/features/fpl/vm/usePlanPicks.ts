@@ -2,6 +2,7 @@ import { useRunwayPicks, useFieldPatterns, useProcedurePicks } from "../../proce
 import { useRouteTidy } from "../../route";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
+import { useKept } from "./useKept";
 
 /**
  * What is picked at the route's fields (usePlanWorkspace): the runways
@@ -29,7 +30,8 @@ export function usePlanPicks({ planned, address, setAddress, crossings }: PlanRo
   });
   // The instrument procedures picked (useProcedurePicks).
   const procedures = useProcedurePicks({ planned, address, setAddress, procedureAirports, crossings, patterns });
-  return { ...runways, noApproaches, procedureAirports, fitAircraft, runwayFitInputs, ...procedures };
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({ ...runways, noApproaches, procedureAirports, fitAircraft, runwayFitInputs, ...procedures });
 }
 
 /** What is picked at the route's fields, as the workspace's hooks read it. */

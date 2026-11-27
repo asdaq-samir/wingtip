@@ -8,6 +8,7 @@ import type { PlanCards } from "./usePlanCards";
 import type { PlanPicks } from "./usePlanPicks";
 import type { PlanMapModel } from "./usePlanMap";
 import type { PlanViewModel } from "./usePlanView";
+import { useKept } from "./useKept";
 
 /**
  * The cards over FPL, the Stops and the lists in full (useFplCards), and
@@ -59,7 +60,8 @@ export function usePlanFpl(
     const handle = idle(prefetchMiniProfile);
     return () => cancel(handle);
   }, [profileReady]);
-  return { ...cards, openProfile, profileReady };
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({ ...cards, openProfile, profileReady });
 }
 
 /** The cards over FPL, as the workspace's hooks read them. */

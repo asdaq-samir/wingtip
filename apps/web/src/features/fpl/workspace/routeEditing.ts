@@ -19,21 +19,15 @@ export function routeBoxOpen(vm: PlanSlices<"flight" | "routeList">): boolean {
   return routeEditing(vm) && vm.routeList.boxOpen;
 }
 
-/** Whether the box's toggle turned the grouped box into the route's field
- *  (TypeRouteButton), rather than a field opened some other way (a stop
- *  being typed, under the card); let go once the field is folded. */
-let toggledInPlace = false;
-export const turnedByToggle = (on: boolean) => {
-  toggledInPlace = on;
-};
-
 /** Whether the box's toggle has turned the grouped box into the route's
  *  field (TypeRouteButton), on an empty, half or whole route alike: drawn
  *  then in the timeline's own place (RouteHead), not under the page, so
  *  the box stays where it was (the owner, 2026-11-22: "Route box moves
- *  down when toggled"; 2026-11-23: "the same area"). */
+ *  down when toggled"; 2026-11-23: "the same area"). Which way the field
+ *  was opened is the view model's (usePlanRouteList's `typedInPlace`), so
+ *  this reads only what it is handed. */
 export function routeTyped(vm: PlanSlices<"flight" | "routeList">): boolean {
-  return routeEditing(vm) && vm.routeList.routeOpen && toggledInPlace;
+  return routeEditing(vm) && vm.routeList.routeOpen && vm.routeList.typedInPlace;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, useMemo } from "react";
 import { airportQuery, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { navlogQuery, suggestedStopAt } from "../../plan";
 import { useSuggestedStops } from "../../stops";
@@ -8,6 +8,7 @@ import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanCards } from "./usePlanCards";
 import type { PlanPicks } from "./usePlanPicks";
+import { useKept } from "./useKept";
 
 /**
  * The stops the planner suggests and keeping them (useSuggestedStops), the
@@ -50,7 +51,7 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
   // point's place in the route (fuelStopsAt, by both the flight's ends; the
   // stops flown through the box's own waypointStopsOf, airways too), so a
   // field the route leaves twice takes it on the right flight.
-  const at = suggestedStopAt(place, fuelStops);
+  const at = useMemo(() => suggestedStopAt(place, fuelStops), [place, fuelStops]);
   const points = [planned.dep, ...planned.stops, planned.dest];
   const fixes = waypointStopsOf(planned.stops, course);
   const flightAt = at
@@ -58,17 +59,17 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
         (f) => !!f && [...f.stops, ...(f.choices ?? [])].some((c) => sameField(c.ident, place!)),
       )
     : -1;
-  return {
-    ...suggested,
-    suggestedAt: at && {
-      stop: at.stop,
-      after:
-        flightAt >= 0
-          ? flightAt
-          : Math.max(
-              0,
-              points.findIndex((p) => sameField(p, at.after)),
-            ),
-    },
-  };
+  const after = !at
+    ? -1
+    : flightAt >= 0
+      ? flightAt
+      : Math.max(
+          0,
+          points.findIndex((p) => sameField(p, at.after)),
+        );
+  const atStop = at ? at.stop : null;
+  // The same object while the stop and its place are (useMemo), and the
+  // slice while nothing in it changes (useKept), as each slice is.
+  const suggestedAt = useMemo(() => (atStop ? { stop: atStop, after } : null), [atStop, after]);
+  return useKept({ ...suggested, suggestedAt });
 }

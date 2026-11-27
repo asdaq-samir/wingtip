@@ -1,4 +1,3 @@
-import { turnedByToggle } from "./routeEditing";
 import { flushSync } from "react-dom";
 import { EndRow, TIMELINE_CARD, TypeRouteButton } from "../../procedures";
 import type { PlanSlices } from "../vm/planSlices";
@@ -17,14 +16,13 @@ type StartSlices = PlanSlices<"route" | "routeList">;
  * keyboard comes up with it.
  */
 export function BoxToggle({ vm, focus = true }: { vm: StartSlices; focus?: boolean }) {
-  const { setRouteOpen } = vm.routeList;
+  const { typeInPlace } = vm.routeList;
   return (
     <TypeRouteButton
       pressed={false}
       onToggle={() => {
-        turnedByToggle(true);
-        if (!focus) return setRouteOpen(true);
-        flushSync(() => setRouteOpen(true));
+        if (!focus) return typeInPlace();
+        flushSync(typeInPlace);
         document.querySelector<HTMLElement>('[data-testid="route-type"]')?.focus();
       }}
     />

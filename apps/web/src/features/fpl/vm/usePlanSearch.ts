@@ -6,6 +6,7 @@ import type { PlanRoute } from "./usePlanRoute";
 import type { PlanCards } from "./usePlanCards";
 import type { PlanMapModel } from "./usePlanMap";
 import type { PlanViewModel } from "./usePlanView";
+import { useKept } from "./useKept";
 
 /**
  * The search bars (useSearchPanel), and the Nearest strip on the search's
@@ -29,5 +30,6 @@ export function usePlanSearch(
   const { data: nearStrip } = useQuery({ ...nearestQuery(near?.lat ?? 0, near?.lon ?? 0), enabled: homeShown && !!near });
   // The search bars (useSearchPanel).
   const panel = useSearchPanel({ view, selectPlace, listAway, address, setAddress });
-  return { ...panel, nearStrip, nearMap: !nearOrigin && !!centre };
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({ ...panel, nearStrip, nearMap: !nearOrigin && !!centre });
 }

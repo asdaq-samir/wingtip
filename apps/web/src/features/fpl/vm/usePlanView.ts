@@ -3,6 +3,7 @@ import { usePanelDragging, type PanelState } from "../../../lib/mapChrome";
 import { usePanelView } from "../../plan";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanCards } from "./usePlanCards";
+import { useKept } from "./useKept";
 
 /**
  * The place up under the one search and the sheet's size (usePlanWorkspace):
@@ -58,7 +59,8 @@ export function usePlanView(
     const idle = requestIdleCallback(draw, { timeout: 2000 });
     return () => cancelIdleCallback(idle);
   }, [stripsDrawn]);
-  return {
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     panel,
     setPanel,
     // The panel out at all: the nav log is in sight, and a checkpoint
@@ -75,7 +77,7 @@ export function usePlanView(
     pickPage,
     opened,
     stripsDrawn,
-  };
+  });
 }
 
 /** The place up and the sheet's size, as the workspace's hooks read them. */

@@ -8,7 +8,7 @@ import { TEXT } from "../../lib/text";
 import { CardMark } from "./routeCard";
 import { FuelGauge } from "./FuelGauge";
 import type { pointEnd } from "./pointEnd";
-import type { ProceduresRouteModel } from "./useProceduresRoute";
+import type { ProceduresRouteModel, RouteListSlice } from "./useProceduresRoute";
 import { WORDING } from "../../lib/wording/generated/wording";
 
 /** A field's head: its symbol and menu, its ident, fuel, time, wind and
@@ -22,7 +22,7 @@ export function FieldHead({
   wind,
   reported,
 }: {
-  vm: ProceduresRouteModel;
+  vm: RouteListSlice<"isFuelStop" | "onInfo">;
   a: ProcedureAirport;
   mark: ReactNode;
   end: ReturnType<typeof pointEnd>;

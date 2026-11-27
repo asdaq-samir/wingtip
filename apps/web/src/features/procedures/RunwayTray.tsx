@@ -5,7 +5,8 @@ import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import type { ProcedureAirport } from "../plan";
 import { TRAY_HEAD } from "./RunwayChips";
-import { setRunwayLine, type ProceduresRouteModel } from "./useProceduresRoute";
+import { setRunwayLine } from "./fieldsOpen";
+import type { RouteListSlice } from "./useProceduresRoute";
 import type { FieldPart } from "./fieldParts";
 
 /** The tray's head: what the runway is for and "RWY", the FAA's
@@ -98,7 +99,7 @@ export function PartTray({
   part,
   trailing,
 }: {
-  vm: ProceduresRouteModel;
+  vm: RouteListSlice<"openLines">;
   a: ProcedureAirport;
   part: FieldPart;
   trailing: ReactNode[];

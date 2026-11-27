@@ -17,6 +17,7 @@ import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";
 import { coursePoints } from "../../../lib/course";
+import { useKept } from "./useKept";
 
 /**
  * What the screen says of the plan (usePlanWorkspace): its progress, its
@@ -165,12 +166,15 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // What planning again would bring in fresh, said by the refresh's dot:
   // winds past the forecast's period the legs were flown on, legs flown
   // with none, and the briefing's weather that could not be fetched again.
-  const stale = [
-    windsStale && "the winds are out of date",
-    s.totals && legsWithoutWind(s.totals) && "some legs have no winds",
-    (s.briefing.state === "failed" || (s.briefing.state === "ready" && s.briefing.refreshError)) && "the weather could not be fetched",
-  ].filter((why): why is string => !!why);
-  return {
+  const stale = useKept(
+    [
+      windsStale && "the winds are out of date",
+      s.totals && legsWithoutWind(s.totals) && "some legs have no winds",
+      (s.briefing.state === "failed" || (s.briefing.state === "ready" && s.briefing.refreshError)) && "the weather could not be fetched",
+    ].filter((why): why is string => !!why),
+  );
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     ...saving,
     unflyable: s.unflyable,
     unflyableBrief: s.unflyable?.brief,
@@ -191,5 +195,5 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     altitudeAt,
     briefLine,
     stale,
-  };
+  });
 }

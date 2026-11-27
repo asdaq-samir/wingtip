@@ -3,6 +3,7 @@ import { useLegSheet } from "../../navlog";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";
+import { useKept } from "./useKept";
 
 /**
  * The point and the leg picked, and the route in order (useLegSheet), and
@@ -35,5 +36,6 @@ export function usePlanLeg(
     },
     [briefShown, closeBrief, selectPointAt],
   );
-  return { ...leg, pickPoint };
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({ ...leg, pickPoint });
 }
