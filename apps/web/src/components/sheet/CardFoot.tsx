@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CARD_FOOT, putCardFoot, useCardFeet, useCardFootSlot } from "./cardFeet";
+import { observeHeight } from "./footBarHeight";
 
 /**
  * A card's foot on a phone's bottom sheet: a slot standing still at the
@@ -30,13 +31,10 @@ export function CardFootSlot({ id, shown }: { id: string; shown: boolean }) {
     if (!el) return;
     const kept = () => useCardFeet.getState().feet[id]?.height ?? 0;
     putCardFoot(id, { el, shown, height: kept() });
-    if (!shown || typeof ResizeObserver === "undefined") return;
-    const watch = new ResizeObserver(([entry]) => {
-      const height = Math.round(entry?.borderBoxSize[0]?.blockSize ?? 0);
+    if (!shown) return;
+    return observeHeight(el, (height) => {
       if (kept() !== height) putCardFoot(id, { el, shown, height });
     });
-    watch.observe(el);
-    return () => watch.disconnect();
   }, [el, id, shown]);
   useLayoutEffect(() => (el ? () => putCardFoot(id, null) : undefined), [el, id]);
   if (!host) return null;

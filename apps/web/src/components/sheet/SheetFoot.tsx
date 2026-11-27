@@ -1,11 +1,11 @@
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { cn } from "cn";
 import { EDGE_ROOM } from "./insets";
 import { PointerTapDiv } from "./PointerTapDiv";
 import { FOOT_BAR_PILL, FootRestOf } from "./FootBar";
 import { CONTROLS_TAPPABLE, ROW_PAD, SHEET_BELOW, type SheetLayout } from "./sheetLayout";
 import { UNDER_INDICATOR } from "./SheetDrawer";
-import { useFootBarHeight } from "./sheetMotion";
+import { useTellFootBar } from "./footBarHeight";
 import { useGroundTaps } from "./groundTaps";
 
 /** Beside the side panel the room under its foot is the panel's own
@@ -120,18 +120,7 @@ export function SheetFoot(p: {
  */
 function BesideSheet(p: { shown: boolean; pill: boolean; toEdge: boolean; onTap: () => void; children: ReactNode }) {
   const bar = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const el = bar.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const watch = new ResizeObserver(([entry]) => {
-      useFootBarHeight.setState({ height: Math.round(entry?.borderBoxSize[0]?.blockSize ?? el.offsetHeight) });
-    });
-    watch.observe(el);
-    return () => {
-      watch.disconnect();
-      useFootBarHeight.setState({ height: 0 });
-    };
-  }, []);
+  useTellFootBar(bar);
   useGroundTaps(bar, p.shown, p.pill ? p.onTap : undefined);
   return (
     <div
