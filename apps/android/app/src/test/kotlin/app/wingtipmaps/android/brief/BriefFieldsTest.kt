@@ -18,7 +18,7 @@ class BriefFieldsTest {
         EngineContract.GonogoRunwayChecksAnswerItem(
             field = 0, role = "Departure", runway = 0, end = "36", picked = false, reported = true,
             headwindKt = 5.0, crosswindKt = 3.0, crosswindOver = false, grass = false, distances = listOf(distance),
-            finding = finding,
+            finding = finding, tempAssumed = false,
         )
 
     @Test

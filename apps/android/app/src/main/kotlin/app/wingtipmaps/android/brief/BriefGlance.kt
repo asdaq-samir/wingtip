@@ -112,7 +112,7 @@ data class BriefGlance(
                     )
                 },
             )
-            return Engine.gonogoRouteFigures(totals = given, crossed = emptyList()).getOrNull()?.leastMarginGal
+            return Engine.gonogoRouteFigures(totals = given).getOrNull()?.leastMarginGal
         }
 
         /** What the briefing holds that the flight meets on the route, one
