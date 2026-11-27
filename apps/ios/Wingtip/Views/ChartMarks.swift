@@ -214,7 +214,8 @@ final nonisolated class SpecialUseRenderer: MKPolylineRenderer {
         guard line.pointCount >= 2 else { return }
         let points = line.points()
         let band = Self.band / zoomScale, step = Self.tickEvery / zoomScale
-        context.setStrokeColor(ink.withAlphaComponent(0.7).cgColor)
+        // The line's own colour, so the night's dim reaches the ticks too (OverlayDim).
+        context.setStrokeColor((strokeColor ?? ink).withAlphaComponent(0.7).cgColor)
         context.setLineWidth(1.5 / zoomScale)
         for i in 0..<(line.pointCount - 1) {
             let a = point(for: points[i]), b = point(for: points[i + 1])

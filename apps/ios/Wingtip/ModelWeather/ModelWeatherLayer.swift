@@ -23,13 +23,21 @@ final class ModelWeatherOverlay: NSObject, MKOverlay {
 /// Draws the hour's painted picture into the box. MapKit calls draw on its
 /// own queues, so the picture is held under a lock.
 /// Unchecked: MKOverlayRenderer is not Sendable; the picture is in a lock.
-final nonisolated class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
+final nonisolated class ModelWeatherRenderer: MKOverlayRenderer, NightDimmed, @unchecked Sendable {
     private let held = OSAllocatedUnfairLock<PaintedField?>(initialState: nil)
+    /// The chart's brightness at night (OverlayDim), the picture's opacity
+    /// times it, so the weather is no brighter than the chart under it.
+    private var brightness: CGFloat = 1
 
     func show(_ painted: PaintedField?) {
         held.withLock { $0 = painted }
-        alpha = painted?.opacity ?? 0
+        alpha = (painted?.opacity ?? 0) * brightness
         setNeedsDisplay()
+    }
+
+    func dim(brightness: CGFloat) {
+        self.brightness = brightness
+        alpha = (held.withLock { $0 }?.opacity ?? 0) * brightness
     }
 
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {

@@ -30,12 +30,11 @@ nonisolated enum NightPalette {
         night ? WingtipColor.Chart.routeGreenNight.withAlphaComponent(0.9) : WingtipColor.Chart.routeGreen
     }
 
-    /// The thin edge round the course's magenta: dark by day, faint and
-    /// light over the dimmed chart, where dark would vanish (web
-    /// routeEdgePaint).
-    static func routeEdge(night: Bool) -> UIColor {
-        night ? UIColor.white.withAlphaComponent(0.35) : WingtipColor.Chart.routeEdge.withAlphaComponent(0.6)
-    }
+    /// The thin edge round the course's magenta: the dark rim by day and
+    /// at night (the web's CHART.routeEdge), where a light one at night
+    /// stood out of the dimmed chart, brighter than the course it edged
+    /// (the round-5 themes audit, as Android's).
+    static let routeEdge = WingtipColor.Chart.routeEdge.withAlphaComponent(0.6)
 
     /// The casing under a line on the chart: white by day, the night's
     /// ground over a dimmed chart, where white would be the brightest line

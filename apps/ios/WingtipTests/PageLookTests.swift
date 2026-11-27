@@ -4,6 +4,7 @@ import UIKit
 
 /// A chart's pages full screen at night (PageLook): white on black and
 /// shaded by the Dimmer, as the plate on the map; a photo untouched.
+@MainActor
 struct PageLookTests {
     private func white() -> UIImage {
         let format = UIGraphicsImageRendererFormat.preferred()
@@ -24,20 +25,19 @@ struct PageLookTests {
         return Array(pixel.prefix(3))
     }
 
-    @Test func aPageUnchangedIsThePictureItself() {
-        let page = white()
-        #expect(PageLook().drawn(page) === page)
-    }
-
-    @Test func invertedTheWhitePaperIsBlack() throws {
-        let drawn = PageLook(inverted: true).drawn(white())
+    @Test func invertedTheWhitePaperIsBlack() async throws {
+        let drawn = try #require(await PageLook.inverted([white()]).first)
         #expect(try middle(drawn).allSatisfy { $0 < 8 })
         #expect(PageLook(inverted: true).paper == .black)
     }
 
-    @Test func theDimmerShadesTheWhitePage() throws {
-        let drawn = PageLook(shade: 0.5).drawn(white())
-        #expect(try middle(drawn).allSatisfy { $0 < 160 })
+    /// The Dimmer is the shade view's alpha over the page, no page drawn again.
+    @Test func theDimmerIsTheShadesAlpha() {
+        let view = PagesScrollView()
+        view.images = [white()]
+        view.look = PageLook(shade: 0.5)
+        let page = view.subviews.first?.subviews.compactMap { $0 as? UIImageView }.first
+        #expect(page?.subviews.first?.alpha == 0.5)
     }
 
     @Test func onlyTheFAAsChartsAreCharts() {

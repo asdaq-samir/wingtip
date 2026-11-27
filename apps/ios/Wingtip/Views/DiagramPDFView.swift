@@ -27,13 +27,18 @@ struct DiagramPDFView: UIViewRepresentable {
     /// The diagram's hot spots, ringed where their labels are drawn, in
     /// PDFKit's page space (DiagramPage.pagePoint).
     var hotSpots: [CGPoint] = []
+    /// The night's look over the page (DiagramNight): white on black and
+    /// the Dimmer's shade, own ship and the hot spots above them.
+    var look = DiagramNight()
 
     func makeUIView(context: Context) -> PDFView {
         let view = PDFView()
         view.displayMode = .singlePage
         view.displaysPageBreaks = false
         view.autoScales = true
-        view.backgroundColor = .white
+        view.backgroundColor = look.inverted ? .black : .white
+        (document.page(at: 0) as? DiagramNightPage)?.look = look
+        context.coordinator.look = look
         view.document = document
         handle.view = view
         context.coordinator.watch(view)
@@ -44,6 +49,7 @@ struct DiagramPDFView: UIViewRepresentable {
     func updateUIView(_ view: PDFView, context: Context) {
         if view.document !== document { view.document = document }
         handle.view = view
+        context.coordinator.paint(look, on: view)
         context.coordinator.disc = disc
         context.coordinator.show(mark, on: view)
     }
@@ -53,10 +59,27 @@ struct DiagramPDFView: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject {
         var disc: CGFloat
+        var look = DiagramNight()
         private var shown: OwnShipAnnotation?
         private var mark: DiagramOwnShipMark?
 
         init(disc: CGFloat) { self.disc = disc }
+
+        /// A new night look: the page's drawn again, the zoom and the
+        /// place on the page kept. PDFKit keeps its drawn tiles, so the
+        /// document is put back to have them drawn afresh.
+        func paint(_ next: DiagramNight, on view: PDFView) {
+            guard next != look, let document = view.document else { return }
+            look = next
+            (document.page(at: 0) as? DiagramNightPage)?.look = next
+            view.backgroundColor = next.inverted ? .black : .white
+            let scale = view.scaleFactor, at = view.currentDestination
+            view.document = nil
+            view.document = document
+            limit(view)
+            view.scaleFactor = scale
+            if let at { view.go(to: at) }
+        }
 
         /// Each hot spot's label ringed in the system's orange, PDFKit's
         /// own circle annotation, drawn and zoomed with the page: the

@@ -506,7 +506,17 @@ code:
   level enlarged past the pyramid's end, and covers a tile still loading
   with the part of the nearest level above it that is in memory. By day
   the web's lift of the chart (`ChartLift`: MapLibre's raster-contrast
-  and -saturation 0.1); at night, dimmed, as printed.
+  and -saturation 0.1); at night, dimmed, as printed. What is drawn
+  over it takes the same dim (`Views/MarkDim`): the marks by their alpha,
+  own ship never; the lines and areas (the course and its dark edge, the
+  airspace, the special-use areas, NEXRAD, the forecast areas) by their
+  colour, the web's DIM_BY_COLOUR (`OverlayDim`), so they keep their
+  contrast with the chart; the weather loop and the model weather by
+  their opacity, the obstacle dots by colour; the terrain hazard's tint
+  never. A chart's pages full screen are inverted once off the main
+  thread and shaded by a view's alpha (`PageLook`), and the airport
+  diagram with own ship is PDFKit's page inverted where it is drawn,
+  own ship and the hot spots over it undimmed (`DiagramNight`).
 - **ForeFlight-style overlays** (`Views/ChartOverlays`, `AirportMarks`):
   the planner's own airport mark (`Views/FieldMark`, the web's
   `airportMarkSvg`, option I of 2026-11-14: the surface class's ring in

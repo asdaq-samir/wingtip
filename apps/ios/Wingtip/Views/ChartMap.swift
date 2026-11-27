@@ -283,13 +283,12 @@ struct ChartMap: UIViewRepresentable {
         let extras = MapExtrasState()
         /// The fields' weather on their marks (FieldWeatherState).
         let weather = FieldWeatherState()
-        /// The chart's renderer and the course's, kept to restyle when
-        /// the appearance or the setting changes; MapKit asks for a
-        /// renderer once per overlay.
+        /// The chart's renderer, kept to shade as the Dimmer moves; MapKit
+        /// asks for a renderer once per overlay. The lines over it take the
+        /// night's dim by their colours (OverlayDim).
         private var tiles: ChartTileRenderer?
-        private var courseRenderer: MKPolylineRenderer?
-        private var edgeRenderer: MKPolylineRenderer?
-        // The Dimmer's shade; the route's night edge follows the dark appearance alone, as the web's.
+        let overlayDim = OverlayDim()
+        // The Dimmer's shade and the night, the marks' and lines' dim.
         private var shade: CGFloat = 0, night = false
 
         /// The chart's renderer let go, its loads stopped, as its overlay
@@ -303,10 +302,9 @@ struct ChartMap: UIViewRepresentable {
             guard shade != self.shade || night != self.night else { return }
             (self.shade, self.night) = (shade, night)
             tiles?.shade = shade
-            courseRenderer?.strokeColor = NightPalette.course
-            edgeRenderer?.strokeColor = NightPalette.routeEdge(night: night)
-            [edgeRenderer, courseRenderer].forEach { $0?.setNeedsDisplay() }
-            MarkDim.apply(MarkDim.alpha(shade: shade, night: night), on: map)
+            let brightness = MarkDim.alpha(shade: shade, night: night)
+            overlayDim.set(brightness, on: map)
+            MarkDim.apply(brightness, on: map)
         }
 
         /// The course's two strokes, points, as the web draws them where a
@@ -314,7 +312,8 @@ struct ChartMap: UIViewRepresentable {
         /// and the thin edge round it.
         static let courseWidth: CGFloat = 4.5, edgeWidth: CGFloat = 6.5
 
-        func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
+        /// The overlay's renderer, before the night's dim takes it (OverlayDim, MarkDim.swift).
+        func made(_ mapView: MKMapView, for overlay: any MKOverlay) -> MKOverlayRenderer {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
             if let renderer = legLayer.renderer(for: overlay) { return renderer }
             if let renderer = overlays.renderer(for: overlay) { return renderer }
@@ -330,11 +329,10 @@ struct ChartMap: UIViewRepresentable {
             if let renderer = extras.renderer(for: overlay) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
-                renderer.strokeColor = NightPalette.routeEdge(night: night)
+                renderer.strokeColor = NightPalette.routeEdge
                 renderer.lineWidth = Self.edgeWidth
                 renderer.lineJoin = .round
                 renderer.lineCap = .round
-                edgeRenderer = renderer
                 return renderer
             }
             if let hazard = overlay as? HazardPolyline {
@@ -357,11 +355,10 @@ struct ChartMap: UIViewRepresentable {
                 return renderer
             }
             if let line = overlay as? MKPolyline {
-                // The web app's magenta course line, the night's lighter
-                // one over a dimmed chart.
+                // The web app's magenta course line, dimmed by its colour
+                // with the chart at night (OverlayDim).
                 let renderer = MKPolylineRenderer(polyline: line)
                 renderer.strokeColor = NightPalette.course
-                courseRenderer = renderer
                 renderer.lineWidth = Self.courseWidth
                 renderer.lineJoin = .round
                 renderer.lineCap = .round

@@ -41,7 +41,7 @@ final class OwnShip {
         let speedKt: Double?
         let gpsFt: Double?
 
-        static func == (a: HazardFix, b: HazardFix) -> Bool { a.underway == b.underway && a.gpsFt == b.gpsFt }
+        static func == (a: HazardFix, b: HazardFix) -> Bool { a.underway == b.underway && TerrainHazard.step(a.gpsFt) == TerrainHazard.step(b.gpsFt) }
     }
 
     private(set) var fix: Fix?
@@ -68,7 +68,7 @@ final class OwnShip {
     /// asked again by, so a fix a second does not run their views again.
     private(set) var byTheMile: String?
     /// What the map's terrain hazard colouring is asked with (HazardInput):
-    /// the height in the hazard's 50 ft steps (TerrainHazard.stepped) and
+    /// the height as read, told apart by its whole step (TerrainHazard.step), and
     /// whether the airplane is at flying speed, the one thing the engine's
     /// hazard_view reads the speed for (its `underway`). Changed only when
     /// either changes, so a fix in cruise runs neither the map's body nor
@@ -275,7 +275,7 @@ final class OwnShip {
         // the recorder and the instruments (InFlight, by FlightLoops) all
         // read this one answer.
         let underway = (try? Flight.underway(fix.groundspeedKt)) ?? false
-        let hazard = HazardFix(underway: underway, speedKt: fix.groundspeedKt, gpsFt: TerrainHazard.stepped(fix.altitudeFt))
+        let hazard = HazardFix(underway: underway, speedKt: fix.groundspeedKt, gpsFt: fix.altitudeFt)
         if hazard != hazardFix { hazardFix = hazard }
         let coarse = Self.coarse(fix.coordinate)
         if coarse.latitude != coarseCoordinate?.latitude || coarse.longitude != coarseCoordinate?.longitude { coarseCoordinate = coarse }

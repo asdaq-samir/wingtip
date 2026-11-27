@@ -40,6 +40,8 @@ struct DiagramOwnShipView: View {
     @State private var diagram: DiagramPage?
     @State private var problem: String?
     @State private var handle = DiagramPDFHandle()
+    /// White on Black and the Dimmer, as a chart's other pages (PageLook).
+    private var pageLook = PageLookKept()
     /// The white disc behind the airplane, growing with its glyph's text size.
     @ScaledMetric(relativeTo: .title2) private var disc = 30.0
 
@@ -121,7 +123,7 @@ struct DiagramOwnShipView: View {
 
     private func page(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> some View {
         DiagramPDFView(document: diagram.document, mark: mark(diagram, fix: fix), disc: disc, handle: handle,
-                       hotSpots: diagram.hotSpots.map { diagram.pagePoint(x: $0.x, y: $0.y) })
+                       hotSpots: diagram.hotSpots.map { diagram.pagePoint(x: $0.x, y: $0.y) }, look: night)
             // VoiceOver's three-finger zoom and Switch Control, which
             // cannot pinch: the page one element, where the airplane is
             // its value.
@@ -131,6 +133,12 @@ struct DiagramOwnShipView: View {
             .accessibilityAddTraits(.isImage)
             .accessibilityZoomAction { zoom in handle.zoom(in: zoom.direction == .zoomIn) }
             .accessibilityAction(named: "Fit the page") { handle.fit() }
+    }
+
+    /// The page's night look, a chart's own (PageLookKept).
+    private var night: DiagramNight {
+        let look = pageLook.look(chart: true)
+        return DiagramNight(inverted: look.inverted, shade: look.shade)
     }
 
     /// Own ship on the page where the engine places it, turned by the

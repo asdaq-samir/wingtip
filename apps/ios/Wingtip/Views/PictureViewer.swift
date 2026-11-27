@@ -251,9 +251,13 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
     var images: [UIImage] = [] {
         didSet {
             container.subviews.forEach { $0.removeFromSuperview() }
+            whiteOnBlack = nil
+            inverting?.cancel()
+            inverting = nil
             for image in images {
                 let page = UIImageView(image: image)
                 page.contentMode = .scaleAspectFit
+                page.addSubview(PageLook.shadeView(over: page))
                 container.addSubview(page)
             }
             container.addSubview(markup)
@@ -263,15 +267,35 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
         }
     }
 
-    /// The pages' night look, each page drawn again when it changes.
+    /// The pages turned white on black, drawn once off the main thread
+    /// (PageLook.inverted) and kept while the pages are; nil until then.
+    private var whiteOnBlack: [UIImage]?
+    private var inverting: Task<Void, Never>?
+
+    /// The pages' night look: the Dimmer only moves each shade's alpha;
+    /// White on Black swaps in the inverted pages, drawn once.
     var look = PageLook() {
         didSet { if look != oldValue { paint() } }
     }
 
     private func paint() {
-        for (page, image) in zip(container.subviews.compactMap { $0 as? UIImageView }, images) {
-            page.image = look.drawn(image)
+        let pages = container.subviews.compactMap { $0 as? UIImageView }
+        if look.inverted, whiteOnBlack == nil, inverting == nil {
+            let originals = images
+            inverting = Task { [weak self] in
+                let turned = await PageLook.inverted(originals)
+                guard let self, !Task.isCancelled, self.images.elementsEqual(originals, by: ===) else { return }
+                self.whiteOnBlack = turned
+                self.inverting = nil
+                self.paint()
+            }
+        }
+        for (k, page) in pages.enumerated() where k < images.count {
+            // Until the inverted page comes, none: the black paper, never
+            // a white page flashed in a dark cockpit.
+            page.image = look.inverted ? whiteOnBlack?[k] : images[k]
             page.backgroundColor = look.paper
+            page.subviews.first?.alpha = look.shade
         }
     }
 
@@ -305,8 +329,8 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             laidWidth = width
             if zoomScale != 1 { zoomScale = 1 }
             var y: CGFloat = 0
-            for case let page as UIImageView in container.subviews {
-                let size = page.image?.size ?? .zero
+            for (page, image) in zip(container.subviews.compactMap { $0 as? UIImageView }, images) {
+                let size = image.size
                 let height = size.width > 0 ? width * size.height / size.width : 0
                 page.frame = CGRect(x: 0, y: y, width: width, height: height)
                 y += height + Self.gap

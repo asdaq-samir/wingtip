@@ -145,7 +145,11 @@ final class WeatherLoopLayer {
         }
     }
 
-    private static func alpha(radar: Bool) -> CGFloat { radar ? radarAlpha : satelliteAlpha }
+    /// The chart's brightness at night (OverlayDim): each frame's alpha
+    /// times it, so the loop is no brighter than the chart under it.
+    static var brightness: CGFloat = 1
+
+    static func alpha(radar: Bool) -> CGFloat { (radar ? radarAlpha : satelliteAlpha) * brightness }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
         guard let tiles = overlay as? LoopTileOverlay else { return nil }

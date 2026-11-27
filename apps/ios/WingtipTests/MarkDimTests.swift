@@ -22,4 +22,34 @@ struct MarkDimTests {
     @Test func thePlatesTakeTheMapsShade() {
         #expect(MapExtrasInput().shaded(0.3).plateLook.shade == 0.3)
     }
+
+    /// Dimmed by colour, the web's DIM_BY_COLOUR: the colour times the
+    /// chart's brightness, its alpha kept; itself at full light.
+    @Test func aLineIsDimmedByItsColourItsAlphaKept() throws {
+        let edge = UIColor(red: 1, green: 0.5, blue: 0, alpha: 0.6)
+        let dimmed = try #require(OverlayDim.colour(edge, brightness: 0.5))
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        #expect(dimmed.getRed(&r, green: &g, blue: &b, alpha: &a))
+        #expect(abs(r - 0.5) < 1e-6 && abs(g - 0.25) < 1e-6 && b == 0 && abs(a - 0.6) < 1e-6)
+        #expect(OverlayDim.colour(edge, brightness: 1) === edge)
+        #expect(OverlayDim.colour(nil, brightness: 0.5) == nil)
+    }
+
+    /// A line MapKit is given takes the dim now, and every one on the map
+    /// the next; the terrain tint's tiles are no path, and keep their light.
+    @Test @MainActor func theLinesTakeTheDimAsItMoves() throws {
+        let dim = OverlayDim()
+        let line = MKPolylineRenderer(polyline: MKPolyline())
+        line.strokeColor = .white
+        _ = dim.take(line)
+        #expect(line.strokeColor == .white)
+        dim.set(0.5, on: MKMapView())
+        #expect(dim.brightness == 0.5 && WeatherLoopLayer.brightness == 0.5)
+        let later = MKPolylineRenderer(polyline: MKPolyline())
+        later.strokeColor = .white
+        _ = dim.take(later)
+        var w: CGFloat = 0, a: CGFloat = 0
+        #expect(try #require(later.strokeColor).getWhite(&w, alpha: &a) && abs(w - 0.5) < 1e-6)
+        WeatherLoopLayer.brightness = 1
+    }
 }
