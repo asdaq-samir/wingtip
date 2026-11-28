@@ -390,7 +390,13 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: ["**/node_modules/**", "e2e/**"],
-    setupFiles: ["src/test/storage.ts", "src/test/animations.ts", "src/lib/engine/vitestSetup.ts", "src/test/guards.ts"],
+    setupFiles: [
+      "src/test/storage.ts",
+      "src/test/animations.ts",
+      "src/test/ranges.ts",
+      "src/lib/engine/vitestSetup.ts",
+      "src/test/guards.ts",
+    ],
     sequence: { shuffle: true },
     dangerouslyIgnoreUnhandledErrors: false,
   },
