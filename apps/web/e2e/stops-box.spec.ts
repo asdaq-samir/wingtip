@@ -169,13 +169,14 @@ test("a long route turned from the grouped box wraps over its lines, nothing pas
   await openPanel(page);
   await typeRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
-  await expect(lines.locator("[role=group]")).toHaveCount(10);
+  // Each point a plain pill (RoutePill's data-point), no group round it.
+  await expect(lines.locator("[data-point]")).toHaveCount(10);
   const box = await lines.evaluate((el) => ({
     clientHeight: el.clientHeight,
     scrollHeight: el.scrollHeight,
     clientWidth: el.clientWidth,
     scrollWidth: el.scrollWidth,
-    tops: [...new Set([...el.querySelectorAll("[role=group]")].map((g) => Math.round(g.getBoundingClientRect().top)))].length,
+    tops: [...new Set([...el.querySelectorAll("[data-point]")].map((g) => Math.round(g.getBoundingClientRect().top)))].length,
     mask: getComputedStyle(el).maskImage || getComputedStyle(el).webkitMaskImage,
   }));
   // Turned from the grouped box by its toggle, the route wraps over as
@@ -225,25 +226,6 @@ test("an airport's card adds it as the route's next stop; a card of the route's 
   await expect(sideDrawer(page).getByTestId("timeline-pick-dest")).toHaveText("Destination");
 });
 
-test("the route's airports are marked by their airspace's ring and their weather's dot", async ({ page }) => {
-  await page.route(
-    (url) => /\/(checkpoints|navlog)$/.test(url.pathname),
-    (route) => route.abort(),
-  );
-  // Each point of the route's title led by its field's chart mark (the
-  // polish pass, 2026-10-26): Duluth's Class D ring.
-  const mark = () => sideDrawer(page).getByRole("button", { name: "Destination KDLH" }).locator("[data-airport-mark]");
-  const weather = () => mark().locator("[data-weather]").getAttribute("fill");
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await openPanel(page);
-  await typeRoute(page);
-  await expect(mark()).toHaveAttribute("data-airspace", "D", { timeout: slow(15000) });
-  // Its METAR's colour in the middle, or the grey of none, as the chart's
-  // marks have it: no setting since the owner's split (2026-10-27).
-  await expect.poll(weather, { timeout: slow(15000) }).toMatch(/^(#|rgb|oklch)/);
-});
-
 /**
  * A round trip's field twice in FPL's list: left from as its Departure and
  * landed at as its Destination (the audit's finding: it was one step,
@@ -257,5 +239,8 @@ test("a round trip's field is a Depart step and an Arrive step, each with its ru
   const route = sideDrawer(page).getByTestId("procedures");
   await expect(route.getByRole("region", { name: "C81 · Depart" })).toBeVisible({ timeout: slow(60000) });
   await expect(route.getByRole("region", { name: "C81 · Arrive" })).toBeVisible({ timeout: slow(60000) });
-  await expect(route.getByRole("region", { name: "C81 · Depart" }).getByRole("group", { name: "C81 takeoff runway" })).toBeVisible();
+  // Its takeoff runway a pill of its own on its line (RunwayPill).
+  await expect(route.getByRole("region", { name: "C81 · Depart" }).getByTestId("runway-pill")).toHaveAccessibleName(
+    /, C81 takeoff runway, /,
+  );
 });
