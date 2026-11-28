@@ -27,7 +27,7 @@ import kotlin.time.Instant
 
 private val READING = Json.parseToJsonElement(
     """{"information":"K","time_z":"1452Z","wind":{"from_deg":210,"kt":12,"gust_kt":18,"variable":false},
-       "visibility_sm":10,"sky":[{"cover":"few","base_ft":4500},{"cover":"broken","base_ft":9000}],
+       "visibility_sm":10,"visibility_minus":false,"sky":[{"cover":"few","base_ft":4500},{"cover":"broken","base_ft":9000}],
        "temp_c":21,"dewpoint_c":-3,"altimeter_inhg":29.92,"approach":null,
        "runways":{"landing":["27L","28R"],"departing":["27L","28R"]},"remarks":["Bird activity"],"raw":"x"}""",
 ).jsonObject

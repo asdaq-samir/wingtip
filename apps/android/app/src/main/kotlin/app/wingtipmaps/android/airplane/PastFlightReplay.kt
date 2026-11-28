@@ -87,7 +87,10 @@ object PastFlightReplay {
             get() = points.takeWhile { it.t <= startT + flownS }.map { PathPoint(t = it.t, lat = it.lat, lon = it.lon, altFt = it.altFt) }
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    /** Made at the first play, not as the object loads: Dispatchers.Main
+     *  is Android's, and a plain JVM (the unit tests of between and
+     *  climbWords) has none, so asking it at class load failed the class. */
+    private val scope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate) }
     /** Compose's own state, so the map and the bar read it where they
      *  draw, with no state of their own (MapPane holds none for it). */
     var state by mutableStateOf(State())
