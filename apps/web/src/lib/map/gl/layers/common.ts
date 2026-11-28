@@ -68,7 +68,8 @@ export const LABEL_HALO = { "text-halo-color": HALO_COLOUR, "text-halo-width": M
  *  on its tag, the open card's field's) take the fixes' near white, so
  *  after dark they are dimmed by their ink with the rest at the words'
  *  light, their dark halo or tab whole (the round-7 themes audit's R7-5). */
-const NIGHT_INK: Record<string, string> = { ...DIMMER.nightWord, [CHART.casing]: DIMMER.nightWord[CHART.fixInk]! };
+const NIGHT_WORD: Record<string, string> = DIMMER.nightWord;
+const NIGHT_INK: Record<string, string> = { ...NIGHT_WORD, [CHART.casing]: NIGHT_WORD[CHART.fixInk]! };
 
 /** A colour at the words' light after dark (LIGHT): black at none, itself
  *  at 1, as mapDim's dimmedColour takes the chart's brightness. */
