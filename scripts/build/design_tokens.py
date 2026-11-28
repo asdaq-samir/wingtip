@@ -28,6 +28,7 @@ from design_tokens_webtype import fixed, rem, resolve_space, size_css, web_class
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
 from design_tokens_looks import css_block, sun_and_contrast, swatch_ts
+from emit import write_or_check
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "tokens.json"
@@ -503,7 +504,6 @@ def gen_kotlin(tree, sch):
 
 
 def main():
-    check = "--check" in sys.argv[1:]
     tree = resolve_space(json.loads(SOURCE.read_text()))
     sch = schemes(tree)
     outputs = {
@@ -514,23 +514,7 @@ def main():
         FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
         **zoom.outputs(tree, ROOT, BANNER),
     }
-    stale = []
-    for path, text in outputs.items():
-        old = path.read_text() if path.exists() else None
-        if old == text:
-            continue
-        if check:
-            stale.append(path.relative_to(ROOT))
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text)
-            print("wrote %s" % path.relative_to(ROOT))
-    if stale:
-        print("design tokens out of date -- run scripts/build/design-tokens.sh and commit:", file=sys.stderr)
-        for p in stale:
-            print("  %s" % p, file=sys.stderr)
-        return 1
-    return 0
+    return write_or_check(outputs, ROOT, "design/tokens.json", "scripts/build/design-tokens.sh")
 
 
 if __name__ == "__main__":

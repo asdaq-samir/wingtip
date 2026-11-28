@@ -26,6 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from design_tokens_colour import hex6, rgba  # noqa: E402
+from emit import write_or_check  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design/map-style.json"
@@ -220,25 +221,12 @@ def web(style, tokens):
 
 
 def main():
-    check = "--check" in sys.argv[1:]
     style, tokens = json.loads(SOURCE.read_text()), json.loads(TOKENS.read_text())
     from map_style_android import android  # noqa: E402 -- it builds on this module's Resolver
 
     outputs = {WEB_TS: web(style, tokens), ANDROID_KT: android(style, tokens)}
-    stale = []
-    for path, text in outputs.items():
-        if (path.read_text() if path.exists() else None) == text:
-            continue
-        if check:
-            stale.append(str(path.relative_to(ROOT)))
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text)
-            print(f"wrote {path.relative_to(ROOT)}")
-    if stale:
-        print("Out of date with design/map-style.json (run scripts/build/map-style.sh and commit):", *stale, sep="\n  ")
-        sys.exit(1)
+    return write_or_check(outputs, ROOT, "design/map-style.json", "scripts/build/map-style.sh")
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

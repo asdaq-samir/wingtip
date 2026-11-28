@@ -30,6 +30,8 @@ import re
 import sys
 from pathlib import Path
 
+from emit import write_or_check
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "card-actions.json"
 WORDING = ROOT / "design" / "wording.json"
@@ -215,19 +217,11 @@ def doc(block, current):
 
 
 def main():
-    check = "--check" in sys.argv[1:]
     actions, cards, words = load()
     outputs = {WEB_TS: web(actions, cards), IOS_SWIFT: ios(actions, cards), ANDROID_KT: android(actions, cards)}
     outputs[DOC] = doc(doc_block(actions, cards, words), DOC.read_text())
-    differ = [path for path, text in outputs.items() if not path.exists() or path.read_text() != text]
-    if check and differ:
-        names = "\n  ".join(str(path.relative_to(ROOT)) for path in differ)
-        sys.exit(f"Out of date with design/card-actions.json (run scripts/build/card-actions.sh and commit):\n  {names}")
-    for path in [] if check else differ:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(outputs[path])
-        print(f"wrote {path.relative_to(ROOT)}")
+    return write_or_check(outputs, ROOT, "design/card-actions.json", "scripts/build/card-actions.sh")
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
