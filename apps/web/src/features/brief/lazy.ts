@@ -8,7 +8,8 @@
 
 import { fromChunk } from "../../lib/fromChunk";
 
-export { default as BriefCard } from "./BriefCard";
+export { default as BriefCard } from "./BriefCardPart";
+export { prefetchBriefPages } from "./briefPagesChunk";
 export { BriefingNotices, default as FlightBriefingView } from "./FlightBriefingView";
 
 /** Save, and the solo cross-country review asked from the route, on a
