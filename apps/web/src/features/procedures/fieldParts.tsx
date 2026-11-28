@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import type { Runway } from "../../lib/api/types";
 import { sameField } from "../../lib/procedures";
 import {
@@ -11,7 +11,8 @@ import {
   type RunwayEnd,
 } from "../plan";
 import { DepartPicker } from "../navlog/lazy";
-import ProcedureMenu from "./ProcedureMenu";
+import type ProcedureMenu from "./ProcedureMenu";
+import { ProcedureMenuChunk } from "./procedureMenuChunk";
 import { ProcedureDropdown } from "./ProcedureDropdown";
 import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
@@ -72,7 +73,13 @@ export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Ki
   // FPL's Landing and Takeoff pills pick from the stock dropdown, as their
   // runway's does (ProcedureDropdown); the list read in flight keeps the
   // sheet of pages.
-  if (look !== "slim" && look !== "wide") return <ProcedureMenu key={kind} {...props} />;
+  if (look !== "slim" && look !== "wide")
+    return (
+      // Nothing in its place for the moment its chunk takes, if it is not in yet (procedureMenuChunk).
+      <Suspense key={kind} fallback={null}>
+        <ProcedureMenuChunk {...props} />
+      </Suspense>
+    );
   const reported = vm.reportedOf(a.ident);
   const wordsOfWind = kind === "approach" ? windWords(reported) : null;
   return (

@@ -81,7 +81,8 @@ const routePanel = panelChunk(importRoutePanel);
 const placePanel = panelChunk(importPlacePanel);
 const cardsPanel = panelChunk(importCardsPanel);
 export const loadRoutePanel = routePanel.load;
-/** The chunks drawn only at a tap, and the Brief's card, pages and airport sections,
+/** The chunks drawn only at a tap, the Brief's card, pages and airport sections,
+ *  and the nav log's table and the procedures' sheet read in flight,
  *  asked for some seconds after the page is idle (usePrefetchWhenIdle),
  *  once a route has had its time to draw, so a tap still opens its card
  *  at once. */
@@ -93,6 +94,8 @@ export function prefetchTapCards() {
     .then((m) => {
       m.prefetchAirportSections();
       m.prefetchBriefPages();
+      m.prefetchNavLogTable();
+      m.prefetchProcedureMenu();
     })
     .catch(() => {});
 }

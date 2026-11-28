@@ -8,7 +8,7 @@ import { EXPLAINED, type ExplainedTerm } from "../../lib/explain";
 import LegWorkings from "./LegWorkings";
 import type { Phase } from "./workings";
 import DiversionDrill from "./DiversionDrill";
-import { tas } from "./navLogColumns";
+import { tas } from "./legTas";
 
 /** A shorthand's tap area in the grid: a 44-point square centred on it. */
 const SHORTHAND_AREA = "after:inset-auto after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2";

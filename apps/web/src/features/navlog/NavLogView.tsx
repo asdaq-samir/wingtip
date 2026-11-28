@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { cn } from "cn";
 import PanelTabs from "./PanelTabs";
 import { usePrinting } from "../plan/lazy";
@@ -17,8 +17,7 @@ import { NavLogList } from "./NavLogList";
 import { NavLogPaperHead } from "./NavLogPaperHead";
 import { NavLogNote } from "./NavLogNote";
 import { NavLogSummary } from "./NavLogSummary";
-import { NavLogTable } from "./NavLogTable";
-import { navLogColumns } from "./navLogColumns";
+import { NavLogTableChunk } from "./navLogTableChunk";
 import { railOf } from "./navLogRail";
 import type { NavLogViewProps } from "./NavLogViewProps";
 import { useIsDesktop } from "../../hooks/use-desktop";
@@ -110,7 +109,7 @@ export default function NavLogView({
   // in every column that needs one. Kept while they are the same
   // (useMemo): a new list was the profile chart drawn again at every row
   // picked. (The column defs close over this render's `nav` and `depart`,
-  // so navLogColumns is called here, not at module scope.)
+  // so navLogColumns is called with the table, not at module scope.)
   const data = useMemo(() => navLogRows(ends, selected, legs), [ends, selected, legs]);
   // Each checkpoint's number, as its dot on the map has it (RouteMap):
   // its place among the chosen, from one.
@@ -124,7 +123,6 @@ export default function NavLogView({
   // Under IFR the airway each row's leg joins and its published altitudes,
   // as the phone's list says them on its rail (navLogRail).
   const airways = useMemo(() => new Map(railOf(data).flatMap((r, i) => (r.airway ? [[data[i]!.key, r.airway] as const] : []))), [data]);
-  const shownColumns = navLogColumns({ nav, depart, numbers, airways, metarColourOf, onDesk, airplane: !!airplane });
   useAnnounce(totals && data.length ? `Nav log ready, ${nm(totals.distance_nm)}` : null); // to VoiceOver, once (WEB-16)
   // The selected row as it is put in the page: the rows are drawn a moment
   // after the panel (PanelTabs' deferred draw), and on a busy page after
@@ -170,24 +168,28 @@ export default function NavLogView({
     />
   );
 
+  // The table is a desktop's and paper's, on a chunk of its own with its
+  // columns (navLogTableChunk): a phone's list draws none of it.
   const navLogTable = (
-    <NavLogTable
-      data={data}
-      columns={shownColumns}
-      onDesk={onDesk}
-      printing={printing}
-      airplane={!!airplane}
-      dep={dep}
-      dest={dest}
-      totals={totals}
-      flying={flying}
-      isSelected={isSelected}
-      noteOf={noteOf}
-      onSelectPoint={onSelectPoint}
-      onDeselectPoint={onDeselectPoint}
-      setSelectedRow={setSelectedRow}
-      setFlyingRow={setFlyingRow}
-    />
+    <Suspense fallback={null}>
+      <NavLogTableChunk
+        data={data}
+        columnsOf={{ nav, depart, numbers, airways, metarColourOf, onDesk, airplane: !!airplane }}
+        onDesk={onDesk}
+        printing={printing}
+        airplane={!!airplane}
+        dep={dep}
+        dest={dest}
+        totals={totals}
+        flying={flying}
+        isSelected={isSelected}
+        noteOf={noteOf}
+        onSelectPoint={onSelectPoint}
+        onDeselectPoint={onDeselectPoint}
+        setSelectedRow={setSelectedRow}
+        setFlyingRow={setFlyingRow}
+      />
+    </Suspense>
   );
 
   // On screen the log a line a point (NavLogList), under its count of

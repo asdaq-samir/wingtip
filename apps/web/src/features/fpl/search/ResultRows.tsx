@@ -147,8 +147,14 @@ export function ResultRow({
   return (
     <div className={cn("has-data-highlighted:bg-muted", ICON_WIDTH[iconWidth])} data-result-row="">
       {item}
-      {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events -- a pointer's miss round the buttons taken as the row's, not a control of its own: the option beside it is reached and taken by the keyboard (Enter), and each button is its own. */}
+      {/* Hidden from a screen reader, as it is out of the keyboard's way:
+          inside the list a button is no child a listbox or its group may
+          own (axe's aria-required-children on the typed search, WCAG
+          1.3.1), and the option it sits under opens the card with the
+          same actions. A pointer's miss round the buttons is the row's,
+          no control of its own: the keyboard takes the option by Enter. */}
       <span
+        aria-hidden="true"
         className="flex gap-2 pt-1.5 pr-3 pb-2.5 pl-[calc(var(--row-icon)+1.5rem)]"
         onClick={disabled ? undefined : onSelect}
         data-testid={`${testId}-actions`}

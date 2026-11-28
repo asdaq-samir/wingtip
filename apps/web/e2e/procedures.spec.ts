@@ -108,7 +108,7 @@ test("a field typed as ORD is KORD, its arrivals offered and its runways in its 
   const kord = page.getByTestId("procedures").getByRole("region", { name: "KORD · Arrive" });
   await expect(kord.locator("[data-testid=procedure-kind][data-kind=arrival]")).toBeVisible({ timeout: slow(20000) });
   // 9L picked on its pill; its menu every runway, 9L checked.
-  await expect(kord.getByTestId("runway-pill")).toHaveAccessibleName(/: Runway 9L\b/, { timeout: slow(20000) });
+  await expect(kord.getByTestId("runway-pill")).toHaveAccessibleName(/^RWY 9L\b/, { timeout: slow(20000) });
   await openRunways(kord);
   expect(await runwayOptions(page).count()).toBeGreaterThan(5);
   await expect(page.getByRole("menuitemradio", { name: /^Runway 9L\b/ })).toHaveAttribute("aria-checked", "true");

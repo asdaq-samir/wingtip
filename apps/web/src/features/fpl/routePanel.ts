@@ -24,3 +24,5 @@ export { AltitudeProfile } from "../navlog/lazy";
 export { RouteProblem } from "../route/lazy";
 export { LocalDuration } from "../route/lazy";
 export { BriefCard, prefetchAirportSections, prefetchBriefPages } from "../brief/lazy";
+export { prefetchNavLogTable } from "../navlog/lazy";
+export { prefetchProcedureMenu } from "../procedures/lazy";

@@ -11,16 +11,13 @@ import { usePreferences } from "../../lib/preferences";
 import { transitionWords, type PickedProcedure } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import { procedureTrigger, TITLE, type TriggerLook } from "./ProcedureTrigger";
-import { ALL, approachGroups, NONE, shortName } from "./procedureWords";
+import { ALL, approachGroups, NONE, PROCEDURES_FAILED, shortName } from "./procedureWords";
 import { faaWords } from "../../lib/advisories";
 import QueryState from "../../components/QueryState";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { WORDING } from "../../lib/wording/generated/wording";
 
 type Kind = ProcedureSummary["kind"];
-
-/** The one failure both the pull-down and the procedures sheet say. */
-export const PROCEDURES_FAILED = "The FAA's procedures could not be fetched.";
 
 /**
  * One kind of a field's procedures picked from a pull-down, at the

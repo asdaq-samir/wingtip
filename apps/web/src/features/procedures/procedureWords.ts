@@ -9,6 +9,9 @@ import type { ProcedureSummary } from "../../lib/api/types";
 
 type Kind = ProcedureKind;
 
+/** The one failure the pull-downs and the procedures sheet say. */
+export const PROCEDURES_FAILED = "The FAA's procedures could not be fetched.";
+
 /** A kind as its list's title says it (listTitle, ProcedurePicker). */
 export const KIND_TITLE: Record<Kind, string> = { approach: "Approaches", arrival: "Arrivals", departure: "Departures" };
 /** A kind as a branch's head says it, under the procedure's name. */

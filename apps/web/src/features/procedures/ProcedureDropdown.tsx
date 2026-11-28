@@ -22,8 +22,7 @@ import { transitionWords } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import { WORDING } from "../../lib/wording/generated/wording";
 import type ProcedureMenu from "./ProcedureMenu";
-import { PROCEDURES_FAILED } from "./ProcedureMenu";
-import { ALL, approachGroups, NONE, shortName } from "./procedureWords";
+import { ALL, approachGroups, NONE, PROCEDURES_FAILED, shortName } from "./procedureWords";
 import { procedureTrigger, TITLE } from "./ProcedureTrigger";
 
 type MenuProps = Parameters<typeof ProcedureMenu>[0];
@@ -63,7 +62,10 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
   // "‹ All Runways" at its top in the tint; and every runway, the landed
   // on's first, a tap opening its page, where it was three deep (the
   // landed on's, the others, one of them) with Back to the one before.
-  const [page, setPaged] = useState<"runways" | string | null>(null);
+  // Undefined till the pilot turns one: the page the menu opens on, which
+  // follows the list as it comes in (a menu opened before its list said
+  // nothing of the runway's having none, and stayed on the first page).
+  const [turnedTo, setPaged] = useState<"runways" | string | null | undefined>(undefined);
   // A page turned under a finger lit the row that came under it (iOS
   // fires its hover where the tap was), reading as picked (the owner's
   // iPhone, 2026-11-25): no row lit till the next press or a mouse moves.
@@ -93,6 +95,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
   // are approaches being shown for runway 16, when 12 is selected?").
   const noneHere = kind === "approach" && m.runway !== null && !byRunway.has(m.runway) && runways.length > 0;
   const opening = noneHere ? "runways" : null;
+  const page = turnedTo === undefined ? opening : turnedTo;
   // What a runway's row says at its right: the approach picked there, else its approaches' kinds.
   const aside = (r: string) => {
     const there = byRunway.get(r) ?? [];
@@ -152,7 +155,7 @@ export function ProcedureDropdown(m: MenuProps & { windHead?: ReactNode }) {
         // As it opens, at its first page: reset as it closed, the page
         // flipped back under its fade.
         if (!open) return;
-        setPaged(opening);
+        setPaged(undefined);
         setTurned(false);
         setMinWidth(undefined);
         m.onOpen();

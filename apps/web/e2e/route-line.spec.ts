@@ -136,9 +136,11 @@ test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is
   // line (the owner, 2026-11-23, 730d03aa8), with no airport cards among
   // them: the cards are the route's editor, which hides the chips while open.
   await expect(sheetFoot(page).locator("[data-foot-strip]").getByTestId("route-line")).toBeVisible();
+  // Below the route's lines: the summary's box runs on behind the fixed bar
+  // (its Add a Stop scrolls clear of it, sheet/FootBar), its lines do not.
   const lineBox = (await line.boundingBox())!,
-    summary = (await sideDrawer(page).getByTestId("route-summary").boundingBox())!;
-  expect(lineBox.y, "below the route's line").toBeGreaterThanOrEqual(summary.y + summary.height - 1);
+    last = (await sideDrawer(page).getByTestId("route-summary").getByTestId("timeline-line").last().boundingBox())!;
+  expect(lineBox.y, "below the route's line").toBeGreaterThanOrEqual(last.y + last.height - 1);
   await expect(sideDrawer(page).getByTestId("route-field")).toHaveCount(0);
   await expect.poll(() => planned.length, { timeout: slow(15_000) }).toBeGreaterThan(0);
   // Every way drawn on the chart beside the course, as the chips' probe says (WaysGl).
