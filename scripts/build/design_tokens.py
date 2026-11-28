@@ -505,12 +505,11 @@ def gen_kotlin(tree, sch):
 
 def main():
     tree = resolve_space(json.loads(SOURCE.read_text()))
-    sch = schemes(tree)
     outputs = {
         WEB_CSS: gen_css(tree),
         WEB_TS: gen_ts(tree),
-        IOS_SWIFT: gen_swift(tree, sch),
-        ANDROID_KT: gen_kotlin(tree, sch),
+        IOS_SWIFT: gen_swift(tree, schemes(tree)),
+        ANDROID_KT: gen_kotlin(tree, schemes(tree)),
         FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
         **zoom.outputs(tree, ROOT, BANNER),
     }
