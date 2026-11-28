@@ -2968,6 +2968,13 @@ export interface EngineContract {
     answer: MagneticVariationAnswer;
   };
   /**
+   * The Dimmer's words and paper at night, one copy for every app: the chart's white as MapLibre's raster shader draws it (raster-contrast about the middle, 1/(1-k) over 0 and 1+k under, then raster-brightness-max), the share of their night inks the map's light-haloed words take so that none is brighter than the paper under it (AIM 8-1-6, Vision in Flight: the pilot's dark adaptation), floored under the night's own contrast, and a night warning's light against the paper's. A display's look, not an aviation figure; its figures are design/tokens.json's map-dim group, its cases apps/web/src/lib/fixtures/mapDim.json.
+   */
+  map_dim_words: {
+    input: MapDimWordsInput;
+    answer: MapDimWords;
+  };
+  /**
    * The distress call in AIM 6-3-2(a)(3)'s order, filled from what the app knows, each part it does not know a blank in brackets and listed in missing; the code (7700, AIM 6-2-2; an assigned code kept while talking to ATC, 6-3-2(a)(2)); and the frequencies to call on: the one in use, the nearest approach or departure control and tower the app lists, then 121.5 MHz.
    */
   mayday_call: {
@@ -10830,6 +10837,34 @@ export interface MagneticVariationInput {
    * The model's decimal year (2026.5 mid-2026), in place of the date.
    */
   year?: number;
+}
+export interface MapDimWordsInput {
+  /**
+   * After dark: by day the words take no share (0) and the warnings their whole light (1).
+   */
+  night: boolean;
+  /**
+   * The chart's raster-brightness-max, 0 to 1 (held to it).
+   */
+  brightness: number;
+  /**
+   * The chart's raster-contrast, -1 to 1.
+   */
+  contrast: number;
+}
+export interface MapDimWords {
+  /**
+   * The chart's white as drawn, encoded sRGB 0 to 1.
+   */
+  paper: number;
+  /**
+   * The share of their night inks the light-haloed words take, in hundredths: 0 by day, at least 0.01 at night.
+   */
+  words: number;
+  /**
+   * A night warning's colour's share of light, the paper's times map-dim.warning-under-paper, in hundredths; 1 by day.
+   */
+  warning: number;
 }
 export interface MaydayCallInput {
   station?: string | null;

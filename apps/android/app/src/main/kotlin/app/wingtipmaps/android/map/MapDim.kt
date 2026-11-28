@@ -1,6 +1,8 @@
 package app.wingtipmaps.android.map
 
 import app.wingtipmaps.android.design.generated.WingtipDimmer
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.mapDimWords
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -11,8 +13,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import java.util.Locale
-import kotlin.math.pow
-import kotlin.math.roundToInt
 
 /**
  * The Dimmer over what is drawn on the chart, not the chart's tiles alone,
@@ -113,36 +113,20 @@ object MapDim {
         return JsonObject(root + ("layers" to JsonArray(layers.map { layer(it.jsonObject) })))
     }
 
-    /** The chart's white as MapLibre's raster shader draws it, encoded
-     *  sRGB 0 to 1: raster-contrast about the middle (1/(1-k) over 0,
-     *  1+k under), then raster-brightness-max (the web's paperOf). */
-    fun paperOf(brightness: Double, contrast: Double): Double {
-        val factor = if (contrast > 0) 1 / (1 - contrast) else 1 + contrast
-        return minOf(1.0, (0.5 * factor + 0.5) * brightness.coerceIn(0.0, 1.0))
-    }
-
-    private fun paperShare(brightness: Double, contrast: Double): Double =
-        (linear(paperOf(brightness, contrast)) / WingtipDimmer.WORD_LIGHT).pow(1.0 / WingtipDimmer.WORD_GAMMA)
-
     /** The words' share of their night inks after dark, 0 by day: the
+     *  engine's map_dim_words (the web's mapDimWords, one copy of the maths
+     *  for every app, its cases apps/web/src/lib/fixtures/mapDim.json), the
      *  paper's light against the towered blue's, floored under the night's
-     *  own contrast at map-dim.word-floor, in hundredths (the web's
-     *  wordLight). */
-    fun wordLight(night: Boolean, brightness: Double, contrast: Double): Double {
-        if (!night) return 0.0
-        val floor = minOf(WingtipDimmer.WORD_FLOOR.toDouble(), paperShare(brightness, WingtipDimmer.WORD_FLOOR_CONTRAST.toDouble()))
-        val share = maxOf(paperShare(brightness, contrast), floor)
-        return maxOf(WingtipDimmer.WORD_LEAST.toDouble(), minOf(1.0, (share * 100).roundToInt() / 100.0))
-    }
+     *  own contrast, in hundredths. Asked as the chart is painted, once a
+     *  Dimmer's move. */
+    fun wordLight(night: Boolean, brightness: Double, contrast: Double): Double =
+        Engine.mapDimWords(night, brightness, contrast).getOrNull()?.words ?: if (night) WingtipDimmer.WORD_FLOOR.toDouble() else 0.0
 
     /** A day ink's night word: its night ink (map.label.night-ink) brought
      *  down to the towered blue's light (map-dim's nightWord), so at the
      *  words' light none is brighter than the paper; a colour not in the
      *  table keeps its own. */
     fun nightWord(dayHex: String): String = WingtipDimmer.NIGHT_WORD[dayHex.lowercase(Locale.US)] ?: dayHex
-
-    /** sRGB's encoded 0 to 1 to its linear light (WCAG 2). */
-    private fun linear(c: Double) = if (c <= 0.04045) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
 
     /** A style's expression from plain values and elements. */
     private object Json {

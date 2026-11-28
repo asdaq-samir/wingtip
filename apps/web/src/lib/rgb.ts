@@ -17,7 +17,7 @@ export function withAlpha(hex: string, alpha: number): string {
 }
 
 /** An encoded sRGB channel, 0 to 1, as light (WCAG 2's relative luminance). */
-export const linearOf = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const linearOf = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 
 /** A "#rrggbb"'s relative luminance, 0 to 1 (WCAG 2). */
 export function luminanceOf(hex: string): number {

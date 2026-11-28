@@ -355,19 +355,20 @@ final nonisolated class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendabl
     }
 }
 
-/// The day chart's lift, the web map's (glStyle.ts chartPaint, DAY_CONTRAST
-/// and DAY_SATURATION 0.1): MapLibre's raster-contrast c scales each
-/// channel about the middle grey by 1 / (1 - c), and its raster-saturation
+/// The day chart's lift, the web map's (glStyle.ts chartPaint), from
+/// design/tokens.json's chart-paint group (WingtipChartPaint): MapLibre's
+/// raster-contrast c scales each channel about the middle grey by
+/// 1 / (1 - c), and its raster-saturation
 /// s moves each away from the pixel's grey by 1 / (1 - s); Core Image's
 /// colour controls do both, the grey by luminance rather than the plain
 /// mean, a difference under a step of the eye on the chart's inks.
 ///
-/// The Map card's Contrast (ChartLook) adds its offset to the lift's 0.1
+/// The Map card's Contrast (ChartLook) adds its offset to the lift's
 /// by day, to none at night, as the web adds it to the look's own
 /// raster-contrast: MapLibre's c over 0 is 1 / (1 - c), under 0 1 + c.
 nonisolated enum ChartLift {
-    static let base = 0.1
-    static let saturation = 1 / (1 - 0.1)
+    static let base = WingtipChartPaint.dayContrast
+    static let saturation = 1 / (1 - WingtipChartPaint.daySaturation)
 
     /// Core Image's contrast for MapLibre's raster-contrast c.
     static func factor(_ c: Double) -> Double {

@@ -8731,6 +8731,38 @@ object EngineContract {
     )
 
     @Serializable
+    data class MapDimWordsAnswer(
+        /**
+         * The chart's white as drawn, encoded sRGB 0 to 1.
+         */
+        val paper: Double,
+        /**
+         * The share of their night inks the light-haloed words take, in hundredths: 0 by day, at least 0.01 at night.
+         */
+        val words: Double,
+        /**
+         * A night warning's colour's share of light, the paper's times map-dim.warning-under-paper, in hundredths; 1 by day.
+         */
+        val warning: Double,
+    )
+
+    @Serializable
+    data class MapDimWordsInput(
+        /**
+         * After dark: by day the words take no share (0) and the warnings their whole light (1).
+         */
+        val night: Boolean,
+        /**
+         * The chart's raster-brightness-max, 0 to 1 (held to it).
+         */
+        val brightness: Double,
+        /**
+         * The chart's raster-contrast, -1 to 1.
+         */
+        val contrast: Double,
+    )
+
+    @Serializable
     data class MaydayCallAnswer(
         val lines: List<String>,
         val words: String,

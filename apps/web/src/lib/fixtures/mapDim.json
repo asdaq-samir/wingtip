@@ -1,5 +1,5 @@
 {
-  "_note": "The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group), one set of cases for every app: the web's lib/map/gl/mapDim.test.ts, Android's MapDimTest and iOS's MarkDimTests read this file, so an app whose dim drifts from the others fails its test. Each section names the apps that keep that part of the policy; a phone that takes one up adds itself. Worked from the policy's own definitions: the dim is the chart's brightness at night and 1 by day; a colour dimmed by colour is its sRGB times the dim; the paper is the chart's white through MapLibre's raster-contrast (1/(1-k) over 0, 1+k under, about the middle) then its brightness; the words' share of light is (the paper's luminance / the towered blue night ink's)^(1/2.2), floored at the lesser of 0.75 and that share at the night's own contrast 0.13, in hundredths, never under 0.01 at night, 0 by day; each night ink is brought down to the towered blue's luminance (its sRGB times (that luminance / its own)^(1/2.2), at most 1). WCAG 2 relative luminance throughout.",
+  "_note": "The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group), one set of cases for every app: the web's lib/map/gl/mapDim.test.ts, Android's MapDimTest and iOS's MarkDimTests read this file, so an app whose dim drifts from the others fails its test. Each section names the apps that keep that part of the policy; a phone that takes one up adds itself. The paper's and the words' are the engine's map_dim_words (engine/facade/tests/map_dim.rs), which every app asks. Worked from the policy's own definitions: the dim is the chart's brightness at night and 1 by day; a colour dimmed by colour is its sRGB times the dim; the paper is the chart's white through MapLibre's raster-contrast (1/(1-k) over 0, 1+k under, about the middle) then its brightness; the words' share of light is (the paper's luminance / the towered blue night ink's)^(1/2.2), floored at the lesser of 0.75 and that share at the night's own contrast 0.13, in hundredths, never under 0.01 at night, 0 by day; each night ink is brought down to the towered blue's luminance (its sRGB times (that luminance / its own)^(1/2.2), at most 1). WCAG 2 relative luminance throughout.",
   "dim": {
     "apps": [
       "web",
@@ -430,9 +430,7 @@
   },
   "paper": {
     "apps": [
-      "web",
-      "android",
-      "ios"
+      "engine"
     ],
     "cases": [
       {
@@ -479,9 +477,7 @@
   },
   "words": {
     "apps": [
-      "web",
-      "android",
-      "ios"
+      "engine"
     ],
     "cases": [
       {

@@ -1,20 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { ChartInfo } from "../../api/types";
 import type { LineLayerSpecification, SymbolLayerSpecification } from "maplibre-gl";
-import {
-  absoluteTiles,
-  OVERLAY_SOURCE,
-  chartPaint,
-  chartRole,
-  chartSource,
-  chartStyle,
-  DAY_CONTRAST,
-  DAY_SATURATION,
-  glZoom,
-} from "./glStyle";
+import { absoluteTiles, OVERLAY_SOURCE, chartPaint, chartRole, chartSource, chartStyle, glZoom } from "./glStyle";
 import { legPiece, routeCasingPaint, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
 import { dimLayer, dimmedColour } from "./mapDim";
-import { CHART } from "../../tokens";
+import { CHART, CHART_PAINT } from "../../tokens";
 import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryFrom } from "./closeZoom";
 import { OVERLAY_LINES } from "../../generated/overlayLayers";
 
@@ -91,8 +81,11 @@ describe("chartStyle", () => {
   });
 
   it("lifts the chart's contrast and colour by day, leaving the night and the sunlight as they were", () => {
-    expect(chartPaint(false, false)).toMatchObject({ "raster-contrast": DAY_CONTRAST, "raster-saturation": DAY_SATURATION });
-    expect([DAY_CONTRAST, DAY_SATURATION]).toEqual([0.1, 0.1]);
+    expect(chartPaint(false, false)).toMatchObject({
+      "raster-contrast": CHART_PAINT.dayContrast,
+      "raster-saturation": CHART_PAINT.daySaturation,
+    });
+    expect([CHART_PAINT.dayContrast, CHART_PAINT.daySaturation]).toEqual([0.1, 0.1]);
     expect(chartPaint(true, false)).toMatchObject({ "raster-contrast": 0.13, "raster-saturation": 0, "raster-brightness-max": 0.5 });
     expect(chartPaint(false, true)).toMatchObject({ "raster-contrast": 0.2, "raster-saturation": 0.2 });
   });

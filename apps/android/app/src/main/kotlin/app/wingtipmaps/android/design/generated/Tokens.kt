@@ -1474,6 +1474,16 @@ object WingtipChartLook {
     const val ROUTE_EDGE_SUNLIGHT = 0.9f
 }
 
+/** The chart's raster paint by look, its contrast and saturation (design/tokens.json's chart-paint group). */
+object WingtipChartPaint {
+    const val DAY_CONTRAST = 0.1f
+    const val DAY_SATURATION = 0.1f
+    const val NIGHT_CONTRAST = 0.13f
+    const val NIGHT_SATURATION = 0f
+    const val SUNLIGHT_CONTRAST = 0.2f
+    const val SUNLIGHT_SATURATION = 0.2f
+}
+
 /** The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group). */
 object WingtipDimmer {
     const val STATE = "mapDim"
@@ -1486,8 +1496,8 @@ object WingtipDimmer {
     const val WORD_GAMMA = 2.2f
     const val WORD_LEAST = 0.01f
     const val WORD_FLOOR = 0.75f
-    const val WORD_FLOOR_CONTRAST = 0.13f
     const val WORD_LIGHT = 0.4460834275041789
+    const val WORD_FLOOR_CONTRAST = 0.13f
     val NIGHT_WORD: Map<String, String> = mapOf("#2465b8" to "#82b4ff", "#c0309f" to "#f28ddc", "#117a35" to "#5cc685", "#1c1a17" to "#afb1b4", "#dc2626" to "#ff8a8a", "#d70015" to "#ff8a8a", "#c2410c" to "#fb9466", "#2563eb" to "#8db2fc", "#b45309" to "#dfaa20", "#7c3aed" to "#bba1ff", "#78716c" to "#b6b1ad", "#be185d" to "#f58cc4", "#0f766e" to "#4ac4b9", "#57534e" to "#b6b1ad", "#9333ea" to "#c99cff")
 }
 

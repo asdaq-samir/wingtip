@@ -10,7 +10,7 @@ import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
 import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
-import { MAP_DIM, WARNING_DIM, warningLight, wordLight } from "../mapDim";
+import { MAP_DIM, WARNING_DIM, mapDimWords } from "../mapDim";
 import { testDriven } from "../useGlProbe";
 import { useCloseImagery } from "../useCloseImagery";
 import { useChartMissed } from "../useChartMissed";
@@ -75,19 +75,21 @@ export function ChartGl({ course }: { course: Course | null }) {
   // The labels' halos dark after dark with the page's theme (common's
   // HALO_COLOUR reads it), not glaring white over the night's chart, and
   // their words at the paper's light under the Dimmer as committed
-  // (mapDim's wordLight), so they are no brighter than the chart; one
-  // figure, 0 by day.
+  // (mapDimWords' words), so they are no brighter than the chart; one
+  // figure, 0 by day, asked of the engine as the committed look changes.
   const committed = chartPaint(night, sunlight, keptDim, keptContrast);
   const keptBrightness = Number(committed?.["raster-brightness-max"] ?? 1),
     keptRasterContrast = Number(committed?.["raster-contrast"] ?? 0);
-  const words = wordLight(night, keptBrightness, keptRasterContrast);
+  const { words, warning: warnings } = useMemo(
+    () => mapDimWords(night, keptBrightness, keptRasterContrast),
+    [night, keptBrightness, keptRasterContrast],
+  );
   useEffect(() => {
     if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, words);
   }, [map, words]);
   // And the night's warnings under the paper's light, Contrast and all
-  // (mapDim's warningLight), a constant colour each, so no tile is laid out
+  // (mapDimWords' warning), a constant colour each, so no tile is laid out
   // again.
-  const warnings = warningLight(night, keptBrightness, keptRasterContrast);
   useEffect(() => {
     if (map.style) map.setGlobalStateProperty(WARNING_DIM, warnings);
   }, [map, warnings]);

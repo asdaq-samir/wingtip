@@ -1,18 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LayerSpecification } from "maplibre-gl";
 import { labelInk } from "./layers/common";
-import {
-  DIM_BY_COLOUR,
-  DIM_WARNING,
-  dimLayer,
-  dimmedColour,
-  dimmedOpacity,
-  dimmedPaint,
-  isDimmed,
-  mapDimOf,
-  warningLight,
-  wordLight,
-} from "./mapDim";
+import { DIM_BY_COLOUR, DIM_WARNING, dimLayer, dimmedColour, dimmedOpacity, dimmedPaint, isDimmed, mapDimOf, mapDimWords } from "./mapDim";
 
 const DIM = ["coalesce", ["global-state", "mapDim"], 1];
 
@@ -86,15 +75,11 @@ describe("the Dimmer over what is drawn on the chart", () => {
       1,
       "#dc2626",
     ]);
-    expect(warningLight(false, 0.5, 0.13)).toBe(1);
-    // The night's default: the paper sRGB 137 (0.537), the red at 0.85 of it.
-    expect(warningLight(true, 0.5, 0.13)).toBe(0.46);
   });
 
-  it("gives the words their light at night, none by day, never 0 after dark", () => {
-    expect(wordLight(false, 0.5, 0.13)).toBe(0);
-    expect(wordLight(true, 0.5, 0.13)).toBeCloseTo(0.77, 2);
-    expect(wordLight(true, 1, 0.13)).toBe(1);
-    expect(wordLight(true, 0, 0.13)).toBe(0.01);
+  it("asks the engine the words' and the warnings' light (map_dim_words, its cases there)", () => {
+    // The night's default: the paper sRGB 137 (0.537), the red at 0.85 of it.
+    expect(mapDimWords(true, 0.5, 0.13)).toEqual({ paper: expect.closeTo(0.537356, 6), words: 0.77, warning: 0.46 });
+    expect(mapDimWords(false, 0.5, 0.13)).toMatchObject({ words: 0, warning: 1 });
   });
 });

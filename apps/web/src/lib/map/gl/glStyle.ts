@@ -2,7 +2,7 @@ import type { RasterLayerSpecification, RasterSourceSpecification } from "maplib
 import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../sources/overlayTypes";
 import { chartPair, tileTemplate } from "../sources/tiles";
-import { CHART } from "../../tokens";
+import { CHART, CHART_PAINT } from "../../tokens";
 import { chartBrightness, chartContrast, NIGHT_DIM } from "../chartLook";
 import { OVERLAY_SOURCES } from "../../generated/overlayLayers";
 
@@ -42,10 +42,6 @@ export function absoluteTiles(template: string, origin: string): string {
   return template.startsWith("/") ? `${origin}${template}` : template;
 }
 
-/** The day chart's lift (chartPaint). */
-export const DAY_CONTRAST = 0.1;
-export const DAY_SATURATION = 0.1;
-
 export interface ChartStyle {
   sources: Record<string, RasterSourceSpecification>;
   layers: RasterLayerSpecification[];
@@ -57,8 +53,9 @@ export interface ChartStyle {
 /** The chart's ink by day, dimmed at night (half the brightness, a
  *  little more contrast) and brightened in sunlight (a fifth more contrast
  *  and colour, and never dimmed). By day a touch more contrast and colour
- *  than the scan (0.1 each), as ForeFlight's chart reads beside ours (the
- *  owner's screenshots, 2026-11-07). `dim` is the Map card's Dimmer, how
+ *  than the scan, as ForeFlight's chart reads beside ours (the owner's
+ *  screenshots, 2026-11-07): the figures are design/tokens.json's
+ *  chart-paint group (CHART_PAINT), the phones' the same. `dim` is the Map card's Dimmer, how
  *  far the tiles are dimmed (the night's half unless given), and
  *  `contrast` its Contrast, an offset on the look's own (lib/map/chartLook). */
 export function chartPaint(
@@ -77,8 +74,11 @@ export function chartPaint(
     // chart's type from shimmering as a pinch passes through them.
     "raster-resampling": "linear",
     "raster-brightness-max": chartBrightness(dim, sunlight, night),
-    "raster-contrast": chartContrast(sunlight ? 0.2 : night ? 0.13 : DAY_CONTRAST, contrast),
-    "raster-saturation": sunlight ? 0.2 : night ? 0 : DAY_SATURATION,
+    "raster-contrast": chartContrast(
+      sunlight ? CHART_PAINT.sunlightContrast : night ? CHART_PAINT.nightContrast : CHART_PAINT.dayContrast,
+      contrast,
+    ),
+    "raster-saturation": sunlight ? CHART_PAINT.sunlightSaturation : night ? CHART_PAINT.nightSaturation : CHART_PAINT.daySaturation,
   };
 }
 

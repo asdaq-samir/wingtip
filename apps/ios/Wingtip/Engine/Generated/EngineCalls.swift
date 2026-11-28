@@ -1245,6 +1245,11 @@ nonisolated extension Engine {
         try Self.rule("magnetic_variation", EngineContract.MagneticVariationInput(lat: lat, lon: lon, date: date, year: year))
     }
 
+    /// The Dimmer's words and paper at night, one copy for every app: the chart's white as MapLibre's raster shader draws it (raster-contrast about the middle, 1/(1-k) over 0 and 1+k under, then raster-brightness-max), the share of their night inks the map's light-haloed words take so that none is brighter than the paper under it (AIM 8-1-6, Vision in Flight: the pilot's dark adaptation), floored under the night's own contrast, and a night warning's light against the paper's. A display's look, not an aviation figure; its figures are design/tokens.json's map-dim group, its cases apps/web/src/lib/fixtures/mapDim.json.
+    static func mapDimWords(night: Bool, brightness: Double, contrast: Double) throws -> EngineContract.MapDimWordsAnswer {
+        try Self.rule("map_dim_words", EngineContract.MapDimWordsInput(night: night, brightness: brightness, contrast: contrast))
+    }
+
     /// The distress call in AIM 6-3-2(a)(3)'s order, filled from what the app knows, each part it does not know a blank in brackets and listed in missing; the code (7700, AIM 6-2-2; an assigned code kept while talking to ATC, 6-3-2(a)(2)); and the frequencies to call on: the one in use, the nearest approach or departure control and tower the app lists, then 121.5 MHz.
     static func maydayCall(station: String? = nil, callsign: String? = nil, airplaneType: String? = nil, nature: String? = nil, weather: String? = nil, intentions: String? = nil, position: String? = nil, headingMagDeg: Double? = nil, altitudeFt: Double? = nil, fuelMin: Double? = nil, souls: Double? = nil, frequencies: [EngineContract.MaydayCallInputFrequenciesItem]? = nil) throws -> EngineContract.MaydayCallAnswer {
         try Self.rule("mayday_call", EngineContract.MaydayCallInput(station: station, callsign: callsign, airplaneType: airplaneType, nature: nature, weather: weather, intentions: intentions, position: position, headingMagDeg: headingMagDeg, altitudeFt: altitudeFt, fuelMin: fuelMin, souls: souls, frequencies: frequencies))

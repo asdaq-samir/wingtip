@@ -147,6 +147,7 @@ export const WEB_RULES = [
   "lost_comms",
   "magnetic_of",
   "magnetic_variation",
+  "map_dim_words",
   "mayday_call",
   "model_weather_bands",
   "morse",

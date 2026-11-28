@@ -90,7 +90,7 @@ struct MarkDimTests {
     /// The sections the fixture names iOS in are exactly those tested here.
     @Test func iOSKeepsEverySectionTheFixtureNamesItIn() throws {
         let named = try shared().compactMap { key, value in ((value as? [String: Any])?["apps"] as? [String])?.contains("ios") == true ? key : nil }
-        #expect(Set(named) == ["dim", "colour", "paper", "words", "nightInks"])
+        #expect(Set(named) == ["dim", "colour", "nightInks"])
     }
 
     @Test func theSharedDims() throws {
@@ -113,16 +113,16 @@ struct MarkDimTests {
         }
     }
 
-    @Test func theSharedPaperAndWords() throws {
-        for c in try cases("paper") {
-            let b = try #require(c["brightness"] as? Double), k = try #require(c["contrast"] as? Double), paper = try #require(c["paper"] as? Double)
-            #expect(abs(MarkDim.paperOf(brightness: b, contrast: k) - paper) < 1e-6, "\(c)")
-        }
-        for c in try cases("words") {
-            let night = try #require(c["night"] as? Bool), b = try #require(c["brightness"] as? Double)
-            let k = try #require(c["contrast"] as? Double), share = try #require(c["share"] as? Double)
-            #expect(MarkDim.wordLight(night: night, brightness: b, contrast: k) == share, "\(c)")
-        }
+    /// The words' share is the engine's map_dim_words, its cases its own
+    /// (engine/facade/tests/map_dim.rs): asked, and asked again from the
+    /// share kept, alike.
+    @Test func theWordsLightIsTheEngines() throws {
+        let words = try cases("words")
+        let c = try #require(words.first(where: { $0["night"] as? Bool == true }))
+        let b = try #require(c["brightness"] as? Double), k = try #require(c["contrast"] as? Double)
+        let share = try #require(c["share"] as? Double)
+        #expect(WordLight.share(brightness: b, contrast: k) == share, "\(c)")
+        #expect(WordLight.share(brightness: b, contrast: k) == share, "\(c)")
     }
 
     @Test func theSharedNightInks() throws {

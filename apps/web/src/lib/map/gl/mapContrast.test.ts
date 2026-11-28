@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { luminanceOf, scaledHex } from "../../rgb";
-import { CHART, MAP_LABEL } from "../../tokens";
+import { CHART, CHART_PAINT, MAP_LABEL } from "../../tokens";
 import { CONTRAST_MAX, CONTRAST_MIN, DIM_MAX, LOOK_STEP, chartBrightness, chartContrast } from "../chartLook";
 import { labelInk } from "./layers/common";
-import { paperOf, warningLight, wordLight } from "./mapDim";
+import { mapDimWords } from "./mapDim";
 
 /** WCAG 2's contrast ratio of two luminances. */
 const ratio = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 /** The night's own raster-contrast (glStyle's chartPaint). */
-const NIGHT_CONTRAST = 0.13;
+const NIGHT_CONTRAST = CHART_PAINT.nightContrast;
 /** The night's default Dimmer (chart-look.night-dim). */
 const DEFAULT_DIM = 0.5;
 /** The night's reds: a TFR's edge and an obstacle in the warning band
@@ -24,11 +24,12 @@ function offsets(): number[] {
 
 /** The paper's luminance and the figures set at a Contrast offset and a
  *  Dimmer, at night: the chart's white through the raster's contrast,
- *  then its brightness, as MapLibre draws it (mapDim's paperOf). */
+ *  then its brightness, as MapLibre draws it (mapDimWords' paper). */
 function at(offset: number, dim = DEFAULT_DIM) {
   const b = chartBrightness(dim, false, true);
   const k = chartContrast(NIGHT_CONTRAST, offset);
-  return { paper: luminanceOf(scaledHex("#ffffff", paperOf(b, k))), b, warn: warningLight(true, b, k), words: wordLight(true, b, k) };
+  const { paper, warning, words } = mapDimWords(true, b, k);
+  return { paper: luminanceOf(scaledHex("#ffffff", paper)), b, warn: warning, words };
 }
 
 /**

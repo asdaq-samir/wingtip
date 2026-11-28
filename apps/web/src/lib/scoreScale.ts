@@ -1,4 +1,4 @@
-import { rgbOf } from "./rgb";
+import { luminanceOf } from "./rgb";
 import { CHART, SCORE } from "./tokens";
 
 /**
@@ -31,12 +31,7 @@ export function scoreColor(s: number): string {
 /** Text or a number drawn on a step: white where it reads, ink where
  *  the step is too pale for white (the two palest). */
 export function inkOn(fill: string): string {
-  const linear = (v: number) => {
-    const c = v / 255;
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const [r, g, b] = rgbOf(fill);
-  const luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  const luminance = luminanceOf(fill);
   // Contrast against white is (1.05) / (L + 0.05); below 4.5:1, ink.
   return 1.05 / (luminance + 0.05) >= 4.5 ? CHART.casing : CHART.fixInk;
 }
