@@ -26,6 +26,14 @@ enum CardAction: String, CaseIterable, Sendable {
     case address
     /// A frequency or an ident to the clipboard.
     case copy
+    /// The airplane shown the one the plan flies.
+    case flyThis
+    /// An airplane in the air kept in sight on the map.
+    case track
+    /// Alerts as the airplane takes off and lands, by its ICAO address.
+    case alerts
+    /// The airplane's book figures, opened over its card.
+    case figures
 
     var title: String {
         switch self {
@@ -39,6 +47,10 @@ enum CardAction: String, CaseIterable, Sendable {
         case .favorite: Wording.favorite
         case .address: Wording.address
         case .copy: Wording.copy
+        case .flyThis: Wording.flyThis
+        case .track: Wording.track
+        case .alerts: Wording.alerts
+        case .figures: Wording.figures
         }
     }
 
@@ -54,6 +66,10 @@ enum CardAction: String, CaseIterable, Sendable {
         case .favorite: WingtipIcon.favorite
         case .address: WingtipIcon.address
         case .copy: WingtipIcon.copy
+        case .flyThis: WingtipIcon.directTo
+        case .track: WingtipIcon.track
+        case .alerts: WingtipIcon.alerts
+        case .figures: WingtipIcon.figures
         }
     }
 }
@@ -71,6 +87,10 @@ enum CardKind: String, CaseIterable, Sendable {
     case point
     /// A VOR, a fix or a VFR waypoint.
     case navaid
+    /// An airplane's on the ground (the owner's design of 2026-11-26, on the phones since the owner's 2026-11-27 "Yes, match the web"), one greyed where it does nothing for this airplane, never hidden.
+    case airplane
+    /// An airplane's in the air: Track in Fly This's place.
+    case airplaneAirborne
 
     var actions: [CardAction] {
         switch self {
@@ -79,6 +99,8 @@ enum CardKind: String, CaseIterable, Sendable {
         case .airportStopOff: [.flyHere, .call, .favorite, .address]
         case .point: [.directTo, .addToRoute, .holdHere]
         case .navaid: [.directTo, .addToRoute, .copy]
+        case .airplane: [.flyThis, .alerts, .favorite, .figures]
+        case .airplaneAirborne: [.track, .alerts, .favorite, .figures]
         }
     }
 }

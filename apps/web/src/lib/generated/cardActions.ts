@@ -49,7 +49,7 @@ export const CARD_ACTIONS = {
   point: ["directTo", "addToRoute", "holdHere"],
   /** A VOR, a fix or a VFR waypoint. */
   navaid: ["directTo", "addToRoute", "copy"],
-  /** An airplane's on the ground (the owner's design of 2026-11-26), one greyed where it does nothing for this airplane; the web's alone until the phones take the merged airplane card. */
+  /** An airplane's on the ground (the owner's design of 2026-11-26, on the phones since the owner's 2026-11-27 "Yes, match the web"), one greyed where it does nothing for this airplane, never hidden. */
   airplane: ["flyThis", "alerts", "favorite", "figures"],
   /** An airplane's in the air: Track in Fly This's place. */
   airplaneAirborne: ["track", "alerts", "favorite", "figures"],

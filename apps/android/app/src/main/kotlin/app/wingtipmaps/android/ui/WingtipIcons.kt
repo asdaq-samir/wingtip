@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.FilterDrama
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.FlightLand
 import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Layers
@@ -37,12 +38,14 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Square
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.CropSquare
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.NearMe
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -144,6 +147,14 @@ object WingtipIcons {
 
     /** Favorite, off: the star's outline (its toggle fills it on). */
     val favorite = Icons.Outlined.StarOutline
+
+    /** The airplane card's (the owner's design of 2026-11-26, the web's
+     *  Crosshair, Bell and Gauge): Track, the map keeping it in sight;
+     *  Alerts, the bell's outline (filled while one is set); Figures, its
+     *  book figures. */
+    val track = Icons.Filled.GpsFixed
+    val alerts = Icons.Outlined.NotificationsNone
+    val figures = Icons.Filled.Speed
 
     /**
      * Direct To, drawn as the chart's and the avionics' D-arrow: a D with
