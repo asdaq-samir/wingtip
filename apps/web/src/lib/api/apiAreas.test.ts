@@ -5,14 +5,22 @@ import { plannerAirports } from "./plannerAirports";
 import { plannerMap } from "./plannerMap";
 import { plannerDev } from "./plannerDev";
 import { plannerLibrary } from "./plannerLibrary";
+import { plannerTeaching } from "./plannerTeaching";
 import { gatewayPilot } from "./gatewayPilot";
 import { gatewayRecords } from "./gatewayRecords";
 
 describe("the api made of its areas", () => {
   it("has every area's calls, each name once: a name in two areas would hide one of them", () => {
-    const names = [plannerRoute, plannerAirports, plannerMap, plannerDev, plannerLibrary, gatewayPilot, gatewayRecords].flatMap(
-      Object.keys,
-    );
+    const names = [
+      plannerRoute,
+      plannerAirports,
+      plannerMap,
+      plannerDev,
+      plannerLibrary,
+      plannerTeaching,
+      gatewayPilot,
+      gatewayRecords,
+    ].flatMap(Object.keys);
     expect(new Set(names).size).toBe(names.length);
     expect(Object.keys(api).sort()).toEqual(names.sort());
   });
