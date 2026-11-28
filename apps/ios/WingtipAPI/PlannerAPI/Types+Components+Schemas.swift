@@ -8290,6 +8290,8 @@ extension Components {
             public var speedKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/EmergencyMetar/temp_c`.
             public var tempC: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_minus`.
+            public var visibilityMinus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_plus`.
             public var visibilityPlus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_sm`.
@@ -8304,6 +8306,7 @@ extension Components {
             ///   - raw:
             ///   - speedKt:
             ///   - tempC:
+            ///   - visibilityMinus:
             ///   - visibilityPlus:
             ///   - visibilitySm:
             public init(
@@ -8314,6 +8317,7 @@ extension Components {
                 raw: Swift.String? = nil,
                 speedKt: Swift.Double? = nil,
                 tempC: Swift.Double? = nil,
+                visibilityMinus: Swift.Bool? = nil,
                 visibilityPlus: Swift.Bool? = nil,
                 visibilitySm: Swift.Double? = nil
             ) {
@@ -8324,6 +8328,7 @@ extension Components {
                 self.raw = raw
                 self.speedKt = speedKt
                 self.tempC = tempC
+                self.visibilityMinus = visibilityMinus
                 self.visibilityPlus = visibilityPlus
                 self.visibilitySm = visibilitySm
             }
@@ -8335,6 +8340,7 @@ extension Components {
                 case raw
                 case speedKt = "speed_kt"
                 case tempC = "temp_c"
+                case visibilityMinus = "visibility_minus"
                 case visibilityPlus = "visibility_plus"
                 case visibilitySm = "visibility_sm"
             }
@@ -19575,6 +19581,8 @@ extension Components {
             public var ceilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/ceiling_ref`.
             public var ceilingRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RouteTfr/ceiling_varies`.
+            public var ceilingVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/crosses`.
             public var crosses: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/RouteTfr/effective`.
@@ -19585,6 +19593,8 @@ extension Components {
             public var floorFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/floor_ref`.
             public var floorRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RouteTfr/floor_varies`.
+            public var floorVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/kind`.
             public var kind: Swift.String?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/notam_id`.
@@ -19606,11 +19616,13 @@ extension Components {
             ///   - alongTrackNm:
             ///   - ceilingFt:
             ///   - ceilingRef:
+            ///   - ceilingVaries:
             ///   - crosses:
             ///   - effective:
             ///   - expires:
             ///   - floorFt:
             ///   - floorRef:
+            ///   - floorVaries:
             ///   - kind:
             ///   - notamId:
             ///   - onRoute:
@@ -19623,11 +19635,13 @@ extension Components {
                 alongTrackNm: Swift.Double,
                 ceilingFt: Swift.Double? = nil,
                 ceilingRef: Swift.String? = nil,
+                ceilingVaries: Swift.Bool? = nil,
                 crosses: Swift.Bool,
                 effective: Swift.String? = nil,
                 expires: Swift.String? = nil,
                 floorFt: Swift.Double? = nil,
                 floorRef: Swift.String? = nil,
+                floorVaries: Swift.Bool? = nil,
                 kind: Swift.String? = nil,
                 notamId: Swift.String,
                 onRoute: Components.Schemas.OnRoute? = nil,
@@ -19640,11 +19654,13 @@ extension Components {
                 self.alongTrackNm = alongTrackNm
                 self.ceilingFt = ceilingFt
                 self.ceilingRef = ceilingRef
+                self.ceilingVaries = ceilingVaries
                 self.crosses = crosses
                 self.effective = effective
                 self.expires = expires
                 self.floorFt = floorFt
                 self.floorRef = floorRef
+                self.floorVaries = floorVaries
                 self.kind = kind
                 self.notamId = notamId
                 self.onRoute = onRoute
@@ -19658,11 +19674,13 @@ extension Components {
                 case alongTrackNm = "along_track_nm"
                 case ceilingFt = "ceiling_ft"
                 case ceilingRef = "ceiling_ref"
+                case ceilingVaries = "ceiling_varies"
                 case crosses
                 case effective
                 case expires
                 case floorFt = "floor_ft"
                 case floorRef = "floor_ref"
+                case floorVaries = "floor_varies"
                 case kind
                 case notamId = "notam_id"
                 case onRoute = "on_route"
@@ -21446,6 +21464,8 @@ extension Components {
             public var ceilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Tfr/ceiling_ref`.
             public var ceilingRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Tfr/ceiling_varies`.
+            public var ceilingVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Tfr/effective`.
             public var effective: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Tfr/expires`.
@@ -21454,6 +21474,8 @@ extension Components {
             public var floorFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Tfr/floor_ref`.
             public var floorRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Tfr/floor_varies`.
+            public var floorVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Tfr/geometry`.
             public struct GeometryPayload: Codable, Hashable, Sendable {
                 /// A container of undocumented properties.
@@ -21491,10 +21513,12 @@ extension Components {
             /// - Parameters:
             ///   - ceilingFt:
             ///   - ceilingRef:
+            ///   - ceilingVaries:
             ///   - effective:
             ///   - expires:
             ///   - floorFt:
             ///   - floorRef:
+            ///   - floorVaries:
             ///   - geometry:
             ///   - kind:
             ///   - notamId:
@@ -21505,10 +21529,12 @@ extension Components {
             public init(
                 ceilingFt: Swift.Double? = nil,
                 ceilingRef: Swift.String? = nil,
+                ceilingVaries: Swift.Bool? = nil,
                 effective: Swift.String? = nil,
                 expires: Swift.String? = nil,
                 floorFt: Swift.Double? = nil,
                 floorRef: Swift.String? = nil,
+                floorVaries: Swift.Bool? = nil,
                 geometry: Components.Schemas.Tfr.GeometryPayload,
                 kind: Swift.String? = nil,
                 notamId: Swift.String,
@@ -21519,10 +21545,12 @@ extension Components {
             ) {
                 self.ceilingFt = ceilingFt
                 self.ceilingRef = ceilingRef
+                self.ceilingVaries = ceilingVaries
                 self.effective = effective
                 self.expires = expires
                 self.floorFt = floorFt
                 self.floorRef = floorRef
+                self.floorVaries = floorVaries
                 self.geometry = geometry
                 self.kind = kind
                 self.notamId = notamId
@@ -21534,10 +21562,12 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case ceilingFt = "ceiling_ft"
                 case ceilingRef = "ceiling_ref"
+                case ceilingVaries = "ceiling_varies"
                 case effective
                 case expires
                 case floorFt = "floor_ft"
                 case floorRef = "floor_ref"
+                case floorVaries = "floor_varies"
                 case geometry
                 case kind
                 case notamId = "notam_id"
@@ -21703,6 +21733,8 @@ extension Components {
             public var ceilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TfrHere/ceiling_ref`.
             public var ceilingRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TfrHere/ceiling_varies`.
+            public var ceilingVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/TfrHere/effective`.
             public var effective: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TfrHere/expires`.
@@ -21711,6 +21743,8 @@ extension Components {
             public var floorFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TfrHere/floor_ref`.
             public var floorRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TfrHere/floor_varies`.
+            public var floorVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/TfrHere/kind`.
             public var kind: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TfrHere/notam_id`.
@@ -21729,10 +21763,12 @@ extension Components {
             ///   - activeNow:
             ///   - ceilingFt:
             ///   - ceilingRef:
+            ///   - ceilingVaries:
             ///   - effective:
             ///   - expires:
             ///   - floorFt:
             ///   - floorRef:
+            ///   - floorVaries:
             ///   - kind:
             ///   - notamId:
             ///   - purpose:
@@ -21743,10 +21779,12 @@ extension Components {
                 activeNow: Swift.Bool,
                 ceilingFt: Swift.Double? = nil,
                 ceilingRef: Swift.String? = nil,
+                ceilingVaries: Swift.Bool? = nil,
                 effective: Swift.String? = nil,
                 expires: Swift.String? = nil,
                 floorFt: Swift.Double? = nil,
                 floorRef: Swift.String? = nil,
+                floorVaries: Swift.Bool? = nil,
                 kind: Swift.String? = nil,
                 notamId: Swift.String,
                 purpose: Swift.String? = nil,
@@ -21757,10 +21795,12 @@ extension Components {
                 self.activeNow = activeNow
                 self.ceilingFt = ceilingFt
                 self.ceilingRef = ceilingRef
+                self.ceilingVaries = ceilingVaries
                 self.effective = effective
                 self.expires = expires
                 self.floorFt = floorFt
                 self.floorRef = floorRef
+                self.floorVaries = floorVaries
                 self.kind = kind
                 self.notamId = notamId
                 self.purpose = purpose
@@ -21772,10 +21812,12 @@ extension Components {
                 case activeNow = "active_now"
                 case ceilingFt = "ceiling_ft"
                 case ceilingRef = "ceiling_ref"
+                case ceilingVaries = "ceiling_varies"
                 case effective
                 case expires
                 case floorFt = "floor_ft"
                 case floorRef = "floor_ref"
+                case floorVaries = "floor_varies"
                 case kind
                 case notamId = "notam_id"
                 case purpose

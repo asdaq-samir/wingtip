@@ -36,6 +36,9 @@ class EmergencyMetar(BaseModel):
     visibility_sm: float | None = None
     #: At least visibility_sm: P6SM, the AWC's "10+" (FAA JO 7900.5).
     visibility_plus: bool = False
+    #: Less than visibility_sm: "M1/4SM" (FMH-1 chapter 6), said "less than
+    #: 1/4 sm", never 1/4 (awc_metars_read).
+    visibility_minus: bool = False
     flight_category: str | None = None
     raw: str | None = None
 

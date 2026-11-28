@@ -104,7 +104,8 @@ def all_tfrs() -> list:
     """Every TFR in force or to come, one per NOTAM: {"notam_id", "title",
     "kind", "state", "geometry" (GeoJSON, a MultiPolygon of its areas)}
     and its detail ({"effective", "expires", "rule", "purpose",
-    "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"}, where its file
+    "floor_ft", "floor_ref", "floor_varies", "ceiling_ft", "ceiling_ref",
+    "ceiling_varies"}, where its file
     could be read). TfrUnavailable where the service has stored none."""
     record = _record()
     return list(map(dict, filter(_keeps(record), record.data)))

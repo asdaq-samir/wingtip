@@ -1330,6 +1330,9 @@ data class TfrHere (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val effective: String? = null,
     val expires: String? = null,
 
@@ -1338,6 +1341,9 @@ data class TfrHere (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val kind: String? = null,
 
@@ -1821,6 +1827,9 @@ data class RouteTfr (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val crosses: Boolean,
     val effective: String? = null,
     val expires: String? = null,
@@ -1830,6 +1839,9 @@ data class RouteTfr (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val kind: String? = null,
 
@@ -2452,6 +2464,9 @@ data class EmergencyMetar (
 
     @SerialName("temp_c")
     val tempC: Double? = null,
+
+    @SerialName("visibility_minus")
+    val visibilityMinus: Boolean? = null,
 
     @SerialName("visibility_plus")
     val visibilityPlus: Boolean? = null,
@@ -8646,6 +8661,9 @@ data class Tfr (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val effective: String? = null,
     val expires: String? = null,
 
@@ -8654,6 +8672,9 @@ data class Tfr (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val geometry: JsonObject,
     val kind: String? = null,

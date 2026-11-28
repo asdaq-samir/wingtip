@@ -62,6 +62,7 @@ def _metar(report: dict | None) -> dict | None:
         # guessed where the report has none.
         "visibility_sm": report.get("visibility_sm"),
         "visibility_plus": bool(report.get("visibility_plus")),
+        "visibility_minus": bool(report.get("visibility_minus")),
         "flight_category": report.get("flight_category"),
         "raw": report.get("raw"),
     }
