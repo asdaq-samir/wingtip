@@ -38,7 +38,7 @@ struct RunwaySketchTests {
             let planner = try #require(input["runways"] as? [[String: Any]]).map { $0.merging(["closed": false, "lighted": true, "turf": []]) { a, _ in a } }
             let runways = try Planner.json.decode([Runway].self, from: JSONSerialization.data(withJSONObject: planner))
             let lat = try #require(input["lat"] as? Double), lon = try #require(input["lon"] as? Double)
-            let strips = RunwaySketch.strips(runways, lat: lat, lon: lon)
+            let strips = RunwaySketchLayout.strips(runways, lat: lat, lon: lon)
             let want = try #require(answer["strips"] as? [[String: Any]])
             #expect(strips.count == want.count, "\(c["about"] ?? "")")
             for (got, strip) in zip(strips, want) {

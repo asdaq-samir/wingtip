@@ -214,18 +214,12 @@ struct RunwayDetails: View {
 /// the web app's RunwaySketch, for a field with no FAA diagram: a picture
 /// of where they lie, not a chart to taxi by.
 struct RunwaySketch: View {
-    let runways: [Runway]
-    /// The field's point the engine lays the runways about.
-    let lat: Double, lon: Double
-
-    /// The engine's strips (RunwaySketchLayout), none where it lays none.
-    static func strips(_ runways: [Runway], lat: Double, lon: Double) -> [RunwaySketchLayout.Strip] {
-        RunwaySketchLayout.strips(runways, lat: lat, lon: lon)
-    }
+    /// The engine's strips (RunwaySketchLayout), asked once by the card as
+    /// its field loads.
+    let strips: [RunwaySketchLayout.Strip]
 
     var body: some View {
         Canvas { context, size in
-            let strips = Self.strips(runways, lat: lat, lon: lon)
             let xs = strips.flatMap { [$0.a.x, $0.b.x] }, ys = strips.flatMap { [$0.a.y, $0.b.y] }
             guard let minX = xs.min(), let maxX = xs.max(), let minY = ys.min(), let maxY = ys.max() else { return }
             let span = max(maxX - minX, maxY - minY, 1e-6)
@@ -247,7 +241,7 @@ struct RunwaySketch: View {
                 context.draw(Text(AirportWords.runwayNumber(strip.ends[1])).font(.caption2.weight(.bold)), at: CGPoint(x: pb.x - dx, y: pb.y - dy))
             }
         }
-        .accessibilityLabel("Runways \(Self.strips(runways, lat: lat, lon: lon).map { $0.ends.joined(separator: "/") }.joined(separator: ", ")), north up")
+        .accessibilityLabel("Runways \(strips.map { $0.ends.joined(separator: "/") }.joined(separator: ", ")), north up")
     }
 }
 
@@ -314,7 +308,7 @@ private enum PreviewData {
 }
 
 #Preview("RunwaySketch") {
-    RunwaySketch(runways: PreviewData.runways, lat: 43.9850, lon: -88.5570)
+    RunwaySketch(strips: RunwaySketchLayout.strips(PreviewData.runways, lat: 43.9850, lon: -88.5570))
         .frame(width: 300, height: 300)
 }
 
