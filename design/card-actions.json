@@ -41,13 +41,11 @@
     "point": { "about": "A point held on the map: the airspace card's.", "actions": ["directTo", "addToRoute", "holdHere"] },
     "navaid": { "about": "A VOR, a fix or a VFR waypoint.", "actions": ["directTo", "addToRoute", "copy"] },
     "airplane": {
-      "about": "An airplane's on the ground (the owner's design of 2026-11-26), one greyed where it does nothing for this airplane; the web's alone until the phones take the merged airplane card.",
-      "apps": ["web"],
+      "about": "An airplane's on the ground (the owner's design of 2026-11-26, on the phones since the owner's 2026-11-27 \"Yes, match the web\"), one greyed where it does nothing for this airplane, never hidden.",
       "actions": ["flyThis", "alerts", "favorite", "figures"]
     },
     "airplaneAirborne": {
       "about": "An airplane's in the air: Track in Fly This's place.",
-      "apps": ["web"],
       "actions": ["track", "alerts", "favorite", "figures"]
     }
   }

@@ -7,18 +7,20 @@ import SwiftUI
 /// similar to airport card"; the web's AirplaneProfileSheet): its head
 /// (AirplanePlaceHead), its one status line, its facts in the sideways
 /// strip (AirplaneFacts), its photo as a picture tile, then the tab's page,
-/// Flights, Info and Figures in the floating glass bar at the card's foot,
-/// Flights with its count. Flights is its flights by the registry's
-/// address, each replayed from its row; Info its whole public record
-/// (AirplaneInfoSections); Figures every figure with its source -- Book,
-/// Handbook Photo or You -- each editable in place. The one profile card
-/// (the owner's card rule, 2026-11-10). Its state is AirplaneProfileModel's
-/// and AirplaneLookup's.
+/// Info and Flights in the floating glass bar at the card's foot, Info
+/// first and Flights with its count, as the web's (2026-11-27). Info is its
+/// whole public record (AirplaneInfoSections); Flights its flights by the
+/// registry's address, each replayed from its row. Its Figures a page of
+/// their own from its fourth button (AirplaneFiguresPage), and Share in its
+/// head, as the web's CardTitle. The one profile card (the owner's card
+/// rule, 2026-11-10). Its state is AirplaneProfileModel's and
+/// AirplaneLookup's.
 struct AirplaneProfileView: View {
     @Environment(Airplanes.self) private var airplanes
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
+    @Environment(Tracking.self) private var tracking
     @Environment(\.lookAccent) private var accent
     @Environment(\.cardAtPill) private var atPill
     /// Back to the plan once flown, where the profile was opened over it.
@@ -27,17 +29,14 @@ struct AirplaneProfileView: View {
     @AppStorage(Extra.otherAirplanes.key) private var others = false
     @State private var model: AirplaneProfileModel
     @State private var lookup = AirplaneLookup()
-    @State private var tab: ProfileTab
-    @FocusState private var focused: OwnFigure?
+    @State private var tab: ProfileTab = .info
+    /// Its Figures page pushed over it: from the start where a figure was asked for.
+    @State private var figuresOpen: Bool
     private let focus: OwnFigure?
-    /// The field and its unit grow with the type, so "gal/h" and a
-    /// five-figure moment still fit.
-    @ScaledMetric(relativeTo: .body) private var fieldWidth = 96.0
 
     init(tail: String, focus: OwnFigure? = nil) {
         _model = State(initialValue: AirplaneProfileModel(tail: tail))
-        // Opened for a figure: on Figures; else on Flights.
-        _tab = State(initialValue: focus == nil ? .flights : .figures)
+        _figuresOpen = State(initialValue: focus != nil)
         self.focus = focus
     }
 
@@ -53,16 +52,29 @@ struct AirplaneProfileView: View {
 
     /// The card's pages, in the web's order.
     enum ProfileTab: String, CaseIterable, Identifiable {
-        case flights = "Flights", info = "Info", figures = "Figures"
+        case info = "Info", flights = "Flights"
         var id: String { rawValue }
+    }
+
+    /// Its four actions' facts (AirplaneActions): in the air where it is
+    /// heard flying, kept by the registry's ICAO address.
+    private var actionState: AirplaneActionState {
+        let hex = model.registration?.modeSHex?.lowercased()
+        let plane = lookup.flying
+        return AirplaneActionState(name: model.tail, hex: hex, airborne: plane != nil, heard: plane != nil,
+                                   tracked: tracking.follow && plane.map { tracking.hex == $0.hex.lowercased() } == true,
+                                   tail: model.tail, booked: model.stock != nil, owned: own, flying: plan.tail == model.tail,
+                                   kept: hex.map { KeptAirplane(hex: $0, name: model.tail, type: model.typeLine) })
     }
 
     var body: some View {
         Form {
             Section {
-                AirplanePlaceHead(model: model, lookup: lookup, follow: offersHistory, fly: fly)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
+                AirplanePlaceHead(model: model) {
+                    AirplaneActions(state: actionState, follow: follow, fly: fly) { figuresOpen = true }
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
             Section {
                 VStack(alignment: .leading, spacing: WingtipSpace.md) {
@@ -80,7 +92,6 @@ struct AirplaneProfileView: View {
             case .flights: flights
             case .info: AirplaneInfoSections(record: model.registration, details: lookup.details, detailsFailed: lookup.detailsFailed,
                                              own: own, history: offersHistory)
-            case .figures: figures
             }
         }
         .navigationTitle(model.tail)
@@ -88,31 +99,35 @@ struct AirplaneProfileView: View {
         // The N-number is the head's, large and centred, as Maps' card.
         .toolbar(removing: .title)
         .toolbar {
-            ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { focused = nil } }
-            CardTabBar(tab: $tab, items: tabs, atPill: atPill, accent: accent)
+            // Share at the head's start, as the web's CardTitle.
+            ToolbarItem(placement: .topBarLeading) {
+                ShareLink(item: Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "airplane", value: model.tail)]),
+                          subject: Text(model.tail)) { Label("Share", systemImage: WingtipIcon.share) }
+                    .accessibilityLabel("Share \(model.tail)")
+                    .accessibilityIdentifier("airplane-share")
+            }
+            if offersHistory {
+                CardTabBar(tab: $tab, items: tabs, atPill: atPill, accent: accent)
+            }
         }
+        .navigationDestination(isPresented: $figuresOpen) { AirplaneFiguresPage(model: model, focus: focus) }
         // A flown flight's card, its replay, pushed in this one.
         .navigationDestination(for: PastFlightSummary.self) { flight in
             if let hex = model.registration?.modeSHex { PastFlightCard(hex: hex.lowercased(), flight: flight) }
         }
-        // Opened on Flights where its flights are not offered: on Info,
-        // so the bar's picker has its tab.
-        .onAppear { if tab == .flights, !offersHistory { tab = .info } }
         .task {
             // The record at once; whether it is in the air, its whole
             // record, its photo and its flights after, each on its own.
             await model.load(signedIn: session.signedIn)
-            focused = focus
             await lookup.load(tail: model.tail, hex: model.registration?.modeSHex, flights: offersHistory)
         }
-        // A figure is saved as the pilot leaves its field.
-        .onChange(of: focused) { old, _ in
-            if let old { Task { await model.commit(old, plan: plan, signedIn: session.signedIn) } }
-        }
-        // A figure being typed is saved as the card goes.
-        .onDisappear {
-            if let typing = focused { Task { await model.commit(typing, plan: plan, signedIn: session.signedIn) } }
-        }
+    }
+
+    /// Track: the map keeps it in sight, from its last report; let go, the
+    /// map stays where it is (the web's follow).
+    private func follow(_ on: Bool) {
+        if on, let plane = lookup.flying { tracking.track(plane.hex, plane: plane) }
+        tracking.follow = on
     }
 
     /// The plan flown with this airplane, then the plan shown.
@@ -177,66 +192,6 @@ struct AirplaneProfileView: View {
                 Text("Fetching its flights…").foregroundStyle(.secondary)
             }
             ProblemLine(lookup.flightsProblem)
-        }
-    }
-
-    @ViewBuilder private var figures: some View {
-        airplane
-        Section {
-            ForEach(OwnFigure.allCases) { figure in row(figure) }
-        } header: {
-            Text("Figures")
-        } footer: {
-            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                if let words = model.keptWords(signedIn: session.signedIn) { Text(words) }
-                ProblemLine(model.problem)
-            }
-        }
-        EnduranceSection(model: model)
-        ProfilePhotoSection(model: model) { Task { await model.commitDrafts(plan: plan, signedIn: session.signedIn) } }
-        if let record = airplanes.record(model.tail) {
-            Section {
-                NavigationLink("Checklists, Squawks and Inspections") {
-                    OwnAircraftPage(record: record) { Task { await airplanes.loadRecords(signedIn: session.signedIn) } }.navigationBarTitleDisplayMode(.inline)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder private var airplane: some View {
-        Section {
-            if model.loaded {
-                // A type the planner has no book for flies on these figures
-                // alone, never another airplane's (the owner, 2026-11-09).
-                LabeledContent("Book Figures", value: model.stock.map { "The planner's \($0.uppercased())" } ?? "None: yours alone")
-            }
-        }
-    }
-
-    private func row(_ figure: OwnFigure) -> some View {
-        let item = model.item(figure)
-        return VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-            LabeledContent {
-                HStack(spacing: WingtipSpace.sm) {
-                    TextField("—", text: Binding(get: { model.text(figure) },
-                                                 set: { model.drafts[figure] = $0.filter { $0.isNumber || $0 == "." || $0 == "," } }))
-                        .keyboardType(.decimalPad).multilineTextAlignment(.trailing).font(WingtipType.row.monospacedDigit()).frame(width: fieldWidth)
-                        .focused($focused, equals: figure)
-                        .accessibilityLabel(figure.label)
-                    Text(figure.unit).foregroundStyle(.secondary).accessibilityHidden(true)
-                }
-            } label: {
-                Text(figure.label)
-                Text(FigureSource.words(item?.source))
-            }
-            if model.resettable(figure), let book = item?.book {
-                Button("Reset to Book Figure, \(Format.tenths(book)) \(figure.unit)") {
-                    Task { await model.reset(figure, plan: plan, signedIn: session.signedIn) }
-                }
-                .buttonStyle(.borderless)
-                .font(WingtipType.note)
-                .disabled(model.saving)
-            }
         }
     }
 }

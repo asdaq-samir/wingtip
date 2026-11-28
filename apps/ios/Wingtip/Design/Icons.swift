@@ -29,6 +29,14 @@ enum WingtipIcon {
     static let favorite = "star"
     static let send = "paperplane"
 
+    // The airplane card's (the owner's design of 2026-11-26, the web's
+    // Crosshair, Bell and Gauge): Track, the map keeping it in sight, a
+    // finder's dot rather than Nearest's scope; Alerts, filled while one
+    // is set; Figures, its book figures.
+    static let track = "dot.viewfinder"
+    static let alerts = "bell"
+    static let figures = "gauge.with.dots.needle.33percent"
+
     // The one search's rows and the airport card's (the one-search
     // design, 2026-11-09): what was each tab's glyph is now its kind's.
     static let departFrom = "airplane.departure"

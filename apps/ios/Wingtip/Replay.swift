@@ -12,7 +12,12 @@ import Observation
 @Observable
 final class Replay {
     /// A report of the flight: when (s since 1970), where, its height, and
-    /// its ground speed and track where they are known.
+    /// its ground speed and track where they are known; as the engine's
+    /// replay_track makes one ready (the planner's past flights, and the
+    /// pilot's own track here), its climb, whether it comes after a gap
+    /// (nothing heard between it and the last, so nothing drawn there),
+    /// whether it is on the ground, and whether its height is a held one
+    /// carried forward. A height not known stays nil, never 0 ft.
     struct Point: Equatable, Sendable {
         let t: Double
         let lat: Double
@@ -20,6 +25,10 @@ final class Replay {
         var altFt: Double?
         var gsKt: Double?
         var trackDeg: Double?
+        var vsFpm: Double?
+        var gap = false
+        var ground = false
+        var altHeld = false
 
         var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
     }
@@ -121,7 +130,8 @@ final class Replay {
     /// Where the airplane was at `t`, between the reports either side of
     /// it: its position and height in proportion, its track and speed the
     /// earlier report's, as the web app's positionAt. Nil outside the
-    /// flight.
+    /// flight, and inside a gap: where no report was heard it is not
+    /// known, and is not drawn as if it were.
     nonisolated static func position(_ points: [Point], at t: Double) -> Point? {
         guard let first = points.first, let last = points.last, t >= first.t, t <= last.t else { return nil }
         var lo = 0, hi = points.count - 1
@@ -130,15 +140,24 @@ final class Replay {
             if points[mid].t <= t { lo = mid } else { hi = mid }
         }
         let a = points[lo], b = points[hi]
+        if b.gap, t > a.t, t < b.t { return nil }
         let f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 0
         var alt = a.altFt
         if let x = a.altFt, let y = b.altFt { alt = x + (y - x) * f }
-        return Point(t: t, lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f, altFt: alt, gsKt: a.gsKt, trackDeg: a.trackDeg)
+        return Point(t: t, lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f, altFt: alt, gsKt: a.gsKt, trackDeg: a.trackDeg,
+                     vsFpm: a.vsFpm, gap: false, ground: a.ground, altHeld: a.altHeld)
     }
 
-    /// A tracked airplane's past flight, its speed and track as sent.
+    /// A tracked airplane's past flight, played as the planner sends it:
+    /// already made ready by the engine's replay_track on the planner (its
+    /// gaps, its climb, the ground and a held height marked), so nothing is
+    /// worked out again here; a height it does not send is left out, never
+    /// drawn at 0 ft.
     nonisolated static func points(_ flown: [PastFlightPoint]) -> [Point] {
-        flown.map { Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt, gsKt: $0.gsKt, trackDeg: $0.trackDeg) }
+        flown.map {
+            Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt, gsKt: $0.gsKt, trackDeg: $0.trackDeg,
+                  vsFpm: $0.vsFpm, gap: $0.gap ?? false, ground: $0.ground ?? false, altHeld: $0.altHeld ?? false)
+        }
     }
 
     /// The pilot's own track, which keeps no speed or track (a GPX file's
@@ -153,6 +172,9 @@ final class Replay {
         guard plain.count >= 2,
               let ready = try? Engine.replayTrack(points: plain.map { .init(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt) })
         else { return plain }
-        return ready.points.map { Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt, gsKt: $0.gsKt, trackDeg: $0.trackDeg) }
+        return ready.points.map {
+            Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt, gsKt: $0.gsKt, trackDeg: $0.trackDeg,
+                  vsFpm: $0.vsFpm, gap: $0.gap, ground: $0.ground, altHeld: $0.altHeld)
+        }
     }
 }

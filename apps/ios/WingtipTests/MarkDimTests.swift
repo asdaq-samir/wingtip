@@ -102,8 +102,11 @@ struct MarkDimTests {
 
     @Test func theSharedColoursGoToBlackWithTheDim() throws {
         for c in try cases("colour") {
-            let colour = try #require(UIColor(token: try #require(c["colour"] as? String)))
-            let dim = try #require(c["dim"] as? Double), want = try #require(UIColor(token: try #require(c["dimmed"] as? String)))
+            // One #require a line: a #require inside another is a recursive
+            // macro expansion, which Xcode 27.2 refuses.
+            let token = try #require(c["colour"] as? String), dimmedToken = try #require(c["dimmed"] as? String)
+            let colour = try #require(UIColor(token: token))
+            let dim = try #require(c["dim"] as? Double), want = try #require(UIColor(token: dimmedToken))
             var got = (r: CGFloat(0), g: CGFloat(0), b: CGFloat(0), a: CGFloat(0)), expected = got
             let dimmed = try #require(OverlayDim.colour(colour, brightness: CGFloat(dim)))
             #expect(dimmed.getRed(&got.r, green: &got.g, blue: &got.b, alpha: &got.a))

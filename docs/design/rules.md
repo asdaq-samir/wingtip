@@ -470,7 +470,10 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   airplane); then **Alerts** (takes off, lands, comes near),
   **Favorite** and **Figures**. A tile that does nothing for this
   airplane is greyed, not taken away (the owner, 2026-11-27: "Keep four
-  buttons on top, just disable the one when needed"): Fly This and
+  buttons on top, just disable the one when needed"); the phones draw the
+  same row from design/card-actions.json (the owner, 2026-11-27: "Yes,
+  match the web"; iOS's `AirplaneActions`, Android's `AirplaneActionRow`),
+  Figures a page pushed over the card: Fly This and
   Figures for an airplane the planner cannot fly (it can fly one the
   FAA's registry holds, or the pilot's own). Alerts is offered
   where its history is, greyed where the registry gives no ICAO address.

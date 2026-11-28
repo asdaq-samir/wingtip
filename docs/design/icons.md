@@ -38,9 +38,9 @@ own maps follow this table.
 | address | lucide `MapPin` | `mappin` | `place` | A place in Maps. |
 | copy | lucide `ClipboardCopy` | `doc.on.doc` | `content_copy` | A frequency to the clipboard. |
 | favorite | lucide `Star` | `star` (`star.fill` while on) | `star_outline` (`star` while on) | Favorite, a switch in a card's row. |
-| track | lucide `Crosshair` | not yet: the web's airplane card (2026-11-26) | not yet | Track, an airplane in the air kept in sight. |
-| alerts | lucide `Bell` | `bell` | not yet | Alerts as an airplane takes off and lands. |
-| figures | lucide `Gauge` | not yet | not yet | An airplane's book figures, from its card. |
+| track | lucide `Crosshair` | `dot.viewfinder` | `gps_fixed` | Track, an airplane in the air kept in sight. |
+| alerts | lucide `Bell` | `bell` (`bell.fill` while one is set) | `notifications_none` (`notifications` while one is set) | Alerts as an airplane takes off and lands. |
+| figures | lucide `Gauge` | `gauge.with.dots.needle.33percent` | `speed` | An airplane's book figures, from its card. |
 | send | lucide `Send` | `paperplane` | `send` | File or send a flight plan. |
 
 ## The panel's tabs (`TAB_ICON`)
@@ -71,8 +71,8 @@ design/card-actions.json: change an action there.
 | `airportStopOff` | Fly Here, Call, Favorite, Address | web, ios, android | An airport's where Add Stop cannot be used (the field on the route already, closed): Address last in its place, not a greyed tile (the owner, 2026-11-20). |
 | `point` | Direct To, Add to Route, Hold Here | web, ios, android | A point held on the map: the airspace card's. |
 | `navaid` | Direct To, Add to Route, Copy | web, ios, android | A VOR, a fix or a VFR waypoint. |
-| `airplane` | Fly This, Alerts, Favorite, Figures | web | An airplane's on the ground (the owner's design of 2026-11-26), one greyed where it does nothing for this airplane; the web's alone until the phones take the merged airplane card. |
-| `airplaneAirborne` | Track, Alerts, Favorite, Figures | web | An airplane's in the air: Track in Fly This's place. |
+| `airplane` | Fly This, Alerts, Favorite, Figures | web, ios, android | An airplane's on the ground (the owner's design of 2026-11-26, on the phones since the owner's 2026-11-27 "Yes, match the web"), one greyed where it does nothing for this airplane, never hidden. |
+| `airplaneAirborne` | Track, Alerts, Favorite, Figures | web, ios, android | An airplane's in the air: Track in Fly This's place. |
 
 - **Fly Here** (`flyHere`, glyph `directTo`): A new route from the airplane to this field.
 - **Depart From** (`departFrom`, glyph `departFrom`): The field the route's departure, the rest of the route kept (the one-search design, 2026-11-09); the one search's and the airport mark's menus, on no card's row.

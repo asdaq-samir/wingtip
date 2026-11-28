@@ -1,4 +1,5 @@
 import Foundation
+import GatewayAPI
 
 // The pilot's own things on the gateway: saved flights, the logbook and
 // the currency it works out (FlightController, LogbookController), each
@@ -50,7 +51,13 @@ extension Gateway {
 
     static func flights() async throws -> [SavedFlight] { try await read { try await $0.getFlights().ok.body.json } ?? [] }
     static func logbook() async throws -> [LogbookEntry] { try await read { try await $0.getLogbook().ok.body.json } ?? [] }
-    static func currency() async throws -> Currency? { try await read { try await $0.currency().ok.body.json } }
+    /// What the logbook says of the pilot's currency, passengers judged for
+    /// the airplane to be flown where its category, class and gear are known
+    /// (14 CFR 61.57(a)(1)), else for the newest flight's; nil signed out.
+    static func currency(toFly: AirplaneKind? = nil) async throws -> Currency? {
+        let query = GatewayAPI.Operations.Currency.Input.Query(category: toFly?.category, aircraftClass: toFly?.aircraftClass, tailwheel: toFly?.tailwheel)
+        return try await read { try await $0.currency(query: query).ok.body.json }
+    }
 
     /// A flight saved as planned (POST /api/flights).
     static func save(_ flight: SaveFlightRequest) async throws {

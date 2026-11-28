@@ -18,11 +18,15 @@ enum FieldNotamWords {
         return String(notam.id.dropFirst(own.count + 1))
     }
 
-    /// A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it.
+    /// A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of
+    /// it, with whether its areas' floors or ceilings are given some AGL and
+    /// some MSL (floor_varies, ceiling_varies), so its card says they vary
+    /// rather than the smaller raw figure as the floor.
     nonisolated static func readTfr(_ notam: APIRankedNotam) throws -> EngineContract.TfrReadAnswer {
         let t = notam.tfr
         return try Engine.tfrRead(kind: t?.kind, rule: t?.rule, title: t?.title, floorFt: t?.floorFt, floorRef: t?.floorRef,
-                                  ceilingFt: t?.ceilingFt, ceilingRef: t?.ceilingRef, overField: t?.overField,
+                                  ceilingFt: t?.ceilingFt, ceilingRef: t?.ceilingRef, floorVaries: t?.floorVaries, ceilingVaries: t?.ceilingVaries,
+                                  overField: t?.overField,
                                   field: t?.field.map { .init(lat: $0.lat, lon: $0.lon) }, edge: t?.edge.map { .init(lat: $0.lat, lon: $0.lon) })
     }
 
@@ -54,7 +58,9 @@ enum FieldNotamWords {
 
     /// A TFR from tfr.faa.gov's list read by the engine (tfr_read), for
     /// its card (TfrCard): its altitudes and where, and the rule it is
-    /// under; nil where the engine cannot read it.
+    /// under; nil where the engine cannot read it. TODO(services): the
+    /// planner's list (Tfr) sends no floor_varies or ceiling_varies yet,
+    /// only a field's TfrFacts do; pass them here once it does.
     static func readTfr(_ tfr: APITfr) -> EngineContract.TfrReadAnswer? {
         try? Engine.tfrRead(kind: tfr.kind, rule: tfr.rule, floorFt: tfr.floorFt, floorRef: tfr.floorRef,
                             ceilingFt: tfr.ceilingFt, ceilingRef: tfr.ceilingRef)

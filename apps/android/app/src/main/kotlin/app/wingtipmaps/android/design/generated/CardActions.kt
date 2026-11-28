@@ -29,6 +29,14 @@ enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
     ADDRESS(R.string.wording_address, WingtipIcons.address),
     /** A frequency or an ident to the clipboard. */
     COPY(R.string.wording_copy, WingtipIcons.copy),
+    /** The airplane shown the one the plan flies. */
+    FLY_THIS(R.string.wording_fly_this, WingtipIcons.directTo),
+    /** An airplane in the air kept in sight on the map. */
+    TRACK(R.string.wording_track, WingtipIcons.track),
+    /** Alerts as the airplane takes off and lands, by its ICAO address. */
+    ALERTS(R.string.wording_alerts, WingtipIcons.alerts),
+    /** The airplane's book figures, opened over its card. */
+    FIGURES(R.string.wording_figures, WingtipIcons.figures),
 }
 
 /** The kinds of card, each with its actions in order; the first is its
@@ -44,4 +52,8 @@ enum class CardKind(val actions: List<CardAction>) {
     POINT(listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE, CardAction.HOLD_HERE)),
     /** A VOR, a fix or a VFR waypoint. */
     NAVAID(listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE, CardAction.COPY)),
+    /** An airplane's on the ground (the owner's design of 2026-11-26, on the phones since the owner's 2026-11-27 "Yes, match the web"), one greyed where it does nothing for this airplane, never hidden. */
+    AIRPLANE(listOf(CardAction.FLY_THIS, CardAction.ALERTS, CardAction.FAVORITE, CardAction.FIGURES)),
+    /** An airplane's in the air: Track in Fly This's place. */
+    AIRPLANE_AIRBORNE(listOf(CardAction.TRACK, CardAction.ALERTS, CardAction.FAVORITE, CardAction.FIGURES)),
 }
